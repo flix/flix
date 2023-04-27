@@ -141,37 +141,25 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    // First, we try to get the syntactic context from the parser or from an error message.
     context.sctx match {
-      case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
-      case SyntacticContext.Expr.Do => return OpCompleter.getCompletions(context)
-      case _: SyntacticContext.Expr => return getExpCompletions()
+      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
+      case _: SyntacticContext.Expr => getExpCompletions()
 
-      case SyntacticContext.Decl.Class => return KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.OtherDecl =>
-        return KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context) ++ InstanceCompleter.getCompletions(context)
+        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context) ++ InstanceCompleter.getCompletions(context)
 
-      case SyntacticContext.Import => return ImportCompleter.getCompletions(context)
+      case SyntacticContext.Import => ImportCompleter.getCompletions(context)
 
-      case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
-      case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
+      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
+      case _: SyntacticContext.Type => TypeCompleter.getCompletions(context)
 
-      case _: SyntacticContext.Pat => return Nil
-      case SyntacticContext.Use => return UseCompleter.getCompletions(context)
-      case SyntacticContext.WithClause => return WithCompleter.getCompletions(context)
-      case _ => // fallthrough
-    }
-
-    // No luck, fall back to regular expressions:
-
-    // If we match one of the we know what type of completion we need
-    val instanceRegex = raw"\s*instance\s+[^s]*".r
-
-    // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
-    context.prefix match {
-      case instanceRegex() => InstanceCompleter.getCompletions(context)
-
-      case _ => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+      case _: SyntacticContext.Pat => Nil
+      case SyntacticContext.Use => UseCompleter.getCompletions(context)
+      case SyntacticContext.WithClause => WithCompleter.getCompletions(context)
+      case _ =>
+        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
     }
   }
 
