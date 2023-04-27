@@ -153,6 +153,8 @@ object CompletionProvider {
       // Declarations.
       //
       case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
       case _: SyntacticContext.Decl =>
         KeywordOtherCompleter.getCompletions(context) ++
           InstanceCompleter.getCompletions(context) ++
@@ -182,7 +184,9 @@ object CompletionProvider {
       //
       // With.
       //
-      case SyntacticContext.WithClause => WithCompleter.getCompletions(context)
+      case SyntacticContext.WithClause =>
+        // A with context could also be just a type context.
+        TypeCompleter.getCompletions(context) ++ WithCompleter.getCompletions(context)
 
       //
       // Fallthrough.
