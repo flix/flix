@@ -541,6 +541,18 @@ object GenExpression {
           // Cast underlying value to the correct type if the underlying type is Object
           AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
+        case IntrinsicOperator.ArrayLength =>
+          // Adding source line number for debugging
+          addSourceLine(visitor, loc)
+          // We get the inner type of the array
+          val jvmType = JvmOps.getErasedJvmType(exp.tpe.asInstanceOf[MonoType.Array].tpe)
+          // Evaluating the 'base'
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          // Cast the object to array
+          visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
+          // Pushes the 'length' of the array on top of stack
+          visitor.visitInsn(ARRAYLENGTH)
+
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -595,18 +607,6 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
-
-      case IntrinsicOperator1.ArrayLength =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // We get the inner type of the array
-        val jvmType = JvmOps.getErasedJvmType(exp.tpe.asInstanceOf[MonoType.Array].tpe)
-        // Evaluating the 'base'
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Cast the object to array
-        visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-        // Pushes the 'length' of the array on top of stack
-        visitor.visitInsn(ARRAYLENGTH)
 
       case IntrinsicOperator1.Lazy =>
         // Add source line numbers for debugging.
