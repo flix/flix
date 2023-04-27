@@ -409,25 +409,6 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
           }
 
-        case IntrinsicOperator.Untag(sym) =>
-          // Adding source line number for debugging
-          addSourceLine(visitor, loc)
-
-          // We get the `TagInfo` for the tag
-          val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
-          // We get the JvmType of the class for the tag
-          val classType = JvmOps.getTagClassType(tagInfo)
-          // Evaluate the exp
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          // Cast the exp to the type of the tag
-          visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
-          // Descriptor of the method
-          val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
-          // Invoke `getValue()` method to extract the field of the tag
-          visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
-          // Cast the object to it's type if it's not a primitive
-          AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -482,6 +463,25 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Untag(sym) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+
+        // We get the `TagInfo` for the tag
+        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
+        // We get the JvmType of the class for the tag
+        val classType = JvmOps.getTagClassType(tagInfo)
+        // Evaluate the exp
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Cast the exp to the type of the tag
+        visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+        // Descriptor of the method
+        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
+        // Invoke `getValue()` method to extract the field of the tag
+        visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
+        // Cast the object to it's type if it's not a primitive
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
       case IntrinsicOperator1.InstanceOf(clazz) =>
         addSourceLine(visitor, loc)
