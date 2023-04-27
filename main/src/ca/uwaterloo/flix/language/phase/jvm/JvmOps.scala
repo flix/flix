@@ -700,8 +700,6 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
         }
 
-      case Expr.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
-
       case Expr.App(_, exps, tpe, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)

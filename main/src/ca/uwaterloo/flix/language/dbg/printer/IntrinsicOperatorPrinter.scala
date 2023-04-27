@@ -28,50 +28,45 @@ object IntrinsicOperatorPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def print(op: IntrinsicOperator1, d: Expression, tpe: DocAst.Type): Expression = op match {
-    case IntrinsicOperator1.Unary(sop) => Unary(OperatorPrinter.print(sop), d)
-    case IntrinsicOperator1.Is(sym) => Is(sym, d)
-    case IntrinsicOperator1.Tag(sym) => Tag(sym, List(d))
-    case IntrinsicOperator1.Untag(sym) => Untag(sym, d)
-    case IntrinsicOperator1.InstanceOf(_) => Unknown
-    case IntrinsicOperator1.Cast => Cast(d, tpe)
-    case IntrinsicOperator1.Index(idx) => Index(idx, d)
-    case IntrinsicOperator1.RecordSelect(field) => RecordSelect(field, d)
-    case IntrinsicOperator1.RecordRestrict(field) => RecordRestrict(field, d)
-    case IntrinsicOperator1.Ref => Ref(d)
-    case IntrinsicOperator1.Deref => Deref(d)
-    case IntrinsicOperator1.ArrayLength => ArrayLength(d)
-    case IntrinsicOperator1.Lazy => Lazy(d)
-    case IntrinsicOperator1.Force => Force(d)
-    case IntrinsicOperator1.GetField(field) => JavaGetField(field, d)
-    case IntrinsicOperator1.PutStaticField(field) => JavaPutStaticField(field, d)
-    case IntrinsicOperator1.BoxBool => Box(d)
-    case IntrinsicOperator1.BoxInt8 => Box(d)
-    case IntrinsicOperator1.BoxInt16 => Box(d)
-    case IntrinsicOperator1.BoxInt32 => Box(d)
-    case IntrinsicOperator1.BoxInt64 => Box(d)
-    case IntrinsicOperator1.BoxChar => Box(d)
-    case IntrinsicOperator1.BoxFloat32 => Box(d)
-    case IntrinsicOperator1.BoxFloat64 => Box(d)
-    case IntrinsicOperator1.UnboxBool => Unbox(d)
-    case IntrinsicOperator1.UnboxInt8 => Unbox(d)
-    case IntrinsicOperator1.UnboxInt16 => Unbox(d)
-    case IntrinsicOperator1.UnboxInt32 => Unbox(d)
-    case IntrinsicOperator1.UnboxInt64 => Unbox(d)
-    case IntrinsicOperator1.UnboxChar => Unbox(d)
-    case IntrinsicOperator1.UnboxFloat32 => Unbox(d)
-    case IntrinsicOperator1.UnboxFloat64 => Unbox(d)
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOp, ds: List[Expression]): Expression = (op, ds) match {
+  def print(op: IntrinsicOp, ds: List[Expression], tpe: DocAst.Type): Expression = (op, ds) match {
     case (IntrinsicOp.Region, Nil) => Region
     case (IntrinsicOp.RecordEmpty, Nil) => RecordEmpty
     case (IntrinsicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (IntrinsicOp.HoleError(sym), Nil) => HoleError(sym)
     case (IntrinsicOp.MatchError, Nil) => MatchError
+
+    case (IntrinsicOp.Unary(sop), List(d)) => Unary(OperatorPrinter.print(sop), d)
+    case (IntrinsicOp.Is(sym), List(d)) => Is(sym, d)
+    case (IntrinsicOp.Tag(sym), List(d)) => Tag(sym, List(d))
+    case (IntrinsicOp.Untag(sym), List(d)) => Untag(sym, d)
+    case (IntrinsicOp.InstanceOf(_), List(d)) => Unknown
+    case (IntrinsicOp.Cast, List(d)) => Cast(d, tpe)
+    case (IntrinsicOp.Index(idx), List(d)) => Index(idx, d)
+    case (IntrinsicOp.RecordSelect(field), List(d)) => RecordSelect(field, d)
+    case (IntrinsicOp.RecordRestrict(field), List(d)) => RecordRestrict(field, d)
+    case (IntrinsicOp.Ref, List(d)) => Ref(d)
+    case (IntrinsicOp.Deref, List(d)) => Deref(d)
+    case (IntrinsicOp.ArrayLength, List(d)) => ArrayLength(d)
+    case (IntrinsicOp.Lazy, List(d)) => Lazy(d)
+    case (IntrinsicOp.Force, List(d)) => Force(d)
+    case (IntrinsicOp.GetField(field), List(d)) => JavaGetField(field, d)
+    case (IntrinsicOp.PutStaticField(field), List(d)) => JavaPutStaticField(field, d)
+    case (IntrinsicOp.BoxBool, List(d)) => Box(d)
+    case (IntrinsicOp.BoxInt8, List(d)) => Box(d)
+    case (IntrinsicOp.BoxInt16, List(d)) => Box(d)
+    case (IntrinsicOp.BoxInt32, List(d)) => Box(d)
+    case (IntrinsicOp.BoxInt64, List(d)) => Box(d)
+    case (IntrinsicOp.BoxChar, List(d)) => Box(d)
+    case (IntrinsicOp.BoxFloat32, List(d)) => Box(d)
+    case (IntrinsicOp.BoxFloat64, List(d)) => Box(d)
+    case (IntrinsicOp.UnboxBool, List(d)) => Unbox(d)
+    case (IntrinsicOp.UnboxInt8, List(d)) => Unbox(d)
+    case (IntrinsicOp.UnboxInt16, List(d)) => Unbox(d)
+    case (IntrinsicOp.UnboxInt32, List(d)) => Unbox(d)
+    case (IntrinsicOp.UnboxInt64, List(d)) => Unbox(d)
+    case (IntrinsicOp.UnboxChar, List(d)) => Unbox(d)
+    case (IntrinsicOp.UnboxFloat32, List(d)) => Unbox(d)
+    case (IntrinsicOp.UnboxFloat64, List(d)) => Unbox(d)
 
     case (IntrinsicOp.Closure(sym), _) => ClosureLifted(sym, ds)
     case (IntrinsicOp.ApplyDef(sym), _) => App(sym, ds)
@@ -94,7 +89,7 @@ object IntrinsicOperatorPrinter {
 
     case (IntrinsicOp.ApplyClo, d :: rs) => AppClo(d, rs)
     case (IntrinsicOp.ApplyCloTail, d :: rs) => AppCloTail(d, rs)
-    case (IntrinsicOp.InvokeMethod(method), d :: rs)  => JavaInvokeMethod(method, d, rs)
+    case (IntrinsicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
 
     case _ => throw InternalCompilerException("Mismatched Arity", SourceLocation.Unknown)
   }

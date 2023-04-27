@@ -69,8 +69,7 @@ object ErasedAstPrinter {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
           DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       })
-    case Intrinsic1(op, exp, tpe, _) => IntrinsicOperatorPrinter.print(op, print(exp), MonoTypePrinter.print(tpe))
-    case App(op, exps, _, _) => IntrinsicOperatorPrinter.print(op, exps.map(print))
+    case App(op, exps, tpe, _) => IntrinsicOperatorPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
   }
 
   /**

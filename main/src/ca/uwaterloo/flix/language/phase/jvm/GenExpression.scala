@@ -318,12 +318,40 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+    case Expr.App(op, exps, tpe, loc) => op match {
 
-      case IntrinsicOperator1.Unary(sop) =>
+      case IntrinsicOp.Region =>
+        //!TODO: For now, just emit unit
+        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
+
+      case IntrinsicOp.RecordEmpty =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the JvmType of the class for the RecordEmpty
+        val classType = JvmOps.getRecordEmptyClassType()
+        // Instantiating a new object of tuple
+        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
+
+      case IntrinsicOp.GetStaticField(field) =>
+        addSourceLine(visitor, loc)
+        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+        visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+      case IntrinsicOp.HoleError(sym) =>
+        addSourceLine(visitor, loc)
+        AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
+
+      case IntrinsicOp.MatchError =>
+        addSourceLine(visitor, loc)
+        AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
+
+      case IntrinsicOp.Unary(sop) =>
+        val List(exp) = exps
         compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
-      case IntrinsicOperator1.Is(sym) =>
+      case IntrinsicOp.Is(sym) =>
+        val List(exp) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the `TagInfo` for the tag
@@ -337,7 +365,9 @@ object GenExpression {
         visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
       // Normal Tag
-      case IntrinsicOperator1.Tag(sym) =>
+      case IntrinsicOp.Tag(sym) =>
+        val List(exp) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // Get the tag info.
@@ -377,7 +407,9 @@ object GenExpression {
           visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
         }
 
-      case IntrinsicOperator1.Untag(sym) =>
+      case IntrinsicOp.Untag(sym) =>
+        val List(exp) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
 
@@ -396,18 +428,21 @@ object GenExpression {
         // Cast the object to it's type if it's not a primitive
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperator1.InstanceOf(clazz) =>
+      case IntrinsicOp.InstanceOf(clazz) =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         val className = asm.Type.getInternalName(clazz)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(INSTANCEOF, className.toString)
 
-      case IntrinsicOperator1.Cast =>
+      case IntrinsicOp.Cast =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperator1.Index(idx) =>
+      case IntrinsicOp.Index(idx) =>
+        val List(exp) = exps
         // We get the JvmType of the class for the tuple
         val classType = JvmOps.getTupleClassType(exp.tpe.asInstanceOf[MonoType.Tuple])
         // evaluating the `base`
@@ -417,7 +452,8 @@ object GenExpression {
         // Cast the object to it's type if it's not a primitive
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperator1.RecordSelect(field) =>
+      case IntrinsicOp.RecordSelect(field) =>
+        val List(exp) = exps
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
 
@@ -450,7 +486,8 @@ object GenExpression {
         // Cast the field value to the expected type.
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperator1.RecordRestrict(field) =>
+      case IntrinsicOp.RecordRestrict(field) =>
+        val List(exp) = exps
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the JvmType of the record interface
@@ -465,7 +502,8 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldMethod.name,
           AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
-      case IntrinsicOperator1.Ref =>
+      case IntrinsicOp.Ref =>
+        val List(exp) = exps
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // JvmType of the reference class
@@ -490,7 +528,8 @@ object GenExpression {
         // set the field with the ref value
         visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
 
-      case IntrinsicOperator1.Deref =>
+      case IntrinsicOp.Deref =>
+        val List(exp) = exps
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // Evaluate the exp
@@ -509,7 +548,8 @@ object GenExpression {
         // Cast underlying value to the correct type if the underlying type is Object
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperator1.ArrayLength =>
+      case IntrinsicOp.ArrayLength =>
+        val List(exp) = exps
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the inner type of the array
@@ -521,7 +561,8 @@ object GenExpression {
         // Pushes the 'length' of the array on top of stack
         visitor.visitInsn(ARRAYLENGTH)
 
-      case IntrinsicOperator1.Lazy =>
+      case IntrinsicOp.Lazy =>
+        val List(exp) = exps
         // Add source line numbers for debugging.
         addSourceLine(visitor, loc)
 
@@ -536,7 +577,8 @@ object GenExpression {
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
-      case IntrinsicOperator1.Force =>
+      case IntrinsicOp.Force =>
+        val List(exp) = exps
         // Add source line numbers for debugging.
         addSourceLine(visitor, loc)
 
@@ -575,13 +617,15 @@ object GenExpression {
         // The result of force is a generic object so a cast is needed.
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperator1.GetField(field) =>
+      case IntrinsicOp.GetField(field) =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
-      case IntrinsicOperator1.PutStaticField(field) =>
+      case IntrinsicOp.PutStaticField(field) =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
@@ -590,122 +634,109 @@ object GenExpression {
         // Push Unit on the stack.
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-      case IntrinsicOperator1.BoxBool =>
+      case IntrinsicOp.BoxBool =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
 
-      case IntrinsicOperator1.BoxInt8 =>
+      case IntrinsicOp.BoxInt8 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)
 
-      case IntrinsicOperator1.BoxInt16 =>
+      case IntrinsicOp.BoxInt16 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
 
-      case IntrinsicOperator1.BoxInt32 =>
+      case IntrinsicOp.BoxInt32 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
 
-      case IntrinsicOperator1.BoxInt64 =>
+      case IntrinsicOp.BoxInt64 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
 
-      case IntrinsicOperator1.BoxChar =>
+      case IntrinsicOp.BoxChar =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false)
 
-      case IntrinsicOperator1.BoxFloat32 =>
+      case IntrinsicOp.BoxFloat32 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
 
-      case IntrinsicOperator1.BoxFloat64 =>
+      case IntrinsicOp.BoxFloat64 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
 
-      case IntrinsicOperator1.UnboxBool =>
+      case IntrinsicOp.UnboxBool =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
 
-      case IntrinsicOperator1.UnboxInt8 =>
+      case IntrinsicOp.UnboxInt8 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
 
-      case IntrinsicOperator1.UnboxInt16 =>
+      case IntrinsicOp.UnboxInt16 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
 
-      case IntrinsicOperator1.UnboxInt32 =>
+      case IntrinsicOp.UnboxInt32 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
 
-      case IntrinsicOperator1.UnboxInt64 =>
+      case IntrinsicOp.UnboxInt64 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
 
-      case IntrinsicOperator1.UnboxChar =>
+      case IntrinsicOp.UnboxChar =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
 
-      case IntrinsicOperator1.UnboxFloat32 =>
+      case IntrinsicOp.UnboxFloat32 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
 
-      case IntrinsicOperator1.UnboxFloat64 =>
+      case IntrinsicOp.UnboxFloat64 =>
+        val List(exp) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
         visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
-
-    }
-
-    case Expr.App(op, exps, tpe, loc) => op match {
-
-      case IntrinsicOp.Region =>
-        //!TODO: For now, just emit unit
-        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-
-      case IntrinsicOp.RecordEmpty =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // We get the JvmType of the class for the RecordEmpty
-        val classType = JvmOps.getRecordEmptyClassType()
-        // Instantiating a new object of tuple
-        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
-
-      case IntrinsicOp.GetStaticField(field) =>
-        addSourceLine(visitor, loc)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
-
-      case IntrinsicOp.HoleError(sym) =>
-        addSourceLine(visitor, loc)
-        AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
-
-      case IntrinsicOp.MatchError =>
-        addSourceLine(visitor, loc)
-        AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
 
       case IntrinsicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps

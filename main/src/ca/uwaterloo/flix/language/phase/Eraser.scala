@@ -106,8 +106,8 @@ object Eraser {
       ErasedAst.Expr.App(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.Unary(sop, _, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Unary(sop)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Unary(sop)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       ErasedAst.Expr.Binary(sop, visitExp(exp1), visitExp(exp2), tpe, loc)
@@ -146,20 +146,20 @@ object Eraser {
       ErasedAst.Expr.App(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
     case FinalAst.Expression.Is(sym, exp, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Is(sym)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), MonoType.Bool, loc)
+      val op = ErasedAst.IntrinsicOp.Is(sym)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), MonoType.Bool, loc)
 
     case FinalAst.Expression.Tag(sym, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Tag(sym)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Tag(sym)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Untag(sym, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Untag(sym)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Untag(sym)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Index(base, idx, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Index(idx)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(base), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Index(idx)
+      ErasedAst.Expr.App(op, List(visitExp(base)), tpe, loc)
 
     case FinalAst.Expression.Tuple(exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.Tuple
@@ -170,16 +170,16 @@ object Eraser {
       ErasedAst.Expr.App(op, Nil, tpe, loc)
 
     case FinalAst.Expression.RecordSelect(exp, field, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.RecordSelect(field)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.RecordSelect(field)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.RecordExtend(field, exp1, exp2, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.RecordExtend(field)
       ErasedAst.Expr.App(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
     case FinalAst.Expression.RecordRestrict(field, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.RecordRestrict(field)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.RecordRestrict(field)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.ArrayLit(exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.ArrayLit
@@ -198,29 +198,29 @@ object Eraser {
       ErasedAst.Expr.App(op, List(visitExp(exp1), visitExp(exp2), visitExp(exp3)), tpe, loc)
 
     case FinalAst.Expression.ArrayLength(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.ArrayLength
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.ArrayLength
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Ref
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Ref
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Deref
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Deref
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.Assign
       ErasedAst.Expr.App(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
     case FinalAst.Expression.InstanceOf(exp, clazz, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.InstanceOf(clazz)
+      val op = ErasedAst.IntrinsicOp.InstanceOf(clazz)
       val tpe = MonoType.Bool
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Cast(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Cast
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Cast
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.TryCatch(exp, rules0, tpe, loc) =>
       val rules = rules0.map {
@@ -242,8 +242,8 @@ object Eraser {
       ErasedAst.Expr.App(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.GetField(field)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.GetField(field)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.PutField(field)
@@ -254,8 +254,8 @@ object Eraser {
       ErasedAst.Expr.App(op, Nil, tpe, loc)
 
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.PutStaticField(field)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.PutStaticField(field)
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.NewObject(name, clazz, tpe, methods0, loc) =>
       val methods = methods0.map {
@@ -271,12 +271,12 @@ object Eraser {
       ErasedAst.Expr.App(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Lazy
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Lazy
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Force(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Force
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.Force
+      ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.HoleError(sym)

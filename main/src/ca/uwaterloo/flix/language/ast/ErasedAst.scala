@@ -66,79 +66,7 @@ object ErasedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
-
     case class App(op: IntrinsicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-  }
-
-  sealed trait IntrinsicOperator1
-
-  object IntrinsicOperator1 {
-
-    case class Unary(sop: SemanticOperator) extends IntrinsicOperator1
-
-    case class Is(sym: Symbol.CaseSym) extends IntrinsicOperator1
-
-    case class Tag(sym: Symbol.CaseSym) extends IntrinsicOperator1
-
-    case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
-
-    case class InstanceOf(clazz: Class[_]) extends IntrinsicOperator1
-
-    case object Cast extends IntrinsicOperator1
-
-    case class Index(idx: Int) extends IntrinsicOperator1
-
-    case class RecordSelect(field: Name.Field) extends IntrinsicOperator1
-
-    case class RecordRestrict(field: Name.Field) extends IntrinsicOperator1
-
-    case object Ref extends IntrinsicOperator1
-
-    case object Deref extends IntrinsicOperator1
-
-    case object ArrayLength extends IntrinsicOperator1
-
-    case object Lazy extends IntrinsicOperator1
-
-    case object Force extends IntrinsicOperator1
-
-    case class GetField(field: Field) extends IntrinsicOperator1
-
-    case class PutStaticField(field: Field) extends IntrinsicOperator1
-
-    case object BoxBool extends IntrinsicOperator1
-
-    case object BoxInt8 extends IntrinsicOperator1
-
-    case object BoxInt16 extends IntrinsicOperator1
-
-    case object BoxInt32 extends IntrinsicOperator1
-
-    case object BoxInt64 extends IntrinsicOperator1
-
-    case object BoxChar extends IntrinsicOperator1
-
-    case object BoxFloat32 extends IntrinsicOperator1
-
-    case object BoxFloat64 extends IntrinsicOperator1
-
-    case object UnboxBool extends IntrinsicOperator1
-
-    case object UnboxInt8 extends IntrinsicOperator1
-
-    case object UnboxInt16 extends IntrinsicOperator1
-
-    case object UnboxInt32 extends IntrinsicOperator1
-
-    case object UnboxInt64 extends IntrinsicOperator1
-
-    case object UnboxChar extends IntrinsicOperator1
-
-    case object UnboxFloat32 extends IntrinsicOperator1
-
-    case object UnboxFloat64 extends IntrinsicOperator1
 
   }
 
@@ -155,6 +83,70 @@ object ErasedAst {
     case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOp
 
     case object MatchError extends IntrinsicOp
+
+    case class Unary(sop: SemanticOperator) extends IntrinsicOp
+
+    case class Is(sym: Symbol.CaseSym) extends IntrinsicOp
+
+    case class Tag(sym: Symbol.CaseSym) extends IntrinsicOp
+
+    case class Untag(sym: Symbol.CaseSym) extends IntrinsicOp
+
+    case class InstanceOf(clazz: Class[_]) extends IntrinsicOp
+
+    case object Cast extends IntrinsicOp
+
+    case class Index(idx: Int) extends IntrinsicOp
+
+    case class RecordSelect(field: Name.Field) extends IntrinsicOp
+
+    case class RecordRestrict(field: Name.Field) extends IntrinsicOp
+
+    case object Ref extends IntrinsicOp
+
+    case object Deref extends IntrinsicOp
+
+    case object ArrayLength extends IntrinsicOp
+
+    case object Lazy extends IntrinsicOp
+
+    case object Force extends IntrinsicOp
+
+    case class GetField(field: Field) extends IntrinsicOp
+
+    case class PutStaticField(field: Field) extends IntrinsicOp
+
+    case object BoxBool extends IntrinsicOp
+
+    case object BoxInt8 extends IntrinsicOp
+
+    case object BoxInt16 extends IntrinsicOp
+
+    case object BoxInt32 extends IntrinsicOp
+
+    case object BoxInt64 extends IntrinsicOp
+
+    case object BoxChar extends IntrinsicOp
+
+    case object BoxFloat32 extends IntrinsicOp
+
+    case object BoxFloat64 extends IntrinsicOp
+
+    case object UnboxBool extends IntrinsicOp
+
+    case object UnboxInt8 extends IntrinsicOp
+
+    case object UnboxInt16 extends IntrinsicOp
+
+    case object UnboxInt32 extends IntrinsicOp
+
+    case object UnboxInt64 extends IntrinsicOp
+
+    case object UnboxChar extends IntrinsicOp
+
+    case object UnboxFloat32 extends IntrinsicOp
+
+    case object UnboxFloat64 extends IntrinsicOp
 
     case class Closure(sym: Symbol.DefnSym) extends IntrinsicOp
 
