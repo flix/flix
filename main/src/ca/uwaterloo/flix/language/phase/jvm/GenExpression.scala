@@ -453,20 +453,25 @@ object GenExpression {
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
             visitor.visitInsn(D2L)
 
-          case Int8Op.And =>
+          case Int8Op.And | Int16Op.And | Int32Op.And =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IAND)
 
-          case Int8Op.Or =>
+          case Int8Op.Or | Int16Op.Or | Int32Op.Or =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IOR)
 
-          case Int8Op.Xor =>
+          case Int8Op.Xor | Int16Op.Xor | Int32Op.Xor =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IXOR)
+
+          case Int8Op.Shr | Int16Op.Shr | Int32Op.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHR)
 
           case Int8Op.Shl =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
@@ -474,36 +479,41 @@ object GenExpression {
             visitor.visitInsn(ISHL)
             visitor.visitInsn(I2B)
 
-          case Int8Op.Shr =>
-            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(ISHR)
-
-          case Int16Op.And =>
-            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(IAND)
-
-          case Int16Op.Or =>
-            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(IOR)
-
-          case Int16Op.Xor =>
-            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(IXOR)
-
           case Int16Op.Shl =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(ISHL)
             visitor.visitInsn(I2S)
 
-          case Int16Op.Shr =>
+          case Int32Op.Shl =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(ISHR)
+            visitor.visitInsn(ISHL)
+
+          case Int64Op.And =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LAND)
+
+          case Int64Op.Or =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LOR)
+
+          case Int64Op.Xor =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LXOR)
+
+          case Int64Op.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LSHR)
+
+          case Int64Op.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LSHL)
 
           /*
 {
