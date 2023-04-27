@@ -515,44 +515,25 @@ object GenExpression {
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(LSHL)
 
-          /*
-{
-    compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
-    compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-    (semanticOperatorBitwiseToOpcode(sop), semanticOperatorBitwiseToMethod(sop)) match {
-      case (Some(op), _) =>
-        sop match {
-          case Int8Op.And | Int8Op.Or | Int8Op.Xor | Int8Op.Shl | Int8Op.Shr =>
-            visitor.visitInsn(op)
-            if (op == ISHL) visitor.visitInsn(I2B)
-          case Int16Op.And | Int16Op.Or | Int16Op.Xor | Int16Op.Shl | Int16Op.Shr =>
-            visitor.visitInsn(op)
-            if (op == ISHL) visitor.visitInsn(I2S)
-          case Int32Op.And | Int32Op.Or | Int32Op.Xor | Int32Op.Shl | Int32Op.Shr
-               | Int64Op.And | Int64Op.Or | Int64Op.Xor | Int64Op.Shl | Int64Op.Shr => visitor.visitInsn(op)
-          case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-        }
-      case (_, Some(op)) => sop match {
-        case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
-            op, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
-        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-      }
-      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-    }
-  }
+          case BigIntOp.And =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "and", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
- */
-          case Int16Op.And | Int32Op.And
-               | Int64Op.And | BigIntOp.And
-               | Int8Op.Or | Int16Op.Or | Int32Op.Or
-               | Int64Op.Or | BigIntOp.Or
-               | Int8Op.Xor | Int16Op.Xor | Int32Op.Xor
-               | Int64Op.Xor | BigIntOp.Xor
-               | Int8Op.Shl | Int16Op.Shl | Int32Op.Shl
-               | Int64Op.Shl | BigIntOp.Shl
-               | Int8Op.Shr | Int16Op.Shr | Int32Op.Shr
-               | Int64Op.Shr | BigIntOp.Shr => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+          case BigIntOp.Or =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "or", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
+          case BigIntOp.Xor =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "xor", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
+          case BigIntOp.Shl =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "shiftLeft", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
+          case BigIntOp.Shr =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
           case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
         }
