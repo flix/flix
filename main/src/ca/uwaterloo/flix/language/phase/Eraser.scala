@@ -147,8 +147,8 @@ object Eraser {
       ErasedAst.Expr.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Is(sym, exp, loc) =>
-      val op = ErasedAst.IntrinsicOperator.Is(sym)
-      ErasedAst.Expr.Intrinsic(op, visitExp(exp) :: Nil, MonoType.Bool, loc)
+      val op = ErasedAst.IntrinsicOperator1.Is(sym)
+      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), MonoType.Bool, loc)
 
     case FinalAst.Expression.Tag(sym, exp, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1.Tag(sym)
