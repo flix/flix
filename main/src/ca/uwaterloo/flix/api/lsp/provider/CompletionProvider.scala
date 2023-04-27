@@ -151,6 +151,7 @@ object CompletionProvider {
       case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       case _: SyntacticContext.Pat => return Nil
+      case SyntacticContext.Use => return UseCompleter.getCompletions(context)
       case SyntacticContext.WithClause => return WithCompleter.getCompletions(context)
       case _ => // fallthrough
     }
@@ -158,12 +159,10 @@ object CompletionProvider {
     // No luck, fall back to regular expressions:
 
     // If we match one of the we know what type of completion we need
-    val useRegex = raw"\s*use\s+[^\s]*".r
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
-      case useRegex() => UseCompleter.getCompletions(context)
       case instanceRegex() => InstanceCompleter.getCompletions(context)
 
       case _ => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
@@ -277,7 +276,7 @@ object CompletionProvider {
       case ParseError(_, ctx, _) => ctx
       case WeederError.IllegalJavaClass(_, _) => SyntacticContext.Import
       case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
-      case ResolutionError.UndefinedName(_, _, _, _) => SyntacticContext.Expr.OtherExpr
+      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) SyntacticContext.Use else SyntacticContext.Expr.OtherExpr
       case ResolutionError.UndefinedVar(_, _) => SyntacticContext.Expr.OtherExpr
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)

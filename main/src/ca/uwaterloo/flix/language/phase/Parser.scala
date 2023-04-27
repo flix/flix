@@ -135,6 +135,9 @@ object Parser {
       case "PutField" => SyntacticContext.Import
       case "GetStaticField" => SyntacticContext.Import
       case "PutStaticField" => SyntacticContext.Import
+      case "UseOne" => SyntacticContext.Use
+      case "UseMany" => SyntacticContext.Use
+      case "UseName" => SyntacticContext.Use
       case "EffectSetOrEmpty" => SyntacticContext.Type.Eff
       case "Type" => SyntacticContext.Type.OtherType
       case "WithClause" => SyntacticContext.WithClause
