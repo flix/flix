@@ -434,11 +434,6 @@ object GenExpression {
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
           visitor.visitTypeInsn(INSTANCEOF, className.toString)
 
-        case IntrinsicOperator.Cast =>
-          addSourceLine(visitor, loc)
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -493,6 +488,11 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Cast =>
+        addSourceLine(visitor, loc)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
       case IntrinsicOperator1.Index(idx) =>
         // We get the JvmType of the class for the tuple
