@@ -136,6 +136,8 @@ object ErasedAst {
 
     case object ArrayLength extends IntrinsicOperator
 
+    case object Lazy extends IntrinsicOperator
+
 
     // Intrinsic2
 
@@ -156,8 +158,6 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
-
-    case object Lazy extends IntrinsicOperator1
 
     case object Force extends IntrinsicOperator1
 

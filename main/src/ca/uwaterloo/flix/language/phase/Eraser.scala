@@ -273,8 +273,8 @@ object Eraser {
       ErasedAst.Expr.Intrinsic(op, exps, tpe, loc)
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Lazy
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.Lazy
+      ErasedAst.Expr.Intrinsic(op, visitExp(exp) :: Nil, tpe, loc)
 
     case FinalAst.Expression.Force(exp, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1.Force

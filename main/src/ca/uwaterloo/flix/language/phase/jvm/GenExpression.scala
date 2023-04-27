@@ -553,6 +553,21 @@ object GenExpression {
           // Pushes the 'length' of the array on top of stack
           visitor.visitInsn(ARRAYLENGTH)
 
+        case IntrinsicOperator.Lazy =>
+          // Add source line numbers for debugging.
+          addSourceLine(visitor, loc)
+
+          // Find the Lazy class name (Lazy$tpe).
+          val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
+
+          // Make a new lazy object and dup it to leave it on the stack.
+          visitor.visitTypeInsn(NEW, classType)
+          visitor.visitInsn(DUP)
+
+          // Compile the thunked expression and call new Lazy$erased_tpe(expression).
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -607,21 +622,6 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
-
-      case IntrinsicOperator1.Lazy =>
-        // Add source line numbers for debugging.
-        addSourceLine(visitor, loc)
-
-        // Find the Lazy class name (Lazy$tpe).
-        val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
-
-        // Make a new lazy object and dup it to leave it on the stack.
-        visitor.visitTypeInsn(NEW, classType)
-        visitor.visitInsn(DUP)
-
-        // Compile the thunked expression and call new Lazy$erased_tpe(expression).
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
       case IntrinsicOperator1.Force =>
         // Add source line numbers for debugging.
