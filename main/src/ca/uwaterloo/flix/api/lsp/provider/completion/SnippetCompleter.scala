@@ -30,9 +30,6 @@ object SnippetCompleter extends Completer {
       ("main",
         "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
         "snippet for Hello World Program"),
-      ("query",
-        "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",
-        "snippet for query")
     ) map { case (name, snippet, documentation) => Completion.SnippetCompletion(name, snippet, documentation)}
   }
 }

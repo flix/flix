@@ -19,22 +19,16 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object ImportCompleter {
+object ExprCompleter extends Completer {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    val importKeywords = List(
-      Completion.KeywordCompletion("import"),
-      Completion.KeywordCompletion("new"),
-      Completion.KeywordCompletion("get"),
-      Completion.KeywordCompletion("set"),
-      Completion.KeywordCompletion("static")
-    )
-
-    importKeywords ++
-      ImportNewCompleter.getCompletions(context) ++
-      ImportMethodCompleter.getCompletions(context) ++
-      ImportFieldCompleter.getCompletions(context) ++
-      ImportClassCompleter.getCompletions(context)
+    DefCompleter.getCompletions(context) ++
+      FieldCompleter.getCompletions(context) ++
+      KeywordExprCompleter.getCompletions(context) ++
+      MatchCompleter.getCompletions(context) ++
+      VarCompleter.getCompletions(context) ++
+      SignatureCompleter.getCompletions(context) ++
+      SnippetCompleter.getCompletions(context)
   }
 
 }
