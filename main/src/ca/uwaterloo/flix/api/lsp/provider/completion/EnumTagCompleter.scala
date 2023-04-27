@@ -96,15 +96,17 @@ object EnumTagCompleter extends Completer {
   /**
     * This checks if the provided nameSpace from the user matches the nameSpace for the Enum.
     *
-    * It's allowed not to provide a namespace, hence the user could have a 'use A.B.Color2;'.
+    * It's allowed not to provide a namespace, hence the user could have a 'use A.B.Color'.
     * The user should therefore not be required to provide the path.
     *
-    * @param ns  the provided nameSpace
-    * @param sym the enumSym
+    * Further if the user has 'use A.B', it is only required to provide 'B.Color'.
+    *
+    * @param ns  the provided nameSpace.
+    * @param sym the enumSym.
     * @return    true, if the ns.isEmpty or it matches sym.namespace, false otherwise.
     */
   private def providedNameSpaceIsValid(ns: List[String], sym: Symbol.EnumSym): Boolean = {
-    ns.isEmpty || ns == sym.namespace
+    ns.isEmpty || ns == sym.namespace || ns == sym.namespace.tail
   }
 
   /**
