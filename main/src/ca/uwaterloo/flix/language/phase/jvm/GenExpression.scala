@@ -449,39 +449,6 @@ object GenExpression {
           // Cast the object to it's type if it's not a primitive
           AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-        case IntrinsicOperator.RecordSelect(field) =>
-          // Adding source line number for debugging
-          addSourceLine(visitor, loc)
-
-          // Get the correct record extend class, given the expression type 'tpe'
-          // We get the JvmType of the extended record class to retrieve the proper field
-          val classType = JvmOps.getRecordType(tpe)
-
-          // We get the JvmType of the record interface
-          val interfaceType = JvmOps.getRecordInterfaceType()
-
-          val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(tpe), BackendObjType.RecordEmpty.toTpe)
-
-          //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
-          //lookupField
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-
-          //Push the desired label of the field we want get of the record onto the stack
-          visitor.visitLdcInsn(field.name)
-
-          //Invoke the lookupField method on the record. (To get the proper record object)
-          visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "lookupField",
-            AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
-
-          //Cast to proper record extend class
-          visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
-
-          //Retrieve the value field  (To get the proper value)
-          visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-
-          // Cast the field value to the expected type.
-          AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -536,6 +503,39 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.RecordSelect(field) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+
+        // Get the correct record extend class, given the expression type 'tpe'
+        // We get the JvmType of the extended record class to retrieve the proper field
+        val classType = JvmOps.getRecordType(tpe)
+
+        // We get the JvmType of the record interface
+        val interfaceType = JvmOps.getRecordInterfaceType()
+
+        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(tpe), BackendObjType.RecordEmpty.toTpe)
+
+        //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
+        //lookupField
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+        //Push the desired label of the field we want get of the record onto the stack
+        visitor.visitLdcInsn(field.name)
+
+        //Invoke the lookupField method on the record. (To get the proper record object)
+        visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "lookupField",
+          AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
+
+        //Cast to proper record extend class
+        visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+
+        //Retrieve the value field  (To get the proper value)
+        visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
+
+        // Cast the field value to the expected type.
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
       case IntrinsicOperator1.RecordRestrict(field) =>
         // Adding source line number for debugging
