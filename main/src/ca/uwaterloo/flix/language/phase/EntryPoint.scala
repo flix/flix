@@ -147,9 +147,9 @@ object EntryPoint {
           // TODO ASSOC-TYPES better eqEnv
           ().toSuccess
 
-        // Case 2: Bad arguments. Error
-        // Case 3: argVal was None / SoftError
-        case Some(_) | None =>
+        // Case 2: Bad arguments. SoftError
+        // Case 3: argVal was None. SoftError
+        case _ =>
           ().toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
       }
   }
