@@ -151,19 +151,18 @@ object CompletionProvider {
       case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       case _: SyntacticContext.Pat => return Nil
+      case SyntacticContext.WithClause => return WithCompleter.getCompletions(context)
       case _ => // fallthrough
     }
 
     // No luck, fall back to regular expressions:
 
     // If we match one of the we know what type of completion we need
-    val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
     val useRegex = raw"\s*use\s+[^\s]*".r
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
-      case withRegex() => WithCompleter.getCompletions(context)
       case useRegex() => UseCompleter.getCompletions(context)
       case instanceRegex() => InstanceCompleter.getCompletions(context)
 
