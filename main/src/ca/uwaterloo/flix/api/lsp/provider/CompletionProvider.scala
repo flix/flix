@@ -147,13 +147,13 @@ object CompletionProvider {
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
-      case SyntacticContext.Expr.OtherExpr => ExprCompleter.getCompletions(context)
+      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
       // Declarations.
       //
       case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
-      case SyntacticContext.Decl.OtherDecl =>
+      case _: SyntacticContext.Decl =>
         KeywordOtherCompleter.getCompletions(context) ++
           InstanceCompleter.getCompletions(context) ++
           SnippetCompleter.getCompletions(context)
@@ -172,7 +172,7 @@ object CompletionProvider {
       //
       // Patterns.
       //
-      case SyntacticContext.Pat.OtherPat => Nil
+      case _: SyntacticContext.Pat => Nil
 
       //
       // Uses.
@@ -187,7 +187,7 @@ object CompletionProvider {
       //
       // Fallthrough.
       //
-      case _ =>
+      case SyntacticContext.Unknown =>
         KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
     }
   }

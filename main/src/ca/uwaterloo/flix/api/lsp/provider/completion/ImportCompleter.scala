@@ -34,7 +34,7 @@ object ImportCompleter {
       ImportNewCompleter.getCompletions(context) ++
       ImportMethodCompleter.getCompletions(context) ++
       ImportFieldCompleter.getCompletions(context) ++
-      ClassCompleter.getCompletions(context)
+      ImportClassCompleter.getCompletions(context)
   }
 
 }
