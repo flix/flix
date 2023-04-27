@@ -827,6 +827,8 @@ object Ast {
       case object OtherType extends Type
     }
 
+    case object Use extends SyntacticContext
+
     case object WithClause extends SyntacticContext
 
     case object Unknown extends SyntacticContext
