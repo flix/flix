@@ -68,9 +68,6 @@ object IntrinsicOperatorPrinter {
     case (AtomicOp.UnboxFloat64, List(d)) => Unbox(d)
 
     case (AtomicOp.Closure(sym), _) => ClosureLifted(sym, ds)
-    case (AtomicOp.ApplyDef(sym), _) => App(sym, ds)
-    case (AtomicOp.ApplyDefTail(sym), _) => AppDefTail(sym, ds)
-    case (AtomicOp.ApplySelfTail(sym, _), _) => AppSelfTail(sym, ds)
     case (AtomicOp.Tuple, _) => Tuple(ds)
     case (AtomicOp.ArrayLit, _) => ArrayLit(ds)
     case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
@@ -86,8 +83,6 @@ object IntrinsicOperatorPrinter {
 
     case (AtomicOp.ArrayStore, d1 :: d2 :: d3 :: Nil) => ArrayStore(d1, d2, d3)
 
-    case (AtomicOp.ApplyClo, d :: rs) => AppClo(d, rs)
-    case (AtomicOp.ApplyCloTail, d :: rs) => AppCloTail(d, rs)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
 
     case _ => throw InternalCompilerException("Mismatched Arity", SourceLocation.Unknown)
