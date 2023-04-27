@@ -439,16 +439,6 @@ object GenExpression {
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
           AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-        case IntrinsicOperator.Index(idx) =>
-          // We get the JvmType of the class for the tuple
-          val classType = JvmOps.getTupleClassType(exp.tpe.asInstanceOf[MonoType.Tuple])
-          // evaluating the `base`
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          // Retrieving the field `field${offset}`
-          visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
-          // Cast the object to it's type if it's not a primitive
-          AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -503,6 +493,16 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Index(idx) =>
+        // We get the JvmType of the class for the tuple
+        val classType = JvmOps.getTupleClassType(exp.tpe.asInstanceOf[MonoType.Tuple])
+        // evaluating the `base`
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Retrieving the field `field${offset}`
+        visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
+        // Cast the object to it's type if it's not a primitive
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
       case IntrinsicOperator1.RecordSelect(field) =>
         // Adding source line number for debugging
