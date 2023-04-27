@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.Method
 
 object ErasedAst {
 
@@ -48,6 +48,18 @@ object ErasedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr
 
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyCloTail(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyDefTail(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: MonoType, loc: SourceLocation) extends Expr
@@ -63,8 +75,6 @@ object ErasedAst {
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
-
-    case class App(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
   }
 

@@ -190,19 +190,19 @@ object DocAst {
     def Cst(cst: Ast.Constant): Expression =
       printer.ConstantPrinter.print(cst)
 
-    def AppClo(d: Expression, ds: List[Expression]): Expression =
+    def ApplyClo(d: Expression, ds: List[Expression]): Expression =
       App(d, ds)
 
-    def AppCloTail(d: Expression, ds: List[Expression]): Expression =
+    def ApplyCloTail(d: Expression, ds: List[Expression]): Expression =
       App(d, ds)
 
-    def AppDefTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
+    def ApplyDefTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
       App(AsIs(sym.toString), ds)
 
-    def AppSelfTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
+    def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
       App(AsIs(sym.toString), ds)
 
-    def App(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
       App(AsIs(sym.toString), ds)
 
     def JavaInvokeMethod(m: Method, d: Expression, ds: List[Expression]): Expression =

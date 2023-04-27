@@ -15,25 +15,16 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.FormalParam
-
 import java.lang.reflect.{Constructor, Field, Method}
 
+/**
+  * A common super-type for control pure expressions.
+  */
 sealed trait AtomicOp
 
 object AtomicOp {
 
   case class Closure(sym: Symbol.DefnSym) extends AtomicOp
-
-  case object ApplyClo extends AtomicOp
-
-  case object ApplyCloTail extends AtomicOp
-
-  case class ApplyDef(sym: Symbol.DefnSym) extends AtomicOp
-
-  case class ApplyDefTail(sym: Symbol.DefnSym) extends AtomicOp
-
-  case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam]) extends AtomicOp
 
   case class Unary(sop: SemanticOperator) extends AtomicOp
 
