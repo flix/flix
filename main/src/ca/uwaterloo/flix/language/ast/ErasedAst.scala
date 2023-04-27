@@ -134,11 +134,19 @@ object ErasedAst {
 
     // Intrinsic2
 
+    // case class RecordExtend(field: Name.Field) extends IntrinsicOperator
+
+    // case object Assign extends IntrinsicOperator
+
+    // case object ArrayNew extends IntrinsicOperator
+
     // case object ArrayLoad extends IntrinsicOperator
 
     case object Spawn extends IntrinsicOperator
 
     // case object ScopeExit extends IntrinsicOperator
+
+    // case class PutField(field: Field) extends IntrinsicOperator
 
     // Intrinsic3
 
