@@ -428,12 +428,6 @@ object GenExpression {
           // Cast the object to it's type if it's not a primitive
           AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-        case IntrinsicOperator.InstanceOf(clazz) =>
-          addSourceLine(visitor, loc)
-          val className = asm.Type.getInternalName(clazz)
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitTypeInsn(INSTANCEOF, className.toString)
-
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -488,6 +482,12 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.InstanceOf(clazz) =>
+        addSourceLine(visitor, loc)
+        val className = asm.Type.getInternalName(clazz)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(INSTANCEOF, className.toString)
 
       case IntrinsicOperator1.Cast =>
         addSourceLine(visitor, loc)
