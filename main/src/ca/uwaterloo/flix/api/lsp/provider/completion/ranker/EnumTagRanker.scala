@@ -19,14 +19,30 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker.hasRealSourceKinds
 
 object EnumTagRanker {
 
   /**
     * Find the best enum tag completion.
     */
-  def findBest(completions: Iterable[Completion], tagUses: MultiMap[Symbol.CaseSym, SourceLocation]): Option[Completion] = {
-    // TODO
-    None
+  def findBest(completions: Iterable[Completion], tagUses: MultiMap[Symbol.CaseSym, SourceLocation]): Option[EnumTagCompletion] = {
+    // Remove all none typeEnum completions
+    getEnumTagCompletions(completions)
+      // Find the typeEnum comp that has 0 Real uses
+      .find(enumTag =>
+        !hasRealSourceKinds(tagUses(enumTag.sym)))
+  }
+
+  /**
+    * Returns a list only consisting of enumTag completions.
+    *
+    * @param completions the list of all possible completions.
+    * @return            a List of EnumTagCompletion.
+    */
+  private def getEnumTagCompletions(completions: Iterable[Completion]): Iterable[EnumTagCompletion] = {
+    completions.collect {
+      case comp: EnumTagCompletion => comp
+    }
   }
 }
