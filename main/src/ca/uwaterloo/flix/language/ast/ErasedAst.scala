@@ -138,6 +138,7 @@ object ErasedAst {
 
     case object Lazy extends IntrinsicOperator
 
+    case object Force extends IntrinsicOperator
 
     // Intrinsic2
 
@@ -158,8 +159,6 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
-
-    case object Force extends IntrinsicOperator1
 
     case class GetField(field: Field) extends IntrinsicOperator1
 
