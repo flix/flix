@@ -453,6 +453,174 @@ object GenExpression {
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
             visitor.visitInsn(D2L)
 
+          case BoolOp.Eq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPNE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case BoolOp.Neq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case CharOp.Eq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPNE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case CharOp.Neq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          /*
+          compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+          compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
+          val condElse = new Label()
+          val condEnd = new Label()
+          semanticOperatorCopmarisonToOpcode(sop) match {
+            case Some((op, cmp)) => sop match {
+              case StringOp.Eq | StringOp.Neq =>
+                // String can be compared using Object's `equal` method
+                visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
+                  AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
+                visitor.visitInsn(ICONST_1)
+                visitor.visitJumpInsn(op, condElse)
+
+              case BoolOp.Eq | BoolOp.Neq =>
+                // Bool can be (value) compared for equality.
+                visitor.visitJumpInsn(op, condElse)
+
+              case Float32Op.Lt | Float32Op.Le | Float32Op.Gt | Float32Op.Ge | Float32Op.Eq | Float32Op.Neq
+                   | Float64Op.Lt | Float64Op.Le | Float64Op.Gt | Float64Op.Ge | Float64Op.Eq | Float64Op.Neq =>
+                visitor.visitInsn(op)
+                visitor.visitJumpInsn(cmp, condElse)
+
+              case BigDecimalOp.Lt | BigDecimalOp.Le | BigDecimalOp.Gt | BigDecimalOp.Ge | BigDecimalOp.Eq | BigDecimalOp.Neq =>
+                visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+                  AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+                visitor.visitInsn(ICONST_0)
+                visitor.visitJumpInsn(op, condElse)
+
+              case CharOp.Lt | CharOp.Le | CharOp.Gt | CharOp.Ge | CharOp.Eq | CharOp.Neq
+                   | Int8Op.Lt | Int8Op.Le | Int8Op.Gt | Int8Op.Ge | Int8Op.Eq | Int8Op.Neq
+                   | Int16Op.Lt | Int16Op.Le | Int16Op.Gt | Int16Op.Ge | Int16Op.Eq | Int16Op.Neq
+                   | Int32Op.Lt | Int32Op.Le | Int32Op.Gt | Int32Op.Ge | Int32Op.Eq | Int32Op.Neq => visitor.visitJumpInsn(op, condElse)
+
+              case Int64Op.Lt | Int64Op.Le | Int64Op.Gt | Int64Op.Ge | Int64Op.Eq | Int64Op.Neq =>
+                visitor.visitInsn(LCMP)
+                visitor.visitJumpInsn(cmp, condElse)
+
+              case BigIntOp.Lt | BigIntOp.Le | BigIntOp.Gt | BigIntOp.Ge | BigIntOp.Eq | BigIntOp.Neq =>
+                visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
+                  AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
+                visitor.visitInsn(ICONST_0)
+                visitor.visitJumpInsn(op, condElse)
+
+              case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+            }
+            case None => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+          }
+          visitor.visitInsn(ICONST_1)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitLabel(condEnd)
+        }
+
+        private def semanticOperatorCopmarisonToOpcode(sop: SemanticOperator): Option[(Int, Int)] = sop match {
+          case BoolOp.Eq => Some(IF_ICMPNE, IFNE)
+          case BoolOp.Neq => Some(IF_ICMPEQ, IFEQ)
+          case Float32Op.Eq => Some(FCMPG, IFNE)
+          case Float32Op.Neq => Some(FCMPG, IFEQ)
+          case Float32Op.Lt => Some(FCMPG, IFGE)
+          case Float32Op.Le => Some(FCMPG, IFGT)
+          case Float32Op.Gt => Some(FCMPL, IFLE)
+          case Float32Op.Ge => Some(FCMPL, IFLT)
+          case Float64Op.Eq => Some(DCMPG, IFNE)
+          case Float64Op.Neq => Some(DCMPG, IFEQ)
+          case Float64Op.Lt => Some(DCMPG, IFGE)
+          case Float64Op.Le => Some(DCMPG, IFGT)
+          case Float64Op.Gt => Some(DCMPL, IFLE)
+          case Float64Op.Ge => Some(DCMPL, IFLT)
+          case CharOp.Eq | Int8Op.Eq | Int16Op.Eq | Int32Op.Eq
+               | BigDecimalOp.Eq | BigIntOp.Eq | StringOp.Eq => Some(IF_ICMPNE, IFNE)
+          case CharOp.Neq | Int8Op.Neq | Int16Op.Neq | Int32Op.Neq
+               | BigDecimalOp.Neq | BigIntOp.Neq | StringOp.Neq => Some(IF_ICMPEQ, IFEQ)
+          case CharOp.Lt | Int8Op.Lt | Int16Op.Lt | Int32Op.Lt
+               | BigDecimalOp.Lt | BigIntOp.Lt => Some(IF_ICMPGE, IFGE)
+          case CharOp.Le | Int8Op.Le | Int16Op.Le | Int32Op.Le
+               | BigDecimalOp.Le | BigIntOp.Le => Some(IF_ICMPGT, IFGT)
+          case CharOp.Gt | Int8Op.Gt | Int16Op.Gt | Int32Op.Gt
+               | BigDecimalOp.Gt | BigIntOp.Gt => Some(IF_ICMPLE, IFLE)
+          case CharOp.Ge | Int8Op.Ge | Int16Op.Ge | Int32Op.Ge
+               | BigDecimalOp.Ge | BigIntOp.Ge => Some(IF_ICMPLT, IFLT)
+          case Int64Op.Eq => Some(LCMP, IFNE)
+          case Int64Op.Neq => Some(LCMP, IFEQ)
+          case Int64Op.Lt => Some(LCMP, IFGE)
+          case Int64Op.Le => Some(LCMP, IFGT)
+          case Int64Op.Gt => Some(LCMP, IFLE)
+          case Int64Op.Ge => Some(LCMP, IFLT)
+
+          case _ => None
+        }
+
+           */
+          case BoolOp.Eq | CharOp.Eq
+               | Float32Op.Eq | Float64Op.Eq | BigDecimalOp.Eq
+               | Int8Op.Eq | Int16Op.Eq | Int32Op.Eq
+               | Int64Op.Eq | BigIntOp.Eq
+               | StringOp.Eq
+               | BoolOp.Neq | CharOp.Neq
+               | Float32Op.Neq | Float64Op.Neq | BigDecimalOp.Neq
+               | Int8Op.Neq | Int16Op.Neq | Int32Op.Neq
+               | Int64Op.Neq | BigIntOp.Neq
+               | StringOp.Neq
+               | CharOp.Lt | Float32Op.Lt | Float64Op.Lt
+               | BigDecimalOp.Lt
+               | Int8Op.Lt | Int16Op.Lt | Int32Op.Lt
+               | Int64Op.Lt | BigIntOp.Lt
+               | CharOp.Le | Float32Op.Le | Float64Op.Le
+               | BigDecimalOp.Le
+               | Int8Op.Le | Int16Op.Le | Int32Op.Le
+               | Int64Op.Le | BigIntOp.Le
+               | CharOp.Gt | Float32Op.Gt | Float64Op.Gt
+               | BigDecimalOp.Gt
+               | Int8Op.Gt | Int16Op.Gt | Int32Op.Gt
+               | Int64Op.Gt | BigIntOp.Gt
+               | CharOp.Ge | Float32Op.Ge | Float64Op.Ge
+               | BigDecimalOp.Ge
+               | Int8Op.Ge | Int16Op.Ge | Int32Op.Ge
+               | Int64Op.Ge | BigIntOp.Ge => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+
           case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
         }
 
