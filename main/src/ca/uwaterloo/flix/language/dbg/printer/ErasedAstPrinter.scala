@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object ErasedAstPrinter {
@@ -68,7 +68,7 @@ object ErasedAstPrinter {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
           DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       })
-    case Intrinsic0(op, _, _) => IntrinsicOperatorPrinter.print(op)
+    case Intrinsic(op, exps, tpe, loc) => IntrinsicOperatorPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe), loc)
     case Intrinsic1(op, exp, tpe, _) => IntrinsicOperatorPrinter.print(op, print(exp), MonoTypePrinter.print(tpe))
     case Intrinsic2(op, exp1, exp2, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2))
     case Intrinsic3(op, exp1, exp2, exp3, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2), print(exp3))
