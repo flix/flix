@@ -17,39 +17,43 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object IntrinsicOperatorPrinter {
 
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def print(op: IntrinsicOperator0): Expression = op match {
-    case IntrinsicOperator0.Cst(cst) => ConstantPrinter.print(cst)
-    case IntrinsicOperator0.Region => Region
-    case IntrinsicOperator0.RecordEmpty => RecordEmpty
-    case IntrinsicOperator0.GetStaticField(field) => JavaGetStaticField(field)
-    case IntrinsicOperator0.HoleError(sym) => HoleError(sym)
-    case IntrinsicOperator0.MatchError => MatchError
+  def print(op: IntrinsicOperator, exps: List[Expression], tpe: DocAst.Type, loc: SourceLocation): Expression = (op, exps) match {
+    case (IntrinsicOperator.Cst(cst), Nil) => ConstantPrinter.print(cst)
+    case (IntrinsicOperator.Region, Nil) => Region
+    case (IntrinsicOperator.RecordEmpty, Nil) => RecordEmpty
+    case (IntrinsicOperator.GetStaticField(field), Nil) => JavaGetStaticField(field)
+    case (IntrinsicOperator.HoleError(sym), Nil) => HoleError(sym)
+    case (IntrinsicOperator.MatchError, Nil) => MatchError
+    case (IntrinsicOperator.Unary(sop), exp :: Nil) => Unary(OperatorPrinter.print(sop), exp)
+    case (IntrinsicOperator.Is(sym), exp :: Nil) => Is(sym, exp)
+    case (IntrinsicOperator.Tag(sym), exp :: Nil) => Tag(sym, List(exp))
+    case (IntrinsicOperator.Untag(sym), exp :: Nil) => Untag(sym, exp)
+    case (IntrinsicOperator.InstanceOf(_), exp :: Nil) => Unknown
+    case (IntrinsicOperator.Cast, exp :: Nil) => Cast(exp, tpe)
+    case (IntrinsicOperator.Index(idx), exp :: Nil) => Index(idx, exp)
+    case (IntrinsicOperator.RecordSelect(field), exp :: Nil) => RecordSelect(field, exp)
+    case (IntrinsicOperator.RecordRestrict(field), exp :: Nil) => RecordRestrict(field, exp)
+    case (IntrinsicOperator.Ref, exp :: Nil) => Ref(exp)
+    case (IntrinsicOperator.Deref, exp :: Nil) => Deref(exp)
+    case (IntrinsicOperator.Spawn, exp1 :: exp2 :: Nil) => Spawn(exp1, exp2)
+    case _ => throw InternalCompilerException("Unexpected pattern at IntrinsicOperatorPrinter", loc)
   }
 
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
   def print(op: IntrinsicOperator1, d: Expression, tpe: DocAst.Type): Expression = op match {
-    case IntrinsicOperator1.Unary(sop) => Unary(OperatorPrinter.print(sop), d)
-    case IntrinsicOperator1.Is(sym) => Is(sym, d)
-    case IntrinsicOperator1.Tag(sym) => Tag(sym, List(d))
-    case IntrinsicOperator1.Untag(sym) => Untag(sym, d)
-    case IntrinsicOperator1.InstanceOf(_) => Unknown
-    case IntrinsicOperator1.Cast => Cast(d, tpe)
-    case IntrinsicOperator1.Index(idx) => Index(idx, d)
-    case IntrinsicOperator1.RecordSelect(field) => RecordSelect(field, d)
-    case IntrinsicOperator1.RecordRestrict(field) => RecordRestrict(field, d)
-    case IntrinsicOperator1.Ref => Ref(d)
-    case IntrinsicOperator1.Deref => Deref(d)
     case IntrinsicOperator1.ArrayLength => ArrayLength(d)
     case IntrinsicOperator1.Lazy => Lazy(d)
     case IntrinsicOperator1.Force => Force(d)
@@ -81,7 +85,6 @@ object IntrinsicOperatorPrinter {
     case IntrinsicOperator2.Assign => Assign(d1, d2)
     case IntrinsicOperator2.ArrayNew => ArrayNew(d1, d2)
     case IntrinsicOperator2.ArrayLoad => ArrayLoad(d1, d2)
-    case IntrinsicOperator2.Spawn => Spawn(d1, d2)
     case IntrinsicOperator2.ScopeExit => ScopeExit(d1, d2)
     case IntrinsicOperator2.PutField(field) => JavaPutField(field, d1, d2)
   }
