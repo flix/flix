@@ -671,8 +671,6 @@ object JvmOps {
 
       case Expr.Var(_, tpe, _) => Set(tpe)
 
-      case Expr.Binary(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
       case Expr.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expr.Branch(exp, branches, _, _) =>

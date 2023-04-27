@@ -54,7 +54,6 @@ object ErasedAstPrinter {
   def print(e: ErasedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case Binary(sop, exp1, exp2, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)

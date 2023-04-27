@@ -110,7 +110,8 @@ object Eraser {
       ErasedAst.Expr.App(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      ErasedAst.Expr.Binary(sop, visitExp(exp1), visitExp(exp2), tpe, loc)
+      val op = AtomicOp.Binary(sop)
+      ErasedAst.Expr.App(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
     case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       ErasedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
