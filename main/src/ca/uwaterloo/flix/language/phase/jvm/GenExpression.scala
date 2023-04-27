@@ -477,6 +477,9 @@ object GenExpression {
             visitor.visitInsn(ICONST_0)
             visitor.visitLabel(condEnd)
 
+          case CharOp.Lt => ???
+          case CharOp.Le => ???
+
           case CharOp.Eq =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
@@ -500,6 +503,68 @@ object GenExpression {
             visitor.visitLabel(condElse)
             visitor.visitInsn(ICONST_0)
             visitor.visitLabel(condEnd)
+
+          case CharOp.Ge => ???
+          case CharOp.Gt => ???
+
+          case Float32Op.Lt => ???
+          case Float32Op.Le => ???
+          case Float32Op.Eq => ???
+          case Float32Op.Neq => ???
+          case Float32Op.Ge => ???
+          case Float32Op.Gt => ???
+
+          case Float64Op.Lt => ???
+          case Float64Op.Le => ???
+          case Float64Op.Eq => ???
+          case Float64Op.Neq => ???
+          case Float64Op.Ge => ???
+          case Float64Op.Gt => ???
+
+          case BigDecimalOp.Lt => ???
+          case BigDecimalOp.Le => ???
+          case BigDecimalOp.Eq => ???
+          case BigDecimalOp.Neq => ???
+          case BigDecimalOp.Ge => ???
+          case BigDecimalOp.Gt => ???
+
+          case Int8Op.Lt => ???
+          case Int8Op.Le => ???
+          case Int8Op.Eq => ???
+          case Int8Op.Neq => ???
+          case Int8Op.Ge => ???
+          case Int8Op.Gt => ???
+
+          case Int16Op.Lt => ???
+          case Int16Op.Le => ???
+          case Int16Op.Eq => ???
+          case Int16Op.Neq => ???
+          case Int16Op.Ge => ???
+          case Int16Op.Gt => ???
+
+          case Int32Op.Lt => ???
+          case Int32Op.Le => ???
+          case Int32Op.Eq => ???
+          case Int32Op.Neq => ???
+          case Int32Op.Ge => ???
+          case Int32Op.Gt => ???
+
+          case Int64Op.Lt => ???
+          case Int64Op.Le => ???
+          case Int64Op.Eq => ???
+          case Int64Op.Neq => ???
+          case Int64Op.Ge => ???
+          case Int64Op.Gt => ???
+
+          case BigIntOp.Lt => ???
+          case BigIntOp.Le => ???
+          case BigIntOp.Eq => ???
+          case BigIntOp.Neq => ???
+          case BigIntOp.Ge => ???
+          case BigIntOp.Gt => ???
+
+          case StringOp.Eq => ???
+          case StringOp.Neq => ???
 
           /*
           compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
@@ -594,31 +659,6 @@ object GenExpression {
         }
 
            */
-
-          case Float32Op.Eq | Float64Op.Eq | BigDecimalOp.Eq
-               | Int8Op.Eq | Int16Op.Eq | Int32Op.Eq
-               | Int64Op.Eq | BigIntOp.Eq
-               | StringOp.Eq
-               | Float32Op.Neq | Float64Op.Neq | BigDecimalOp.Neq
-               | Int8Op.Neq | Int16Op.Neq | Int32Op.Neq
-               | Int64Op.Neq | BigIntOp.Neq
-               | StringOp.Neq
-               | CharOp.Lt | Float32Op.Lt | Float64Op.Lt
-               | BigDecimalOp.Lt
-               | Int8Op.Lt | Int16Op.Lt | Int32Op.Lt
-               | Int64Op.Lt | BigIntOp.Lt
-               | CharOp.Le | Float32Op.Le | Float64Op.Le
-               | BigDecimalOp.Le
-               | Int8Op.Le | Int16Op.Le | Int32Op.Le
-               | Int64Op.Le | BigIntOp.Le
-               | CharOp.Gt | Float32Op.Gt | Float64Op.Gt
-               | BigDecimalOp.Gt
-               | Int8Op.Gt | Int16Op.Gt | Int32Op.Gt
-               | Int64Op.Gt | BigIntOp.Gt
-               | CharOp.Ge | Float32Op.Ge | Float64Op.Ge
-               | BigDecimalOp.Ge
-               | Int8Op.Ge | Int16Op.Ge | Int32Op.Ge
-               | Int64Op.Ge | BigIntOp.Ge => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
           case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
         }
