@@ -77,13 +77,6 @@ object IntrinsicOperatorPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def print(op: IntrinsicOperator3, d1: Expression, d2: Expression, d3: Expression): Expression = op match {
-    case IntrinsicOperator3.ArrayStore => ArrayStore(d1, d2, d3)
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
   def print(op: IntrinsicOp, ds: List[Expression]): Expression = op match {
     case IntrinsicOp.Region => Region
     case IntrinsicOp.RecordEmpty => RecordEmpty
@@ -98,6 +91,9 @@ object IntrinsicOperatorPrinter {
     case IntrinsicOp.ArrayLit => ArrayLit(ds)
     case IntrinsicOp.InvokeConstructor(constructor) => JavaInvokeConstructor(constructor, ds)
     case IntrinsicOp.InvokeStaticMethod(method) => JavaInvokeStaticMethod(method, ds)
+    case IntrinsicOp.ArrayStore =>
+      val List(d1, d2, d3) = ds
+      ArrayStore(d1, d2, d3)
   }
 
   /**

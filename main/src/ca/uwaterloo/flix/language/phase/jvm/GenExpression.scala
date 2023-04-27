@@ -858,28 +858,6 @@ object GenExpression {
 
     }
 
-    case Expr.Intrinsic3(op, exp1, exp2, exp3, tpe, loc) => op match {
-      case IntrinsicOperator3.ArrayStore =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // We get the jvmType of the element to be stored
-        val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
-        // Evaluating the 'base'
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        // Cast the object to Array
-        visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-        // Evaluating the 'index' to be stored in
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        // Evaluating the 'element' to be stored
-        compileExpression(exp3, visitor, currentClass, lenv0, entryPoint)
-        // Stores the 'element' at the given 'index' in the 'array'
-        // with the store instruction corresponding to the stored element
-        visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
-        // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
-        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
-    }
-
     case Expr.App(op, exps, tpe, loc) => op match {
 
       case IntrinsicOp.Region =>
@@ -1059,6 +1037,29 @@ object GenExpression {
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
           visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
+
+      case IntrinsicOp.ArrayStore => exps match {
+        case List(exp1, exp2, exp3) =>
+          // Adding source line number for debugging
+          addSourceLine(visitor, loc)
+          // We get the jvmType of the element to be stored
+          val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
+          // Evaluating the 'base'
+          compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+          // Cast the object to Array
+          visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
+          // Evaluating the 'index' to be stored in
+          compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+          // Evaluating the 'element' to be stored
+          compileExpression(exp3, visitor, currentClass, lenv0, entryPoint)
+          // Stores the 'element' at the given 'index' in the 'array'
+          // with the store instruction corresponding to the stored element
+          visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
+          // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
+          visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        case _ => throw InternalCompilerException("Mismatched Arity", loc)
+      }
+
     }
 
     case Expr.Intrinsic1N(op, exp, exps, tpe, loc) => op match {

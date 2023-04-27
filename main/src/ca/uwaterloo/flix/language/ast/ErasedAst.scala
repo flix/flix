@@ -70,25 +70,9 @@ object ErasedAst {
 
     case class Intrinsic2(op: IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic3(op: IntrinsicOperator3, exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
-
     case class App(op: IntrinsicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic1N(op: IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-  }
-
-  sealed trait Stmt
-
-  object Stmt {
-
-    case class Ret(exp: Expr, tpe: MonoType, loc: SourceLocation) extends Stmt
-
-    case class Let(sym: Symbol.VarSym, exp1: Stmt, exp2: Stmt, tpe: MonoType, loc: SourceLocation) extends Stmt
-
-    case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Stmt
-
-    case class Handle(sym: Symbol.OpSym, stmt: Stmt, loc: SourceLocation) extends Stmt
 
   }
 
@@ -182,14 +166,6 @@ object ErasedAst {
 
   }
 
-  sealed trait IntrinsicOperator3
-
-  object IntrinsicOperator3 {
-
-    case object ArrayStore extends IntrinsicOperator3
-
-  }
-
   sealed trait IntrinsicOp
 
   object IntrinsicOp {
@@ -219,6 +195,8 @@ object ErasedAst {
     case class InvokeConstructor(constructor: Constructor[_]) extends IntrinsicOp
 
     case class InvokeStaticMethod(method: Method) extends IntrinsicOp
+
+    case object ArrayStore extends IntrinsicOp
 
   }
 
