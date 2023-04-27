@@ -20,9 +20,9 @@ object ControlSeparator {
     val LiftedAst.Def(ann, mod, sym, fparams0, exp, tpe, loc) = defn
     val fparams = fparams0.map(visitFormalParam)
     // important! reify bindings later
-    implicit val ctx: Context = Context(Nil)
-    val stmt = visitExpAsStmt(exp)
-    val body = ctx.reifyBindings(stmt)
+    implicit val ctx: Context = new Context()
+    val (stmt, bindings) = ctx.withBindings(_ => visitExpAsStmt(exp))
+    val body = ctx.reifyBindings(stmt, bindings)
     CallByValueAst.Def(ann, mod, sym, fparams, body, tpe, loc)
   }
 
@@ -37,43 +37,59 @@ object ControlSeparator {
     CallByValueAst.Case(sym, tpeDeprecated, loc)
   }
 
+  // invariant: context will be empty
   def visitExpAsStmt(exp: LiftedAst.Expression)(implicit ctx: Context, flix: Flix): CallByValueAst.Stmt = exp match {
     case Expression.Cst(cst, tpe, loc) =>
-      ret(CallByValueAst.Expr.Cst(cst, tpe, loc))
+      insertBindings(_ => ret(CallByValueAst.Expr.Cst(cst, tpe, loc)))
     case Expression.Var(sym, tpe, loc) =>
       ret(CallByValueAst.Expr.Var(sym, tpe, loc))
     case Expression.Closure(sym, closureArgs0, tpe, loc) =>
-      val closureArgs = closureArgs0.map(visitExpAsExpr)
-      ret(CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc))
+      insertBindings(_ => {
+        val closureArgs = closureArgs0.map(visitExpAsExpr)
+        ret(CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc))
+      })
     case Expression.ApplyClo(exp, args0, tpe, purity, loc) =>
-      val e = visitExpAsExpr(exp)
-      val args = args0.map(visitExpAsExpr)
-      CallByValueAst.Stmt.ApplyClo(e, args, tpe, purity, loc)
+      insertBindings(_ => {
+        val e = visitExpAsExpr(exp)
+        val args = args0.map(visitExpAsExpr)
+        CallByValueAst.Stmt.ApplyClo(e, args, tpe, purity, loc)
+      })
     case Expression.ApplyDef(sym, args0, tpe, purity, loc) =>
-      val args = args0.map(visitExpAsExpr)
-      CallByValueAst.Stmt.ApplyDef(sym, args, tpe, purity, loc)
+      insertBindings(_ => {
+        val args = args0.map(visitExpAsExpr)
+        CallByValueAst.Stmt.ApplyDef(sym, args, tpe, purity, loc)
+      })
     case Expression.ApplyCloTail(exp, args0, tpe, purity, loc) =>
-      val e = visitExpAsExpr(exp)
-      val args = args0.map(visitExpAsExpr)
-      CallByValueAst.Stmt.ApplyCloTail(e, args, tpe, purity, loc)
+      insertBindings(_ => {
+        val e = visitExpAsExpr(exp)
+        val args = args0.map(visitExpAsExpr)
+        CallByValueAst.Stmt.ApplyCloTail(e, args, tpe, purity, loc)
+      })
     case Expression.ApplyDefTail(sym, args0, tpe, purity, loc) =>
-      val args = args0.map(visitExpAsExpr)
-      CallByValueAst.Stmt.ApplyDefTail(sym, args, tpe, purity, loc)
+      insertBindings(_ => {
+        val args = args0.map(visitExpAsExpr)
+        CallByValueAst.Stmt.ApplyDefTail(sym, args, tpe, purity, loc)
+      })
     case Expression.ApplySelfTail(sym, formals0, actuals0, tpe, purity, loc) =>
-      val formals = formals0.map(visitFormalParam)
-      val actuals = actuals0.map(visitExpAsExpr)
-      CallByValueAst.Stmt.ApplySelfTail(sym, formals, actuals, tpe, purity, loc)
+      insertBindings(_ => {
+        val formals = formals0.map(visitFormalParam)
+        val actuals = actuals0.map(visitExpAsExpr)
+        CallByValueAst.Stmt.ApplySelfTail(sym, formals, actuals, tpe, purity, loc)
+      })
     case Expression.Unary(sop, op, exp, tpe, purity, loc) => todo
     case Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) => todo
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      val e1 = visitExpAsExpr(exp1)
-      val e2 = visitExpAsStmt(exp2)
-      val e3 = visitExpAsStmt(exp3)
-      CallByValueAst.Stmt.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      insertBindings(_ => {
+        val e1 = visitExpAsExpr(exp1)
+        val e2 = visitExpAsStmt(exp2)
+        val e3 = visitExpAsStmt(exp3)
+        CallByValueAst.Stmt.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      })
     case Expression.Branch(exp, branches, tpe, purity, loc) => todo
     case Expression.JumpTo(sym, tpe, purity, loc) => todo
     case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
-      val stmt1 = visitExpAsStmt(exp1)
+      // ensure proper binding ordering
+      val stmt1 = insertBindings(_ => ret(visitExpAsExpr(exp1)))
       val stmt2 = visitExpAsStmt(exp2)
       CallByValueAst.Stmt.LetVal(sym, stmt1, stmt2, tpe, purity, loc)
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => todo
@@ -99,8 +115,10 @@ object ControlSeparator {
     case Expression.Assign(exp1, exp2, tpe, loc) => todo
     case Expression.InstanceOf(exp, clazz, loc) => todo
     case Expression.Cast(exp, tpe, purity, loc) =>
-      val e = visitExpAsExpr(exp)
-      ret(CallByValueAst.Expr.ApplyPure(CallByValueAst.AtomicOp.Cast, List(e), tpe, purity, loc))
+      insertBindings(_ => {
+        val e = visitExpAsExpr(exp)
+        ret(CallByValueAst.Expr.ApplyPure(CallByValueAst.AtomicOp.Cast, List(e), tpe, purity, loc))
+      })
     case Expression.TryCatch(exp, rules, tpe, purity, loc) => todo
     case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) => todo
     case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) => todo
@@ -126,21 +144,39 @@ object ControlSeparator {
   /**
     * Knows how to bind.
     */
-  case class Context(var l: List[Binding]) {
+  class Context() {
+
+    private var l: List[Binding] = Nil
+
     def bind(stmt: CallByValueAst.Stmt)(implicit flix: Flix): CallByValueAst.Expr.Var = {
       val loc = SourceLocation.Unknown
       val sym = Symbol.freshVarSym("cbv", Ast.BoundBy.Let, loc)
-      l = Binding.Val(Symbol.freshVarSym(sym), stmt, stmt.tpe, stmt.purity, stmt.loc.asSynthetic) :: l
+      l = Binding.Val(sym, stmt, stmt.tpe, stmt.purity, stmt.loc.asSynthetic) :: l
       CallByValueAst.Expr.Var(sym, stmt.tpe, stmt.loc)
     }
 
-    def reifyBindings(stmt: CallByValueAst.Stmt): CallByValueAst.Stmt = {
-      l.foldLeft(stmt) {
+    def withBindings[R](f: Unit => R): (R, List[Binding]) = {
+      // track fresh bindings
+      val old = l
+      l = Nil
+      val res = f(())
+      val bindings = l
+      l = old
+      (res, bindings)
+    }
+
+    def reifyBindings(stmt: CallByValueAst.Stmt, bindings: List[Binding]): CallByValueAst.Stmt = {
+      bindings.foldLeft(stmt) {
         case (acc, Binding.Val(sym, binding, tpe, purity, loc)) =>
           CallByValueAst.Stmt.LetVal(sym, binding, acc, tpe, purity, loc)
       }
     }
 
+  }
+
+  def insertBindings(f: Unit => CallByValueAst.Stmt)(implicit ctx: Context): CallByValueAst.Stmt = {
+    val (s, bindings) = ctx.withBindings(f)
+    ctx.reifyBindings(s, bindings)
   }
 
   /**
