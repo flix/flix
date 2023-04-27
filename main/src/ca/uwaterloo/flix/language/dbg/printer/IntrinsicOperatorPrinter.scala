@@ -49,6 +49,7 @@ object IntrinsicOperatorPrinter {
     case (IntrinsicOperator.ArrayLength, exp :: Nil) => ArrayLength(exp)
     case (IntrinsicOperator.Lazy, exp :: Nil) => Lazy(exp)
     case (IntrinsicOperator.Force, exp :: Nil) => Force(exp)
+    case (IntrinsicOperator.GetField(field), exp :: Nil) => JavaGetField(field, exp)
     case (IntrinsicOperator.Spawn, exp1 :: exp2 :: Nil) => Spawn(exp1, exp2)
     case _ => throw InternalCompilerException("Unexpected pattern at IntrinsicOperatorPrinter", loc)
   }
@@ -57,7 +58,6 @@ object IntrinsicOperatorPrinter {
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
   def print(op: IntrinsicOperator1, d: Expression, tpe: DocAst.Type): Expression = op match {
-    case IntrinsicOperator1.GetField(field) => JavaGetField(field, d)
     case IntrinsicOperator1.PutStaticField(field) => JavaPutStaticField(field, d)
     case IntrinsicOperator1.BoxBool => Box(d)
     case IntrinsicOperator1.BoxInt8 => Box(d)

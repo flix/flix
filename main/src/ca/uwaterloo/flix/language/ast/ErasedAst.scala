@@ -140,6 +140,8 @@ object ErasedAst {
 
     case object Force extends IntrinsicOperator
 
+    case class GetField(field: Field) extends IntrinsicOperator
+
     // Intrinsic2
 
     // case object ArrayLoad extends IntrinsicOperator
@@ -159,8 +161,6 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
-
-    case class GetField(field: Field) extends IntrinsicOperator1
 
     case class PutStaticField(field: Field) extends IntrinsicOperator1
 

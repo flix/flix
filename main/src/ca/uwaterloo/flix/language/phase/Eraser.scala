@@ -243,8 +243,8 @@ object Eraser {
       ErasedAst.Expr.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.GetField(field)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.GetField(field)
+      ErasedAst.Expr.Intrinsic(op, visitExp(exp) :: Nil, tpe, loc)
 
     case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator2.PutField(field)

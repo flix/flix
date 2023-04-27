@@ -607,6 +607,12 @@ object GenExpression {
           // The result of force is a generic object so a cast is needed.
           AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
+        case IntrinsicOperator.GetField(field) =>
+          addSourceLine(visitor, loc)
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+          visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -661,12 +667,6 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
-
-      case IntrinsicOperator1.GetField(field) =>
-        addSourceLine(visitor, loc)
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
       case IntrinsicOperator1.PutStaticField(field) =>
         addSourceLine(visitor, loc)
