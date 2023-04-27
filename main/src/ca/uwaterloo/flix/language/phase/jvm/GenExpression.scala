@@ -594,12 +594,11 @@ object GenExpression {
         }
 
            */
-          case BoolOp.Eq | CharOp.Eq
-               | Float32Op.Eq | Float64Op.Eq | BigDecimalOp.Eq
+
+          case Float32Op.Eq | Float64Op.Eq | BigDecimalOp.Eq
                | Int8Op.Eq | Int16Op.Eq | Int32Op.Eq
                | Int64Op.Eq | BigIntOp.Eq
                | StringOp.Eq
-               | BoolOp.Neq | CharOp.Neq
                | Float32Op.Neq | Float64Op.Neq | BigDecimalOp.Neq
                | Int8Op.Neq | Int16Op.Neq | Int32Op.Neq
                | Int64Op.Neq | BigIntOp.Neq
