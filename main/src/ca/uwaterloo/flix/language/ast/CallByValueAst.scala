@@ -17,9 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-
-import java.lang.reflect.{Constructor, Field, Method}
+import ca.uwaterloo.flix.language.ast.Purity.Pure
 
 object CallByValueAst {
 
@@ -34,62 +32,79 @@ object CallByValueAst {
 
   sealed trait Expr {
     def tpe: Type
+
+    def purity: Purity
+
     def loc: SourceLocation
   }
+
   object Expr {
 
-    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Expr
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr {
+      def purity: Purity = Pure
+    }
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, loc: SourceLocation) extends Expr
-
-    case class TryCatch(exp: Expr, /* require body to be pure */ rules: List[CatchRule], tpe: Type, loc: SourceLocation) extends Expr
-
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, /* no control effects */ methods: List[JvmMethod], loc: SourceLocation) extends Expr
-
-    // TODO: Minus all the applies stuff in Intrinsic.
-    case class ApplyPure(op: IntrinsicOperator, exps: List[Expr], tpe: Type, loc: SourceLocation) extends Expr
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Expr {
+      def purity: Purity = Pure
+    }
 
     case class Closure(sym: Symbol.DefnSym, closureArgs: List[Expr], tpe: Type, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
+
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class TryCatch(exp: Expr, /* require body to be pure */ rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, /* no control effects */ methods: List[JvmMethod], loc: SourceLocation) extends Expr
+
+    // TODO: Minus all the applies stuff in Intrinsic.
+    case class ApplyPure(op: IntrinsicOperator, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+
+
     // Introduce run for force/lazy
 
     // TODO: Enforce spawn e, e must be control pure. Put spawn here. (Wrap into run?)
 
   }
 
-  sealed trait Stmt
+  sealed trait Stmt {
+    def tpe: Type
+
+    def purity: Purity
+
+    def loc: SourceLocation
+  }
 
   object Stmt {
 
-    case class Ret(exp: Expr, tpe: Type, loc: SourceLocation) extends Stmt
+    case class Ret(exp: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class IfThenElse(exp: Expr, stmt1: Stmt, stmt2: Stmt, tpe: Type, loc: SourceLocation) extends Stmt
+    case class IfThenElse(exp: Expr, stmt1: Stmt, stmt2: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Branch(stmt: Stmt, branches: Map[Symbol.LabelSym, Stmt], tpe: Type, loc: SourceLocation) extends Stmt
+    case class Branch(stmt: Stmt, branches: Map[Symbol.LabelSym, Stmt], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends Stmt
+    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class LetVal(sym: Symbol.VarSym, stmt1: Stmt, stmt2: Stmt, tpe: Type, loc: SourceLocation) extends Stmt
+    case class LetVal(sym: Symbol.VarSym, stmt1: Stmt, stmt2: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class LetRecVal(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp: Expr, stmt: Stmt, tpe: Type, loc: SourceLocation) extends Stmt
+    case class LetRecVal(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp: Expr, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Scope(sym: Symbol.VarSym, stmt: Stmt, tpe: Type, loc: SourceLocation) extends Stmt
+    case class Scope(sym: Symbol.VarSym, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplyClo(exp: Expr, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplyCloTail(exp: Expr, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyCloTail(exp: Expr, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[LiftedAst.FormalParam], actuals: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[CallByValueAst.FormalParam], actuals: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: Type, loc: SourceLocation) extends Stmt
+    case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Handle(sym: Symbol.OpSym, stmt: Stmt, loc: SourceLocation) extends Stmt
+    case class Handle(sym: Symbol.OpSym, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
   }
 
@@ -102,9 +117,9 @@ object CallByValueAst {
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[CallByValueAst.FormalParam], clo: CallByValueAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[CallByValueAst.FormalParam], clo: CallByValueAst.Expr, retTpe: Type, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: CallByValueAst.Expression)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: CallByValueAst.Expr)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
