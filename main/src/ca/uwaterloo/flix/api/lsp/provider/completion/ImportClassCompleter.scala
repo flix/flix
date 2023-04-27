@@ -20,11 +20,9 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ClassCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object ClassCompleter extends Completer {
-  /**
-    * Returns a List of Completion for java packages/classes.
-    */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ClassCompletion] = {
+object ImportClassCompleter extends Completer {
+
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ClassCompletion] = {
     val regex = raw"\s*import\s+(?:.*\s+)*(.*)".r
     context.prefix match {
       case regex(clazz) =>

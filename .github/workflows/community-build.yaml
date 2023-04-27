@@ -65,4 +65,4 @@ jobs:
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar flix.jar build
+          java -jar flix.jar build --github-key ${{ github.token }}

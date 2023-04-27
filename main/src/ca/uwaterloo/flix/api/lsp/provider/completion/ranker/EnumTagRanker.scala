@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2023 Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.fmt
 
-object MarkDown {
+package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
+
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.collection.MultiMap
+
+object EnumTagRanker {
 
   /**
-    * Escapes certain markdown characters.
+    * Find the best enum tag completion.
     */
-  def escape(s: String): String =
-    s
-      .replace("[", "\\[")
-      .replace("]", "\\]")
-
+  def findBest(completions: Iterable[Completion], tagUses: MultiMap[Symbol.CaseSym, SourceLocation]): Option[Completion] = {
+    // TODO
+    None
+  }
 }

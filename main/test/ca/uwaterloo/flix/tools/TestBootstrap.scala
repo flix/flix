@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
 import java.security.{DigestInputStream, MessageDigest}
@@ -12,7 +12,7 @@ import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
-class TestBootstrap extends FunSuite {
+class TestBootstrap extends AnyFunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
 
@@ -26,7 +26,7 @@ class TestBootstrap extends FunSuite {
   test("check") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.check(DefaultOptions)
   }
 
@@ -34,7 +34,7 @@ class TestBootstrap extends FunSuite {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
   }
 
@@ -42,7 +42,7 @@ class TestBootstrap extends FunSuite {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
     b.buildJar(DefaultOptions)
 
@@ -56,7 +56,7 @@ class TestBootstrap extends FunSuite {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
     b.buildJar(DefaultOptions)
 
@@ -77,7 +77,7 @@ class TestBootstrap extends FunSuite {
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
     b.buildJar(DefaultOptions)
 
@@ -97,7 +97,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -110,7 +110,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -129,7 +129,7 @@ class TestBootstrap extends FunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.buildPkg(DefaultOptions)
 
     def hash1 = calcHash(packagePath)
@@ -146,21 +146,21 @@ class TestBootstrap extends FunSuite {
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.benchmark(DefaultOptions)
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
-    b.run(DefaultOptions)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.run(DefaultOptions, Array("arg0", "arg1"))
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.test(DefaultOptions)
   }
 

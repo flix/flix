@@ -123,10 +123,10 @@ object Typer {
     flix.subphase("EqualityEnv") {
 
       val assocs = for {
-        (classSym, _) <- classes0
+        (classSym, _) <- classes0.iterator
         inst <- instances0.getOrElse(classSym, Nil)
         assoc <- inst.assocs
-      } yield (assoc.sym.sym , Ast.AssocTypeDef(assoc.arg, assoc.tpe))
+      } yield (assoc.sym.sym, Ast.AssocTypeDef(assoc.arg, assoc.tpe))
 
 
       assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
@@ -163,9 +163,9 @@ object Typer {
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val assocs = assocs0.map {
-        case KindedAst.AssociatedTypeSig(doc, mod, sym, tp, kind, loc) =>
+        case KindedAst.AssocTypeSig(doc, mod, sym, tp, kind, loc) =>
           val tps = getTypeParams(List(tp))
-          TypedAst.AssociatedTypeSig(doc, mod, sym, tps.head, kind, loc) // TODO ASSOC-TYPES trivial
+          TypedAst.AssocTypeSig(doc, mod, sym, tps.head, kind, loc) // TODO ASSOC-TYPES trivial
       }
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv, eqEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv, eqEnv))
@@ -193,7 +193,7 @@ object Typer {
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs0, defs0, ns, loc) =>
       val assocs = assocs0.map {
-        case KindedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) => TypedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
+        case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv, eqEnv))
       mapN(defsVal) {
@@ -792,8 +792,7 @@ object Typer {
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-        case SemanticOperator.BigDecimalOp.Add | SemanticOperator.BigDecimalOp.Sub | SemanticOperator.BigDecimalOp.Mul | SemanticOperator.BigDecimalOp.Div
-             | SemanticOperator.BigDecimalOp.Exp =>
+        case SemanticOperator.BigDecimalOp.Add | SemanticOperator.BigDecimalOp.Sub | SemanticOperator.BigDecimalOp.Mul | SemanticOperator.BigDecimalOp.Div =>
           for {
             (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
@@ -857,8 +856,7 @@ object Typer {
           } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
         case SemanticOperator.BigIntOp.Add | SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
-             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.Exp
-             | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
+             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
           for {
             (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
@@ -1495,6 +1493,14 @@ object Typer {
           resultTyp <- expectTypeM(expected = expectedTyp.getOrElse(Type.freshVar(Kind.Star, loc)), actual = actualTyp, bind = tvar, loc)
           resultPur <- expectTypeM(expected = expectedPur.getOrElse(Type.freshVar(Kind.Bool, loc)), actual = actualPur, loc)
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Effect, loc)), actual = actualEff, loc)
+        } yield (constrs, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.InstanceOf(exp, className, loc) =>
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          resultTyp = Type.Bool
+          resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
+          resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
@@ -2344,6 +2350,10 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.InstanceOf(exp, clazz, loc) =>
+        val e1 = visitExp(exp, subst0)
+        TypedAst.Expression.InstanceOf(e1, clazz, loc)
 
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {

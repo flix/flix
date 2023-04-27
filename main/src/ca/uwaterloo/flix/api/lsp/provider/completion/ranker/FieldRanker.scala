@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2023 Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst
+package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
-object FormatCase {
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.util.collection.MultiMap
+
+object FieldRanker {
 
   /**
-    * Returns a markdown string for the given `caze`.
+    * Find the best field completion.
     */
-  def asMarkDown(caze: TypedAst.Case)(implicit flix: Flix): String = {
-    s"case **${caze.sym.name}**: ${FormatScheme.formatScheme(caze.sc)}"
+  def findBest(completions: Iterable[Completion], fieldUses: MultiMap[Name.Field, SourceLocation]): Option[FieldCompletion] = {
+    // TODO
+    None
   }
-
 }

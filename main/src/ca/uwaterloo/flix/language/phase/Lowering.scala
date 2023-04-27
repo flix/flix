@@ -16,13 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -143,7 +141,7 @@ object Lowering {
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[LoweredAst.Root, CompilationMessage] = flix.phase("Lowering") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
     val defs = ParOps.parMap(root.defs.values)((d: TypedAst.Def) => visitDef(d)(root, flix))
     val sigs = ParOps.parMap(root.sigs.values)((s: TypedAst.Sig) => visitSig(s)(root, flix))
     val instances = ParOps.parMap(root.instances.values)((insts: List[TypedAst.Instance]) => insts.map(i => visitInstance(i)(root, flix)))
@@ -163,7 +161,8 @@ object Lowering {
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
     val classes = ParOps.parMap(root.classes.values)((c: TypedAst.Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
-    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv).toSuccess
+
+    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv)
   }
 
   /**
@@ -194,7 +193,7 @@ object Lowering {
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc)
+        case TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
       }
       val defs = defs0.map(visitDef)
       LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
@@ -303,7 +302,7 @@ object Lowering {
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc)
+        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)
@@ -572,6 +571,10 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Ascribe(e, t, pur, eff, loc)
+
+    case TypedAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
 
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
@@ -2082,6 +2085,10 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Ascribe(e, tpe, pur, eff, loc)
 
+    case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+
     case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
@@ -2152,6 +2159,7 @@ object Lowering {
     case LoweredAst.Expression.Force(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Force(e, tpe, pur, eff, loc)
+
   }
 
   /**

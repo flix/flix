@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2023 Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg
+package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MatchCompletion
 
-object FormatJvmMethod {
+object MatchRanker {
 
   /**
-    * JvmMethod.
+    * Find the best match completion.
     */
-  def format(method: TypedAst.JvmMethod): String = method match {
-    case TypedAst.JvmMethod(ident, fparams, exp, _, _, _, _) =>
-      s"JvmMethod($ident, ${fparams.map(FormatFormalParam.format).mkString("(", ", ", ")")}, ${FormatExpression.format(exp)})"
+  def findBest(completions: Iterable[Completion]): Option[MatchCompletion] = {
+    // TODO
+    None
   }
-
 }

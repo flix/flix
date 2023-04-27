@@ -144,8 +144,8 @@ object Resolver {
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
     case ResolvedAst.Declaration.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
-    case ResolvedAst.Declaration.AssociatedTypeSig(_, _, sym, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.AssociatedTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
+    case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
   }
 
   /**
@@ -623,19 +623,19 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeSig, ResolutionError] = s0 match {
+  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeSig, ResolutionError] = s0 match {
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, loc) =>
       val tparamVal = Params.resolveTparam(tparam0, env, ns0, root)
       val kindVal = resolveKind(kind0, env, ns0, root)
       mapN(tparamVal, kindVal) {
-        case (tparam, kind) => ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc)
+        case (tparam, kind) => ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
   }
 
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = d0 match {
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
       // TODO ASSOC-TYPES roll into visitType check
@@ -675,7 +675,7 @@ object Resolver {
           mapN(checkAssocTypes(tpe)) {
             case _ =>
               val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
-              ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, symUse, arg, tpe, loc)
+              ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
           }
       }
   }
@@ -1327,6 +1327,13 @@ object Resolver {
             case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
           }.recoverOne {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
+          }
+
+        case NamedAst.Expression.InstanceOf(exp, className, loc) =>
+          val eVal = visitExp(exp, env0)
+          val clazzVal = lookupJvmClass(className, loc);
+          mapN(eVal, clazzVal) {
+            (e, clazz) => ResolvedAst.Expression.InstanceOf(e, clazz, loc)
           }
 
         case NamedAst.Expression.CheckedCast(c, exp, loc) =>
@@ -2095,7 +2102,7 @@ object Resolver {
         ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
-      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure
+      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc).toFailure
     }
   }
 
@@ -2686,7 +2693,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
   }
 
   /**
@@ -2697,7 +2704,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
   }
 
   /**
@@ -2827,7 +2834,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
+      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure
       case Some(decl) => decl.toSuccess
     }
   }
@@ -3520,7 +3527,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
+      case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, isUse = true, loc).toFailure
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess
