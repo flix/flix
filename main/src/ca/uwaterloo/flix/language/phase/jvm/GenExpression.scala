@@ -43,92 +43,6 @@ object GenExpression {
     case Expr.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expr.Binary(sop, exp1, exp2, _, _) => sop match {
-      case BoolOp.And =>
-        val andFalseBranch = new Label()
-        val andEnd = new Label()
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitJumpInsn(IFEQ, andFalseBranch)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitJumpInsn(IFEQ, andFalseBranch)
-        visitor.visitInsn(ICONST_1)
-        visitor.visitJumpInsn(GOTO, andEnd)
-        visitor.visitLabel(andFalseBranch)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitLabel(andEnd)
-
-      case BoolOp.Or =>
-        val orTrueBranch = new Label()
-        val orFalseBranch = new Label()
-        val orEnd = new Label()
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitJumpInsn(IFNE, orTrueBranch)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitJumpInsn(IFEQ, orFalseBranch)
-        visitor.visitLabel(orTrueBranch)
-        visitor.visitInsn(ICONST_1)
-        visitor.visitJumpInsn(GOTO, orEnd)
-        visitor.visitLabel(orFalseBranch)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitLabel(orEnd)
-
-      case Float32Op.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(F2D) // Sign extend to double
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(F2D) // Sign extend to double
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-        visitor.visitInsn(D2F)
-
-      case Float64Op.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-
-      case Int8Op.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(I2D)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(I2D)
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-        visitor.visitInsn(D2I)
-        visitor.visitInsn(I2B)
-
-      case Int16Op.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(I2D)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(I2D)
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-        visitor.visitInsn(D2I)
-        visitor.visitInsn(I2S)
-
-      case Int32Op.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(I2D)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(I2D)
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-        visitor.visitInsn(D2I)
-
-      case Int64Op.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(L2D)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitInsn(L2D)
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-        visitor.visitInsn(D2L)
-
-      case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-    }
-
-
     case Expr.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -348,6 +262,93 @@ object GenExpression {
       case AtomicOp.Unary(sop) =>
         val List(exp) = exps
         compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
+
+      case AtomicOp.Binary(sop) =>
+        val List(exp1, exp2) = exps
+        sop match {
+          case BoolOp.And =>
+            val andFalseBranch = new Label()
+            val andEnd = new Label()
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitJumpInsn(IFEQ, andFalseBranch)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitJumpInsn(IFEQ, andFalseBranch)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, andEnd)
+            visitor.visitLabel(andFalseBranch)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(andEnd)
+
+          case BoolOp.Or =>
+            val orTrueBranch = new Label()
+            val orFalseBranch = new Label()
+            val orEnd = new Label()
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitJumpInsn(IFNE, orTrueBranch)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitJumpInsn(IFEQ, orFalseBranch)
+            visitor.visitLabel(orTrueBranch)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, orEnd)
+            visitor.visitLabel(orFalseBranch)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(orEnd)
+
+          case Float32Op.Exp =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(F2D) // Sign extend to double
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(F2D) // Sign extend to double
+            visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+            visitor.visitInsn(D2F)
+
+          case Float64Op.Exp =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+
+          case Int8Op.Exp =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(I2D)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(I2D)
+            visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+            visitor.visitInsn(D2I)
+            visitor.visitInsn(I2B)
+
+          case Int16Op.Exp =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(I2D)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(I2D)
+            visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+            visitor.visitInsn(D2I)
+            visitor.visitInsn(I2S)
+
+          case Int32Op.Exp =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(I2D)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(I2D)
+            visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+            visitor.visitInsn(D2I)
+
+          case Int64Op.Exp =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(L2D)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(L2D)
+            visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+              AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+            visitor.visitInsn(D2L)
+
+          case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+        }
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps

@@ -37,6 +37,8 @@ object AtomicOp {
 
   case class Unary(sop: SemanticOperator) extends AtomicOp
 
+  case class Binary(sop: SemanticOperator) extends AtomicOp
+
   case object Region extends AtomicOp
 
   case object ScopeExit extends AtomicOp
