@@ -516,22 +516,32 @@ object GenExpression {
             visitor.visitInsn(LSHL)
 
           case BigIntOp.And =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "and", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
           case BigIntOp.Or =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "or", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
           case BigIntOp.Xor =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "xor", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
           case BigIntOp.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "shiftLeft", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
           case BigIntOp.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
