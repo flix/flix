@@ -314,7 +314,7 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expr.Intrinsic(op, exps0, tpe, loc) => exps0 match {
+    case Expr.Intrinsic(op, exps, tpe, loc) => exps match {
 
       case Nil => op match {
 
@@ -350,21 +350,21 @@ object GenExpression {
 
       }
 
-      case exp :: Nil => op match {
+      case e1 :: Nil => op match {
 
         case IntrinsicOperator.Unary(sop) =>
-          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
+          compileUnaryExpr(e1, currentClass, visitor, lenv0, entryPoint, sop)
 
         case IntrinsicOperator.Is(sym) =>
           // Adding source line number for debugging
           addSourceLine(visitor, loc)
           // We get the `TagInfo` for the tag
-          val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
+          val tagInfo = JvmOps.getTagInfo(e1.tpe, sym.name)
           // We get the JvmType of the class for tag
           val classType = JvmOps.getTagClassType(tagInfo)
 
           // First we compile the `exp`
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          compileExpression(e1, visitor, currentClass, lenv0, entryPoint)
           // We check if the enum is `instanceof` the class
           visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
@@ -372,17 +372,17 @@ object GenExpression {
 
       }
 
-      case exp1 :: exp2 :: Nil => op match {
+      case e1 :: e2 :: Nil => op match {
 
         case IntrinsicOperator.Spawn =>
           addSourceLine(visitor, loc)
 
-          exp2 match {
+          e2 match {
             // The expression represents the `Static` region, just start a thread directly
             case Expr.Intrinsic(IntrinsicOperator.Region, _, tpe, loc) =>
 
               // Compile the expression, putting a function implementing the Runnable interface on the stack
-              compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+              compileExpression(e1, visitor, currentClass, lenv0, entryPoint)
               visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
               // make a thread and run it
@@ -399,11 +399,11 @@ object GenExpression {
 
             case _ =>
               // Compile the expression representing the region
-              compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+              compileExpression(e2, visitor, currentClass, lenv0, entryPoint)
               visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
 
               // Compile the expression, putting a function implementing the Runnable interface on the stack
-              compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+              compileExpression(e1, visitor, currentClass, lenv0, entryPoint)
               visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
               // Call the Region's `spawn` method
@@ -417,8 +417,8 @@ object GenExpression {
 
       }
 
-      case exp1 :: exp2 :: exp3 :: Nil => ???
-      case exp1 :: exps => ???
+      case e1 :: e2 :: e3 :: Nil => ???
+      case e1 :: es => ???
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
