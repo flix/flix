@@ -112,8 +112,6 @@ object ErasedAst {
 
     // Intrinsic1
 
-    case class Unary(sop: SemanticOperator) extends IntrinsicOperator
-
     // Intrinsic2
 
     // case class RecordExtend(field: Name.Field) extends IntrinsicOperator
@@ -141,6 +139,8 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
+
+    case class Unary(sop: SemanticOperator) extends IntrinsicOperator1
 
     case class Is(sym: Symbol.CaseSym) extends IntrinsicOperator1
 

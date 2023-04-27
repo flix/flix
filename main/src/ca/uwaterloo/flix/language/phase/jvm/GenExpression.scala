@@ -350,15 +350,7 @@ object GenExpression {
 
       }
 
-      case e1 :: Nil => op match {
-
-        case IntrinsicOperator.Unary(sop) =>
-          compileUnaryExpr(e1, currentClass, visitor, lenv0, entryPoint, sop)
-
-        case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
-
-      }
-
+      case e1 :: Nil => ???
       case e1 :: e2 :: Nil => op match {
 
         case IntrinsicOperator.Spawn =>
@@ -409,6 +401,9 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Unary(sop) =>
+        compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
       case IntrinsicOperator1.Is(sym) =>
         // Adding source line number for debugging
