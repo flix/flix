@@ -680,9 +680,36 @@ object GenExpression {
 
     }
 
-    case Expr.Intrinsic2(op, exp1, exp2, tpe, loc) => op match {
+    case Expr.App(op, exps, tpe, loc) => op match {
 
-      case IntrinsicOperator2.RecordExtend(field) =>
+      case IntrinsicOp.Region =>
+        //!TODO: For now, just emit unit
+        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
+
+      case IntrinsicOp.RecordEmpty =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the JvmType of the class for the RecordEmpty
+        val classType = JvmOps.getRecordEmptyClassType()
+        // Instantiating a new object of tuple
+        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
+
+      case IntrinsicOp.GetStaticField(field) =>
+        addSourceLine(visitor, loc)
+        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+        visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+      case IntrinsicOp.HoleError(sym) =>
+        addSourceLine(visitor, loc)
+        AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
+
+      case IntrinsicOp.MatchError =>
+        addSourceLine(visitor, loc)
+        AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
+
+      case IntrinsicOp.RecordExtend(field) =>
+        val List(exp1, exp2) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the JvmType of the class for the record extend
@@ -716,7 +743,9 @@ object GenExpression {
         compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
         visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.RestField.name, interfaceType.toDescriptor)
 
-      case IntrinsicOperator2.Assign =>
+      case IntrinsicOp.Assign =>
+        val List(exp1, exp2) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // Evaluate the reference address
@@ -735,7 +764,9 @@ object GenExpression {
         // Since the return type is unit, we put an instance of unit on top of the stack
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-      case IntrinsicOperator2.ArrayNew =>
+      case IntrinsicOp.ArrayNew =>
+        val List(exp1, exp2) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the inner type of the array
@@ -776,7 +807,9 @@ object GenExpression {
         // Invoking the method to fill the array with the default element
         visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
-      case IntrinsicOperator2.ArrayLoad =>
+      case IntrinsicOp.ArrayLoad =>
+        val List(exp1, exp2) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the jvmType of the element to be loaded
@@ -791,7 +824,9 @@ object GenExpression {
         // with the load instruction corresponding to the loaded element
         visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
 
-      case IntrinsicOperator2.Spawn =>
+      case IntrinsicOp.Spawn =>
+        val List(exp1, exp2) = exps
+
         addSourceLine(visitor, loc)
 
         exp2 match {
@@ -830,7 +865,9 @@ object GenExpression {
         // Put a Unit value on the stack
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-      case IntrinsicOperator2.ScopeExit =>
+      case IntrinsicOp.ScopeExit =>
+        val List(exp1, exp2) = exps
+
         // Compile the expression, putting a function implementing the Runnable interface on the stack
         compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
@@ -846,7 +883,8 @@ object GenExpression {
         // Put a Unit value on the stack
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-      case IntrinsicOperator2.PutField(field) =>
+      case IntrinsicOp.PutField(field) =>
+        val List(exp1, exp2) = exps
         addSourceLine(visitor, loc)
         compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
         compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
@@ -856,34 +894,6 @@ object GenExpression {
         // Push Unit on the stack.
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    }
-
-    case Expr.App(op, exps, tpe, loc) => op match {
-
-      case IntrinsicOp.Region =>
-        //!TODO: For now, just emit unit
-        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-
-      case IntrinsicOp.RecordEmpty =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // We get the JvmType of the class for the RecordEmpty
-        val classType = JvmOps.getRecordEmptyClassType()
-        // Instantiating a new object of tuple
-        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
-
-      case IntrinsicOp.GetStaticField(field) =>
-        addSourceLine(visitor, loc)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
-
-      case IntrinsicOp.HoleError(sym) =>
-        addSourceLine(visitor, loc)
-        AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
-
-      case IntrinsicOp.MatchError =>
-        addSourceLine(visitor, loc)
-        AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
 
       case IntrinsicOp.Closure(sym) =>
         // JvmType of the closure

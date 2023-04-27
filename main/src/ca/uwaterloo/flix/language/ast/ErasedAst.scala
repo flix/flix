@@ -68,8 +68,6 @@ object ErasedAst {
 
     case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic2(op: IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
-
     case class App(op: IntrinsicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic1N(op: IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
@@ -146,26 +144,6 @@ object ErasedAst {
 
   }
 
-  sealed trait IntrinsicOperator2
-
-  object IntrinsicOperator2 {
-
-    case class RecordExtend(field: Name.Field) extends IntrinsicOperator2
-
-    case object Assign extends IntrinsicOperator2
-
-    case object ArrayNew extends IntrinsicOperator2
-
-    case object ArrayLoad extends IntrinsicOperator2
-
-    case object Spawn extends IntrinsicOperator2
-
-    case object ScopeExit extends IntrinsicOperator2
-
-    case class PutField(field: Field) extends IntrinsicOperator2
-
-  }
-
   sealed trait IntrinsicOp
 
   object IntrinsicOp {
@@ -195,6 +173,20 @@ object ErasedAst {
     case class InvokeConstructor(constructor: Constructor[_]) extends IntrinsicOp
 
     case class InvokeStaticMethod(method: Method) extends IntrinsicOp
+
+    case class RecordExtend(field: Name.Field) extends IntrinsicOp
+
+    case object Assign extends IntrinsicOp
+
+    case object ArrayNew extends IntrinsicOp
+
+    case object ArrayLoad extends IntrinsicOp
+
+    case object Spawn extends IntrinsicOp
+
+    case object ScopeExit extends IntrinsicOp
+
+    case class PutField(field: Field) extends IntrinsicOp
 
     case object ArrayStore extends IntrinsicOp
 

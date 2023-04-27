@@ -17,9 +17,11 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object IntrinsicOperatorPrinter {
 
@@ -64,36 +66,33 @@ object IntrinsicOperatorPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def print(op: IntrinsicOperator2, d1: Expression, d2: Expression): Expression = op match {
-    case IntrinsicOperator2.RecordExtend(field) => RecordExtend(field, d1, d2)
-    case IntrinsicOperator2.Assign => Assign(d1, d2)
-    case IntrinsicOperator2.ArrayNew => ArrayNew(d1, d2)
-    case IntrinsicOperator2.ArrayLoad => ArrayLoad(d1, d2)
-    case IntrinsicOperator2.Spawn => Spawn(d1, d2)
-    case IntrinsicOperator2.ScopeExit => ScopeExit(d1, d2)
-    case IntrinsicOperator2.PutField(field) => JavaPutField(field, d1, d2)
-  }
+  def print(op: IntrinsicOp, ds: List[Expression]): Expression = (op, ds) match {
+    case (IntrinsicOp.Region, Nil) => Region
+    case (IntrinsicOp.RecordEmpty, Nil) => RecordEmpty
+    case (IntrinsicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
+    case (IntrinsicOp.HoleError(sym), Nil) => HoleError(sym)
+    case (IntrinsicOp.MatchError, Nil) => MatchError
 
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOp, ds: List[Expression]): Expression = op match {
-    case IntrinsicOp.Region => Region
-    case IntrinsicOp.RecordEmpty => RecordEmpty
-    case IntrinsicOp.GetStaticField(field) => JavaGetStaticField(field)
-    case IntrinsicOp.HoleError(sym) => HoleError(sym)
-    case IntrinsicOp.MatchError => MatchError
-    case IntrinsicOp.Closure(sym) => ClosureLifted(sym, ds)
-    case IntrinsicOp.ApplyDef(sym) => App(sym, ds)
-    case IntrinsicOp.ApplyDefTail(sym) => AppDefTail(sym, ds)
-    case IntrinsicOp.ApplySelfTail(sym, _) => AppSelfTail(sym, ds)
-    case IntrinsicOp.Tuple => Tuple(ds)
-    case IntrinsicOp.ArrayLit => ArrayLit(ds)
-    case IntrinsicOp.InvokeConstructor(constructor) => JavaInvokeConstructor(constructor, ds)
-    case IntrinsicOp.InvokeStaticMethod(method) => JavaInvokeStaticMethod(method, ds)
-    case IntrinsicOp.ArrayStore =>
-      val List(d1, d2, d3) = ds
-      ArrayStore(d1, d2, d3)
+    case (IntrinsicOp.Closure(sym), _) => ClosureLifted(sym, ds)
+    case (IntrinsicOp.ApplyDef(sym), _) => App(sym, ds)
+    case (IntrinsicOp.ApplyDefTail(sym), _) => AppDefTail(sym, ds)
+    case (IntrinsicOp.ApplySelfTail(sym, _), _) => AppSelfTail(sym, ds)
+    case (IntrinsicOp.Tuple, _) => Tuple(ds)
+    case (IntrinsicOp.ArrayLit, _) => ArrayLit(ds)
+    case (IntrinsicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
+    case (IntrinsicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
+
+    case (IntrinsicOp.RecordExtend(field), d1 :: d2 :: Nil) => RecordExtend(field, d1, d2)
+    case (IntrinsicOp.Assign, d1 :: d2 :: Nil) => Assign(d1, d2)
+    case (IntrinsicOp.ArrayNew, d1 :: d2 :: Nil) => ArrayNew(d1, d2)
+    case (IntrinsicOp.ArrayLoad, d1 :: d2 :: Nil) => ArrayLoad(d1, d2)
+    case (IntrinsicOp.Spawn, d1 :: d2 :: Nil) => Spawn(d1, d2)
+    case (IntrinsicOp.ScopeExit, d1 :: d2 :: Nil) => ScopeExit(d1, d2)
+    case (IntrinsicOp.PutField(field), d1 :: d2 :: Nil) => JavaPutField(field, d1, d2)
+
+    case (IntrinsicOp.ArrayStore, d1 :: d2 :: d3 :: Nil) => ArrayStore(d1, d2, d3)
+
+    case _ => throw InternalCompilerException("Mismatched Arity", SourceLocation.Unknown)
   }
 
   /**
