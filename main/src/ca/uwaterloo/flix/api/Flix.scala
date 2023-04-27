@@ -83,13 +83,19 @@ class Flix {
   /**
     * A cache of ASTs for debugging.
     */
-  private var cachedLiftedAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
+  private var lateTreeShakerAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
+  private var undoAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
   private var cachedErasedAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
 
   /**
-    * Returns the cached LiftedAST.
+    * Returns the cached [[LiftedAst]] after [[LateTreeShaker]].
     */
-  def getLiftedAst: LiftedAst.Root = cachedLiftedAst
+  def getLateTreeShakerAst: LiftedAst.Root = lateTreeShakerAst
+
+  /**
+    * Returns the cached [[LiftedAst]] after [[Undo]]
+    */
+  def getUndoAst: LiftedAst.Root = undoAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -568,11 +574,13 @@ class Flix {
     val afterMonomorph = Monomorph.run(afterEarlyTreeShaker)
     val afterSimplifier = Simplifier.run(afterMonomorph)
     val afterClosureConv = ClosureConv.run(afterSimplifier)
-    cachedLiftedAst = LambdaLift.run(afterClosureConv)
-    val afterTailrec = Tailrec.run(cachedLiftedAst)
-    val afterOptimizer = Optimizer.run(afterTailrec)
-    val afterLateTreeShaker = LateTreeShaker.run(afterOptimizer)
-    val afterVarNumbering = VarNumbering.run(afterLateTreeShaker)
+    val afterLift = LambdaLift.run(afterClosureConv)
+    val afterTailRec = Tailrec.run(afterLift)
+    val afterOptimizer = Optimizer.run(afterTailRec)
+    lateTreeShakerAst = LateTreeShaker.run(afterOptimizer)
+    val afterControlSeperator = ControlSeparator.run(lateTreeShakerAst)
+    undoAst = Undo.run(afterControlSeperator)
+    val afterVarNumbering = VarNumbering.run(undoAst)
     val afterFinalize = Finalize.run(afterVarNumbering)
     cachedErasedAst = Eraser.run(afterFinalize)
     val afterJvmBackend = JvmBackend.run(cachedErasedAst)

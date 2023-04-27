@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 
+import java.lang.reflect.{Constructor, Field, Method}
+
 object CallByValueAst {
 
   case class Root(defs: Map[Symbol.DefnSym, CallByValueAst.Def],
@@ -26,7 +28,7 @@ object CallByValueAst {
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[CallByValueAst.FormalParam], exp: CallByValueAst.Expr, tpe: Type, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[CallByValueAst.FormalParam], stmt: CallByValueAst.Stmt, tpe: Type, loc: SourceLocation)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, CallByValueAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
@@ -52,14 +54,12 @@ object CallByValueAst {
       def purity: Purity = Pure
     }
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
-
     case class TryCatch(exp: Expr, /* require body to be pure */ rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, /* no control effects */ methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     // TODO: Minus all the applies stuff in Intrinsic.
-    case class ApplyPure(op: IntrinsicOperator, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyPure(op: AtomicOp, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
 
     // Introduce run for force/lazy
@@ -102,17 +102,120 @@ object CallByValueAst {
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[CallByValueAst.FormalParam], actuals: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    //    case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Handle(sym: Symbol.OpSym, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    //    case class Handle(sym: Symbol.OpSym, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
   }
 
-  sealed trait IntrinsicOperator
+  sealed trait AtomicOp
 
-  object IntrinsicOperator {
-    case object ArrayLength
-    // ...
+  object AtomicOp {
+
+    case class Closure(sym: Symbol.DefnSym) extends AtomicOp
+
+    case class Unary(sop: SemanticOperator) extends AtomicOp
+
+    case class Binary(sop: SemanticOperator) extends AtomicOp
+
+    case object Region extends AtomicOp
+
+    case object ScopeExit extends AtomicOp
+
+    case class Is(sym: Symbol.CaseSym) extends AtomicOp
+
+    case class Tag(sym: Symbol.CaseSym) extends AtomicOp
+
+    case class Untag(sym: Symbol.CaseSym) extends AtomicOp
+
+    case class Index(idx: Int) extends AtomicOp
+
+    case object Tuple extends AtomicOp
+
+    case object RecordEmpty extends AtomicOp
+
+    case class RecordSelect(field: Name.Field) extends AtomicOp
+
+    case class RecordExtend(field: Name.Field) extends AtomicOp
+
+    case class RecordRestrict(field: Name.Field) extends AtomicOp
+
+    case object ArrayLit extends AtomicOp
+
+    case object ArrayNew extends AtomicOp
+
+    case object ArrayLoad extends AtomicOp
+
+    case object ArrayStore extends AtomicOp
+
+    case object ArrayLength extends AtomicOp
+
+    case object Ref extends AtomicOp
+
+    case object Deref extends AtomicOp
+
+    case object Assign extends AtomicOp
+
+    case class InstanceOf(clazz: Class[_]) extends AtomicOp
+
+    case object Cast extends AtomicOp
+
+    case class InvokeConstructor(constructor: Constructor[_]) extends AtomicOp
+
+    case class InvokeMethod(method: Method) extends AtomicOp
+
+    case class InvokeStaticMethod(method: Method) extends AtomicOp
+
+    case class GetField(field: Field) extends AtomicOp
+
+    case class PutField(field: Field) extends AtomicOp
+
+    case class GetStaticField(field: Field) extends AtomicOp
+
+    case class PutStaticField(field: Field) extends AtomicOp
+
+    case object Spawn extends AtomicOp
+
+    case object Lazy extends AtomicOp
+
+    case object Force extends AtomicOp
+
+    case object BoxBool extends AtomicOp
+
+    case object BoxInt8 extends AtomicOp
+
+    case object BoxInt16 extends AtomicOp
+
+    case object BoxInt32 extends AtomicOp
+
+    case object BoxInt64 extends AtomicOp
+
+    case object BoxChar extends AtomicOp
+
+    case object BoxFloat32 extends AtomicOp
+
+    case object BoxFloat64 extends AtomicOp
+
+    case object UnboxBool extends AtomicOp
+
+    case object UnboxInt8 extends AtomicOp
+
+    case object UnboxInt16 extends AtomicOp
+
+    case object UnboxInt32 extends AtomicOp
+
+    case object UnboxInt64 extends AtomicOp
+
+    case object UnboxChar extends AtomicOp
+
+    case object UnboxFloat32 extends AtomicOp
+
+    case object UnboxFloat64 extends AtomicOp
+
+    case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
+
+    case object MatchError extends AtomicOp
+
   }
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)

@@ -41,7 +41,7 @@ object ShowAstProvider {
 
       phase match {
         case "TypedAst" =>
-          val text = AstPrinter.formatLiftedAst(flix.getLiftedAst)
+          val text = AstPrinter.formatLiftedAst(flix.getLateTreeShakerAst)
           ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
         case _ =>
           ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> s"Unknown phase: '$phase'.")
