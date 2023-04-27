@@ -71,7 +71,6 @@ object ErasedAstPrinter {
       })
     case Intrinsic1(op, exp, tpe, _) => IntrinsicOperatorPrinter.print(op, print(exp), MonoTypePrinter.print(tpe))
     case App(op, exps, _, _) => IntrinsicOperatorPrinter.print(op, exps.map(print))
-    case Intrinsic1N(op, exp, exps, _, _) => IntrinsicOperatorPrinter.print(op, print(exp), exps.map(print))
   }
 
   /**

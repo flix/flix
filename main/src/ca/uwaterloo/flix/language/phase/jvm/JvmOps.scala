@@ -704,8 +704,6 @@ object JvmOps {
 
       case Expr.App(_, exps, tpe, _) => visitExps(exps) + tpe
 
-      case Expr.Intrinsic1N(_, exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) + tpe
-
     }) ++ Set(exp0.tpe)
 
     // TODO: Magnus: Look for types in other places.

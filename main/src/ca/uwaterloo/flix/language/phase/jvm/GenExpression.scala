@@ -1070,10 +1070,9 @@ object GenExpression {
         case _ => throw InternalCompilerException("Mismatched Arity", loc)
       }
 
-    }
+      case IntrinsicOp.ApplyClo =>
+        val exp :: args = exps
 
-    case Expr.Intrinsic1N(op, exp, exps, tpe, loc) => op match {
-      case IntrinsicOperator1N.ApplyClo =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
         val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
@@ -1087,7 +1086,7 @@ object GenExpression {
         // retrieving the unique thread object
         visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
         // Putting args on the Fn class
-        for ((arg, i) <- exps.zipWithIndex) {
+        for ((arg, i) <- args.zipWithIndex) {
           // Duplicate the FunctionInterface
           visitor.visitInsn(DUP)
           // Evaluating the expression
@@ -1100,7 +1099,9 @@ object GenExpression {
           backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperator1N.ApplyCloTail =>
+      case IntrinsicOp.ApplyCloTail =>
+        val exp :: args = exps
+
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
         val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
@@ -1111,7 +1112,7 @@ object GenExpression {
         // retrieving the unique thread object
         visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
         // Putting args on the Fn class
-        for ((arg, i) <- exps.zipWithIndex) {
+        for ((arg, i) <- args.zipWithIndex) {
           // Duplicate the FunctionInterface
           visitor.visitInsn(DUP)
           // Evaluating the expression
@@ -1122,7 +1123,9 @@ object GenExpression {
         // Return the closure
         visitor.visitInsn(ARETURN)
 
-      case IntrinsicOperator1N.InvokeMethod(method) =>
+      case IntrinsicOp.InvokeMethod(method) =>
+        val exp :: args = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
 
@@ -1134,7 +1137,7 @@ object GenExpression {
         // Retrieve the signature.
         val signature = method.getParameterTypes
 
-        pushArgs(visitor, exps, signature, currentClass, lenv0, entryPoint)
+        pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
 
         val declaration = asm.Type.getInternalName(method.getDeclaringClass)
         val name = method.getName
@@ -1151,6 +1154,7 @@ object GenExpression {
         if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
           visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
         }
+
     }
 
   }

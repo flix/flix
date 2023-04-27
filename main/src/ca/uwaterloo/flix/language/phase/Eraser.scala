@@ -83,16 +83,16 @@ object Eraser {
       ErasedAst.Expr.App(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, exps, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1N.ApplyClo
-      ErasedAst.Expr.Intrinsic1N(op, visitExp(exp), exps.map(visitExp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.ApplyClo
+      ErasedAst.Expr.App(op, visitExp(exp) :: exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyDef(sym, exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.ApplyDef(sym)
       ErasedAst.Expr.App(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyCloTail(exp, exps, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1N.ApplyCloTail
-      ErasedAst.Expr.Intrinsic1N(op, visitExp(exp), exps.map(visitExp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.ApplyCloTail
+      ErasedAst.Expr.App(op, visitExp(exp) :: exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyDefTail(sym, exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.ApplyDefTail(sym)
@@ -234,8 +234,8 @@ object Eraser {
       ErasedAst.Expr.App(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.InvokeMethod(method, exp, exps, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1N.InvokeMethod(method)
-      ErasedAst.Expr.Intrinsic1N(op, visitExp(exp), exps.map(visitExp), tpe, loc)
+      val op = ErasedAst.IntrinsicOp.InvokeMethod(method)
+      ErasedAst.Expr.App(op, visitExp(exp) :: exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.InvokeStaticMethod(method, exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOp.InvokeStaticMethod(method)

@@ -92,16 +92,12 @@ object IntrinsicOperatorPrinter {
 
     case (IntrinsicOp.ArrayStore, d1 :: d2 :: d3 :: Nil) => ArrayStore(d1, d2, d3)
 
+    case (IntrinsicOp.ApplyClo, d :: rs) => AppClo(d, rs)
+    case (IntrinsicOp.ApplyCloTail, d :: rs) => AppCloTail(d, rs)
+    case (IntrinsicOp.InvokeMethod(method), d :: rs)  => JavaInvokeMethod(method, d, rs)
+
     case _ => throw InternalCompilerException("Mismatched Arity", SourceLocation.Unknown)
   }
 
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOperator1N, d: Expression, ds: List[Expression]): Expression = op match {
-    case IntrinsicOperator1N.ApplyClo => AppClo(d, ds)
-    case IntrinsicOperator1N.ApplyCloTail => AppCloTail(d, ds)
-    case IntrinsicOperator1N.InvokeMethod(method) => JavaInvokeMethod(method, d, ds)
-  }
 
 }

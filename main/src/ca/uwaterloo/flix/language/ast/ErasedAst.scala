@@ -70,8 +70,6 @@ object ErasedAst {
 
     case class App(op: IntrinsicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic1N(op: IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
   }
 
   sealed trait IntrinsicOperator1
@@ -190,17 +188,11 @@ object ErasedAst {
 
     case object ArrayStore extends IntrinsicOp
 
-  }
+    case object ApplyClo extends IntrinsicOp
 
-  sealed trait IntrinsicOperator1N
+    case object ApplyCloTail extends IntrinsicOp
 
-  object IntrinsicOperator1N {
-
-    case object ApplyClo extends IntrinsicOperator1N
-
-    case object ApplyCloTail extends IntrinsicOperator1N
-
-    case class InvokeMethod(method: Method) extends IntrinsicOperator1N
+    case class InvokeMethod(method: Method) extends IntrinsicOp
 
   }
 
