@@ -16,104 +16,77 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object IntrinsicOperatorPrinter {
 
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def print(op: IntrinsicOperator0): Expression = op match {
-    case IntrinsicOperator0.Cst(cst) => ConstantPrinter.print(cst)
-    case IntrinsicOperator0.Region => Region
-    case IntrinsicOperator0.RecordEmpty => RecordEmpty
-    case IntrinsicOperator0.GetStaticField(field) => JavaGetStaticField(field)
-    case IntrinsicOperator0.HoleError(sym) => HoleError(sym)
-    case IntrinsicOperator0.MatchError => MatchError
+  def print(op: AtomicOp, ds: List[Expression], tpe: DocAst.Type): Expression = (op, ds) match {
+    case (AtomicOp.Region, Nil) => Region
+    case (AtomicOp.RecordEmpty, Nil) => RecordEmpty
+    case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
+    case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
+    case (AtomicOp.MatchError, Nil) => MatchError
+
+    case (AtomicOp.Unary(sop), List(d)) => Unary(OperatorPrinter.print(sop), d)
+    case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
+    case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
+    case (AtomicOp.Untag(sym), List(d)) => Untag(sym, d)
+    case (AtomicOp.InstanceOf(_), List(d)) => Unknown
+    case (AtomicOp.Cast, List(d)) => Cast(d, tpe)
+    case (AtomicOp.Index(idx), List(d)) => Index(idx, d)
+    case (AtomicOp.RecordSelect(field), List(d)) => RecordSelect(field, d)
+    case (AtomicOp.RecordRestrict(field), List(d)) => RecordRestrict(field, d)
+    case (AtomicOp.Ref, List(d)) => Ref(d)
+    case (AtomicOp.Deref, List(d)) => Deref(d)
+    case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
+    case (AtomicOp.Lazy, List(d)) => Lazy(d)
+    case (AtomicOp.Force, List(d)) => Force(d)
+    case (AtomicOp.GetField(field), List(d)) => JavaGetField(field, d)
+    case (AtomicOp.PutStaticField(field), List(d)) => JavaPutStaticField(field, d)
+    case (AtomicOp.BoxBool, List(d)) => Box(d)
+    case (AtomicOp.BoxInt8, List(d)) => Box(d)
+    case (AtomicOp.BoxInt16, List(d)) => Box(d)
+    case (AtomicOp.BoxInt32, List(d)) => Box(d)
+    case (AtomicOp.BoxInt64, List(d)) => Box(d)
+    case (AtomicOp.BoxChar, List(d)) => Box(d)
+    case (AtomicOp.BoxFloat32, List(d)) => Box(d)
+    case (AtomicOp.BoxFloat64, List(d)) => Box(d)
+    case (AtomicOp.UnboxBool, List(d)) => Unbox(d)
+    case (AtomicOp.UnboxInt8, List(d)) => Unbox(d)
+    case (AtomicOp.UnboxInt16, List(d)) => Unbox(d)
+    case (AtomicOp.UnboxInt32, List(d)) => Unbox(d)
+    case (AtomicOp.UnboxInt64, List(d)) => Unbox(d)
+    case (AtomicOp.UnboxChar, List(d)) => Unbox(d)
+    case (AtomicOp.UnboxFloat32, List(d)) => Unbox(d)
+    case (AtomicOp.UnboxFloat64, List(d)) => Unbox(d)
+
+    case (AtomicOp.Closure(sym), _) => ClosureLifted(sym, ds)
+    case (AtomicOp.Tuple, _) => Tuple(ds)
+    case (AtomicOp.ArrayLit, _) => ArrayLit(ds)
+    case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
+    case (AtomicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
+
+    case (AtomicOp.RecordExtend(field), d1 :: d2 :: Nil) => RecordExtend(field, d1, d2)
+    case (AtomicOp.Assign, d1 :: d2 :: Nil) => Assign(d1, d2)
+    case (AtomicOp.ArrayNew, d1 :: d2 :: Nil) => ArrayNew(d1, d2)
+    case (AtomicOp.ArrayLoad, d1 :: d2 :: Nil) => ArrayLoad(d1, d2)
+    case (AtomicOp.Spawn, d1 :: d2 :: Nil) => Spawn(d1, d2)
+    case (AtomicOp.ScopeExit, d1 :: d2 :: Nil) => ScopeExit(d1, d2)
+    case (AtomicOp.PutField(field), d1 :: d2 :: Nil) => JavaPutField(field, d1, d2)
+
+    case (AtomicOp.ArrayStore, d1 :: d2 :: d3 :: Nil) => ArrayStore(d1, d2, d3)
+
+    case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
+
+    case _ => throw InternalCompilerException("Mismatched Arity", SourceLocation.Unknown)
   }
 
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOperator1, d: Expression, tpe: DocAst.Type): Expression = op match {
-    case IntrinsicOperator1.Unary(sop) => Unary(OperatorPrinter.print(sop), d)
-    case IntrinsicOperator1.Is(sym) => Is(sym, d)
-    case IntrinsicOperator1.Tag(sym) => Tag(sym, List(d))
-    case IntrinsicOperator1.Untag(sym) => Untag(sym, d)
-    case IntrinsicOperator1.InstanceOf(_) => Unknown
-    case IntrinsicOperator1.Cast => Cast(d, tpe)
-    case IntrinsicOperator1.Index(idx) => Index(idx, d)
-    case IntrinsicOperator1.RecordSelect(field) => RecordSelect(field, d)
-    case IntrinsicOperator1.RecordRestrict(field) => RecordRestrict(field, d)
-    case IntrinsicOperator1.Ref => Ref(d)
-    case IntrinsicOperator1.Deref => Deref(d)
-    case IntrinsicOperator1.ArrayLength => ArrayLength(d)
-    case IntrinsicOperator1.Lazy => Lazy(d)
-    case IntrinsicOperator1.Force => Force(d)
-    case IntrinsicOperator1.GetField(field) => JavaGetField(field, d)
-    case IntrinsicOperator1.PutStaticField(field) => JavaPutStaticField(field, d)
-    case IntrinsicOperator1.BoxBool => Box(d)
-    case IntrinsicOperator1.BoxInt8 => Box(d)
-    case IntrinsicOperator1.BoxInt16 => Box(d)
-    case IntrinsicOperator1.BoxInt32 => Box(d)
-    case IntrinsicOperator1.BoxInt64 => Box(d)
-    case IntrinsicOperator1.BoxChar => Box(d)
-    case IntrinsicOperator1.BoxFloat32 => Box(d)
-    case IntrinsicOperator1.BoxFloat64 => Box(d)
-    case IntrinsicOperator1.UnboxBool => Unbox(d)
-    case IntrinsicOperator1.UnboxInt8 => Unbox(d)
-    case IntrinsicOperator1.UnboxInt16 => Unbox(d)
-    case IntrinsicOperator1.UnboxInt32 => Unbox(d)
-    case IntrinsicOperator1.UnboxInt64 => Unbox(d)
-    case IntrinsicOperator1.UnboxChar => Unbox(d)
-    case IntrinsicOperator1.UnboxFloat32 => Unbox(d)
-    case IntrinsicOperator1.UnboxFloat64 => Unbox(d)
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOperator2, d1: Expression, d2: Expression): Expression = op match {
-    case IntrinsicOperator2.RecordExtend(field) => RecordExtend(field, d1, d2)
-    case IntrinsicOperator2.Assign => Assign(d1, d2)
-    case IntrinsicOperator2.ArrayNew => ArrayNew(d1, d2)
-    case IntrinsicOperator2.ArrayLoad => ArrayLoad(d1, d2)
-    case IntrinsicOperator2.Spawn => Spawn(d1, d2)
-    case IntrinsicOperator2.ScopeExit => ScopeExit(d1, d2)
-    case IntrinsicOperator2.PutField(field) => JavaPutField(field, d1, d2)
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOperator3, d1: Expression, d2: Expression, d3: Expression): Expression = op match {
-    case IntrinsicOperator3.ArrayStore => ArrayStore(d1, d2, d3)
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOperatorN, ds: List[Expression]): Expression = op match {
-    case IntrinsicOperatorN.Closure(sym) => ClosureLifted(sym, ds)
-    case IntrinsicOperatorN.ApplyDef(sym) => App(sym, ds)
-    case IntrinsicOperatorN.ApplyDefTail(sym) => AppDefTail(sym, ds)
-    case IntrinsicOperatorN.ApplySelfTail(sym, _) => AppSelfTail(sym, ds)
-    case IntrinsicOperatorN.Tuple => Tuple(ds)
-    case IntrinsicOperatorN.ArrayLit => ArrayLit(ds)
-    case IntrinsicOperatorN.InvokeConstructor(constructor) => JavaInvokeConstructor(constructor, ds)
-    case IntrinsicOperatorN.InvokeStaticMethod(method) => JavaInvokeStaticMethod(method, ds)
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def print(op: IntrinsicOperator1N, d: Expression, ds: List[Expression]): Expression = op match {
-    case IntrinsicOperator1N.ApplyClo => AppClo(d, ds)
-    case IntrinsicOperator1N.ApplyCloTail => AppCloTail(d, ds)
-    case IntrinsicOperator1N.InvokeMethod(method) => JavaInvokeMethod(method, d, ds)
-  }
 
 }

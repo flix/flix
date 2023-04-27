@@ -91,8 +91,8 @@ object CompletionProvider {
         root match {
           case Some(nonOptionRoot) =>
             // Get all completions
-            val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
-              FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
+            val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext)
+
             // Find the best completion
             val best = CompletionRanker.findBest(completions, index, deltaContext)
             boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
@@ -141,64 +141,59 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    // First, we try to get the syntactic context from the parser or from an error message.
     context.sctx match {
-      case SyntacticContext.Decl.Class => return Nil
-      case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
-      case SyntacticContext.Import => return ImportCompleter.getCompletions(context)
-      case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
-      case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
-      case _: SyntacticContext.Pat => return Nil
-      case _ => // fallthrough
-    }
-
-    // No luck, fall back to regular expressions:
-
-    // If we match one of the we know what type of completion we need
-    val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
-    val useRegex = raw"\s*use\s+[^\s]*".r
-    val instanceRegex = raw"\s*instance\s+[^s]*".r
-
-    // if any of the following matches we do not want any completions
-    val defRegex = raw"\s*def\s+[^=]*".r
-    val enumRegex = raw"\s*enum\s+.*".r
-    val incompleteTypeAliasRegex = raw"\s*type\s+alias\s+.*".r
-    val classRegex = raw"\s*class\s+.*".r
-    val letRegex = raw"\s*let\s+[^\s]*".r
-    val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
-    val modRegex = raw"\s*mod\s+.*".r
-    val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
-    val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
-
-    // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
-    context.prefix match {
-      case withRegex() => WithCompleter.getCompletions(context)
-      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
-      case useRegex() => UseCompleter.getCompletions(context)
-      case instanceRegex() => InstanceCompleter.getCompletions(context)
       //
-      // The order of this list doesn't matter because suggestions are ordered
-      // through sortText
+      // Expressions.
       //
-      case _ => getExpCompletions() ++
-        TypeCompleter.getCompletions(context)
-    }
-  }
+      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
+      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
-  /**
-    * Returns a list of completions that may be used in a position where an expression is needed.
-    * This should include all completions supported that could be an expression.
-    * All of the completions are not necessarily sound.
-    */
-  private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[Completion] = {
-    KeywordCompleter.getCompletions(context) ++
-      SnippetCompleter.getCompletions(context) ++
-      VarCompleter.getCompletions(context) ++
-      DefCompleter.getCompletions(context) ++
-      SignatureCompleter.getCompletions(context) ++
-      FieldCompleter.getCompletions(context) ++
-      OpCompleter.getCompletions(context) ++
-      MatchCompleter.getCompletions(context)
+      //
+      // Declarations.
+      //
+      case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
+      case _: SyntacticContext.Decl =>
+        KeywordOtherCompleter.getCompletions(context) ++
+          InstanceCompleter.getCompletions(context) ++
+          SnippetCompleter.getCompletions(context)
+
+      //
+      // Imports.
+      //
+      case SyntacticContext.Import => ImportCompleter.getCompletions(context)
+
+      //
+      // Types.
+      //
+      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context)
+
+      //
+      // Patterns.
+      //
+      case _: SyntacticContext.Pat => Nil
+
+      //
+      // Uses.
+      //
+      case SyntacticContext.Use => UseCompleter.getCompletions(context)
+
+      //
+      // With.
+      //
+      case SyntacticContext.WithClause =>
+        // A with context could also be just a type context.
+        TypeCompleter.getCompletions(context) ++ WithCompleter.getCompletions(context)
+
+      //
+      // Fallthrough.
+      //
+      case SyntacticContext.Unknown =>
+        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
+    }
   }
 
   /**
@@ -293,7 +288,8 @@ object CompletionProvider {
       case ParseError(_, ctx, _) => ctx
       case WeederError.IllegalJavaClass(_, _) => SyntacticContext.Import
       case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
-      // TODO: SYNTACTIC-CONTEXT
+      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) SyntacticContext.Use else SyntacticContext.Expr.OtherExpr
+      case ResolutionError.UndefinedVar(_, _) => SyntacticContext.Expr.OtherExpr
     }).getOrElse(SyntacticContext.Unknown)
 
 }

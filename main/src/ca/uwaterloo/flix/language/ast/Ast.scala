@@ -806,6 +806,8 @@ object Ast {
     object Expr {
       case object Constraint extends Expr
 
+      case object Do extends Expr
+
       case object OtherExpr extends Expr
     }
 
@@ -825,7 +827,24 @@ object Ast {
       case object OtherType extends Type
     }
 
+    case object Use extends SyntacticContext
+
+    case object WithClause extends SyntacticContext
+
     case object Unknown extends SyntacticContext
+
+    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
+      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
+      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
+
+      case (_, SyntacticContext.Unknown) => ctx1
+      case (SyntacticContext.Unknown, _) => ctx2
+
+      case (SyntacticContext.Type.OtherType, SyntacticContext.WithClause) => SyntacticContext.WithClause
+      case (SyntacticContext.WithClause, SyntacticContext.Type.OtherType) => SyntacticContext.WithClause
+
+      case _ => ctx1
+    }
   }
 
 }
