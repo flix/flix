@@ -122,10 +122,14 @@ object Parser {
       case "Expression" => SyntacticContext.Expr.OtherExpr
       case "Constraint" => SyntacticContext.Expr.Constraint
       case "Do" => SyntacticContext.Expr.Do
+
       case "Class" => SyntacticContext.Decl.Class
       case "Enum" => SyntacticContext.Decl.Enum
-      case "Pattern" => SyntacticContext.Pat.OtherPat
       case "Instance" => SyntacticContext.Decl.Instance
+      case "Decls" => SyntacticContext.Decl.OtherDecl
+
+      case "Pattern" => SyntacticContext.Pat.OtherPat
+
       case "ImportOne" => SyntacticContext.Import
       case "ImportMany" => SyntacticContext.Import
       case "Constructor" => SyntacticContext.Import
@@ -135,12 +139,17 @@ object Parser {
       case "PutField" => SyntacticContext.Import
       case "GetStaticField" => SyntacticContext.Import
       case "PutStaticField" => SyntacticContext.Import
+
       case "UseOne" => SyntacticContext.Use
       case "UseMany" => SyntacticContext.Use
       case "UseName" => SyntacticContext.Use
+
       case "EffectSetOrEmpty" => SyntacticContext.Type.Eff
+
       case "Type" => SyntacticContext.Type.OtherType
+
       case "WithClause" => SyntacticContext.WithClause
+
       case _ => SyntacticContext.Unknown
     }
   }
