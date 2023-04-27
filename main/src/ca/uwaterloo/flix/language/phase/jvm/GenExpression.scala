@@ -522,25 +522,6 @@ object GenExpression {
           // set the field with the ref value
           visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
 
-        case IntrinsicOperator.Deref =>
-          // Adding source line number for debugging
-          addSourceLine(visitor, loc)
-          // Evaluate the exp
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          // JvmType of the reference class
-          val classType = JvmOps.getRefClassType(exp.tpe)
-
-          // the previous function is already partial
-          val MonoType.Ref(refValueType) = exp.tpe
-          val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
-
-          // Cast the ref
-          visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
-          // Dereference the expression
-          visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-          // Cast underlying value to the correct type if the underlying type is Object
-          AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -595,6 +576,25 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Deref =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // Evaluate the exp
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // JvmType of the reference class
+        val classType = JvmOps.getRefClassType(exp.tpe)
+
+        // the previous function is already partial
+        val MonoType.Ref(refValueType) = exp.tpe
+        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
+        // Cast the ref
+        visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+        // Dereference the expression
+        visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
+        // Cast underlying value to the correct type if the underlying type is Object
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
       case IntrinsicOperator1.ArrayLength =>
         // Adding source line number for debugging
