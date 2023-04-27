@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -143,8 +143,12 @@ object CompletionProvider {
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     // First, we try to get the syntactic context from the parser or from an error message.
     context.sctx match {
-      case SyntacticContext.Decl.Class => return Nil
+      case SyntacticContext.Decl.Class => return KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Expr.Do => return OpCompleter.getCompletions(context)
+      case _: SyntacticContext.Expr => return getExpCompletions()
+      case SyntacticContext.Import => return ImportCompleter.getCompletions(context)
+      case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       case _: SyntacticContext.Pat => return Nil
       case _ => // fallthrough
@@ -154,49 +158,16 @@ object CompletionProvider {
 
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
-    val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasRegex = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val effectRegex = raw".*[\\]\s*[^\s]*".r
-    val importRegex = raw"\s*import\s+.*".r
     val useRegex = raw"\s*use\s+[^\s]*".r
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
-    // if any of the following matches we do not want any completions
-    val defRegex = raw"\s*def\s+[^=]*".r
-    val enumRegex = raw"\s*enum\s+.*".r
-    val incompleteTypeAliasRegex = raw"\s*type\s+alias\s+.*".r
-    val classRegex = raw"\s*class\s+.*".r
-    val letRegex = raw"\s*let\s+[^\s]*".r
-    val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
-    val modRegex = raw"\s*mod\s+.*".r
-    val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
-    val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
-
-    // if any of the following matches we know the next must be an expression
-    val doubleColonRegex = raw".*::\s*[^\s]*".r
-    val tripleColonRegex = raw".*:::\s*[^\s]*".r
-
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
-      case doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => WithCompleter.getCompletions(context)
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context)
-      case effectRegex() => EffectCompleter.getCompletions(context)
-      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
-      case importRegex() =>
-        ImportNewCompleter.getCompletions(context) ++
-          ImportMethodCompleter.getCompletions(context) ++
-          ImportFieldCompleter.getCompletions(context) ++
-          ClassCompleter.getCompletions(context)
       case useRegex() => UseCompleter.getCompletions(context)
       case instanceRegex() => InstanceCompleter.getCompletions(context)
-      //
-      // The order of this list doesn't matter because suggestions are ordered
-      // through sortText
-      //
-      case _ => getExpCompletions() ++
-        TypeCompleter.getCompletions(context) ++
-        EffectCompleter.getCompletions(context)
+
+      case _ => KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
     }
   }
 
@@ -206,13 +177,12 @@ object CompletionProvider {
     * All of the completions are not necessarily sound.
     */
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[Completion] = {
-    KeywordCompleter.getCompletions(context) ++
+    KeywordExprCompleter.getCompletions(context) ++
       SnippetCompleter.getCompletions(context) ++
       VarCompleter.getCompletions(context) ++
       DefCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++
       FieldCompleter.getCompletions(context) ++
-      OpCompleter.getCompletions(context) ++
       MatchCompleter.getCompletions(context)
   }
 
@@ -241,7 +211,7 @@ object CompletionProvider {
         }
         // Boosting by changing priority in sortText
         // This is done by removing the old int at the first position in the string, and changing it to 1
-        val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1)._2,
+        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
           documentation = Some(bestPickDocu))
         List(boostedComp)
     }
@@ -306,7 +276,10 @@ object CompletionProvider {
       case err => pos.line <= err.loc.beginLine
     }).collectFirst({
       case ParseError(_, ctx, _) => ctx
+      case WeederError.IllegalJavaClass(_, _) => SyntacticContext.Import
       case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
+      case ResolutionError.UndefinedName(_, _, _, _) => SyntacticContext.Expr.OtherExpr
+      case ResolutionError.UndefinedVar(_, _) => SyntacticContext.Expr.OtherExpr
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)
 
