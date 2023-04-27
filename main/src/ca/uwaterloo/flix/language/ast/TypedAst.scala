@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -77,8 +76,6 @@ object TypedAst {
     def eff: Type
 
     def loc: SourceLocation
-
-    final override def toString: String = FormatExpression.format(this)
   }
 
   object Expression {
@@ -331,8 +328,6 @@ object TypedAst {
     def tpe: Type
 
     def loc: SourceLocation
-
-    final override def toString: String = FormatPattern.format(this)
   }
 
   object Pattern {

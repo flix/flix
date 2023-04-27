@@ -806,8 +806,12 @@ object Ast {
     object Expr {
       case object Constraint extends Expr
 
+      case object Do extends Expr
+
       case object OtherExpr extends Expr
     }
+
+    case object Import extends SyntacticContext
 
     sealed trait Pat extends SyntacticContext
 
@@ -818,10 +822,21 @@ object Ast {
     sealed trait Type extends SyntacticContext
 
     object Type {
+      case object Eff extends Type
+
       case object OtherType extends Type
     }
 
     case object Unknown extends SyntacticContext
+
+    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
+      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
+      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
+
+      case (_, SyntacticContext.Unknown) => ctx1
+      case (SyntacticContext.Unknown, _) => ctx2
+      case _ => ctx1
+    }
   }
 
 }
