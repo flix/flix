@@ -64,10 +64,11 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Var(sym, t, loc)
 
-      case ControlAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
+      case ControlAst.Expression.Closure(sym, exps, tpe, loc) =>
+        val op = AtomicOp.Closure(sym)
+        val es = exps.map(visit)
         val t = visitType(tpe)
-        val newClosureArgs = closureArgs.map(visit)
-        FinalAst.Expression.Closure(sym, newClosureArgs, t, loc)
+        FinalAst.Expression.ApplyAtomic(op, es, t, loc)
 
       case ControlAst.Expression.ApplyClo(exp, args, tpe, _, loc) =>
         val as = args map visit
@@ -141,8 +142,9 @@ object Finalize {
         FinalAst.Expression.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
       case ControlAst.Expression.Region(tpe, loc) =>
+        val op = AtomicOp.Region
         val t = visitType(tpe)
-        FinalAst.Expression.Region(t, loc)
+        FinalAst.Expression.ApplyAtomic(op, Nil, t, loc)
 
       case ControlAst.Expression.Scope(sym, exp, tpe, _, loc) =>
         val e = visit(exp)
@@ -150,24 +152,28 @@ object Finalize {
         FinalAst.Expression.Scope(sym, e, t, loc)
 
       case ControlAst.Expression.ScopeExit(exp1, exp2, tpe, _, loc) =>
+        val op = AtomicOp.ScopeExit
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.ScopeExit(e1, e2, t, loc)
+        FinalAst.Expression.ApplyAtomic(op, List(e1, e2), t, loc)
 
       case ControlAst.Expression.Is(sym, exp, _, loc) =>
-        val e1 = visit(exp)
-        FinalAst.Expression.Is(sym, e1, loc)
+        val op = AtomicOp.Is(sym)
+        val e = visit(exp)
+        FinalAst.Expression.ApplyAtomic(op, List(e), MonoType.Bool, loc)
 
-      case ControlAst.Expression.Tag(enum, exp, tpe, _, loc) =>
+      case ControlAst.Expression.Tag(sym, exp, tpe, _, loc) =>
+        val op = AtomicOp.Tag(sym)
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Tag(enum, e, t, loc)
+        FinalAst.Expression.ApplyAtomic(op, List(e), t, loc)
 
       case ControlAst.Expression.Untag(sym, exp, tpe, _, loc) =>
+        val op = AtomicOp.Untag(sym)
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Untag(sym, e, t, loc)
+        FinalAst.Expression.ApplyAtomic(op, List(e), t, loc)
 
       case ControlAst.Expression.Index(base, offset, tpe, _, loc) =>
         val b = visit(base)

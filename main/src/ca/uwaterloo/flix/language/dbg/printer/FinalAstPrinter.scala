@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{AtomicOp, FinalAst, Symbol}
-import ca.uwaterloo.flix.language.ast.FinalAst.Expression
 import ca.uwaterloo.flix.language.ast.FinalAst.Expression._
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -55,10 +54,15 @@ object FinalAstPrinter {
   def print(e: FinalAst.Expression): DocAst.Expression = e match {
     case Cst(cst, _, _) => DocAst.Expression.Cst(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case Closure(sym, closureArgs, _, _) => DocAst.Expression.ClosureLifted(sym, closureArgs.map(print))
     case ApplyAtomic(op, exps, tpe, loc) => (op, exps) match {
+      case (AtomicOp.Closure(sym), exps) => DocAst.Expression.ClosureLifted(sym, exps.map(print))
       case (AtomicOp.Unary(sop), List(e)) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(e))
       case (AtomicOp.Binary(sop), List(e1, e2)) => DocAst.Expression.Binary(print(e1), OperatorPrinter.print(sop), print(e2))
+      case (AtomicOp.Region, Nil) => DocAst.Expression.Region
+      case (AtomicOp.ScopeExit, List(exp1, exp2)) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
+      case (AtomicOp.Is(sym), List(exp)) => DocAst.Expression.Is(sym, print(exp))
+      case (AtomicOp.Tag(sym), List(exp)) => DocAst.Expression.Tag(sym, List(print(exp)))
+      case (AtomicOp.Untag(sym), List(exp)) => DocAst.Expression.Untag(sym, print(exp))
       case _ => throw InternalCompilerException("Mismatched Arity", e.loc)
     }
     case ApplyClo(exp, args, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
@@ -71,12 +75,7 @@ object FinalAstPrinter {
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), None, print(exp1), print(exp2))
-    case Region(_, _) => DocAst.Expression.Region
     case Scope(sym, exp, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case ScopeExit(exp1, exp2, _, _) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
-    case Is(sym, exp, _) => DocAst.Expression.Is(sym, print(exp))
-    case Tag(sym, exp, _, _) => DocAst.Expression.Tag(sym, List(print(exp)))
-    case Untag(sym, exp, _, _) => DocAst.Expression.Untag(sym, print(exp))
     case Index(base, offset, _, _) => DocAst.Expression.Index(offset, print(base))
     case Tuple(elms, _, _) => DocAst.Expression.Tuple(elms.map(print))
     case RecordEmpty(_, _) => DocAst.Expression.RecordEmpty

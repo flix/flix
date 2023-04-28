@@ -45,8 +45,6 @@ object FinalAst {
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class ApplyAtomic(op: AtomicOp, exps: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplyClo(exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
@@ -69,19 +67,7 @@ object FinalAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Region(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class Scope(sym: Symbol.VarSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class ScopeExit(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class Is(sym: Symbol.CaseSym, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe: MonoType = MonoType.Bool
-    }
-
-    case class Tag(sym: Symbol.CaseSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class Untag(sym: Symbol.CaseSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class Index(base: FinalAst.Expression, offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 

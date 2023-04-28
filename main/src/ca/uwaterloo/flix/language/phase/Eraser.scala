@@ -77,12 +77,12 @@ object Eraser {
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expr.Var(sym, tpe, loc)
 
-    case FinalAst.Expression.Closure(sym, exps, tpe, loc) =>
-      ctx.closures += ClosureInfo(sym, exps.map(_.tpe), tpe)
-      val op = AtomicOp.Closure(sym)
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
-
     case FinalAst.Expression.ApplyAtomic(op, exps, tpe, loc) =>
+      op match {
+        case AtomicOp.Closure(sym) =>
+          ctx.closures += ClosureInfo(sym, exps.map(_.tpe), tpe)
+        case _ => // nop
+      }
       val es = exps.map(visitExp)
       ErasedAst.Expr.ApplyAtomic(op, es, tpe, loc)
 
@@ -126,28 +126,8 @@ object Eraser {
       val e2 = visitExp(exp2)
       ErasedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
-    case FinalAst.Expression.Region(tpe, loc) =>
-      val op = AtomicOp.Region
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
-
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expr.Scope(sym, visitExp(exp), tpe, loc)
-
-    case FinalAst.Expression.ScopeExit(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.ScopeExit
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.Is(sym, exp, loc) =>
-      val op = AtomicOp.Is(sym)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), MonoType.Bool, loc)
-
-    case FinalAst.Expression.Tag(sym, exp, tpe, loc) =>
-      val op = AtomicOp.Tag(sym)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Untag(sym, exp, tpe, loc) =>
-      val op = AtomicOp.Untag(sym)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Index(base, idx, tpe, loc) =>
       val op = AtomicOp.Index(idx)
