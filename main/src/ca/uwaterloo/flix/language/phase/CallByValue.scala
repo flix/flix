@@ -98,46 +98,108 @@ object CallByValue {
       ControlAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case LiftedAst.Expression.Branch(exp, branches, tpe, purity, loc) => ???
-    case LiftedAst.Expression.JumpTo(sym, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) => ???
-    case LiftedAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Region(tpe, loc) => ???
-    case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) => ???
-    case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Is(sym, exp, purity, loc) => ???
-    case LiftedAst.Expression.Tag(sym, exp, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Untag(sym, exp, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Index(base, offset, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Tuple(elms, tpe, purity, loc) => ???
-    case LiftedAst.Expression.RecordEmpty(tpe, loc) => ???
-    case LiftedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) => ???
-    case LiftedAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) => ???
-    case LiftedAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) => ???
-    case LiftedAst.Expression.ArrayLit(elms, tpe, loc) => ???
-    case LiftedAst.Expression.ArrayNew(elm, len, tpe, loc) => ???
-    case LiftedAst.Expression.ArrayLoad(base, index, tpe, loc) => ???
-    case LiftedAst.Expression.ArrayStore(base, index, elm, tpe, loc) => ???
-    case LiftedAst.Expression.ArrayLength(base, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Ref(exp, tpe, loc) => ???
-    case LiftedAst.Expression.Deref(exp, tpe, loc) => ???
-    case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) => ???
-    case LiftedAst.Expression.InstanceOf(exp, clazz, loc) => ???
-    case LiftedAst.Expression.Cast(exp, tpe, purity, loc) => ???
-    case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) => ???
-    case LiftedAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) => ???
-    case LiftedAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) => ???
-    case LiftedAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) => ???
-    case LiftedAst.Expression.GetField(field, exp, tpe, purity, loc) => ???
-    case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) => ???
-    case LiftedAst.Expression.GetStaticField(field, tpe, purity, loc) => ???
-    case LiftedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) => ???
-    case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) => ???
-    case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) => ???
-    case LiftedAst.Expression.Lazy(exp, tpe, loc) => ???
-    case LiftedAst.Expression.Force(exp, tpe, loc) => ???
-    case LiftedAst.Expression.HoleError(sym, tpe, loc) => ???
 
-    case LiftedAst.Expression.MatchError(tpe, loc) => ???
+    case LiftedAst.Expression.JumpTo(sym, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.Region(tpe, loc) => ???
+
+    case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.Is(sym, exp, purity, loc) => ???
+
+    case LiftedAst.Expression.Tag(sym, exp, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.Untag(sym, exp, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.Index(base, offset, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.Tuple(elms, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.RecordEmpty(tpe, loc) => ???
+
+    case LiftedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.ArrayLit(elms, tpe, loc) => ???
+
+    case LiftedAst.Expression.ArrayNew(elm, len, tpe, loc) => ???
+
+    case LiftedAst.Expression.ArrayLoad(base, index, tpe, loc) => ???
+
+    case LiftedAst.Expression.ArrayStore(base, index, elm, tpe, loc) => ???
+
+    case LiftedAst.Expression.ArrayLength(base, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.Ref(exp, tpe, loc) => ???
+
+    case LiftedAst.Expression.Deref(exp, tpe, loc) => ???
+
+    case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) => ???
+
+    case LiftedAst.Expression.InstanceOf(exp, clazz, loc) => ???
+
+    case LiftedAst.Expression.Cast(exp, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) => ???
+
+    case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      ControlAst.Expression.InvokeConstructor(constructor, es, tpe, purity, loc)
+
+    case LiftedAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val es = exps.map(visitExp)
+      ControlAst.Expression.InvokeMethod(method, e, es, tpe, purity, loc)
+
+    case LiftedAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      ControlAst.Expression.InvokeStaticMethod(method, es, tpe, purity, loc)
+
+    case LiftedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.GetField(field, e, tpe, purity, loc)
+
+    case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
+
+    case LiftedAst.Expression.GetStaticField(field, tpe, purity, loc) =>
+      ControlAst.Expression.GetStaticField(field, tpe, purity, loc)
+
+    case LiftedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+
+    case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) => ???
+
+    case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) => ???
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.Spawn(e1, e2, tpe, loc)
+
+    case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Lazy(e, tpe, loc)
+
+    case LiftedAst.Expression.Force(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Force(e, tpe, loc)
+
+    case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
+      ControlAst.Expression.HoleError(sym, tpe, loc)
+
+    case LiftedAst.Expression.MatchError(tpe, loc) =>
+      ControlAst.Expression.MatchError(tpe, loc)
   }
 
   private def visitCase(caze: LiftedAst.Case): ControlAst.Case = caze match {
