@@ -141,13 +141,25 @@ object CallByValue {
       val es = exps.map(visitExp)
       ControlAst.Expression.ArrayLit(es, tpe, loc)
 
-    case LiftedAst.Expression.ArrayNew(elm, len, tpe, loc) => ???
+    case LiftedAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.ArrayNew(e1, e2, tpe, loc)
 
-    case LiftedAst.Expression.ArrayLoad(base, index, tpe, loc) => ???
+    case LiftedAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.ArrayLoad(e1, e2, tpe, loc)
 
-    case LiftedAst.Expression.ArrayStore(base, index, elm, tpe, loc) => ???
+    case LiftedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      ControlAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
 
-    case LiftedAst.Expression.ArrayLength(base, tpe, purity, loc) => ???
+    case LiftedAst.Expression.ArrayLength(exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.ArrayLength(e, tpe, purity, loc)
 
     case LiftedAst.Expression.Ref(exp, tpe, loc) => ???
 
