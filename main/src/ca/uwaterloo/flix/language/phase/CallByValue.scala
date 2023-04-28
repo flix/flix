@@ -59,15 +59,44 @@ object CallByValue {
       val es = exps.map(visitExp)
       ControlAst.Expression.Closure(sym, es, tpe, loc)
 
-    case LiftedAst.Expression.ApplyClo(exp, exps0, tpe, purity, loc) => ???
+    case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
+      val e = visitExp(e)
+      val es = exps.map(visitExp)
+      ControlAst.Expression.ApplyClo(e, es, tpe, purity, loc)
 
-    case LiftedAst.Expression.ApplyDef(sym, args, tpe, purity, loc) => ???
-    case LiftedAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => ???
-    case LiftedAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => ???
-    case LiftedAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) => ???
-    case LiftedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) => ???
-    case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) => ???
+    case LiftedAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      ControlAst.Expression.ApplyDef(sym, es, tpe, purity, loc)
+
+    case LiftedAst.Expression.ApplyCloTail(exp, exps, tpe, purity, loc) =>
+      val e = visitExp(e)
+      val es = exps.map(visitExp)
+      ControlAst.Expression.ApplyCloTail(e, es, tpe, purity, loc)
+
+    case LiftedAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      ControlAst.Expression.ApplyDefTail(sym, es, tpe, purity, loc)
+
+    case LiftedAst.Expression.ApplySelfTail(sym, formals, exps, tpe, purity, loc) =>
+      val fs = formals.map(visitFormalParam)
+      val as = exps.map(visitExp)
+      ControlAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
+
+    case LiftedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+
+    case LiftedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+
+    case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      ControlAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
+
     case LiftedAst.Expression.Branch(exp, branches, tpe, purity, loc) => ???
     case LiftedAst.Expression.JumpTo(sym, tpe, purity, loc) => ???
     case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) => ???
@@ -107,6 +136,7 @@ object CallByValue {
     case LiftedAst.Expression.Lazy(exp, tpe, loc) => ???
     case LiftedAst.Expression.Force(exp, tpe, loc) => ???
     case LiftedAst.Expression.HoleError(sym, tpe, loc) => ???
+
     case LiftedAst.Expression.MatchError(tpe, loc) => ???
   }
 
