@@ -105,21 +105,37 @@ object CallByValue {
 
     case LiftedAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => ???
 
-    case LiftedAst.Expression.Region(tpe, loc) => ???
+    case LiftedAst.Expression.Region(tpe, loc) =>
+      ControlAst.Expression.Region(tpe, loc)
 
-    case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Scope(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) => ???
+    case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
-    case LiftedAst.Expression.Is(sym, exp, purity, loc) => ???
+    case LiftedAst.Expression.Is(sym, exp, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Is(sym, e, purity, loc)
 
-    case LiftedAst.Expression.Tag(sym, exp, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Tag(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Untag(sym, exp, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Untag(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Index(base, offset, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Index(e, offset, tpe, purity, loc)
 
-    case LiftedAst.Expression.Tuple(elms, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Tuple(exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      ControlAst.Expression.Tuple(es, tpe, purity, loc)
 
     case LiftedAst.Expression.RecordEmpty(tpe, loc) =>
       ControlAst.Expression.RecordEmpty(tpe, loc)
@@ -161,15 +177,26 @@ object CallByValue {
       val e = visitExp(exp)
       ControlAst.Expression.ArrayLength(e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Ref(exp, tpe, loc) => ???
+    case LiftedAst.Expression.Ref(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Ref(e, tpe, loc)
 
-    case LiftedAst.Expression.Deref(exp, tpe, loc) => ???
+    case LiftedAst.Expression.Deref(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Deref(e, tpe, loc)
 
-    case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) => ???
+    case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.Assign(e1, e2, tpe, loc)
 
-    case LiftedAst.Expression.InstanceOf(exp, clazz, loc) => ???
+    case LiftedAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.InstanceOf(e, clazz, loc)
 
-    case LiftedAst.Expression.Cast(exp, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Cast(exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.Cast(e, tpe, purity, loc)
 
     case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) => ???
 
