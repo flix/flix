@@ -97,13 +97,25 @@ object CallByValue {
       val e3 = visitExp(exp3)
       ControlAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case LiftedAst.Expression.Branch(exp, branches, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val bs = branches map {
+        case (label, body) => label -> visitExp(body)
+      }
+      ControlAst.Expression.Branch(e, bs, tpe, purity, loc)
 
-    case LiftedAst.Expression.JumpTo(sym, tpe, purity, loc) => ???
+    case LiftedAst.Expression.JumpTo(sym, tpe, purity, loc) =>
+      ControlAst.Expression.JumpTo(sym, tpe, purity, loc)
 
-    case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.Let(sym, e1, e2, tpe, purity, loc)
 
-    case LiftedAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => ???
+    case LiftedAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
     case LiftedAst.Expression.Region(tpe, loc) =>
       ControlAst.Expression.Region(tpe, loc)
@@ -198,7 +210,14 @@ object CallByValue {
       val e = visitExp(exp)
       ControlAst.Expression.Cast(e, tpe, purity, loc)
 
-    case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) => ???
+    case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val rs = rules map {
+        case LiftedAst.CatchRule(sym, clazz, body) =>
+          val b = visitExp(body)
+          ControlAst.CatchRule(sym, clazz, b)
+      }
+      ControlAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
     case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
@@ -229,9 +248,11 @@ object CallByValue {
       val e = visitExp(exp)
       ControlAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) => ???
+    case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      val ms = methods.map(visitJvmMethod)
+      ControlAst.Expression.NewObject(name, clazz, tpe, purity, ms, loc)
 
-    case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) => ???
+    case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       ControlAst.Expression.Spawn(e1, e2, tpe, loc)
@@ -257,6 +278,13 @@ object CallByValue {
 
   private def visitFormalParam(fparam: LiftedAst.FormalParam): ControlAst.FormalParam = fparam match {
     case LiftedAst.FormalParam(sym, mod, tpe, loc) => ControlAst.FormalParam(sym, mod, tpe, loc)
+  }
+
+  private def visitJvmMethod(m: LiftedAst.JvmMethod): ControlAst.JvmMethod = m match {
+    case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+      val c = visitExp(clo)
+      val fs = fparams.map(visitFormalParam)
+      ControlAst.JvmMethod(ident, fs, c, retTpe, purity, loc)
   }
 
 }
