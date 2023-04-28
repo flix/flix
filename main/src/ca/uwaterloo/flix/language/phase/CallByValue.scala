@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.ControlAst
 
 object CallByValue {
 
-  def run(root: LiftedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("CallByValue") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): ControlAst.Root = flix.phase("CallByValue") {
 
     val newDefs = root.defs.map {
       case (sym, d) => sym -> visitDef(d)
@@ -31,8 +31,6 @@ object CallByValue {
     }
 
     ControlAst.Root(newDefs, newEnums, root.entryPoint, root.sources)
-
-    return root
   }
 
   private def visitDef(d: LiftedAst.Def): ControlAst.Def = d match {
@@ -60,7 +58,7 @@ object CallByValue {
       ControlAst.Expression.Closure(sym, es, tpe, loc)
 
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(e)
+      val e = visitExp(exp)
       val es = exps.map(visitExp)
       ControlAst.Expression.ApplyClo(e, es, tpe, purity, loc)
 
@@ -69,7 +67,7 @@ object CallByValue {
       ControlAst.Expression.ApplyDef(sym, es, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplyCloTail(exp, exps, tpe, purity, loc) =>
-      val e = visitExp(e)
+      val e = visitExp(exp)
       val es = exps.map(visitExp)
       ControlAst.Expression.ApplyCloTail(e, es, tpe, purity, loc)
 
