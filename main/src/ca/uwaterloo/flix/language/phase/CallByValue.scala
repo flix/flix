@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst
 import ca.uwaterloo.flix.language.ast.ControlAst
-import ca.uwaterloo.flix.language.ast.LiftedAst.
 
 object CallByValue {
 
@@ -27,7 +26,10 @@ object CallByValue {
     val newDefs = root.defs.map {
       case (sym, d) => sym -> visitDef(d)
     }
-    val newEnums = ???
+    val newEnums = root.enums.map {
+      case (sym, d) => sym -> visitEnum(d)
+    }
+
     ControlAst.Root(newDefs, newEnums, root.entryPoint, root.sources)
 
     return root
@@ -35,16 +37,30 @@ object CallByValue {
 
   private def visitDef(d: LiftedAst.Def): ControlAst.Def = d match {
     case LiftedAst.Def(ann, mod, sym, fparams0, exp0, tpe, loc) =>
-      val fparams = ???
+      val fparams = fparams0.map(visitFormalParam)
       val exp = visitExp(exp0)
       ControlAst.Def(ann, mod, sym, fparams, exp, tpe, loc)
   }
 
+  private def visitEnum(d: LiftedAst.Enum): ControlAst.Enum = d match {
+    case LiftedAst.Enum(ann, mod, sym, cases0, tpeDeprecated, loc) =>
+      val cases = cases0.map {
+        case (sym, caze) => sym -> visitCase(caze)
+      }
+      ControlAst.Enum(ann, mod, sym, cases, tpeDeprecated, loc)
+  }
+
   private def visitExp(exp0: LiftedAst.Expression): ControlAst.Expression = exp0 match {
-    case LiftedAst.Expression.Cst(cst, tpe, loc) => ???
-    case LiftedAst.Expression.Var(sym, tpe, loc) => ???
-    case LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc) => ???
-    case LiftedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) => ???
+    case LiftedAst.Expression.Cst(cst, tpe, loc) => ControlAst.Expression.Cst(cst, tpe, loc)
+
+    case LiftedAst.Expression.Var(sym, tpe, loc) => ControlAst.Expression.Var(sym, tpe, loc)
+
+    case LiftedAst.Expression.Closure(sym, exps, tpe, loc) =>
+      val es = exps.map(visitExp)
+      ControlAst.Expression.Closure(sym, es, tpe, loc)
+
+    case LiftedAst.Expression.ApplyClo(exp, exps0, tpe, purity, loc) => ???
+
     case LiftedAst.Expression.ApplyDef(sym, args, tpe, purity, loc) => ???
     case LiftedAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => ???
     case LiftedAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => ???
@@ -92,6 +108,14 @@ object CallByValue {
     case LiftedAst.Expression.Force(exp, tpe, loc) => ???
     case LiftedAst.Expression.HoleError(sym, tpe, loc) => ???
     case LiftedAst.Expression.MatchError(tpe, loc) => ???
+  }
+
+  private def visitCase(caze: LiftedAst.Case): ControlAst.Case = caze match {
+    case LiftedAst.Case(sym, tpeDeprecated, loc) => ControlAst.Case(sym, tpeDeprecated, loc)
+  }
+
+  private def visitFormalParam(fparam: LiftedAst.FormalParam): ControlAst.FormalParam = fparam match {
+    case LiftedAst.FormalParam(sym, mod, tpe, loc) => ControlAst.FormalParam(sym, mod, tpe, loc)
   }
 
 }
