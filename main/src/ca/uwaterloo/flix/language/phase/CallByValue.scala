@@ -121,15 +121,25 @@ object CallByValue {
 
     case LiftedAst.Expression.Tuple(elms, tpe, purity, loc) => ???
 
-    case LiftedAst.Expression.RecordEmpty(tpe, loc) => ???
+    case LiftedAst.Expression.RecordEmpty(tpe, loc) =>
+      ControlAst.Expression.RecordEmpty(tpe, loc)
 
-    case LiftedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) => ???
+    case LiftedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.RecordSelect(e, field, tpe, purity, loc)
 
-    case LiftedAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) => ???
+    case LiftedAst.Expression.RecordExtend(field, exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ControlAst.Expression.RecordExtend(field, e1, e2, tpe, purity, loc)
 
-    case LiftedAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) => ???
+    case LiftedAst.Expression.RecordRestrict(field, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      ControlAst.Expression.RecordRestrict(field, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.ArrayLit(elms, tpe, loc) => ???
+    case LiftedAst.Expression.ArrayLit(exps, tpe, loc) =>
+      val es = exps.map(visitExp)
+      ControlAst.Expression.ArrayLit(es, tpe, loc)
 
     case LiftedAst.Expression.ArrayNew(elm, len, tpe, loc) => ???
 
