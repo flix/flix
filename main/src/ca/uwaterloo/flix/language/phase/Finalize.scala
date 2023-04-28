@@ -97,15 +97,17 @@ object Finalize {
         FinalAst.Expression.ApplySelfTail(name, fs, as, t, loc)
 
       case ControlAst.Expression.Unary(sop, op, exp, tpe, _, loc) =>
+        val op = AtomicOp.Unary(sop)
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Unary(sop, op, e, t, loc)
+        FinalAst.Expression.ApplyAtomic(op, List(e), t, loc)
 
       case ControlAst.Expression.Binary(sop, op, exp1, exp2, tpe, _, loc) =>
+        val op = AtomicOp.Binary(sop)
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.Binary(sop, op, e1, e2, t, loc)
+        FinalAst.Expression.ApplyAtomic(op, List(e1, e2), t, loc)
 
       case ControlAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
         val e1 = visit(exp1)

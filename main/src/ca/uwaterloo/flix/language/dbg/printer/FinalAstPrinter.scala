@@ -16,11 +16,11 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.FinalAst
+import ca.uwaterloo.flix.language.ast.{AtomicOp, FinalAst, Symbol}
 import ca.uwaterloo.flix.language.ast.FinalAst.Expression
 import ca.uwaterloo.flix.language.ast.FinalAst.Expression._
 import ca.uwaterloo.flix.language.dbg.DocAst
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object FinalAstPrinter {
 
@@ -56,13 +56,16 @@ object FinalAstPrinter {
     case Cst(cst, _, _) => DocAst.Expression.Cst(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case Closure(sym, closureArgs, _, _) => DocAst.Expression.ClosureLifted(sym, closureArgs.map(print))
+    case ApplyAtomic(op, exps, tpe, loc) => (op, exps) match {
+      case (AtomicOp.Unary(sop), List(e)) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(e))
+      case (AtomicOp.Binary(sop), List(e1, e2)) => DocAst.Expression.Binary(print(e1), OperatorPrinter.print(sop), print(e2))
+      case _ => throw InternalCompilerException("Mismatched Arity", e.loc)
+    }
     case ApplyClo(exp, args, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case ApplyCloTail(exp, args, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
     case ApplyDefTail(sym, args, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
     case ApplySelfTail(sym, _, actuals, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
-    case Unary(sop, _, exp, _, _) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
-    case Binary(sop, _, exp1, exp2, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)

@@ -82,6 +82,10 @@ object Eraser {
       val op = AtomicOp.Closure(sym)
       ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
 
+    case FinalAst.Expression.ApplyAtomic(op, exps, tpe, loc) =>
+      val es = exps.map(visitExp)
+      ErasedAst.Expr.ApplyAtomic(op, es, tpe, loc)
+
     case FinalAst.Expression.ApplyClo(exp, exps, tpe, loc) =>
       ErasedAst.Expr.ApplyClo(visitExp(exp), exps.map(visitExp), tpe, loc)
 
@@ -99,14 +103,6 @@ object Eraser {
         case FinalAst.FormalParam(formalSym, formalTpe) => ErasedAst.FormalParam(formalSym, formalTpe)
       }
       ErasedAst.Expr.ApplySelfTail(sym, formals, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.Unary(sop, _, exp, tpe, loc) =>
-      val op = AtomicOp.Unary(sop)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.Binary(sop)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
     case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       ErasedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
