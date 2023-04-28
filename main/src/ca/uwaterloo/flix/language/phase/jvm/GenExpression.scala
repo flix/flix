@@ -453,6 +453,98 @@ object GenExpression {
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
             visitor.visitInsn(D2L)
 
+          case Int8Op.And | Int16Op.And | Int32Op.And =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IAND)
+
+          case Int8Op.Or | Int16Op.Or | Int32Op.Or =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IOR)
+
+          case Int8Op.Xor | Int16Op.Xor | Int32Op.Xor =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IXOR)
+
+          case Int8Op.Shr | Int16Op.Shr | Int32Op.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHR)
+
+          case Int8Op.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHL)
+            visitor.visitInsn(I2B)
+
+          case Int16Op.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHL)
+            visitor.visitInsn(I2S)
+
+          case Int32Op.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHL)
+
+          case Int64Op.And =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LAND)
+
+          case Int64Op.Or =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LOR)
+
+          case Int64Op.Xor =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LXOR)
+
+          case Int64Op.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LSHR)
+
+          case Int64Op.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LSHL)
+
+          case BigIntOp.And =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "and", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
+          case BigIntOp.Or =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "or", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
+          case BigIntOp.Xor =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "xor", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
+          case BigIntOp.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "shiftLeft", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
+          case BigIntOp.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+              "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
+
           case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
         }
 
@@ -1466,17 +1558,6 @@ object GenExpression {
          | Int8Op.Ge | Int16Op.Ge | Int32Op.Ge
          | Int64Op.Ge | BigIntOp.Ge => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
-    case Int8Op.And | Int16Op.And | Int32Op.And
-         | Int64Op.And | BigIntOp.And
-         | Int8Op.Or | Int16Op.Or | Int32Op.Or
-         | Int64Op.Or | BigIntOp.Or
-         | Int8Op.Xor | Int16Op.Xor | Int32Op.Xor
-         | Int64Op.Xor | BigIntOp.Xor
-         | Int8Op.Shl | Int16Op.Shl | Int32Op.Shl
-         | Int64Op.Shl | BigIntOp.Shl
-         | Int8Op.Shr | Int16Op.Shr | Int32Op.Shr
-         | Int64Op.Shr | BigIntOp.Shr => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
   }
 
@@ -1733,104 +1814,6 @@ object GenExpression {
     case Int64Op.Gt => Some(LCMP, IFLE)
     case Int64Op.Ge => Some(LCMP, IFLT)
 
-    case _ => None
-  }
-
-  /*
-   * In general we don't do any truncation, because it doesn't matter what the higher-order bits are.
-   *
-   * Example:
-   * Consider the bitwise-and of the following Int8s:
-   *     11110000             00000011
-   *   & 11000000           & 11001111
-   * -------------        -------------
-   *     11000000             00000011
-   * On the JVM, these Int8s (bytes) would be represented as Int32s (ints):
-   *    11111111 11111111 11111111 11110000        00000000 00000000 00000000 00000011
-   *  & 11111111 11111111 11111111 11000000      & 00000000 00000000 00000000 11001111
-   * ---------------------------------------    ---------------------------------------
-   *    11111111 11111111 11111111 11000000        00000000 00000000 00000000 00000011
-   *
-   * As with Unary.Negate, sign extension before or after the operation yields the same result.
-   *
-   *
-   * The exception is with bitwise left shifts. The higher-order bits matter because we might sign extend.
-   *
-   * Example:
-   * Consider the following left shift, where x and y each represent unknown values (0 or 1):
-   *   x000y000 << 4 = y0000000
-   * But because Int8s (bytes) are represented as Int32s (ints), and the x is sign extended, we get:
-   *   xxxxxxxx xxxxxxxx xxxxxxxx x000y000 << 4 = xxxxxxxx xxxxxxxx xxxxx000 y0000000
-   * We truncate and sign extend (I2B), which gives:
-   *   yyyyyyyy yyyyyyyy yyyyyyyy y0000000
-   *
-   * It doesn't matter that we left shifted x, because we (generally) ignore the higher-order bits. However, it *does*
-   * matter that we shifted y into the sign bit of an Int8. If y = 1, then the Int8 (byte) 10000000 has value -128,
-   * which needs to be sign extended to represent that value as an Int32 (int).
-   *
-   * Example:
-   * Consider the following (signed) right shift, where x represents an unknown value (0 or 1):
-   *   x0000000 >> 4 = xxxxx000
-   * These Int8s (bytes) are represented as Int32s (ints), so the x is sign extended:
-   *   xxxxxxxx xxxxxxxx xxxxxxxx x0000000 >> 4 = xxxxxxxx xxxxxxxx xxxxxxxx xxxxx000
-   *
-   * We don't need to truncate, because it is impossible for random data to be in the higher-order bits. Either those
-   * bits are all 0, or they are 1 (because of sign extension).
-   *
-   * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
-   */
-  private def compileBitwiseExpr(e1: Expr,
-                                 e2: Expr,
-                                 currentClassType: JvmType.Reference,
-                                 visitor: MethodVisitor,
-                                 jumpLabels: Map[Symbol.LabelSym, Label],
-                                 entryPoint: Label,
-                                 sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
-    compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
-    compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-    (semanticOperatorBitwiseToOpcode(sop), semanticOperatorBitwiseToMethod(sop)) match {
-      case (Some(op), _) =>
-        sop match {
-          case Int8Op.And | Int8Op.Or | Int8Op.Xor | Int8Op.Shl | Int8Op.Shr =>
-            visitor.visitInsn(op)
-            if (op == ISHL) visitor.visitInsn(I2B)
-          case Int16Op.And | Int16Op.Or | Int16Op.Xor | Int16Op.Shl | Int16Op.Shr =>
-            visitor.visitInsn(op)
-            if (op == ISHL) visitor.visitInsn(I2S)
-          case Int32Op.And | Int32Op.Or | Int32Op.Xor | Int32Op.Shl | Int32Op.Shr
-               | Int64Op.And | Int64Op.Or | Int64Op.Xor | Int64Op.Shl | Int64Op.Shr => visitor.visitInsn(op)
-          case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-        }
-      case (_, Some(op)) => sop match {
-        case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
-            op, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
-        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-      }
-      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-    }
-  }
-
-  private def semanticOperatorBitwiseToOpcode(sop: SemanticOperator): Option[Int] = sop match {
-    case Int8Op.And | Int16Op.And | Int32Op.And => Some(IAND)
-    case Int64Op.And => Some(LAND)
-    case Int8Op.Or | Int16Op.Or | Int32Op.Or => Some(IOR)
-    case Int64Op.Or => Some(LOR)
-    case Int8Op.Xor | Int16Op.Xor | Int32Op.Xor => Some(IXOR)
-    case Int64Op.Xor => Some(LXOR)
-    case Int8Op.Shl | Int16Op.Shl | Int32Op.Shl => Some(ISHL)
-    case Int64Op.Shl => Some(LSHL)
-    case Int8Op.Shr | Int16Op.Shr | Int32Op.Shr => Some(ISHR)
-    case Int64Op.Shr => Some(LSHR)
-    case _ => None
-  }
-
-  private def semanticOperatorBitwiseToMethod(sop: SemanticOperator): Option[String] = sop match {
-    case BigIntOp.And => Some("and")
-    case BigIntOp.Or => Some("or")
-    case BigIntOp.Xor => Some("xor")
-    case BigIntOp.Shl => Some("shiftLeft")
-    case BigIntOp.Shr => Some("shiftRight")
     case _ => None
   }
 
