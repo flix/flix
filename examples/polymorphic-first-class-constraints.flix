@@ -1,7 +1,3 @@
-/// Declare two polymorphic predicate symbols.
-/// Here an edge and a path are labelled with some type `l`.
-//rel LabelEdge[l](x: String, l: l, y: String)
-//rel LabelPath[l](x: String, l: l, y: String)
 
 /// Returns a set of edge facts labelled with numbers.
 /// Note that the return type is `closed` which means that the
