@@ -583,26 +583,77 @@ object GenExpression {
             visitor.visitInsn(ICONST_0)
             visitor.visitLabel(condEnd)
 
-          case Int8Op.Lt => ???
-          case Int8Op.Le => ???
-          case Int8Op.Eq => ???
-          case Int8Op.Neq => ???
-          case Int8Op.Ge => ???
-          case Int8Op.Gt => ???
+          case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPGE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
 
-          case Int16Op.Lt => ???
-          case Int16Op.Le => ???
-          case Int16Op.Eq => ???
-          case Int16Op.Neq => ???
-          case Int16Op.Ge => ???
-          case Int16Op.Gt => ???
+          case Int8Op.Le | Int16Op.Le | Int32Op.Le =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPGT, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
 
-          case Int32Op.Lt => ???
-          case Int32Op.Le => ???
-          case Int32Op.Eq => ???
-          case Int32Op.Neq => ???
-          case Int32Op.Ge => ???
-          case Int32Op.Gt => ???
+          case Int8Op.Eq | Int16Op.Eq | Int32Op.Eq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPNE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case Int8Op.Neq | Int16Op.Neq | Int32Op.Neq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case Int8Op.Ge | Int16Op.Ge | Int32Op.Ge =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPLT, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IF_ICMPLE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
 
           case Int64Op.Lt =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
