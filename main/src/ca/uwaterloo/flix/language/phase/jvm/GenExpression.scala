@@ -1722,13 +1722,21 @@ object GenExpression {
         val condElse = new Label()
         val condEnd = new Label()
         visitor.visitJumpInsn(IFNULL, condElse)
-        visitComparisonEpilogue(visitor, condElse, condEnd)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(condEnd)
 
       case SemanticOperator.BoolOp.Not =>
         val condElse = new Label()
         val condEnd = new Label()
         visitor.visitJumpInsn(IFNE, condElse)
-        visitComparisonEpilogue(visitor, condElse, condEnd)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(condEnd)
 
       case Float32Op.Neg | Float64Op.Neg | BigDecimalOp.Neg
            | Int8Op.Neg | Int16Op.Neg | Int32Op.Neg
