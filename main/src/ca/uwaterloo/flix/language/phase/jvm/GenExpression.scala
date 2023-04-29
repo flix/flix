@@ -173,13 +173,13 @@ object GenExpression {
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(ISHL)
-            visitor.visitInsn(I2B)
+            visitor.visitInsn(I2B) // Sign extend to make left most bit appear in the sign bit
 
           case Int16Op.Shl =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(ISHL)
-            visitor.visitInsn(I2S)
+            visitor.visitInsn(I2S) // Sign extend to make left most bit appear in the sign bit
 
           case Int32Op.Shl =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
