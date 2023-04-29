@@ -493,12 +493,96 @@ object GenExpression {
             visitor.visitInsn(ICONST_0)
             visitor.visitLabel(condEnd)
 
-          case BigDecimalOp.Lt => ???
-          case BigDecimalOp.Le => ???
-          case BigDecimalOp.Eq => ???
-          case BigDecimalOp.Neq => ???
-          case BigDecimalOp.Ge => ???
-          case BigDecimalOp.Gt => ???
+
+          case BigDecimalOp.Lt =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitJumpInsn(IF_ICMPGE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case BigDecimalOp.Le =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitJumpInsn(IF_ICMPGT, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case BigDecimalOp.Eq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitJumpInsn(IF_ICMPNE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case BigDecimalOp.Neq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case BigDecimalOp.Ge =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitJumpInsn(IF_ICMPLT, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case BigDecimalOp.Gt =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitJumpInsn(IF_ICMPLE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
 
           case Int8Op.Lt => ???
           case Int8Op.Le => ???
