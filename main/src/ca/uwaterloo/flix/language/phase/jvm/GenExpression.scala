@@ -618,8 +618,35 @@ object GenExpression {
           case BigIntOp.Ge => ???
           case BigIntOp.Gt => ???
 
-          case StringOp.Eq => ???
-          case StringOp.Neq => ???
+          case StringOp.Eq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
+              AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(IF_ICMPNE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case StringOp.Neq =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
+              AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
 
           /*
 
