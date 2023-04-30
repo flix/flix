@@ -98,14 +98,6 @@ object ControlAst {
       def purity: Purity = Impure
     }
 
-    case class Lazy(exp: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression  {
-      def purity: Purity = Pure
-    }
-
-    case class Force(exp: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Pure
-    }
-
   }
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)

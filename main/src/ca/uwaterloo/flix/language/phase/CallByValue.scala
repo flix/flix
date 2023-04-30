@@ -281,12 +281,14 @@ object CallByValue {
       ControlAst.Expression.Spawn(e1, e2, tpe, loc)
 
     case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
+      val op = AtomicOp.Lazy
       val e = visitExp(exp)
-      ControlAst.Expression.Lazy(e, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.Force(exp, tpe, loc) =>
+      val op = AtomicOp.Force
       val e = visitExp(exp)
-      ControlAst.Expression.Force(e, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
       val op = AtomicOp.HoleError(sym)

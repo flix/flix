@@ -158,14 +158,6 @@ object Eraser {
       val op = AtomicOp.Spawn
       ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
-    case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      val op = AtomicOp.Lazy
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Force(exp, tpe, loc) =>
-      val op = AtomicOp.Force
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
   }
 
   private case class Context(closures: mutable.Set[ClosureInfo], anonClasses: mutable.Set[AnonClassInfo])

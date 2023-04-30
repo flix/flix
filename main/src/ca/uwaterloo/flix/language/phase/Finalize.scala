@@ -180,16 +180,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Spawn(e1, e2, t, loc)
 
-      case ControlAst.Expression.Lazy(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.Lazy(e, t, loc)
-
-      case ControlAst.Expression.Force(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.Force(e, t, loc)
-
     }
 
     visit(exp0)
