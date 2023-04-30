@@ -562,17 +562,42 @@ object GenExpression {
             visitor.visitInsn(IREM)
             visitor.visitInsn(I2B)
 
+          case Int16Op.Add =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IADD)
+            visitor.visitInsn(I2S)
+
+          case Int16Op.Sub =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISUB)
+            visitor.visitInsn(I2S)
+
+          case Int16Op.Mul =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IMUL)
+            visitor.visitInsn(I2S)
+
+          case Int16Op.Div =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IDIV)
+            visitor.visitInsn(I2S)
+
+          case Int16Op.Rem =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IREM)
+            visitor.visitInsn(I2S)
 
           /*
 
 
           private def semanticOperatorArithmeticToOpcode(sop: SemanticOperator): Option[Int] = sop match {
 
-            case Int16Op.Add => Some(IADD)
-            case Int16Op.Sub => Some(ISUB)
-            case Int16Op.Mul => Some(IMUL)
-            case Int16Op.Div => Some(IDIV)
-            case Int16Op.Rem => Some(IREM)
+
             case Int32Op.Add => Some(IADD)
             case Int32Op.Sub => Some(ISUB)
             case Int32Op.Mul => Some(IMUL)
