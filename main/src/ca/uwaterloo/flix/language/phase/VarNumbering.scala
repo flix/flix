@@ -117,12 +117,6 @@ object VarNumbering {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.InstanceOf(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Cast(exp, _, _, _) =>
-        visitExp(exp, i0)
-
       case Expression.TryCatch(exp, rules, _, _, _) =>
         val i1 = visitExp(exp, i0)
         val i2 = i1 + 1

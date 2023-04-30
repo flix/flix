@@ -69,12 +69,6 @@ object FinalAst {
 
     case class Scope(sym: Symbol.VarSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class InstanceOf(exp: FinalAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends FinalAst.Expression {
-      final val tpe: MonoType = MonoType.Bool
-    }
-
-    case class Cast(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class TryCatch(exp: FinalAst.Expression, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[FinalAst.JvmMethod], loc: SourceLocation) extends FinalAst.Expression

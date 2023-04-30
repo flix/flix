@@ -82,14 +82,6 @@ object ControlAst {
 
     case class ScopeExit(exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
-    case class InstanceOf(exp: ControlAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = exp.purity
-
-      def tpe: Type = Type.Bool
-    }
-
-    case class Cast(exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
     case class TryCatch(exp: ControlAst.Expression, rules: List[ControlAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[ControlAst.JvmMethod], loc: SourceLocation) extends ControlAst.Expression

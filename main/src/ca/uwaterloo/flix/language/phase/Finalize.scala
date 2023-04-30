@@ -150,15 +150,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ApplyAtomic(op, List(e1, e2), t, loc)
 
-      case ControlAst.Expression.InstanceOf(exp, clazz, loc) =>
-        val e = visit(exp)
-        FinalAst.Expression.InstanceOf(e, clazz, loc)
-
-      case ControlAst.Expression.Cast(exp, tpe, _, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.Cast(e, t, loc)
-
       case ControlAst.Expression.TryCatch(exp, rules, tpe, _, loc) =>
         val e = visit(exp)
         val rs = rules map {

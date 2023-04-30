@@ -219,12 +219,14 @@ object CallByValue {
       ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc)
 
     case LiftedAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val op = AtomicOp.InstanceOf(clazz)
       val e = visitExp(exp)
-      ControlAst.Expression.InstanceOf(e, clazz, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), Type.Bool, Purity.Pure, loc)
 
     case LiftedAst.Expression.Cast(exp, tpe, purity, loc) =>
+      val op = AtomicOp.Cast
       val e = visitExp(exp)
-      ControlAst.Expression.Cast(e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)

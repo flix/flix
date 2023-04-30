@@ -129,15 +129,6 @@ object Eraser {
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expr.Scope(sym, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.InstanceOf(exp, clazz, loc) =>
-      val op = AtomicOp.InstanceOf(clazz)
-      val tpe = MonoType.Bool
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Cast(exp, tpe, loc) =>
-      val op = AtomicOp.Cast
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
     case FinalAst.Expression.TryCatch(exp, rules0, tpe, loc) =>
       val rules = rules0.map {
         case FinalAst.CatchRule(catchSym, catchClazz, catchExp) =>
