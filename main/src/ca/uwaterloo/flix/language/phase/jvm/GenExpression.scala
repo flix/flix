@@ -642,6 +642,12 @@ object GenExpression {
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(LREM)
 
+          case StringOp.Concat =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat",
+              AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
+
           /*
 
 
