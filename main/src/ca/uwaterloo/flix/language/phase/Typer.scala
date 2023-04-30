@@ -643,8 +643,7 @@ object Typer {
             // Special Case: We are applying a Def or Sig and we break apart its declared type.
             //
             val declaredPur = declaredType.typeArguments.head
-            val declaredEff = declaredType.typeArguments.drop(1).head
-            val declaredArgumentTypes = declaredType.typeArguments.drop(2).dropRight(1)
+            val declaredArgumentTypes = declaredType.typeArguments.drop(1).dropRight(1)
             val declaredResultType = declaredType.typeArguments.last
 
             for {

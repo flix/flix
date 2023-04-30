@@ -309,12 +309,12 @@ object Unification {
     arrowType match {
       case Type.Apply(_, resultType, _) =>
         if (Unification.unifiesWith(resultType, argType, renv, ListMap.empty)) { // TODO ASSOC-TYPES empty OK?
-          arrowType.typeArguments.lift(2) match {
+          arrowType.typeArguments.lift(1) match {
             case None => default
             case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
           }
         } else {
-          arrowType.typeArguments.lift(2) match {
+          arrowType.typeArguments.lift(1) match {
             case None => default
             case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
           }
