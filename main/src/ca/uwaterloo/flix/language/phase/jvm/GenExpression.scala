@@ -592,17 +592,39 @@ object GenExpression {
             visitor.visitInsn(IREM)
             visitor.visitInsn(I2S)
 
+          case Int32Op.Add =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IADD)
+
+          case Int32Op.Sub =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISUB)
+
+          case Int32Op.Mul =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IMUL)
+
+          case Int32Op.Div =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IDIV)
+
+          case Int32Op.Rem =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IREM)
+
+
           /*
 
 
           private def semanticOperatorArithmeticToOpcode(sop: SemanticOperator): Option[Int] = sop match {
 
 
-            case Int32Op.Add => Some(IADD)
-            case Int32Op.Sub => Some(ISUB)
-            case Int32Op.Mul => Some(IMUL)
-            case Int32Op.Div => Some(IDIV)
-            case Int32Op.Rem => Some(IREM)
+
             case Int64Op.Add => Some(LADD)
             case Int64Op.Sub => Some(LSUB)
             case Int64Op.Mul => Some(LMUL)
