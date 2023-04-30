@@ -44,7 +44,7 @@ mod TestInt8 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int8.maxValue() == ~~~Int8.leftShift(1i8, 7)
+    def maxValue01(): Bool = Int8.maxValue() == Int8.bitwiseNot(Int8.leftShift(1i8, 7))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -711,7 +711,7 @@ mod TestInt8 {
     def clearBit11(): Bool = Int8.clearBit(pos = 5, -1i8) == -33i8
 
     @test
-    def clearBit12(): Bool = Int8.clearBit(pos = 7, -1i8) == ~~~Int8.leftShift(1i8, 7)
+    def clearBit12(): Bool = Int8.clearBit(pos = 7, -1i8) == Int8.bitwiseNot(Int8.leftShift(1i8, 7))
 
     @test
     def clearBit13(): Bool = Int8.clearBit(pos = 32, -1i8) == -2i8
@@ -779,6 +779,91 @@ mod TestInt8 {
 
     @test
     def log207(): Bool = Int8.log2(-1i8) == 0i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseAnd                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseAnd01(): Bool = Int8.bitwiseAnd(0i8, 0i8) == 0i8
+
+    @test
+    def bitwiseAnd02(): Bool = Int8.bitwiseAnd(127i8, 0i8) == 0i8
+
+    @test
+    def bitwiseAnd03(): Bool = Int8.bitwiseAnd(-128i8, 0i8) == 0i8
+
+    @test
+    def bitwiseAnd04(): Bool = Int8.bitwiseAnd(0i8, 1i8) == 0i8
+
+    @test
+    def bitwiseAnd05(): Bool = Int8.bitwiseAnd(127i8, 1i8) == 1i8
+
+    @test
+    def bitwiseAnd06(): Bool = Int8.bitwiseAnd(-128i8, 1i8) == 0i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseNot                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseNot01(): Bool = Int8.bitwiseNot(0i8) == -1i8
+
+    @test
+    def bitwiseNot02(): Bool = Int8.bitwiseNot(1i8) == -2i8
+
+    @test
+    def bitwiseNot03(): Bool = Int8.bitwiseNot(-1i8) == -0i8
+
+    @test
+    def bitwiseNot04(): Bool = Int8.bitwiseNot(127i8) == -128i8
+
+    @test
+    def bitwiseNot05(): Bool = Int8.bitwiseNot(-128i8) == 127i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseOr                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseOr01(): Bool = Int8.bitwiseOr(0i8, 0i8) == 0i8
+
+    @test
+    def bitwiseOr02(): Bool = Int8.bitwiseOr(127i8, 0i8) == 127i8
+
+    @test
+    def bitwiseOr03(): Bool = Int8.bitwiseOr(-128i8, 0i8) == -128i8
+
+    @test
+    def bitwiseOr04(): Bool = Int8.bitwiseOr(0i8, 1i8) == 1i8
+
+    @test
+    def bitwiseOr05(): Bool = Int8.bitwiseOr(127i8, 1i8) == 127i8
+
+    @test
+    def bitwiseOr06(): Bool = Int8.bitwiseOr(-128i8, 1i8) == -127i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseXor                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseXor01(): Bool = Int8.bitwiseXor(0i8, 0i8) == 0i8
+
+    @test
+    def bitwiseXor02(): Bool = Int8.bitwiseXor(127i8, 0i8) == 127i8
+
+    @test
+    def bitwiseXor03(): Bool = Int8.bitwiseXor(-128i8, 0i8) == -128i8
+
+    @test
+    def bitwiseXor04(): Bool = Int8.bitwiseXor(0i8, 1i8) == 1i8
+
+    @test
+    def bitwiseXor05(): Bool = Int8.bitwiseXor(127i8, 1i8) == 126i8
+
+    @test
+    def bitwiseXor06(): Bool = Int8.bitwiseXor(-128i8, 1i8) == -127i8
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //

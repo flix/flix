@@ -44,7 +44,7 @@ mod TestInt32 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int32.maxValue() == ~~~Int32.leftShift(1, 31)
+    def maxValue01(): Bool = Int32.maxValue() == Int32.bitwiseNot(Int32.leftShift(1, 31))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -495,7 +495,7 @@ mod TestInt32 {
     def numberOfLeadingZeros03(): Bool = Int32.numberOfLeadingZeros(-1) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(~~~Int32.leftShift(1, 31)) == 1
+    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(Int32.bitwiseNot(Int32.leftShift(1, 31))) == 1
 
     @test
     def numberOfLeadingZeros05(): Bool = Int32.numberOfLeadingZeros(2 ** 29) == 2
@@ -779,6 +779,91 @@ mod TestInt32 {
 
     @test
     def log209(): Bool = Int32.log2(-1) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseAnd                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseAnd01(): Bool = Int32.bitwiseAnd(0i32, 0i32) == 0i32
+
+    @test
+    def bitwiseAnd02(): Bool = Int32.bitwiseAnd(127i32, 0i32) == 0i32
+
+    @test
+    def bitwiseAnd03(): Bool = Int32.bitwiseAnd(-128i32, 0i32) == 0i32
+
+    @test
+    def bitwiseAnd04(): Bool = Int32.bitwiseAnd(0i32, 1i32) == 0i32
+
+    @test
+    def bitwiseAnd05(): Bool = Int32.bitwiseAnd(127i32, 1i32) == 1i32
+
+    @test
+    def bitwiseAnd06(): Bool = Int32.bitwiseAnd(-128i32, 1i32) == 0i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseNot                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseNot01(): Bool = Int32.bitwiseNot(0i32) == -1i32
+
+    @test
+    def bitwiseNot02(): Bool = Int32.bitwiseNot(1i32) == -2i32
+
+    @test
+    def bitwiseNot03(): Bool = Int32.bitwiseNot(-1i32) == -0i32
+
+    @test
+    def bitwiseNot04(): Bool = Int32.bitwiseNot(127i32) == -128i32
+
+    @test
+    def bitwiseNot05(): Bool = Int32.bitwiseNot(-128i32) == 127i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseOr                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseOr01(): Bool = Int32.bitwiseOr(0i32, 0i32) == 0i32
+
+    @test
+    def bitwiseOr02(): Bool = Int32.bitwiseOr(127i32, 0i32) == 127i32
+
+    @test
+    def bitwiseOr03(): Bool = Int32.bitwiseOr(-128i32, 0i32) == -128i32
+
+    @test
+    def bitwiseOr04(): Bool = Int32.bitwiseOr(0i32, 1i32) == 1i32
+
+    @test
+    def bitwiseOr05(): Bool = Int32.bitwiseOr(127i32, 1i32) == 127i32
+
+    @test
+    def bitwiseOr06(): Bool = Int32.bitwiseOr(-128i32, 1i32) == -127i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseXor                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseXor01(): Bool = Int32.bitwiseXor(0i32, 0i32) == 0i32
+
+    @test
+    def bitwiseXor02(): Bool = Int32.bitwiseXor(127i32, 0i32) == 127i32
+
+    @test
+    def bitwiseXor03(): Bool = Int32.bitwiseXor(-128i32, 0i32) == -128i32
+
+    @test
+    def bitwiseXor04(): Bool = Int32.bitwiseXor(0i32, 1i32) == 1i32
+
+    @test
+    def bitwiseXor05(): Bool = Int32.bitwiseXor(127i32, 1i32) == 126i32
+
+    @test
+    def bitwiseXor06(): Bool = Int32.bitwiseXor(-128i32, 1i32) == -127i32
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
