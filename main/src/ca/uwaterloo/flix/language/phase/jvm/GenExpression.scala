@@ -560,61 +560,61 @@ object GenExpression {
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IADD)
-            visitor.visitInsn(I2B)
+            visitor.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Sub =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(ISUB)
-            visitor.visitInsn(I2B)
+            visitor.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Mul =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IMUL)
-            visitor.visitInsn(I2B)
+            visitor.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Div =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IDIV)
-            visitor.visitInsn(I2B)
+            visitor.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Rem =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IREM)
-            visitor.visitInsn(I2B)
+            visitor.visitInsn(I2B) // Sign extend after operation
 
           case Int16Op.Add =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IADD)
-            visitor.visitInsn(I2S)
+            visitor.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Sub =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(ISUB)
-            visitor.visitInsn(I2S)
+            visitor.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Mul =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IMUL)
-            visitor.visitInsn(I2S)
+            visitor.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Div =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IDIV)
-            visitor.visitInsn(I2S)
+            visitor.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Rem =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IREM)
-            visitor.visitInsn(I2S)
+            visitor.visitInsn(I2S) // Sign extend after operation
 
           case Int32Op.Add =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
