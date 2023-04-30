@@ -241,36 +241,6 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
-          case CharOp.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
           case Float32Op.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitInsn(FCMPG)
@@ -391,12 +361,12 @@ object GenExpression {
             visitor.visitJumpInsn(IF_ICMPLE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt =>
+          case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt | CharOp.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPGE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Le | Int16Op.Le | Int32Op.Le =>
+          case Int8Op.Le | Int16Op.Le | Int32Op.Le | CharOp.Le =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPGT, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
@@ -411,12 +381,12 @@ object GenExpression {
             visitor.visitJumpInsn(IF_ICMPEQ, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Ge | Int16Op.Ge | Int32Op.Ge =>
+          case Int8Op.Ge | Int16Op.Ge | Int32Op.Ge | CharOp.Ge =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPLT, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt =>
+          case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt | CharOp.Gt =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPLE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
