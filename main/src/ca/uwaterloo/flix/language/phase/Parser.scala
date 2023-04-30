@@ -690,20 +690,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        BitwiseOr ~ zeroOrMore(And ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
+        Equality ~ zeroOrMore(And ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
       }
-    }
-
-    def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseXOr ~ zeroOrMore(optWS ~ operator("|||") ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseAnd ~ zeroOrMore(optWS ~ operator("^^^") ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
-      Equality ~ zeroOrMore(optWS ~ operator("&&&") ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Equality: Rule1[ParsedAst.Expression] = rule {
@@ -742,7 +730,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture("&&&" | ":::" | "<+>" | "<=>" | "???" | "^^^" | "and" | "mod" | "not" | "rem" | "|||" | "~~~")
+        capture(":::" | "<+>" | "<=>" | "???" | "and" | "mod" | "not" | "rem")
       }
 
       // Match any two character operator which is not reserved.
@@ -778,7 +766,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Unary: Rule1[ParsedAst.Expression] = {
       def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
-        operator("-") | operator("~~~")
+        operator("-")
       }
 
       def UnaryOp2: Rule1[ParsedAst.Operator] = rule {
@@ -840,7 +828,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SelectChannel | Spawn | ParYield | Par | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
+        FixpointQueryWithSelect | Interpolation | Literal | Resume | Do |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
@@ -1283,10 +1271,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LambdaMatch: Rule1[ParsedAst.Expression.LambdaMatch] = rule {
       SP ~ keyword("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
-    }
-
-    def ConstraintSingleton: Rule1[ParsedAst.Expression] = rule {
-      atomic("#") ~ optWS ~ SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
     }
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
