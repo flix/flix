@@ -150,23 +150,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ApplyAtomic(op, List(e1, e2), t, loc)
 
-      case ControlAst.Expression.Is(sym, exp, _, loc) =>
-        val op = AtomicOp.Is(sym)
-        val e = visit(exp)
-        FinalAst.Expression.ApplyAtomic(op, List(e), MonoType.Bool, loc)
-
-      case ControlAst.Expression.Tag(sym, exp, tpe, _, loc) =>
-        val op = AtomicOp.Tag(sym)
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.ApplyAtomic(op, List(e), t, loc)
-
-      case ControlAst.Expression.Untag(sym, exp, tpe, _, loc) =>
-        val op = AtomicOp.Untag(sym)
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.ApplyAtomic(op, List(e), t, loc)
-
       case ControlAst.Expression.InstanceOf(exp, clazz, loc) =>
         val e = visit(exp)
         FinalAst.Expression.InstanceOf(e, clazz, loc)

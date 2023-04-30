@@ -82,14 +82,6 @@ object ControlAst {
 
     case class ScopeExit(exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
-    case class Is(sym: Symbol.CaseSym, exp: ControlAst.Expression, purity: Purity, loc: SourceLocation) extends ControlAst.Expression {
-      def tpe: Type = Type.Bool
-    }
-
-    case class Tag(sym: Symbol.CaseSym, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class Untag(sym: Symbol.CaseSym, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
     case class InstanceOf(exp: ControlAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends ControlAst.Expression {
       def purity: Purity = exp.purity
 

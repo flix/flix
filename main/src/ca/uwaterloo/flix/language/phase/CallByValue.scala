@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{AtomicOp, ControlAst, LiftedAst, Purity}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ControlAst, LiftedAst, Purity, Type}
 
 object CallByValue {
 
@@ -129,16 +129,19 @@ object CallByValue {
       ControlAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
     case LiftedAst.Expression.Is(sym, exp, purity, loc) =>
+      val op = AtomicOp.Is(sym)
       val e = visitExp(exp)
-      ControlAst.Expression.Is(sym, e, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), Type.Bool, purity, loc)
 
     case LiftedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
+      val op = AtomicOp.Tag(sym)
       val e = visitExp(exp)
-      ControlAst.Expression.Tag(sym, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
+      val op = AtomicOp.Untag(sym)
       val e = visitExp(exp)
-      ControlAst.Expression.Untag(sym, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.Index(exp, idx, tpe, purity, loc) =>
       val op = AtomicOp.Index(idx)
