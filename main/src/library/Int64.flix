@@ -106,6 +106,11 @@ mod Int64 {
     pub def signum(x: Int64): Int32 = compare(x, 0i64)
 
     ///
+    /// Returns `b` raised to the power of `n`.
+    ///
+    pub def pow(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
+
+    ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 6 bits of `distance` are considered (ie. `distance rem 64`).
     /// A zero is shifted into the leftmost position regardless of sign extension.

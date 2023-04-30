@@ -2195,7 +2195,6 @@ object Weeder {
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Sub.sub", sp1, sp2))
         case "*" => OperatorResult.BuiltIn(Name.mkQName("Mul.mul", sp1, sp2))
         case "/" => OperatorResult.BuiltIn(Name.mkQName("Div.div", sp1, sp2))
-        case "**" => OperatorResult.BuiltIn(Name.mkQName("Exp.exp", sp1, sp2))
         case "<" => OperatorResult.BuiltIn(Name.mkQName("Order.less", sp1, sp2))
         case "<=" => OperatorResult.BuiltIn(Name.mkQName("Order.lessEqual", sp1, sp2))
         case ">" => OperatorResult.BuiltIn(Name.mkQName("Order.greater", sp1, sp2))
