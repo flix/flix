@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.Method
 
 object ErasedAst {
 
@@ -44,9 +44,21 @@ object ErasedAst {
 
   object Expr {
 
+    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends Expr
+
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOperator, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyCloTail(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplyDefTail(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
@@ -63,182 +75,6 @@ object ErasedAst {
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
-
-    case class Intrinsic0(op: IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class Intrinsic2(op: IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class Intrinsic3(op: IntrinsicOperator3, exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class IntrinsicN(op: IntrinsicOperatorN, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class Intrinsic1N(op: IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-  }
-
-  sealed trait Stmt
-
-  object Stmt {
-
-    case class Ret(exp: Expr, tpe: MonoType, loc: SourceLocation) extends Stmt
-
-    case class Let(sym: Symbol.VarSym, exp1: Stmt, exp2: Stmt, tpe: MonoType, loc: SourceLocation) extends Stmt
-
-    case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Stmt
-
-    case class Handle(sym: Symbol.OpSym, stmt: Stmt, loc: SourceLocation) extends Stmt
-
-  }
-
-  sealed trait IntrinsicOperator0
-
-  object IntrinsicOperator0 {
-
-    case class Cst(cst: Ast.Constant) extends IntrinsicOperator0
-
-    case object Region extends IntrinsicOperator0
-
-    case object RecordEmpty extends IntrinsicOperator0
-
-    case class GetStaticField(field: Field) extends IntrinsicOperator0
-
-    case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
-
-    case object MatchError extends IntrinsicOperator0
-
-  }
-
-  sealed trait IntrinsicOperator1
-
-  object IntrinsicOperator1 {
-
-    case class Unary(sop: SemanticOperator) extends IntrinsicOperator1
-
-    case class Is(sym: Symbol.CaseSym) extends IntrinsicOperator1
-
-    case class Tag(sym: Symbol.CaseSym) extends IntrinsicOperator1
-
-    case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
-
-    case class InstanceOf(clazz: Class[_]) extends IntrinsicOperator1
-
-    case object Cast extends IntrinsicOperator1
-
-    case class Index(idx: Int) extends IntrinsicOperator1
-
-    case class RecordSelect(field: Name.Field) extends IntrinsicOperator1
-
-    case class RecordRestrict(field: Name.Field) extends IntrinsicOperator1
-
-    case object Ref extends IntrinsicOperator1
-
-    case object Deref extends IntrinsicOperator1
-
-    case object ArrayLength extends IntrinsicOperator1
-
-    case object Lazy extends IntrinsicOperator1
-
-    case object Force extends IntrinsicOperator1
-
-    case class GetField(field: Field) extends IntrinsicOperator1
-
-    case class PutStaticField(field: Field) extends IntrinsicOperator1
-
-    case object BoxBool extends IntrinsicOperator1
-
-    case object BoxInt8 extends IntrinsicOperator1
-
-    case object BoxInt16 extends IntrinsicOperator1
-
-    case object BoxInt32 extends IntrinsicOperator1
-
-    case object BoxInt64 extends IntrinsicOperator1
-
-    case object BoxChar extends IntrinsicOperator1
-
-    case object BoxFloat32 extends IntrinsicOperator1
-
-    case object BoxFloat64 extends IntrinsicOperator1
-
-    case object UnboxBool extends IntrinsicOperator1
-
-    case object UnboxInt8 extends IntrinsicOperator1
-
-    case object UnboxInt16 extends IntrinsicOperator1
-
-    case object UnboxInt32 extends IntrinsicOperator1
-
-    case object UnboxInt64 extends IntrinsicOperator1
-
-    case object UnboxChar extends IntrinsicOperator1
-
-    case object UnboxFloat32 extends IntrinsicOperator1
-
-    case object UnboxFloat64 extends IntrinsicOperator1
-
-  }
-
-  sealed trait IntrinsicOperator2
-
-  object IntrinsicOperator2 {
-
-    case class RecordExtend(field: Name.Field) extends IntrinsicOperator2
-
-    case object Assign extends IntrinsicOperator2
-
-    case object ArrayNew extends IntrinsicOperator2
-
-    case object ArrayLoad extends IntrinsicOperator2
-
-    case object Spawn extends IntrinsicOperator2
-
-    case object ScopeExit extends IntrinsicOperator2
-
-    case class PutField(field: Field) extends IntrinsicOperator2
-
-  }
-
-  sealed trait IntrinsicOperator3
-
-  object IntrinsicOperator3 {
-
-    case object ArrayStore extends IntrinsicOperator3
-
-  }
-
-  sealed trait IntrinsicOperatorN
-
-  object IntrinsicOperatorN {
-
-    case class Closure(sym: Symbol.DefnSym) extends IntrinsicOperatorN
-
-    case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
-
-    case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
-
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam]) extends IntrinsicOperatorN
-
-    case object Tuple extends IntrinsicOperatorN
-
-    case object ArrayLit extends IntrinsicOperatorN
-
-    case class InvokeConstructor(constructor: Constructor[_]) extends IntrinsicOperatorN
-
-    case class InvokeStaticMethod(method: Method) extends IntrinsicOperatorN
-
-  }
-
-  sealed trait IntrinsicOperator1N
-
-  object IntrinsicOperator1N {
-
-    case object ApplyClo extends IntrinsicOperator1N
-
-    case object ApplyCloTail extends IntrinsicOperator1N
-
-    case class InvokeMethod(method: Method) extends IntrinsicOperator1N
 
   }
 

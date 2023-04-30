@@ -60,13 +60,14 @@ object MatchCompleter extends Completer {
     }
     val (completion, _) = enm.cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
       case ((acc, z), (sym, cas)) =>
-        val name = sym.name
+        val enumName = enm.sym.name
+        val caseName = sym.name
         val (str, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => (s"$name => $${${z + 1}:???}", z + 1)
+          case Some(TypeConstructor.Unit) => (s"$enumName.$caseName => $${${z + 1}:???}", z + 1)
           case Some(TypeConstructor.Tuple(arity)) => (List.range(1, arity + 1)
             .map(elem => s"$${${elem + z}:_elem$elem}")
-            .mkString(s"$name(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
-          case _ => (s"$name($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
+            .mkString(s"$enumName.$caseName(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
+          case _ => (s"$enumName.$caseName($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
         }
         (acc + "    case " + str + "\n", k)
     })

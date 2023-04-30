@@ -667,9 +667,19 @@ object JvmOps {
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expr): Set[MonoType] = (exp0 match {
-      case Expr.Var(_, _, _) => Set.empty
+      case Expr.Cst(_, tpe, _) => Set(tpe)
 
-      case Expr.Binary(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Var(_, tpe, _) => Set(tpe)
+
+      case Expr.ApplyClo(exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+
+      case Expr.ApplyCloTail(exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+
+      case Expr.ApplyDef(_, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+
+      case Expr.ApplyDefTail(_, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+
+      case Expr.ApplySelfTail(_, _, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -698,17 +708,7 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
         }
 
-      case Expr.Intrinsic0(_, tpe, _) => Set(tpe)
-
-      case Expr.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
-
-      case Expr.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expr.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
-
-      case Expr.IntrinsicN(_, exps, tpe, _) => visitExps(exps) + tpe
-
-      case Expr.Intrinsic1N(_, exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) + tpe
+      case Expr.ApplyAtomic(_, exps, tpe, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
 
