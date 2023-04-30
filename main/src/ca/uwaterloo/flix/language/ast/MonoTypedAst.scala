@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 
 import java.lang.reflect.Method
 
-object FinalAst {
+object MonoTypedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],

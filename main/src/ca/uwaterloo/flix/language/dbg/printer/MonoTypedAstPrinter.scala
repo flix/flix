@@ -17,26 +17,26 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.Ast.CallType
-import ca.uwaterloo.flix.language.ast.{AtomicOp, FinalAst, Symbol}
-import ca.uwaterloo.flix.language.ast.FinalAst.Expr._
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoTypedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.MonoTypedAst.Expr._
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-object FinalAstPrinter {
+object MonoTypedAstPrinter {
 
   /**
     * Returns the [[DocAst.Program]] representation of `root`.
     */
-  def print(root: FinalAst.Root): DocAst.Program = {
+  def print(root: MonoTypedAst.Root): DocAst.Program = {
     val enums = root.enums.values.map {
-      case FinalAst.Enum(ann, mod, sym, cases0, _, _) =>
+      case MonoTypedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case FinalAst.Case(sym, _, _) => DocAst.Case(sym)
+          case MonoTypedAst.Case(sym, _, _) => DocAst.Case(sym)
         }.toList
         DocAst.Enum(ann, mod, sym, cases)
     }.toList
     val defs = root.defs.values.map {
-      case FinalAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
+      case MonoTypedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,
@@ -52,7 +52,7 @@ object FinalAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: FinalAst.Expr): DocAst.Expression = e match {
+  def print(e: MonoTypedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => DocAst.Expression.Cst(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, loc) => (op, exps) match {
@@ -109,11 +109,11 @@ object FinalAstPrinter {
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), None, print(exp1), print(exp2))
     case Scope(sym, exp, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
-      case FinalAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
+      case MonoTypedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
     case NewObject(name, clazz, tpe, methods, _) =>
       val ms = methods.map {
-        case FinalAst.JvmMethod(ident, fparams, clo, retTpe, _) =>
+        case MonoTypedAst.JvmMethod(ident, fparams, clo, retTpe, _) =>
           DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       }
       DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), ms)
@@ -124,8 +124,8 @@ object FinalAstPrinter {
   /**
     * Returns the [[DocAst.Expression.Ascription]] representation of `fp`.
     */
-  private def printFormalParam(fp: FinalAst.FormalParam): DocAst.Expression.Ascription = {
-    val FinalAst.FormalParam(sym, tpe) = fp
+  private def printFormalParam(fp: MonoTypedAst.FormalParam): DocAst.Expression.Ascription = {
+    val MonoTypedAst.FormalParam(sym, tpe) = fp
     DocAst.Expression.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
