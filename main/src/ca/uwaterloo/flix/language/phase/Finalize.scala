@@ -53,104 +53,104 @@ object Finalize {
       FinalAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
-  private def visitExp(exp0: ControlAst.Expression)(implicit flix: Flix): FinalAst.Expression = {
+  private def visitExp(exp0: ControlAst.Expr)(implicit flix: Flix): FinalAst.Expr = {
 
-    def visit(e0: ControlAst.Expression): FinalAst.Expression = e0 match {
-      case ControlAst.Expression.Cst(cst, tpe, loc) =>
+    def visit(e0: ControlAst.Expr): FinalAst.Expr = e0 match {
+      case ControlAst.Expr.Cst(cst, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.Cst(cst, t, loc)
+        FinalAst.Expr.Cst(cst, t, loc)
 
-      case ControlAst.Expression.Var(sym, tpe, loc) =>
+      case ControlAst.Expr.Var(sym, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.Var(sym, t, loc)
+        FinalAst.Expr.Var(sym, t, loc)
 
-      case ControlAst.Expression.Closure(sym, exps, tpe, loc) =>
+      case ControlAst.Expr.Closure(sym, exps, tpe, loc) =>
         val op = AtomicOp.Closure(sym)
         val es = exps.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyAtomic(op, es, t, loc)
+        FinalAst.Expr.ApplyAtomic(op, es, t, loc)
 
-      case ControlAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      case ControlAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyAtomic(op, es, t, loc)
+        FinalAst.Expr.ApplyAtomic(op, es, t, loc)
 
-      case ControlAst.Expression.ApplyClo(exp, args, tpe, _, loc) =>
+      case ControlAst.Expr.ApplyClo(exp, args, tpe, _, loc) =>
         val as = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyClo(visit(exp), as, t, loc)
+        FinalAst.Expr.ApplyClo(visit(exp), as, t, loc)
 
-      case ControlAst.Expression.ApplyDef(name, args, tpe, _, loc) =>
+      case ControlAst.Expr.ApplyDef(name, args, tpe, _, loc) =>
         val as = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyDef(name, as, t, loc)
+        FinalAst.Expr.ApplyDef(name, as, t, loc)
 
-      case ControlAst.Expression.ApplyCloTail(exp, args, tpe, _, loc) =>
+      case ControlAst.Expr.ApplyCloTail(exp, args, tpe, _, loc) =>
         val e = visit(exp)
         val rs = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyCloTail(e, rs, t, loc)
+        FinalAst.Expr.ApplyCloTail(e, rs, t, loc)
 
-      case ControlAst.Expression.ApplyDefTail(sym, args, tpe, _, loc) =>
+      case ControlAst.Expr.ApplyDefTail(sym, args, tpe, _, loc) =>
         val as = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyDefTail(sym, as, t, loc)
+        FinalAst.Expr.ApplyDefTail(sym, as, t, loc)
 
-      case ControlAst.Expression.ApplySelfTail(name, formals, actuals, tpe, _, loc) =>
+      case ControlAst.Expr.ApplySelfTail(name, formals, actuals, tpe, _, loc) =>
         val fs = formals.map(visitFormalParam)
         val as = actuals.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.ApplySelfTail(name, fs, as, t, loc)
+        FinalAst.Expr.ApplySelfTail(name, fs, as, t, loc)
 
-      case ControlAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
+      case ControlAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val v3 = visit(exp3)
         val t = visitType(tpe)
-        FinalAst.Expression.IfThenElse(e1, e2, v3, t, loc)
+        FinalAst.Expr.IfThenElse(e1, e2, v3, t, loc)
 
-      case ControlAst.Expression.Branch(exp, branches, tpe, _, loc) =>
+      case ControlAst.Expr.Branch(exp, branches, tpe, _, loc) =>
         val e = visit(exp)
         val bs = branches map {
           case (sym, br) => sym -> visit(br)
         }
         val t = visitType(tpe)
-        FinalAst.Expression.Branch(e, bs, t, loc)
+        FinalAst.Expr.Branch(e, bs, t, loc)
 
-      case ControlAst.Expression.JumpTo(sym, tpe, _, loc) =>
+      case ControlAst.Expr.JumpTo(sym, tpe, _, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.JumpTo(sym, t, loc)
+        FinalAst.Expr.JumpTo(sym, t, loc)
 
-      case ControlAst.Expression.Let(sym, exp1, exp2, tpe, _, loc) =>
+      case ControlAst.Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.Let(sym, e1, e2, t, loc)
+        FinalAst.Expr.Let(sym, e1, e2, t, loc)
 
-      case ControlAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, _, loc) =>
+      case ControlAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, _, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.LetRec(varSym, index, defSym, e1, e2, t, loc)
+        FinalAst.Expr.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
-      case ControlAst.Expression.Region(tpe, loc) =>
+      case ControlAst.Expr.Region(tpe, loc) =>
         val op = AtomicOp.Region
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyAtomic(op, Nil, t, loc)
+        FinalAst.Expr.ApplyAtomic(op, Nil, t, loc)
 
-      case ControlAst.Expression.Scope(sym, exp, tpe, _, loc) =>
+      case ControlAst.Expr.Scope(sym, exp, tpe, _, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Scope(sym, e, t, loc)
+        FinalAst.Expr.Scope(sym, e, t, loc)
 
-      case ControlAst.Expression.ScopeExit(exp1, exp2, tpe, _, loc) =>
+      case ControlAst.Expr.ScopeExit(exp1, exp2, tpe, _, loc) =>
         val op = AtomicOp.ScopeExit
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyAtomic(op, List(e1, e2), t, loc)
+        FinalAst.Expr.ApplyAtomic(op, List(e1, e2), t, loc)
 
-      case ControlAst.Expression.TryCatch(exp, rules, tpe, _, loc) =>
+      case ControlAst.Expr.TryCatch(exp, rules, tpe, _, loc) =>
         val e = visit(exp)
         val rs = rules map {
           case ControlAst.CatchRule(sym, clazz, body) =>
@@ -158,18 +158,18 @@ object Finalize {
             FinalAst.CatchRule(sym, clazz, b)
         }
         val t = visitType(tpe)
-        FinalAst.Expression.TryCatch(e, rs, t, loc)
+        FinalAst.Expr.TryCatch(e, rs, t, loc)
 
-      case ControlAst.Expression.NewObject(name, clazz, tpe, _, methods, loc) =>
+      case ControlAst.Expr.NewObject(name, clazz, tpe, _, methods, loc) =>
         val t = visitType(tpe)
         val ms = methods.map(visitJvmMethod(_))
-        FinalAst.Expression.NewObject(name, clazz, t, ms, loc)
+        FinalAst.Expr.NewObject(name, clazz, t, ms, loc)
 
-      case ControlAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+      case ControlAst.Expr.Spawn(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.Spawn(e1, e2, t, loc)
+        FinalAst.Expr.Spawn(e1, e2, t, loc)
 
     }
 

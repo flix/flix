@@ -56,68 +56,68 @@ object VarNumbering {
       * @param e0 the current expression.
       * @param i0 the current stack offset.
       */
-    def visitExp(e0: Expression, i0: Int): Int = e0 match {
-      case Expression.Cst(_, _, _) => i0
+    def visitExp(e0: Expr, i0: Int): Int = e0 match {
+      case Expr.Cst(_, _, _) => i0
 
-      case Expression.Var(_, _, _) => i0
+      case Expr.Var(_, _, _) => i0
 
-      case Expression.Closure(_, args, _, _) =>
+      case Expr.Closure(_, args, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplyAtomic(_, exps, _, _, _) =>
+      case Expr.ApplyAtomic(_, exps, _, _, _) =>
         visitExps(exps, i0)
 
-      case Expression.ApplyClo(exp, args, _, _, _) =>
+      case Expr.ApplyClo(exp, args, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
 
-      case Expression.ApplyDef(_, args, _, _, _) =>
+      case Expr.ApplyDef(_, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplyCloTail(exp, args, _, _, _) =>
+      case Expr.ApplyCloTail(exp, args, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
 
-      case Expression.ApplyDefTail(_, args, _, _, _) =>
+      case Expr.ApplyDefTail(_, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplySelfTail(_, _, args, _, _, _) =>
+      case Expr.ApplySelfTail(_, _, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)
 
-      case Expression.Branch(exp, branches, _, _, _) =>
+      case Expr.Branch(exp, branches, _, _, _) =>
         val i1 = visitExp(exp, i0)
         visitExps(branches.values.toList, i1)
 
-      case Expression.JumpTo(_, _, _, _) =>
+      case Expr.JumpTo(_, _, _, _) =>
         i0
 
-      case Expression.Let(sym, exp1, exp2, _, _, _) =>
+      case Expr.Let(sym, exp1, exp2, _, _, _) =>
         val i1 = visitSymbolAssignment(sym, exp1.tpe, i0)
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.LetRec(varSym, _, _, exp1, exp2, _, _, _) =>
+      case Expr.LetRec(varSym, _, _, exp1, exp2, _, _, _) =>
         val i1 = visitSymbolAssignment(varSym, exp1.tpe, i0)
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.Region(_, _) =>
+      case Expr.Region(_, _) =>
         i0
 
-      case Expression.Scope(sym, exp, _, _, _) =>
+      case Expr.Scope(sym, exp, _, _, _) =>
         val i1 = visitSymbolAssignment(sym, Type.Unit, i0)
         visitExp(exp, i1)
 
-      case Expression.ScopeExit(exp1, exp2, _, _, _) =>
+      case Expr.ScopeExit(exp1, exp2, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.TryCatch(exp, rules, _, _, _) =>
+      case Expr.TryCatch(exp, rules, _, _, _) =>
         val i1 = visitExp(exp, i0)
         val i2 = i1 + 1
         for (CatchRule(sym, _, _) <- rules) {
@@ -126,11 +126,11 @@ object VarNumbering {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expression.NewObject(_, _, _, _, _, _) =>
+      case Expr.NewObject(_, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
 
-      case Expression.Spawn(exp1, exp2, _, _) =>
+      case Expr.Spawn(exp1, exp2, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
@@ -140,7 +140,7 @@ object VarNumbering {
       * Returns the next available stack offset.
       */
     @tailrec
-    def visitExps(es: List[Expression], i0: Int): Int = es match {
+    def visitExps(es: List[Expr], i0: Int): Int = es match {
       case Nil => i0
       case x :: xs =>
         val i2 = visitExp(x, i0)

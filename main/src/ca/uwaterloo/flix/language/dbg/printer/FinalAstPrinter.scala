@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{AtomicOp, FinalAst, Symbol}
-import ca.uwaterloo.flix.language.ast.FinalAst.Expression._
+import ca.uwaterloo.flix.language.ast.FinalAst.Expr._
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -51,7 +51,7 @@ object FinalAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: FinalAst.Expression): DocAst.Expression = e match {
+  def print(e: FinalAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => DocAst.Expression.Cst(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, loc) => (op, exps) match {
