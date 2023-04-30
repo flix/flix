@@ -126,16 +126,6 @@ object VarNumbering {
       case Expression.Untag(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Ref(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Deref(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Assign(exp1, exp2, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
       case Expression.InstanceOf(exp, _, _) =>
         visitExp(exp, i0)
 

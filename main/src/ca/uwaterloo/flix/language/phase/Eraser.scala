@@ -129,18 +129,6 @@ object Eraser {
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expr.Scope(sym, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      val op = AtomicOp.Ref
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      val op = AtomicOp.Deref
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.Assign
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
     case FinalAst.Expression.InstanceOf(exp, clazz, loc) =>
       val op = AtomicOp.InstanceOf(clazz)
       val tpe = MonoType.Bool

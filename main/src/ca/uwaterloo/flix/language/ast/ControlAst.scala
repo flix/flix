@@ -90,18 +90,6 @@ object ControlAst {
 
     case class Untag(sym: Symbol.CaseSym, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
-    case class Ref(exp: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class Deref(exp: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class Assign(exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
     case class InstanceOf(exp: ControlAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends ControlAst.Expression {
       def purity: Purity = exp.purity
 

@@ -167,22 +167,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ApplyAtomic(op, List(e), t, loc)
 
-      case ControlAst.Expression.Ref(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.Ref(e, t, loc)
-
-      case ControlAst.Expression.Deref(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.Deref(e, t, loc)
-
-      case ControlAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expression.Assign(e1, e2, t, loc)
-
       case ControlAst.Expression.InstanceOf(exp, clazz, loc) =>
         val e = visit(exp)
         FinalAst.Expression.InstanceOf(e, clazz, loc)

@@ -200,17 +200,20 @@ object CallByValue {
       ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.Ref(exp, tpe, loc) =>
+      val op = AtomicOp.Ref
       val e = visitExp(exp)
-      ControlAst.Expression.Ref(e, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, Purity.Impure, loc)
 
     case LiftedAst.Expression.Deref(exp, tpe, loc) =>
+      val op = AtomicOp.Deref
       val e = visitExp(exp)
-      ControlAst.Expression.Deref(e, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, Purity.Impure, loc)
 
     case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+      val op = AtomicOp.Assign
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.Assign(e1, e2, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc)
 
     case LiftedAst.Expression.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)

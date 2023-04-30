@@ -74,6 +74,9 @@ object FinalAstPrinter {
       case (AtomicOp.ArrayLoad, List(exp1, exp2)) => DocAst.Expression.ArrayLoad(print(exp1), print(exp2))
       case (AtomicOp.ArrayStore, List(exp1, exp2, exp3)) => DocAst.Expression.ArrayStore(print(exp1), print(exp2), print(exp3))
       case (AtomicOp.ArrayLength, List(exp)) => DocAst.Expression.ArrayLength(print(exp))
+      case (AtomicOp.Ref, List(exp)) => DocAst.Expression.Ref(print(exp))
+      case (AtomicOp.Deref, List(exp)) => DocAst.Expression.Deref(print(exp))
+      case (AtomicOp.Assign, List(exp1, exp2)) => DocAst.Expression.Assign(print(exp1), print(exp2))
       case (AtomicOp.InvokeConstructor(constructor), exps) => DocAst.Expression.JavaInvokeConstructor(constructor, exps.map(print))
       case (AtomicOp.InvokeMethod(method), exp :: exps) => DocAst.Expression.JavaInvokeMethod(method, print(exp), exps.map(print))
       case (AtomicOp.InvokeStaticMethod(method), exps) => DocAst.Expression.JavaInvokeStaticMethod(method, exps.map(print))
@@ -94,9 +97,6 @@ object FinalAstPrinter {
     case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), None, print(exp1), print(exp2))
     case Scope(sym, exp, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
-    case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
-    case Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))
     case InstanceOf(_, _, _) => DocAst.Expression.Unknown
     case Cast(exp, tpe, _) => DocAst.Expression.Cast(print(exp), MonoTypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
