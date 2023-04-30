@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, RigidityEnv, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.Finalize
+import ca.uwaterloo.flix.language.phase.MonoTyper
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -574,7 +574,7 @@ object JvmOps {
   }
 
   // TODO: Remove
-  private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
+  private def hackType2MonoType(tpe: Type): MonoType = MonoTyper.visitType(tpe)
 
   // TODO: Remove
   private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, Ast.VarText.Absent, Kind.Wild, isRegion = false, SourceLocation.Unknown)
