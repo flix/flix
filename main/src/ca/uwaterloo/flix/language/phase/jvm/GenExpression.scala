@@ -99,12 +99,12 @@ object GenExpression {
 
           case Float32Op.Exp =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(F2D) // Sign extend to double
+            visitor.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(F2D) // Sign extend to double
+            visitor.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
             visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-            visitor.visitInsn(D2F)
+            visitor.visitInsn(D2F) // Convert double to float
 
           case Float64Op.Exp =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
@@ -114,41 +114,41 @@ object GenExpression {
 
           case Int8Op.Exp =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(I2D)
+            visitor.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(I2D)
+            visitor.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-            visitor.visitInsn(D2I)
-            visitor.visitInsn(I2B)
+            visitor.visitInsn(D2I) // Convert to int
+            visitor.visitInsn(I2B) // Convert int to byte
 
           case Int16Op.Exp =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(I2D)
+            visitor.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(I2D)
+            visitor.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-            visitor.visitInsn(D2I)
-            visitor.visitInsn(I2S)
+            visitor.visitInsn(D2I) // Convert to int
+            visitor.visitInsn(I2S) // Convert int to short
 
           case Int32Op.Exp =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(I2D)
+            visitor.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(I2D)
+            visitor.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-            visitor.visitInsn(D2I)
+            visitor.visitInsn(D2I) // Convert to int
 
           case Int64Op.Exp =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(L2D)
+            visitor.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(L2D)
+            visitor.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
             visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-            visitor.visitInsn(D2L)
+            visitor.visitInsn(D2L) // Convert to long
 
           case Int8Op.And | Int16Op.And | Int32Op.And =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
