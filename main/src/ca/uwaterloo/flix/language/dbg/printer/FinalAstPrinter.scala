@@ -84,6 +84,8 @@ object FinalAstPrinter {
       case (AtomicOp.PutField(field), List(exp1, exp2)) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
       case (AtomicOp.GetStaticField(field), Nil) => DocAst.Expression.JavaGetStaticField(field)
       case (AtomicOp.PutStaticField(field), List(exp)) => DocAst.Expression.JavaPutStaticField(field, print(exp))
+      case (AtomicOp.HoleError(sym), Nil) => DocAst.Expression.HoleError(sym)
+      case (AtomicOp.MatchError, Nil) => DocAst.Expression.MatchError
       case _ => throw InternalCompilerException("Mismatched Arity", e.loc)
     }
     case ApplyClo(exp, args, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
@@ -111,8 +113,7 @@ object FinalAstPrinter {
     case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
     case Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
     case Force(exp, _, _) => DocAst.Expression.Force(print(exp))
-    case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
-    case MatchError(_, _) => DocAst.Expression.MatchError
+
   }
 
   /**

@@ -146,11 +146,6 @@ object VarNumbering {
       case Expression.Force(exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.HoleError(_, _, _) =>
-        i0
-
-      case Expression.MatchError(_, _) =>
-        i0
     }
 
     /**

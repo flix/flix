@@ -289,10 +289,12 @@ object CallByValue {
       ControlAst.Expression.Force(e, tpe, loc)
 
     case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
-      ControlAst.Expression.HoleError(sym, tpe, loc)
+      val op = AtomicOp.HoleError(sym)
+      ControlAst.Expression.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.MatchError(tpe, loc) =>
-      ControlAst.Expression.MatchError(tpe, loc)
+      val op = AtomicOp.MatchError
+      ControlAst.Expression.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
   }
 
   private def visitCase(caze: LiftedAst.Case): ControlAst.Case = caze match {

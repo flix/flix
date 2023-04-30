@@ -106,14 +106,6 @@ object ControlAst {
       def purity: Purity = Pure
     }
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class MatchError(tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
   }
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)

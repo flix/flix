@@ -166,13 +166,6 @@ object Eraser {
       val op = AtomicOp.Force
       ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
 
-    case FinalAst.Expression.HoleError(sym, tpe, loc) =>
-      val op = AtomicOp.HoleError(sym)
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
-
-    case FinalAst.Expression.MatchError(tpe, loc) =>
-      val op = AtomicOp.MatchError
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
   }
 
   private case class Context(closures: mutable.Set[ClosureInfo], anonClasses: mutable.Set[AnonClassInfo])
