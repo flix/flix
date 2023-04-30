@@ -532,6 +532,30 @@ object GenExpression {
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(DDIV)
 
+          case BigDecimalOp.Add =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "add",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
+
+          case BigDecimalOp.Sub =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "subtract",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
+
+          case BigDecimalOp.Mul =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "multiply",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
+
+          case BigDecimalOp.Div =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "divide",
+              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
+
           case Int8Op.Add =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
@@ -641,7 +665,15 @@ object GenExpression {
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(LREM)
+          /*
+                    case BigIntOp.Add => ???
 
+                    case BigIntOp.Sub => ???
+
+                    case BigIntOp.Mul => ???
+
+                    case BigIntOp.Div => ???
+          */
           case StringOp.Concat =>
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
@@ -650,23 +682,12 @@ object GenExpression {
 
           /*
 
-
-          private def semanticOperatorArithmeticToOpcode(sop: SemanticOperator): Option[Int] = sop match {
-
-
-
-
-            case _ => None
-          }
-
           private def semanticOperatorArithmeticToMethod(sop: SemanticOperator): Option[String] = sop match {
             case BigDecimalOp.Add | BigIntOp.Add => Some("add")
             case BigDecimalOp.Sub | BigIntOp.Sub => Some("subtract")
             case BigDecimalOp.Mul | BigIntOp.Mul => Some("multiply")
             case BigDecimalOp.Div | BigIntOp.Div => Some("divide")
             case BigIntOp.Rem => Some("remainder")
-            case StringOp.Concat => Some("concat")
-            case _ => None
           }
 
             compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
