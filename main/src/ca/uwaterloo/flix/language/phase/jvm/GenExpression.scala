@@ -492,7 +492,83 @@ object GenExpression {
             visitor.visitJumpInsn(IF_ICMPEQ, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
+          case Float32Op.Add =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(FADD)
+
+          case Float32Op.Sub =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(FSUB)
+
+          case Float32Op.Mul =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(FMUL)
+
+          case Float32Op.Div =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(FDIV)
+
+          case Float64Op.Add =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(DADD)
+
+          case Float64Op.Sub =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(DSUB)
+
+          case Float64Op.Mul =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(DMUL)
+
+          case Float64Op.Div =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(DDIV)
+
           /*
+
+
+          private def semanticOperatorArithmeticToOpcode(sop: SemanticOperator): Option[Int] = sop match {
+            case Int8Op.Add => Some(IADD)
+            case Int8Op.Sub => Some(ISUB)
+            case Int8Op.Mul => Some(IMUL)
+            case Int8Op.Div => Some(IDIV)
+            case Int8Op.Rem => Some(IREM)
+            case Int16Op.Add => Some(IADD)
+            case Int16Op.Sub => Some(ISUB)
+            case Int16Op.Mul => Some(IMUL)
+            case Int16Op.Div => Some(IDIV)
+            case Int16Op.Rem => Some(IREM)
+            case Int32Op.Add => Some(IADD)
+            case Int32Op.Sub => Some(ISUB)
+            case Int32Op.Mul => Some(IMUL)
+            case Int32Op.Div => Some(IDIV)
+            case Int32Op.Rem => Some(IREM)
+            case Int64Op.Add => Some(LADD)
+            case Int64Op.Sub => Some(LSUB)
+            case Int64Op.Mul => Some(LMUL)
+            case Int64Op.Div => Some(LDIV)
+            case Int64Op.Rem => Some(LREM)
+            case _ => None
+          }
+
+          private def semanticOperatorArithmeticToMethod(sop: SemanticOperator): Option[String] = sop match {
+            case BigDecimalOp.Add | BigIntOp.Add => Some("add")
+            case BigDecimalOp.Sub | BigIntOp.Sub => Some("subtract")
+            case BigDecimalOp.Mul | BigIntOp.Mul => Some("multiply")
+            case BigDecimalOp.Div | BigIntOp.Div => Some("divide")
+            case BigIntOp.Rem => Some("remainder")
+            case StringOp.Concat => Some("concat")
+            case _ => None
+          }
+
             compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
           compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
           (semanticOperatorArithmeticToOpcode(sop), semanticOperatorArithmeticToMethod(sop)) match {
