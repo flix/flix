@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.Ast.CallType
+import ca.uwaterloo.flix.language.ast.{Ast, ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -54,10 +55,14 @@ object ErasedAstPrinter {
   def print(e: ErasedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyClo(exp, exps, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
-    case ApplyCloTail(exp, exps, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
-    case ApplyDef(sym, exps, _, _) => DocAst.Expression.ApplyDef(sym, exps.map(print))
-    case ApplyDefTail(sym, exps, _, _) => DocAst.Expression.ApplyDefTail(sym, exps.map(print))
+    case ApplyClo(exp, exps, ct, _, _) => ct match {
+      case CallType.TailCall => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
+      case CallType.NonTailCall => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
+    }
+    case ApplyDef(sym, exps, ct, _, _) => ct match {
+      case CallType.TailCall => DocAst.Expression.ApplyDefTail(sym, exps.map(print))
+      case CallType.NonTailCall => DocAst.Expression.ApplyDef(sym, exps.map(print))
+    }
     case ApplySelfTail(sym, _, exps, _, _) => DocAst.Expression.ApplySelfTail(sym, exps.map(print))
     case ApplyAtomic(op, exps, tpe, _) => IntrinsicOperatorPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
