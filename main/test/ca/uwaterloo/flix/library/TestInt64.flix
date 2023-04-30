@@ -44,7 +44,7 @@ mod TestInt64 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int64.maxValue() == ~~~Int64.leftShift(1i64, 63)
+    def maxValue01(): Bool = Int64.maxValue() == Int64.bitwiseNot(Int64.leftShift(1i64, 63))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -474,7 +474,7 @@ mod TestInt64 {
     def numberOfLeadingZeros03(): Bool = Int64.numberOfLeadingZeros(-1i64) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(~~~Int64.leftShift(1i64, 63)) == 1
+    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(Int64.bitwiseNot(Int64.leftShift(1i64, 63))) == 1
 
     @test
     def numberOfLeadingZeros05(): Bool = Int64.numberOfLeadingZeros(2i64 ** 62i64) == 1
@@ -687,7 +687,7 @@ mod TestInt64 {
     def clearBit11(): Bool = Int64.clearBit(pos = 5, -1i64) == -33i64
 
     @test
-    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == ~~~Int64.leftShift(1i64, 63)
+    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == Int64.bitwiseNot(Int64.leftShift(1i64, 63))
 
     @test
     def clearBit13(): Bool = Int64.clearBit(pos = 64, -1i64) == -2i64
@@ -764,6 +764,92 @@ mod TestInt64 {
 
     @test
     def log210(): Bool = Int64.log2(-1i64) == 0i64
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseAnd                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseAnd01(): Bool = Int64.bitwiseAnd(0i64, 0i64) == 0i64
+
+    @test
+    def bitwiseAnd02(): Bool = Int64.bitwiseAnd(127i64, 0i64) == 0i64
+
+    @test
+    def bitwiseAnd03(): Bool = Int64.bitwiseAnd(-128i64, 0i64) == 0i64
+
+    @test
+    def bitwiseAnd04(): Bool = Int64.bitwiseAnd(0i64, 1i64) == 0i64
+
+    @test
+    def bitwiseAnd05(): Bool = Int64.bitwiseAnd(127i64, 1i64) == 1i64
+
+    @test
+    def bitwiseAnd06(): Bool = Int64.bitwiseAnd(-128i64, 1i64) == 0i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseNot                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseNot01(): Bool = Int64.bitwiseNot(0i64) == -1i64
+
+    @test
+    def bitwiseNot02(): Bool = Int64.bitwiseNot(1i64) == -2i64
+
+    @test
+    def bitwiseNot03(): Bool = Int64.bitwiseNot(-1i64) == -0i64
+
+    @test
+    def bitwiseNot04(): Bool = Int64.bitwiseNot(127i64) == -128i64
+
+    @test
+    def bitwiseNot05(): Bool = Int64.bitwiseNot(-128i64) == 127i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseOr                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseOr01(): Bool = Int64.bitwiseOr(0i64, 0i64) == 0i64
+
+    @test
+    def bitwiseOr02(): Bool = Int64.bitwiseOr(127i64, 0i64) == 127i64
+
+    @test
+    def bitwiseOr03(): Bool = Int64.bitwiseOr(-128i64, 0i64) == -128i64
+
+    @test
+    def bitwiseOr04(): Bool = Int64.bitwiseOr(0i64, 1i64) == 1i64
+
+    @test
+    def bitwiseOr05(): Bool = Int64.bitwiseOr(127i64, 1i64) == 127i64
+
+    @test
+    def bitwiseOr06(): Bool = Int64.bitwiseOr(-128i64, 1i64) == -127i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseXor                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseXor01(): Bool = Int64.bitwiseXor(0i64, 0i64) == 0i64
+
+    @test
+    def bitwiseXor02(): Bool = Int64.bitwiseXor(127i64, 0i64) == 127i64
+
+    @test
+    def bitwiseXor03(): Bool = Int64.bitwiseXor(-128i64, 0i64) == -128i64
+
+    @test
+    def bitwiseXor04(): Bool = Int64.bitwiseXor(0i64, 1i64) == 1i64
+
+    @test
+    def bitwiseXor05(): Bool = Int64.bitwiseXor(127i64, 1i64) == 126i64
+
+    @test
+    def bitwiseXor06(): Bool = Int64.bitwiseXor(-128i64, 1i64) == -127i64
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
