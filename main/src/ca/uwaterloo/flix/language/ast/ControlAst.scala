@@ -54,6 +54,8 @@ object ControlAst {
       def purity: Purity = Pure
     }
 
+    case class ApplyAtomic(op: AtomicOp, exps: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
+
     case class ApplyClo(exp: ControlAst.Expression, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class ApplyDef(sym: Symbol.DefnSym, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
@@ -63,10 +65,6 @@ object ControlAst {
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ControlAst.FormalParam], actuals: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class IfThenElse(exp1: ControlAst.Expression, exp2: ControlAst.Expression, exp3: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 

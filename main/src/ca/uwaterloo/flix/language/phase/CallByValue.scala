@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LiftedAst
-import ca.uwaterloo.flix.language.ast.ControlAst
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ControlAst, LiftedAst}
 
 object CallByValue {
 
@@ -80,14 +79,16 @@ object CallByValue {
       val as = exps.map(visitExp)
       ControlAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case LiftedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+    case LiftedAst.Expression.Unary(sop, _, exp, tpe, purity, loc) =>
+      val op = AtomicOp.Unary(sop)
       val e = visitExp(exp)
-      ControlAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
-    case LiftedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expression.Binary(sop, _, exp1, exp2, tpe, purity, loc) =>
+      val op = AtomicOp.Binary(sop)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)

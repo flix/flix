@@ -64,6 +64,9 @@ object VarNumbering {
       case Expression.Closure(_, args, _, _) =>
         visitExps(args, i0)
 
+      case Expression.ApplyAtomic(_, exps, _, _, _) =>
+        visitExps(exps, i0)
+
       case Expression.ApplyClo(exp, args, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
@@ -80,13 +83,6 @@ object VarNumbering {
 
       case Expression.ApplySelfTail(_, _, args, _, _, _) =>
         visitExps(args, i0)
-
-      case Expression.Unary(_, _, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         val i1 = visitExp(exp1, i0)
