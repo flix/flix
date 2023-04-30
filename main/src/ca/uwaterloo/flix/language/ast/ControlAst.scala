@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 object ControlAst {
 
   case class Root(defs: Map[Symbol.DefnSym, ControlAst.Def],
@@ -54,6 +52,8 @@ object ControlAst {
       def purity: Purity = Pure
     }
 
+    case class ApplyAtomic(op: AtomicOp, exps: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
+
     case class ApplyClo(exp: ControlAst.Expression, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class ApplyDef(sym: Symbol.DefnSym, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
@@ -63,10 +63,6 @@ object ControlAst {
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ControlAst.FormalParam], actuals: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class IfThenElse(exp1: ControlAst.Expression, exp2: ControlAst.Expression, exp3: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
@@ -94,38 +90,6 @@ object ControlAst {
 
     case class Untag(sym: Symbol.CaseSym, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
-    case class Index(base: ControlAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class Tuple(elms: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Pure
-    }
-
-    case class RecordSelect(exp: ControlAst.Expression, field: Name.Field, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class RecordExtend(field: Name.Field, value: ControlAst.Expression, rest: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class RecordRestrict(field: Name.Field, rest: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class ArrayLit(elms: List[ControlAst.Expression], tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayNew(elm: ControlAst.Expression, len: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayLoad(base: ControlAst.Expression, index: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayStore(base: ControlAst.Expression, index: ControlAst.Expression, elm: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayLength(base: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
     case class Ref(exp: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
       def purity: Purity = Impure
     }
@@ -147,20 +111,6 @@ object ControlAst {
     case class Cast(exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class TryCatch(exp: ControlAst.Expression, rules: List[ControlAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class InvokeMethod(method: Method, exp: ControlAst.Expression, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class InvokeStaticMethod(method: Method, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class GetField(field: Field, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class PutField(field: Field, exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class GetStaticField(field: Field, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class PutStaticField(field: Field, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[ControlAst.JvmMethod], loc: SourceLocation) extends ControlAst.Expression
 

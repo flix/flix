@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LiftedAst
-import ca.uwaterloo.flix.language.ast.ControlAst
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ControlAst, LiftedAst, Purity}
 
 object CallByValue {
 
@@ -80,14 +79,16 @@ object CallByValue {
       val as = exps.map(visitExp)
       ControlAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case LiftedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+    case LiftedAst.Expression.Unary(sop, _, exp, tpe, purity, loc) =>
+      val op = AtomicOp.Unary(sop)
       val e = visitExp(exp)
-      ControlAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
-    case LiftedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expression.Binary(sop, _, exp1, exp2, tpe, purity, loc) =>
+      val op = AtomicOp.Binary(sop)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -139,53 +140,64 @@ object CallByValue {
       val e = visitExp(exp)
       ControlAst.Expression.Untag(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
+    case LiftedAst.Expression.Index(exp, idx, tpe, purity, loc) =>
+      val op = AtomicOp.Index(idx)
       val e = visitExp(exp)
-      ControlAst.Expression.Index(e, offset, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.Tuple(exps, tpe, purity, loc) =>
+      val op = AtomicOp.Tuple
       val es = exps.map(visitExp)
-      ControlAst.Expression.Tuple(es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.RecordEmpty(tpe, loc) =>
-      ControlAst.Expression.RecordEmpty(tpe, loc)
+      val op = AtomicOp.RecordEmpty
+      ControlAst.Expression.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
+      val op = AtomicOp.RecordSelect(field)
       val e = visitExp(exp)
-      ControlAst.Expression.RecordSelect(e, field, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.RecordExtend(field, exp1, exp2, tpe, purity, loc) =>
+      val op = AtomicOp.RecordExtend(field)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.RecordExtend(field, e1, e2, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.RecordRestrict(field, exp, tpe, purity, loc) =>
+      val op = AtomicOp.RecordRestrict(field)
       val e = visitExp(exp)
-      ControlAst.Expression.RecordRestrict(field, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.ArrayLit(exps, tpe, loc) =>
+      val op = AtomicOp.ArrayLit
       val es = exps.map(visitExp)
-      ControlAst.Expression.ArrayLit(es, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, Purity.Impure, loc)
 
     case LiftedAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val op = AtomicOp.ArrayNew
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.ArrayNew(e1, e2, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+      val op = AtomicOp.ArrayLoad
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.ArrayLoad(e1, e2, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      val op = AtomicOp.ArrayStore
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      ControlAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2, e3), tpe, Purity.Impure, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.ArrayLength(exp, tpe, purity, loc) =>
+      val op = AtomicOp.ArrayLength
       val e = visitExp(exp)
-      ControlAst.Expression.ArrayLength(e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -218,33 +230,40 @@ object CallByValue {
       ControlAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
     case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+      val op = AtomicOp.InvokeConstructor(constructor)
       val es = exps.map(visitExp)
-      ControlAst.Expression.InvokeConstructor(constructor, es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
+      val op = AtomicOp.InvokeMethod(method)
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      ControlAst.Expression.InvokeMethod(method, e, es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, e :: es, tpe, purity, loc)
 
     case LiftedAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+      val op = AtomicOp.InvokeStaticMethod(method)
       val es = exps.map(visitExp)
-      ControlAst.Expression.InvokeStaticMethod(method, es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
+      val op = AtomicOp.GetField(field)
       val e = visitExp(exp)
-      ControlAst.Expression.GetField(field, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
+      val op = AtomicOp.PutField(field)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.GetStaticField(field, tpe, purity, loc) =>
-      ControlAst.Expression.GetStaticField(field, tpe, purity, loc)
+      val op = AtomicOp.GetStaticField(field)
+      ControlAst.Expression.ApplyAtomic(op, Nil, tpe, purity, loc)
 
     case LiftedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
+      val op = AtomicOp.PutStaticField(field)
       val e = visitExp(exp)
-      ControlAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)

@@ -77,10 +77,14 @@ object Eraser {
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expr.Var(sym, tpe, loc)
 
-    case FinalAst.Expression.Closure(sym, exps, tpe, loc) =>
-      ctx.closures += ClosureInfo(sym, exps.map(_.tpe), tpe)
-      val op = AtomicOp.Closure(sym)
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
+    case FinalAst.Expression.ApplyAtomic(op, exps, tpe, loc) =>
+      op match {
+        case AtomicOp.Closure(sym) =>
+          ctx.closures += ClosureInfo(sym, exps.map(_.tpe), tpe)
+        case _ => // nop
+      }
+      val es = exps.map(visitExp)
+      ErasedAst.Expr.ApplyAtomic(op, es, tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, exps, tpe, loc) =>
       ErasedAst.Expr.ApplyClo(visitExp(exp), exps.map(visitExp), tpe, loc)
@@ -99,14 +103,6 @@ object Eraser {
         case FinalAst.FormalParam(formalSym, formalTpe) => ErasedAst.FormalParam(formalSym, formalTpe)
       }
       ErasedAst.Expr.ApplySelfTail(sym, formals, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.Unary(sop, _, exp, tpe, loc) =>
-      val op = AtomicOp.Unary(sop)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.Binary(sop)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
     case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       ErasedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
@@ -130,72 +126,8 @@ object Eraser {
       val e2 = visitExp(exp2)
       ErasedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
-    case FinalAst.Expression.Region(tpe, loc) =>
-      val op = AtomicOp.Region
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
-
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expr.Scope(sym, visitExp(exp), tpe, loc)
-
-    case FinalAst.Expression.ScopeExit(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.ScopeExit
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.Is(sym, exp, loc) =>
-      val op = AtomicOp.Is(sym)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), MonoType.Bool, loc)
-
-    case FinalAst.Expression.Tag(sym, exp, tpe, loc) =>
-      val op = AtomicOp.Tag(sym)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Untag(sym, exp, tpe, loc) =>
-      val op = AtomicOp.Untag(sym)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Index(base, idx, tpe, loc) =>
-      val op = AtomicOp.Index(idx)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(base)), tpe, loc)
-
-    case FinalAst.Expression.Tuple(exps, tpe, loc) =>
-      val op = AtomicOp.Tuple
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.RecordEmpty(tpe, loc) =>
-      val op = AtomicOp.RecordEmpty
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
-
-    case FinalAst.Expression.RecordSelect(exp, field, tpe, loc) =>
-      val op = AtomicOp.RecordSelect(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.RecordExtend(field, exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.RecordExtend(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.RecordRestrict(field, exp, tpe, loc) =>
-      val op = AtomicOp.RecordRestrict(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.ArrayLit(exps, tpe, loc) =>
-      val op = AtomicOp.ArrayLit
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.ArrayNew
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.ArrayLoad
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
-      val op = AtomicOp.ArrayStore
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2), visitExp(exp3)), tpe, loc)
-
-    case FinalAst.Expression.ArrayLength(exp, tpe, loc) =>
-      val op = AtomicOp.ArrayLength
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
       val op = AtomicOp.Ref
@@ -224,34 +156,6 @@ object Eraser {
           ErasedAst.CatchRule(catchSym, catchClazz, visitExp(catchExp))
       }
       ErasedAst.Expr.TryCatch(visitExp(exp), rules, tpe, loc)
-
-    case FinalAst.Expression.InvokeConstructor(constructor, exps, tpe, loc) =>
-      val op = AtomicOp.InvokeConstructor(constructor)
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.InvokeMethod(method, exp, exps, tpe, loc) =>
-      val op = AtomicOp.InvokeMethod(method)
-      ErasedAst.Expr.ApplyAtomic(op, visitExp(exp) :: exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.InvokeStaticMethod(method, exps, tpe, loc) =>
-      val op = AtomicOp.InvokeStaticMethod(method)
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      val op = AtomicOp.GetField(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.PutField(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      val op = AtomicOp.GetStaticField(field)
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
-
-    case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      val op = AtomicOp.PutStaticField(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
 
     case FinalAst.Expression.NewObject(name, clazz, tpe, methods0, loc) =>
       val methods = methods0.map {

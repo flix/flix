@@ -64,6 +64,9 @@ object VarNumbering {
       case Expression.Closure(_, args, _, _) =>
         visitExps(args, i0)
 
+      case Expression.ApplyAtomic(_, exps, _, _, _) =>
+        visitExps(exps, i0)
+
       case Expression.ApplyClo(exp, args, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
@@ -80,13 +83,6 @@ object VarNumbering {
 
       case Expression.ApplySelfTail(_, _, args, _, _, _) =>
         visitExps(args, i0)
-
-      case Expression.Unary(_, _, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         val i1 = visitExp(exp1, i0)
@@ -130,45 +126,6 @@ object VarNumbering {
       case Expression.Untag(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Index(exp, _, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Tuple(elms, _, _, _) =>
-        visitExps(elms, i0)
-
-      case Expression.RecordEmpty(_, _) =>
-        i0
-
-      case Expression.RecordSelect(base, _, _, _, _) =>
-        visitExp(base, i0)
-
-      case Expression.RecordExtend(_, value, rest, _, _, _) =>
-        val i1 = visitExp(value, i0)
-        val i2 = visitExp(rest, i1)
-        i2
-
-      case Expression.RecordRestrict(_, rest, _, _, _) =>
-        visitExp(rest, i0)
-
-      case Expression.ArrayLit(elms, _, _) =>
-        visitExps(elms, i0)
-
-      case Expression.ArrayNew(elm, len, _, _) =>
-        val i1 = visitExp(elm, i0)
-        visitExp(len, i1)
-
-      case Expression.ArrayLoad(base, index, _, _) =>
-        val i1 = visitExp(base, i0)
-        visitExp(index, i1)
-
-      case Expression.ArrayStore(base, index, elm, _, _) =>
-        val i1 = visitExp(base, i0)
-        val i2 = visitExp(index, i1)
-        visitExp(elm, i2)
-
-      case Expression.ArrayLength(base, _, _, _) =>
-        visitExp(base, i0)
-
       case Expression.Ref(exp, _, _) =>
         visitExp(exp, i0)
 
@@ -193,29 +150,6 @@ object VarNumbering {
           sym.setStackOffset(i1)
         }
         visitExps(rules.map(_.exp), i2)
-
-      case Expression.InvokeConstructor(_, args, _, _, _) =>
-        visitExps(args, i0)
-
-      case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-        val i1 = visitExp(exp, i0)
-        visitExps(args, i1)
-
-      case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-        visitExps(args, i0)
-
-      case Expression.GetField(_, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.PutField(_, exp1, exp2, _, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.GetStaticField(_, _, _, _) =>
-        i0
-
-      case Expression.PutStaticField(_, exp, _, _, _) =>
-        visitExp(exp, i0)
 
       case Expression.NewObject(_, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
