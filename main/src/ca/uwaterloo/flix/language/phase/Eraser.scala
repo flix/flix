@@ -86,17 +86,11 @@ object Eraser {
       val es = exps.map(visitExp)
       ErasedAst.Expr.ApplyAtomic(op, es, tpe, loc)
 
-    case FinalAst.Expr.ApplyClo(exp, exps, tpe, loc) =>
-      ErasedAst.Expr.ApplyClo(visitExp(exp), exps.map(visitExp), tpe, loc)
+    case FinalAst.Expr.ApplyClo(exp, exps, ct, tpe, loc) =>
+      ErasedAst.Expr.ApplyClo(visitExp(exp), exps.map(visitExp), ct, tpe, loc)
 
-    case FinalAst.Expr.ApplyDef(sym, exps, tpe, loc) =>
-      ErasedAst.Expr.ApplyDef(sym, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expr.ApplyCloTail(exp, exps, tpe, loc) =>
-      ErasedAst.Expr.ApplyCloTail(visitExp(exp), exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expr.ApplyDefTail(sym, exps, tpe, loc) =>
-      ErasedAst.Expr.ApplyDefTail(sym, exps.map(visitExp), tpe, loc)
+    case FinalAst.Expr.ApplyDef(sym, exps, ct, tpe, loc) =>
+      ErasedAst.Expr.ApplyDef(sym, exps.map(visitExp), ct, tpe, loc)
 
     case FinalAst.Expr.ApplySelfTail(sym, formals0, exps, tpe, loc) =>
       val formals = formals0.map {

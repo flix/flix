@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{AtomicOp, ControlAst, LiftedAst, Purity, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, ControlAst, LiftedAst, Purity, Type}
 
 object CallByValue {
 
@@ -59,20 +59,20 @@ object CallByValue {
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      ControlAst.Expr.ApplyClo(e, es, tpe, purity, loc)
+      ControlAst.Expr.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      ControlAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+      ControlAst.Expr.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplyCloTail(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      ControlAst.Expr.ApplyCloTail(e, es, tpe, purity, loc)
+      ControlAst.Expr.ApplyClo(e, es, Ast.CallType.TailCall, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      ControlAst.Expr.ApplyDefTail(sym, es, tpe, purity, loc)
+      ControlAst.Expr.ApplyDef(sym, es, Ast.CallType.TailCall, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplySelfTail(sym, formals, exps, tpe, purity, loc) =>
       val fs = formals.map(visitFormalParam)

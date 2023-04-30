@@ -75,26 +75,15 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expr.ApplyAtomic(op, es, t, loc)
 
-      case ControlAst.Expr.ApplyClo(exp, args, tpe, _, loc) =>
-        val as = args map visit
+      case ControlAst.Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
+        val es = exps map visit
         val t = visitType(tpe)
-        FinalAst.Expr.ApplyClo(visit(exp), as, t, loc)
+        FinalAst.Expr.ApplyClo(visit(exp), es, ct, t, loc)
 
-      case ControlAst.Expr.ApplyDef(name, args, tpe, _, loc) =>
-        val as = args map visit
+      case ControlAst.Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
+        val es = exps map visit
         val t = visitType(tpe)
-        FinalAst.Expr.ApplyDef(name, as, t, loc)
-
-      case ControlAst.Expr.ApplyCloTail(exp, args, tpe, _, loc) =>
-        val e = visit(exp)
-        val rs = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyCloTail(e, rs, t, loc)
-
-      case ControlAst.Expr.ApplyDefTail(sym, args, tpe, _, loc) =>
-        val as = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyDefTail(sym, as, t, loc)
+        FinalAst.Expr.ApplyDef(sym, es, ct, t, loc)
 
       case ControlAst.Expr.ApplySelfTail(name, formals, actuals, tpe, _, loc) =>
         val fs = formals.map(visitFormalParam)

@@ -671,13 +671,9 @@ object JvmOps {
 
       case Expr.Var(_, tpe, _) => Set(tpe)
 
-      case Expr.ApplyClo(exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyClo(exp, exps, _, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplyCloTail(exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
-
-      case Expr.ApplyDef(_, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
-
-      case Expr.ApplyDefTail(_, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyDef(_, exps, _, tpe, _) => visitExps(exps) ++ Set(tpe)
 
       case Expr.ApplySelfTail(_, _, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
 
