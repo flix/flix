@@ -70,21 +70,11 @@ object ReducedAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: Expr, exp2: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Region(tpe: Type, loc: SourceLocation) extends Expr {
-      def purity: Purity = Pure
-    }
-
     case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
-
-    case class ScopeExit(exp1: Expr, exp2: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
-
-    case class Spawn(exp1: Expr, exp2: Expr, tpe: Type, loc: SourceLocation) extends Expr {
-      def purity: Purity = Impure
-    }
 
   }
 

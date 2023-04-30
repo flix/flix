@@ -119,22 +119,10 @@ object MonoTyper {
       val t = visitType(tpe)
       MonoTypedAst.Expr.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
-    case ReducedAst.Expr.Region(tpe, loc) =>
-      val op = AtomicOp.Region
-      val t = visitType(tpe)
-      MonoTypedAst.Expr.ApplyAtomic(op, Nil, t, loc)
-
     case ReducedAst.Expr.Scope(sym, exp, tpe, _, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       MonoTypedAst.Expr.Scope(sym, e, t, loc)
-
-    case ReducedAst.Expr.ScopeExit(exp1, exp2, tpe, _, loc) =>
-      val op = AtomicOp.ScopeExit
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      MonoTypedAst.Expr.ApplyAtomic(op, List(e1, e2), t, loc)
 
     case ReducedAst.Expr.TryCatch(exp, rules, tpe, _, loc) =>
       val e = visitExp(exp)
@@ -151,11 +139,6 @@ object MonoTyper {
       val ms = methods.map(visitJvmMethod(_))
       MonoTypedAst.Expr.NewObject(name, clazz, t, ms, loc)
 
-    case ReducedAst.Expr.Spawn(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      MonoTypedAst.Expr.Spawn(e1, e2, t, loc)
   }
 
   def visitType(tpe0: Type): MonoType = {

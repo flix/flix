@@ -99,16 +99,9 @@ object VarNumbering {
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expr.Region(_, _) =>
-        i0
-
       case Expr.Scope(sym, exp, _, _, _) =>
         val i1 = visitSymbolAssignment(sym, Type.Unit, i0)
         visitExp(exp, i1)
-
-      case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         val i1 = visitExp(exp, i0)
@@ -122,10 +115,6 @@ object VarNumbering {
       case Expr.NewObject(_, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
-
-      case Expr.Spawn(exp1, exp2, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
 
     }
 
