@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.Ast.CallType
-import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.DocAst
