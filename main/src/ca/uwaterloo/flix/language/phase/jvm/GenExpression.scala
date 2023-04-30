@@ -492,7 +492,51 @@ object GenExpression {
             visitor.visitJumpInsn(IF_ICMPEQ, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+          /*
+            compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+          compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
+          (semanticOperatorArithmeticToOpcode(sop), semanticOperatorArithmeticToMethod(sop)) match {
+            case (Some(op), _) => sop match {
+              case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div
+                   | Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div =>
+                visitor.visitInsn(op)
+
+              case Int8Op.Add | Int8Op.Sub | Int8Op.Mul | Int8Op.Div | Int8Op.Rem =>
+                visitor.visitInsn(op)
+                visitor.visitInsn(I2B)
+
+              case Int16Op.Add | Int16Op.Sub | Int16Op.Mul | Int16Op.Div | Int16Op.Rem =>
+                visitor.visitInsn(op)
+                visitor.visitInsn(I2S)
+
+              case Int32Op.Add | Int32Op.Sub | Int32Op.Mul | Int32Op.Div | Int32Op.Rem
+                   | Int64Op.Add | Int64Op.Sub | Int64Op.Mul | Int64Op.Div | Int64Op.Rem =>
+                visitor.visitInsn(op)
+
+              case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+            }
+
+            case (_, Some(op)) => sop match {
+              case BigDecimalOp.Add | BigDecimalOp.Sub | BigDecimalOp.Mul | BigDecimalOp.Div =>
+                visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, op,
+                  AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
+
+              case BigIntOp.Add | BigIntOp.Sub | BigIntOp.Mul | BigIntOp.Div | BigIntOp.Rem =>
+                visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, op,
+                  AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
+
+              case StringOp.Concat =>
+                visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, op,
+                  AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
+
+              case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+            }
+            case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+          }
+
+            */
+
+          case _ => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
         }
 
@@ -1781,33 +1825,6 @@ object GenExpression {
         AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
-
-  private def compileBinaryExpr(exp1: Expr, exp2: Expr,
-                                currentClass: JvmType.Reference,
-                                visitor: MethodVisitor,
-                                lenv0: Map[Symbol.LabelSym, Label],
-                                entryPoint: Label,
-                                sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
-
-    case Float32Op.Add | Float64Op.Add | BigDecimalOp.Add
-         | Int8Op.Add | Int16Op.Add | Int16Op.Add
-         | Int32Op.Add | Int64Op.Add | BigIntOp.Add
-         | Float32Op.Sub | Float64Op.Sub | BigDecimalOp.Sub
-         | Int8Op.Sub | Int16Op.Sub | Int16Op.Sub
-         | Int32Op.Sub | Int64Op.Sub | BigIntOp.Sub
-         | Float32Op.Mul | Float64Op.Mul | BigDecimalOp.Mul
-         | Int8Op.Mul | Int16Op.Mul | Int16Op.Mul
-         | Int32Op.Mul | Int64Op.Mul | BigIntOp.Mul
-         | Float32Op.Div | Float64Op.Div | BigDecimalOp.Div
-         | Int8Op.Div | Int16Op.Div | Int16Op.Div
-         | Int32Op.Div | Int64Op.Div | BigIntOp.Div
-         | Int8Op.Rem | Int16Op.Rem | Int16Op.Rem
-         | Int32Op.Rem | Int64Op.Rem
-         | BigIntOp.Rem | StringOp.Concat => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
-  }
-
 
   /*
    * Results are truncated (and sign extended), so that adding two IntN's will always return an IntN. Overflow can
