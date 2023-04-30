@@ -1530,20 +1530,20 @@ object GenExpression {
 
   }
 
-  private def visitComparisonEpilogue(visitor: MethodVisitor, condElse: Label, condEnd: Label): Unit = {
-    visitor.visitInsn(ICONST_1)
-    visitor.visitJumpInsn(GOTO, condEnd)
-    visitor.visitLabel(condElse)
-    visitor.visitInsn(ICONST_0)
-    visitor.visitLabel(condEnd)
-  }
-
   private def visitComparisonPrologue(visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label, exp1: Expr, exp2: Expr)(implicit root: Root, flix: Flix): (Label, Label) = {
     compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
     compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
     val condElse = new Label()
     val condEnd = new Label()
     (condElse, condEnd)
+  }
+
+  private def visitComparisonEpilogue(visitor: MethodVisitor, condElse: Label, condEnd: Label): Unit = {
+    visitor.visitInsn(ICONST_1)
+    visitor.visitJumpInsn(GOTO, condEnd)
+    visitor.visitLabel(condElse)
+    visitor.visitInsn(ICONST_0)
+    visitor.visitLabel(condEnd)
   }
 
   private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = cst match {
