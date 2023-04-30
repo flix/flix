@@ -128,7 +128,7 @@ object EntryPoint {
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, loc), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, loc), _) =>
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
 
       // First check that there's exactly one argument.
@@ -159,7 +159,7 @@ object EntryPoint {
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe)
@@ -197,7 +197,6 @@ object EntryPoint {
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
       pur = Type.Impure,
-      eff = Type.Empty,
       tconstrs = Nil,
       loc = SourceLocation.Unknown
     )
@@ -207,16 +206,16 @@ object EntryPoint {
     val func = TypedAst.Expression.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
 
     // func()
-    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
     val ioSym = root.effects(new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)).sym
     val ioTpe = Type.Cst(TypeConstructor.Effect(ioSym), SourceLocation.Unknown)
-    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Impure, ioTpe, Type.Unit, SourceLocation.Unknown)
+    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Impure, Type.Unit, SourceLocation.Unknown)
     val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
-    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, ioTpe, SourceLocation.Unknown)
+    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
 
     val impl = TypedAst.Impl(
       exp = print,
