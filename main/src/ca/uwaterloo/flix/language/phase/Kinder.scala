@@ -1277,7 +1277,7 @@ object Kinder {
         case Some(_) =>
           val purAndEffVal = visitPurityAndEffect(purAndEff, kenv, senv, taenv, root)
           mapN(purAndEffVal) {
-            case (pur, eff) => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(pur, eff), loc)
+            case (pur, eff) => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(pur), loc)
           }
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }

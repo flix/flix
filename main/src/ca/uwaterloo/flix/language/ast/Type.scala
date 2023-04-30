@@ -172,7 +172,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowArgTypes: List[Type] = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(2).dropRight(1)
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(1).dropRight(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
