@@ -617,6 +617,30 @@ object GenExpression {
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IREM)
 
+          case Int64Op.Add =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LADD)
+
+          case Int64Op.Sub =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LSUB)
+
+          case Int64Op.Mul =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LMUL)
+
+          case Int64Op.Div =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LDIV)
+
+          case Int64Op.Rem =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(LREM)
 
           /*
 
@@ -625,11 +649,7 @@ object GenExpression {
 
 
 
-            case Int64Op.Add => Some(LADD)
-            case Int64Op.Sub => Some(LSUB)
-            case Int64Op.Mul => Some(LMUL)
-            case Int64Op.Div => Some(LDIV)
-            case Int64Op.Rem => Some(LREM)
+
             case _ => None
           }
 
