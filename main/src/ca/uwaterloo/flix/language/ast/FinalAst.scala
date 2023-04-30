@@ -47,13 +47,9 @@ object FinalAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, args: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class ApplyCloTail(exp: Expr, args: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
