@@ -126,26 +126,6 @@ object VarNumbering {
       case Expression.Untag(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Index(exp, _, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Tuple(elms, _, _, _) =>
-        visitExps(elms, i0)
-
-      case Expression.RecordEmpty(_, _) =>
-        i0
-
-      case Expression.RecordSelect(base, _, _, _, _) =>
-        visitExp(base, i0)
-
-      case Expression.RecordExtend(_, value, rest, _, _, _) =>
-        val i1 = visitExp(value, i0)
-        val i2 = visitExp(rest, i1)
-        i2
-
-      case Expression.RecordRestrict(_, rest, _, _, _) =>
-        visitExp(rest, i0)
-
       case Expression.ArrayLit(elms, _, _) =>
         visitExps(elms, i0)
 

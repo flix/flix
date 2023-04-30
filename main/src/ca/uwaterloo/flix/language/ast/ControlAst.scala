@@ -92,20 +92,6 @@ object ControlAst {
 
     case class Untag(sym: Symbol.CaseSym, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
-    case class Index(base: ControlAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class Tuple(elms: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Pure
-    }
-
-    case class RecordSelect(exp: ControlAst.Expression, field: Name.Field, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class RecordExtend(field: Name.Field, value: ControlAst.Expression, rest: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class RecordRestrict(field: Name.Field, rest: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
     case class ArrayLit(elms: List[ControlAst.Expression], tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
       def purity: Purity = Impure
     }

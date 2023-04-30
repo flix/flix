@@ -69,18 +69,6 @@ object FinalAst {
 
     case class Scope(sym: Symbol.VarSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Index(base: FinalAst.Expression, offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class Tuple(elms: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class RecordEmpty(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class RecordSelect(exp: FinalAst.Expression, field: Name.Field, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class RecordExtend(field: Name.Field, value: FinalAst.Expression, rest: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class RecordRestrict(field: Name.Field, rest: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class ArrayLit(elms: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ArrayNew(elm: FinalAst.Expression, len: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{AtomicOp, ControlAst, LiftedAst}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ControlAst, LiftedAst, Purity}
 
 object CallByValue {
 
@@ -140,29 +140,35 @@ object CallByValue {
       val e = visitExp(exp)
       ControlAst.Expression.Untag(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
+    case LiftedAst.Expression.Index(exp, idx, tpe, purity, loc) =>
+      val op = AtomicOp.Index(idx)
       val e = visitExp(exp)
-      ControlAst.Expression.Index(e, offset, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.Tuple(exps, tpe, purity, loc) =>
+      val op = AtomicOp.Tuple
       val es = exps.map(visitExp)
-      ControlAst.Expression.Tuple(es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.RecordEmpty(tpe, loc) =>
-      ControlAst.Expression.RecordEmpty(tpe, loc)
+      val op = AtomicOp.RecordEmpty
+      ControlAst.Expression.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
+      val op = AtomicOp.RecordSelect(field)
       val e = visitExp(exp)
-      ControlAst.Expression.RecordSelect(e, field, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.RecordExtend(field, exp1, exp2, tpe, purity, loc) =>
+      val op = AtomicOp.RecordExtend(field)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.RecordExtend(field, e1, e2, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.RecordRestrict(field, exp, tpe, purity, loc) =>
+      val op = AtomicOp.RecordRestrict(field)
       val e = visitExp(exp)
-      ControlAst.Expression.RecordRestrict(field, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.ArrayLit(exps, tpe, loc) =>
       val es = exps.map(visitExp)

@@ -63,6 +63,12 @@ object FinalAstPrinter {
       case (AtomicOp.Is(sym), List(exp)) => DocAst.Expression.Is(sym, print(exp))
       case (AtomicOp.Tag(sym), List(exp)) => DocAst.Expression.Tag(sym, List(print(exp)))
       case (AtomicOp.Untag(sym), List(exp)) => DocAst.Expression.Untag(sym, print(exp))
+      case (AtomicOp.Index(idx), List(exp)) => DocAst.Expression.Index(idx, print(exp))
+      case (AtomicOp.Tuple, exps) => DocAst.Expression.Tuple(exps.map(print))
+      case (AtomicOp.RecordEmpty, _) => DocAst.Expression.RecordEmpty
+      case (AtomicOp.RecordSelect(field), List(exp)) => DocAst.Expression.RecordSelect(field, print(exp))
+      case (AtomicOp.RecordExtend(field), List(exp1, exp2)) => DocAst.Expression.RecordExtend(field, print(exp1), print(exp2))
+      case (AtomicOp.RecordRestrict(field), List(exp)) => DocAst.Expression.RecordRestrict(field, print(exp))
       case _ => throw InternalCompilerException("Mismatched Arity", e.loc)
     }
     case ApplyClo(exp, args, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
@@ -76,12 +82,6 @@ object FinalAstPrinter {
     case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), None, print(exp1), print(exp2))
     case Scope(sym, exp, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Index(base, offset, _, _) => DocAst.Expression.Index(offset, print(base))
-    case Tuple(elms, _, _) => DocAst.Expression.Tuple(elms.map(print))
-    case RecordEmpty(_, _) => DocAst.Expression.RecordEmpty
-    case RecordSelect(exp, field, _, _) => DocAst.Expression.RecordSelect(field, print(exp))
-    case RecordExtend(field, value, rest, _, _) => DocAst.Expression.RecordExtend(field, print(value), print(rest))
-    case RecordRestrict(field, rest, _, _) => DocAst.Expression.RecordRestrict(field, print(rest))
     case ArrayLit(elms, _, _) => DocAst.Expression.ArrayLit(elms.map(print))
     case ArrayNew(elm, len, _, _) => DocAst.Expression.ArrayNew(print(elm), print(len))
     case ArrayLoad(base, index, _, _) => DocAst.Expression.ArrayLoad(print(base), print(index))
