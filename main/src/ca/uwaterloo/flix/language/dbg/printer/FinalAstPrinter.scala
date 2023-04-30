@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{AtomicOp, FinalAst, Symbol}
-import ca.uwaterloo.flix.language.ast.FinalAst.Expression._
+import ca.uwaterloo.flix.language.ast.FinalAst.Expr._
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -51,7 +51,7 @@ object FinalAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: FinalAst.Expression): DocAst.Expression = e match {
+  def print(e: FinalAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => DocAst.Expression.Cst(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, loc) => (op, exps) match {
@@ -74,6 +74,11 @@ object FinalAstPrinter {
       case (AtomicOp.ArrayLoad, List(exp1, exp2)) => DocAst.Expression.ArrayLoad(print(exp1), print(exp2))
       case (AtomicOp.ArrayStore, List(exp1, exp2, exp3)) => DocAst.Expression.ArrayStore(print(exp1), print(exp2), print(exp3))
       case (AtomicOp.ArrayLength, List(exp)) => DocAst.Expression.ArrayLength(print(exp))
+      case (AtomicOp.Ref, List(exp)) => DocAst.Expression.Ref(print(exp))
+      case (AtomicOp.Deref, List(exp)) => DocAst.Expression.Deref(print(exp))
+      case (AtomicOp.Assign, List(exp1, exp2)) => DocAst.Expression.Assign(print(exp1), print(exp2))
+      case (AtomicOp.InstanceOf(_), List(exp)) => DocAst.Expression.Unknown
+      case (AtomicOp.Cast, List(exp)) => DocAst.Expression.Cast(print(exp), MonoTypePrinter.print(tpe))
       case (AtomicOp.InvokeConstructor(constructor), exps) => DocAst.Expression.JavaInvokeConstructor(constructor, exps.map(print))
       case (AtomicOp.InvokeMethod(method), exp :: exps) => DocAst.Expression.JavaInvokeMethod(method, print(exp), exps.map(print))
       case (AtomicOp.InvokeStaticMethod(method), exps) => DocAst.Expression.JavaInvokeStaticMethod(method, exps.map(print))
@@ -81,6 +86,10 @@ object FinalAstPrinter {
       case (AtomicOp.PutField(field), List(exp1, exp2)) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
       case (AtomicOp.GetStaticField(field), Nil) => DocAst.Expression.JavaGetStaticField(field)
       case (AtomicOp.PutStaticField(field), List(exp)) => DocAst.Expression.JavaPutStaticField(field, print(exp))
+      case (AtomicOp.Lazy, List(exp)) => DocAst.Expression.Lazy(print(exp))
+      case (AtomicOp.Force, List(exp)) => DocAst.Expression.Force(print(exp))
+      case (AtomicOp.HoleError(sym), Nil) => DocAst.Expression.HoleError(sym)
+      case (AtomicOp.MatchError, Nil) => DocAst.Expression.MatchError
       case _ => throw InternalCompilerException("Mismatched Arity", e.loc)
     }
     case ApplyClo(exp, args, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
@@ -94,11 +103,6 @@ object FinalAstPrinter {
     case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), None, print(exp1), print(exp2))
     case Scope(sym, exp, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
-    case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
-    case Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))
-    case InstanceOf(_, _, _) => DocAst.Expression.Unknown
-    case Cast(exp, tpe, _) => DocAst.Expression.Cast(print(exp), MonoTypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case FinalAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
@@ -109,10 +113,7 @@ object FinalAstPrinter {
       }
       DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), ms)
     case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
-    case Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
-    case Force(exp, _, _) => DocAst.Expression.Force(print(exp))
-    case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
-    case MatchError(_, _) => DocAst.Expression.MatchError
+
   }
 
   /**

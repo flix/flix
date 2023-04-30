@@ -70,14 +70,14 @@ object Eraser {
   /**
     * Translates the given expression `exp0` to the ErasedAst.
     */
-  private def visitExp(exp0: FinalAst.Expression)(implicit ctx: Context): ErasedAst.Expr = exp0 match {
-    case FinalAst.Expression.Cst(cst, tpe, loc) =>
+  private def visitExp(exp0: FinalAst.Expr)(implicit ctx: Context): ErasedAst.Expr = exp0 match {
+    case FinalAst.Expr.Cst(cst, tpe, loc) =>
       ErasedAst.Expr.Cst(cst, tpe, loc)
 
-    case FinalAst.Expression.Var(sym, tpe, loc) =>
+    case FinalAst.Expr.Var(sym, tpe, loc) =>
       ErasedAst.Expr.Var(sym, tpe, loc)
 
-    case FinalAst.Expression.ApplyAtomic(op, exps, tpe, loc) =>
+    case FinalAst.Expr.ApplyAtomic(op, exps, tpe, loc) =>
       op match {
         case AtomicOp.Closure(sym) =>
           ctx.closures += ClosureInfo(sym, exps.map(_.tpe), tpe)
@@ -86,78 +86,57 @@ object Eraser {
       val es = exps.map(visitExp)
       ErasedAst.Expr.ApplyAtomic(op, es, tpe, loc)
 
-    case FinalAst.Expression.ApplyClo(exp, exps, tpe, loc) =>
+    case FinalAst.Expr.ApplyClo(exp, exps, tpe, loc) =>
       ErasedAst.Expr.ApplyClo(visitExp(exp), exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplyDef(sym, exps, tpe, loc) =>
+    case FinalAst.Expr.ApplyDef(sym, exps, tpe, loc) =>
       ErasedAst.Expr.ApplyDef(sym, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplyCloTail(exp, exps, tpe, loc) =>
+    case FinalAst.Expr.ApplyCloTail(exp, exps, tpe, loc) =>
       ErasedAst.Expr.ApplyCloTail(visitExp(exp), exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplyDefTail(sym, exps, tpe, loc) =>
+    case FinalAst.Expr.ApplyDefTail(sym, exps, tpe, loc) =>
       ErasedAst.Expr.ApplyDefTail(sym, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplySelfTail(sym, formals0, exps, tpe, loc) =>
+    case FinalAst.Expr.ApplySelfTail(sym, formals0, exps, tpe, loc) =>
       val formals = formals0.map {
         case FinalAst.FormalParam(formalSym, formalTpe) => ErasedAst.FormalParam(formalSym, formalTpe)
       }
       ErasedAst.Expr.ApplySelfTail(sym, formals, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case FinalAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       ErasedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
 
-    case FinalAst.Expression.Branch(exp, branches0, tpe, loc) =>
+    case FinalAst.Expr.Branch(exp, branches0, tpe, loc) =>
       val branches = branches0.map {
         case (branchLabel, branchExp) => (branchLabel, visitExp(branchExp))
       }
       ErasedAst.Expr.Branch(visitExp(exp), branches, tpe, loc)
 
-    case FinalAst.Expression.JumpTo(sym, tpe, loc) =>
+    case FinalAst.Expr.JumpTo(sym, tpe, loc) =>
       ErasedAst.Expr.JumpTo(sym, tpe, loc)
 
-    case FinalAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+    case FinalAst.Expr.Let(sym, exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       ErasedAst.Expr.Let(sym, e1, e2, tpe, loc)
 
-    case FinalAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
+    case FinalAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       ErasedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
-    case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
+    case FinalAst.Expr.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expr.Scope(sym, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      val op = AtomicOp.Ref
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      val op = AtomicOp.Deref
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.Assign
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.InstanceOf(exp, clazz, loc) =>
-      val op = AtomicOp.InstanceOf(clazz)
-      val tpe = MonoType.Bool
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Cast(exp, tpe, loc) =>
-      val op = AtomicOp.Cast
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.TryCatch(exp, rules0, tpe, loc) =>
+    case FinalAst.Expr.TryCatch(exp, rules0, tpe, loc) =>
       val rules = rules0.map {
         case FinalAst.CatchRule(catchSym, catchClazz, catchExp) =>
           ErasedAst.CatchRule(catchSym, catchClazz, visitExp(catchExp))
       }
       ErasedAst.Expr.TryCatch(visitExp(exp), rules, tpe, loc)
 
-    case FinalAst.Expression.NewObject(name, clazz, tpe, methods0, loc) =>
+    case FinalAst.Expr.NewObject(name, clazz, tpe, methods0, loc) =>
       val methods = methods0.map {
         case FinalAst.JvmMethod(ident, fparams, clo, retTpe, loc) =>
           val f = fparams.map(visitFormalParam)
@@ -166,25 +145,10 @@ object Eraser {
       ctx.anonClasses += AnonClassInfo(name, clazz, tpe, methods, loc)
       ErasedAst.Expr.NewObject(name, clazz, tpe, methods, loc)
 
-    case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+    case FinalAst.Expr.Spawn(exp1, exp2, tpe, loc) =>
       val op = AtomicOp.Spawn
       ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
 
-    case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      val op = AtomicOp.Lazy
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.Force(exp, tpe, loc) =>
-      val op = AtomicOp.Force
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.HoleError(sym, tpe, loc) =>
-      val op = AtomicOp.HoleError(sym)
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
-
-    case FinalAst.Expression.MatchError(tpe, loc) =>
-      val op = AtomicOp.MatchError
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
   }
 
   private case class Context(closures: mutable.Set[ClosureInfo], anonClasses: mutable.Set[AnonClassInfo])
