@@ -241,16 +241,6 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
-          case BoolOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case BoolOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
           case CharOp.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPGE, condElse)
@@ -411,12 +401,12 @@ object GenExpression {
             visitor.visitJumpInsn(IF_ICMPGT, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Eq | Int16Op.Eq | Int32Op.Eq =>
+          case Int8Op.Eq | Int16Op.Eq | Int32Op.Eq | CharOp.Eq | BoolOp.Eq =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPNE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Neq | Int16Op.Neq | Int32Op.Neq =>
+          case Int8Op.Neq | Int16Op.Neq | Int32Op.Neq | CharOp.Neq | BoolOp.Neq =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPEQ, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
