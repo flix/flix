@@ -340,7 +340,7 @@ object Ast {
 
   object CallType {
     /**
-      * Represents call in tail position.
+      * Represents a call in tail position.
       */
     case object TailCall extends CallType
 
