@@ -167,35 +167,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ApplyAtomic(op, List(e), t, loc)
 
-      case ControlAst.Expression.ArrayLit(elms, tpe, loc) =>
-        val es = elms map visit
-        val t = visitType(tpe)
-        FinalAst.Expression.ArrayLit(es, t, loc)
-
-      case ControlAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-        val e = visit(elm)
-        val l = visit(len)
-        val t = visitType(tpe)
-        FinalAst.Expression.ArrayNew(e, l, t, loc)
-
-      case ControlAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-        val b = visit(base)
-        val i = visit(index)
-        val t = visitType(tpe)
-        FinalAst.Expression.ArrayLoad(b, i, t, loc)
-
-      case ControlAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-        val b = visit(base)
-        val i = visit(index)
-        val e = visit(elm)
-        val t = visitType(tpe)
-        FinalAst.Expression.ArrayStore(b, i, e, t, loc)
-
-      case ControlAst.Expression.ArrayLength(base, tpe, _, loc) =>
-        val b = visit(base)
-        val t = visitType(tpe)
-        FinalAst.Expression.ArrayLength(b, t, loc)
-
       case ControlAst.Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)

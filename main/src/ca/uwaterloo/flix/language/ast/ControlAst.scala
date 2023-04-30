@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 object ControlAst {
 
   case class Root(defs: Map[Symbol.DefnSym, ControlAst.Def],
@@ -91,24 +89,6 @@ object ControlAst {
     case class Tag(sym: Symbol.CaseSym, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class Untag(sym: Symbol.CaseSym, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class ArrayLit(elms: List[ControlAst.Expression], tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayNew(elm: ControlAst.Expression, len: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayLoad(base: ControlAst.Expression, index: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayStore(base: ControlAst.Expression, index: ControlAst.Expression, elm: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayLength(base: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
     case class Ref(exp: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {
       def purity: Purity = Impure

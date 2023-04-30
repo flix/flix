@@ -171,28 +171,33 @@ object CallByValue {
       ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.ArrayLit(exps, tpe, loc) =>
+      val op = AtomicOp.ArrayLit
       val es = exps.map(visitExp)
-      ControlAst.Expression.ArrayLit(es, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, Purity.Impure, loc)
 
     case LiftedAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val op = AtomicOp.ArrayNew
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.ArrayNew(e1, e2, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+      val op = AtomicOp.ArrayLoad
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.ArrayLoad(e1, e2, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      val op = AtomicOp.ArrayStore
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      ControlAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2, e3), tpe, Purity.Impure, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.ArrayLength(exp, tpe, purity, loc) =>
+      val op = AtomicOp.ArrayLength
       val e = visitExp(exp)
-      ControlAst.Expression.ArrayLength(e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc) // TODO: Use effect from earlier phase.
 
     case LiftedAst.Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp)
