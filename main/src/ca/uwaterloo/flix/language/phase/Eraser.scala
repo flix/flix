@@ -177,34 +177,6 @@ object Eraser {
       }
       ErasedAst.Expr.TryCatch(visitExp(exp), rules, tpe, loc)
 
-    case FinalAst.Expression.InvokeConstructor(constructor, exps, tpe, loc) =>
-      val op = AtomicOp.InvokeConstructor(constructor)
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.InvokeMethod(method, exp, exps, tpe, loc) =>
-      val op = AtomicOp.InvokeMethod(method)
-      ErasedAst.Expr.ApplyAtomic(op, visitExp(exp) :: exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.InvokeStaticMethod(method, exps, tpe, loc) =>
-      val op = AtomicOp.InvokeStaticMethod(method)
-      ErasedAst.Expr.ApplyAtomic(op, exps.map(visitExp), tpe, loc)
-
-    case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      val op = AtomicOp.GetField(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
-    case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.PutField(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp1), visitExp(exp2)), tpe, loc)
-
-    case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      val op = AtomicOp.GetStaticField(field)
-      ErasedAst.Expr.ApplyAtomic(op, Nil, tpe, loc)
-
-    case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      val op = AtomicOp.PutStaticField(field)
-      ErasedAst.Expr.ApplyAtomic(op, List(visitExp(exp)), tpe, loc)
-
     case FinalAst.Expression.NewObject(name, clazz, tpe, methods0, loc) =>
       val methods = methods0.map {
         case FinalAst.JvmMethod(ident, fparams, clo, retTpe, loc) =>

@@ -132,20 +132,6 @@ object ControlAst {
 
     case class TryCatch(exp: ControlAst.Expression, rules: List[ControlAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class InvokeMethod(method: Method, exp: ControlAst.Expression, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class InvokeStaticMethod(method: Method, args: List[ControlAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class GetField(field: Field, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class PutField(field: Field, exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class GetStaticField(field: Field, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
-    case class PutStaticField(field: Field, exp: ControlAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends ControlAst.Expression
-
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[ControlAst.JvmMethod], loc: SourceLocation) extends ControlAst.Expression
 
     case class Spawn(exp1: ControlAst.Expression, exp2: ControlAst.Expression, tpe: Type, loc: SourceLocation) extends ControlAst.Expression {

@@ -231,42 +231,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.TryCatch(e, rs, t, loc)
 
-      case ControlAst.Expression.InvokeConstructor(constructor, args, tpe, _, loc) =>
-        val as = args.map(visit)
-        val t = visitType(tpe)
-        FinalAst.Expression.InvokeConstructor(constructor, as, t, loc)
-
-      case ControlAst.Expression.InvokeMethod(method, exp, args, tpe, _, loc) =>
-        val e = visit(exp)
-        val as = args.map(visit)
-        val t = visitType(tpe)
-        FinalAst.Expression.InvokeMethod(method, e, as, t, loc)
-
-      case ControlAst.Expression.InvokeStaticMethod(method, args, tpe, _, loc) =>
-        val as = args.map(visit)
-        val t = visitType(tpe)
-        FinalAst.Expression.InvokeStaticMethod(method, as, t, loc)
-
-      case ControlAst.Expression.GetField(field, exp, tpe, _, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.GetField(field, e, t, loc)
-
-      case ControlAst.Expression.PutField(field, exp1, exp2, tpe, _, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expression.PutField(field, e1, e2, t, loc)
-
-      case ControlAst.Expression.GetStaticField(field, tpe, _, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expression.GetStaticField(field, t, loc)
-
-      case ControlAst.Expression.PutStaticField(field, exp, tpe, _, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.PutStaticField(field, e, t, loc)
-
       case ControlAst.Expression.NewObject(name, clazz, tpe, _, methods, loc) =>
         val t = visitType(tpe)
         val ms = methods.map(visitJvmMethod(_))

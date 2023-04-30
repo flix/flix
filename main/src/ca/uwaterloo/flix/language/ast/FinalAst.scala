@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.Method
 
 object FinalAst {
 
@@ -92,20 +92,6 @@ object FinalAst {
     case class Cast(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class TryCatch(exp: FinalAst.Expression, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class InvokeConstructor(constructor: Constructor[_], args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class InvokeMethod(method: Method, exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class InvokeStaticMethod(method: Method, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class GetField(field: Field, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class PutField(field: Field, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class GetStaticField(field: Field, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class PutStaticField(field: Field, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[FinalAst.JvmMethod], loc: SourceLocation) extends FinalAst.Expression
 

@@ -69,6 +69,13 @@ object FinalAstPrinter {
       case (AtomicOp.RecordSelect(field), List(exp)) => DocAst.Expression.RecordSelect(field, print(exp))
       case (AtomicOp.RecordExtend(field), List(exp1, exp2)) => DocAst.Expression.RecordExtend(field, print(exp1), print(exp2))
       case (AtomicOp.RecordRestrict(field), List(exp)) => DocAst.Expression.RecordRestrict(field, print(exp))
+      case (AtomicOp.InvokeConstructor(constructor), exps) => DocAst.Expression.JavaInvokeConstructor(constructor, exps.map(print))
+      case (AtomicOp.InvokeMethod(method), exp :: exps) => DocAst.Expression.JavaInvokeMethod(method, print(exp), exps.map(print))
+      case (AtomicOp.InvokeStaticMethod(method), exps) => DocAst.Expression.JavaInvokeStaticMethod(method, exps.map(print))
+      case (AtomicOp.GetField(field), List(exp)) => DocAst.Expression.JavaGetField(field, print(exp))
+      case (AtomicOp.PutField(field), List(exp1, exp2)) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
+      case (AtomicOp.GetStaticField(field), Nil) => DocAst.Expression.JavaGetStaticField(field)
+      case (AtomicOp.PutStaticField(field), List(exp)) => DocAst.Expression.JavaPutStaticField(field, print(exp))
       case _ => throw InternalCompilerException("Mismatched Arity", e.loc)
     }
     case ApplyClo(exp, args, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
@@ -95,13 +102,6 @@ object FinalAstPrinter {
     case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case FinalAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
-    case InvokeConstructor(constructor, args, _, _) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
-    case InvokeMethod(method, exp, args, _, _) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
-    case InvokeStaticMethod(method, args, _, _) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
-    case GetField(field, exp, _, _) => DocAst.Expression.JavaGetField(field, print(exp))
-    case PutField(field, exp1, exp2, _, _) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
-    case GetStaticField(field, _, _) => DocAst.Expression.JavaGetStaticField(field)
-    case PutStaticField(field, exp, _, _) => DocAst.Expression.JavaPutStaticField(field, print(exp))
     case NewObject(name, clazz, tpe, methods, _) =>
       val ms = methods.map {
         case FinalAst.JvmMethod(ident, fparams, clo, retTpe, _) =>

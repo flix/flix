@@ -225,33 +225,40 @@ object CallByValue {
       ControlAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
     case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+      val op = AtomicOp.InvokeConstructor(constructor)
       val es = exps.map(visitExp)
-      ControlAst.Expression.InvokeConstructor(constructor, es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
+      val op = AtomicOp.InvokeMethod(method)
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      ControlAst.Expression.InvokeMethod(method, e, es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, e :: es, tpe, purity, loc)
 
     case LiftedAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+      val op = AtomicOp.InvokeStaticMethod(method)
       val es = exps.map(visitExp)
-      ControlAst.Expression.InvokeStaticMethod(method, es, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
+      val op = AtomicOp.GetField(field)
       val e = visitExp(exp)
-      ControlAst.Expression.GetField(field, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
+      val op = AtomicOp.PutField(field)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ControlAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.GetStaticField(field, tpe, purity, loc) =>
-      ControlAst.Expression.GetStaticField(field, tpe, purity, loc)
+      val op = AtomicOp.GetStaticField(field)
+      ControlAst.Expression.ApplyAtomic(op, Nil, tpe, purity, loc)
 
     case LiftedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
+      val op = AtomicOp.PutStaticField(field)
       val e = visitExp(exp)
-      ControlAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+      ControlAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
