@@ -242,46 +242,6 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
-          case BoolOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case BoolOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
-          case CharOp.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
-
           case Float32Op.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitInsn(FCMPG)
@@ -402,32 +362,32 @@ object GenExpression {
             visitor.visitJumpInsn(IF_ICMPLE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt =>
+          case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt | CharOp.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPGE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Le | Int16Op.Le | Int32Op.Le =>
+          case Int8Op.Le | Int16Op.Le | Int32Op.Le | CharOp.Le =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPGT, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Eq | Int16Op.Eq | Int32Op.Eq =>
+          case Int8Op.Eq | Int16Op.Eq | Int32Op.Eq | CharOp.Eq | BoolOp.Eq =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPNE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Neq | Int16Op.Neq | Int32Op.Neq =>
+          case Int8Op.Neq | Int16Op.Neq | Int32Op.Neq | CharOp.Neq | BoolOp.Neq =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPEQ, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Ge | Int16Op.Ge | Int32Op.Ge =>
+          case Int8Op.Ge | Int16Op.Ge | Int32Op.Ge | CharOp.Ge =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPLT, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
-          case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt =>
+          case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt | CharOp.Gt =>
             val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
             visitor.visitJumpInsn(IF_ICMPLE, condElse)
             visitComparisonEpilogue(visitor, condElse, condEnd)
@@ -1576,20 +1536,20 @@ object GenExpression {
 
   }
 
-  private def visitComparisonEpilogue(visitor: MethodVisitor, condElse: Label, condEnd: Label): Unit = {
-    visitor.visitInsn(ICONST_1)
-    visitor.visitJumpInsn(GOTO, condEnd)
-    visitor.visitLabel(condElse)
-    visitor.visitInsn(ICONST_0)
-    visitor.visitLabel(condEnd)
-  }
-
   private def visitComparisonPrologue(visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label, exp1: Expr, exp2: Expr)(implicit root: Root, flix: Flix): (Label, Label) = {
     compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
     compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
     val condElse = new Label()
     val condEnd = new Label()
     (condElse, condEnd)
+  }
+
+  private def visitComparisonEpilogue(visitor: MethodVisitor, condElse: Label, condEnd: Label): Unit = {
+    visitor.visitInsn(ICONST_1)
+    visitor.visitJumpInsn(GOTO, condEnd)
+    visitor.visitLabel(condElse)
+    visitor.visitInsn(ICONST_0)
+    visitor.visitLabel(condEnd)
   }
 
   private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = cst match {
