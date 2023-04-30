@@ -117,16 +117,18 @@ object Reducer {
       ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
     case LiftedAst.Expression.Region(tpe, loc) =>
-      ReducedAst.Expr.Region(tpe, loc)
+      val op = AtomicOp.Region
+      ReducedAst.Expr.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
     case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+      val op = AtomicOp.ScopeExit
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ReducedAst.Expr.ScopeExit(e1, e2, tpe, purity, loc)
+      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.Is(sym, exp, purity, loc) =>
       val op = AtomicOp.Is(sym)
@@ -278,9 +280,10 @@ object Reducer {
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
 
     case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+      val op = AtomicOp.Spawn
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ReducedAst.Expr.Spawn(e1, e2, tpe, loc)
+      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc)
 
     case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
       val op = AtomicOp.Lazy
