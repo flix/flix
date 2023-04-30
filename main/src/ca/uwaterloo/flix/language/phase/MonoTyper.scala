@@ -20,10 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-object Finalize {
+object MonoTyper {
 
-  def run(root: ControlAst.Root)(implicit flix: Flix): FinalAst.Root = flix.phase("Finalize") {
-
+  def run(root: ReducedAst.Root)(implicit flix: Flix): MonoTypedAst.Root = flix.phase("Finalize") {
     val defs = root.defs.map {
       case (k, v) => k -> visitDef(v)
     }
@@ -32,161 +31,133 @@ object Finalize {
       case (sym, enum) => sym -> visitEnum(enum)
     }
 
-    FinalAst.Root(defs, enums, root.entryPoint, root.sources)
+    MonoTypedAst.Root(defs, enums, root.entryPoint, root.sources)
   }
 
-  private def visitDef(def0: ControlAst.Def)(implicit flix: Flix): FinalAst.Def = {
+  private def visitDef(def0: ReducedAst.Def)(implicit flix: Flix): MonoTypedAst.Def = {
     val fs = def0.fparams.map(visitFormalParam)
     val e = visitExp(def0.exp)
     val tpe = visitType(def0.tpe)
-    FinalAst.Def(def0.ann, def0.mod, def0.sym, fs, e, tpe, def0.loc)
+    MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, fs, e, tpe, def0.loc)
   }
 
-  private def visitEnum(enum0: ControlAst.Enum)(implicit flix: Flix): FinalAst.Enum = enum0 match {
-    case ControlAst.Enum(ann, mod, sym, cases0, tpe0, loc) =>
+  private def visitEnum(enum0: ReducedAst.Enum)(implicit flix: Flix): MonoTypedAst.Enum = enum0 match {
+    case ReducedAst.Enum(ann, mod, sym, cases0, tpe0, loc) =>
       val cases = cases0.map {
-        case (tag, ControlAst.Case(enumSym, tagType, tagLoc)) =>
+        case (tag, ReducedAst.Case(enumSym, tagType, tagLoc)) =>
           val tpe = visitType(tagType)
-          tag -> FinalAst.Case(enumSym, tpe, tagLoc)
+          tag -> MonoTypedAst.Case(enumSym, tpe, tagLoc)
       }
       val tpe = visitType(tpe0)
-      FinalAst.Enum(ann, mod, sym, cases, tpe, loc)
+      MonoTypedAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
-  private def visitExp(exp0: ControlAst.Expr)(implicit flix: Flix): FinalAst.Expr = {
+  private def visitExp(exp0: ReducedAst.Expr)(implicit flix: Flix): MonoTypedAst.Expr = exp0 match {
+    case ReducedAst.Expr.Cst(cst, tpe, loc) =>
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.Cst(cst, t, loc)
 
-    def visit(e0: ControlAst.Expr): FinalAst.Expr = e0 match {
-      case ControlAst.Expr.Cst(cst, tpe, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expr.Cst(cst, t, loc)
+    case ReducedAst.Expr.Var(sym, tpe, loc) =>
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.Var(sym, t, loc)
 
-      case ControlAst.Expr.Var(sym, tpe, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expr.Var(sym, t, loc)
+    case ReducedAst.Expr.Closure(sym, exps, tpe, loc) =>
+      val op = AtomicOp.Closure(sym)
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
 
-      case ControlAst.Expr.Closure(sym, exps, tpe, loc) =>
-        val op = AtomicOp.Closure(sym)
-        val es = exps.map(visit)
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyAtomic(op, es, t, loc)
+    case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
 
-      case ControlAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visit)
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyAtomic(op, es, t, loc)
+    case ReducedAst.Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
+      val es = exps map visitExp
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.ApplyClo(visitExp(exp), es, ct, t, loc)
 
-      case ControlAst.Expr.ApplyClo(exp, args, tpe, _, loc) =>
-        val as = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyClo(visit(exp), as, t, loc)
+    case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
+      val es = exps map visitExp
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.ApplyDef(sym, es, ct, t, loc)
 
-      case ControlAst.Expr.ApplyDef(name, args, tpe, _, loc) =>
-        val as = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyDef(name, as, t, loc)
+    case ReducedAst.Expr.ApplySelfTail(name, formals, actuals, tpe, _, loc) =>
+      val fs = formals.map(visitFormalParam)
+      val as = actuals.map(visitExp)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.ApplySelfTail(name, fs, as, t, loc)
 
-      case ControlAst.Expr.ApplyCloTail(exp, args, tpe, _, loc) =>
-        val e = visit(exp)
-        val rs = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyCloTail(e, rs, t, loc)
+    case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val v3 = visitExp(exp3)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.IfThenElse(e1, e2, v3, t, loc)
 
-      case ControlAst.Expr.ApplyDefTail(sym, args, tpe, _, loc) =>
-        val as = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyDefTail(sym, as, t, loc)
+    case ReducedAst.Expr.Branch(exp, branches, tpe, _, loc) =>
+      val e = visitExp(exp)
+      val bs = branches map {
+        case (sym, br) => sym -> visitExp(br)
+      }
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.Branch(e, bs, t, loc)
 
-      case ControlAst.Expr.ApplySelfTail(name, formals, actuals, tpe, _, loc) =>
-        val fs = formals.map(visitFormalParam)
-        val as = actuals.map(visit)
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplySelfTail(name, fs, as, t, loc)
+    case ReducedAst.Expr.JumpTo(sym, tpe, _, loc) =>
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.JumpTo(sym, t, loc)
 
-      case ControlAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val v3 = visit(exp3)
-        val t = visitType(tpe)
-        FinalAst.Expr.IfThenElse(e1, e2, v3, t, loc)
+    case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.Let(sym, e1, e2, t, loc)
 
-      case ControlAst.Expr.Branch(exp, branches, tpe, _, loc) =>
-        val e = visit(exp)
-        val bs = branches map {
-          case (sym, br) => sym -> visit(br)
-        }
-        val t = visitType(tpe)
-        FinalAst.Expr.Branch(e, bs, t, loc)
+    case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, _, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
-      case ControlAst.Expr.JumpTo(sym, tpe, _, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expr.JumpTo(sym, t, loc)
+    case ReducedAst.Expr.Region(tpe, loc) =>
+      val op = AtomicOp.Region
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.ApplyAtomic(op, Nil, t, loc)
 
-      case ControlAst.Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expr.Let(sym, e1, e2, t, loc)
+    case ReducedAst.Expr.Scope(sym, exp, tpe, _, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.Scope(sym, e, t, loc)
 
-      case ControlAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, _, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expr.LetRec(varSym, index, defSym, e1, e2, t, loc)
+    case ReducedAst.Expr.ScopeExit(exp1, exp2, tpe, _, loc) =>
+      val op = AtomicOp.ScopeExit
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.ApplyAtomic(op, List(e1, e2), t, loc)
 
-      case ControlAst.Expr.Region(tpe, loc) =>
-        val op = AtomicOp.Region
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyAtomic(op, Nil, t, loc)
+    case ReducedAst.Expr.TryCatch(exp, rules, tpe, _, loc) =>
+      val e = visitExp(exp)
+      val rs = rules map {
+        case ReducedAst.CatchRule(sym, clazz, body) =>
+          val b = visitExp(body)
+          MonoTypedAst.CatchRule(sym, clazz, b)
+      }
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.TryCatch(e, rs, t, loc)
 
-      case ControlAst.Expr.Scope(sym, exp, tpe, _, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expr.Scope(sym, e, t, loc)
+    case ReducedAst.Expr.NewObject(name, clazz, tpe, _, methods, loc) =>
+      val t = visitType(tpe)
+      val ms = methods.map(visitJvmMethod(_))
+      MonoTypedAst.Expr.NewObject(name, clazz, t, ms, loc)
 
-      case ControlAst.Expr.ScopeExit(exp1, exp2, tpe, _, loc) =>
-        val op = AtomicOp.ScopeExit
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expr.ApplyAtomic(op, List(e1, e2), t, loc)
-
-      case ControlAst.Expr.TryCatch(exp, rules, tpe, _, loc) =>
-        val e = visit(exp)
-        val rs = rules map {
-          case ControlAst.CatchRule(sym, clazz, body) =>
-            val b = visit(body)
-            FinalAst.CatchRule(sym, clazz, b)
-        }
-        val t = visitType(tpe)
-        FinalAst.Expr.TryCatch(e, rs, t, loc)
-
-      case ControlAst.Expr.NewObject(name, clazz, tpe, _, methods, loc) =>
-        val t = visitType(tpe)
-        val ms = methods.map(visitJvmMethod(_))
-        FinalAst.Expr.NewObject(name, clazz, t, ms, loc)
-
-      case ControlAst.Expr.Spawn(exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val t = visitType(tpe)
-        FinalAst.Expr.Spawn(e1, e2, t, loc)
-
-    }
-
-    visit(exp0)
+    case ReducedAst.Expr.Spawn(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      MonoTypedAst.Expr.Spawn(e1, e2, t, loc)
   }
 
-  private def visitFormalParam(p0: ControlAst.FormalParam): FinalAst.FormalParam = {
-    val tpe = visitType(p0.tpe)
-    FinalAst.FormalParam(p0.sym, tpe)
-  }
-
-  // TODO: Should be private
-  // TODO: Remove
-
-  /**
-    * Finalizes the given type.
-    */
   def visitType(tpe0: Type): MonoType = {
 
     def visit(t0: Type): MonoType = {
@@ -310,11 +281,16 @@ object Finalize {
     visit(Type.eraseAliases(tpe0))
   }
 
-  private def visitJvmMethod(method: ControlAst.JvmMethod)(implicit flix: Flix): FinalAst.JvmMethod = method match {
-    case ControlAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+  private def visitFormalParam(p0: ReducedAst.FormalParam): MonoTypedAst.FormalParam = {
+    val tpe = visitType(p0.tpe)
+    MonoTypedAst.FormalParam(p0.sym, tpe)
+  }
+
+  private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit flix: Flix): MonoTypedAst.JvmMethod = method match {
+    case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       val f = fparams.map(visitFormalParam)
       val c = visitExp(clo)
       val t = visitType(retTpe)
-      FinalAst.JvmMethod(ident, f, c, t, loc)
+      MonoTypedAst.JvmMethod(ident, f, c, t, loc)
   }
 }

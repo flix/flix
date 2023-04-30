@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 
-object ControlAst {
+object ReducedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
@@ -54,13 +54,9 @@ object ControlAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
-
-    case class ApplyCloTail(exp: Expr, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
-
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 

@@ -50,13 +50,9 @@ object ErasedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyCloTail(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class ApplyDefTail(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
@@ -85,4 +81,5 @@ object ErasedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
+
 }

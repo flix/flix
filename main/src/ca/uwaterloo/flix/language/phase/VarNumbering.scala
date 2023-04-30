@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ControlAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
 
 import scala.annotation.tailrec
@@ -67,18 +67,11 @@ object VarNumbering {
       case Expr.ApplyAtomic(_, exps, _, _, _) =>
         visitExps(exps, i0)
 
-      case Expr.ApplyClo(exp, args, _, _, _) =>
+      case Expr.ApplyClo(exp, args, _, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
 
-      case Expr.ApplyDef(_, args, _, _, _) =>
-        visitExps(args, i0)
-
-      case Expr.ApplyCloTail(exp, args, _, _, _) =>
-        val i = visitExp(exp, i0)
-        visitExps(args, i)
-
-      case Expr.ApplyDefTail(_, args, _, _, _) =>
+      case Expr.ApplyDef(_, args, _, _, _, _) =>
         visitExps(args, i0)
 
       case Expr.ApplySelfTail(_, _, args, _, _, _) =>

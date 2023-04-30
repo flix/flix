@@ -334,6 +334,23 @@ object Ast {
   }
 
   /**
+    * A common super-type that represents a call type.
+    */
+  sealed trait CallType
+
+  object CallType {
+    /**
+      * Represents a call in tail position.
+      */
+    case object TailCall extends CallType
+
+    /**
+      * Represents a call in non-tail position.
+      */
+    case object NonTailCall extends CallType
+  }
+
+  /**
     * Documentation.
     *
     * @param lines the lines of the comments.
