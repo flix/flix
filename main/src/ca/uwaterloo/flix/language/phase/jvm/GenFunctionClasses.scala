@@ -140,7 +140,7 @@ object GenFunctionClasses {
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, m, classType, Map(), enterLabel)
+    GenExpression.compileStmt(defn.stmt, m, classType, Map(), enterLabel)
 
     // Loading `this`
     m.visitVarInsn(ALOAD, 0)

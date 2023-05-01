@@ -1746,6 +1746,13 @@ object GenExpression {
 
   }
 
+  /**
+    * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
+    */
+  def compileStmt(stmt0: Stmt, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = stmt0 match {
+    case Stmt.Ret(e, tpe, loc) => compileExpression(e, visitor, currentClass, lenv0, entryPoint)
+  }
+
   private def visitComparisonPrologue(visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label, exp1: Expr, exp2: Expr)(implicit root: Root, flix: Flix): (Label, Label) = {
     compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
     compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)

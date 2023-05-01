@@ -27,7 +27,7 @@ object MonoTypedAst {
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
   }
 
@@ -70,6 +70,18 @@ object MonoTypedAst {
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class Spawn(exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
+
+  }
+
+  sealed trait Stmt {
+    def tpe: MonoType
+
+    def loc: SourceLocation
+  }
+
+  object Stmt {
+
+    case class Ret(expr: Expr, tpe: MonoType, loc: SourceLocation) extends Stmt
 
   }
 
