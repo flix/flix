@@ -69,15 +69,10 @@ object Simplifier {
         SimplifiedAst.Expression.Apply(e, es, tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Unary(sop, e, tpe, pur, loc) =>
-        // TODO: Remove when we have the new backend
-        val op = SemanticOperatorOps.toUnaryOp(sop, loc)
-        SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, simplifyPurity(pur), loc)
+        SimplifiedAst.Expression.Unary(sop, visitExp(e), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Binary(sop, e1, e2, tpe, pur, loc) =>
-        // TODO: Remove when we have the new backend
-        val op = SemanticOperatorOps.toBinaryOp(sop, loc)
-
-        SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, simplifyPurity(pur), loc)
+        SimplifiedAst.Expression.Binary(sop, visitExp(e1), visitExp(e2), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, pur, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, simplifyPurity(pur), loc)
@@ -355,7 +350,7 @@ object Simplifier {
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, purity, loc)
+      SimplifiedAst.Expression.Binary(sop, e1, e2, Type.Bool, purity, loc)
     }
 
     /**
@@ -365,7 +360,7 @@ object Simplifier {
       val add = SemanticOperator.Int32Op.Add
       val tpe = Type.Int32
       val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(add, BinaryOperator.Plus, e1, e2, tpe, purity, loc)
+      SimplifiedAst.Expression.Binary(add, e1, e2, tpe, purity, loc)
     }
 
     /**
@@ -375,7 +370,7 @@ object Simplifier {
       val sub = SemanticOperator.Int32Op.Sub
       val tpe = Type.Int32
       val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(sub, BinaryOperator.Minus, e1, e2, tpe, purity, loc)
+      SimplifiedAst.Expression.Binary(sub, e1, e2, tpe, purity, loc)
     }
 
     /**
@@ -551,7 +546,7 @@ object Simplifier {
               SimplifiedAst.Expression.Let(name, SimplifiedAst.Expression.Index(SimplifiedAst.Expression.Var(v, tpe, loc), idx, pat.tpe, Pure, loc), exp, succ.tpe, exp.purity, loc)
           }
 
-        case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs(0).loc)
+        case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
       }
 
     /**
@@ -622,12 +617,12 @@ object Simplifier {
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val caseSym = new Symbol.CaseSym(sym, "Absent", SourceLocation.Unknown)
               val isAbsent = SimplifiedAst.Expression.Is(caseSym, varExp, varExp.purity, loc)
-              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isAbsent, acc, Type.Bool, acc.purity, loc)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, isAbsent, acc, Type.Bool, acc.purity, loc)
             case (((freshMatchVar, LoweredAst.RelationalChoicePattern.Present(matchVar, _, _)), (matchExp, _)), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val caseSym = new Symbol.CaseSym(sym, "Present", SourceLocation.Unknown)
               val isPresent = SimplifiedAst.Expression.Is(caseSym, varExp, varExp.purity, loc)
-              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isPresent, acc, Type.Bool, acc.purity, loc)
+              SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, isPresent, acc, Type.Bool, acc.purity, loc)
           }
           val bodyExp = visitExp(body)
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
@@ -691,11 +686,11 @@ object Simplifier {
       case SimplifiedAst.Expression.Apply(exp, args, tpe, purity, loc) =>
         SimplifiedAst.Expression.Apply(visitExp(exp), args.map(visitExp), tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Unary(sop, op, visitExp(exp), tpe, purity, loc)
+      case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
+        SimplifiedAst.Expression.Unary(sop, visitExp(exp), tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
+      case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
+        SimplifiedAst.Expression.Binary(sop, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, purity, loc)

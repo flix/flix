@@ -126,14 +126,14 @@ object LambdaLift {
         val as = args map visitExp
         LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+        LiftedAst.Expression.Unary(sop, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+        LiftedAst.Expression.Binary(sop, e1, e2, tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
