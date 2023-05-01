@@ -255,7 +255,7 @@ object Lowering {
     * Lowers `sym` from a restrictable enum sym into a regular enum sym.
     */
   private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
-    new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+    new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
 
   /**
     * Lowers the given `effect`.

@@ -129,6 +129,10 @@ object VarNumbering {
         visitExps(xs, i2)
     }
 
+    def visitStm(stmt: Stmt, i0: Int): Int = stmt match {
+      case Stmt.Ret(e, _, _) => visitExp(e, i0)
+    }
+
     // Compute the stack offset for each formal parameter.
     var offset = 0
     for (FormalParam(sym, _, tpe, _) <- defn.fparams) {
@@ -136,7 +140,7 @@ object VarNumbering {
     }
 
     // Compute stack offset for the body.
-    visitExp(defn.exp, offset)
+    visitStm(defn.stmt, offset)
   }
 
   /**
