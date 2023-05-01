@@ -245,8 +245,6 @@ object SimpleType {
 
   case class TagConstructor(name: String) extends SimpleType
 
-  case class Tag(name: String, args: List[SimpleType], ret: SimpleType) extends SimpleType
-
   //////////////////////
   // Miscellaneous Types
   //////////////////////

@@ -110,10 +110,6 @@ object Kinder {
 
         mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, restrictableEnums, classes, defs, instances, effects) =>
-            // construct the restrictable enum universes
-            val univMap = restrictableEnums.map {
-              case (sym, enum) => sym -> enum.cases.keys.toList
-            }.toMap
             KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
