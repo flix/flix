@@ -21,9 +21,8 @@ object ControlSeparator {
     val fparams = fparams0.map(visitFormalParam)
     // important! reify bindings later
     implicit val ctx: Context = new Context()
-    val (stmt, bindings) = ctx.withBindings(_ => visitExpAsStmt(exp))
-    val body = ctx.reifyBindings(stmt, bindings)
-    CallByValueAst.Def(ann, mod, sym, fparams, body, tpe, loc)
+    val stmt = insertBindings(_ => visitExpAsStmt(exp))
+    CallByValueAst.Def(ann, mod, sym, fparams, stmt, tpe, loc)
   }
 
   def visitEnum(e: LiftedAst.Enum): CallByValueAst.Enum = {
@@ -37,7 +36,7 @@ object ControlSeparator {
     CallByValueAst.Case(sym, tpeDeprecated, loc)
   }
 
-  // invariant: context will be empty
+  // invariant: context will be unchanged
   def visitExpAsStmt(exp: LiftedAst.Expression)(implicit ctx: Context, flix: Flix): CallByValueAst.Stmt = exp match {
     case Expression.Cst(cst, tpe, loc) =>
       insertBindings(_ => ret(CallByValueAst.Expr.Cst(cst, tpe, loc)))
@@ -88,8 +87,7 @@ object ControlSeparator {
     case Expression.Branch(exp, branches, tpe, purity, loc) => todo
     case Expression.JumpTo(sym, tpe, purity, loc) => todo
     case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
-      // ensure proper binding ordering
-      val stmt1 = insertBindings(_ => ret(visitExpAsExpr(exp1)))
+      val stmt1 = visitExpAsStmt(exp1)
       val stmt2 = visitExpAsStmt(exp2)
       CallByValueAst.Stmt.LetVal(sym, stmt1, stmt2, tpe, purity, loc)
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => todo
@@ -146,7 +144,9 @@ object ControlSeparator {
     */
   class Context() {
 
-    private var l: List[Binding] = Nil
+    type Stack[a] = List[a]
+
+    private var l: Stack[Binding] = Nil
 
     def bind(stmt: CallByValueAst.Stmt)(implicit flix: Flix): CallByValueAst.Expr.Var = {
       val loc = SourceLocation.Unknown
@@ -155,7 +155,7 @@ object ControlSeparator {
       CallByValueAst.Expr.Var(sym, stmt.tpe, stmt.loc)
     }
 
-    def withBindings[R](f: Unit => R): (R, List[Binding]) = {
+    def withBindings[R](f: Unit => R): (R, Stack[Binding]) = {
       // track fresh bindings
       val old = l
       l = Nil
@@ -165,7 +165,7 @@ object ControlSeparator {
       (res, bindings)
     }
 
-    def reifyBindings(stmt: CallByValueAst.Stmt, bindings: List[Binding]): CallByValueAst.Stmt = {
+    def reifyBindings(stmt: CallByValueAst.Stmt, bindings: Stack[Binding]): CallByValueAst.Stmt = {
       bindings.foldLeft(stmt) {
         case (acc, Binding.Val(sym, binding, tpe, purity, loc)) =>
           CallByValueAst.Stmt.LetVal(sym, binding, acc, tpe, purity, loc)
