@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Purity._
 import ca.uwaterloo.flix.language.ast._
@@ -248,14 +247,14 @@ object Simplifier {
         // Wrap the expression in a closure: () -> tpe \ eff
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, pur, pur, e1.tpe, loc)
+        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, pur, e1.tpe, loc)
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e1, lambdaTyp, loc)
         SimplifiedAst.Expression.Spawn(lambdaExp, e2, tpe, loc)
 
       case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
         // Wrap the expression in a closure: () -> tpe & Pure
         val e = visitExp(exp)
-        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, Type.Empty, e.tpe, loc)
+        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe, loc)
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
         SimplifiedAst.Expression.Lazy(lambdaExp, tpe, loc)
 
