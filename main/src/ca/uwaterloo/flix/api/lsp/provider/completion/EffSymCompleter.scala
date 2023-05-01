@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2022 Paul Butcher, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.fmt
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EffectCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object FormatCase {
+object EffSymCompleter extends Completer {
 
-  /**
-    * Returns a markdown string for the given `caze`.
-    */
-  def asMarkDown(caze: TypedAst.Case)(implicit flix: Flix): String = {
-    s"case **${caze.sym.name}**: ${FormatScheme.formatScheme(caze.sc)}"
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EffectCompletion] = {
+    root.effects.map {
+      case (sym, eff) => Completion.EffectCompletion(sym, eff.doc.text)
+    }
   }
 
 }

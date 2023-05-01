@@ -17,10 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 
@@ -34,7 +32,7 @@ object LambdaLift {
   /**
     * Performs lambda lifting on the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.phase("LambdaLift") {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
@@ -51,7 +49,7 @@ object LambdaLift {
       newEnums,
       root.entryPoint,
       root.sources
-    ).toSuccess
+    )
   }
 
   /**
@@ -128,14 +126,14 @@ object LambdaLift {
         val as = args map visitExp
         LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+        LiftedAst.Expression.Unary(sop, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+        LiftedAst.Expression.Binary(sop, e1, e2, tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
@@ -261,6 +259,10 @@ object LambdaLift {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp)
+        LiftedAst.Expression.InstanceOf(e, clazz, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)

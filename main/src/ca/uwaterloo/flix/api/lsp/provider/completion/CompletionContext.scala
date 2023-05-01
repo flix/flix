@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 
 /**
   * Represents a completion context.
@@ -24,9 +25,10 @@ import ca.uwaterloo.flix.language.CompilationMessage
   * @param uri          Source file URI (from client)
   * @param pos          The position in LSP
   * @param range        Start and end position of the word underneath (or alongside) the cursor
+  * @param sctx         The syntactic context.
   * @param word         The word underneath (or alongside) the cursor
   * @param previousWord The word before the above (note that this may be on either the current or previous line)
   * @param prefix       The text from the start of the line up to the cursor
   * @param errors       The current compilation errors
   */
-case class CompletionContext(uri: String, pos: Position, range: Range, word: String, previousWord: String, prefix: String, errors: List[CompilationMessage])
+case class CompletionContext(uri: String, pos: Position, range: Range, sctx: SyntacticContext, word: String, previousWord: String, prefix: String, errors: List[CompilationMessage])

@@ -110,10 +110,6 @@ object Kinder {
 
         mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, restrictableEnums, classes, defs, instances, effects) =>
-            // construct the restrictable enum universes
-            val univMap = restrictableEnums.map {
-              case (sym, enum) => sym -> enum.cases.keys.toList
-            }.toMap
             KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
@@ -389,7 +385,7 @@ object Kinder {
       mapN(tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
         case (tparams, fparams, tpe, (pur, eff), tconstrs, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, eff, tpe, tpe.loc)
+          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
           KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, tconstrs, loc)
       }
@@ -729,6 +725,12 @@ object Kinder {
           val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
           KindedAst.Expression.Error(err, tvar, pvar, evar)
+      }
+
+    case ResolvedAst.Expression.InstanceOf(exp0, clazz, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        exp => KindedAst.Expression.InstanceOf(exp, clazz, loc)
       }
 
     case ResolvedAst.Expression.CheckedCast(cast, exp, loc) =>
@@ -1271,7 +1273,7 @@ object Kinder {
         case Some(_) =>
           val purAndEffVal = visitPurityAndEffect(purAndEff, kenv, senv, taenv, root)
           mapN(purAndEffVal) {
-            case (pur, eff) => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(pur, eff), loc)
+            case (pur, eff) => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(pur), loc)
           }
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }

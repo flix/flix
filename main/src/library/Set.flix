@@ -128,7 +128,7 @@ mod Set {
     ///
     def useParallelEvaluation(s: Set[a]): Bool =
         let Set(t) = s;
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///

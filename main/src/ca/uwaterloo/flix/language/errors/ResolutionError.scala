@@ -432,12 +432,13 @@ object ResolutionError {
   /**
     * Undefined Name Error.
     *
-    * @param qn  the unresolved name.
-    * @param ns  the current namespace.
-    * @param env the variables in the scope.
-    * @param loc the location where the error occurred.
+    * @param qn    the unresolved name.
+    * @param ns    the current namespace.
+    * @param env   the variables in the scope.
+    * @param isUse true if the undefined name occurs in a use.
+    * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {

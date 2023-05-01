@@ -54,7 +54,7 @@ object CompletionUtils {
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
 
   def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
       else
@@ -75,17 +75,7 @@ object CompletionUtils {
         }
       }
 
-      // don't show effect if set effects are turned off
-      val eff = if (flix.options.xnoseteffects) {
-        ""
-      } else {
-        eff0 match {
-          case Type.Cst(TypeConstructor.Empty, _) => ""
-          case e => " \\ " + FormatType.formatType(e)
-        }
-      }
-
-      s"$name(${args.mkString(", ")}): $retTpe$pur$eff"
+      s"$name(${args.mkString(", ")}): $retTpe$pur"
   }
 
   /**
