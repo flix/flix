@@ -224,8 +224,6 @@ object OperatorPrinter {
          Int32Op.Shr |
          Int64Op.Shr |
          BigIntOp.Shr => shr
-    case ObjectOp.EqNull => "null == "
-    case ObjectOp.NeqNull => "null != "
   }
 
 }
