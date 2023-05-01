@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoTypedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.MonoTypedAst.Expr._
+import ca.uwaterloo.flix.language.ast.MonoTypedAst.Stmt
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -119,6 +120,13 @@ object MonoTypedAstPrinter {
       DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), ms)
     case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
 
+  }
+
+  /**
+    * Returns the [[DocAst.Expression]] representation of `s`.
+    */
+  def print(s: MonoTypedAst.Stmt): DocAst.Expression = s match {
+    case Stmt.Ret(e, tpe, loc) => print(e)
   }
 
   /**

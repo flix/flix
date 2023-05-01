@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ReducedAst.Stmt
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -36,9 +37,9 @@ object MonoTyper {
 
   private def visitDef(def0: ReducedAst.Def)(implicit flix: Flix): MonoTypedAst.Def = {
     val fs = def0.fparams.map(visitFormalParam)
-    val e = visitExp(def0.exp)
+    val s = visitStmt(def0.stmt)
     val tpe = visitType(def0.tpe)
-    MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, fs, e, tpe, def0.loc)
+    MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, fs, s, tpe, def0.loc)
   }
 
   private def visitEnum(enum0: ReducedAst.Enum)(implicit flix: Flix): MonoTypedAst.Enum = enum0 match {
@@ -52,7 +53,7 @@ object MonoTyper {
       MonoTypedAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
-  private def visitExp(exp0: ReducedAst.Expr)(implicit flix: Flix): MonoTypedAst.Expr = exp0 match {
+  private def visitExpr(exp0: ReducedAst.Expr)(implicit flix: Flix): MonoTypedAst.Expr = exp0 match {
     case ReducedAst.Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       MonoTypedAst.Expr.Cst(cst, t, loc)
@@ -63,42 +64,42 @@ object MonoTyper {
 
     case ReducedAst.Expr.Closure(sym, exps, tpe, loc) =>
       val op = AtomicOp.Closure(sym)
-      val es = exps.map(visitExp)
+      val es = exps.map(visitExpr)
       val t = visitType(tpe)
       MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
 
     case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp)
+      val es = exps.map(visitExpr)
       val t = visitType(tpe)
       MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
 
     case ReducedAst.Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
-      val es = exps map visitExp
+      val es = exps map visitExpr
       val t = visitType(tpe)
-      MonoTypedAst.Expr.ApplyClo(visitExp(exp), es, ct, t, loc)
+      MonoTypedAst.Expr.ApplyClo(visitExpr(exp), es, ct, t, loc)
 
     case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
-      val es = exps map visitExp
+      val es = exps map visitExpr
       val t = visitType(tpe)
       MonoTypedAst.Expr.ApplyDef(sym, es, ct, t, loc)
 
     case ReducedAst.Expr.ApplySelfTail(name, formals, actuals, tpe, _, loc) =>
       val fs = formals.map(visitFormalParam)
-      val as = actuals.map(visitExp)
+      val as = actuals.map(visitExpr)
       val t = visitType(tpe)
       MonoTypedAst.Expr.ApplySelfTail(name, fs, as, t, loc)
 
     case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val v3 = visitExp(exp3)
+      val e1 = visitExpr(exp1)
+      val e2 = visitExpr(exp2)
+      val v3 = visitExpr(exp3)
       val t = visitType(tpe)
       MonoTypedAst.Expr.IfThenElse(e1, e2, v3, t, loc)
 
     case ReducedAst.Expr.Branch(exp, branches, tpe, _, loc) =>
-      val e = visitExp(exp)
+      val e = visitExpr(exp)
       val bs = branches map {
-        case (sym, br) => sym -> visitExp(br)
+        case (sym, br) => sym -> visitExpr(br)
       }
       val t = visitType(tpe)
       MonoTypedAst.Expr.Branch(e, bs, t, loc)
@@ -108,27 +109,27 @@ object MonoTyper {
       MonoTypedAst.Expr.JumpTo(sym, t, loc)
 
     case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
+      val e1 = visitExpr(exp1)
+      val e2 = visitExpr(exp2)
       val t = visitType(tpe)
       MonoTypedAst.Expr.Let(sym, e1, e2, t, loc)
 
     case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, _, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
+      val e1 = visitExpr(exp1)
+      val e2 = visitExpr(exp2)
       val t = visitType(tpe)
       MonoTypedAst.Expr.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
     case ReducedAst.Expr.Scope(sym, exp, tpe, _, loc) =>
-      val e = visitExp(exp)
+      val e = visitExpr(exp)
       val t = visitType(tpe)
       MonoTypedAst.Expr.Scope(sym, e, t, loc)
 
     case ReducedAst.Expr.TryCatch(exp, rules, tpe, _, loc) =>
-      val e = visitExp(exp)
+      val e = visitExpr(exp)
       val rs = rules map {
         case ReducedAst.CatchRule(sym, clazz, body) =>
-          val b = visitExp(body)
+          val b = visitExpr(body)
           MonoTypedAst.CatchRule(sym, clazz, b)
       }
       val t = visitType(tpe)
@@ -139,6 +140,13 @@ object MonoTyper {
       val ms = methods.map(visitJvmMethod(_))
       MonoTypedAst.Expr.NewObject(name, clazz, t, ms, loc)
 
+  }
+
+  private def visitStmt(stmt0: ReducedAst.Stmt)(implicit flix: Flix): MonoTypedAst.Stmt = stmt0 match {
+    case Stmt.Ret(exp, tpe, loc) =>
+      val e = visitExpr(exp)
+      val t = visitType(tpe)
+      MonoTypedAst.Stmt.Ret(e, t, loc)
   }
 
   def visitType(tpe0: Type): MonoType = {
@@ -195,7 +203,7 @@ object MonoTyper {
             case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
             case TypeConstructor.RestrictableEnum(sym, _) =>
-              val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+              val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
               MonoType.Enum(enumSym, args)
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
@@ -272,7 +280,7 @@ object MonoTyper {
   private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit flix: Flix): MonoTypedAst.JvmMethod = method match {
     case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       val f = fparams.map(visitFormalParam)
-      val c = visitExp(clo)
+      val c = visitExpr(clo)
       val t = visitType(retTpe)
       MonoTypedAst.JvmMethod(ident, f, c, t, loc)
   }

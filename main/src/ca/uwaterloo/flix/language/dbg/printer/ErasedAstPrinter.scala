@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.Ast.CallType
-import ca.uwaterloo.flix.language.ast.{Ast, ErasedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -79,6 +79,13 @@ object ErasedAstPrinter {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
           DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       })
+  }
+
+  /**
+    * Returns the [[DocAst.Expression]] representation of `s`.
+    */
+  def print(s: ErasedAst.Stmt): DocAst.Expression = s match {
+    case ErasedAst.Stmt.Ret(e, _, _) => print(e)
   }
 
   /**
