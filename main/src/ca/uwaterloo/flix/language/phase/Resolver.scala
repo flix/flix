@@ -59,17 +59,17 @@ object Resolver {
     * The set of cases that are used by default in the namespace.
     */
   private val DefaultCases = Map(
-    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Nil", SourceLocation.Unknown),
-    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Cons", SourceLocation.Unknown),
+    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Nil", SourceLocation.Unknown),
+    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Cons", SourceLocation.Unknown),
 
-    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "None", SourceLocation.Unknown),
-    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
+    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "None", SourceLocation.Unknown),
+    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
 
-    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
-    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown),
+    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
+    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown),
 
-    "Present" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Present", SourceLocation.Unknown),
-    "Absent" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Absent", SourceLocation.Unknown),
+    "Present" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Choice", SourceLocation.Unknown), "Present", SourceLocation.Unknown),
+    "Absent" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Choice", SourceLocation.Unknown), "Absent", SourceLocation.Unknown),
   )
 
   /**
