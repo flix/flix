@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
@@ -347,6 +347,7 @@ class Bootstrap(val projectPath: Path) {
   private var sourcePaths: List[Path] = List.empty
   private var flixPackagePaths: List[Path] = List.empty
   private var mavenPackagePaths: List[Path] = List.empty
+  private var jarPackagePaths: List[Path] = List.empty
 
   /**
     * Parses `flix.toml` to a Manifest and downloads all required files.
@@ -374,6 +375,10 @@ class Bootstrap(val projectPath: Path) {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
+    JarPackageManager.installAll(manifests, projectPath) match {
+      case Ok(l) => jarPackagePaths = l
+      case Err(e) => return Err(???)
+    }
     out.println("Dependency resolution completed.")
 
     // 3. Add *.flix, src/**.flix and test/**.flix
@@ -397,6 +402,7 @@ class Bootstrap(val projectPath: Path) {
     sourcePaths = filesHere ++ filesSrc ++ filesTest
 
     // 2. Grab all jars in lib/
+    //TODO: cannot tell the difference between Maven jars and other jars - does it matter?
     val jarFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath), "jar")
     mavenPackagePaths = jarFilesLib
 
@@ -427,7 +433,11 @@ class Bootstrap(val projectPath: Path) {
       flix.addJar(path)
     }
 
-    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths).filter(p => Files.exists(p))
+    for (path <- jarPackagePaths if hasChanged(path)) {
+      flix.addJar(path)
+    }
+
+    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
 
     val deletedSources = previousSources -- currentSources
     for (path <- deletedSources) {

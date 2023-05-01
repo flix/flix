@@ -222,14 +222,14 @@ object ManifestParser {
       case Some(deps) =>
         val depsEntries = deps.entrySet().asScala
         traverse(depsEntries)(entry => {
-          val depName = entry.getKey
-          val depVer = entry.getValue
+          val depKey = entry.getKey
+          val depValue = entry.getValue
           if (jarDep) {
-            createJarDep(depName, p)
+            createJarDep(depKey, depValue, p)
           } else if (flixDep) {
-            createFlixDep(depName, depVer, prodDep, p)
+            createFlixDep(depKey, depValue, prodDep, p)
           } else {
-            createMavenDep(depName, depVer, prodDep, p)
+            createMavenDep(depKey, depValue, prodDep, p)
           }
         })
     }
@@ -298,6 +298,65 @@ object ManifestParser {
       case Array(_, artifactId) => checkNameCharacters(artifactId, p)
       case _ => Err(ManifestError.MavenDependencyFormatError(p, depName))
     }
+  }
+
+  private def getUrl(depUrl: AnyRef, p: Path): Result[String, ManifestError] = {
+    try {
+      val url = depUrl.asInstanceOf[String]
+      if (url.startsWith("url:")) {
+        val v1 = url.substring(4)
+        val v2 = if(v1.startsWith("https://")) v1.substring(8) else v1
+        checkNameCharacters(v2, p)
+      } else {
+        Err(???)
+      }
+    } catch {
+      case e: ClassCastException =>
+        Err(ManifestError.DependencyFormatError(p, e.getMessage))
+    }
+  }
+
+  private def getFileNameDownload(url: String, p: Path): Result[String, ManifestError] = {
+    val urlSplit = url.split('/')
+    if(urlSplit.length >= 2) {
+      val fileName = urlSplit.apply(urlSplit.length-1)
+      val extSplit = fileName.split('.')
+      if(extSplit.length >= 2) {
+        val extension = extSplit.apply(extSplit.length-1)
+        if(extension == "jar") {
+          checkNameCharacters(fileName, p)
+        } else {
+          Err(???)
+        }
+      } else {
+        Err(???)
+      }
+    } else {
+      Err(???)
+    }
+  }
+
+  private def getWebsite(url: String, p: Path): Result[String, ManifestError] = {
+    val split = url.split('/')
+    if(split.length >= 2) {
+      val website = split.apply(0)
+      checkNameCharacters(website, p)
+    } else {
+      Err(???)
+    }
+  }
+
+  private def getFileNameSave(depName: String, p: Path): Result[String, ManifestError] = {
+    depName.split('.') match {
+      case Array(_, extension) =>
+        if (extension == "jar") {
+          checkNameCharacters(depName, p)
+        } else {
+          Err(???)
+        }
+      case _ => Err(???)
+    }
+
   }
 
   /**
@@ -382,11 +441,14 @@ object ManifestParser {
     }
   }
 
-  private def createJarDep(depName: String, p: Path): Result[JarDependency, ManifestError] = {
+  private def createJarDep(depName: String, depUrl: AnyRef, p: Path): Result[JarDependency, ManifestError] = {
     for (
-      url <- checkNameCharacters(depName, p)
+      url <- getUrl(depUrl, p);
+      website <- getWebsite(url, p);
+      fileNameDownload <- getFileNameDownload(url, p);
+      fileNameSave <- getFileNameSave(depName, p)
     ) yield {
-      Dependency.JarDependency(url)
+      Dependency.JarDependency(url, website, fileNameDownload, fileNameSave)
     }
   }
 
