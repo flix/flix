@@ -117,7 +117,7 @@ object TypeConstructor {
     */
   @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.Effect ->: Kind.mkArrow(arity)
+    def kind: Kind = Kind.Bool ->: Kind.mkArrow(arity)
   }
 
   /**
