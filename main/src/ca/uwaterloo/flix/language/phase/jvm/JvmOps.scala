@@ -651,7 +651,7 @@ object JvmOps {
       }
 
       // Compute the types in the expression.
-      val expressionTypes = visitExp(defn.exp)
+      val expressionTypes = visitStmt(defn.stmt)
 
       // Return the types in the defn.
       formalParamTypes ++ expressionTypes + defn.tpe
@@ -707,6 +707,13 @@ object JvmOps {
       case Expr.ApplyAtomic(_, exps, tpe, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
+
+    /**
+      * Returns the set of types which occur in the given expression `exp0`.
+      */
+    def visitStmt(s: Stmt): Set[MonoType] = s match {
+      case Stmt.Ret(e, tpe, loc) => visitExp(e)
+    }
 
     // TODO: Magnus: Look for types in other places.
 
