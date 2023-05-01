@@ -199,7 +199,7 @@ object PatternExhaustiveness {
       case Expression.Ascribe(exp, _, _, _) => visitExp(exp, root)
       case Expression.InstanceOf(exp, _, _) => visitExp(exp, root)
       case Expression.CheckedCast(_, exp, _, _, _) => visitExp(exp, root)
-      case Expression.UncheckedCast(exp, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.UncheckedMaskingCast(exp, _, _, _) => visitExp(exp, root)
       case Expression.Without(exp, _, _, _, _) => visitExp(exp, root)
 

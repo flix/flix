@@ -195,7 +195,7 @@ object Regions {
     case Expression.CheckedCast(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.UncheckedCast(exp, _, _, _, tpe, _, loc) =>
+    case Expression.UncheckedCast(exp, _, _, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
     case Expression.UncheckedMaskingCast(exp, tpe, _, loc) =>

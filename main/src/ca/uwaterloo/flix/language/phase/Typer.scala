@@ -32,7 +32,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import java.io.PrintWriter
 import scala.annotation.tailrec
@@ -246,7 +245,6 @@ object Typer {
           //
           val tpe = spec0.tpe
           val pur = spec0.pur
-          val eff = spec0.eff
           val exp = TypedAst.Expression.Error(err, tpe, pur)
           val spec = visitSpec(spec0, root, Substitution.empty)
           val impl = TypedAst.Impl(exp, spec.declaredScheme)
@@ -280,7 +278,7 @@ object Typer {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): TypedAst.Spec = spec match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, pur, eff, tconstrs, loc) =>
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, pur, tconstrs, loc) =>
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
       TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, tconstrs, loc)
@@ -314,13 +312,13 @@ object Typer {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(_, _, _, _, fparams0, sc, tpe, pur, eff, _, _) =>
+    case KindedAst.Spec(_, _, _, _, fparams0, sc, tpe, pur, _, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.
       ///
       val result = for {
-        (inferredConstrs, inferredTyp, inferredPur) <- inferExpectedExp(exp0, tpe, pur, eff, root)
+        (inferredConstrs, inferredTyp, inferredPur) <- inferExpectedExp(exp0, tpe, pur, root)
       } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredPur, inferredTyp, loc))
 
 
@@ -548,7 +546,7 @@ object Typer {
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
-      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, loc) =>
         for {
           (tconstrs, tpe, pur) <- visitExp(exp)
           // result type is whatever is needed for the hole
@@ -613,7 +611,7 @@ object Typer {
           resultTyp = Type.mkArrowWithEffect(argType, bodyPur, bodyType, loc)
         } yield (constrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.Apply(exp, exps, tvar, pvar, loc) =>
         //
         // Determine if there is a direct call to a Def or Sig.
         //
@@ -1429,7 +1427,7 @@ object Typer {
           resultPur <- unifyTypeM(pvar, Type.mkAnd(pur1, pur2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-      case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedPur, expectedEff, tvar, loc) =>
+      case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedPur, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (constrs, actualTyp, actualPur) <- visitExp(exp)
@@ -1444,7 +1442,7 @@ object Typer {
           resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
         } yield (constrs, resultTyp, resultPur)
 
-      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             for {
@@ -1460,7 +1458,7 @@ object Typer {
             } yield (constrs, tpe, resultPur)
         }
 
-      case KindedAst.Expression.UncheckedCast(exp, declaredTyp, declaredPur, declaredEff, tvar, loc) =>
+      case KindedAst.Expression.UncheckedCast(exp, declaredTyp, declaredPur, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
         for {
           (constrs, actualTyp, actualPur) <- visitExp(exp)
@@ -1476,7 +1474,8 @@ object Typer {
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
-        val expected = Type.mkDifference(Type.freshVar(Kind.Effect, loc), effType, loc)
+//        val expected = Type.mkDifference(Type.freshVar(Kind.Bool, loc), effType, loc)
+        // TODO EFF-MIGRATION use expected
         for {
           (tconstrs, tpe, pur) <- visitExp(exp)
         } yield (tconstrs, tpe, pur)
@@ -1517,7 +1516,7 @@ object Typer {
             // Don't need to generalize since ops are monomorphic
             // Don't need to handle unknown op because resolver would have caught this
             ops(op.sym) match {
-              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, expectedEff, _, _)) =>
+              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, _, _)) =>
                 for {
                   _ <- unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams)
                   (actualTconstrs, actualTpe, actualPur) <- visitExp(body)
@@ -1646,7 +1645,7 @@ object Typer {
           * Performs type inference on the given JVM `method`.
           */
         def inferJvmMethod(method: KindedAst.JvmMethod): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = method match {
-          case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, eff, loc) =>
+          case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, pur, loc) =>
 
             /**
               * Constrains the given formal parameter to its declared type.
@@ -1898,7 +1897,7 @@ object Typer {
           resultPur = Type.mkAnd(pur1, pur2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+      case KindedAst.Expression.Error(m, tvar, pvar) =>
         InferMonad.point((Nil, tvar, pvar))
 
     }
@@ -1927,13 +1926,12 @@ object Typer {
   /**
     * Infers the type and effect of the expression, and checks that they match the expected type and effect.
     */
-  private def inferExpectedExp(exp: KindedAst.Expression, tpe0: Type, pur0: Type, eff0: Type, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  private def inferExpectedExp(exp: KindedAst.Expression, tpe0: Type, pur0: Type, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
     for {
       (tconstrs, tpe, pur) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
       // TODO Currently disabled due to region issues. See issue #5603
       //      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
-      //      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, pur)
   }
 
@@ -1964,7 +1962,7 @@ object Typer {
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
 
-      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.HoleWithExp(e, subst0(tvar), subst0(pvar), loc)
 
@@ -1981,7 +1979,7 @@ object Typer {
 
       case KindedAst.Expression.Cst(cst, loc) => TypedAst.Expression.Cst(cst, constantType(cst), loc)
 
-      case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.Apply(exp, exps, tvar, pvar, loc) =>
         val e = visitExp(exp, subst0)
         val es = exps.map(visitExp(_, subst0))
         TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(pvar), loc)
@@ -2221,7 +2219,7 @@ object Typer {
         val pur = subst0(pvar)
         TypedAst.Expression.Assign(e1, e2, tpe, pur, loc)
 
-      case KindedAst.Expression.Ascribe(exp, _, _, _, tvar, loc) =>
+      case KindedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = e.pur
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, loc)
@@ -2230,7 +2228,7 @@ object Typer {
         val e1 = visitExp(exp, subst0)
         TypedAst.Expression.InstanceOf(e1, clazz, loc)
 
-      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
+      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             val e = visitExp(exp, subst0)
@@ -2242,18 +2240,17 @@ object Typer {
             TypedAst.Expression.CheckedCast(cast, e, e.tpe, pur, loc)
         }
 
-      case KindedAst.Expression.UncheckedCast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
+      case KindedAst.Expression.UncheckedCast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, tvar, loc) =>
         val t = subst0(tvar)
         TypedAst.Expression.Cst(Ast.Constant.Null, t, loc)
 
-      case KindedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tvar, loc) =>
+      case KindedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val dt = declaredType.map(tpe => subst0(tpe))
         val dp = declaredPur.map(pur => subst0(pur))
-        val de = declaredEff.map(eff => subst0(eff))
         val tpe = subst0(tvar)
         val pur = declaredPur.getOrElse(e.pur)
-        TypedAst.Expression.UncheckedCast(e, dt, dp, de, tpe, pur, loc)
+        TypedAst.Expression.UncheckedCast(e, dt, dp, tpe, pur, loc)
 
       case KindedAst.Expression.UncheckedMaskingCast(exp, loc) =>
         // We explicitly mark a `Mask` expression as Impure.
@@ -2462,7 +2459,7 @@ object Typer {
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, loc)
 
-      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+      case KindedAst.Expression.Error(m, tvar, pvar) =>
         val tpe = subst0(tvar)
         val pur = subst0(pvar)
         TypedAst.Expression.Error(m, tpe, pur)
@@ -2507,7 +2504,7 @@ object Typer {
       */
     def visitJvmMethod(method: KindedAst.JvmMethod): TypedAst.JvmMethod = {
       method match {
-        case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, pur, eff, loc) =>
+        case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, pur, loc) =>
           val fparams = getFormalParams(fparams0, subst0)
           val exp = visitExp(exp0, subst0)
           TypedAst.JvmMethod(ident, fparams, exp, tpe, pur, loc)

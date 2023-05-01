@@ -234,17 +234,7 @@ object MonoTyper {
 
             case TypeConstructor.Or => MonoType.Unit
 
-            case TypeConstructor.Complement => MonoType.Unit
-
-            case TypeConstructor.Union => MonoType.Unit
-
-            case TypeConstructor.Intersection => MonoType.Unit
-
             case TypeConstructor.Effect(_) => MonoType.Unit
-
-            case TypeConstructor.Empty => MonoType.Unit
-
-            case TypeConstructor.All => MonoType.Unit
 
             case TypeConstructor.CaseSet(sym, enumSym) => MonoType.Unit
             case TypeConstructor.CaseComplement(sym) => MonoType.Unit
