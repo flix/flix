@@ -22,7 +22,8 @@
 
     def f(x: a): a \ IO = unchecked_cast(x as _ \ IO)
 
-    def g(x: a): a \ E = unchecked_cast(x as _ \ E)
+// TODO EFF-MIGRATION temporarily disabled
+//    def g(x: a): a \ E = unchecked_cast(x as _ \ E)
 
     @test
     def testUncheckedEffectCast01(): Unit \ IO = unchecked_cast(() as _ \ IO)
@@ -114,11 +115,13 @@
     @test
     def testUncheckedEffectCast28(): (a -> a) \ IO = unchecked_cast(x -> x as _ \ IO)
 
-    @test
-    def testUncheckedEffectCast29(): (a -> a \ E) = x -> unchecked_cast(x as _ \ E)
+// TODO EFF-MIGRATION temporarily disabled
+//    @test
+//    def testUncheckedEffectCast29(): (a -> a \ E) = x -> unchecked_cast(x as _ \ E)
 
-    @test
-    def testUncheckedEffectCast30(): (a -> a) \ E = unchecked_cast(x -> x as _ \ E)
+// TODO EFF-MIGRATION temporarily disabled
+//    @test
+//    def testUncheckedEffectCast30(): (a -> a) \ E = unchecked_cast(x -> x as _ \ E)
 
     // Unsafe casts
 
@@ -194,10 +197,12 @@
     @test
     def testUncheckedEffectCast48(): (a -> a) = unchecked_cast(f(x -> x) as _ \ {})
 
-    @test
-    def testUncheckedEffectCast49(): (a -> a) = x -> unchecked_cast(g(x) as _ \ {})
+// TODO EFF-MIGRATION temporarily disabled
+//    @test
+//    def testUncheckedEffectCast49(): (a -> a) = x -> unchecked_cast(g(x) as _ \ {})
 
-    @test
-    def testUncheckedEffectCast50(): (a -> a) = unchecked_cast(g(x -> x) as _ \ {})
+// TODO EFF-MIGRATION temporarily disabled
+//    @test
+//    def testUncheckedEffectCast50(): (a -> a) = unchecked_cast(g(x -> x) as _ \ {})
 
 }

@@ -218,7 +218,7 @@ object MonoTyper {
 
             case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 
-            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(2).init, args.last)
+            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
 
             case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
 
