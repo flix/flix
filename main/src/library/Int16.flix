@@ -106,6 +106,11 @@ mod Int16 {
     pub def signum(x: Int16): Int32 = compare(x, 0i16)
 
     ///
+    /// Returns `b` raised to the power of `n`.
+    ///
+    pub def pow(b: Int16, n: Int16): Int16 = $INT16_EXP$(b, n)
+
+    ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.

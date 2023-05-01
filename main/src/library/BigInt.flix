@@ -34,7 +34,7 @@ mod BigInt {
     ///
     /// Returns `x` raised to the power of `n`.
     ///
-    pub def exp(n: Int32, x: BigInt): BigInt =
+    pub def pow(x: BigInt, n: Int32): BigInt =
         import java.math.BigInteger.pow(Int32): ##java.math.BigInteger \ {};
         pow(x, n)
 
