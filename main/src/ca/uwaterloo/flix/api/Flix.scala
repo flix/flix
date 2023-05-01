@@ -109,7 +109,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads
