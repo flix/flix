@@ -90,14 +90,14 @@ object ClosureConv {
         Expression.ApplyClo(e, es, tpe, purity, loc)
     }
 
-    case Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+    case Expression.Unary(sop, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
-      Expression.Unary(sop, op, e, tpe, purity, loc)
+      Expression.Unary(sop, e, tpe, purity, loc)
 
-    case Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+    case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+      Expression.Binary(sop, e1, e2, tpe, purity, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -332,9 +332,9 @@ object ClosureConv {
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
-    case Expression.Unary(_, _, exp, _, _, _) => freeVars(exp)
+    case Expression.Unary(_, exp, _, _, _) => freeVars(exp)
 
-    case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -507,14 +507,14 @@ object ClosureConv {
         val as = args map visitExp
         Expression.Apply(e, as, tpe, purity, loc)
 
-      case Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+      case Expression.Unary(sop, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        Expression.Unary(sop, op, e, tpe, purity, loc)
+        Expression.Unary(sop, e, tpe, purity, loc)
 
-      case Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+      case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+        Expression.Binary(sop, e1, e2, tpe, purity, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
