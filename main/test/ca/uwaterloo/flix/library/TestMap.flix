@@ -1393,6 +1393,16 @@ def intersectionWith15(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{
 @test
 def intersectionWith16(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33, 11 => 11})
                                    == Map#{2 => -1, 15 => 1, 11 => 3}
+@test
+def intersectionWith17(): Bool = Map.intersectionWith((v1, v2) -> "${v1}${v2}", Map#{3 => 'a', 5 => 'b'}, Map#{5 => "B", 7 => "C"})
+                                   == Map#{5 => "bB"}
+@test
+def intersectionWith18(): Bool = Map.intersectionWith((v1, v2) -> "${v1}${v2}", Map#{3 => 'a', 5 => 'b', 7 => 'c', 10 => 'd'}, Map#{5 => "B", 7 => "C"})
+                                   == Map#{5 => "bB", 7 => "cC"}
+
+@test
+def intersectionWith19(): Bool = Map.intersectionWith((v1, v2) -> "${v1}:${v2}", Map#{3 => '3'}, Map#{3 => 3})
+                                   == Map#{3 => "3:3"}
 
 /////////////////////////////////////////////////////////////////////////////
 // intersectionWithKey                                                     //
