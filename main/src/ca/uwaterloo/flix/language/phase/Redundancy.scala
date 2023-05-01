@@ -234,7 +234,12 @@ object Redundancy {
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
           case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
         }
-        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.sym) && !tparam.name.name.startsWith("_"))
+        val unusedTypeParams = decl.tparams.filter {
+          tparam =>
+            !usedTypeVars.contains(tparam.sym) &&
+              !tparam.name.name.startsWith("_") &&
+              tparam.sym.kind != Kind.Effect // TODO EFF-MIGRRATION temporarily disabling for effect sets
+        }
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
   }
@@ -1155,7 +1160,7 @@ object Redundancy {
   private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
     !tvar.isWild &&
       !used.contains(tvar) &&
-      tvar.kind != Kind.Effect // TODO ignoring effects for now; reactivate later
+      tvar.kind != Kind.Effect // TODO EFF-MIGRATION ignoring effects for now; reactivate later
   }
 
   /**
