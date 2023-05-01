@@ -187,7 +187,6 @@ object FormatType {
       case SimpleType.LatticeConstructor => true
       case SimpleType.Lattice(_, _) => true
       case SimpleType.TagConstructor(_) => true
-      case SimpleType.Tag(_, _, _) => true
       case SimpleType.Name(_) => true
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
@@ -309,11 +308,6 @@ object FormatType {
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $purString"
       case SimpleType.TagConstructor(name) => name
-      case SimpleType.Tag(name, args, ret) =>
-        // NB: not putting too much care into tag formatting, as it should not show up
-        val argString = parenthesize(args.map(visit(_, mode)).mkString(", "))
-        val retString = visit(ret, mode)
-        s"$name($argString -> $retString)"
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>
         val string = visit(tpe, Mode.Type)
