@@ -44,7 +44,7 @@ import scala.collection.immutable.SortedSet
   *     This inference uses the following rules:
   *       - If the type variable is the type of a formal parameter, it is ascribed kind Star.
   *       - If the type variable is the return type of the function, it is ascribed kind Star.
-  *       - If the type variable is the purity/effect type of the function, it is ascribed kind Beef.
+  *       - If the type variable is the purity type of the function, it is ascribed kind Bool.
   *       - If the type variable is an argument to a type constraint, it is ascribed the class's parameter kind
   *       - If the type variable is an argument to a type constructor, it is ascribed the type constructor's parameter kind.
   *       - If the type variable is used as an type constructor, it is ascribed the kind Star -> Star ... -> Star -> X,
@@ -52,12 +52,6 @@ import scala.collection.immutable.SortedSet
   *       - If there is an inconsistency among these kinds, an error is raised.
   *
   * In inferring types, variable type constructors are assumed to have kind * -> * -> * -> ???.
-  *
-  * Purity and Effect Handling:
-  * After kind inference, any type variables inferred to have kind Beef are split into two variables:
-  * a Bool-kinded purity and an Effect-kinded effect. Because variables of this kind can only be found
-  * where both a purity and effect are expected, we can distribute the purity and effect variables
-  * appropriately into these AST fields, joining them with the appropriate operator (conjunction or union).
   *
   */
 object Kinder {
