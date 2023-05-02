@@ -215,7 +215,9 @@ object ManifestParser {
     * the value of each entry is a String which can be converted to a
     * semantic version. `flixDep` decides whether the Dependency is a Flix
     * or MavenDependency and `prodDep` decides whether it is for production
-    * or development. Returns an error if anything is not as expected.
+    * or development. `jarDep` decides whether it is an external jar. This
+    * overrides `flixDep` and `prodDep`.
+    * Returns an error if anything is not as expected.
     */
   private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
     deps match {

@@ -211,7 +211,7 @@ object ManifestError {
       s"""
          | The toml file has a table named ${f.red(tableName)}, which is not allowed.
          | Allowed table names:
-         |   package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies
+         |   package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies, jar-dependencies
          | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }
