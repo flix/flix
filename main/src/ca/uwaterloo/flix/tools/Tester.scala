@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.util.Duration
+import ca.uwaterloo.flix.util.{Duration, Result}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.io.{ByteArrayOutputStream, OutputStream, PrintStream, PrintWriter, StringWriter}
@@ -34,7 +34,7 @@ object Tester {
   /**
     * Runs all tests.
     */
-  def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
+  def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, Int] = {
     //
     // Find all test cases (both active and ignored).
     //
@@ -42,7 +42,8 @@ object Tester {
 
     // Start the TestRunner and TestReporter.
     val queue = new ConcurrentLinkedQueue[TestEvent]()
-    val reporter = new TestReporter(queue, tests)
+    val failureQueue = new ConcurrentLinkedQueue[Int]()
+    val reporter = new TestReporter(queue, failureQueue, tests)
     val runner = new TestRunner(queue, tests)
     reporter.start()
     runner.start()
@@ -50,12 +51,19 @@ object Tester {
     // Wait for everything to complete.
     reporter.join()
     runner.join()
+    if (failureQueue.isEmpty()) {
+      Result.Ok(())
+    } else {
+      failureQueue.clear()
+      // Set exit code of program to 1.
+      Result.Err(1)
+    }
   }
 
   /**
     * A class that reports the results of test events as they come in.
     */
-  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
+  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], failureQueue: ConcurrentLinkedQueue[Int], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
 
     override def run(): Unit = {
       // Silence JLine warnings about terminal type.
@@ -100,6 +108,7 @@ object Tester {
             val line = output.headOption.map(s => s"(${red(s)})").getOrElse("")
             writer.println(s"  ${bgRed(" FAIL ")} $sym $line")
             terminal.flush()
+            failureQueue.add(1)
 
           case TestEvent.Skip(sym) =>
             skipped = skipped + 1
