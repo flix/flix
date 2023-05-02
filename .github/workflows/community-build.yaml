@@ -42,11 +42,12 @@ jobs:
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "flix/museum"
           - "jaschdoc/flix-parsers"
-          - "magnus-madsen/helloworld"
           - "mlutze/fcwg"
           - "mlutze/flix-json"
           - "mlutze/flixball"
+          - "stephentetley/flix-either"
           - "stephentetley/flix-pretty"
+          - "stephentetley/flix-time"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Java
