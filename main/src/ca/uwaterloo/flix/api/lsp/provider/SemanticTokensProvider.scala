@@ -440,7 +440,7 @@ object SemanticTokensProvider {
     case Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.UncheckedCast(exp, _, _, _, tpe, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
     case Expression.UncheckedMaskingCast(exp, _, _, _) =>
@@ -656,7 +656,6 @@ object SemanticTokensProvider {
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
-    case TypeConstructor.All => true
 
     // invisible
     case TypeConstructor.Arrow(_) => false
@@ -672,10 +671,6 @@ object SemanticTokensProvider {
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
-    case TypeConstructor.Complement => false
-    case TypeConstructor.Union => false
-    case TypeConstructor.Intersection => false
-    case TypeConstructor.Empty => false
     case TypeConstructor.CaseComplement(_) => false
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false

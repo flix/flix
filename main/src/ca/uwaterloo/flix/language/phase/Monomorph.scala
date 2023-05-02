@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, SetUnification, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -79,7 +79,6 @@ object Monomorph {
           throw UnexpectedNonConstBool(tpe0, tpe0.loc)
         else
           Type.True
-      case Kind.Effect => Type.Empty
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
@@ -108,11 +107,6 @@ object Monomorph {
               case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
               case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
               case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
-
-              // Simplify set expressions
-              case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
-              case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
-              case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
 
               case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
               case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
@@ -523,10 +517,10 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.InstanceOf(e, clazz, loc)
 
-    case Expression.Cast(exp, _, _, _, tpe, pur, loc) =>
+    case Expression.Cast(exp, _, _, tpe, pur, loc) =>
       // We drop the declaredType and declaredEff here.
       val e = visitExp(exp, env0, subst)
-      Expression.Cast(e, None, None, None, subst(tpe), pur, loc)
+      Expression.Cast(e, None, None, subst(tpe), pur, loc)
 
     case Expression.Without(exp, sym, tpe, pur, loc) =>
       // Erase the Without

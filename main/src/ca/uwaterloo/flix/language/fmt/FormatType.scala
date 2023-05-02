@@ -316,11 +316,9 @@ object FormatType {
       case SimpleType.Var(id, kind, isRegion, text) =>
         val prefix: String = kind match {
           case Kind.Wild => "_" + id.toString
-          case Kind.Beef => "_b" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
           case Kind.Bool => "b" + id
-          case Kind.Effect => "e" + id
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString
