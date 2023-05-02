@@ -63,8 +63,9 @@ object SimpleRunner {
     }
 
     // check if we should start a REPL
-    if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
+    if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty
+          && !cmdOpts.test && !cmdOpts.benchmark) {
+        Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
         case Result.Ok(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
@@ -97,19 +98,21 @@ object SimpleRunner {
     timer.getResult match {
       case Validation.Success(compilationResult) =>
 
-        compilationResult.getMain match {
-          case None => // nop
-          case Some(m) =>
-            // Compute the arguments to be passed to main.
-            val args: Array[String] = cmdOpts.args match {
-              case None => Array.empty
-              case Some(a) => a.split(" ")
-            }
-            // Invoke main with the supplied arguments.
-            m(args)
+        if (!cmdOpts.benchmark && !cmdOpts.test) {
+          compilationResult.getMain match {
+            case None => // nop
+            case Some(m) =>
+              // Compute the arguments to be passed to main.
+              val args: Array[String] = cmdOpts.args match {
+                case None => Array.empty
+                case Some(a) => a.split(" ")
+              }
+              // Invoke main with the supplied arguments.
+              m(args)
 
-            // Exit.
-            System.exit(0)
+              // Exit.
+              System.exit(0)
+          }
         }
 
         if (cmdOpts.benchmark) {
@@ -117,7 +120,10 @@ object SimpleRunner {
         }
 
         if (cmdOpts.test) {
-          Tester.run(Nil, compilationResult)(flix)
+          Tester.run(Nil, compilationResult)(flix) match {
+            case Result.Ok(_) => ()
+            case Result.Err(code) => System.exit(code)
+          }
         }
 
         ().toOk
