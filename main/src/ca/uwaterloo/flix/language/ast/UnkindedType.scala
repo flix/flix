@@ -369,7 +369,7 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val purAndEff = PurityAndEffect(Some(UnkindedType.Cst(TypeConstructor.False, loc)), None)
+    val purAndEff = PurityAndEffect(None, Some(List(UnkindedType.Cst(TypeConstructor.False, loc))))
     mkApply(UnkindedType.Arrow(purAndEff, 2, loc), List(a, b), loc)
   }
 
