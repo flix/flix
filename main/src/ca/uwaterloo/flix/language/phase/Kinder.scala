@@ -1196,6 +1196,14 @@ object Kinder {
     */
   private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
+
+    // TODO EFF-MIGRATION temporary hack to maintain behavior of IO
+    case UnkindedType.Cst(TypeConstructor.Effect(sym), loc) if (sym == IoSym || sym == NonDetSym) =>
+      unify(expectedKind, Kind.Bool) match {
+        case Some(_) => Type.Cst(TypeConstructor.False, loc).toSuccess
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Bool, loc = loc).toFailure
+      }
+
     case UnkindedType.Cst(cst, loc) =>
       val kind = cst.kind
       unify(expectedKind, kind) match {
