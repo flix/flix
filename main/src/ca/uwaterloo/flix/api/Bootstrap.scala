@@ -346,6 +346,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // Lists of paths to the source files, flix packages and .jar files used
   private var sourcePaths: List[Path] = List.empty
   private var flixPackagePaths: List[Path] = List.empty
+  private var mavenPackagePaths: List[Path] = List.empty
   private var jarPackagePaths: List[Path] = List.empty
 
   /**
@@ -370,15 +371,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
-    val mavenPackages = MavenPackageManager.installAll(manifests, projectPath) match {
-      case Ok(l) => l
+    MavenPackageManager.installAll(manifests, projectPath) match {
+      case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
-    val jarPackages = JarPackageManager.installAll(manifests, projectPath) match {
-      case Ok(l) => l
+    JarPackageManager.installAll(manifests, projectPath) match {
+      case Ok(l) => jarPackagePaths = l
       case Err(e) => return Err(BootstrapError.JarPackageError(e))
     }
-    jarPackagePaths = mavenPackages ++ jarPackages
     out.println("Dependency resolution completed.")
 
     // 3. Add *.flix, src/**.flix and test/**.flix
@@ -402,8 +402,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
     sourcePaths = filesHere ++ filesSrc ++ filesTest
 
-    // 2. Grab all jars in lib/
-    val jarFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath), "jar")
+    // 2. Grab all jars in lib/external
+    val mavenFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.folderName), "jar")
+    mavenPackagePaths = mavenFilesLib
+
+    // 3. Grab all jars in lib/external
+    val jarFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.folderName), "jar")
     jarPackagePaths = jarFilesLib
 
     // 3. Grab all flix packages in lib/
@@ -429,11 +433,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       flix.addPkg(path)
     }
 
+    for (path <- mavenPackagePaths if hasChanged(path)) {
+      flix.addJar(path)
+    }
+
     for (path <- jarPackagePaths if hasChanged(path)) {
       flix.addJar(path)
     }
 
-    val currentSources = (sourcePaths ++ flixPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
+    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
+    println(currentSources)
 
     val deletedSources = previousSources -- currentSources
     for (path <- deletedSources) {

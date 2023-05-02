@@ -10,8 +10,10 @@ import java.nio.file.{Files, Path, StandardCopyOption}
 
 object JarPackageManager {
 
+  val folderName = "external"
+
   /**
-    * Installs all the jar dependencies for a list of Manifests at the /lib folder
+    * Installs all the jar dependencies for a list of Manifests at the /lib/external folder
     * of `path` and returns a list of paths to all the dependencies.
     */
   def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
@@ -38,7 +40,7 @@ object JarPackageManager {
     */
   private def install(dep: JarDependency, p: Path)(implicit out: PrintStream): Result[Path, PackageError] = {
     val lib = Bootstrap.getLibraryDirectory(p)
-    val folderPath = lib.resolve(dep.website)
+    val folderPath = lib.resolve(folderName).resolve(dep.website)
 
     //create the folder if it does not exist
     Files.createDirectories(folderPath)

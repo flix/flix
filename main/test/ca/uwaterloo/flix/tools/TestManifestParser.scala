@@ -1204,12 +1204,12 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
-        |"org.pos/gresql:post¤resql" = "1.2.3"
+        |"org.po)tgresql:postgresql" = "1.2.3"
         |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalName(null, "org.pos/gresql").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.IllegalName(null, "org.po)tgresql").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
