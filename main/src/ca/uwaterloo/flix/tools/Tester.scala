@@ -42,30 +42,19 @@ object Tester {
 
     // Start the TestRunner and TestReporter.
     val queue = new ConcurrentLinkedQueue[TestEvent]()
-    val failureQueue = new ConcurrentLinkedQueue[Int]()
-    val reporter = new TestReporter(queue, failureQueue, tests)
     val runner = new TestRunner(queue, tests)
-    reporter.start()
     runner.start()
-
+    val retVal = testReporter(queue, tests)
     // Wait for everything to complete.
-    reporter.join()
     runner.join()
-    if (failureQueue.isEmpty()) {
-      Result.Ok(())
-    } else {
-      failureQueue.clear()
-      // Set exit code of program to 1.
-      Result.Err(1)
-    }
+    retVal
   }
 
   /**
-    * A class that reports the results of test events as they come in.
+    * A function that reports the results of test events as they come in.
     */
-  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], failureQueue: ConcurrentLinkedQueue[Int], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
+def testReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix): Result[Unit, Int] = {
 
-    override def run(): Unit = {
       // Silence JLine warnings about terminal type.
       Logger.getLogger("org.jline").setLevel(Level.OFF)
 
@@ -108,7 +97,6 @@ object Tester {
             val line = output.headOption.map(s => s"(${red(s)})").getOrElse("")
             writer.println(s"  ${bgRed(" FAIL ")} $sym $line")
             terminal.flush()
-            failureQueue.add(1)
 
           case TestEvent.Skip(sym) =>
             skipped = skipped + 1
@@ -145,9 +133,14 @@ object Tester {
           case _ => // nop
         }
       }
+    if (failed.isEmpty) {
+      Result.Ok(())
+    } else {
+      // Set exit code of program to 1.
+      Result.Err(1)
     }
-
   }
+
 
   /**
     * A class that runs all the given tests emitting test events.
