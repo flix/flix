@@ -1891,26 +1891,6 @@ object GenExpression {
 
     compileExpression(e, visitor, currentClassType, jumpLabels, entryPoint)
     sop match {
-      case SemanticOperator.ObjectOp.EqNull =>
-        val condElse = new Label()
-        val condEnd = new Label()
-        visitor.visitJumpInsn(IFNULL, condElse)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitJumpInsn(GOTO, condEnd)
-        visitor.visitLabel(condElse)
-        visitor.visitInsn(ICONST_1)
-        visitor.visitLabel(condEnd)
-
-      case SemanticOperator.ObjectOp.NeqNull =>
-        val condElse = new Label()
-        val condEnd = new Label()
-        visitor.visitJumpInsn(IFNULL, condElse)
-        visitor.visitInsn(ICONST_1)
-        visitor.visitJumpInsn(GOTO, condEnd)
-        visitor.visitLabel(condElse)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitLabel(condEnd)
-
       case SemanticOperator.BoolOp.Not =>
         val condElse = new Label()
         val condEnd = new Label()
