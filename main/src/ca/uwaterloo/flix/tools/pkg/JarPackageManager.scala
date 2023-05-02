@@ -6,11 +6,14 @@ import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.io.{IOException, InputStream, PrintStream}
-import java.net.{MalformedURLException, URL}
 import java.nio.file.{Files, Path, StandardCopyOption}
 
 object JarPackageManager {
 
+  /**
+    * Installs all the jar dependencies for a list of Manifests at the /lib folder
+    * of `path` and returns a list of paths to all the dependencies.
+    */
   def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Downloading jar dependencies...")
 
@@ -19,47 +22,56 @@ object JarPackageManager {
     val jarPaths = allJarDeps.map(dep => {
       install(dep, path) match {
         case Ok(p) => p
-        case Err(e) => out.println(s"ERROR: Installation of `${dep.fileNameSave}` from `${dep.url}` failed."); return Err(e)
+        case Err(e) => out.println(s"ERROR: Installation of `${dep.fileName}` from `${dep.url.toString}` failed."); return Err(e)
       }
     })
 
     Ok(jarPaths)
   }
 
+  /**
+    * Installs a jar file from a URL given by `dep.url`.
+    *
+    * The file is installed at `dep.fileName`.
+    *
+    * Returns the path to the downloaded file.
+    */
   private def install(dep: JarDependency, p: Path)(implicit out: PrintStream): Result[Path, PackageError] = {
     val lib = Bootstrap.getLibraryDirectory(p)
     val folderPath = lib.resolve(dep.website)
+
     //create the folder if it does not exist
     Files.createDirectories(folderPath)
-    val assetPath = folderPath.resolve(dep.fileNameSave)
+    val assetPath = folderPath.resolve(dep.fileName)
 
     if (Files.exists(assetPath)) {
-      out.println(s"  Cached `${dep.fileNameSave}` from `${dep.url}`.")
+      out.println(s"  Cached `${dep.fileName}` from `${dep.url.toString}`.")
       Ok(assetPath)
     } else {
-      out.print(s"  Downloading `${dep.fileNameSave}` from `${dep.url}`... ")
+      out.print(s"  Downloading `${dep.fileName}` from `${dep.url.toString}`... ")
       out.flush()
       try {
-        val url: URL = new URL(s"https://${dep.url}")
-        val stream: InputStream = url.openStream()
+        val stream: InputStream = dep.url.openStream()
         Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
       } catch {
-        case e: MalformedURLException => println(e.getMessage); ???
         case e: IOException =>
           out.println(s"ERROR: ${e.getMessage}.");
-          return Err(PackageError.DownloadError(???, Some(e.getMessage)))
+          return Err(PackageError.DownloadErrorJar(dep.url.toString, dep.fileName, Some(e.getMessage)))
       }
       if (Files.exists(assetPath)) {
         out.println(s"OK.")
         Ok(assetPath)
       } else {
         out.println(s"ERROR.")
-        Err(PackageError.DownloadError(???, None))
+        Err(PackageError.DownloadErrorJar(dep.url.toString, dep.fileName, None))
       }
     }
     Ok(assetPath)
   }
 
+  /**
+    * Finds the jar dependencies in a Manifest.
+    */
   private def findJarDependencies(manifest: Manifest): List[JarDependency] = {
     manifest.dependencies.collect { case dep: JarDependency => dep }
   }

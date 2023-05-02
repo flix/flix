@@ -39,4 +39,8 @@ object BootstrapError {
   case class MavenPackageError(e: PackageError) extends BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
+
+  case class JarPackageError(e: PackageError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
 }

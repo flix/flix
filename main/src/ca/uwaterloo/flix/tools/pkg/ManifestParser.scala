@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
+import java.net.{MalformedURLException, URL}
 import java.nio.file.Path
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.SetHasAsScala
@@ -300,61 +301,70 @@ object ManifestParser {
     }
   }
 
-  private def getUrl(depUrl: AnyRef, p: Path): Result[String, ManifestError] = {
+  /**
+    * Converts `depUrl` to a String and retrieves the URL for a jar dependency.
+    * Returns an error if it is not formatted correctly.
+    */
+  private def getUrl(depUrl: AnyRef, p: Path): Result[URL, ManifestError] = {
     try {
       val url = depUrl.asInstanceOf[String]
-      if (url.startsWith("url:")) {
-        val v1 = url.substring(4)
-        val v2 = if(v1.startsWith("https://")) v1.substring(8) else v1
-        checkNameCharacters(v2, p)
-      } else {
-        Err(???)
+      try {
+        if (url.startsWith("url:")) {
+          val removeTag = url.substring(4)
+          val urlHttps = if(removeTag.startsWith("https://")) removeTag else "https://" + removeTag
+          Ok(new URL(urlHttps))
+        } else {
+          Err(ManifestError.JarUrlFormatError(p, url))
+        }
+      } catch {
+        case e: MalformedURLException =>
+          Err(ManifestError.MalformedJarUrl(p, url, e.getMessage))
       }
     } catch {
       case e: ClassCastException =>
-        Err(ManifestError.DependencyFormatError(p, e.getMessage))
+        Err(ManifestError.JarUrlTypeError(p, e.getMessage))
+
     }
   }
 
-  private def getFileNameDownload(url: String, p: Path): Result[String, ManifestError] = {
-    val urlSplit = url.split('/')
-    if(urlSplit.length >= 2) {
-      val fileName = urlSplit.apply(urlSplit.length-1)
-      val extSplit = fileName.split('.')
-      if(extSplit.length >= 2) {
-        val extension = extSplit.apply(extSplit.length-1)
-        if(extension == "jar") {
-          checkNameCharacters(fileName, p)
-        } else {
-          Err(???)
-        }
+  /**
+    * Converts `depUrl` to a String and retrieves the website name for a jar dependency.
+    * Returns an error if it is not formatted correctly or has characters that are not allowed.
+    */
+  private def getWebsite(depUrl: AnyRef, p: Path): Result[String, ManifestError] = {
+    try {
+      val url = depUrl.asInstanceOf[String]
+      val removeTag = url.substring(4)
+      val removeHttps = if(removeTag.startsWith("https://")) removeTag.substring(8) else removeTag
+      val split = removeHttps.split('/')
+      if (split.length >= 2) {
+        val website = split.apply(0)
+        checkNameCharacters(website, p)
       } else {
-        Err(???)
+        Err(ManifestError.JarUrlWebsiteError(p, url))
       }
-    } else {
-      Err(???)
+    } catch {
+      case e: ClassCastException =>
+        Err(ManifestError.JarUrlTypeError(p, e.getMessage))
     }
   }
 
-  private def getWebsite(url: String, p: Path): Result[String, ManifestError] = {
-    val split = url.split('/')
+  /**
+    * Retrieves the file name for a jar dependency
+    * and returns an error if it is not formatted correctly
+    * or has characters that are not allowed.
+    */
+  private def getFileName(depName: String, p: Path): Result[String, ManifestError] = {
+    val split = depName.split('.')
     if(split.length >= 2) {
-      val website = split.apply(0)
-      checkNameCharacters(website, p)
-    } else {
-      Err(???)
-    }
-  }
-
-  private def getFileNameSave(depName: String, p: Path): Result[String, ManifestError] = {
-    depName.split('.') match {
-      case Array(_, extension) =>
-        if (extension == "jar") {
+      val extension = split.apply(split.length-1)
+      if (extension == "jar") {
           checkNameCharacters(depName, p)
         } else {
-          Err(???)
+          Err(ManifestError.JarUrlExtensionError(p, depName, extension))
         }
-      case _ => Err(???)
+    } else {
+      Err(ManifestError.JarUrlFileNameError(p, depName))
     }
 
   }
@@ -441,14 +451,19 @@ object ManifestParser {
     }
   }
 
+  /**
+    * Creates a JarDependency.
+    * URL and website is given by `depUrl`.
+    * The file name is given by `depName`.
+    * `p` is for reporting errors.
+    */
   private def createJarDep(depName: String, depUrl: AnyRef, p: Path): Result[JarDependency, ManifestError] = {
     for (
       url <- getUrl(depUrl, p);
-      website <- getWebsite(url, p);
-      fileNameDownload <- getFileNameDownload(url, p);
-      fileNameSave <- getFileNameSave(depName, p)
+      website <- getWebsite(depUrl, p);
+      fileName <- getFileName(depName, p)
     ) yield {
-      Dependency.JarDependency(url, website, fileNameDownload, fileNameSave)
+      Dependency.JarDependency(url, website, fileName)
     }
   }
 
