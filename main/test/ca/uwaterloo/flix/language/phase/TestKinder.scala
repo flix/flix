@@ -396,7 +396,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   // TODO EFF-MIGRATION temporarily disabled
-  test("IllegalTypeApplication.07") {
+  ignore("IllegalTypeApplication.07") {
     val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ not Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)

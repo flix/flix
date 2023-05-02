@@ -1168,7 +1168,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.02") {
     val input =
       """
-        |def f(): Int32 \ Pure = unchecked_cast(123 as _ \ IO)
+        |def f(): Int32 \ {} = unchecked_cast(123 as _ \ Impure)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1181,7 +1181,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
         |
-        |def zero(): Int32 \ Pure = $ARRAY_LENGTH$(mkArray())
+        |def zero(): Int32 \ {} = $ARRAY_LENGTH$(mkArray())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)
@@ -1200,7 +1200,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.EffectPolymorphicDeclaredAsPure.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 \ ef): Int32 \ Pure = g(123)
+        |def f(g: Int32 -> Int32 \ ef): Int32 \ {} = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1426,7 +1426,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestPar.01") {
     val input =
       """
-        |def f(): Int32 \ IO =
+        |def f(): Int32 \ Impure =
         |    par f()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
