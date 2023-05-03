@@ -430,6 +430,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     Type ~ PurityAndEffect
   }
 
+  def OptEffect: Rule1[Option[ParsedAst.Type]] = {
+    // Override the empty record type in this position to be the empty effect.
+    def Empty: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.True
+    }
+
+    def Effect: Rule1[ParsedAst.Type] = rule {
+      Empty | Type
+    }
+
+    optional(optWS ~ "\\" ~ optWS ~ Effect)
+  }
+
   def PurityAndEffect: Rule1[ParsedAst.PurityAndEffect] = {
     rule {
       optional(optWS ~ "&" ~ optWS ~ Type) ~ optional(optWS ~ "\\" ~ optWS ~ Effects.EffectSetOrEmpty) ~> ParsedAst.PurityAndEffect
@@ -1493,15 +1506,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def CaseIntersection: Rule1[ParsedAst.Type] = rule {
-      Or ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
+      Union ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
     }
 
-    def Or: Rule1[ParsedAst.Type] = rule {
-      And ~ zeroOrMore(WS ~ keyword("or") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Or)
+    def Union: Rule1[ParsedAst.Type] = rule {
+      Intersection ~ zeroOrMore(WS ~ keyword("+") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Union)
     }
 
-    def And: Rule1[ParsedAst.Type] = rule {
-      Ascribe ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
+    def Intersection: Rule1[ParsedAst.Type] = rule {
+      Difference ~ zeroOrMore(WS ~ keyword("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+    }
+
+    def Difference: Rule1[ParsedAst.Type] = rule {
+      Ascribe ~ zeroOrMore(WS ~ keyword("-") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Difference)
     }
 
     def Ascribe: Rule1[ParsedAst.Type] = rule {
@@ -1513,7 +1530,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | CaseComplement | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | CaseComplement | Native | True | False | Pure | Impure | Complement | Var | Ambiguous | Effect
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1592,9 +1609,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
     }
 
-    def Not: Rule1[ParsedAst.Type] = rule {
+    def Complement: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
+      SP ~ "~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.Not
     }
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {

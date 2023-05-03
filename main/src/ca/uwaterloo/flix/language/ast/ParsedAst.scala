@@ -1549,22 +1549,31 @@ object ParsedAst {
     case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * The And type constructor.
+      * The Intersection type constructor.
       *
       * @param tpe1 the 1st type.
       * @param tpe2 the 2nd type.
       * @param sp2  the position of the last character in the type.
       */
-    case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class Intersection(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * The Or type constructor.
+      * The Union type constructor.
       *
       * @param tpe1 the 1st type.
       * @param tpe2 the 2nd type.
       * @param sp2  the position of the last character in the type.
       */
-    case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class Union(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * The Difference type constructor.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class Difference(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * A type representing an effect set.
