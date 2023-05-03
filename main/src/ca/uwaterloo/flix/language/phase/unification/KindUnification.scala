@@ -42,18 +42,6 @@ object KindUnification {
     case (k, Kind.Wild) =>
       Some(k)
 
-    // Beef ~ Bool = Bool
-    case (Kind.Beef, Kind.Bool) =>
-      Some(Kind.Bool)
-    case (Kind.Bool, Kind.Beef) =>
-      Some(Kind.Bool)
-
-    // Beef ~ Effect = Effect
-    case (Kind.Beef, Kind.Effect) =>
-      Some(Kind.Effect)
-    case (Kind.Effect, Kind.Beef) =>
-      Some(Kind.Effect)
-
     // WildCaseSet ~ CaseSet(s) = CaseSet(s)
     case (Kind.WildCaseSet , Kind.CaseSet(sym)) =>
       Some(Kind.CaseSet(sym))

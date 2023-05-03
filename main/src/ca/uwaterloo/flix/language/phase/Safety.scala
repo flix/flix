@@ -241,7 +241,7 @@ object Safety {
             visit(exp) ++ errors
         }
 
-      case e@Expression.UncheckedCast(exp, _, _, _, _, _, _) =>
+      case e@Expression.UncheckedCast(exp, _, _, _, _, _) =>
         val errors = verifyUncheckedCast(e)
         visit(exp) ++ errors
 

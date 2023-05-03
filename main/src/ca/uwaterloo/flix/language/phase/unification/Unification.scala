@@ -86,17 +86,6 @@ object Unification {
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
     //
-    // Effects
-    //
-    case (Kind.Effect, Kind.Effect) =>
-      // don't try to unify effects if the `no-set-effects` flag is on
-      if (flix.options.xnoseteffects) {
-        Ok(Substitution.empty, Nil)
-      } else {
-        SetUnification.unify(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in sets
-      }
-
-    //
     // Bools
     //
     case (Kind.Bool, Kind.Bool) =>

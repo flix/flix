@@ -74,7 +74,7 @@ object TypedAstOps {
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
     case Expression.InstanceOf(exp, _, _) => sigSymsOf(exp)
     case Expression.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expression.UncheckedCast(exp, _, _, _, _, _, _) => sigSymsOf(exp)
+    case Expression.UncheckedCast(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.UncheckedMaskingCast(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Without(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -280,7 +280,7 @@ object TypedAstOps {
     case Expression.CheckedCast(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.UncheckedCast(exp, _, _, _, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.UncheckedMaskingCast(exp, _, _, _) =>

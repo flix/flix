@@ -164,7 +164,6 @@ object Deriver {
         ),
         tpe = Type.mkBool(loc),
         pur = Type.Cst(TypeConstructor.True, loc),
-        eff = Type.Cst(TypeConstructor.Empty, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
         loc = loc
       )
@@ -195,7 +194,6 @@ object Deriver {
             ),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Bool, loc),
-            Type.freshVar(Kind.Effect, loc),
             loc
           )
       }
@@ -307,7 +305,6 @@ object Deriver {
               List(mkVarExpr(param1, loc)),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Bool, loc),
-              Type.freshVar(Kind.Effect, loc),
               loc
             ),
             KindedAst.Expression.Apply(
@@ -315,12 +312,10 @@ object Deriver {
               List(mkVarExpr(param2, loc)),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Bool, loc),
-              Type.freshVar(Kind.Effect, loc),
               loc),
           ),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Bool, loc),
-          Type.freshVar(Kind.Effect, loc),
           loc
         )
       )
@@ -361,7 +356,6 @@ object Deriver {
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         pur = Type.Cst(TypeConstructor.True, loc),
-        eff = Type.Cst(TypeConstructor.Empty, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
         loc = loc
       )
@@ -406,7 +400,6 @@ object Deriver {
             ),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Bool, loc),
-            Type.freshVar(Kind.Effect, loc),
             loc
           )
       }
@@ -424,7 +417,6 @@ object Deriver {
           ),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Bool, loc),
-          Type.freshVar(Kind.Effect, loc),
           loc
         )
       }
@@ -527,7 +519,6 @@ object Deriver {
         ),
         tpe = Type.mkString(loc),
         pur = Type.Cst(TypeConstructor.True, loc),
-        eff = Type.Cst(TypeConstructor.Empty, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
         loc = loc
       )
@@ -556,7 +547,6 @@ object Deriver {
             List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Bool, loc),
-            Type.freshVar(Kind.Effect, loc),
             loc
           )
       }
@@ -665,7 +655,6 @@ object Deriver {
         ),
         tpe = Type.mkInt32(loc),
         pur = Type.Cst(TypeConstructor.True, loc),
-        eff = Type.Cst(TypeConstructor.Empty, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),
         loc = loc
       )
@@ -698,13 +687,11 @@ object Deriver {
                 List(mkVarExpr(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
                 Type.freshVar(Kind.Bool, loc),
-                Type.freshVar(Kind.Effect, loc),
                 loc
               ),
             ),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Bool, loc),
-            Type.freshVar(Kind.Effect, loc),
             loc
           )
       }

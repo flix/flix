@@ -126,7 +126,7 @@ object Statistics {
       case Expression.Ascribe(exp, tpe, pur, loc) => visitExp(exp)
       case Expression.InstanceOf(exp, _, _) => visitExp(exp)
       case Expression.CheckedCast(_, exp, _, _, _) => visitExp(exp)
-      case Expression.UncheckedCast(exp, _, _, _, tpe, pur, loc) => visitExp(exp)
+      case Expression.UncheckedCast(exp, _, _, tpe, pur, loc) => visitExp(exp)
       case Expression.UncheckedMaskingCast(exp, tpe, pur, loc) => visitExp(exp)
       case Expression.Without(exp, _, _, _, _) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, pur, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))

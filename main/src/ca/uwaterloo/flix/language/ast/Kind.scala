@@ -53,13 +53,6 @@ object Kind {
   case object Wild extends Kind
 
   /**
-    * Represents the wildcard kind only matching Bool and Effect.
-    * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
-    * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
-    */
-  case object Beef extends Kind
-
-  /**
     * Represents the wildcard kind only matching Case Sets.
     * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
     * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
@@ -75,11 +68,6 @@ object Kind {
     * Represents the kind of boolean formulas.
     */
   case object Bool extends Kind
-
-  /**
-    * Represents the kind of effect sets.
-    */
-  case object Effect extends Kind
 
   /**
     * Represents the kind of record rows.
