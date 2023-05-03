@@ -46,8 +46,8 @@ jobs:
           - "mlutze/flix-json"
           - "mlutze/flixball"
           - "stephentetley/flix-either"
+          - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
-          - "stephentetley/flix-time"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Java
