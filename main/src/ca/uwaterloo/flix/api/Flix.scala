@@ -109,11 +109,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
-    "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
-    "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
-    "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
-    "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads
@@ -572,9 +567,10 @@ class Flix {
     val afterTailrec = Tailrec.run(cachedLiftedAst)
     val afterOptimizer = Optimizer.run(afterTailrec)
     val afterLateTreeShaker = LateTreeShaker.run(afterOptimizer)
-    val afterVarNumbering = VarNumbering.run(afterLateTreeShaker)
-    val afterFinalize = Finalize.run(afterVarNumbering)
-    cachedErasedAst = Eraser.run(afterFinalize)
+    val afterReducer = Reducer.run(afterLateTreeShaker)
+    val afterVarNumbering = VarNumbering.run(afterReducer)
+    val afterMonoTyper = MonoTyper.run(afterVarNumbering)
+    cachedErasedAst = Eraser.run(afterMonoTyper)
     val afterJvmBackend = JvmBackend.run(cachedErasedAst)
     val result = Finish.run(afterJvmBackend)
 

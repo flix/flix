@@ -42,42 +42,6 @@ object OperatorPrinter {
   private val xor = "xor"
 
   /**
-    * Returns the string representation of `uo`.
-    */
-  def print(uo: UnaryOperator): String = uo match {
-    case UnaryOperator.LogicalNot => not
-    case UnaryOperator.Plus => plus
-    case UnaryOperator.Minus => minus
-    case UnaryOperator.BitwiseNegate => "b_" + neg
-  }
-
-  /**
-    * Returns the string representation of `bo`.
-    */
-  def print(bo: BinaryOperator): String = bo match {
-    case BinaryOperator.Plus => plus
-    case BinaryOperator.Minus => minus
-    case BinaryOperator.Times => mul
-    case BinaryOperator.Divide => div
-    case BinaryOperator.Remainder => rem
-    case BinaryOperator.Exponentiate => exp
-    case BinaryOperator.Equal => eq
-    case BinaryOperator.NotEqual => neq
-    case BinaryOperator.Spaceship => "<=>"
-    case BinaryOperator.Less => lt
-    case BinaryOperator.LessEqual => le
-    case BinaryOperator.Greater => gt
-    case BinaryOperator.GreaterEqual => ge
-    case BinaryOperator.LogicalAnd => and
-    case BinaryOperator.LogicalOr => or
-    case BinaryOperator.BitwiseAnd => "b_" + and
-    case BinaryOperator.BitwiseOr => "b_" + or
-    case BinaryOperator.BitwiseXor => "b_" + xor
-    case BinaryOperator.BitwiseLeftShift => "b_" + shl
-    case BinaryOperator.BitwiseRightShift => "b_" + shr
-  }
-
-  /**
     * Returns the string representation of `so`.
     */
   def print(so: SemanticOperator): String = so match {
@@ -224,8 +188,6 @@ object OperatorPrinter {
          Int32Op.Shr |
          Int64Op.Shr |
          BigIntOp.Shr => shr
-    case ObjectOp.EqNull => "null == "
-    case ObjectOp.NeqNull => "null != "
   }
 
 }

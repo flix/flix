@@ -115,10 +115,10 @@ object LateTreeShaker {
     case Expression.ApplySelfTail(sym, _, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
-    case Expression.Unary(_, _, exp, _, _, _) =>
+    case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>

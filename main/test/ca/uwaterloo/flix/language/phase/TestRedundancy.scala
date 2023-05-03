@@ -1328,8 +1328,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
 
   test("UnderAppliedFunction.03") {
     val input =
-      s"""
-         |def hof(f: a -> b & e, x: a): b & e = f(x)
+      """
+         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
          |
          |def f(): Unit =
          |    hof(x -> (x, ref 21 @ Static));

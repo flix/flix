@@ -44,7 +44,7 @@ mod TestInt16 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int16.maxValue() == ~~~Int16.leftShift(1i16, 15)
+    def maxValue01(): Bool = Int16.maxValue() == Int16.bitwiseNot(Int16.leftShift(1i16, 15))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -192,6 +192,24 @@ mod TestInt16 {
 
     @test
     def signum03(): Bool = Int16.signum(0i16) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
+    // pow                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def pow01(): Bool = Int16.pow(0i16, 0i16) == 1i16
+
+    @test
+    def pow02(): Bool = Int16.pow(0i16, 1i16) == 0i16
+
+    @test
+    def pow03(): Bool = Int16.pow(1i16, 0i16) == 1i16
+
+    @test
+    def pow04(): Bool = Int16.pow(1i16, 1i16) == 1i16
+
+    @test
+    def pow05(): Bool = Int16.pow(5i16, 2i16) == 25i16
 
     /////////////////////////////////////////////////////////////////////////////
     // leftShift                                                               //
@@ -444,7 +462,7 @@ mod TestInt16 {
     def highestOneBitPosition06(): Bool = Int16.highestOneBitPosition(20i16) == 4
 
     @test
-    def highestOneBitPosition07(): Bool = Int16.highestOneBitPosition(2i16 ** 14i16) == 14
+    def highestOneBitPosition07(): Bool = Int16.highestOneBitPosition(Int16.pow(2i16, 14i16)) == 14
 
     @test
     def highestOneBitPosition08(): Bool = Int16.highestOneBitPosition(32767i16) == 14
@@ -453,10 +471,10 @@ mod TestInt16 {
     def highestOneBitPosition09(): Bool = Int16.highestOneBitPosition(0i16) == -1
 
     @test
-    def highestOneBitPosition10(): Bool = Int16.highestOneBitPosition(2i16 ** 8i16 + 2i16 ** 11i16) == 11
+    def highestOneBitPosition10(): Bool = Int16.highestOneBitPosition(Int16.pow(2i16, 8i16) + Int16.pow(2i16, 11i16)) == 11
 
     @test
-    def highestOneBitPosition11(): Bool = Int16.highestOneBitPosition(2i16 ** 3i16 + 2i16 ** 7i16) == 7
+    def highestOneBitPosition11(): Bool = Int16.highestOneBitPosition(Int16.pow(2i16, 3i16) + Int16.pow(2i16, 7i16)) == 7
 
     @test
     def highestOneBitPosition12(): Bool = Int16.highestOneBitPosition(-32767i16) == 15
@@ -483,7 +501,7 @@ mod TestInt16 {
     def highestOneBit06(): Bool = Int16.highestOneBit(20i16) == 16i16
 
     @test
-    def highestOneBit07(): Bool = Int16.highestOneBit(2i16 ** 11i16 + 2i16 ** 13i16) == 8192i16
+    def highestOneBit07(): Bool = Int16.highestOneBit(Int16.pow(2i16, 11i16) + Int16.pow(2i16, 13i16)) == 8192i16
 
     @test
     def highestOneBit08(): Bool = Int16.highestOneBit(32767i16) == 16384i16
@@ -492,7 +510,7 @@ mod TestInt16 {
     def highestOneBit09(): Bool = Int16.highestOneBit(0i16) == 0i16
 
     @test
-    def highestOneBit10(): Bool = Int16.highestOneBit(2i16 ** 6i16 + 2i16 ** 9i16) == 512i16
+    def highestOneBit10(): Bool = Int16.highestOneBit(Int16.pow(2i16, 6i16) + Int16.pow(2i16, 9i16)) == 512i16
 
     /////////////////////////////////////////////////////////////////////////////
     // numberOfLeadingZeros                                                    //
@@ -510,13 +528,13 @@ mod TestInt16 {
     def numberOfLeadingZeros04(): Bool = Int16.numberOfLeadingZeros(32767i16) == 1
 
     @test
-    def numberOfLeadingZeros05(): Bool = Int16.numberOfLeadingZeros(2i16 ** 14i16) == 1
+    def numberOfLeadingZeros05(): Bool = Int16.numberOfLeadingZeros(Int16.pow(2i16, 14i16)) == 1
 
     @test
-    def numberOfLeadingZeros06(): Bool = Int16.numberOfLeadingZeros(2i16 ** 6i16 + 2i16 ** 11i16) == 4
+    def numberOfLeadingZeros06(): Bool = Int16.numberOfLeadingZeros(Int16.pow(2i16, 6i16) + Int16.pow(2i16, 11i16)) == 4
 
     @test
-    def numberOfLeadingZeros07(): Bool = Int16.numberOfLeadingZeros(2i16 ** 7i16 + 2i16 ** 6i16) == 8
+    def numberOfLeadingZeros07(): Bool = Int16.numberOfLeadingZeros(Int16.pow(2i16, 7i16) + Int16.pow(2i16, 6i16)) == 8
 
     @test
     def numberOfLeadingZeros08(): Bool = Int16.numberOfLeadingZeros(20i16) == 11
@@ -549,10 +567,10 @@ mod TestInt16 {
     def lowestOneBitPosition07(): Bool = Int16.lowestOneBitPosition(12i16) == 2
 
     @test
-    def lowestOneBitPosition08(): Bool = Int16.lowestOneBitPosition(2i16 ** 11i16) == 11
+    def lowestOneBitPosition08(): Bool = Int16.lowestOneBitPosition(Int16.pow(2i16, 11i16)) == 11
 
     @test
-    def lowestOneBitPosition09(): Bool = Int16.lowestOneBitPosition(2i16 ** 11i16 + 2i16 ** 6i16) == 6
+    def lowestOneBitPosition09(): Bool = Int16.lowestOneBitPosition(Int16.pow(2i16, 11i16) + Int16.pow(2i16, 6i16)) == 6
 
     @test
     def lowestOneBitPosition10(): Bool = Int16.lowestOneBitPosition(32767i16) == 0
@@ -582,13 +600,13 @@ mod TestInt16 {
     def lowestOneBit06(): Bool = Int16.lowestOneBit(12i16) == 4i16
 
     @test
-    def lowestOneBit07(): Bool = Int16.lowestOneBit(2i16 ** 6i16 + 2i16 ** 9i16 + 2i16 ** 14i16) == 64i16
+    def lowestOneBit07(): Bool = Int16.lowestOneBit(Int16.pow(2i16, 6i16) + Int16.pow(2i16, 9i16) + Int16.pow(2i16, 14i16)) == 64i16
 
     @test
-    def lowestOneBit08(): Bool = Int16.lowestOneBit(2i16 ** 13i16) == 8192i16
+    def lowestOneBit08(): Bool = Int16.lowestOneBit(Int16.pow(2i16, 13i16)) == 8192i16
 
     @test
-    def lowestOneBit09(): Bool = Int16.lowestOneBit(2i16 ** 3i16 + 2i16 ** 5i16) == 8i16
+    def lowestOneBit09(): Bool = Int16.lowestOneBit(Int16.pow(2i16, 3i16) + Int16.pow(2i16, 5i16)) == 8i16
 
     @test
     def lowestOneBit10(): Bool = Int16.lowestOneBit(32767i16) == 1i16
@@ -609,10 +627,10 @@ mod TestInt16 {
     def numberOfTrailingZeros03(): Bool = Int16.numberOfTrailingZeros(42i16) == 1
 
     @test
-    def numberOfTrailingZeros04(): Bool = Int16.numberOfTrailingZeros(2i16 ** 10i16 + 2i16 ** 14i16) == 10
+    def numberOfTrailingZeros04(): Bool = Int16.numberOfTrailingZeros(Int16.pow(2i16, 10i16) + Int16.pow(2i16, 14i16)) == 10
 
     @test
-    def numberOfTrailingZeros05(): Bool = Int16.numberOfTrailingZeros(2i16 ** 8i16) == 8
+    def numberOfTrailingZeros05(): Bool = Int16.numberOfTrailingZeros(Int16.pow(2i16, 8i16)) == 8
 
     @test
     def numberOfTrailingZeros06(): Bool = Int16.numberOfTrailingZeros(-1i16) == 0
@@ -630,19 +648,19 @@ mod TestInt16 {
     def getBit02(): Bool = Int16.getBit(pos = 15, -10000i16) == 1
 
     @test
-    def getBit03(): Bool = Int16.getBit(pos = 12, 2i16 ** 12i16) == 1
+    def getBit03(): Bool = Int16.getBit(pos = 12, Int16.pow(2i16, 12i16)) == 1
 
     @test
-    def getBit04(): Bool = Int16.getBit(pos = 13, 2i16 ** 12i16) == 0
+    def getBit04(): Bool = Int16.getBit(pos = 13, Int16.pow(2i16, 12i16)) == 0
 
     @test
-    def getBit05(): Bool = Int16.getBit(pos = 11, 2i16 ** 12i16) == 0
+    def getBit05(): Bool = Int16.getBit(pos = 11, Int16.pow(2i16, 12i16)) == 0
 
     @test
-    def getBit06(): Bool = Int16.getBit(pos = 9, -1i16 - 2i16 ** 9i16) == 0
+    def getBit06(): Bool = Int16.getBit(pos = 9, -1i16 - Int16.pow(2i16, 9i16)) == 0
 
     @test
-    def getBit07(): Bool = Int16.getBit(pos = 10, -1i16 - 2i16 ** 9i16) == 1
+    def getBit07(): Bool = Int16.getBit(pos = 10, -1i16 - Int16.pow(2i16, 9i16)) == 1
 
     @test
     def getBit08(): Bool = Int16.getBit(pos = 15, 0i16) == 0
@@ -714,7 +732,7 @@ mod TestInt16 {
     def clearBit11(): Bool = Int16.clearBit(pos = 5, -1i16) == -33i16
 
     @test
-    def clearBit12(): Bool = Int16.clearBit(pos = 15, -1i16) == ~~~Int16.leftShift(1i16, 15)
+    def clearBit12(): Bool = Int16.clearBit(pos = 15, -1i16) == Int16.bitwiseNot(Int16.leftShift(1i16, 15))
 
     @test
     def clearBit13(): Bool = Int16.clearBit(pos = 32, -1i16) == -2i16
@@ -788,6 +806,91 @@ mod TestInt16 {
 
     @test
     def log209(): Bool = Int16.log2(-1i16) == 0i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseAnd                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseAnd01(): Bool = Int16.bitwiseAnd(0i16, 0i16) == 0i16
+
+    @test
+    def bitwiseAnd02(): Bool = Int16.bitwiseAnd(127i16, 0i16) == 0i16
+
+    @test
+    def bitwiseAnd03(): Bool = Int16.bitwiseAnd(-128i16, 0i16) == 0i16
+
+    @test
+    def bitwiseAnd04(): Bool = Int16.bitwiseAnd(0i16, 1i16) == 0i16
+
+    @test
+    def bitwiseAnd05(): Bool = Int16.bitwiseAnd(127i16, 1i16) == 1i16
+
+    @test
+    def bitwiseAnd06(): Bool = Int16.bitwiseAnd(-128i16, 1i16) == 0i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseNot                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseNot01(): Bool = Int16.bitwiseNot(0i16) == -1i16
+
+    @test
+    def bitwiseNot02(): Bool = Int16.bitwiseNot(1i16) == -2i16
+
+    @test
+    def bitwiseNot03(): Bool = Int16.bitwiseNot(-1i16) == -0i16
+
+    @test
+    def bitwiseNot04(): Bool = Int16.bitwiseNot(127i16) == -128i16
+
+    @test
+    def bitwiseNot05(): Bool = Int16.bitwiseNot(-128i16) == 127i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseOr                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseOr01(): Bool = Int16.bitwiseOr(0i16, 0i16) == 0i16
+
+    @test
+    def bitwiseOr02(): Bool = Int16.bitwiseOr(127i16, 0i16) == 127i16
+
+    @test
+    def bitwiseOr03(): Bool = Int16.bitwiseOr(-128i16, 0i16) == -128i16
+
+    @test
+    def bitwiseOr04(): Bool = Int16.bitwiseOr(0i16, 1i16) == 1i16
+
+    @test
+    def bitwiseOr05(): Bool = Int16.bitwiseOr(127i16, 1i16) == 127i16
+
+    @test
+    def bitwiseOr06(): Bool = Int16.bitwiseOr(-128i16, 1i16) == -127i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseXor                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseXor01(): Bool = Int16.bitwiseXor(0i16, 0i16) == 0i16
+
+    @test
+    def bitwiseXor02(): Bool = Int16.bitwiseXor(127i16, 0i16) == 127i16
+
+    @test
+    def bitwiseXor03(): Bool = Int16.bitwiseXor(-128i16, 0i16) == -128i16
+
+    @test
+    def bitwiseXor04(): Bool = Int16.bitwiseXor(0i16, 1i16) == 1i16
+
+    @test
+    def bitwiseXor05(): Bool = Int16.bitwiseXor(127i16, 1i16) == 126i16
+
+    @test
+    def bitwiseXor06(): Bool = Int16.bitwiseXor(-128i16, 1i16) == -127i16
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
