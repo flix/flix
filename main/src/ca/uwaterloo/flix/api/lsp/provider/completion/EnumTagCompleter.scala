@@ -26,47 +26,52 @@ object EnumTagCompleter extends Completer {
     * Returns a List of Completion for enum tags.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumTagCompletion] = {
-    context.word.split('.').toList match {
-      /* We have the following cases:
-         0: We have nothing
-         1: We have path or enum
-         2: We have a path.enum, enum.tag, path.path
-            2.1: We have A.Color
-            2.2: We have Color.Green
-            2.3: We have A.B
-         3: We have an path.path.enum or path.enum.tag
-            3.1: We have A.B.Color
-            3.2: We have A.Color.Green
-         4: We have path.enum.tag i.e. A.B.Color.Green
-       */
-
+    val word = context.word.split('.').toList
+    /* We have the following cases:
+             0: We have nothing
+             1: We have path or enum
+                1.1: We have A
+                1.2: We have Color
+             2: We have a path.enum, enum.tag, path.path
+                2.1: We have A.Color
+                2.2: We have Color.Green
+                2.3: We have A.B
+             3: We have an a longer path.enum or longer path.enum.tag
+                3.1: We have A.X.B.Color
+                3.2: We have A.X.Color.Green
+           */
+    word.length match {
       // Case 0:
-      case Nil => Nil
+      case 0 => Nil
       // Case 1:
-      case x :: Nil =>
-        getEnumTagCompletions(Nil, x, None)
+      case 1 =>
+        // Case 1.1:
+        // Do nothing, not valid for tags
+        // Case 1.2:
+        val enm = word.head
+        getEnumTagCompletions(Nil, enm, None)
       // Case 2:
-      case x :: y :: Nil =>
-        val ns1 = List(x)
+      case 2 =>
+        val ns = word.take(1)
+        val enmOrTag = word(1)
+        val enm2 = word.head
         // Case 2.1:
-        getEnumTagCompletions(ns1, y, None) ++
+        getEnumTagCompletions(ns, enmOrTag, None) ++
           // Case 2.2:
-          getEnumTagCompletions(Nil, x, Some(y))
+          getEnumTagCompletions(Nil, enm2, Some(enmOrTag))
           // Case 2.3:
           // Do nothing, not valid for tags
       // Case 3:
-      case x :: y :: z :: Nil =>
-        val ns1 = List(x)
-        val ns2 = List(x, y)
+      case x =>
+        val ns1 = word.take(x - 1)
+        val ns2 = word.take(x - 2)
+        val enmOrTag = word(x - 1)
+        val enm2 = word(x - 2)
         // Case 3.1:
-        getEnumTagCompletions(ns2, z, None) ++
+        getEnumTagCompletions(ns1, enmOrTag, None) ++
           // Case 3.2
-          getEnumTagCompletions(ns1, y, Some(z))
-      // Case 4:
-      case ns1 :: ns2 :: enum :: tag :: Nil =>
-        val ns = List(ns1, ns2)
-        getEnumTagCompletions(ns, enum, Some(tag))
-      case _ => Nil
+          getEnumTagCompletions(ns2, enm2, Some(enmOrTag))
+
     }
   }
 
@@ -106,7 +111,7 @@ object EnumTagCompleter extends Completer {
     * @return    true, if the ns.isEmpty or it matches sym.namespace, false otherwise.
     */
   private def providedNameSpaceIsValid(ns: List[String], sym: Symbol.EnumSym): Boolean = {
-    ns.isEmpty || ns == sym.namespace || ns == sym.namespace.tail
+    ns.isEmpty || ns == sym.namespace || ns == sym.namespace.reverse.take(ns.length - 1)
   }
 
   /**
