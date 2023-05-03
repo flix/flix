@@ -42,19 +42,35 @@ object Tester {
 
     // Start the TestRunner and TestReporter.
     val queue = new ConcurrentLinkedQueue[TestEvent]()
+    val reporter = new TestReporter(queue, tests)
     val runner = new TestRunner(queue, tests)
+    reporter.start()
     runner.start()
-    val retVal = testReporter(queue, tests)
+
     // Wait for everything to complete.
+    reporter.join()
     runner.join()
-    retVal
+
+    if (reporter.isSuccess()) {
+      Result.Ok(())
+    } else {
+      // Set exit code of program to 1.
+      Result.Err(1)
+    }
   }
 
   /**
-    * A function that reports the results of test events as they come in.
+    * A class that reports the results of test events as they come in.
     */
-def testReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix): Result[Unit, Int] = {
+  private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
 
+    private var success = new java.util.concurrent.atomic.AtomicBoolean(true)
+
+    def isSuccess(): Boolean = {
+      success.get()
+    }
+
+    override def run(): Unit = {
       // Silence JLine warnings about terminal type.
       Logger.getLogger("org.jline").setLevel(Level.OFF)
 
@@ -97,6 +113,7 @@ def testReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase
             val line = output.headOption.map(s => s"(${red(s)})").getOrElse("")
             writer.println(s"  ${bgRed(" FAIL ")} $sym $line")
             terminal.flush()
+            success.set(false)
 
           case TestEvent.Skip(sym) =>
             skipped = skipped + 1
@@ -133,14 +150,9 @@ def testReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase
           case _ => // nop
         }
       }
-    if (failed.isEmpty) {
-      Result.Ok(())
-    } else {
-      // Set exit code of program to 1.
-      Result.Err(1)
     }
-  }
 
+  }
 
   /**
     * A class that runs all the given tests emitting test events.
