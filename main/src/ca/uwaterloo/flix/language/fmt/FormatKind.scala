@@ -27,8 +27,6 @@ object FormatKind {
     case Kind.WildCaseSet => s"CaseSet[???]"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
-    case Kind.Effect => "Effect"
-    case Kind.Beef => "Bool or Effect"
     case Kind.RecordRow => "RecordRow"
     case Kind.SchemaRow => "SchemaRow"
     case Kind.Predicate => "Predicate"

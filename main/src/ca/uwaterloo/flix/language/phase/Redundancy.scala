@@ -237,8 +237,7 @@ object Redundancy {
         val unusedTypeParams = decl.tparams.filter {
           tparam =>
             !usedTypeVars.contains(tparam.sym) &&
-              !tparam.name.name.startsWith("_") &&
-              tparam.sym.kind != Kind.Effect // TODO EFF-MIGRRATION temporarily disabling for effect sets
+              !tparam.name.name.startsWith("_")
         }
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
@@ -659,7 +658,7 @@ object Redundancy {
             visitExp(exp, env0, rc)
       }
 
-    case Expression.UncheckedCast(exp, _, declaredPur, _, _, _, loc) =>
+    case Expression.UncheckedCast(exp, _, declaredPur, _, _, loc) =>
       declaredPur match {
         // Don't capture redundant purity casts if there's also a set effect
         case Some(pur) =>
@@ -981,7 +980,7 @@ object Redundancy {
     val isPure = exp.pur == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) =>
-        curriedArrowPurityType(exp.tpe) != Type.Pure || curriedArrowEffectType(exp.tpe) != Type.Empty
+        curriedArrowPurityType(exp.tpe) != Type.Pure
       case _ => false
     }
     isPure && isNonPureFunction
@@ -1159,8 +1158,7 @@ object Redundancy {
     */
   private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
     !tvar.isWild &&
-      !used.contains(tvar) &&
-      tvar.kind != Kind.Effect // TODO EFF-MIGRATION ignoring effects for now; reactivate later
+      !used.contains(tvar)
   }
 
   /**

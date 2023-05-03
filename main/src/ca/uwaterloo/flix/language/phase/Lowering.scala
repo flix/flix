@@ -579,11 +579,11 @@ object Lowering {
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, pur, loc) =>
+    case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, tpe, pur, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
-      LoweredAst.Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, loc)
+      LoweredAst.Expression.Cast(e, dt, declaredPur, t, pur, loc)
 
     case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
@@ -733,7 +733,7 @@ object Lowering {
         val es = visitExps(elms)
         val t = visitType(tpe)
         val e = mkParTuple(LoweredAst.Expression.Tuple(es, t, pur, loc1))
-        LoweredAst.Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, loc0)
+        LoweredAst.Expression.Cast(e, None, Some(Type.Pure), t, pur, loc0)
 
       case _ =>
         throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp", loc0)
@@ -1778,7 +1778,7 @@ object Lowering {
     val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
 
     // Wrap everything in a purity cast,
-    LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, loc.asSynthetic)
+    LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), tpe, pur, loc.asSynthetic)
   }
 
   /**
@@ -2086,9 +2086,9 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.InstanceOf(e, clazz, loc)
 
-    case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, loc) =>
+    case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, loc)
+      LoweredAst.Expression.Cast(e, declaredType, declaredPur, tpe, pur, loc)
 
     case LoweredAst.Expression.Without(exp, sym, tpe, pur, loc) =>
       val e = substExp(exp, subst)

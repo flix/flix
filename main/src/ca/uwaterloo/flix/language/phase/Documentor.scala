@@ -331,10 +331,8 @@ object Documentor {
   def visitKind(kind: Kind): String = kind match {
     case Kind.Wild => ""
     case Kind.WildCaseSet => ""
-    case Kind.Beef => "Bool or Effect"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
-    case Kind.Effect => "Effect"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
     case Kind.Predicate => ""

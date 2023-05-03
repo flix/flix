@@ -224,7 +224,7 @@ object CodeHinter {
     case Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.UncheckedCast(exp, _, _, _, tpe, pur, loc) =>
+    case Expression.UncheckedCast(exp, _, _, tpe, pur, loc) =>
       visitExp(exp)
 
     case Expression.UncheckedMaskingCast(exp, _, _, _) =>
