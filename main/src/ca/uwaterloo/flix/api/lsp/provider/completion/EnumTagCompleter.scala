@@ -39,7 +39,7 @@ object EnumTagCompleter extends Completer {
              3: We have an a longer path.enum or longer path.enum.tag
                 3.1: We have A.X.B.Color
                 3.2: We have A.X.Color.Green
-           */
+    */
     word.length match {
       // Case 0:
       case 0 => Nil
@@ -108,10 +108,10 @@ object EnumTagCompleter extends Completer {
     *
     * @param ns  the provided nameSpace.
     * @param sym the enumSym.
-    * @return    true, if the ns.isEmpty or it matches sym.namespace, false otherwise.
+    * @return    true, if the ns.isEmpty or it matches sym.namespace or the last part of the sym.namespace, false otherwise.
     */
   private def providedNameSpaceIsValid(ns: List[String], sym: Symbol.EnumSym): Boolean = {
-    ns.isEmpty || ns == sym.namespace || ns == sym.namespace.reverse.take(ns.length - 1)
+    ns.isEmpty || ns == sym.namespace || ns == sym.namespace.takeRight(ns.length)
   }
 
   /**
