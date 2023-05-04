@@ -216,15 +216,9 @@ object JvmOps {
     * NB: The given type `tpe` must be an enum type.
     */
   def getEnumInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
-    case MonoType.Enum(sym, elms) =>
-      // Compute the stringified erased type of each type argument.
-      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
-
-      // The JVM name is of the form Option$ or Option$Int
-      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + Flix.Delimiter + args.mkString(Flix.Delimiter)
-
+    case MonoType.Enum(sym, _) =>
       // The enum resides in its namespace package.
-      JvmType.Reference(JvmName(sym.namespace, name))
+      JvmType.Reference(JvmName(sym.namespace, "I" + sym.name))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -243,15 +237,7 @@ object JvmOps {
     */
   // TODO: Magnus: Can we improve the representation w.r.t. unused type variables?
   def getTagClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Retrieve the tag name.
-    val tagName = tag.tag
-
-    // Retrieve the type arguments.
-    val args = tag.tparams.map(tpe => stringify(getErasedJvmType(tpe)))
-
-    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
-    val name = tag.sym.name + Flix.Delimiter + (if (args.isEmpty) tagName else tagName + Flix.Delimiter + args.mkString(Flix.Delimiter))
-
+    val name = tag.sym.name + Flix.Delimiter + tag.tag
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
   }
@@ -517,67 +503,12 @@ object JvmOps {
 
       // Compute the tag info.
       enum0.cases.foldLeft(Set.empty[TagInfo]) {
-        case (sacc, (_, Case(caseSym, uninstantiatedTagType, _))) =>
-          // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val (subst, econstrs) = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
-          val tagType = subst(hackMonoType2Type(uninstantiatedTagType)) // TODO ASSOC-TYPES consider econstrs
-
-          sacc + TagInfo(caseSym.enumSym, caseSym.name, args, tpe, hackType2MonoType(tagType))
+        case (sacc, (_, Case(caseSym, tagType, _))) =>
+          // TODO ASSOC-TYPES consider econstrs
+          sacc + TagInfo(caseSym.enumSym, caseSym.name, args, tpe, tagType)
       }
     case _ => Set.empty
   }
-
-  // TODO: Should be removed.
-  private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
-    case MonoType.Var(id) => Type.Var(hackId2TypeVarSym(id), SourceLocation.Unknown)
-    case MonoType.Unit => Type.Unit
-    case MonoType.Bool => Type.Bool
-    case MonoType.Char => Type.Char
-    case MonoType.Float32 => Type.Float32
-    case MonoType.Float64 => Type.Float64
-    case MonoType.BigDecimal => Type.BigDecimal
-    case MonoType.Int8 => Type.Int8
-    case MonoType.Int16 => Type.Int16
-    case MonoType.Int32 => Type.Int32
-    case MonoType.Int64 => Type.Int64
-    case MonoType.BigInt => Type.BigInt
-    case MonoType.Str => Type.Str
-    case MonoType.Regex => Type.Regex
-    case MonoType.Region => Type.mkRegion(Type.Unit, SourceLocation.Unknown) // hack
-    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
-    case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
-    case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)
-    case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
-    case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
-    case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type), SourceLocation.Unknown)
-    case MonoType.Tuple(_) => Type.mkTuple(Nil, SourceLocation.Unknown) // hack
-    case MonoType.RecordEmpty() => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
-    case MonoType.RecordExtend(_, _, _) => Type.mkRecord(hackMonoType2RecordRowType(tpe), SourceLocation.Unknown)
-    case MonoType.SchemaEmpty() => Type.mkSchema(Type.RecordRowEmpty, SourceLocation.Unknown)
-    case MonoType.SchemaExtend(_, _, _) => Type.mkSchema(hackMonoType2SchemaRowType(tpe), SourceLocation.Unknown)
-  }
-
-  // TODO: Remove
-  private def hackMonoType2RecordRowType(tpe: MonoType): Type = tpe match {
-    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordRowExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2RecordRowType(rest), SourceLocation.Unknown)
-    case MonoType.RecordEmpty() => Type.RecordRowEmpty
-    case MonoType.Var(id) => Type.Var(hackId2TypeVarSym(id), SourceLocation.Unknown)
-    case _ => throw InternalCompilerException("Unexpected non-row type.", SourceLocation.Unknown)
-  }
-
-  // TODO: Remove
-  private def hackMonoType2SchemaRowType(tpe: MonoType): Type = tpe match {
-    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaRowExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2SchemaRowType(rest), SourceLocation.Unknown)
-    case MonoType.SchemaEmpty() => Type.SchemaRowEmpty
-    case MonoType.Var(id) => Type.Var(hackId2TypeVarSym(id), SourceLocation.Unknown)
-    case _ => throw InternalCompilerException("Unexpected non-row type.", SourceLocation.Unknown)
-  }
-
-  // TODO: Remove
-  private def hackType2MonoType(tpe: Type): MonoType = MonoTyper.visitType(tpe)
-
-  // TODO: Remove
-  private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, Ast.VarText.Absent, Kind.Wild, isRegion = false, SourceLocation.Unknown)
 
   /**
     * Returns the tag info for the given `tpe` and `tag`

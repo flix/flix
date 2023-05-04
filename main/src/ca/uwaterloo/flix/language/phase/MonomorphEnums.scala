@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern, RelationalChoicePattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -39,7 +39,7 @@ object MonomorphEnums {
     val specializedEnums: mutable.Map[Symbol.EnumSym, LoweredAst.Enum] = mutable.Map.empty
   }
 
-  def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonomorphEnums"){
+  def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonomorphEnums") {
     // Two assumption:
     // - All typeclass information have been transformed into defs - this
     //   phase only looks at types and expressions in defs.
@@ -98,40 +98,40 @@ object MonomorphEnums {
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       Expression.Lambda(visitFormalParam(fparam), visitExp(exp), visitType(tpe), loc)
     case Expression.Apply(exp, exps, tpe, pur, loc) =>
-      Expression.Apply(visitExp(exp), exps.map(visitExp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Apply(visitExp(exp), exps.map(visitExp), visitType(tpe), visitType(pur), loc)
     case Expression.Unary(sop, exp, tpe, pur, loc) =>
-      Expression.Unary(sop, visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Unary(sop, visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.Binary(sop, exp1, exp2, tpe, pur, loc) =>
-      Expression.Binary(sop, visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Binary(sop, visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.Let(sym, mod, exp1, exp2, tpe, pur, loc) =>
-      Expression.Let(sym, mod, visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Let(sym, mod, visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, loc) =>
-      Expression.LetRec(sym, mod, visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.LetRec(sym, mod, visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.Region(tpe, loc) =>
       Expression.Region(visitType(tpe), loc)
     case Expression.Scope(sym, regionVar, exp, tpe, pur, loc) =>
       // TODO: the regionVar??
-      Expression.Scope(sym, regionVar, visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Scope(sym, regionVar, visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.ScopeExit(exp1, exp2, tpe, pur, loc) =>
-      Expression.ScopeExit(visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.ScopeExit(visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, loc) =>
-      Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), visitEffectType(pur), loc)
+      Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), visitType(pur), loc)
     case Expression.Stm(exp1, exp2, tpe, pur, loc) =>
-      Expression.Stm(visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Stm(visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.Discard(exp, pur, loc) =>
-      Expression.Discard(visitExp(exp), visitEffectType(pur), loc)
+      Expression.Discard(visitExp(exp), visitType(pur), loc)
     case Expression.Match(exp, rules, tpe, pur, loc) =>
-      val newRules = rules.map{
+      val newRules = rules.map {
         case LoweredAst.MatchRule(pat, guard, exp) =>
           LoweredAst.MatchRule(visitPat(pat), guard.map(visitExp), visitExp(exp))
       }
-      Expression.Match(visitExp(exp), newRules, visitType(tpe), visitEffectType(pur), loc)
+      Expression.Match(visitExp(exp), newRules, visitType(tpe), visitType(pur), loc)
     case Expression.TypeMatch(exp, rules, tpe, pur, loc) =>
-      val newRules = rules.map{
+      val newRules = rules.map {
         case LoweredAst.MatchTypeRule(sym, tpe, exp) =>
           LoweredAst.MatchTypeRule(sym, visitType(tpe), visitExp(exp))
       }
-      Expression.TypeMatch(visitExp(exp), newRules, visitType(tpe), visitEffectType(pur), loc)
+      Expression.TypeMatch(visitExp(exp), newRules, visitType(tpe), visitType(pur), loc)
     case Expression.RelationalChoose(exps, rules, tpe, pur, loc) =>
       val newRules = rules.map {
         case LoweredAst.RelationalChoiceRule(pat, exp) =>
@@ -142,93 +142,93 @@ object MonomorphEnums {
           }
           LoweredAst.RelationalChoiceRule(newPat, visitExp(exp))
       }
-      Expression.RelationalChoose(exps.map(visitExp), newRules, visitType(tpe), visitEffectType(pur), loc)
+      Expression.RelationalChoose(exps.map(visitExp), newRules, visitType(tpe), visitType(pur), loc)
     case Expression.Tag(sym, exp, tpe, pur, loc) =>
       val freshEnumSym = specializeEnum(sym.sym.enumSym, tpe.typeArguments, tpe.loc)
       val freshCaseSym = Ast.CaseSymUse(new Symbol.CaseSym(freshEnumSym, sym.sym.name, sym.sym.loc), sym.loc)
-      Expression.Tag(freshCaseSym, visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Tag(freshCaseSym, visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.Tuple(elms, tpe, pur, loc) =>
-      Expression.Tuple(elms.map(visitExp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Tuple(elms.map(visitExp), visitType(tpe), visitType(pur), loc)
     case Expression.RecordEmpty(tpe, loc) =>
       Expression.RecordEmpty(visitType(tpe), loc)
     case Expression.RecordSelect(exp, field, tpe, pur, loc) =>
-      Expression.RecordSelect(visitExp(exp), field, visitType(tpe), visitEffectType(pur), loc)
+      Expression.RecordSelect(visitExp(exp), field, visitType(tpe), visitType(pur), loc)
     case Expression.RecordExtend(field, value, rest, tpe, pur, loc) =>
-      Expression.RecordExtend(field, visitExp(value), visitExp(rest), visitType(tpe), visitEffectType(pur), loc)
+      Expression.RecordExtend(field, visitExp(value), visitExp(rest), visitType(tpe), visitType(pur), loc)
     case Expression.RecordRestrict(field, rest, tpe, pur, loc) =>
-      Expression.RecordRestrict(field, visitExp(rest), visitType(tpe), visitEffectType(pur), loc)
+      Expression.RecordRestrict(field, visitExp(rest), visitType(tpe), visitType(pur), loc)
     case Expression.ArrayLit(exps, exp, tpe, pur, loc) =>
-      Expression.ArrayLit(exps.map(visitExp), visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.ArrayLit(exps.map(visitExp), visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, loc) =>
-      Expression.ArrayNew(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), visitEffectType(pur), loc)
+      Expression.ArrayNew(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), visitType(pur), loc)
     case Expression.ArrayLoad(base, index, tpe, pur, loc) =>
-      Expression.ArrayLoad(visitExp(base), visitExp(index), visitType(tpe), visitEffectType(pur), loc)
+      Expression.ArrayLoad(visitExp(base), visitExp(index), visitType(tpe), visitType(pur), loc)
     case Expression.ArrayLength(base, pur, loc) =>
-      Expression.ArrayLength(visitExp(base), visitEffectType(pur), loc)
+      Expression.ArrayLength(visitExp(base), visitType(pur), loc)
     case Expression.ArrayStore(base, index, elm, pur, loc) =>
-      Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), visitEffectType(pur), loc)
+      Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), visitType(pur), loc)
     case Expression.VectorLit(exps, tpe, pur, loc) =>
-      Expression.VectorLit(exps.map(visitExp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.VectorLit(exps.map(visitExp), visitType(tpe), visitType(pur), loc)
     case Expression.VectorLoad(exp1, exp2, tpe, pur, loc) =>
-      Expression.VectorLoad(visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.VectorLoad(visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.VectorLength(exp, loc) =>
       Expression.VectorLength(visitExp(exp), loc)
     case Expression.Ref(exp1, exp2, tpe, pur, loc) =>
-      Expression.Ref(visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Ref(visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.Deref(exp, tpe, pur, loc) =>
-      Expression.Deref(visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Deref(visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.Assign(exp1, exp2, tpe, pur, loc) =>
-      Expression.Assign(visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Assign(visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.Ascribe(exp, tpe, pur, loc) =>
-      Expression.Ascribe(visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Ascribe(visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.InstanceOf(exp, clazz, loc) =>
       Expression.InstanceOf(visitExp(exp), clazz, loc)
     case Expression.Cast(exp, declaredType, declaredPur, tpe, pur, loc) =>
-      Expression.Cast(visitExp(exp), declaredType.map(visitType), declaredPur.map(visitType), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Cast(visitExp(exp), declaredType.map(visitType), declaredPur.map(visitType), visitType(tpe), visitType(pur), loc)
     case Expression.Without(exp, effUse, tpe, pur, loc) =>
-      Expression.Without(visitExp(exp), effUse, visitType(tpe), visitEffectType(pur), loc)
+      Expression.Without(visitExp(exp), effUse, visitType(tpe), visitType(pur), loc)
     case Expression.TryCatch(exp, rules, tpe, pur, loc) =>
-      val newRules = rules.map{
+      val newRules = rules.map {
         case LoweredAst.CatchRule(sym, clazz, exp) =>
           LoweredAst.CatchRule(sym, clazz, visitExp(exp))
       }
-      Expression.TryCatch(visitExp(exp), newRules, visitType(tpe), visitEffectType(pur), loc)
+      Expression.TryCatch(visitExp(exp), newRules, visitType(tpe), visitType(pur), loc)
     case Expression.TryWith(exp, effUse, rules, tpe, pur, loc) =>
-      val newRules = rules.map{
+      val newRules = rules.map {
         case LoweredAst.HandlerRule(op, fparams, exp) =>
           LoweredAst.HandlerRule(op, fparams.map(visitFormalParam), visitExp(exp))
       }
-      Expression.TryWith(visitExp(exp), effUse, newRules, visitType(tpe), visitEffectType(pur), loc)
+      Expression.TryWith(visitExp(exp), effUse, newRules, visitType(tpe), visitType(pur), loc)
     case Expression.Do(op, exps, pur, loc) =>
-      Expression.Do(op, exps.map(visitExp), visitEffectType(pur), loc)
+      Expression.Do(op, exps.map(visitExp), visitType(pur), loc)
     case Expression.Resume(exp, tpe, loc) =>
       Expression.Resume(visitExp(exp), visitType(tpe), loc)
     case Expression.InvokeConstructor(constructor, args, tpe, pur, loc) =>
-      Expression.InvokeConstructor(constructor, args.map(visitExp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.InvokeConstructor(constructor, args.map(visitExp), visitType(tpe), visitType(pur), loc)
     case Expression.InvokeMethod(method, exp, args, tpe, pur, loc) =>
-      Expression.InvokeMethod(method, visitExp(exp), args.map(visitExp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.InvokeMethod(method, visitExp(exp), args.map(visitExp), visitType(tpe), visitType(pur), loc)
     case Expression.InvokeStaticMethod(method, args, tpe, pur, loc) =>
-      Expression.InvokeStaticMethod(method, args.map(visitExp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.InvokeStaticMethod(method, args.map(visitExp), visitType(tpe), visitType(pur), loc)
     case Expression.GetField(field, exp, tpe, pur, loc) =>
-      Expression.GetField(field, visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.GetField(field, visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.PutField(field, exp1, exp2, tpe, pur, loc) =>
-      Expression.PutField(field, visitExp(exp1), visitExp(exp1), visitType(tpe), visitEffectType(pur), loc)
+      Expression.PutField(field, visitExp(exp1), visitExp(exp1), visitType(tpe), visitType(pur), loc)
     case Expression.GetStaticField(field, tpe, pur, loc) =>
-      Expression.GetStaticField(field, visitType(tpe), visitEffectType(pur), loc)
+      Expression.GetStaticField(field, visitType(tpe), visitType(pur), loc)
     case Expression.PutStaticField(field, exp, tpe, pur, loc) =>
-      Expression.PutStaticField(field, visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.PutStaticField(field, visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.NewObject(name, clazz, tpe, pur, methods, loc) =>
-      val newMethods = methods.map{
+      val newMethods = methods.map {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, pur, loc) =>
-          LoweredAst.JvmMethod(ident, fparams.map(visitFormalParam), visitExp(exp), visitType(retTpe), visitEffectType(pur), loc)
+          LoweredAst.JvmMethod(ident, fparams.map(visitFormalParam), visitExp(exp), visitType(retTpe), visitType(pur), loc)
       }
-      Expression.NewObject(name, clazz, visitType(tpe), visitEffectType(pur), newMethods, loc)
+      Expression.NewObject(name, clazz, visitType(tpe), visitType(pur), newMethods, loc)
     case Expression.Spawn(exp1, exp2, tpe, pur, loc) =>
-      Expression.Spawn(visitExp(exp1), visitExp(exp2), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Spawn(visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.Lazy(exp, tpe, loc) =>
       Expression.Lazy(visitExp(exp), visitType(tpe), loc)
     case Expression.Force(exp, tpe, pur, loc) =>
-      Expression.Force(visitExp(exp), visitType(tpe), visitEffectType(pur), loc)
+      Expression.Force(visitExp(exp), visitType(tpe), visitType(pur), loc)
   }
 
   private def visitPat(pat: LoweredAst.Pattern)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Pattern = pat match {
@@ -243,9 +243,14 @@ object MonomorphEnums {
     case Pattern.Tuple(elms, tpe, loc) => Pattern.Tuple(elms.map(visitPat), visitType(tpe), loc)
   }
 
+  /**
+    * Specialize enums and erase aliases.
+    */
   private def visitType(tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Type = {
     def visitInner(tpe0: Type): Type = tpe0.baseType match {
       case Type.Cst(TypeConstructor.Enum(sym, _), loc) => // enum
+        // this cannot be visited yet, because specialization works on
+        // non-specialized enums.
         val args = tpe0.typeArguments
         val freshSym = specializeEnum(sym, args, loc)
         Type.mkEnum(freshSym, Nil, loc)
@@ -257,10 +262,9 @@ object MonomorphEnums {
         case Type.AssocType(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
       }
     }
+    // it is important that eraseAliases happens BEFORE enum specialization
     visitInner(eraseAliases(tpe))
   }
-
-  private def visitEffectType(tpe: Type): Type = tpe
 
   private def visitFormalParam(p: LoweredAst.FormalParam)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.FormalParam = {
     val LoweredAst.FormalParam(sym, mod, tpe, src, loc) = p
@@ -273,7 +277,9 @@ object MonomorphEnums {
   }
 
   private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
-    val args = args0.map(eraseAliases)
+    // TODO: remove this hack to simplify booleans
+    val emptySubst = Substitution(Map(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, SourceLocation.Unknown) -> Type.Unit))
+    val args = args0.map(eraseAliases).map(emptySubst.apply)
     // check assumptions
     args.foreach(t => if (t.typeVars.nonEmpty) throw InternalCompilerException(s"Unexpected type var: '$sym'", loc))
     // assemble enum type (e.g. `List[Int32]`)
@@ -295,7 +301,7 @@ object MonomorphEnums {
         // e.g. for List[a] and List[Int32] we substitute [a -> Int32]
         val e = root.enums(sym)
         val subst = Substitution(e.tparams.map(_.sym).zip(args).toMap)
-        val cases = e.cases.map{
+        val cases = e.cases.map {
           case (caseSym, LoweredAst.Case(_, caseTpe, caseSc, caseLoc)) =>
             val freshCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, caseSym.loc)
             val newCaseSc = Scheme(caseSc.quantifiers, caseSc.tconstrs, caseSc.econstrs, subst(caseSc.base))
@@ -310,7 +316,7 @@ object MonomorphEnums {
           Nil,
           e.derives,
           cases,
-          e.tpeDeprecated,
+          Type.mkEnum(freshSym, Nil, loc),
           e.loc
         )
         ctx.specializedEnums.put(freshSym, freshEnum)
