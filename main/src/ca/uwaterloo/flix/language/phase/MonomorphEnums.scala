@@ -274,7 +274,6 @@ object MonomorphEnums {
 
   private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
     val args = args0.map(eraseAliases)
-    if (args.nonEmpty) println(args)
     // check assumptions
     args.foreach(t => if (t.typeVars.nonEmpty) throw InternalCompilerException(s"Unexpected type var: '$sym'", loc))
     // assemble enum type (e.g. `List[Int32]`)
