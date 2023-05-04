@@ -332,41 +332,17 @@ object GenExpression {
           case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt | CharOp.Gt =>
             visitComparison1(exp1, exp2, IF_ICMPLE, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Lt => visitComparison2(exp1, exp2, LCMP, IFGE, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Le => visitComparison2(exp1, exp2, LCMP, IFGT, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Eq => visitComparison2(exp1, exp2, LCMP, IFNE, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Neq => visitComparison2(exp1, exp2, LCMP, IFEQ, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Ge => visitComparison2(exp1, exp2, LCMP, IFLT, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Gt => visitComparison2(exp1, exp2, LCMP, IFLE, visitor, currentClass, lenv0, entryPoint)
 
           case BigIntOp.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
