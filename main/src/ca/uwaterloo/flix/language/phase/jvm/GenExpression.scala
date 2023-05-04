@@ -64,7 +64,30 @@ object GenExpression {
 
       case AtomicOp.Unary(sop) =>
         val List(exp) = exps
-        compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
+        // Adding source line number for debugging
+        addSourceLine(visitor, exp.loc)
+
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        sop match {
+          case SemanticOperator.BoolOp.Not =>
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IFNE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case Float32Op.Neg | Float64Op.Neg | BigDecimalOp.Neg
+               | Int8Op.Neg | Int16Op.Neg | Int32Op.Neg
+               | Int64Op.Neg | BigIntOp.Neg => compileUnaryMinusExpr(visitor, sop, exp.loc)
+
+          case Int8Op.Not | Int16Op.Not | Int32Op.Not
+               | Int64Op.Not | BigIntOp.Not => compileUnaryNegateExpr(visitor, sop, exp.loc)
+
+          case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", e.loc)
+        }
 
       case AtomicOp.Binary(sop) =>
         val List(exp1, exp2) = exps
@@ -1878,38 +1901,6 @@ object GenExpression {
       case _ => visitor.visitLdcInsn(i)
     }
     if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
-  }
-
-  private def compileUnaryExpr(e: Expr,
-                               currentClassType: JvmType.Reference,
-                               visitor: MethodVisitor,
-                               jumpLabels: Map[Symbol.LabelSym, Label],
-                               entryPoint: Label,
-                               sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
-    // Adding source line number for debugging
-    addSourceLine(visitor, e.loc)
-
-    compileExpression(e, visitor, currentClassType, jumpLabels, entryPoint)
-    sop match {
-      case SemanticOperator.BoolOp.Not =>
-        val condElse = new Label()
-        val condEnd = new Label()
-        visitor.visitJumpInsn(IFNE, condElse)
-        visitor.visitInsn(ICONST_1)
-        visitor.visitJumpInsn(GOTO, condEnd)
-        visitor.visitLabel(condElse)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitLabel(condEnd)
-
-      case Float32Op.Neg | Float64Op.Neg | BigDecimalOp.Neg
-           | Int8Op.Neg | Int16Op.Neg | Int32Op.Neg
-           | Int64Op.Neg | BigIntOp.Neg => compileUnaryMinusExpr(visitor, sop, e.loc)
-
-      case Int8Op.Not | Int16Op.Not | Int32Op.Not
-           | Int64Op.Not | BigIntOp.Not => compileUnaryNegateExpr(visitor, sop, e.loc)
-
-      case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", e.loc)
-    }
   }
 
   /*
