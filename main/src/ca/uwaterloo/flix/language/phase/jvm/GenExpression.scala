@@ -242,41 +242,17 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
-          case Float32Op.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Lt => visitFloatComparison(exp1, exp2, FCMPG, IFGE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Le => visitFloatComparison(exp1, exp2, FCMPG, IFGT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Eq => visitFloatComparison(exp1, exp2, FCMPG, IFNE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Neq => visitFloatComparison(exp1, exp2, FCMPG, IFEQ, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(FCMPL)
-            visitor.visitJumpInsn(IFLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Ge => visitFloatComparison(exp1, exp2, FCMPL, IFLT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(FCMPL)
-            visitor.visitJumpInsn(IFLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Gt => visitFloatComparison(exp1, exp2, FCMPL, IFLE, visitor, currentClass, lenv0, entryPoint)
 
           case Float64Op.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
@@ -1767,6 +1743,13 @@ object GenExpression {
     visitor.visitLabel(condElse)
     visitor.visitInsn(ICONST_0)
     visitor.visitLabel(condEnd)
+  }
+
+  private def visitFloatComparison(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
+    val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
+    visitor.visitInsn(opcode)
+    visitor.visitJumpInsn(cmpOpcode, condElse)
+    visitComparisonEpilogue(visitor, condElse, condEnd)
   }
 
   private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = cst match {
