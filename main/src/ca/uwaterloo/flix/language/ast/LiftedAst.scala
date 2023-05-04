@@ -63,9 +63,9 @@ object LiftedAst {
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[LiftedAst.FormalParam], actuals: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Unary(sop: SemanticOperator, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Binary(sop: SemanticOperator, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class IfThenElse(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, exp3: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
@@ -135,6 +135,12 @@ object LiftedAst {
 
     case class Assign(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Impure
+    }
+
+    case class InstanceOf(exp: LiftedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = exp.purity
+
+      def tpe: Type = Type.Bool
     }
 
     case class Cast(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression

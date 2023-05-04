@@ -621,7 +621,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("ReservedName.Def.01") {
     val input =
       """
-        |pub def |||(x: a, y: a): a = ???
+        |pub def **(x: a, y: a): a = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.ReservedName](result)
@@ -662,7 +662,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    law ^^^: forall (x: a) . true
+        |    law **: forall (x: a) . true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -860,6 +860,224 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUseAlias](result)
+  }
+
+  test("IllegalModuleName.01") {
+    val input =
+      """
+        |mod mymod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.02") {
+    val input =
+      """
+        |mod myMod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.03") {
+    val input =
+      """
+        |mod mymod.othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.04") {
+    val input =
+      """
+        |mod mymod.Othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.05") {
+    val input =
+      """
+        |mod Mymod.othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.06") {
+    val input =
+      """
+        |mod Mymod {
+        |    mod othermod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.07") {
+    val input =
+      """
+        |mod mymod {
+        |    mod othermod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.08") {
+    val input =
+      """
+        |mod mymod {
+        |    mod Othermod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.09") {
+    val input =
+      """
+        |mod mymod {
+        |    mod Othermod.Thirdmod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.10") {
+    val input =
+      """
+        |mod mymod {
+        |    mod Othermod.thirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.11") {
+    val input =
+      """
+        |mod Mymod {
+        |    mod othermod.thirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.12") {
+    val input =
+      """
+        |mod Mymod {
+        |    mod Othermod.thirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.13") {
+    val input =
+      """
+        |mod Mymod.Othermod {
+        |    mod thirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.14") {
+    val input =
+      """
+        |mod Mymod.othermod {
+        |    mod thirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.15") {
+    val input =
+      """
+        |mod Mymod.othermod {
+        |    mod ThirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.16") {
+    val input =
+      """
+        |mod mymod.othermod {
+        |    mod ThirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.17") {
+    val input =
+      """
+        |mod mymod.othermod {
+        |    mod thirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.18") {
+    val input =
+      """
+        |mod mymod.Othermod {
+        |    mod thirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.19") {
+    val input =
+      """
+        |mod mymod.Othermod {
+        |    mod ThirdMod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
   }
 
   test("NonUnaryAssocType.01") {

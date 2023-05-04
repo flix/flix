@@ -334,6 +334,23 @@ object Ast {
   }
 
   /**
+    * A common super-type that represents a call type.
+    */
+  sealed trait CallType
+
+  object CallType {
+    /**
+      * Represents a call in tail position.
+      */
+    case object TailCall extends CallType
+
+    /**
+      * Represents a call in non-tail position.
+      */
+    case object NonTailCall extends CallType
+  }
+
+  /**
     * Documentation.
     *
     * @param lines the lines of the comments.
@@ -779,4 +796,72 @@ object Ast {
       */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
+
+  /**
+    * A common super-type for syntactic contexts.
+    *
+    * A syntactic context is an estimate of the syntactic construct a specific source position is inside.
+    */
+  sealed trait SyntacticContext
+
+  object SyntacticContext {
+
+    sealed trait Decl extends SyntacticContext
+
+    object Decl {
+      case object Class extends Decl
+
+      case object Enum extends Decl
+
+      case object Instance extends Decl
+
+      case object OtherDecl extends Decl
+    }
+
+    sealed trait Expr extends SyntacticContext
+
+    object Expr {
+      case object Constraint extends Expr
+
+      case object Do extends Expr
+
+      case object OtherExpr extends Expr
+    }
+
+    case object Import extends SyntacticContext
+
+    sealed trait Pat extends SyntacticContext
+
+    object Pat {
+      case object OtherPat extends Pat
+    }
+
+    sealed trait Type extends SyntacticContext
+
+    object Type {
+      case object Eff extends Type
+
+      case object OtherType extends Type
+    }
+
+    case object Use extends SyntacticContext
+
+    case object WithClause extends SyntacticContext
+
+    case object Unknown extends SyntacticContext
+
+    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
+      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
+      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
+
+      case (_, SyntacticContext.Unknown) => ctx1
+      case (SyntacticContext.Unknown, _) => ctx2
+
+      case (SyntacticContext.Type.OtherType, SyntacticContext.WithClause) => SyntacticContext.WithClause
+      case (SyntacticContext.WithClause, SyntacticContext.Type.OtherType) => SyntacticContext.WithClause
+
+      case _ => ctx1
+    }
+  }
+
 }

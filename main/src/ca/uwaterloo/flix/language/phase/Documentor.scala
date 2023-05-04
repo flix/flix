@@ -17,13 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
@@ -46,12 +43,12 @@ object Documentor {
     */
   val OutputDirectory: Path = Paths.get("./build/api")
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("Documentor") {
     //
     // Determine whether to generate documentation.
     //
     if (!flix.options.documentor) {
-      return root.toSuccess
+      return root
     }
 
     //
@@ -169,7 +166,7 @@ object Documentor {
     // Write the string to the path.
     writeString(s, p)
 
-    root.toSuccess
+    root
   }
 
   /**
@@ -199,7 +196,7 @@ object Documentor {
     if (namespace == Nil)
       RootNS
     else
-      namespace.mkString("/")
+      namespace.mkString(".")
   }
 
   /**
@@ -209,7 +206,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given enum `decl`.
@@ -218,7 +215,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given definition `decl`.
@@ -227,7 +224,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given type alias `decl`.
@@ -236,7 +233,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the given definition `defn0` as a JSON object.
@@ -334,10 +331,8 @@ object Documentor {
   def visitKind(kind: Kind): String = kind match {
     case Kind.Wild => ""
     case Kind.WildCaseSet => ""
-    case Kind.Beef => "Bool or Effect"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
-    case Kind.Effect => "Effect"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
     case Kind.Predicate => ""

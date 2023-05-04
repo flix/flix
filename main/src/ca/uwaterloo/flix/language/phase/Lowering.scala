@@ -16,13 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -143,7 +141,7 @@ object Lowering {
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[LoweredAst.Root, CompilationMessage] = flix.phase("Lowering") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
     val defs = ParOps.parMap(root.defs.values)((d: TypedAst.Def) => visitDef(d)(root, flix))
     val sigs = ParOps.parMap(root.sigs.values)((s: TypedAst.Sig) => visitSig(s)(root, flix))
     val instances = ParOps.parMap(root.instances.values)((insts: List[TypedAst.Instance]) => insts.map(i => visitInstance(i)(root, flix)))
@@ -163,7 +161,8 @@ object Lowering {
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
     val classes = ParOps.parMap(root.classes.values)((c: TypedAst.Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
-    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv).toSuccess
+
+    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv)
   }
 
   /**
@@ -256,7 +255,7 @@ object Lowering {
     * Lowers `sym` from a restrictable enum sym into a regular enum sym.
     */
   private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
-    new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+    new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
 
   /**
     * Lowers the given `effect`.
@@ -314,11 +313,11 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: TypedAst.Spec)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Spec = spec0 match {
-    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, pur, eff, tconstrs, loc) =>
+    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, pur, tconstrs, loc) =>
       val tparam = tparams0.map(visitTypeParam)
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, pur, eff, tconstrs, loc)
+      LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, pur, tconstrs, loc)
   }
 
   /**
@@ -366,7 +365,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
-    case TypedAst.Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.HoleWithExp(exp, tpe, pur, loc) =>
       val sym = Symbol.freshHoleSym(loc)
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
@@ -383,304 +382,308 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Lambda(p, e, t, loc)
 
-    case TypedAst.Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Apply(exp, exps, tpe, pur, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
       val t = visitType(tpe)
-      LoweredAst.Expression.Apply(e, es, t, pur, eff, loc)
+      LoweredAst.Expression.Apply(e, es, t, pur, loc)
 
-    case TypedAst.Expression.Unary(sop, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Unary(sop, exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Unary(sop, e, t, pur, eff, loc)
+      LoweredAst.Expression.Unary(sop, e, t, pur, loc)
 
-    case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Binary(sop, e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.Binary(sop, e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Let(sym, mod, e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.Let(sym, mod, e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.LetRec(sym, mod, e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.LetRec(sym, mod, e1, e2, t, pur, loc)
 
     case TypedAst.Expression.Region(tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expression.Region(t, loc)
 
-    case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Scope(sym, regionVar, e, t, pur, eff, loc)
+      LoweredAst.Expression.Scope(sym, regionVar, e, t, pur, loc)
 
-    case TypedAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ScopeExit(exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.ScopeExit(e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.ScopeExit(e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       val t = visitType(tpe)
-      LoweredAst.Expression.IfThenElse(e1, e2, e3, t, pur, eff, loc)
+      LoweredAst.Expression.IfThenElse(e1, e2, e3, t, pur, loc)
 
-    case TypedAst.Expression.Stm(exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Stm(exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Stm(e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.Stm(e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.Discard(exp, pur, eff, loc) =>
+    case TypedAst.Expression.Discard(exp, pur, loc) =>
       val e = visitExp(exp)
-      LoweredAst.Expression.Discard(e, pur, eff, loc)
+      LoweredAst.Expression.Discard(e, pur, loc)
 
-    case TypedAst.Expression.Match(exp, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Match(exp, rules, tpe, pur, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.Match(e, rs, t, pur, eff, loc)
+      LoweredAst.Expression.Match(e, rs, t, pur, loc)
 
-    case TypedAst.Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.TypeMatch(exp, rules, tpe, pur, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchTypeRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.TypeMatch(e, rs, t, pur, eff, loc)
+      LoweredAst.Expression.TypeMatch(e, rs, t, pur, loc)
 
-    case TypedAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RelationalChoose(exps, rules, tpe, pur, loc) =>
       val es = visitExps(exps)
       val rs = rules.map(visitRelationalChoiceRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.RelationalChoose(es, rs, t, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, t, pur, loc)
 
-    case TypedAst.Expression.RestrictableChoose(_, exp, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RestrictableChoose(_, exp, rules, tpe, pur, loc) =>
       // lower into an ordinary match
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChoiceRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.Match(e, rs, t, pur, eff, loc)
+      LoweredAst.Expression.Match(e, rs, t, pur, loc)
 
-    case TypedAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Tag(sym, exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tag(sym, e, t, pur, eff, loc)
+      LoweredAst.Expression.Tag(sym, e, t, pur, loc)
 
-    case TypedAst.Expression.RestrictableTag(sym0, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RestrictableTag(sym0, exp, tpe, pur, loc) =>
       // Lower a restrictable tag into a normal tag.
       val caseSym = visitRestrictableCaseSym(sym0.sym)
       val sym = CaseSymUse(caseSym, sym0.loc)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tag(sym, e, t, pur, eff, loc)
+      LoweredAst.Expression.Tag(sym, e, t, pur, loc)
 
-    case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Tuple(elms, tpe, pur, loc) =>
       val es = visitExps(elms)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tuple(es, t, pur, eff, loc)
+      LoweredAst.Expression.Tuple(es, t, pur, loc)
 
     case TypedAst.Expression.RecordEmpty(tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expression.RecordEmpty(t, loc)
 
-    case TypedAst.Expression.RecordSelect(exp, field, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RecordSelect(exp, field, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordSelect(e, field, t, pur, eff, loc)
+      LoweredAst.Expression.RecordSelect(e, field, t, pur, loc)
 
-    case TypedAst.Expression.RecordExtend(field, value, rest, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RecordExtend(field, value, rest, tpe, pur, loc) =>
       val v = visitExp(value)
       val r = visitExp(rest)
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordExtend(field, v, r, t, pur, eff, loc)
+      LoweredAst.Expression.RecordExtend(field, v, r, t, pur, loc)
 
-    case TypedAst.Expression.RecordRestrict(field, rest, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RecordRestrict(field, rest, tpe, pur, loc) =>
       val r = visitExp(rest)
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordRestrict(field, r, t, pur, eff, loc)
+      LoweredAst.Expression.RecordRestrict(field, r, t, pur, loc)
 
-    case TypedAst.Expression.ArrayLit(exps, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ArrayLit(exps, exp, tpe, pur, loc) =>
       val es = visitExps(exps)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArrayLit(es, e, t, pur, eff, loc)
+      LoweredAst.Expression.ArrayLit(es, e, t, pur, loc)
 
-    case TypedAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArrayNew(e1, e2, e3, t, pur, eff, loc)
+      LoweredAst.Expression.ArrayNew(e1, e2, e3, t, pur, loc)
 
-    case TypedAst.Expression.ArrayLoad(base, index, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ArrayLoad(base, index, tpe, pur, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArrayLoad(b, i, t, pur, eff, loc)
+      LoweredAst.Expression.ArrayLoad(b, i, t, pur, loc)
 
-    case TypedAst.Expression.ArrayLength(base, pur, eff, loc) =>
+    case TypedAst.Expression.ArrayLength(base, pur, loc) =>
       val b = visitExp(base)
-      LoweredAst.Expression.ArrayLength(b, pur, eff, loc)
+      LoweredAst.Expression.ArrayLength(b, pur, loc)
 
-    case TypedAst.Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
+    case TypedAst.Expression.ArrayStore(base, index, elm, pur, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val e = visitExp(elm)
-      LoweredAst.Expression.ArrayStore(b, i, e, pur, eff, loc)
+      LoweredAst.Expression.ArrayStore(b, i, e, pur, loc)
 
-    case TypedAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.VectorLit(exps, tpe, pur, loc) =>
       val es = visitExps(exps)
       val t = visitType(tpe)
-      LoweredAst.Expression.VectorLit(es, t, pur, eff, loc)
+      LoweredAst.Expression.VectorLit(es, t, pur, loc)
 
-    case TypedAst.Expression.VectorLoad(base, index, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.VectorLoad(base, index, tpe, pur, loc) =>
       val b = visitExp(base)
       val i = visitExp(index)
       val t = visitType(tpe)
-      LoweredAst.Expression.VectorLoad(b, i, t, pur, eff, loc)
+      LoweredAst.Expression.VectorLoad(b, i, t, pur, loc)
 
     case TypedAst.Expression.VectorLength(base, loc) =>
       val b = visitExp(base)
       LoweredAst.Expression.VectorLength(b, loc)
 
-    case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Ref(e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.Ref(e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.Deref(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Deref(exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Deref(e, t, pur, eff, loc)
+      LoweredAst.Expression.Deref(e, t, pur, loc)
 
-    case TypedAst.Expression.Assign(exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Assign(exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Assign(e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.Assign(e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.Ascribe(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Ascribe(exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Ascribe(e, t, pur, eff, loc)
+      LoweredAst.Expression.Ascribe(e, t, pur, loc)
 
-    case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
+    case TypedAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+
+    case TypedAst.Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, tpe, pur, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
-      LoweredAst.Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
+      LoweredAst.Expression.Cast(e, dt, declaredPur, t, pur, loc)
 
-    case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
+    case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
-    case TypedAst.Expression.Without(exp, sym, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Without(exp, sym, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Without(e, sym, t, pur, eff, loc)
+      LoweredAst.Expression.Without(e, sym, t, pur, loc)
 
-    case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.TryCatch(exp, rules, tpe, pur, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.TryCatch(e, rs, t, pur, eff, loc)
+      LoweredAst.Expression.TryCatch(e, rs, t, pur, loc)
 
-    case TypedAst.Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.TryWith(exp, sym, rules, tpe, pur, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitHandlerRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.TryWith(e, sym, rs, t, pur, eff, loc)
+      LoweredAst.Expression.TryWith(e, sym, rs, t, pur, loc)
 
-    case TypedAst.Expression.Do(sym, exps, pur, eff, loc) =>
+    case TypedAst.Expression.Do(sym, exps, pur, loc) =>
       val es = visitExps(exps)
-      LoweredAst.Expression.Do(sym, es, pur, eff, loc)
+      LoweredAst.Expression.Do(sym, es, pur, loc)
 
     case TypedAst.Expression.Resume(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Resume(e, t, loc)
 
-    case TypedAst.Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.InvokeConstructor(constructor, args, tpe, pur, loc) =>
       val as = visitExps(args)
       val t = visitType(tpe)
-      LoweredAst.Expression.InvokeConstructor(constructor, as, t, pur, eff, loc)
+      LoweredAst.Expression.InvokeConstructor(constructor, as, t, pur, loc)
 
-    case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, pur, loc) =>
       val e = visitExp(exp)
       val as = visitExps(args)
       val t = visitType(tpe)
-      LoweredAst.Expression.InvokeMethod(method, e, as, t, pur, eff, loc)
+      LoweredAst.Expression.InvokeMethod(method, e, as, t, pur, loc)
 
-    case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, pur, loc) =>
       val as = visitExps(args)
       val t = visitType(tpe)
-      LoweredAst.Expression.InvokeStaticMethod(method, as, t, pur, eff, loc)
+      LoweredAst.Expression.InvokeStaticMethod(method, as, t, pur, loc)
 
-    case TypedAst.Expression.GetField(field, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.GetField(field, exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.GetField(field, e, t, pur, eff, loc)
+      LoweredAst.Expression.GetField(field, e, t, pur, loc)
 
-    case TypedAst.Expression.PutField(field, exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.PutField(field, exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.PutField(field, e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.PutField(field, e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.GetStaticField(field, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.GetStaticField(field, tpe, pur, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.GetStaticField(field, t, pur, eff, loc)
+      LoweredAst.Expression.GetStaticField(field, t, pur, loc)
 
-    case TypedAst.Expression.PutStaticField(field, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.PutStaticField(field, exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.PutStaticField(field, e, t, pur, eff, loc)
+      LoweredAst.Expression.PutStaticField(field, e, t, pur, loc)
 
-    case TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) =>
+    case TypedAst.Expression.NewObject(name, clazz, tpe, pur, methods, loc) =>
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)
-      LoweredAst.Expression.NewObject(name, clazz, t, pur, eff, ms, loc)
+      LoweredAst.Expression.NewObject(name, clazz, t, pur, ms, loc)
 
     // New channel expressions are rewritten as follows:
     //     chan Int32 10
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case TypedAst.Expression.NewChannel(_, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.NewChannel(_, exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkNewChannelTuple(e, t, pur, eff, loc)
+      mkNewChannelTuple(e, t, pur, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
     // becomes a call to the standard library function:
     //     Concurrent/Channel.get(c)
     //
-    case TypedAst.Expression.GetChannel(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.GetChannel(exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkGetChannel(e, t, pur, eff, loc)
+      mkGetChannel(e, t, pur, loc)
 
     // Channel put expressions are rewritten as follows:
     //     c <- 42
     // becomes a call to the standard library function:
     //     Concurrent/Channel.put(42, c)
     //
-    case TypedAst.Expression.PutChannel(exp1, exp2, _, pur, eff, loc) =>
+    case TypedAst.Expression.PutChannel(exp1, exp2, _, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      mkPutChannel(e1, e2, pur, eff, loc)
+      mkPutChannel(e1, e2, pur, loc)
 
     // Channel select expressions are rewritten as follows:
     //     select {
@@ -703,7 +706,7 @@ object Lowering {
     //     }
     // Note: match is not exhaustive: we're relying on the simplifier to handle this for us
     //
-    case TypedAst.Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.SelectChannel(rules, default, tpe, pur, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
@@ -711,82 +714,82 @@ object Lowering {
       val channels = rs map { case LoweredAst.SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }
       val admins = mkChannelAdminList(rs, channels, loc)
       val selectExp = mkChannelSelect(admins, d, loc)
-      val cases = mkChannelCases(rs, channels, pur, eff, loc)
+      val cases = mkChannelCases(rs, channels, pur, loc)
       val defaultCase = mkSelectDefaultCase(d, t, loc)
-      val matchExp = LoweredAst.Expression.Match(selectExp, cases ++ defaultCase, t, pur, eff, loc)
+      val matchExp = LoweredAst.Expression.Match(selectExp, cases ++ defaultCase, t, pur, loc)
 
       channels.foldRight[LoweredAst.Expression](matchExp) {
-        case ((sym, c), e) => LoweredAst.Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
+        case ((sym, c), e) => LoweredAst.Expression.Let(sym, Modifiers.Empty, c, e, t, pur, loc)
       }
 
-    case TypedAst.Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Spawn(exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Spawn(e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.Spawn(e1, e2, t, pur, loc)
 
     case TypedAst.Expression.Par(exp, loc0) => exp match {
-      case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc1) =>
+      case TypedAst.Expression.Tuple(elms, tpe, pur, loc1) =>
         val es = visitExps(elms)
         val t = visitType(tpe)
-        val e = mkParTuple(LoweredAst.Expression.Tuple(es, t, pur, eff, loc1))
-        LoweredAst.Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
+        val e = mkParTuple(LoweredAst.Expression.Tuple(es, t, pur, loc1))
+        LoweredAst.Expression.Cast(e, None, Some(Type.Pure), t, pur, loc0)
 
       case _ =>
         throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp", loc0)
     }
 
-    case TypedAst.Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ParYield(frags, exp, tpe, pur, loc) =>
       val fs = frags.map {
         case TypedAst.ParYieldFragment(pat, e, loc) => LoweredAst.ParYieldFragment(visitPat(pat), visitExp(e), loc)
       }
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkParYield(fs, e, t, pur, eff, loc)
+      mkParYield(fs, e, t, pur, loc)
 
     case TypedAst.Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Lazy(e, t, loc)
 
-    case TypedAst.Expression.Force(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Force(exp, tpe, pur, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Force(e, t, pur, eff, loc)
+      LoweredAst.Expression.Force(e, t, pur, loc)
 
     case TypedAst.Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
 
-    case TypedAst.Expression.FixpointLambda(pparams, exp, _, _, pur, eff, loc) =>
+    case TypedAst.Expression.FixpointLambda(pparams, exp, _, _, pur, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = LoweredAst.Expression.Def(defn.sym, Types.RenameType, loc)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.mkList(Types.PredSym, loc), loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
+      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, loc)
 
-    case TypedAst.Expression.FixpointMerge(exp1, exp2, _, _, pur, eff, loc) =>
+    case TypedAst.Expression.FixpointMerge(exp1, exp2, _, _, pur, loc) =>
       val defn = Defs.lookup(Defs.Merge)
       val defExp = LoweredAst.Expression.Def(defn.sym, Types.MergeType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
+      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, loc)
 
-    case TypedAst.Expression.FixpointSolve(exp, _, _, pur, eff, loc) =>
+    case TypedAst.Expression.FixpointSolve(exp, _, _, pur, loc) =>
       val defn = Defs.lookup(Defs.Solve)
       val defExp = LoweredAst.Expression.Def(defn.sym, Types.SolveType, loc)
       val argExps = visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
+      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, loc)
 
-    case TypedAst.Expression.FixpointFilter(pred, exp, _, pur, eff, loc) =>
+    case TypedAst.Expression.FixpointFilter(pred, exp, _, pur, loc) =>
       val defn = Defs.lookup(Defs.Filter)
       val defExp = LoweredAst.Expression.Def(defn.sym, Types.FilterType, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
-      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, eff, loc)
+      LoweredAst.Expression.Apply(defExp, argExps, resultType, pur, loc)
 
-    case TypedAst.Expression.FixpointInject(exp, pred, _, pur, eff, loc) =>
+    case TypedAst.Expression.FixpointInject(exp, pred, _, pur, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
       val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
@@ -806,9 +809,9 @@ object Lowering {
       // Put everything together.
       val defExp = LoweredAst.Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      LoweredAst.Expression.Apply(defExp, argExps, Types.Datalog, pur, eff, loc)
+      LoweredAst.Expression.Apply(defExp, argExps, Types.Datalog, pur, loc)
 
-    case TypedAst.Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.FixpointProject(pred, exp, tpe, pur, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = Type.eraseAliases(tpe) match {
@@ -829,9 +832,9 @@ object Lowering {
       // Put everything together.
       val defExp = LoweredAst.Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      LoweredAst.Expression.Apply(defExp, argExps, tpe, pur, eff, loc)
+      LoweredAst.Expression.Apply(defExp, argExps, tpe, pur, loc)
 
-    case TypedAst.Expression.Error(m, _, _, _) =>
+    case TypedAst.Expression.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
   }
@@ -1142,11 +1145,11 @@ object Lowering {
     * Lowers the given JvmMethod `method`.
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.JvmMethod = method match {
-    case TypedAst.JvmMethod(ident, fparams, exp, retTyp, pur, eff, loc) =>
+    case TypedAst.JvmMethod(ident, fparams, exp, retTyp, pur, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)
       val t = visitType(retTyp)
-      LoweredAst.JvmMethod(ident, fs, e, t, pur, eff, loc)
+      LoweredAst.JvmMethod(ident, fs, e, t, pur, loc)
   }
 
   /**
@@ -1212,8 +1215,8 @@ object Lowering {
           val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.box")
           val BoxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
-          val innerApply = LoweredAst.Expression.Apply(LoweredAst.Expression.Def(Lattice, LatticeType, loc), List(LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)), unboxedDenotationType, Type.Pure, Type.Empty, loc)
-          LoweredAst.Expression.Apply(LoweredAst.Expression.Def(Box, BoxType, loc), List(innerApply), boxedDenotationType, Type.Pure, Type.Empty, loc)
+          val innerApply = LoweredAst.Expression.Apply(LoweredAst.Expression.Def(Lattice, LatticeType, loc), List(LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)), unboxedDenotationType, Type.Pure, loc)
+          LoweredAst.Expression.Apply(LoweredAst.Expression.Def(Box, BoxType, loc), List(innerApply), boxedDenotationType, Type.Pure, loc)
       }
   }
 
@@ -1269,7 +1272,7 @@ object Lowering {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
     val innerExp = LoweredAst.Expression.Def(Defs.Box, tpe, loc)
-    LoweredAst.Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, Type.Empty, loc)
+    LoweredAst.Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, loc)
   }
 
   /**
@@ -1419,33 +1422,33 @@ object Lowering {
   /**
     * Make a new channel expression
     */
-  private def mkNewChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+  private def mkNewChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, loc: SourceLocation): LoweredAst.Expression = {
     val newChannel = LoweredAst.Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, loc)
   }
 
   /**
     * Make a new channel tuple (sender, receiver) expression
     */
-  private def mkNewChannelTuple(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+  private def mkNewChannelTuple(exp: LoweredAst.Expression, tpe: Type, pur: Type, loc: SourceLocation): LoweredAst.Expression = {
     val newChannel = LoweredAst.Expression.Def(Defs.ChannelNewTuple, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, loc)
   }
 
   /**
     * Make a channel get expression
     */
-  private def mkGetChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+  private def mkGetChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, loc: SourceLocation): LoweredAst.Expression = {
     val getChannel = LoweredAst.Expression.Def(Defs.ChannelGet, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(getChannel, exp :: Nil, tpe, pur, eff, loc)
+    LoweredAst.Expression.Apply(getChannel, exp :: Nil, tpe, pur, loc)
   }
 
   /**
     * Make a channel put expression
     */
-  private def mkPutChannel(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+  private def mkPutChannel(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, pur: Type, loc: SourceLocation): LoweredAst.Expression = {
     val putChannel = LoweredAst.Expression.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc), loc)
-    LoweredAst.Expression.Apply(putChannel, List(exp2, exp1), Type.Unit, pur, eff, loc)
+    LoweredAst.Expression.Apply(putChannel, List(exp2, exp1), Type.Unit, pur, loc)
   }
 
   /**
@@ -1455,7 +1458,7 @@ object Lowering {
     val admins = rs.zip(channels) map {
       case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
         val admin = LoweredAst.Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
-        LoweredAst.Expression.Apply(admin, List(LoweredAst.Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
+        LoweredAst.Expression.Apply(admin, List(LoweredAst.Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, loc)
     }
     mkList(admins, Types.ChannelMpmcAdmin, loc)
   }
@@ -1473,13 +1476,13 @@ object Lowering {
       case Some(_) => LoweredAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
       case None => LoweredAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
     }
-    LoweredAst.Expression.Apply(select, List(admins, blocking), selectRetTpe, Type.Impure, Type.Empty, loc)
+    LoweredAst.Expression.Apply(select, List(admins, blocking), selectRetTpe, Type.Impure, loc)
   }
 
   /**
     * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
     */
-  private def mkChannelCases(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expression)], pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): List[LoweredAst.MatchRule] = {
+  private def mkChannelCases(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expression)], pur: Type, loc: SourceLocation)(implicit flix: Flix): List[LoweredAst.MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     rs.zip(channels).zipWithIndex map {
@@ -1491,8 +1494,8 @@ object Lowering {
           case _ => throw InternalCompilerException("Unexpected channel type found.", loc)
         }
         val get = LoweredAst.Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
-        val getExp = LoweredAst.Expression.Apply(get, List(LoweredAst.Expression.Var(chSym, chan.tpe, loc), LoweredAst.Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
-        val e = LoweredAst.Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, eff, loc)
+        val getExp = LoweredAst.Expression.Apply(get, List(LoweredAst.Expression.Var(chSym, chan.tpe, loc), LoweredAst.Expression.Var(locksSym, locksType, loc)), getTpe, pur, loc)
+        val e = LoweredAst.Expression.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, pur, loc)
         LoweredAst.MatchRule(pat, None, e)
     }
   }
@@ -1539,7 +1542,7 @@ object Lowering {
 
     // Construct a call to the liftX function.
     val defn = LoweredAst.Expression.Def(sym, liftType, exp0.loc)
-    LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
+    LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, exp0.loc)
   }
 
   /**
@@ -1566,7 +1569,7 @@ object Lowering {
 
     // Construct a call to the liftXb function.
     val defn = LoweredAst.Expression.Def(sym, liftType, exp0.loc)
-    LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
+    LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, exp0.loc)
   }
 
 
@@ -1600,7 +1603,7 @@ object Lowering {
 
     // Construct a call to the liftXY function.
     val defn = LoweredAst.Expression.Def(sym, liftType, loc)
-    LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, loc)
+    LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, loc)
   }
 
   /**
@@ -1617,7 +1620,7 @@ object Lowering {
     * Returns a vector expression constructed from the given `exps` with type list of `elmType`.
     */
   private def mkVector(exps: List[LoweredAst.Expression], elmType: Type, loc: SourceLocation): LoweredAst.Expression = {
-    LoweredAst.Expression.VectorLit(exps, Type.mkVector(elmType, loc), Type.Pure, Type.Empty, loc)
+    LoweredAst.Expression.VectorLit(exps, Type.mkVector(elmType, loc), Type.Pure, loc)
   }
 
   /**
@@ -1640,7 +1643,7 @@ object Lowering {
     */
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation): LoweredAst.Expression = {
     val caseSym = new Symbol.CaseSym(sym, tag, SourceLocation.Unknown)
-    LoweredAst.Expression.Tag(Ast.CaseSymUse(caseSym, loc), exp, tpe, Type.Pure, Type.Empty, loc)
+    LoweredAst.Expression.Tag(Ast.CaseSymUse(caseSym, loc), exp, tpe, Type.Pure, loc)
   }
 
   /**
@@ -1649,8 +1652,7 @@ object Lowering {
   private def mkTuple(exps: List[LoweredAst.Expression], loc: SourceLocation): LoweredAst.Expression = {
     val tpe = Type.mkTuple(exps.map(_.tpe), loc)
     val pur = Type.Pure
-    val eff = Type.Empty
-    LoweredAst.Expression.Tuple(exps, tpe, pur, eff, loc)
+    LoweredAst.Expression.Tuple(exps, tpe, pur, loc)
   }
 
   /**
@@ -1683,7 +1685,7 @@ object Lowering {
   private def mkParWait(exp: LoweredAst.Expression, sym: Symbol.VarSym): LoweredAst.Expression = {
     val loc = exp.loc.asSynthetic
     val chExp = mkChannelExp(sym, exp.tpe, loc)
-    mkGetChannel(chExp, exp.tpe, Type.Impure, exp.eff, loc)
+    mkGetChannel(chExp, exp.tpe, Type.Impure, loc)
   }
 
   /**
@@ -1695,17 +1697,17 @@ object Lowering {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
-        val e2 = mkPutChannel(e1, e, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
-        val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        LoweredAst.Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
+        val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        LoweredAst.Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
     chanSymsWithExps.foldRight(spawns: LoweredAst.Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val chan = mkNewChannel(LoweredAst.Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
-        LoweredAst.Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
+        val chan = mkNewChannel(LoweredAst.Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, loc) // The channel exp `chan 1`
+        LoweredAst.Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
 
@@ -1726,8 +1728,7 @@ object Lowering {
     val loc = exp.loc.asSynthetic
     val rule = List(LoweredAst.MatchRule(pat, None, body))
     val pur = Type.mkAnd(exp.pur, body.pur, loc)
-    val eff = Type.mkUnion(exp.eff, body.eff, loc)
-    LoweredAst.Expression.Match(exp, rule, body.tpe, pur, eff, loc)
+    LoweredAst.Expression.Match(exp, rule, body.tpe, pur, loc)
   }
 
   /**
@@ -1748,7 +1749,7 @@ object Lowering {
       case (p, sym, e) =>
         val loc = e.loc.asSynthetic
         val chExp = mkChannelExp(sym, e.tpe, loc)
-        (p, mkGetChannel(chExp, e.tpe, Type.Impure, e.eff, loc))
+        (p, mkGetChannel(chExp, e.tpe, Type.Impure, loc))
     }.foldRight(exp) {
       case ((pat, chan), e) => mkLetMatch(pat, chan, e)
     }
@@ -1756,7 +1757,7 @@ object Lowering {
   /**
     * Returns a desugared [[TypedAst.Expression.ParYield]] expression as a nested match-expression.
     */
-  private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
+  private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
     // Partition fragments into complex and simple (vars or csts) exps.
     val (complex, varOrCsts) = frags.partition(f => isSpawnable(f.exp))
 
@@ -1777,7 +1778,7 @@ object Lowering {
     val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
 
     // Wrap everything in a purity cast,
-    LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc.asSynthetic)
+    LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), tpe, pur, loc.asSynthetic)
   }
 
   /**
@@ -1823,7 +1824,7 @@ object Lowering {
     * }}}
     */
   private def mkParTuple(exp: LoweredAst.Expression.Tuple)(implicit flix: Flix): LoweredAst.Expression = {
-    val LoweredAst.Expression.Tuple(elms, tpe, pur, eff, loc) = exp
+    val LoweredAst.Expression.Tuple(elms, tpe, pur, loc) = exp
 
     // Partition elements into complex and simple (vars or csts) exps.
     // We remember the index so we can sort the expression into the correct
@@ -1851,7 +1852,7 @@ object Lowering {
     val parElmExps = (waitExps ::: lastVarExp ::: varOrCsts).sortBy(_._2).map(_._1)
 
     // Make new tuple
-    val parTuple = LoweredAst.Expression.Tuple(parElmExps, tpe, pur, eff, loc.asSynthetic)
+    val parTuple = LoweredAst.Expression.Tuple(parElmExps, tpe, pur, loc.asSynthetic)
 
     // Make let-exp that evaluates last under `lastVarExp` and prepend to the tuple.
     val lastLetExp = lastVarExpWithSym.map {
@@ -1860,8 +1861,7 @@ object Lowering {
         val mods = Ast.Modifiers.Empty
         val t = parTuple.tpe
         val p = Type.mkAnd(e.pur, parTuple.pur, l)
-        val ef = Type.mkUnion(e.eff, parTuple.eff, l)
-        LoweredAst.Expression.Let(s, mods, e, parTuple, t, p, ef, l)
+        LoweredAst.Expression.Let(s, mods, e, parTuple, t, p, l)
     }
 
     // If there was no lastVarExp, then just return `parTuple`.
@@ -1883,7 +1883,7 @@ object Lowering {
     //
     val tpe = Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, exp2.tpe, loc)
     val innerExp = TypedAst.Expression.Def(Defs.DebugWithPrefix, tpe, loc)
-    TypedAst.Expression.Apply(innerExp, exp1 :: exp2 :: Nil, exp2.tpe, Type.Impure, Type.Empty, loc)
+    TypedAst.Expression.Apply(innerExp, exp1 :: exp2 :: Nil, exp2.tpe, Type.Impure, loc)
   }
 
   /**
@@ -1936,163 +1936,167 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Lambda(p, e, tpe, loc)
 
-    case LoweredAst.Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Apply(exp, exps, tpe, pur, loc) =>
       val e = substExp(exp, subst)
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expression.Apply(e, es, tpe, pur, eff, loc)
+      LoweredAst.Expression.Apply(e, es, tpe, pur, loc)
 
-    case LoweredAst.Expression.Unary(sop, exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Unary(sop, exp, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Unary(sop, e, tpe, pur, eff, loc)
+      LoweredAst.Expression.Unary(sop, e, tpe, pur, loc)
 
-    case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Binary(sop, e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.Binary(sop, e1, e2, tpe, pur, loc)
 
-    case LoweredAst.Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Let(sym, mod, exp1, exp2, tpe, pur, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Let(s, mod, e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.Let(s, mod, e1, e2, tpe, pur, loc)
 
-    case LoweredAst.Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.LetRec(s, mod, e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.LetRec(s, mod, e1, e2, tpe, pur, loc)
 
     case LoweredAst.Expression.Region(tpe, loc) =>
       LoweredAst.Expression.Region(tpe, loc)
 
-    case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Scope(s, regionVar, e, tpe, pur, eff, loc)
+      LoweredAst.Expression.Scope(s, regionVar, e, tpe, pur, loc)
 
-    case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.ScopeExit(e1, e2, tpe, pur, loc)
 
-    case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       val e3 = substExp(exp3, subst)
-      LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, pur, eff, loc)
+      LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, pur, loc)
 
-    case LoweredAst.Expression.Stm(exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Stm(exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Stm(e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.Stm(e1, e2, tpe, pur, loc)
 
-    case LoweredAst.Expression.Discard(exp, pur, eff, loc) =>
+    case LoweredAst.Expression.Discard(exp, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Discard(e, pur, eff, loc)
+      LoweredAst.Expression.Discard(e, pur, loc)
 
-    case LoweredAst.Expression.Match(_, _, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expression.Match(_, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expression.TypeMatch(_, _, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expression.TypeMatch(_, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.RelationalChoose(exps, rules, tpe, pur, loc) =>
       val es = exps.map(substExp(_, subst))
       val rs = rules map {
         case LoweredAst.RelationalChoiceRule(pat, exp) =>
           // TODO: Substitute in patterns?
           LoweredAst.RelationalChoiceRule(pat, substExp(exp, subst))
       }
-      LoweredAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, tpe, pur, loc)
 
-    case LoweredAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Tag(sym, exp, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Tag(sym, e, tpe, pur, eff, loc)
+      LoweredAst.Expression.Tag(sym, e, tpe, pur, loc)
 
-    case LoweredAst.Expression.Tuple(elms, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Tuple(elms, tpe, pur, loc) =>
       val es = elms.map(substExp(_, subst))
-      LoweredAst.Expression.Tuple(es, tpe, pur, eff, loc)
+      LoweredAst.Expression.Tuple(es, tpe, pur, loc)
 
     case LoweredAst.Expression.RecordEmpty(_, _) => exp0
 
-    case LoweredAst.Expression.RecordSelect(exp, field, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.RecordSelect(exp, field, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.RecordSelect(e, field, tpe, pur, eff, loc)
+      LoweredAst.Expression.RecordSelect(e, field, tpe, pur, loc)
 
-    case LoweredAst.Expression.RecordExtend(field, value, rest, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.RecordExtend(field, value, rest, tpe, pur, loc) =>
       val v = substExp(value, subst)
       val r = substExp(rest, subst)
-      LoweredAst.Expression.RecordExtend(field, v, r, tpe, pur, eff, loc)
+      LoweredAst.Expression.RecordExtend(field, v, r, tpe, pur, loc)
 
-    case LoweredAst.Expression.RecordRestrict(field, rest, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.RecordRestrict(field, rest, tpe, pur, loc) =>
       val r = substExp(rest, subst)
-      LoweredAst.Expression.RecordRestrict(field, r, tpe, pur, eff, loc)
+      LoweredAst.Expression.RecordRestrict(field, r, tpe, pur, loc)
 
-    case LoweredAst.Expression.ArrayLit(exps, exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.ArrayLit(exps, exp, tpe, pur, loc) =>
       val es = exps.map(substExp(_, subst))
       val e = substExp(exp, subst)
-      LoweredAst.Expression.ArrayLit(es, e, tpe, pur, eff, loc)
+      LoweredAst.Expression.ArrayLit(es, e, tpe, pur, loc)
 
-    case LoweredAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       val e3 = substExp(exp3, subst)
-      LoweredAst.Expression.ArrayNew(e1, e2, e3, tpe, pur, eff, loc)
+      LoweredAst.Expression.ArrayNew(e1, e2, e3, tpe, pur, loc)
 
-    case LoweredAst.Expression.ArrayLoad(base, index, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.ArrayLoad(base, index, tpe, pur, loc) =>
       val b = substExp(base, subst)
       val i = substExp(index, subst)
-      LoweredAst.Expression.ArrayLoad(b, i, tpe, pur, eff, loc)
+      LoweredAst.Expression.ArrayLoad(b, i, tpe, pur, loc)
 
-    case LoweredAst.Expression.ArrayLength(base, pur, eff, loc) =>
+    case LoweredAst.Expression.ArrayLength(base, pur, loc) =>
       val b = substExp(base, subst)
-      LoweredAst.Expression.ArrayLength(b, pur, eff, loc)
+      LoweredAst.Expression.ArrayLength(b, pur, loc)
 
-    case LoweredAst.Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
+    case LoweredAst.Expression.ArrayStore(base, index, elm, pur, loc) =>
       val b = substExp(base, subst)
       val i = substExp(index, subst)
-      LoweredAst.Expression.ArrayStore(b, i, elm, pur, eff, loc)
+      LoweredAst.Expression.ArrayStore(b, i, elm, pur, loc)
 
-    case LoweredAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.VectorLit(exps, tpe, pur, loc) =>
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expression.VectorLit(es, tpe, pur, eff, loc)
+      LoweredAst.Expression.VectorLit(es, tpe, pur, loc)
 
-    case LoweredAst.Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.VectorLoad(exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.VectorLoad(e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.VectorLoad(e1, e2, tpe, pur, loc)
 
     case LoweredAst.Expression.VectorLength(exp, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.VectorLength(e, loc)
 
-    case LoweredAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Ref(exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Ref(e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.Ref(e1, e2, tpe, pur, loc)
 
-    case LoweredAst.Expression.Deref(exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Deref(exp, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Deref(e, tpe, pur, eff, loc)
+      LoweredAst.Expression.Deref(e, tpe, pur, loc)
 
-    case LoweredAst.Expression.Assign(exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Assign(exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Assign(e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.Assign(e1, e2, tpe, pur, loc)
 
-    case LoweredAst.Expression.Ascribe(exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Ascribe(exp, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Ascribe(e, tpe, pur, eff, loc)
+      LoweredAst.Expression.Ascribe(e, tpe, pur, loc)
 
-    case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
 
-    case LoweredAst.Expression.Without(exp, sym, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Without(e, sym, tpe, pur, eff, loc)
+      LoweredAst.Expression.Cast(e, declaredType, declaredPur, tpe, pur, loc)
 
-    case LoweredAst.Expression.TryCatch(_, _, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expression.Without(exp, sym, tpe, pur, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.Without(e, sym, tpe, pur, loc)
 
-    case LoweredAst.Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.TryCatch(_, _, _, _, _) => ??? // TODO
+
+    case LoweredAst.Expression.TryWith(exp, sym, rules, tpe, pur, loc) =>
       val e = substExp(exp, subst)
       val rs = rules.map {
         case LoweredAst.HandlerRule(op, fparams, hexp) =>
@@ -2100,58 +2104,59 @@ object Lowering {
           val he = substExp(hexp, subst)
           LoweredAst.HandlerRule(op, fps, he)
       }
-      LoweredAst.Expression.TryWith(e, sym, rs, tpe, pur, eff, loc)
+      LoweredAst.Expression.TryWith(e, sym, rs, tpe, pur, loc)
 
-    case LoweredAst.Expression.Do(sym, exps, pur, eff, loc) =>
+    case LoweredAst.Expression.Do(sym, exps, pur, loc) =>
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expression.Do(sym, es, pur, eff, loc)
+      LoweredAst.Expression.Do(sym, es, pur, loc)
 
     case LoweredAst.Expression.Resume(exp, tpe, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Resume(e, tpe, loc)
 
-    case LoweredAst.Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.InvokeConstructor(constructor, args, tpe, pur, loc) =>
       val as = args.map(substExp(_, subst))
-      LoweredAst.Expression.InvokeConstructor(constructor, as, tpe, pur, eff, loc)
+      LoweredAst.Expression.InvokeConstructor(constructor, as, tpe, pur, loc)
 
-    case LoweredAst.Expression.InvokeMethod(method, exp, args, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.InvokeMethod(method, exp, args, tpe, pur, loc) =>
       val e = substExp(exp, subst)
       val as = args.map(substExp(_, subst))
-      LoweredAst.Expression.InvokeMethod(method, e, as, tpe, pur, eff, loc)
+      LoweredAst.Expression.InvokeMethod(method, e, as, tpe, pur, loc)
 
-    case LoweredAst.Expression.InvokeStaticMethod(method, args, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.InvokeStaticMethod(method, args, tpe, pur, loc) =>
       val as = args.map(substExp(_, subst))
-      LoweredAst.Expression.InvokeStaticMethod(method, as, tpe, pur, eff, loc)
+      LoweredAst.Expression.InvokeStaticMethod(method, as, tpe, pur, loc)
 
-    case LoweredAst.Expression.GetField(field, exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.GetField(field, exp, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.GetField(field, e, tpe, pur, eff, loc)
+      LoweredAst.Expression.GetField(field, e, tpe, pur, loc)
 
-    case LoweredAst.Expression.PutField(field, exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.PutField(field, exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.PutField(field, e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.PutField(field, e1, e2, tpe, pur, loc)
 
-    case LoweredAst.Expression.GetStaticField(_, _, _, _, _) => exp0
+    case LoweredAst.Expression.GetStaticField(_, _, _, _) => exp0
 
-    case LoweredAst.Expression.PutStaticField(field, exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.PutStaticField(field, exp, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.PutStaticField(field, e, tpe, pur, eff, loc)
+      LoweredAst.Expression.PutStaticField(field, e, tpe, pur, loc)
 
-    case LoweredAst.Expression.NewObject(_, _, _, _, _, _, _) => exp0
+    case LoweredAst.Expression.NewObject(_, _, _, _, _, _) => exp0
 
-    case LoweredAst.Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Spawn(exp1, exp2, tpe, pur, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Spawn(e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.Spawn(e1, e2, tpe, pur, loc)
 
     case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Lazy(e, tpe, loc)
 
-    case LoweredAst.Expression.Force(exp, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.Force(exp, tpe, pur, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Force(e, tpe, pur, eff, loc)
+      LoweredAst.Expression.Force(e, tpe, pur, loc)
+
   }
 
   /**

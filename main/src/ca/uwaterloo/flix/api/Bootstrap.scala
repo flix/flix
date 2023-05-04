@@ -585,13 +585,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Runs the main function in flix package for the project.
     */
-  def run(o: Options): Result[Unit, Int] = {
+  def run(o: Options, args: Array[String]): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     val res = for {
       compilationResult <- build().toOption
       main <- compilationResult.getMain
     } yield {
-      main(Array.empty)
+      main(args)
       ().toOk[Unit, Int]
     }
     res.getOrElse(Err(1))
@@ -605,7 +605,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     build() flatMap {
       compilationResult =>
         Tester.run(Nil, compilationResult)
-        ().toOk
     }
   }
 }

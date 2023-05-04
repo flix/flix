@@ -59,17 +59,17 @@ object Resolver {
     * The set of cases that are used by default in the namespace.
     */
   private val DefaultCases = Map(
-    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Nil", SourceLocation.Unknown),
-    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Cons", SourceLocation.Unknown),
+    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Nil", SourceLocation.Unknown),
+    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "List", SourceLocation.Unknown), "Cons", SourceLocation.Unknown),
 
-    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "None", SourceLocation.Unknown),
-    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
+    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "None", SourceLocation.Unknown),
+    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
 
-    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
-    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown),
+    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
+    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown),
 
-    "Present" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Present", SourceLocation.Unknown),
-    "Absent" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Absent", SourceLocation.Unknown),
+    "Present" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Choice", SourceLocation.Unknown), "Present", SourceLocation.Unknown),
+    "Absent" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Choice", SourceLocation.Unknown), "Absent", SourceLocation.Unknown),
   )
 
   /**
@@ -702,7 +702,6 @@ object Resolver {
         qname.ident.name match {
           case "Type" => Kind.Star.toSuccess
           case "Bool" => Kind.Bool.toSuccess
-          case "Eff" => Kind.Effect.toSuccess
           case "RecordRow" => Kind.RecordRow.toSuccess
           case "SchemaRow" => Kind.SchemaRow.toSuccess
           case "Predicate" => Kind.Predicate.toSuccess
@@ -1327,6 +1326,13 @@ object Resolver {
             case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
           }.recoverOne {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
+          }
+
+        case NamedAst.Expression.InstanceOf(exp, className, loc) =>
+          val eVal = visitExp(exp, env0)
+          val clazzVal = lookupJvmClass(className, loc);
+          mapN(eVal, clazzVal) {
+            (e, clazz) => ResolvedAst.Expression.InstanceOf(e, clazz, loc)
           }
 
         case NamedAst.Expression.CheckedCast(c, exp, loc) =>
@@ -2095,7 +2101,7 @@ object Resolver {
         ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
-      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure
+      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc).toFailure
     }
   }
 
@@ -2361,17 +2367,17 @@ object Resolver {
 
       case NamedAst.Type.Complement(tpe, loc) =>
         mapN(visit(tpe)) {
-          t => mkComplement(t, loc)
+          t => mkNot(t, loc)
         }
 
       case NamedAst.Type.Union(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkUnion(t1, t2, loc)
+          case (t1, t2) => mkAnd(t1, t2, loc)
         }
 
       case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkIntersection(t1, t2, loc)
+          case (t1, t2) => mkOr(t1, t2, loc)
         }
 
       case NamedAst.Type.Read(tpe, loc) =>
@@ -2384,7 +2390,7 @@ object Resolver {
           case t => UnkindedType.ReadWrite(t, loc)
         }
 
-      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
+      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
 
       case NamedAst.Type.CaseSet(cases0, loc) =>
         val casesVal = traverse(cases0)(lookupRestrictableTag(_, env, ns0, root))
@@ -2686,7 +2692,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
   }
 
   /**
@@ -2697,7 +2703,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
   }
 
   /**
@@ -2827,7 +2833,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
+      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure
       case Some(decl) => decl.toSuccess
     }
   }
@@ -3359,13 +3365,9 @@ object Resolver {
 
         case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-        case TypeConstructor.All => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Complement => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Empty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Intersection => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -3378,7 +3380,6 @@ object Resolver {
         case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseSet(_, _) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -3520,7 +3521,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
+      case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, isUse = true, loc).toFailure
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess

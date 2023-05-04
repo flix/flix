@@ -161,7 +161,7 @@ object GenClosureClasses {
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, invokeMethod, classType, Map(), enterLabel)
+    GenExpression.compileStmt(defn.stmt, invokeMethod, classType, Map(), enterLabel)
 
     // Loading `this`
     invokeMethod.visitVarInsn(ALOAD, 0)

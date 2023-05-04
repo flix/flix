@@ -157,6 +157,8 @@ object WeededAst {
 
     case class Ascribe(exp: WeededAst.Expression, expectedType: Option[WeededAst.Type], expectedEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
 
+    case class InstanceOf(exp: WeededAst.Expression, className: String, loc: SourceLocation) extends WeededAst.Expression
+
     case class CheckedCast(cast: Ast.CheckedCastType, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class UncheckedCast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
