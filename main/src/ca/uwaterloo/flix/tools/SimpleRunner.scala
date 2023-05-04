@@ -63,8 +63,7 @@ object SimpleRunner {
     }
 
     // check if we should start a REPL
-    if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty
-          && !cmdOpts.test && !cmdOpts.benchmark) {
+    if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
       Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
         case Result.Ok(bootstrap) =>
           val shell = new Shell(bootstrap, options)
@@ -98,7 +97,6 @@ object SimpleRunner {
     timer.getResult match {
       case Validation.Success(compilationResult) =>
 
-        if (!cmdOpts.benchmark && !cmdOpts.test) {
         compilationResult.getMain match {
           case None => // nop
           case Some(m) =>
@@ -113,17 +111,13 @@ object SimpleRunner {
             // Exit.
             System.exit(0)
         }
-        }
 
         if (cmdOpts.benchmark) {
           Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
         }
 
         if (cmdOpts.test) {
-          Tester.run(Nil, compilationResult)(flix) match {
-            case Result.Ok(_) => ()
-            case Result.Err(code) => System.exit(code)
-          }
+          Tester.run(Nil, compilationResult)(flix)
         }
 
         ().toOk

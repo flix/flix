@@ -64,7 +64,7 @@ object Tester {
     */
   private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
 
-    private var success = new java.util.concurrent.atomic.AtomicBoolean(true)
+    private val success = new java.util.concurrent.atomic.AtomicBoolean(true)
 
     def isSuccess(): Boolean = {
       success.get()
