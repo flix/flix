@@ -42,7 +42,10 @@ object GenExpression {
       compileConstant(visitor, cst, tpe, loc)
 
     case Expr.Var(sym, tpe, _) =>
-      readVar(sym, tpe, visitor)
+      val jvmType = JvmOps.getErasedJvmType(tpe)
+      val iLOAD = AsmOps.getLoadInstruction(jvmType)
+      visitor.visitVarInsn(iLOAD, sym.getStackOffset + 1)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expr.ApplyAtomic(op, exps, tpe, loc) => op match {
 
@@ -1977,16 +1980,6 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
         AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
-  }
-
-  /**
-    * Generates code to read the given variable symbol and put it on top of the stack.
-    */
-  private def readVar(sym: Symbol.VarSym, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    val jvmType = JvmOps.getErasedJvmType(tpe)
-    val iLOAD = AsmOps.getLoadInstruction(jvmType)
-    mv.visitVarInsn(iLOAD, sym.getStackOffset + 1)
-    AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
   }
 
   /*
