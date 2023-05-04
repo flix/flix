@@ -104,8 +104,18 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
               AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
 
-          case Int8Op.Not | Int16Op.Not | Int32Op.Not
-               | Int64Op.Not | BigIntOp.Not => compileUnaryNegateExpr(visitor, sop, exp.loc)
+          case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
+            visitor.visitInsn(ICONST_M1)
+            visitor.visitInsn(IXOR)
+
+          case Int64Op.Not =>
+            visitor.visitInsn(ICONST_M1)
+            visitor.visitInsn(I2L)
+            visitor.visitInsn(LXOR)
+
+          case BigIntOp.Not =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
+              AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
 
           case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", exp.loc)
         }
@@ -1922,58 +1932,6 @@ object GenExpression {
       case _ => visitor.visitLdcInsn(i)
     }
     if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
-  }
-
-  /*
-   * For Int8/Int16, we need to truncate and sign extend the result.
-   *
-   * Example:
-   * Suppose we store the value -128 into an Int8 (byte). The number is represented as (in two's complement):
-   *   10000000
-   * But on the JVM, the value is sign extended and stored as an Int32 (int):
-   *   11111111 11111111 11111111 10000000
-   * If we simply negate -128, we get the value 128, which is represented as:
-   *   00000000 00000000 00000000 10000000
-   * But this is greater than the maximum value (127) for an Int8 (byte). We use I2B to convert the Int32 (int) to an
-   * Int8 (byte), which does a truncation and sign extension:
-   *   11111111 11111111 11111111 10000000
-   * And the final value is -128.
-   *
-   * Note that in Java semantics, the unary minus operator returns an Int32 (int), so the programmer must explicitly
-   * cast to an Int8 (byte).
-   */
-  private def compileUnaryMinusExpr(visitor: MethodVisitor, sop: SemanticOperator, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = sop match {
-
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
-  }
-
-  /*
-   * Note that ~xxxx = xxxx ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~b = b ^ -1. No need to
-   * truncate because Int8/Int16 (byte/short) are sign extended to Int32 (int), and s.ext(negate(b) = negate(s.ext(b)).
-   *
-   * Example:
-   * Consider two Int8s:
-   *     b = 11000011    c = 00001111
-   * Conceptually, ~b and ~c would be:
-   *    ~b = 00111100   ~c = 11110000
-   * On the JVM, b, ~b, c, and ~c would be stored as an Int32s:
-   *    b' = 11111111 11111111 11111111 11000011    c' = 00000000 00000000 00000000 00001111
-   *   ~b' = 00000000 00000000 00000000 00111100   ~c' = 11111111 11111111 11111111 11110000
-   *
-   * Note that sign extending and then negating a value is equal to negating and then sign extending it.
-   */
-  private def compileUnaryNegateExpr(visitor: MethodVisitor, sop: SemanticOperator, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = sop match {
-    case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
-      visitor.visitInsn(ICONST_M1)
-      visitor.visitInsn(IXOR)
-    case Int64Op.Not =>
-      visitor.visitInsn(ICONST_M1)
-      visitor.visitInsn(I2L)
-      visitor.visitInsn(LXOR)
-    case BigIntOp.Not =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
-        AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
 
   /**
