@@ -265,7 +265,21 @@ object Monomorph {
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = LoweredAst.Impl(specializedExp, Scheme(Nil, Nil, Nil, subst(defn.impl.inferredScheme.base))))
+        val spec0 = defn.spec
+        val spec = Spec(
+          spec0.doc,
+          spec0.ann,
+          spec0.mod,
+          Nil,
+          fparams,
+          Scheme(Nil, Nil, Nil, subst(defn.spec.declaredScheme.base)),
+          subst(spec0.retTpe),
+          subst(spec0.pur),
+          spec0.tconstrs,
+          spec0.loc
+        )
+        val impl = LoweredAst.Impl(specializedExp, Scheme(Nil, Nil, Nil, subst(defn.impl.inferredScheme.base)))
+        val specializedDefn = defn.copy(sym = freshSym, spec = spec, impl = impl)
 
         // Save the specialized function.
         ctx.specializedDefns.put(freshSym, specializedDefn)
