@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.InternalCompilerException
-
 sealed trait SemanticOperator
 
 object SemanticOperator {
@@ -813,25 +811,6 @@ object SemanticOperator {
   }
 
   /**
-    * Object Operators.
-    */
-  sealed trait ObjectOp extends SemanticOperator
-
-  object ObjectOp {
-
-    /**
-      * Null equality.
-      */
-    case object EqNull extends ObjectOp
-
-    /**
-      * Null inequality.
-      */
-    case object NeqNull extends ObjectOp
-
-  }
-
-  /**
     * String Operators.
     */
   sealed trait StringOp extends SemanticOperator
@@ -853,112 +832,6 @@ object SemanticOperator {
       */
     case object Neq extends StringOp
 
-  }
-
-}
-
-object SemanticOperatorOps {
-
-  /**
-    * Maps a semantic operator to a unary operator.
-    *
-    * @param sop The semantic operator.
-    * @return The appropriate unary operator.
-    */
-  def toUnaryOp(sop: SemanticOperator, loc: SourceLocation): UnaryOperator = sop match {
-    case SemanticOperator.BoolOp.Not => UnaryOperator.LogicalNot
-    case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg | SemanticOperator.BigDecimalOp.Neg
-         | SemanticOperator.Int8Op.Neg | SemanticOperator.Int16Op.Neg | SemanticOperator.Int32Op.Neg | SemanticOperator.Int64Op.Neg
-         | SemanticOperator.BigIntOp.Neg => UnaryOperator.Minus
-    case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not | SemanticOperator.Int64Op.Not
-         | SemanticOperator.BigIntOp.Not => UnaryOperator.BitwiseNegate
-    case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
-  }
-
-  /**
-    * Maps a semantic operator to a binary operator.
-    *
-    * @param sop The semantic operator.
-    * @return The appropriate binary operator.
-    */
-  def toBinaryOp(sop: SemanticOperator, loc: SourceLocation): BinaryOperator = sop match {
-    case SemanticOperator.BoolOp.And => BinaryOperator.LogicalAnd
-    case SemanticOperator.BoolOp.Or => BinaryOperator.LogicalOr
-
-    case SemanticOperator.Float32Op.Add | SemanticOperator.Float64Op.Add | SemanticOperator.BigDecimalOp.Add
-         | SemanticOperator.Int8Op.Add  | SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Add
-         | SemanticOperator.Int32Op.Add | SemanticOperator.Int64Op.Add | SemanticOperator.BigIntOp.Add => BinaryOperator.Plus
-
-    case SemanticOperator.Float32Op.Sub | SemanticOperator.Float64Op.Sub | SemanticOperator.BigDecimalOp.Sub
-         | SemanticOperator.Int8Op.Sub  | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Sub
-         | SemanticOperator.Int32Op.Sub | SemanticOperator.Int64Op.Sub | SemanticOperator.BigIntOp.Sub => BinaryOperator.Minus
-
-    case SemanticOperator.Float32Op.Mul | SemanticOperator.Float64Op.Mul | SemanticOperator.BigDecimalOp.Mul
-         | SemanticOperator.Int8Op.Mul  | SemanticOperator.Int16Op.Mul | SemanticOperator.Int16Op.Mul
-         | SemanticOperator.Int32Op.Mul | SemanticOperator.Int64Op.Mul | SemanticOperator.BigIntOp.Mul => BinaryOperator.Times
-
-    case SemanticOperator.Float32Op.Div | SemanticOperator.Float64Op.Div | SemanticOperator.BigDecimalOp.Div
-         | SemanticOperator.Int8Op.Div  | SemanticOperator.Int16Op.Div | SemanticOperator.Int16Op.Div
-         | SemanticOperator.Int32Op.Div | SemanticOperator.Int64Op.Div | SemanticOperator.BigIntOp.Div => BinaryOperator.Divide
-
-    case SemanticOperator.Int8Op.Rem | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Rem
-         | SemanticOperator.Int32Op.Rem | SemanticOperator.Int64Op.Rem
-         | SemanticOperator.BigIntOp.Rem => BinaryOperator.Remainder
-
-    case SemanticOperator.Float32Op.Exp | SemanticOperator.Float64Op.Exp
-         | SemanticOperator.Int8Op.Exp | SemanticOperator.Int16Op.Exp | SemanticOperator.Int16Op.Exp
-         | SemanticOperator.Int32Op.Exp | SemanticOperator.Int64Op.Exp => BinaryOperator.Exponentiate
-
-    case SemanticOperator.Int8Op.And | SemanticOperator.Int16Op.And | SemanticOperator.Int32Op.And
-         | SemanticOperator.Int64Op.And | SemanticOperator.BigIntOp.And => BinaryOperator.BitwiseAnd
-
-    case SemanticOperator.Int8Op.Or | SemanticOperator.Int16Op.Or | SemanticOperator.Int32Op.Or
-         | SemanticOperator.Int64Op.Or | SemanticOperator.BigIntOp.Or => BinaryOperator.BitwiseOr
-
-    case SemanticOperator.Int8Op.Xor | SemanticOperator.Int16Op.Xor | SemanticOperator.Int32Op.Xor
-         | SemanticOperator.Int64Op.Xor | SemanticOperator.BigIntOp.Xor => BinaryOperator.BitwiseXor
-
-    case SemanticOperator.Int8Op.Shl | SemanticOperator.Int16Op.Shl | SemanticOperator.Int32Op.Shl
-         | SemanticOperator.Int64Op.Shl | SemanticOperator.BigIntOp.Shl => BinaryOperator.BitwiseLeftShift
-
-    case SemanticOperator.Int8Op.Shr | SemanticOperator.Int16Op.Shr | SemanticOperator.Int32Op.Shr
-         | SemanticOperator.Int64Op.Shr | SemanticOperator.BigIntOp.Shr => BinaryOperator.BitwiseRightShift
-
-    case SemanticOperator.BoolOp.Eq | SemanticOperator.CharOp.Eq
-         | SemanticOperator.Float32Op.Eq | SemanticOperator.Float64Op.Eq | SemanticOperator.BigDecimalOp.Eq
-         | SemanticOperator.Int8Op.Eq | SemanticOperator.Int16Op.Eq | SemanticOperator.Int32Op.Eq
-         | SemanticOperator.Int64Op.Eq | SemanticOperator.BigIntOp.Eq
-         | SemanticOperator.StringOp.Eq => BinaryOperator.Equal
-
-    case SemanticOperator.BoolOp.Neq | SemanticOperator.CharOp.Neq
-         | SemanticOperator.Float32Op.Neq | SemanticOperator.Float64Op.Neq | SemanticOperator.BigDecimalOp.Neq
-         | SemanticOperator.Int8Op.Neq | SemanticOperator.Int16Op.Neq | SemanticOperator.Int32Op.Neq
-         | SemanticOperator.Int64Op.Neq | SemanticOperator.BigIntOp.Neq
-         | SemanticOperator.StringOp.Neq => BinaryOperator.NotEqual
-
-    case SemanticOperator.CharOp.Lt | SemanticOperator.Float32Op.Lt | SemanticOperator.Float64Op.Lt
-         | SemanticOperator.BigDecimalOp.Lt
-         | SemanticOperator.Int8Op.Lt | SemanticOperator.Int16Op.Lt | SemanticOperator.Int32Op.Lt
-         | SemanticOperator.Int64Op.Lt | SemanticOperator.BigIntOp.Lt => BinaryOperator.Less
-
-    case SemanticOperator.CharOp.Le | SemanticOperator.Float32Op.Le | SemanticOperator.Float64Op.Le
-         | SemanticOperator.BigDecimalOp.Le
-         | SemanticOperator.Int8Op.Le | SemanticOperator.Int16Op.Le | SemanticOperator.Int32Op.Le
-         | SemanticOperator.Int64Op.Le | SemanticOperator.BigIntOp.Le => BinaryOperator.LessEqual
-
-    case SemanticOperator.CharOp.Gt | SemanticOperator.Float32Op.Gt | SemanticOperator.Float64Op.Gt
-         | SemanticOperator.BigDecimalOp.Gt
-         | SemanticOperator.Int8Op.Gt | SemanticOperator.Int16Op.Gt | SemanticOperator.Int32Op.Gt
-         | SemanticOperator.Int64Op.Gt | SemanticOperator.BigIntOp.Gt => BinaryOperator.Greater
-
-    case SemanticOperator.CharOp.Ge | SemanticOperator.Float32Op.Ge | SemanticOperator.Float64Op.Ge
-         | SemanticOperator.BigDecimalOp.Ge
-         | SemanticOperator.Int8Op.Ge | SemanticOperator.Int16Op.Ge | SemanticOperator.Int32Op.Ge
-         | SemanticOperator.Int64Op.Ge | SemanticOperator.BigIntOp.Ge => BinaryOperator.GreaterEqual
-
-    case SemanticOperator.StringOp.Concat => BinaryOperator.Plus
-
-    case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
   }
 
 }

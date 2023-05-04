@@ -42,7 +42,7 @@ mod BigDecimal {
     ///
     /// Returns `x` raised to the power of `n`.
     ///
-    pub def exp(n: Int32, x: BigDecimal): BigDecimal =
+    pub def pow(x: BigDecimal, n: Int32): BigDecimal =
         import java.math.BigDecimal.pow(Int32): ##java.math.BigDecimal \ {};
         pow(x, n)
 

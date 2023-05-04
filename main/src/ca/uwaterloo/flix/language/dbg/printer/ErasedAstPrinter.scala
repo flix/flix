@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
+import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
@@ -52,8 +53,18 @@ object ErasedAstPrinter {
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
   def print(e: ErasedAst.Expr): DocAst.Expression = e match {
+    case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case Binary(sop, exp1, exp2, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
+    case ApplyClo(exp, exps, ct, _, _) => ct match {
+      case CallType.TailCall => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
+      case CallType.NonTailCall => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
+    }
+    case ApplyDef(sym, exps, ct, _, _) => ct match {
+      case CallType.TailCall => DocAst.Expression.ApplyDefTail(sym, exps.map(print))
+      case CallType.NonTailCall => DocAst.Expression.ApplyDef(sym, exps.map(print))
+    }
+    case ApplySelfTail(sym, _, exps, _, _) => DocAst.Expression.ApplySelfTail(sym, exps.map(print))
+    case ApplyAtomic(op, exps, tpe, _) => IntrinsicOperatorPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
@@ -68,12 +79,13 @@ object ErasedAstPrinter {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
           DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       })
-    case Intrinsic0(op, _, _) => IntrinsicOperatorPrinter.print(op)
-    case Intrinsic1(op, exp, tpe, _) => IntrinsicOperatorPrinter.print(op, print(exp), MonoTypePrinter.print(tpe))
-    case Intrinsic2(op, exp1, exp2, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2))
-    case Intrinsic3(op, exp1, exp2, exp3, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2), print(exp3))
-    case IntrinsicN(op, exps, _, _) => IntrinsicOperatorPrinter.print(op, exps.map(print))
-    case Intrinsic1N(op, exp, exps, _, _) => IntrinsicOperatorPrinter.print(op, print(exp), exps.map(print))
+  }
+
+  /**
+    * Returns the [[DocAst.Expression]] representation of `s`.
+    */
+  def print(s: ErasedAst.Stmt): DocAst.Expression = s match {
+    case ErasedAst.Stmt.Ret(e, _, _) => print(e)
   }
 
   /**

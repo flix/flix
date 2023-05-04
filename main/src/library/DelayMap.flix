@@ -83,7 +83,7 @@ mod DelayMap {
     ///
     def useParallelEvaluation(m: DelayMap[k, v]): Bool =
         let DMap(t) = m;
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///

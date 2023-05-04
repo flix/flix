@@ -203,15 +203,15 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplySelfTail(sym, f, as, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+    case Expression.Unary(sop, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Unary(sop, op, e, tpe, purity, loc), o.increaseSizeByOne())
+      (OccurrenceAst.Expression.Unary(sop, e, tpe, purity, loc), o.increaseSizeByOne())
 
-    case Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+    case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.Binary(sop, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)

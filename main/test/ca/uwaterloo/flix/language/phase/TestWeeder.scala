@@ -621,7 +621,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("ReservedName.Def.01") {
     val input =
       """
-        |pub def |||(x: a, y: a): a = ???
+        |pub def **(x: a, y: a): a = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.ReservedName](result)
@@ -662,7 +662,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    law ^^^: forall (x: a) . true
+        |    law **: forall (x: a) . true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

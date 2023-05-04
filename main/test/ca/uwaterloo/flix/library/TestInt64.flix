@@ -44,7 +44,7 @@ mod TestInt64 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int64.maxValue() == ~~~Int64.leftShift(1i64, 63)
+    def maxValue01(): Bool = Int64.maxValue() == Int64.bitwiseNot(Int64.leftShift(1i64, 63))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -193,6 +193,23 @@ mod TestInt64 {
     @test
     def signum03(): Bool = Int64.signum(0i64) == 0
 
+    /////////////////////////////////////////////////////////////////////////////
+    // pow                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def pow01(): Bool = Int64.pow(0i64, 0i64) == 1i64
+
+    @test
+    def pow02(): Bool = Int64.pow(0i64, 1i64) == 0i64
+
+    @test
+    def pow03(): Bool = Int64.pow(1i64, 0i64) == 1i64
+
+    @test
+    def pow04(): Bool = Int64.pow(1i64, 1i64) == 1i64
+
+    @test
+    def pow05(): Bool = Int64.pow(5i64, 2i64) == 25i64
 
     /////////////////////////////////////////////////////////////////////////////
     // leftShift                                                               //
@@ -411,7 +428,7 @@ mod TestInt64 {
     def highestOneBitPosition06(): Bool = Int64.highestOneBitPosition(20i64) == 4
 
     @test
-    def highestOneBitPosition07(): Bool = Int64.highestOneBitPosition(2i64 ** 30i64) == 30
+    def highestOneBitPosition07(): Bool = Int64.highestOneBitPosition(Int64.pow(2i64, 30i64)) == 30
 
     @test
     def highestOneBitPosition08(): Bool = Int64.highestOneBitPosition(9223372036854775807i64) == 62
@@ -420,10 +437,10 @@ mod TestInt64 {
     def highestOneBitPosition09(): Bool = Int64.highestOneBitPosition(0i64) == -1
 
     @test
-    def highestOneBitPosition10(): Bool = Int64.highestOneBitPosition(2i64 ** 23i64 + 2i64 ** 60i64) == 60
+    def highestOneBitPosition10(): Bool = Int64.highestOneBitPosition(Int64.pow(2i64, 23i64) + Int64.pow(2i64, 60i64)) == 60
 
     @test
-    def highestOneBitPosition11(): Bool = Int64.highestOneBitPosition(2i64 ** 20i64 + 2i64 ** 59i64) == 59
+    def highestOneBitPosition11(): Bool = Int64.highestOneBitPosition(Int64.pow(2i64, 20i64) + Int64.pow(2i64, 59i64)) == 59
 
     @test
     def highestOneBitPosition12(): Bool = Int64.highestOneBitPosition(-44556677i64) == 63
@@ -450,7 +467,7 @@ mod TestInt64 {
     def highestOneBit06(): Bool = Int64.highestOneBit(20i64) == 16i64
 
     @test
-    def highestOneBit07(): Bool = Int64.highestOneBit(2i64 ** 57i64 + 2i64 ** 32i64) == 144115188075855872i64
+    def highestOneBit07(): Bool = Int64.highestOneBit(Int64.pow(2i64, 57i64) + Int64.pow(2i64, 32i64)) == 144115188075855872i64
 
     @test
     def highestOneBit08(): Bool = Int64.highestOneBit(9223372036854775807i64) == 4611686018427387904i64
@@ -459,7 +476,7 @@ mod TestInt64 {
     def highestOneBit09(): Bool = Int64.highestOneBit(0i64) == 0i64
 
     @test
-    def highestOneBit10(): Bool = Int64.highestOneBit(2i64 ** 44i64 + 2i64 ** 18i64) == 17592186044416i64
+    def highestOneBit10(): Bool = Int64.highestOneBit(Int64.pow(2i64, 44i64) + Int64.pow(2i64, 18i64)) == 17592186044416i64
 
     /////////////////////////////////////////////////////////////////////////////
     // numberOfLeadingZeros                                                    //
@@ -474,16 +491,16 @@ mod TestInt64 {
     def numberOfLeadingZeros03(): Bool = Int64.numberOfLeadingZeros(-1i64) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(~~~Int64.leftShift(1i64, 63)) == 1
+    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(Int64.bitwiseNot(Int64.leftShift(1i64, 63))) == 1
 
     @test
-    def numberOfLeadingZeros05(): Bool = Int64.numberOfLeadingZeros(2i64 ** 62i64) == 1
+    def numberOfLeadingZeros05(): Bool = Int64.numberOfLeadingZeros(Int64.pow(2i64, 62i64)) == 1
 
     @test
-    def numberOfLeadingZeros06(): Bool = Int64.numberOfLeadingZeros(2i64 ** 61i64 + 2i64 ** 18i64) == 2
+    def numberOfLeadingZeros06(): Bool = Int64.numberOfLeadingZeros(Int64.pow(2i64, 61i64) + Int64.pow(2i64, 18i64)) == 2
 
     @test
-    def numberOfLeadingZeros07(): Bool = Int64.numberOfLeadingZeros(2i64 ** 20i64 + 2i64 ** 18i64) == 43
+    def numberOfLeadingZeros07(): Bool = Int64.numberOfLeadingZeros(Int64.pow(2i64, 20i64) + Int64.pow(2i64, 18i64)) == 43
 
     @test
     def numberOfLeadingZeros08(): Bool = Int64.numberOfLeadingZeros(20i64) == 59
@@ -516,10 +533,10 @@ mod TestInt64 {
     def lowestOneBitPosition07(): Bool = Int64.lowestOneBitPosition(12i64) == 2
 
     @test
-    def lowestOneBitPosition08(): Bool = Int64.lowestOneBitPosition(2i64 ** 30i64) == 30
+    def lowestOneBitPosition08(): Bool = Int64.lowestOneBitPosition(Int64.pow(2i64, 30i64)) == 30
 
     @test
-    def lowestOneBitPosition09(): Bool = Int64.lowestOneBitPosition(2i64 ** 57i64 + 2i64 ** 18i64) == 18
+    def lowestOneBitPosition09(): Bool = Int64.lowestOneBitPosition(Int64.pow(2i64, 57i64) + Int64.pow(2i64, 18i64)) == 18
 
     @test
     def lowestOneBitPosition10(): Bool = Int64.lowestOneBitPosition(9223372036854775807i64) == 0
@@ -549,13 +566,13 @@ mod TestInt64 {
     def lowestOneBit06(): Bool = Int64.lowestOneBit(12i64) == 4i64
 
     @test
-    def lowestOneBit07(): Bool = Int64.lowestOneBit(2i64 ** 6i64 + 2i64 ** 18i64 + 2i64 ** 27i64) == 64i64
+    def lowestOneBit07(): Bool = Int64.lowestOneBit(Int64.pow(2i64, 6i64) + Int64.pow(2i64, 18i64) + Int64.pow(2i64, 27i64)) == 64i64
 
     @test
-    def lowestOneBit08(): Bool = Int64.lowestOneBit(2i64 ** 54i64) == 18014398509481984i64
+    def lowestOneBit08(): Bool = Int64.lowestOneBit(Int64.pow(2i64, 54i64)) == 18014398509481984i64
 
     @test
-    def lowestOneBit09(): Bool = Int64.lowestOneBit(2i64 ** 62i64 + 2i64 ** 18i64) == 262144i64
+    def lowestOneBit09(): Bool = Int64.lowestOneBit(Int64.pow(2i64, 62i64) + Int64.pow(2i64, 18i64)) == 262144i64
 
     @test
     def lowestOneBit10(): Bool = Int64.lowestOneBit(9223372036854775807i64) == 1i64
@@ -576,10 +593,10 @@ mod TestInt64 {
     def numberOfTrailingZeros03(): Bool = Int64.numberOfTrailingZeros(42i64) == 1
 
     @test
-    def numberOfTrailingZeros04(): Bool = Int64.numberOfTrailingZeros(2i64 ** 16i64 + 2i64 ** 22i64) == 16
+    def numberOfTrailingZeros04(): Bool = Int64.numberOfTrailingZeros(Int64.pow(2i64, 16i64) + Int64.pow(2i64, 22i64)) == 16
 
     @test
-    def numberOfTrailingZeros05(): Bool = Int64.numberOfTrailingZeros(2i64 ** 57i64) == 57
+    def numberOfTrailingZeros05(): Bool = Int64.numberOfTrailingZeros(Int64.pow(2i64, 57i64)) == 57
 
     @test
     def numberOfTrailingZeros06(): Bool = Int64.numberOfTrailingZeros(-1i64) == 0
@@ -597,19 +614,19 @@ mod TestInt64 {
     def getBit02(): Bool = Int64.getBit(pos = 63, -1000000i64) == 1
 
     @test
-    def getBit03(): Bool = Int64.getBit(pos = 59, 2i64 ** 59i64) == 1
+    def getBit03(): Bool = Int64.getBit(pos = 59, Int64.pow(2i64, 59i64)) == 1
 
     @test
-    def getBit04(): Bool = Int64.getBit(pos = 60, 2i64 ** 59i64) == 0
+    def getBit04(): Bool = Int64.getBit(pos = 60, Int64.pow(2i64, 59i64)) == 0
 
     @test
-    def getBit05(): Bool = Int64.getBit(pos = 58, 2i64 ** 59i64) == 0
+    def getBit05(): Bool = Int64.getBit(pos = 58, Int64.pow(2i64, 59i64)) == 0
 
     @test
-    def getBit06(): Bool = Int64.getBit(pos = 61, -1i64 - 2i64 ** 61i64) == 0
+    def getBit06(): Bool = Int64.getBit(pos = 61, -1i64 - Int64.pow(2i64, 61i64)) == 0
 
     @test
-    def getBit07(): Bool = Int64.getBit(pos = 60, -1i64 - 2i64 ** 61i64) == 1
+    def getBit07(): Bool = Int64.getBit(pos = 60, -1i64 - Int64.pow(2i64, 61i64)) == 1
 
     @test
     def getBit08(): Bool = Int64.getBit(pos = 55, 0i64) == 0
@@ -687,7 +704,7 @@ mod TestInt64 {
     def clearBit11(): Bool = Int64.clearBit(pos = 5, -1i64) == -33i64
 
     @test
-    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == ~~~Int64.leftShift(1i64, 63)
+    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == Int64.bitwiseNot(Int64.leftShift(1i64, 63))
 
     @test
     def clearBit13(): Bool = Int64.clearBit(pos = 64, -1i64) == -2i64
@@ -764,6 +781,92 @@ mod TestInt64 {
 
     @test
     def log210(): Bool = Int64.log2(-1i64) == 0i64
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseAnd                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseAnd01(): Bool = Int64.bitwiseAnd(0i64, 0i64) == 0i64
+
+    @test
+    def bitwiseAnd02(): Bool = Int64.bitwiseAnd(127i64, 0i64) == 0i64
+
+    @test
+    def bitwiseAnd03(): Bool = Int64.bitwiseAnd(-128i64, 0i64) == 0i64
+
+    @test
+    def bitwiseAnd04(): Bool = Int64.bitwiseAnd(0i64, 1i64) == 0i64
+
+    @test
+    def bitwiseAnd05(): Bool = Int64.bitwiseAnd(127i64, 1i64) == 1i64
+
+    @test
+    def bitwiseAnd06(): Bool = Int64.bitwiseAnd(-128i64, 1i64) == 0i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseNot                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseNot01(): Bool = Int64.bitwiseNot(0i64) == -1i64
+
+    @test
+    def bitwiseNot02(): Bool = Int64.bitwiseNot(1i64) == -2i64
+
+    @test
+    def bitwiseNot03(): Bool = Int64.bitwiseNot(-1i64) == -0i64
+
+    @test
+    def bitwiseNot04(): Bool = Int64.bitwiseNot(127i64) == -128i64
+
+    @test
+    def bitwiseNot05(): Bool = Int64.bitwiseNot(-128i64) == 127i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseOr                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseOr01(): Bool = Int64.bitwiseOr(0i64, 0i64) == 0i64
+
+    @test
+    def bitwiseOr02(): Bool = Int64.bitwiseOr(127i64, 0i64) == 127i64
+
+    @test
+    def bitwiseOr03(): Bool = Int64.bitwiseOr(-128i64, 0i64) == -128i64
+
+    @test
+    def bitwiseOr04(): Bool = Int64.bitwiseOr(0i64, 1i64) == 1i64
+
+    @test
+    def bitwiseOr05(): Bool = Int64.bitwiseOr(127i64, 1i64) == 127i64
+
+    @test
+    def bitwiseOr06(): Bool = Int64.bitwiseOr(-128i64, 1i64) == -127i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseXor                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseXor01(): Bool = Int64.bitwiseXor(0i64, 0i64) == 0i64
+
+    @test
+    def bitwiseXor02(): Bool = Int64.bitwiseXor(127i64, 0i64) == 127i64
+
+    @test
+    def bitwiseXor03(): Bool = Int64.bitwiseXor(-128i64, 0i64) == -128i64
+
+    @test
+    def bitwiseXor04(): Bool = Int64.bitwiseXor(0i64, 1i64) == 1i64
+
+    @test
+    def bitwiseXor05(): Bool = Int64.bitwiseXor(127i64, 1i64) == 126i64
+
+    @test
+    def bitwiseXor06(): Bool = Int64.bitwiseXor(-128i64, 1i64) == -127i64
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //

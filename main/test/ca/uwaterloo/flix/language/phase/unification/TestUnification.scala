@@ -417,17 +417,6 @@ class TestUnification extends AnyFunSuite with TestUtils {
     assertResult(Type.mkTuple(List(Type.Bool, Type.Char), loc))(subst.m(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
   }
 
-  test("TestNoSetEffects") {
-    val t1 = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "e1", loc)), loc)
-    val t2 = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "e2", loc)), loc)
-
-    // Sanity check: make sure the types don't normally unify
-    assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
-
-    // Make sure the types do unify when ignoring effects
-    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(flix.setOptions(flix.options.copy(xnoseteffects = true)))))
-  }
-
   test("TestNoBoolEffects") {
     val t1 = Type.True
     val t2 = Type.False

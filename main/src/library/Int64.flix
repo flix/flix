@@ -37,7 +37,7 @@ mod Int64 {
     ///
     /// Returns the maximum number representable by an `Int64`.
     ///
-    pub def maxValue(): Int64 = ~~~minValue()
+    pub def maxValue(): Int64 = bitwiseNot(minValue())
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -106,13 +106,18 @@ mod Int64 {
     pub def signum(x: Int64): Int32 = compare(x, 0i64)
 
     ///
+    /// Returns `b` raised to the power of `n`.
+    ///
+    pub def pow(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
+
+    ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 6 bits of `distance` are considered (ie. `distance rem 64`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
         if (x < 0i64 and Int32.rem(dist.dist, size()) != 0)
-            rightShift(rightShift(x, 1) &&& maxValue(), (dist.dist - 1))
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), (dist.dist - 1))
         else
             rightShift(x, dist.dist)
 
@@ -131,14 +136,14 @@ mod Int64 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int64): Int64 =
-        (logicalRightShift(dist = dist.dist, x)) ||| leftShift(x, -dist.dist)
+        bitwiseOr(logicalRightShift(dist = dist.dist, x), leftShift(x, -dist.dist))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int64): Int64 =
-        (logicalRightShift(dist = -dist.dist, x)) ||| leftShift(x, dist.dist)
+        bitwiseOr(logicalRightShift(dist = -dist.dist, x), leftShift(x, dist.dist))
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -245,21 +250,21 @@ mod Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = x ||| leftShift(1i64, pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseOr(x, leftShift(1i64, pos.pos))
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = x &&& ~~~leftShift(1i64, pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseAnd(x, bitwiseNot(leftShift(1i64, pos.pos)))
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = x ^^^ leftShift(1i64, pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = bitwiseXor(x, leftShift(1i64, pos.pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -281,6 +286,26 @@ mod Int64 {
     /// Returns `x` with the bits shifted right by `y` places
     ///
     pub def rightShift(x: Int64, y: Int32): Int64 = $INT64_SHR$(x, y)
+
+    ///
+    /// Returns the bitwise AND of `x` and `y`.
+    ///
+    pub def bitwiseAnd(x: Int64, y: Int64): Int64 = $INT64_AND$(x, y)
+
+    ///
+    /// Returns the bitwise NOT of `x`.
+    ///
+    pub def bitwiseNot(x: Int64): Int64 = $INT64_NOT$(x)
+
+    ///
+    /// Returns the bitwise OR of `x` and `y`.
+    ///
+    pub def bitwiseOr(x: Int64, y: Int64): Int64 = $INT64_OR$(x, y)
+
+    ///
+    /// Returns the bitwise XOR of `x` and `y`.
+    ///
+    pub def bitwiseXor(x: Int64, y: Int64): Int64 = $INT64_XOR$(x, y)
 
     ///
     /// Returns the factorial of `x`.

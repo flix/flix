@@ -28,7 +28,7 @@ object ExprCompleter extends Completer {
       MatchCompleter.getCompletions(context) ++
       VarCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++
+      EnumTagCompleter.getCompletions(context) ++
       SnippetCompleter.getCompletions(context)
   }
-
 }
