@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker.hasRealSourceKinds
@@ -31,7 +32,7 @@ object EnumTagRanker {
     getEnumTagCompletions(completions)
       // Find the typeEnum comp that has 0 Real uses
       .find(enumTag =>
-        !hasRealSourceKinds(tagUses(enumTag.sym)))
+        !hasRealSourceKinds(tagUses(enumTag.caseSym)))
   }
 
   /**
