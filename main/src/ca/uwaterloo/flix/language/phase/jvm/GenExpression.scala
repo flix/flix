@@ -254,41 +254,17 @@ object GenExpression {
 
           case Float32Op.Gt => visitFloatComparison(exp1, exp2, FCMPL, IFLE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Lt => visitFloatComparison(exp1, exp2, DCMPG, IFGE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Le => visitFloatComparison(exp1, exp2, DCMPG, IFGT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Eq => visitFloatComparison(exp1, exp2, DCMPG, IFNE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Neq => visitFloatComparison(exp1, exp2, DCMPG, IFEQ, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(DCMPL)
-            visitor.visitJumpInsn(IFLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Ge => visitFloatComparison(exp1, exp2, DCMPL, IFLT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitInsn(DCMPL)
-            visitor.visitJumpInsn(IFLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Gt => visitFloatComparison(exp1, exp2, DCMPL, IFLE, visitor, currentClass, lenv0, entryPoint)
 
           case BigDecimalOp.Lt =>
             val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
