@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, SetUnification, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -79,7 +79,6 @@ object Monomorph {
           throw UnexpectedNonConstBool(tpe0, tpe0.loc)
         else
           Type.True
-      case Kind.Effect => Type.Empty
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
@@ -108,11 +107,6 @@ object Monomorph {
               case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
               case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
               case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
-
-              // Simplify set expressions
-              case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
-              case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
-              case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
 
               case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
               case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
@@ -164,28 +158,39 @@ object Monomorph {
   // TODO: Monomorph: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
 
   /**
-    * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
-    *
-    * For example, if the queue contains the entry:
-    *
-    * -   (f$1, f, [a -> Int])
-    *
-    * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+    * Holds the mutable data used throughout monomorphization.
     */
-  private type DefQueue = mutable.Set[(Symbol.DefnSym, Def, StrictSubstitution)]
+  private class Context() {
 
-  /**
-    * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
-    *
-    * For example, if the function:
-    *
-    * -   def fst[a, b](x: a, y: b): a = ...
-    *
-    * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
-    *
-    * -   (fst, (Int, Str) -> Int) -> fst$1
-    */
-  private type Def2Def = mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym]
+    /**
+      * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
+      *
+      * For example, if the queue contains the entry:
+      *
+      * -   (f$1, f, [a -> Int])
+      *
+      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+      */
+    val defQueue: mutable.Set[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Set.empty
+
+    /**
+      * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
+      *
+      * For example, if the function:
+      *
+      * -   def fst[a, b](x: a, y: b): a = ...
+      *
+      * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
+      *
+      * -   (fst, (Int, Str) -> Int) -> fst$1
+      */
+    val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
+
+    /**
+      * A map used to collect specialized definitions, etc.
+      */
+    val specializedDefns: mutable.Map[Symbol.DefnSym, LoweredAst.Def] = mutable.Map.empty
+  }
 
   /**
     * Enqueues the element `x` in `xs`.
@@ -208,14 +213,7 @@ object Monomorph {
 
     implicit val r: Root = root
 
-    implicit val defQueue: DefQueue = mutable.Set.empty
-
-    implicit val def2def: Def2Def = mutable.Map.empty
-
-    /*
-     * A map used to collect specialized definitions, etc.
-     */
-    val specializedDefns: mutable.Map[Symbol.DefnSym, LoweredAst.Def] = mutable.Map.empty
+    implicit val ctx: Context = new Context()
 
     /*
      * Collect all non-parametric function definitions.
@@ -247,15 +245,15 @@ object Monomorph {
         val scheme = Scheme(tvars, tconstrs, econstrs, base)
 
         // Reassemble the definition.
-        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body, inferredScheme = scheme)))
+        ctx.specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body, inferredScheme = scheme)))
       }
 
       /*
        * Performs function specialization until both queues are empty.
        */
-      while (defQueue.nonEmpty) {
+      while (ctx.defQueue.nonEmpty) {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = dequeue(defQueue)
+        val (freshSym, defn, subst) = dequeue(ctx.defQueue)
 
         flix.subtask(freshSym.toString, sample = true)
 
@@ -270,12 +268,12 @@ object Monomorph {
         val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = LoweredAst.Impl(specializedExp, Scheme(Nil, Nil, Nil, subst(defn.impl.inferredScheme.base))))
 
         // Save the specialized function.
-        specializedDefns.put(freshSym, specializedDefn)
+        ctx.specializedDefns.put(freshSym, specializedDefn)
       }
 
       // Reassemble the AST.
       root.copy(
-        defs = specializedDefns.toMap
+        defs = ctx.specializedDefns.toMap
       )
     } catch {
       case UnexpectedNonConstBool(tpe, loc) => throw InternalCompilerException(s"Unexpected non-const Bool: '$tpe'", loc)
@@ -292,7 +290,7 @@ object Monomorph {
     * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
     * definition and substitution is enqueued.
     */
-  private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit def2def: Def2Def, defQueue: DefQueue, root: Root, flix: Flix): Expression = exp0 match {
+  private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): Expression = exp0 match {
     case Expression.Wild(tpe, loc) => Expression.Wild(subst(tpe), loc)
 
     case Expression.Var(sym, tpe, loc) =>
@@ -523,10 +521,10 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.InstanceOf(e, clazz, loc)
 
-    case Expression.Cast(exp, _, _, _, tpe, pur, loc) =>
+    case Expression.Cast(exp, _, _, tpe, pur, loc) =>
       // We drop the declaredType and declaredEff here.
       val e = visitExp(exp, env0, subst)
-      Expression.Cast(e, None, None, None, subst(tpe), pur, loc)
+      Expression.Cast(e, None, None, subst(tpe), pur, loc)
 
     case Expression.Without(exp, sym, tpe, pur, loc) =>
       // Erase the Without
@@ -628,7 +626,7 @@ object Monomorph {
     *
     * Returns the new method.
     */
-  private def visitJvmMethod(method: JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit def2def: Def2Def, defQueue: DefQueue, root: Root, flix: Flix): JvmMethod = method match {
+  private def visitJvmMethod(method: JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): JvmMethod = method match {
     case JvmMethod(ident, fparams0, exp0, tpe, pur, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
       val exp = visitExp(exp0, env0 ++ env1, subst)
@@ -638,7 +636,7 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit def2def: Def2Def, defQueue: DefQueue, root: Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: Root, flix: Flix): Symbol.DefnSym = {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
@@ -656,7 +654,7 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe0: Type)(implicit def2def: Def2Def, defQueue: DefQueue, root: Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe0: Type)(implicit ctx: Context, root: Root, flix: Flix): Symbol.DefnSym = {
     // Perform erasure on the type
     val tpe = eraseType(tpe0)
 
@@ -703,22 +701,22 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit def2def: Def2Def, defQueue: DefQueue, root: Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
 
     // Check whether the function definition has already been specialized.
-    def2def.get((defn.sym, tpe)) match {
+    ctx.def2def.get((defn.sym, tpe)) match {
       case None =>
         // Case 1: The function has not been specialized.
         // Generate a fresh specialized definition symbol.
         val freshSym = Symbol.freshDefnSym(defn.sym)
 
         // Register the fresh symbol (and actual type) in the symbol2symbol map.
-        def2def.put((defn.sym, tpe), freshSym)
+        ctx.def2def.put((defn.sym, tpe), freshSym)
 
         // Enqueue the fresh symbol with the definition and substitution.
-        enqueue((freshSym, defn, subst), defQueue)
+        enqueue((freshSym, defn, subst), ctx.defQueue)
 
         // Now simply refer to the freshly generated symbol.
         freshSym

@@ -393,7 +393,7 @@ mod Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1 \ ef1_, g: a -> b & ef2 \ ef2_, l: Nel[a]): b & (ef1 and ef2) \ (ef1_ + ef2_) =
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} =
         def loop(ll, k) = match ll {
             case x :: Nil => k(g(x))
             case x :: xs  => loop(xs, ks -> k(f(x, ks)))

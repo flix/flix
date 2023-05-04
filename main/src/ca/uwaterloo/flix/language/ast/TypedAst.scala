@@ -80,38 +80,26 @@ object TypedAst {
 
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class HoleWithExp(exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -128,8 +116,6 @@ object TypedAst {
 
     case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Apply(exp: TypedAst.Expression, exps: List[TypedAst.Expression], tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -144,8 +130,6 @@ object TypedAst {
 
     case class Region(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -176,8 +160,6 @@ object TypedAst {
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class RecordSelect(exp: TypedAst.Expression, field: Name.Field, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -226,7 +208,7 @@ object TypedAst {
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class UncheckedCast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class UncheckedCast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class UncheckedMaskingCast(exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -242,8 +224,6 @@ object TypedAst {
 
     case class Resume(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -282,16 +262,12 @@ object TypedAst {
 
     case class Lazy(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class Force(exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointConstraintSet(cs: List[TypedAst.Constraint], stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
-
-      def eff: Type = Type.Empty
     }
 
     case class FixpointLambda(pparams: List[TypedAst.PredicateParam], exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression

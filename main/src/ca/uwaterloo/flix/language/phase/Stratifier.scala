@@ -322,9 +322,9 @@ object Stratifier {
     case Expression.CheckedCast(cast, exp, tpe, pur, loc) =>
       mapN(visitExp(exp))(Expression.CheckedCast(cast, _, tpe, pur, loc))
 
-    case Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, pur, loc) =>
+    case Expression.UncheckedCast(exp, declaredType, declaredPur, tpe, pur, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.UncheckedCast(e, declaredType, declaredPur, declaredEff, tpe, pur, loc)
+        case e => Expression.UncheckedCast(e, declaredType, declaredPur, tpe, pur, loc)
       }
 
     case Expression.UncheckedMaskingCast(exp, tpe, pur, loc) =>
@@ -712,7 +712,7 @@ object Stratifier {
     case Expression.CheckedCast(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.UncheckedCast(exp, _, _, _, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.UncheckedMaskingCast(exp, _, _, _) =>

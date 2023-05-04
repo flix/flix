@@ -472,43 +472,6 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Complement =>
-          t.typeArguments.map(visit) match {
-            case Nil => Complement(Hole)
-            case arg :: Nil => Complement(arg)
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
-
-        case TypeConstructor.Union =>
-          // collapse into a chain of unions
-          t.typeArguments.map(visit).map(splitUnions) match {
-            // Case 1: No args. ? + ?
-            case Nil => Union(Hole :: Hole :: Nil)
-            // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
-            case args :: Nil => Union(args :+ Hole)
-            // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
-            case args1 :: args2 :: Nil => Union(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
-
-        case TypeConstructor.Intersection =>
-          // collapse into a chain of intersections
-          t.typeArguments.map(visit).map(splitIntersections) match {
-            // Case 1: No args. ? & ?
-            case Nil => Intersection(Hole :: Hole :: Nil)
-            // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
-            case args :: Nil => Intersection(args :+ Hole)
-            // Case 3: Complement on the right: sugar it into a difference.
-            case args :: List(Complement(tpe)) :: Nil => Difference(joinIntersection(args), tpe)
-            // Case 4: Complement on the left: sugar it into a difference.
-            case List(Complement(tpe)) :: args :: Nil => Difference(joinIntersection(args), tpe)
-            // Case 5: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
-            case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
-            // Case 6: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
-
         case TypeConstructor.CaseSet(syms, _) =>
           val names = syms.toList.map(sym => SimpleType.Name(sym.name))
           val set = SimpleType.Union(names)
@@ -539,8 +502,6 @@ object SimpleType {
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
-        case TypeConstructor.Empty => SimpleType.Empty
-        case TypeConstructor.All => SimpleType.All
       }
     }
 

@@ -620,7 +620,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     build() flatMap {
       compilationResult =>
         Tester.run(Nil, compilationResult)
-        ().toOk
     }
   }
 }
