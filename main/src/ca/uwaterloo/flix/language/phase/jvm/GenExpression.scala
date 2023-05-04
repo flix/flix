@@ -64,10 +64,11 @@ object GenExpression {
 
       case AtomicOp.Unary(sop) =>
         val List(exp) = exps
+
         // Adding source line number for debugging
         addSourceLine(visitor, exp.loc)
-
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
         sop match {
           case SemanticOperator.BoolOp.Not =>
             val condElse = new Label()
@@ -79,14 +80,34 @@ object GenExpression {
             visitor.visitInsn(ICONST_0)
             visitor.visitLabel(condEnd)
 
-          case Float32Op.Neg | Float64Op.Neg | BigDecimalOp.Neg
-               | Int8Op.Neg | Int16Op.Neg | Int32Op.Neg
-               | Int64Op.Neg | BigIntOp.Neg => compileUnaryMinusExpr(visitor, sop, exp.loc)
+          case Float32Op.Neg => visitor.visitInsn(FNEG)
+
+          case Float64Op.Neg => visitor.visitInsn(DNEG)
+
+          case BigDecimalOp.Neg =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
+              AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
+
+          case Int8Op.Neg =>
+            visitor.visitInsn(INEG)
+            visitor.visitInsn(I2B) // Sign extend so sign bit is also changed
+
+          case Int16Op.Neg =>
+            visitor.visitInsn(INEG)
+            visitor.visitInsn(I2S) // Sign extend so sign bit is also changed
+
+          case Int32Op.Neg => visitor.visitInsn(INEG)
+
+          case Int64Op.Neg => visitor.visitInsn(LNEG)
+
+          case BigIntOp.Neg =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
+              AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
 
           case Int8Op.Not | Int16Op.Not | Int32Op.Not
                | Int64Op.Not | BigIntOp.Not => compileUnaryNegateExpr(visitor, sop, exp.loc)
 
-          case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", e.loc)
+          case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", exp.loc)
         }
 
       case AtomicOp.Binary(sop) =>
@@ -1922,22 +1943,7 @@ object GenExpression {
    * cast to an Int8 (byte).
    */
   private def compileUnaryMinusExpr(visitor: MethodVisitor, sop: SemanticOperator, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = sop match {
-    case Float32Op.Neg => visitor.visitInsn(FNEG)
-    case Float64Op.Neg => visitor.visitInsn(DNEG)
-    case BigDecimalOp.Neg =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
-        AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
-    case Int8Op.Neg =>
-      visitor.visitInsn(INEG)
-      visitor.visitInsn(I2B)
-    case Int16Op.Neg =>
-      visitor.visitInsn(INEG)
-      visitor.visitInsn(I2S)
-    case Int32Op.Neg => visitor.visitInsn(INEG)
-    case Int64Op.Neg => visitor.visitInsn(LNEG)
-    case BigIntOp.Neg =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
-        AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
+
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
 
