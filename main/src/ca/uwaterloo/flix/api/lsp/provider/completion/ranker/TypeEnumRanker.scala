@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeEnumCompletion
-import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker.hasRealSourceKinds
 
 object TypeEnumRanker {
 
@@ -49,13 +50,4 @@ object TypeEnumRanker {
       case comp: TypeEnumCompletion => comp
     }
   }
-
-  /**
-    * Checks if set[SourceLocation] contain any SourceKind.Real
-    *
-    * @param  set the set of SourceLocations.
-    * @return true, if at least one of the SourceKinds are Real, false otherwise.
-    */
-  private def hasRealSourceKinds(set: Set[SourceLocation]): Boolean =
-    set.exists(_.locationKind == SourceKind.Real)
 }

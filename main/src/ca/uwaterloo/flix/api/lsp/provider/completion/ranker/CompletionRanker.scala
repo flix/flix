@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
+import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation}
 
 /**
   * CompletionRanker
@@ -41,4 +42,13 @@ object CompletionRanker {
       .orElse(EnumTagRanker.findBest(completions, index.tagUses))
       .orElse(DefRanker.findBest(completions, deltaContext))
   }
+
+  /**
+    * Checks if set[SourceLocation] contain any SourceKind.Real
+    *
+    * @param set the set of SourceLocations.
+    * @return true, if at least one of the SourceKinds are Real, false otherwise.
+    */
+  def hasRealSourceKinds(set: Set[SourceLocation]): Boolean =
+    set.exists(_.locationKind == SourceKind.Real)
 }
