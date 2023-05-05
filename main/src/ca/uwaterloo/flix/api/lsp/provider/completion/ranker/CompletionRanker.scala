@@ -37,9 +37,9 @@ object CompletionRanker extends Ranker {
     // TODO: Prioritize which completion is most important
     VarRanker.findBest(completions)
       .orElse(FieldRanker.findBest(completions))
-      .orElse(MatchRanker.findBest(completions))
       .orElse(TypeEnumRanker.findBest(completions))
       .orElse(EnumTagRanker.findBest(completions))
+      .orElse(MatchRanker.findBest(completions))
       .orElse(DefRanker.findBest(completions))
   }
 
