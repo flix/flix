@@ -243,6 +243,28 @@ mod Regex {
     }
 
     ///
+    /// Returns `Some(prefix)` of string `s` if its prefix matches `substr`.
+    ///
+    pub def getPrefix(substr: {substr = Regex}, s: String): Option[String] = region rc {
+        let m = newMatcher(rc, substr.substr, s);
+        match firstSubmatch(matcherRange, m) {
+            case Err(_) => None
+            case Ok(r)  => if (r.start == 0) Some(String.takeLeft(r.end, s)) else None
+        }
+    }
+
+    ///
+    /// Returns `Some(suffix)` of string `s` if its suffix matches `substr`.
+    ///
+    pub def getSuffix(substr: {substr = Regex}, s: String): Option[String] = region rc {
+        let m = newMatcher(rc, substr.substr, s);
+        match lastSubmatch(matcherRange, m) {
+            case Err(_) => None
+            case Ok(r)  => if (r.end == String.length(s)) Some(String.dropLeft(r.start, s)) else None
+        }
+    }
+
+    ///
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
     pub def stripPrefix(substr: {substr = Regex}, s: String): Option[String] = region rc {
@@ -285,6 +307,26 @@ mod Regex {
     }
 
     ///
+    /// Return the content of the first occurence of `substr` in `s` from the left.
+    ///
+    /// If the Regex `substr` is not present in `s` return None.
+    ///
+    pub def getFirst(substr: {substr = Regex}, s: String): Option[String] = region rc {
+        let m = newMatcher(rc, substr.substr, s);
+        firstSubmatch(matcherContent, m) |> Result.toOption
+    }
+
+    ///
+    /// Return the content of the last occurence of `substr` in `s` from the left.
+    ///
+    /// If the Regex `substr` is not present in `s` return None.
+    ///
+    pub def getLast(substr: {substr = Regex}, s: String): Option[String] = region rc {
+        let m = newMatcher(rc, substr.substr, s);
+        lastSubmatch(matcherContent, m) |> Result.toOption
+    }
+
+    ///
     /// This is `indexOfFirst` with a start offset.
     ///
     /// If the Regex `substr` is not present in `s` return None.
@@ -306,6 +348,32 @@ mod Regex {
         let m = newMatcher(rc, substr.substr, s);
         match setBounds!(start = offset.offset, end = String.length(s), m) {
             case Ok()   => lastSubmatch(matcherStart, m) |> Result.toOption
+            case Err(_) => None
+        }
+    }
+
+    ///
+    /// This is `getFirst` with a start offset.
+    ///
+    /// If the Regex `substr` is not present in `s` return None.
+    ///
+    pub def getFirstWithOffset(substr: {substr = Regex}, offset: {offset = Int32}, s: String): Option[String] = region rc {
+        let m = newMatcher(rc, substr.substr, s);
+        match setBounds!(start = offset.offset, end = String.length(s), m) {
+            case Ok()   => firstSubmatch(matcherContent, m) |> Result.toOption
+            case Err(_) => None
+        }
+    }
+
+    ///
+    /// This is `getLast` with a start offset.
+    ///
+    /// If the Regex `substr` is not present in `s` return None.
+    ///
+    pub def getLastWithOffset(substr: {substr = Regex}, offset: {offset = Int32}, s: String): Option[String] = region rc {
+        let m = newMatcher(rc, substr.substr, s);
+        match setBounds!(start = offset.offset, end = String.length(s), m) {
+            case Ok()   => lastSubmatch(matcherContent, m) |> Result.toOption
             case Err(_) => None
         }
     }

@@ -441,6 +441,61 @@ mod TestRegex {
         Regex.endsWith(suffix = regex"\\p{Alpha}+", "AA BBB CCCC") == true
 
     /////////////////////////////////////////////////////////////////////////////
+    // getPrefix                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getPrefix01(): Bool =
+        Regex.getPrefix(substr = Regex.unmatchable(), "") == None
+
+    @test
+    def getPrefix02(): Bool =
+        Regex.getPrefix(substr = Regex.unmatchable(), "A B C") == None
+
+    @test
+    def getPrefix03(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "") == None
+
+    @test
+    def getPrefix04(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "   A B C") == None
+
+    @test
+    def getPrefix05(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "A B C") == Some("A")
+
+    @test
+    def getPrefix06(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("AA")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getSuffix                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getSuffix01(): Bool =
+        Regex.getSuffix(substr = Regex.unmatchable(), "") == None
+
+    @test
+    def getSuffix02(): Bool =
+        Regex.getSuffix(substr = Regex.unmatchable(), "A B C") == None
+
+    @test
+    def getSuffix03(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "") == None
+
+    @test
+    def getSuffix04(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "A B C  ") == None
+
+    @test
+    def getSuffix05(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "A B C") == Some("C")
+    @test
+    def getSuffix06(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("CCCC")
+
+    /////////////////////////////////////////////////////////////////////////////
     // stripPrefix                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
