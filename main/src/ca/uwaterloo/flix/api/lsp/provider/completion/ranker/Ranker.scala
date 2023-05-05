@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MatchCompletion
 
-object MatchRanker extends Ranker {
+/**
+  * Ranker
+  *
+  * Ranks the completions to better suit the actual needs for the user.
+  */
+trait Ranker {
   /**
-    * Find the best match completion.
+    * Calculate the best 1st completion in popup-pane
     *
     * @param completions the list of decided completions.
-    * @return            Some(MatchCompletion) if a better completion is possible, else none.
+    * @return            Some(Completion) if a better completion is possible, else none.
     */
-  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[MatchCompletion] = {
-    // TODO
-    None
-  }
+  def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[Completion]
 }

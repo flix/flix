@@ -16,17 +16,19 @@
 
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
-import ca.uwaterloo.flix.util.collection.MultiMap
 
-object FieldRanker {
+object FieldRanker extends Ranker {
 
   /**
     * Find the best field completion.
+    *
+    * @param completions the list of completions.
+    * @return            Some(FieldCompletion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion], fieldUses: MultiMap[Name.Field, SourceLocation]): Option[FieldCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[FieldCompletion] = {
     // TODO
     None
   }
