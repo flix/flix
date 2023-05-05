@@ -156,7 +156,8 @@ mod Regex {
     ///
     /// Returns the positions of the all the occurrences of `substr` in `s`.
     ///
-    /// Returns `Nil` if `substr` is the empty string.
+    /// If `substr` regexp matches the empty string, positions where an empty match
+    /// has been recognized will be returned.
     ///
     pub def indices(substr: {substr = Regex}, s: String): List[Int32] = region rc {
         let m = newMatcher(rc, substr.substr, s);
@@ -179,7 +180,6 @@ mod Regex {
         }
     }
 
-    ///
     ///
     /// Count the occurrences of `substr` in string `s`.
     ///
@@ -426,6 +426,135 @@ mod Regex {
         }
     }
 
+    ///
+    /// Returns `true` if the entire string `s` is matched by the Regex `rgx`.
+    ///
+    /// Returns `false` if the entire string does not match or the bounds are invalid.
+    ///
+    pub def isMatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
+        import java.util.regex.Matcher.matches(): Bool \ rc;
+        match newMatcherWithBounds(rc, rgx, start, end, s) {
+            case Ok(m)  => {let Matcher(m1) = m; matches(m1)}
+            case Err(_) => false
+        }
+    }
+
+    ///
+    /// Returns `true` if the string `input` is matched by the Regex `rgx`
+    /// at any position within the string `s` that is within the bounds `(start, end)`.
+    ///
+    /// Returns `false` if there is no match or the bounds are invalid.
+    ///
+    pub def isSubmatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
+        match newMatcherWithBounds(rc, rgx, start, end, s) {
+            case Ok(m)  => find!(m)
+            case Err(_) => false
+        }
+    }
+
+    ///
+    /// Returns the positions of the all the occurrences of `substr` in `s`
+    /// within the bounds `(start, end)`.
+    ///
+    /// If `substr` regexp matches the empty string, positions where an empty match
+    /// has been recognized will be returned.
+    ///
+    /// Returns `Nil` if there are no matches or the bounds are invalid.
+    ///
+    pub def indicesWithBounds(substr: {substr = Regex}, start: {start = Int32}, end: {end = Int32}, s: String): List[Int32] = region rc {
+        match newMatcherWithBounds(rc, substr.substr, start, end, s) {
+            case Ok(m)  => match foldSubmatches(Chain.snoc, Chain.empty(), matcherStart, m) {
+               case Ok(c)  => Chain.toList(c)
+               case Err(_) => Nil
+            }
+            case Err(_) => Nil
+        }
+    }
+
+    ///
+    /// Returns the contents of the all the occurrences of `substr` in `s`
+    /// within the bounds `(start, end)`.
+    ///
+    /// Returns `Nil` if `substr` is the empty string or the bounds are invalid.
+    ///
+    pub def submatchesWithBounds(substr: {substr = Regex}, start: {start = Int32}, end: {end = Int32}, s: String): List[String] = region rc {
+        match newMatcherWithBounds(rc, substr.substr, start, end, s) {
+            case Ok(m)   => match foldSubmatches(Chain.snoc, Chain.empty(), matcherContent, m) {
+                case Ok(c)  => Chain.toList(c)
+                case Err(_) => Nil
+            }
+            case Err(_) => Nil
+        }
+    }
+
+    ///
+    /// Count the occurrences of `substr` in string `s` within the bounds `(start, end)`.
+    ///
+    /// Returns 0 if the bounds are invalid.
+    ///
+    pub def countSubmatchesWithBounds(substr: {substr = Regex}, start: {start = Int32}, end: {end = Int32}, s: String): Int32 = region rc {
+        match newMatcherWithBounds(rc, substr.substr, start, end, s) {
+            case Ok(m)  => match foldSubmatches((acc, _) -> acc + 1, 0, matcherStart, m) {
+                case Ok(n)  => n
+                case Err(_) => 0
+            }
+            case Err(_) => 0
+        }
+    }
+
+    ///
+    /// Returns string `s` with every match of the Regex `from` replaced by the string `to`
+    /// within the bounds `(start, end)`.
+    ///
+    /// Returns the empty string if the bounds are invalid.
+    ///
+    pub def replaceWithBounds(from: {from = Regex}, to: {to = String}, start: {start = Int32}, end: {end = Int32}, s: String): String = region rc {
+        import java.util.regex.Matcher.replaceAll(String): String \ rc;
+        match newMatcherWithBounds(rc, from.from, start, end, s) {
+            case Ok(m)  => {let Matcher(m1) = m; replaceAll(m1, to.to)}
+            case Err(_) => ""
+        }
+    }
+    ///
+    /// Returns string `s` with the first match of the regular expression `from` replaced by the string `to`
+    /// within the bounds `(start, end)`.
+    ///
+    /// Returns the empty string if the bounds are invalid.
+    ///
+    pub def replaceFirstWithBounds(from: {from = Regex}, to: {to = String}, start: {start = Int32}, end: {end = Int32}, s: String): String = region rc {
+        import java.util.regex.Matcher.replaceFirst(String): String \ rc;
+        match newMatcherWithBounds(rc, from.from, start, end, s) {
+            case Ok(m)  => {let Matcher(m1) = m; replaceFirst(m1, to.to)}
+            case Err(_) => ""
+        }
+    }
+
+    ///
+    /// Return the content of the first occurence of `substr` in `s` from the left within
+    /// the bounds `(start, end)`.
+    ///
+    /// If the Regex `substr` is not present in `s` or the bounds are invalid return `None`.
+    ///
+    pub def getFirstWithBounds(substr: {substr = Regex}, start: {start = Int32}, end: {end = Int32}, s: String): Option[String] = region rc {
+        match newMatcherWithBounds(rc, substr.substr, start, end, s) {
+            case Ok(m)  => firstSubmatch(matcherContent, m) |> Result.toOption
+            case Err(_) => None
+        }
+    }
+
+    ///
+    /// Return the content of the last occurence of `substr` in `s` from the left within
+    /// the bounds `(start, end)`.
+    ///
+    /// If the Regex `substr` is not present in `s` or the bounds are invalid return `None`.
+    ///
+    pub def getLastWithBounds(substr: {substr = Regex}, start: {start = Int32}, end: {end = Int32}, s: String): Option[String] = region rc {
+        match newMatcherWithBounds(rc, substr.substr, start, end, s) {
+            case Ok(m)  => lastSubmatch(matcherContent, m) |> Result.toOption
+            case Err(_) => None
+        }
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Internal support for matching using ####java.util.regex.Matcher       //
     ///////////////////////////////////////////////////////////////////////////
@@ -444,6 +573,18 @@ mod Regex {
     def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ Write(r) =
         import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ r;
         Matcher(matcher(rgx, checked_cast(s)))
+
+    ///
+    /// Create a Matcher for Regex `rgx` on the source String `input` with bounds `start` and `end`.
+    ///
+    /// Returns `Ok(matcher)` if the bounds are valid for the input String `s` otherwise returns `Err(_)`.
+    ///
+    def newMatcherWithBounds(rc: Region[r], rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Result[String, Matcher[r]] \ Write(r) =
+        let m = newMatcher(rc, rgx, s);
+        match setBounds!(start, end, m) {
+            case Ok()     => Ok(m)
+            case Err(msg) => Err(msg)
+        }
 
     ///
     /// Attempt to find the next match. Returns `true` and moves to the next match
