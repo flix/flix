@@ -45,7 +45,6 @@ object MonomorphEnums {
     //   phase only looks at types and expressions in defs.
     // - All the following types have been removed:
     //   - Type variables
-    //   - Type aliases
     //   - Associated types
     // - In schemas these are unused
     //   - tconstrs
@@ -277,9 +276,7 @@ object MonomorphEnums {
   }
 
   private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
-    // TODO: remove this hack to simplify booleans
-    val emptySubst = Substitution(Map(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Star, isRegion = false, SourceLocation.Unknown) -> Type.Unit))
-    val args = args0.map(eraseAliases).map(emptySubst.apply)
+    val args = args0.map(eraseAliases).map(collapseFormulas)
     // check assumptions
     args.foreach(t => if (t.typeVars.nonEmpty) throw InternalCompilerException(s"Unexpected type var: '$sym'", loc))
     // assemble enum type (e.g. `List[Int32]`)
@@ -322,6 +319,30 @@ object MonomorphEnums {
         ctx.specializedEnums.put(freshSym, freshEnum)
         freshSym
     }
+  }
+
+  private def collapseFormulas(tpe: Type): Type = tpe match {
+    case Type.Var(sym, loc) => throw InternalCompilerException(s"Unexpected type var '$sym'", loc)
+    case Type.Cst(_, _) => tpe
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = collapseFormulas(tpe1)
+      val t2 = collapseFormulas(tpe2)
+      t1 match {
+        // Simplify boolean equations.
+        case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(t2, loc)
+        case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, t2, loc)
+        case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, t2, loc)
+
+        // Simplify set expressions
+        case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(t2, sym, loc)
+        case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, t2, sym, loc)
+        case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, t2, sym, loc)
+
+        // Else just apply
+        case x => Type.Apply(x, t2, loc)
+      }
+    case Type.Alias(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected type alias: '${cst.sym}'", loc)
+    case Type.AssocType(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
   }
 
 }

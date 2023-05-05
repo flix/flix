@@ -283,7 +283,10 @@ object Monomorph {
 
       // Reassemble the AST.
       root.copy(
-        defs = ctx.specializedDefns.toMap
+        defs = ctx.specializedDefns.toMap,
+        classes = Map.empty,
+        instances = Map.empty,
+        sigs = Map.empty
       )
     } catch {
       case UnexpectedNonConstBool(tpe, loc) => throw InternalCompilerException(s"Unexpected non-const Bool: '$tpe'", loc)
