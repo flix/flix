@@ -1267,62 +1267,6 @@ mod TestRegex {
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "::::") == 0
 
     /////////////////////////////////////////////////////////////////////////////
-    // replaceWithBounds                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def replaceWithBounds01(): Bool =
-        Regex.replaceWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 1, "") == ""
-
-    @test
-    def replaceWithBounds02(): Bool =
-        Regex.replaceWithBounds(from = regex"\\p{Blank}+", to = "_", start = -1, end = 10, "A B C") == "A B C"
-
-    @test
-    def replaceWithBounds03(): Bool =
-        Regex.replaceWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 8, "A  B   C") == "A_B_C"
-
-    @test
-    def replaceWithBounds04(): Bool =
-        Regex.replaceWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 3, "ABC") == "ABC"
-
-    @test
-    def replaceWithBounds05(): Bool =
-        Regex.replaceWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 4, "A B  C") == "A_B_ C"
-
-    @test
-    def replaceWithBounds06(): Bool =
-        Regex.replaceWithBounds(from = regex"\\p{Blank}+", to = "_", start = 1, end = 5, " A B  C  ") == " A_B_ C  "
-
-    /////////////////////////////////////////////////////////////////////////////
-    // replaceFirstWithBounds                                                  //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def replaceFirstWithBounds01(): Bool =
-        Regex.replaceFirstWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 1, "") == ""
-
-    @test
-    def replaceFirstWithBounds02(): Bool =
-        Regex.replaceFirstWithBounds(from = regex"\\p{Blank}+", to = "_", start = -1, end = 10, "A B C") == ""
-
-    @test
-    def replaceFirstWithBounds03(): Bool =
-        Regex.replaceFirstWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 8, "A  B   C") == "A_B   C"
-
-    @test
-    def replaceFirstWithBounds04(): Bool =
-        Regex.replaceFirstWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 3, "ABC")  == "ABC"
-
-    @test
-    def replaceFirstWithBounds05(): Bool =
-        Regex.replaceFirstWithBounds(from = regex"\\p{Blank}+", to = "_", start = 0, end = 4, "A B  C") == "A_B  C"
-
-    @test
-    def replaceFirstWithBounds06(): Bool =
-        Regex.replaceFirstWithBounds(from = regex"\\p{Blank}+", to = "_", start = 2, end = 6, "A B  C") == "A B_C"
-/*
-    /////////////////////////////////////////////////////////////////////////////
     // getFirstWithBounds                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1340,27 +1284,27 @@ mod TestRegex {
 
     @test
     def getFirstWithBounds04(): Bool =
-        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "a::b::c") == Some("a")
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some("a")
 
     @test
     def getFirstWithBounds05(): Bool =
-        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "ab") == Some("ab")
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "a::b::c") == Some("a")
 
     @test
     def getFirstWithBounds06(): Bool =
-        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "_b") == Some("b")
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 3, end = 7, "a::b::c") == Some("b")
 
     @test
     def getFirstWithBounds07(): Bool =
-        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "a_") == Some("a")
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 6, end = 7, "a::b::c") == Some("c")
 
     @test
     def getFirstWithBounds08(): Bool =
-        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "ab_") == Some("ab")
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some("b")
 
     @test
     def getFirstWithBounds09(): Bool =
-        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "_bc") == Some("bc")
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 7, end = 9, "a::b::c::") == None
 
     /////////////////////////////////////////////////////////////////////////////
     // getLastWithBounds                                                       //
@@ -1368,41 +1312,38 @@ mod TestRegex {
 
     @test
     def getLastWithBounds01(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "") == None
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
 
     @test
     def getLastWithBounds02(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "_") == None
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
 
     @test
     def getLastWithBounds03(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "a") == Some("a")
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some("a")
 
     @test
     def getLastWithBounds04(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "__") == None
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some("c")
 
     @test
     def getLastWithBounds05(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "a_") == Some("a")
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 5, end = 7, "a::b::c") == Some("c")
 
     @test
     def getLastWithBounds06(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "_b") == Some("b")
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 6, "a::b::c") == Some("b")
 
     @test
     def getLastWithBounds07(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 6, "aa") == Some("aa")
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::b::c") == Some("a")
 
     @test
     def getLastWithBounds08(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}{2}", start = 2, end = 6, "ab") == Some("ab")
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some("b")
 
     @test
     def getLastWithBounds09(): Bool =
-        Regex.getLastWithBounds(substr = regex"\\p{Alpha}{2}", start = 2, end = 6, "abcd") == Some("cd")
-
-
-*/
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "::a::b::c") == None
 
 }

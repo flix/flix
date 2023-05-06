@@ -503,33 +503,6 @@ mod Regex {
     }
 
     ///
-    /// Returns string `s` with every match of the Regex `from` replaced by the string `to`
-    /// within the bounds `(start, end)`.
-    ///
-    /// Returns the empty string if the bounds are invalid.
-    ///
-    pub def replaceWithBounds(from: {from = Regex}, to: {to = String}, start: {start = Int32}, end: {end = Int32}, s: String): String = region rc {
-        import java.util.regex.Matcher.replaceAll(String): String \ rc;
-        match newMatcherWithBounds(rc, from.from, start, end, s) {
-            case Ok(m)  => {let Matcher(m1) = m; replaceAll(m1, to.to)}
-            case Err(_) => ""
-        }
-    }
-    ///
-    /// Returns string `s` with the first match of the regular expression `from` replaced by the string `to`
-    /// within the bounds `(start, end)`.
-    ///
-    /// Returns the empty string if the bounds are invalid.
-    ///
-    pub def replaceFirstWithBounds(from: {from = Regex}, to: {to = String}, start: {start = Int32}, end: {end = Int32}, s: String): String = region rc {
-        import java.util.regex.Matcher.replaceFirst(String): String \ rc;
-        match newMatcherWithBounds(rc, from.from, start, end, s) {
-            case Ok(m)  => {let Matcher(m1) = m; replaceFirst(m1, to.to)}
-            case Err(_) => ""
-        }
-    }
-
-    ///
     /// Return the content of the first occurence of `substr` in `s` from the left within
     /// the bounds `(start, end)`.
     ///
