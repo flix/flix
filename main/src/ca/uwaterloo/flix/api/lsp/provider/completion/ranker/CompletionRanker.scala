@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation}
   *
   * Ranks the completions to better suit the actual needs for the user.
   */
-object CompletionRanker {
+object CompletionRanker extends Ranker {
 
   /**
     * Calculate the best 1st completion in popup-pane
@@ -33,14 +33,14 @@ object CompletionRanker {
     * @param completions  the list of decided completions.
     * @return             Some(Completion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion], index: Index, deltaContext: DeltaContext): Option[Completion] = {
+  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[Completion] = {
     // TODO: Prioritize which completion is most important
-    VarRanker.findBest(completions, index.varUses)
-      .orElse(FieldRanker.findBest(completions, index.fieldUses))
+    VarRanker.findBest(completions)
+      .orElse(FieldRanker.findBest(completions))
+      .orElse(TypeEnumRanker.findBest(completions))
+      .orElse(EnumTagRanker.findBest(completions))
       .orElse(MatchRanker.findBest(completions))
-      .orElse(TypeEnumRanker.findBest(completions, index.enumUses))
-      .orElse(EnumTagRanker.findBest(completions, index.tagUses))
-      .orElse(DefRanker.findBest(completions, deltaContext))
+      .orElse(DefRanker.findBest(completions))
   }
 
   /**

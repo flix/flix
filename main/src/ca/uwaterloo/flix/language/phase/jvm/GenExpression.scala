@@ -38,11 +38,95 @@ object GenExpression {
     */
   def compileExpression(exp0: Expr, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
 
-    case Expr.Cst(cst, tpe, loc) =>
-      compileConstant(visitor, cst, tpe, loc)
+    case Expr.Cst(cst, tpe, loc) => cst match {
+      case Ast.Constant.Unit =>
+        addSourceLine(visitor, loc)
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
+          BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.toDescriptor)
+
+      case Ast.Constant.Null =>
+        addSourceLine(visitor, loc)
+        visitor.visitInsn(ACONST_NULL)
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case Ast.Constant.Bool(true) =>
+        addSourceLine(visitor, loc)
+        visitor.visitInsn(ICONST_1)
+
+      case Ast.Constant.Bool(false) =>
+        addSourceLine(visitor, loc)
+        visitor.visitInsn(ICONST_0)
+
+      case Ast.Constant.Char(c) =>
+        addSourceLine(visitor, loc)
+        compileInt(visitor, c)
+
+      case Ast.Constant.Float32(f) =>
+        addSourceLine(visitor, loc)
+        f match {
+          case 0f => visitor.visitInsn(FCONST_0)
+          case 1f => visitor.visitInsn(FCONST_1)
+          case 2f => visitor.visitInsn(FCONST_2)
+          case _ => visitor.visitLdcInsn(f)
+        }
+
+      case Ast.Constant.Float64(d) =>
+        addSourceLine(visitor, loc)
+        d match {
+          case 0d => visitor.visitInsn(DCONST_0)
+          case 1d => visitor.visitInsn(DCONST_1)
+          case _ => visitor.visitLdcInsn(d)
+        }
+
+      case Ast.Constant.BigDecimal(dd) =>
+        addSourceLine(visitor, loc)
+        visitor.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
+        visitor.visitInsn(DUP)
+        visitor.visitLdcInsn(dd.toString)
+        visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
+          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+      case Ast.Constant.Int8(b) =>
+        addSourceLine(visitor, loc)
+        compileInt(visitor, b)
+
+      case Ast.Constant.Int16(s) =>
+        addSourceLine(visitor, loc)
+        compileInt(visitor, s)
+
+      case Ast.Constant.Int32(i) =>
+        addSourceLine(visitor, loc)
+        compileInt(visitor, i)
+
+      case Ast.Constant.Int64(l) =>
+        addSourceLine(visitor, loc)
+        compileInt(visitor, l, isLong = true)
+
+      case Ast.Constant.BigInt(ii) =>
+        addSourceLine(visitor, loc)
+        visitor.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
+        visitor.visitInsn(DUP)
+        visitor.visitLdcInsn(ii.toString)
+        visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
+          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+      case Ast.Constant.Str(s) =>
+        addSourceLine(visitor, loc)
+        visitor.visitLdcInsn(s)
+
+      case Ast.Constant.Regex(patt) =>
+        addSourceLine(visitor, loc)
+        visitor.visitLdcInsn(patt.pattern)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
+          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
+
+    }
 
     case Expr.Var(sym, tpe, _) =>
-      readVar(sym, tpe, visitor)
+      val jvmType = JvmOps.getErasedJvmType(tpe)
+      val iLOAD = AsmOps.getLoadInstruction(jvmType)
+      visitor.visitVarInsn(iLOAD, sym.getStackOffset + 1)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expr.ApplyAtomic(op, exps, tpe, loc) => op match {
 
@@ -624,7 +708,8 @@ object GenExpression {
 
       case AtomicOp.Region =>
         //!TODO: For now, just emit unit
-        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
+        val e = Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
+        compileExpression(e, visitor, currentClass, lenv0, entryPoint)
 
       case AtomicOp.ScopeExit =>
         val List(exp1, exp2) = exps
@@ -1699,90 +1784,6 @@ object GenExpression {
     visitComparisonEpilogue(visitor, condElse, condEnd)
   }
 
-  private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = cst match {
-    case Ast.Constant.Unit =>
-      addSourceLine(visitor, loc)
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
-        BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.toDescriptor)
-
-    case Ast.Constant.Null =>
-      addSourceLine(visitor, loc)
-      visitor.visitInsn(ACONST_NULL)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
-    case Ast.Constant.Bool(true) =>
-      addSourceLine(visitor, loc)
-      visitor.visitInsn(ICONST_1)
-
-    case Ast.Constant.Bool(false) =>
-      addSourceLine(visitor, loc)
-      visitor.visitInsn(ICONST_0)
-
-    case Ast.Constant.Char(c) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, c)
-
-    case Ast.Constant.Float32(f) =>
-      addSourceLine(visitor, loc)
-      f match {
-        case 0f => visitor.visitInsn(FCONST_0)
-        case 1f => visitor.visitInsn(FCONST_1)
-        case 2f => visitor.visitInsn(FCONST_2)
-        case _ => visitor.visitLdcInsn(f)
-      }
-
-    case Ast.Constant.Float64(d) =>
-      addSourceLine(visitor, loc)
-      d match {
-        case 0d => visitor.visitInsn(DCONST_0)
-        case 1d => visitor.visitInsn(DCONST_1)
-        case _ => visitor.visitLdcInsn(d)
-      }
-
-    case Ast.Constant.BigDecimal(dd) =>
-      addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(dd.toString)
-      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigDecimal.jvmName.toInternalName, "<init>",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-
-    case Ast.Constant.Int8(b) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, b)
-
-    case Ast.Constant.Int16(s) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, s)
-
-    case Ast.Constant.Int32(i) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, i)
-
-    case Ast.Constant.Int64(l) =>
-      addSourceLine(visitor, loc)
-      compileInt(visitor, l, isLong = true)
-
-    case Ast.Constant.BigInt(ii) =>
-      addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(ii.toString)
-      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-
-    case Ast.Constant.Str(s) =>
-      addSourceLine(visitor, loc)
-      visitor.visitLdcInsn(s)
-
-    case Ast.Constant.Regex(patt) =>
-      addSourceLine(visitor, loc)
-      visitor.visitLdcInsn(patt.pattern)
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
-
-  }
-
   /*
    * Generate code to load an integer constant.
    *
@@ -1907,16 +1908,6 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
         AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
-  }
-
-  /**
-    * Generates code to read the given variable symbol and put it on top of the stack.
-    */
-  private def readVar(sym: Symbol.VarSym, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    val jvmType = JvmOps.getErasedJvmType(tpe)
-    val iLOAD = AsmOps.getLoadInstruction(jvmType)
-    mv.visitVarInsn(iLOAD, sym.getStackOffset + 1)
-    AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
   }
 
   /*

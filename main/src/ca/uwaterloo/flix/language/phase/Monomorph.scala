@@ -63,10 +63,6 @@ object Monomorph {
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
-    /**
-      * Returns `true` if this substitution is empty.
-      */
-    def isEmpty: Boolean = s.isEmpty
 
     private def default(tpe0: Type): Type = tpe0.kind match {
       case Kind.Bool =>
@@ -99,7 +95,7 @@ object Monomorph {
             case Some(tpe) => tpe.map(default)
             case None => default(t)
           }
-          case Type.Cst(tc, _) => t
+          case Type.Cst(_, _) => t
           case Type.Apply(t1, t2, loc) =>
             val y = visit(t2)
             visit(t1) match {
@@ -346,7 +342,7 @@ object Monomorph {
       Expression.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), pur, loc)
 
     case Expression.Region(tpe, loc) =>
-      Expression.Region(tpe, loc)
+      Expression.Region(subst(tpe), loc)
 
     case Expression.Scope(sym, regionVar, exp, tpe, pur, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -386,7 +382,7 @@ object Monomorph {
       }
       Expression.Match(visitExp(exp, env0, subst), rs, subst(tpe), pur, loc)
 
-    case Expression.TypeMatch(exp, rules, tpe, pur0, loc) =>
+    case Expression.TypeMatch(exp, rules, tpe, _, loc) =>
       // use the non-strict substitution
       // to allow free type variables to match with anything
       val expTpe = subst.nonStrict(exp.tpe)
@@ -526,7 +522,7 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.Cast(e, None, None, subst(tpe), pur, loc)
 
-    case Expression.Without(exp, sym, tpe, pur, loc) =>
+    case Expression.Without(exp, _, _, _, _) =>
       // Erase the Without
       visitExp(exp, env0, subst)
 
@@ -561,27 +557,27 @@ object Monomorph {
     case Expression.InvokeMethod(method, exp, args, tpe, pur, loc) =>
       val e = visitExp(exp, env0, subst)
       val as = args.map(visitExp(_, env0, subst))
-      Expression.InvokeMethod(method, e, as, tpe, pur, loc)
+      Expression.InvokeMethod(method, e, as, subst(tpe), pur, loc)
 
     case Expression.InvokeStaticMethod(method, args, tpe, pur, loc) =>
       val as = args.map(visitExp(_, env0, subst))
-      Expression.InvokeStaticMethod(method, as, tpe, pur, loc)
+      Expression.InvokeStaticMethod(method, as, subst(tpe), pur, loc)
 
     case Expression.GetField(field, exp, tpe, pur, loc) =>
       val e = visitExp(exp, env0, subst)
-      Expression.GetField(field, e, tpe, pur, loc)
+      Expression.GetField(field, e, subst(tpe), pur, loc)
 
     case Expression.PutField(field, exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1, env0, subst)
       val e2 = visitExp(exp2, env0, subst)
-      Expression.PutField(field, e1, e2, tpe, pur, loc)
+      Expression.PutField(field, e1, e2, subst(tpe), pur, loc)
 
     case Expression.GetStaticField(field, tpe, pur, loc) =>
-      Expression.GetStaticField(field, tpe, pur, loc)
+      Expression.GetStaticField(field, subst(tpe), pur, loc)
 
     case Expression.PutStaticField(field, exp, tpe, pur, loc) =>
       val e = visitExp(exp, env0, subst)
-      Expression.PutStaticField(field, e, tpe, pur, loc)
+      Expression.PutStaticField(field, e, subst(tpe), pur, loc)
 
     case Expression.NewObject(name, clazz, tpe, pur, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, env0, subst))
@@ -612,7 +608,7 @@ object Monomorph {
       // Generate a fresh variable symbol for the pattern-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       (Pattern.Var(freshSym, subst(tpe), loc), Map(sym -> freshSym))
-    case Pattern.Cst(cst, tpe, loc) => (Pattern.Cst(cst, tpe, loc), Map.empty)
+    case Pattern.Cst(cst, tpe, loc) => (Pattern.Cst(cst, subst(tpe), loc), Map.empty)
     case Pattern.Tag(sym, pat, tpe, loc) =>
       val (p, env1) = visitPat(pat, subst)
       (Pattern.Tag(sym, p, subst(tpe), loc), env1)
@@ -755,35 +751,6 @@ object Monomorph {
   }
 
   /**
-    * Specializes the given constraint parameters `cparams0` w.r.t. the given substitution `subst0`.
-    *
-    * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
-    */
-  private def specializeConstraintParams(cparams0: List[ConstraintParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[ConstraintParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
-    // Return early if there are no formal parameters.
-    if (cparams0.isEmpty)
-      return (Nil, Map.empty)
-
-    // Specialize each constraint parameter and recombine the results.
-    val (params, envs) = cparams0.map(p => specializeConstraintParam(p, subst0)).unzip
-    (params, envs.reduce(_ ++ _))
-  }
-
-  /**
-    * Specializes the given constraint parameter `fparam0` w.r.t. the given substitution `subst0`.
-    *
-    * Returns the new constraint parameter and an environment mapping the variable symbol to a fresh variable symbol.
-    */
-  private def specializeConstraintParam(cparam0: ConstraintParam, subst0: StrictSubstitution)(implicit flix: Flix): (ConstraintParam, Map[Symbol.VarSym, Symbol.VarSym]) = cparam0 match {
-    case ConstraintParam.HeadParam(sym, tpe, loc) =>
-      val freshSym = Symbol.freshVarSym(sym)
-      (ConstraintParam.HeadParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
-    case ConstraintParam.RuleParam(sym, tpe, loc) =>
-      val freshSym = Symbol.freshVarSym(sym)
-      (ConstraintParam.RuleParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
-  }
-
-  /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
@@ -827,7 +794,7 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
-    case Type.AssocType(cst, arg, kind, loc) =>
+    case Type.AssocType(cst, arg, _, _) =>
       val a = eraseType(arg)
       EqualityEnvironment.reduceAssocTypeStep(cst, a, root.eqEnv).get
   }

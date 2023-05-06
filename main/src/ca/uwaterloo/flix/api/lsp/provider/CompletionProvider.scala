@@ -94,7 +94,7 @@ object CompletionProvider {
             val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext)
 
             // Find the best completion
-            val best = CompletionRanker.findBest(completions, index, deltaContext)
+            val best = CompletionRanker.findBest(completions)
             boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
           case None => Nil
         }
