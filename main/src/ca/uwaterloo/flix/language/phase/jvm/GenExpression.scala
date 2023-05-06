@@ -148,7 +148,61 @@ object GenExpression {
 
       case AtomicOp.Unary(sop) =>
         val List(exp) = exps
-        compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
+
+        // Adding source line number for debugging
+        addSourceLine(visitor, exp.loc)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+        sop match {
+          case SemanticOperator.BoolOp.Not =>
+            val condElse = new Label()
+            val condEnd = new Label()
+            visitor.visitJumpInsn(IFNE, condElse)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(GOTO, condEnd)
+            visitor.visitLabel(condElse)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitLabel(condEnd)
+
+          case Float32Op.Neg => visitor.visitInsn(FNEG)
+
+          case Float64Op.Neg => visitor.visitInsn(DNEG)
+
+          case BigDecimalOp.Neg =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
+              AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
+
+          case Int8Op.Neg =>
+            visitor.visitInsn(INEG)
+            visitor.visitInsn(I2B) // Sign extend so sign bit is also changed
+
+          case Int16Op.Neg =>
+            visitor.visitInsn(INEG)
+            visitor.visitInsn(I2S) // Sign extend so sign bit is also changed
+
+          case Int32Op.Neg => visitor.visitInsn(INEG)
+
+          case Int64Op.Neg => visitor.visitInsn(LNEG)
+
+          case BigIntOp.Neg =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
+              AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
+
+          case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
+            visitor.visitInsn(ICONST_M1)
+            visitor.visitInsn(IXOR)
+
+          case Int64Op.Not =>
+            visitor.visitInsn(ICONST_M1)
+            visitor.visitInsn(I2L)
+            visitor.visitInsn(LXOR)
+
+          case BigIntOp.Not =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
+              AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
+
+          case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", exp.loc)
+        }
 
       case AtomicOp.Binary(sop) =>
         val List(exp1, exp2) = exps
@@ -326,80 +380,32 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
               "shiftRight", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
 
-          case Float32Op.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Lt => visitComparison2(exp1, exp2, FCMPG, IFGE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Le => visitComparison2(exp1, exp2, FCMPG, IFGT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Eq => visitComparison2(exp1, exp2, FCMPG, IFNE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(FCMPG)
-            visitor.visitJumpInsn(IFEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Neq => visitComparison2(exp1, exp2, FCMPG, IFEQ, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(FCMPL)
-            visitor.visitJumpInsn(IFLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Ge => visitComparison2(exp1, exp2, FCMPL, IFLT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float32Op.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(FCMPL)
-            visitor.visitJumpInsn(IFLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float32Op.Gt => visitComparison2(exp1, exp2, FCMPL, IFLE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Lt => visitComparison2(exp1, exp2, DCMPG, IFGE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Le => visitComparison2(exp1, exp2, DCMPG, IFGT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Eq => visitComparison2(exp1, exp2, DCMPG, IFNE, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(DCMPG)
-            visitor.visitJumpInsn(IFEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Neq => visitComparison2(exp1, exp2, DCMPG, IFEQ, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(DCMPL)
-            visitor.visitJumpInsn(IFLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Ge => visitComparison2(exp1, exp2, DCMPL, IFLT, visitor, currentClass, lenv0, entryPoint)
 
-          case Float64Op.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(DCMPL)
-            visitor.visitJumpInsn(IFLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Float64Op.Gt => visitComparison2(exp1, exp2, DCMPL, IFLE, visitor, currentClass, lenv0, entryPoint)
 
           case BigDecimalOp.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -407,7 +413,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigDecimalOp.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -415,7 +421,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigDecimalOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -423,7 +429,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigDecimalOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -431,7 +437,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigDecimalOp.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -439,7 +445,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigDecimalOp.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -447,73 +453,37 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt | CharOp.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+            visitComparison1(exp1, exp2, IF_ICMPGE, visitor, currentClass, lenv0, entryPoint)
 
           case Int8Op.Le | Int16Op.Le | Int32Op.Le | CharOp.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+            visitComparison1(exp1, exp2, IF_ICMPGT, visitor, currentClass, lenv0, entryPoint)
 
           case Int8Op.Eq | Int16Op.Eq | Int32Op.Eq | CharOp.Eq | BoolOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+            visitComparison1(exp1, exp2, IF_ICMPNE, visitor, currentClass, lenv0, entryPoint)
 
           case Int8Op.Neq | Int16Op.Neq | Int32Op.Neq | CharOp.Neq | BoolOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+            visitComparison1(exp1, exp2, IF_ICMPEQ, visitor, currentClass, lenv0, entryPoint)
 
           case Int8Op.Ge | Int16Op.Ge | Int32Op.Ge | CharOp.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+            visitComparison1(exp1, exp2, IF_ICMPLT, visitor, currentClass, lenv0, entryPoint)
 
           case Int8Op.Gt | Int16Op.Gt | Int32Op.Gt | CharOp.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitJumpInsn(IF_ICMPLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+            visitComparison1(exp1, exp2, IF_ICMPLE, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFGE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Lt => visitComparison2(exp1, exp2, LCMP, IFGE, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFGT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Le => visitComparison2(exp1, exp2, LCMP, IFGT, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFNE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Eq => visitComparison2(exp1, exp2, LCMP, IFNE, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFEQ, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Neq => visitComparison2(exp1, exp2, LCMP, IFEQ, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFLT, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Ge => visitComparison2(exp1, exp2, LCMP, IFLT, visitor, currentClass, lenv0, entryPoint)
 
-          case Int64Op.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(IFLE, condElse)
-            visitComparisonEpilogue(visitor, condElse, condEnd)
+          case Int64Op.Gt => visitComparison2(exp1, exp2, LCMP, IFLE, visitor, currentClass, lenv0, entryPoint)
 
           case BigIntOp.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -521,7 +491,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigIntOp.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -529,7 +499,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigIntOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -537,7 +507,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigIntOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -545,7 +515,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigIntOp.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -553,7 +523,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case BigIntOp.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
               AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
             visitor.visitInsn(ICONST_0)
@@ -561,7 +531,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case StringOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
               AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
             visitor.visitInsn(ICONST_1)
@@ -569,7 +539,7 @@ object GenExpression {
             visitComparisonEpilogue(visitor, condElse, condEnd)
 
           case StringOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(visitor, currentClass, lenv0, entryPoint, exp1, exp2)
+            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
               AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
             visitor.visitInsn(ICONST_1)
@@ -1831,6 +1801,7 @@ object GenExpression {
 
   }
 
+
   /**
     * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
     */
@@ -1838,7 +1809,7 @@ object GenExpression {
     case Stmt.Ret(e, tpe, loc) => compileExpression(e, visitor, currentClass, lenv0, entryPoint)
   }
 
-  private def visitComparisonPrologue(visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label, exp1: Expr, exp2: Expr)(implicit root: Root, flix: Flix): (Label, Label) = {
+  private def visitComparisonPrologue(exp1: Expr, exp2: Expr, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): (Label, Label) = {
     compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
     compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
     val condElse = new Label()
@@ -1852,6 +1823,19 @@ object GenExpression {
     visitor.visitLabel(condElse)
     visitor.visitInsn(ICONST_0)
     visitor.visitLabel(condEnd)
+  }
+
+  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
+    val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
+    visitor.visitJumpInsn(opcode, condElse)
+    visitComparisonEpilogue(visitor, condElse, condEnd)
+  }
+
+  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
+    val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2, visitor, currentClass, lenv0, entryPoint)
+    visitor.visitInsn(opcode)
+    visitor.visitJumpInsn(cmpOpcode, condElse)
+    visitComparisonEpilogue(visitor, condElse, condEnd)
   }
 
   /*
@@ -1879,105 +1863,6 @@ object GenExpression {
       case _ => visitor.visitLdcInsn(i)
     }
     if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
-  }
-
-  private def compileUnaryExpr(e: Expr,
-                               currentClassType: JvmType.Reference,
-                               visitor: MethodVisitor,
-                               jumpLabels: Map[Symbol.LabelSym, Label],
-                               entryPoint: Label,
-                               sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
-    // Adding source line number for debugging
-    addSourceLine(visitor, e.loc)
-
-    compileExpression(e, visitor, currentClassType, jumpLabels, entryPoint)
-    sop match {
-      case SemanticOperator.BoolOp.Not =>
-        val condElse = new Label()
-        val condEnd = new Label()
-        visitor.visitJumpInsn(IFNE, condElse)
-        visitor.visitInsn(ICONST_1)
-        visitor.visitJumpInsn(GOTO, condEnd)
-        visitor.visitLabel(condElse)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitLabel(condEnd)
-
-      case Float32Op.Neg | Float64Op.Neg | BigDecimalOp.Neg
-           | Int8Op.Neg | Int16Op.Neg | Int32Op.Neg
-           | Int64Op.Neg | BigIntOp.Neg => compileUnaryMinusExpr(visitor, sop, e.loc)
-
-      case Int8Op.Not | Int16Op.Not | Int32Op.Not
-           | Int64Op.Not | BigIntOp.Not => compileUnaryNegateExpr(visitor, sop, e.loc)
-
-      case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", e.loc)
-    }
-  }
-
-  /*
-   * For Int8/Int16, we need to truncate and sign extend the result.
-   *
-   * Example:
-   * Suppose we store the value -128 into an Int8 (byte). The number is represented as (in two's complement):
-   *   10000000
-   * But on the JVM, the value is sign extended and stored as an Int32 (int):
-   *   11111111 11111111 11111111 10000000
-   * If we simply negate -128, we get the value 128, which is represented as:
-   *   00000000 00000000 00000000 10000000
-   * But this is greater than the maximum value (127) for an Int8 (byte). We use I2B to convert the Int32 (int) to an
-   * Int8 (byte), which does a truncation and sign extension:
-   *   11111111 11111111 11111111 10000000
-   * And the final value is -128.
-   *
-   * Note that in Java semantics, the unary minus operator returns an Int32 (int), so the programmer must explicitly
-   * cast to an Int8 (byte).
-   */
-  private def compileUnaryMinusExpr(visitor: MethodVisitor, sop: SemanticOperator, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = sop match {
-    case Float32Op.Neg => visitor.visitInsn(FNEG)
-    case Float64Op.Neg => visitor.visitInsn(DNEG)
-    case BigDecimalOp.Neg =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
-        AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
-    case Int8Op.Neg =>
-      visitor.visitInsn(INEG)
-      visitor.visitInsn(I2B)
-    case Int16Op.Neg =>
-      visitor.visitInsn(INEG)
-      visitor.visitInsn(I2S)
-    case Int32Op.Neg => visitor.visitInsn(INEG)
-    case Int64Op.Neg => visitor.visitInsn(LNEG)
-    case BigIntOp.Neg =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
-        AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
-  }
-
-  /*
-   * Note that ~xxxx = xxxx ^ 1111, and since the JVM uses two's complement, -1 = 0xFFFFFFFF, so ~b = b ^ -1. No need to
-   * truncate because Int8/Int16 (byte/short) are sign extended to Int32 (int), and s.ext(negate(b) = negate(s.ext(b)).
-   *
-   * Example:
-   * Consider two Int8s:
-   *     b = 11000011    c = 00001111
-   * Conceptually, ~b and ~c would be:
-   *    ~b = 00111100   ~c = 11110000
-   * On the JVM, b, ~b, c, and ~c would be stored as an Int32s:
-   *    b' = 11111111 11111111 11111111 11000011    c' = 00000000 00000000 00000000 00001111
-   *   ~b' = 00000000 00000000 00000000 00111100   ~c' = 11111111 11111111 11111111 11110000
-   *
-   * Note that sign extending and then negating a value is equal to negating and then sign extending it.
-   */
-  private def compileUnaryNegateExpr(visitor: MethodVisitor, sop: SemanticOperator, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = sop match {
-    case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
-      visitor.visitInsn(ICONST_M1)
-      visitor.visitInsn(IXOR)
-    case Int64Op.Not =>
-      visitor.visitInsn(ICONST_M1)
-      visitor.visitInsn(I2L)
-      visitor.visitInsn(LXOR)
-    case BigIntOp.Not =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
-        AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
 
   /*
