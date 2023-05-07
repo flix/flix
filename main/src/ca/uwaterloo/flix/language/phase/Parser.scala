@@ -824,7 +824,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
-        RecordOperation | RecordLiteral | Block | RecordSelectLambda |
+        RecordOperation | RecordLiteral | Block |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
@@ -1168,10 +1168,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ "{" ~ optWS ~ zeroOrMore(FieldLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
       }
-    }
-
-    def RecordSelectLambda: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelectLambda
     }
 
     def RecordOperation: Rule1[ParsedAst.Expression] = {
