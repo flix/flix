@@ -529,4 +529,164 @@ def toString10(): Bool = Char.toString('â') == "â"
 @test
 def toString11(): Bool = Char.toString('Â') == "Â"
 
+/////////////////////////////////////////////////////////////////////////////
+// getNumericValue                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def getNumericValue01(): Bool = Char.getNumericValue('0') == Some(0)
+
+@test
+def getNumericValue02(): Bool = Char.getNumericValue('1') == Some(1)
+
+@test
+def getNumericValue03(): Bool = Char.getNumericValue('9') == Some(9)
+
+@test
+def getNumericValue04(): Bool = Char.getNumericValue('A') == Some(10)
+
+@test
+def getNumericValue05(): Bool = Char.getNumericValue('a') == Some(10)
+
+@test
+def getNumericValue06(): Bool = Char.getNumericValue('F') == Some(15)
+
+@test
+def getNumericValue07(): Bool = Char.getNumericValue('f') == Some(15)
+
+@test
+def getNumericValue08(): Bool = Char.getNumericValue(' ') == None
+
+@test
+def getNumericValue09(): Bool = Char.getNumericValue('+') == None
+
+@test
+def getNumericValue10(): Bool = Char.getNumericValue('-') == None
+
+/////////////////////////////////////////////////////////////////////////////
+// getCodePointNumericValue                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def getCodePointNumericValue01(): Bool = Char.getCodePointNumericValue(0x0030) == Some(0)       // '0'
+
+@test
+def getCodePointNumericValue02(): Bool = Char.getCodePointNumericValue(0x0031) == Some(1)       // '1'
+
+@test
+def getCodePointNumericValue03(): Bool = Char.getCodePointNumericValue(0x0039) == Some(9)       // '9'
+
+@test
+def getCodePointNumericValue04(): Bool = Char.getCodePointNumericValue(0x0041) == Some(10)      // 'A'
+
+@test
+def getCodePointNumericValue05(): Bool = Char.getCodePointNumericValue(0x0041) == Some(10)      // 'a'
+
+@test
+def getCodePointNumericValue06(): Bool = Char.getCodePointNumericValue(0x0046) == Some(15)      // 'F'
+
+@test
+def getCodePointNumericValue07(): Bool = Char.getCodePointNumericValue(0x0066) == Some(15)      // 'f'
+
+@test
+def getCodePointNumericValue08(): Bool = Char.getCodePointNumericValue(0x0020) == None          // ' ' (space)
+
+@test
+def getCodePointNumericValue09(): Bool = Char.getCodePointNumericValue(0x002b) == None          // '+'
+
+@test
+def getCodePointNumericValue10(): Bool = Char.getCodePointNumericValue(0x002d) == None          // '-'
+
+/////////////////////////////////////////////////////////////////////////////
+// digit                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def digit01(): Bool = Char.digit(radix = 10, '0') == Some(0)
+
+@test
+def digit02(): Bool = Char.digit(radix = 10, '1') == Some(1)
+
+@test
+def digit03(): Bool = Char.digit(radix = 10, '9') == Some(9)
+
+@test
+def digit04(): Bool = Char.digit(radix = 10, 'A') == None
+
+@test
+def digit05(): Bool = Char.digit(radix = 10, 'a') == None
+
+@test
+def digit06(): Bool = Char.digit(radix = 10, 'F') == None
+
+@test
+def digit07(): Bool = Char.digit(radix = 10, 'f') == None
+
+@test
+def digit08(): Bool = Char.digit(radix = 10, ' ') == None
+
+@test
+def digit09(): Bool = Char.digit(radix = 10, '+') == None
+
+@test
+def digit10(): Bool = Char.digit(radix = 10, '-') == None
+
+@test
+def digit11(): Bool = Char.digit(radix = 16, '0') == Some(0)
+
+@test
+def digit12(): Bool = Char.digit(radix = 16, '1') == Some(1)
+
+@test
+def digit13(): Bool = Char.digit(radix = 16, '9') == Some(9)
+
+@test
+def digit14(): Bool = Char.digit(radix = 16, 'A') == Some(10)
+
+@test
+def digit15(): Bool = Char.digit(radix = 16, 'a') == Some(10)
+
+@test
+def digit16(): Bool = Char.digit(radix = 16, 'F') == Some(15)
+
+@test
+def digit17(): Bool = Char.digit(radix = 16, 'f') == Some(15)
+
+/////////////////////////////////////////////////////////////////////////////
+// forDigit                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def forDigit01(): Bool = Char.forDigit(radix = 10, 0) == Some('0')
+
+@test
+def forDigit02(): Bool = Char.forDigit(radix = 10, 1) == Some('1')
+
+@test
+def forDigit03(): Bool = Char.forDigit(radix = 10, 9) == Some('9')
+
+@test
+def forDigit04(): Bool = Char.forDigit(radix = 10, 11) == None              // 'A'
+
+@test
+def forDigit05(): Bool = Char.forDigit(radix = 10, 15) == None              // 'F'
+
+@test
+def forDigit06(): Bool = Char.forDigit(radix = 10, 256) == None
+
+@test
+def forDigit07(): Bool = Char.forDigit(radix = 16, 0) == Some('0')
+
+@test
+def forDigit08(): Bool = Char.forDigit(radix = 16, 1) == Some('1')
+
+@test
+def forDigit09(): Bool = Char.forDigit(radix = 16, 9) == Some('9')
+
+@test
+def forDigit10(): Bool = Char.forDigit(radix = 16, 10) == Some('a')
+
+@test
+def forDigit11(): Bool = Char.forDigit(radix = 16, 15) == Some('f')
+
 }
