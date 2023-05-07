@@ -110,8 +110,8 @@ mod Map {
     ///
     /// Returns a string representation of the given map `m`.
     ///
-    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)

@@ -100,8 +100,8 @@ mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(s: Set[a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)

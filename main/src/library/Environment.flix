@@ -18,20 +18,20 @@ mod Environment {
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
-    pub def getArgs(): List[String] = region r {
-        import static dev.flix.runtime.Global.getArgs(): Array[String, r] \ Write(r);
-        let _ = r; // Avoids redundancy error.
+    pub def getArgs(): List[String] = region rc {
+        import static dev.flix.runtime.Global.getArgs(): Array[String, rc] \ Write(rc);
+        let _ = rc; // Avoids redundancy error.
         Array.toList(getArgs())
     }
 
     ///
     /// Returns an map of the current system environment.
     ///
-    pub def getEnv(): Map[String, String] = region r {
-        import static java.lang.System.getenv(): ##java.util.Map \ Write(r);
-        import java.util.Map.entrySet(): ##java.util.Set \ { Read(r), Write(r) };
-        import java.util.Set.iterator(): ##java.util.Iterator \ { Read(r), Write(r) };
-        let _ = r; // Avoids redundancy error.
+    pub def getEnv(): Map[String, String] = region rc {
+        import static java.lang.System.getenv(): ##java.util.Map \ Write(rc);
+        import java.util.Map.entrySet(): ##java.util.Set \ { Read(rc), Write(rc) };
+        import java.util.Set.iterator(): ##java.util.Iterator \ { Read(rc), Write(rc) };
+        let _ = rc; // Avoids redundancy error.
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
