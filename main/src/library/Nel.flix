@@ -119,9 +119,9 @@ mod Nel {
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region r {
+    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
         let Nel(x, xs) = l;
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nel(${x}, ", sb);
 
         let list = List.toString(xs);
@@ -571,8 +571,8 @@ mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
-        let list = toArray(r, l) !> Array.sort! |> Array.toList;
+    pub def sort(l: Nel[a]): Nel[a] with Order[a] = region rc {
+        let list = toArray(rc, l) !> Array.sort! |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -587,8 +587,8 @@ mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
-        let list = toArray(r, l) !> Array.sortBy!(f) |> Array.toList;
+    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region rc {
+        let list = toArray(rc, l) !> Array.sortBy!(f) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -603,8 +603,8 @@ mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
-        let list = toArray(r, l) !> Array.sortWith!(cmp) |> Array.toList;
+    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region rc {
+        let list = toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -681,8 +681,8 @@ mod Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toNel
+    pub def shuffle(rnd: Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toNel
     }
 
 }
