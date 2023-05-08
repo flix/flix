@@ -1530,14 +1530,6 @@ object Weeder {
         case e => WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.RecordSelectLambda(sp1, _, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val ident = Name.Ident(sp1, "_rec", sp2)
-      val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-      val varExp = WeededAst.Expression.Ambiguous(Name.mkQName(ident), loc)
-      val lambdaBody = WeededAst.Expression.RecordSelect(varExp, Name.mkField(ident), loc)
-      WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
-
     case ParsedAst.Expression.RecordOperation(_, ops, rest, _) =>
       // We translate the sequence of record operations into a nested tree using a fold right.
       foldRight(ops)(visitExp(rest, senv)) {
@@ -3320,7 +3312,6 @@ object Weeder {
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)

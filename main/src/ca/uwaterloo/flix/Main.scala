@@ -119,7 +119,7 @@ object Main {
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -268,7 +268,6 @@ object Main {
     */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
-                     benchmark: Boolean = false,
                      documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
@@ -277,7 +276,6 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
-                     test: Boolean = false,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
@@ -386,9 +384,6 @@ object Main {
         valueName("<a1, a2, ...>").
         text("arguments passed to main. Must be a single quoted string.")
 
-      opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
-        text("runs benchmarks.")
-
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
         text("generates HTML documentation.")
 
@@ -416,9 +411,6 @@ object Main {
 
       opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
         text("disables automatic installation of dependencies.")
-
-      opt[Unit]("test").action((_, c) => c.copy(test = true)).
-        text("runs unit tests.")
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")

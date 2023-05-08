@@ -880,15 +880,6 @@ object ParsedAst {
     case class RecordSelect(exp: ParsedAst.Expression, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Record Select Lambda Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param field the field to select from the record.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class RecordSelectLambda(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Record Operation Expression.
       *
       * @param sp1 the position of the first character in the expression.

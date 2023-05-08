@@ -16,27 +16,25 @@
 
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeEnumCompletion
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker.hasRealSourceKinds
 
-object TypeEnumRanker {
+object TypeEnumRanker extends Ranker {
 
   /**
     * Find the best type enum completion.
     *
     * @param completions the list of completions.
-    * @param enumUses    a map consisting of EnumSym and its SourceLocations
     * @return            Some(TypeEnumCompletion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion], enumUses: MultiMap[Symbol.EnumSym, SourceLocation]): Option[TypeEnumCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[TypeEnumCompletion] = {
     // Remove all none typeEnum completions
     getTypeEnumCompletions(completions)
       // Find the typeEnum comp that has 0 Real uses
       .find(typeEnumComp =>
-        !hasRealSourceKinds(enumUses(typeEnumComp.enumSym)))
+        !hasRealSourceKinds(index.enumUses(typeEnumComp.enumSym)))
   }
 
   /**
