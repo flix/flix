@@ -1069,7 +1069,9 @@ object GenExpression {
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We push the 'length' of the array on top of stack
-        compileInt(visitor, exps.length, isLong = false)
+        val arrLengthCst = Ast.Constant.Int32(exps.length)
+        val arrLengthExp = Expr.Cst(arrLengthCst, MonoType.Int32, loc.asSynthetic)
+        compileExpression(arrLengthExp, visitor, currentClass, lenv0, entryPoint)
         // We get the inner type of the array
         val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
         // Instantiating a new array of type jvmType
@@ -1080,11 +1082,14 @@ object GenExpression {
             visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
         }
         // For each element we generate code to store it into the array
-        for (i <- exps.indices) {
+        val locs = exps.map(_.loc)
+        for ((i, l) <- exps.indices.zip(locs)) {
           // Duplicates the 'array reference'
           visitor.visitInsn(DUP)
           // We push the 'index' of the current element on top of stack
-          compileInt(visitor, i, isLong = false)
+          val idxCst = Ast.Constant.Int32(i)
+          val idxExp = Expr.Cst(idxCst, MonoType.Int32, l.asSynthetic)
+          compileExpression(idxExp, visitor, currentClass, lenv0, entryPoint)
           // Evaluating the 'element' to be stored
           compileExpression(exps(i), visitor, currentClass, lenv0, entryPoint)
           // Stores the 'element' at the given 'index' in the 'array'
@@ -1916,33 +1921,6 @@ object GenExpression {
     visitor.visitInsn(opcode)
     visitor.visitJumpInsn(cmpOpcode, condElse)
     visitComparisonEpilogue(visitor, condElse, condEnd)
-  }
-
-  /*
-   * Generate code to load an integer constant.
-   *
-   * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
-   * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
-   * bytes. The exception is if we set `isLong` to true, in which case a cast will be performed if necessary.
-   *
-   * This is needed because sometimes we expect the operands to be a long, which means two (int) values are popped from
-   * the stack and concatenated to form a long.
-   */
-  private def compileInt(visitor: MethodVisitor, i: Long, isLong: Boolean = false): Unit = {
-    i match {
-      case -1 => visitor.visitInsn(ICONST_M1)
-      case 0 => if (!isLong) visitor.visitInsn(ICONST_0) else visitor.visitInsn(LCONST_0)
-      case 1 => if (!isLong) visitor.visitInsn(ICONST_1) else visitor.visitInsn(LCONST_1)
-      case 2 => visitor.visitInsn(ICONST_2)
-      case 3 => visitor.visitInsn(ICONST_3)
-      case 4 => visitor.visitInsn(ICONST_4)
-      case 5 => visitor.visitInsn(ICONST_5)
-      case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-      case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-      case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-      case _ => visitor.visitLdcInsn(i)
-    }
-    if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
   }
 
   /*
