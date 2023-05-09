@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -785,9 +785,6 @@ object Redundancy {
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
-
-    case Expression.Par(exp, _) =>
-      visitExp(exp, env0, rc)
 
     case Expression.ParYield(frags, exp, _, _, _) =>
       val (used, env1, fvs) = visitParYieldFragments(frags, env0, rc)

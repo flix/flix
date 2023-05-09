@@ -311,13 +311,6 @@ object Safety {
       case Expression.Spawn(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.Par(exp, _) =>
-        // Only tuple expressions are allowed to be parallelized with `par`.
-        exp match {
-          case e: Expression.Tuple => visit(e)
-          case _ => IllegalParExpression(exp, exp.loc) :: Nil
-        }
-
       case Expression.ParYield(frags, exp, _, _, _) =>
         frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ++ visit(exp)
 

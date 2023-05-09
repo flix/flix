@@ -94,7 +94,6 @@ object TypedAstOps {
     case Expression.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.Par(exp, _) => sigSymsOf(exp)
     case Expression.ParYield(frags, exp, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _) => sigSymsOf(exp)
@@ -351,9 +350,6 @@ object TypedAstOps {
 
     case Expression.Spawn(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.Par(exp, _) =>
-      freeVars(exp)
 
     case Expression.ParYield(frags, exp, _, _, _) =>
       val freeFragVars = frags.foldLeft(Map.empty[Symbol.VarSym, Type]) {
