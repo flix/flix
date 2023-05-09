@@ -32,10 +32,6 @@ import java.nio.file.Paths
   */
 object Main {
 
-  private val EXIT_SUCCESS = 0
-  private val EXIT_FAILURE = 1
-
-
   /**
     * The main method.
     */
@@ -146,10 +142,10 @@ object Main {
         case Command.Init =>
           Bootstrap.init(cwd, options)(System.out) match {
             case Result.Ok(_) =>
-              System.exit(EXIT_SUCCESS)
+              System.exit(0)
             case Result.Err(e) =>
               System.err.println(e)
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.Check =>
@@ -160,7 +156,7 @@ object Main {
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.Build =>
@@ -172,7 +168,7 @@ object Main {
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.BuildJar =>
@@ -183,7 +179,7 @@ object Main {
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.BuildPkg =>
@@ -194,7 +190,7 @@ object Main {
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.Run =>
@@ -210,7 +206,7 @@ object Main {
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.Benchmark =>
@@ -222,7 +218,7 @@ object Main {
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.Test =>
@@ -234,7 +230,7 @@ object Main {
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(EXIT_FAILURE)
+              System.exit(1)
           }
 
         case Command.Repl =>
@@ -275,8 +271,8 @@ object Main {
     * Extracts the exit code from the given result.
     */
   private def getCode[T, E](result: Result[T, E]): Int = result match {
-    case Result.Ok(_) => EXIT_SUCCESS
-    case Result.Err(_) => EXIT_FAILURE
+    case Result.Ok(_) => 0
+    case Result.Err(_) => 1
   }
 
   /**
