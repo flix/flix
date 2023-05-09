@@ -98,7 +98,20 @@ object GenExpression {
 
       case Ast.Constant.Int8(b) =>
         addSourceLine(visitor, loc)
-        compileInt(visitor, b)
+        b match {
+          case -1 => visitor.visitInsn(ICONST_M1)
+          case 0 => visitor.visitInsn(ICONST_0)
+          case 1 => visitor.visitInsn(ICONST_1)
+          case 2 => visitor.visitInsn(ICONST_2)
+          case 3 => visitor.visitInsn(ICONST_3)
+          case 4 => visitor.visitInsn(ICONST_4)
+          case 5 => visitor.visitInsn(ICONST_5)
+          case _ => visitor.visitIntInsn(BIPUSH, b.toInt)
+        }
+
+      case Ast.Constant.Int16(s) =>
+        addSourceLine(visitor, loc)
+        compileInt(visitor, s)
       /*
             private def compileInt(visitor: MethodVisitor, i: Long, isLong: Boolean = false): Unit = {
               i match {
@@ -117,10 +130,6 @@ object GenExpression {
               if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
             }
              */
-
-      case Ast.Constant.Int16(s) =>
-        addSourceLine(visitor, loc)
-        compileInt(visitor, s)
 
       case Ast.Constant.Int32(i) =>
         addSourceLine(visitor, loc)
