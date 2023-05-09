@@ -265,9 +265,6 @@ object Regions {
     case Expression.Spawn(exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expression.Par(exp, loc) =>
-      visitExp(exp) ++ checkType(exp.tpe, loc)
-
     case Expression.ParYield(frags, exp, tpe, _, loc) =>
       val fragsErrors = frags.flatMap {
         case ParYieldFragment(_, e, _) => visitExp(e)

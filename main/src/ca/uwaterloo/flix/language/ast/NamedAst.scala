@@ -213,8 +213,6 @@ object NamedAst {
 
     case class Spawn(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
     case class ParYield(frags: List[NamedAst.ParYieldFragment], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Lazy(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression

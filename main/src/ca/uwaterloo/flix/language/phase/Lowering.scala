@@ -728,17 +728,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Spawn(e1, e2, t, pur, loc)
 
-    case TypedAst.Expression.Par(exp, loc0) => exp match {
-      case TypedAst.Expression.Tuple(elms, tpe, pur, loc1) =>
-        val es = visitExps(elms)
-        val t = visitType(tpe)
-        val e = mkParTuple(LoweredAst.Expression.Tuple(es, t, pur, loc1))
-        LoweredAst.Expression.Cast(e, None, Some(Type.Pure), t, pur, loc0)
-
-      case _ =>
-        throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp", loc0)
-    }
-
     case TypedAst.Expression.ParYield(frags, exp, tpe, pur, loc) =>
       val fs = frags.map {
         case TypedAst.ParYieldFragment(pat, e, loc) => LoweredAst.ParYieldFragment(visitPat(pat), visitExp(e), loc)

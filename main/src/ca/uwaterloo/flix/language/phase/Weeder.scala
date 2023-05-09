@@ -1860,9 +1860,6 @@ object Weeder {
         case (e1, e2) => WeededAst.Expression.Spawn(e1, e2, loc)
       }
 
-    case ParsedAst.Expression.Par(sp1, exp, sp2) =>
-      mapN(visitExp(exp, senv))(WeededAst.Expression.Par(_, mkSL(sp1, sp2)))
-
     case ParsedAst.Expression.ParYield(sp1, frags, exp, sp2) =>
       val fragVals = traverse(frags) {
         case ParsedAst.ParYieldFragment(fsp1, pat, e, fsp2) => mapN(visitPattern(pat), visitExp(e, senv)) {
@@ -3336,7 +3333,6 @@ object Weeder {
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Par(sp1, _, _) => sp1
     case ParsedAst.Expression.ParYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lazy(sp1, _, _) => sp1
     case ParsedAst.Expression.Force(sp1, _, _) => sp1

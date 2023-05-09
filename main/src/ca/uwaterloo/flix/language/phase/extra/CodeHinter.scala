@@ -292,9 +292,6 @@ object CodeHinter {
     case Expression.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Par(exp, _) =>
-      visitExp(exp)
-
     case Expression.ParYield(frags, exp, _, _, _) =>
       frags.flatMap {
         case ParYieldFragment(_, e, _) => visitExp(e)
