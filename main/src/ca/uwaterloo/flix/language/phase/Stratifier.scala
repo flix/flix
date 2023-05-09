@@ -439,9 +439,6 @@ object Stratifier {
         case (r, e) => Expression.Spawn(r, e, tpe, pur, loc)
       }
 
-    case Expression.Par(exp, loc) =>
-      mapN(visitExp(exp))(Expression.Par(_, loc))
-
     case Expression.ParYield(frags, exp, tpe, pur, loc) =>
       val fragsVal = traverse(frags) {
         case ParYieldFragment(p, e, l) => mapN(visitExp(e)) {
@@ -790,9 +787,6 @@ object Stratifier {
 
     case Expression.Spawn(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expression.Par(exp, _) =>
-      labelledGraphOfExp(exp)
 
     case Expression.ParYield(frags, exp, _, _, _) =>
       frags.foldLeft(labelledGraphOfExp(exp)) {

@@ -1423,51 +1423,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.PossibleCheckedTypeCast](result)
   }
 
-  test("TestPar.01") {
-    val input =
-      """
-        |def f(): Int32 \ Impure =
-        |    par f()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestPar.02") {
-    val input =
-      """
-        |def f(g: Unit -> a \ ef): a \ ef =
-        |    par g()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("TestPar.03") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(): Unit
-        |}
-        |
-        |def f(): a \ E =
-        |    par f()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestPar.04") {
-    val input =
-      """
-        |def f(g: Unit -> b \ ef): b \ ef =
-        |    par g()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
   test("TestParYield.01") {
     val input =
       """

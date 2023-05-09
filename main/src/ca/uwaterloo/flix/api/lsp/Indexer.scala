@@ -422,9 +422,6 @@ object Indexer {
     case Expression.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Par(exp, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
     case Expression.ParYield(frags, exp, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(frags) {
