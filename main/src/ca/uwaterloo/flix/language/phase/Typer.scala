@@ -1754,12 +1754,6 @@ object Typer {
           resultPur = Type.mkAnd(Type.Impure, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-      case KindedAst.Expression.Par(exp, _) =>
-        for {
-          (constrs, tpe, pur) <- visitExp(exp)
-          resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
-        } yield (constrs, tpe, resultPur)
-
       case KindedAst.Expression.ParYield(frags, exp, loc) =>
         val patterns = frags.map(_.pat)
         val parExps = frags.map(_.exp)
@@ -2382,9 +2376,6 @@ object Typer {
         val tpe = Type.Unit
         val pur = Type.Impure
         TypedAst.Expression.Spawn(e1, e2, tpe, pur, loc)
-
-      case KindedAst.Expression.Par(exp, loc) =>
-        TypedAst.Expression.Par(visitExp(exp, subst0), loc)
 
       case KindedAst.Expression.ParYield(frags, exp, loc) =>
         val e = visitExp(exp, subst0)
