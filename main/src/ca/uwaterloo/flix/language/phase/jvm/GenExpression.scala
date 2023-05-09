@@ -121,28 +121,39 @@ object GenExpression {
           case _ if scala.Byte.MinValue <= s && s <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, s.toInt)
           case _ => visitor.visitIntInsn(SIPUSH, s.toInt)
         }
-      /*
-            private def compileInt(visitor: MethodVisitor, i: Long, isLong: Boolean = false): Unit = {
-              i match {
-                case -1 => visitor.visitInsn(ICONST_M1)
-                case 0 => if (!isLong) visitor.visitInsn(ICONST_0) else visitor.visitInsn(LCONST_0)
-                case 1 => if (!isLong) visitor.visitInsn(ICONST_1) else visitor.visitInsn(LCONST_1)
-                case 2 => visitor.visitInsn(ICONST_2)
-                case 3 => visitor.visitInsn(ICONST_3)
-                case 4 => visitor.visitInsn(ICONST_4)
-                case 5 => visitor.visitInsn(ICONST_5)
-                case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-                case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-                case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-                case _ => visitor.visitLdcInsn(i)
-              }
-              if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
-            }
-             */
 
       case Ast.Constant.Int32(i) =>
         addSourceLine(visitor, loc)
-        compileInt(visitor, i)
+        i match {
+          case -1 => visitor.visitInsn(ICONST_M1)
+          case 0 => visitor.visitInsn(ICONST_0)
+          case 1 => visitor.visitInsn(ICONST_1)
+          case 2 => visitor.visitInsn(ICONST_2)
+          case 3 => visitor.visitInsn(ICONST_3)
+          case 4 => visitor.visitInsn(ICONST_4)
+          case 5 => visitor.visitInsn(ICONST_5)
+          case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
+          case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
+          case _ => visitor.visitLdcInsn(i)
+        }
+      /*
+    private def compileInt(visitor: MethodVisitor, i: Long, isLong: Boolean = false): Unit = {
+      i match {
+        case -1 => visitor.visitInsn(ICONST_M1)
+        case 0 => if (!isLong) visitor.visitInsn(ICONST_0) else visitor.visitInsn(LCONST_0)
+        case 1 => if (!isLong) visitor.visitInsn(ICONST_1) else visitor.visitInsn(LCONST_1)
+        case 2 => visitor.visitInsn(ICONST_2)
+        case 3 => visitor.visitInsn(ICONST_3)
+        case 4 => visitor.visitInsn(ICONST_4)
+        case 5 => visitor.visitInsn(ICONST_5)
+        case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
+        case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
+        case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i.toInt)
+        case _ => visitor.visitLdcInsn(i)
+      }
+      if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
+    }
+         */
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(visitor, loc)
