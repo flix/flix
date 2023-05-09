@@ -67,6 +67,8 @@ object SimpleType {
 
   case object Str extends SimpleType
 
+  case object Regex extends SimpleType
+
   case object Array extends SimpleType
 
   case object Vector extends SimpleType
@@ -225,25 +227,13 @@ object SimpleType {
   /**
     * A function with a purity.
     */
-  case class PolyPurArrow(arg: SimpleType, pur: SimpleType, ret: SimpleType) extends SimpleType
-
-  /**
-    * A function with an effect.
-    */
-  case class PolyEffArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
-
-  /**
-    * A function with effect and purity.
-    */
-  case class PolyPurAndEffArrow(arg: SimpleType, pur: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
+  case class PolyArrow(arg: SimpleType, pur: SimpleType, ret: SimpleType) extends SimpleType
 
   ///////
   // Tags
   ///////
 
   case class TagConstructor(name: String) extends SimpleType
-
-  case class Tag(name: String, args: List[SimpleType], ret: SimpleType) extends SimpleType
 
   //////////////////////
   // Miscellaneous Types
@@ -326,49 +316,28 @@ object SimpleType {
         case TypeConstructor.Int64 => Int64
         case TypeConstructor.BigInt => BigInt
         case TypeConstructor.Str => Str
+        case TypeConstructor.Regex => Regex
 
         case TypeConstructor.Arrow(arity) =>
           val args = t.typeArguments.map(visit)
           args match {
             // Case 1: No args. Fill everything with a hole.
             case Nil =>
-              val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, Hole, Hole, Hole)
+              val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
               // NB: safe to subtract 2 since arity is always at least 2
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
-            // Case 2: Only applied to purity but not effect
-            case pur :: Nil =>
-              val lastArrow: SimpleType = PolyPurAndEffArrow(Hole, pur, Hole, Hole)
-              // NB: safe to subtract 2 since arity is always at least 2
-              List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
-
-            // Case 3: Pure function.
-            case pur :: eff :: tpes if (pur == True || fmt.ignorePur) && (eff == Empty || fmt.ignoreEff) =>
+            // Case 2: Pure function.
+            case pur :: tpes if pur == True || fmt.ignorePur =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
-            // Case 4: Impure in effect only.
-            case pur :: eff :: tpes if pur == True || fmt.ignorePur =>
+            // Case 3: Impure function.
+            case pur :: tpes =>
               // NB: safe to take last 2 because arity is always at least 2
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
-              val lastArrow: SimpleType = PolyEffArrow(lastArg, eff, ret)
-              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
-
-            // Case 5: Impure in purity only.
-            case pur :: eff :: tpes if eff == Empty || fmt.ignoreEff =>
-              // NB: safe to take last 2 because arity is always at least 2
-              val allTpes = tpes.padTo(arity, Hole)
-              val List(lastArg, ret) = allTpes.takeRight(2)
-              val lastArrow: SimpleType = PolyPurArrow(lastArg, pur, ret)
-              allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
-
-            // Case 6: Impure function.
-            case pur :: eff :: tpes =>
-              // NB: safe to take last 2 because arity is always at least 2
-              val allTpes = tpes.padTo(arity, Hole)
-              val List(lastArg, ret) = allTpes.takeRight(2)
-              val lastArrow: SimpleType = PolyPurAndEffArrow(lastArg, pur, eff, ret)
+              val lastArrow: SimpleType = PolyArrow(lastArg, pur, ret)
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
           }
 
@@ -503,43 +472,6 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Complement =>
-          t.typeArguments.map(visit) match {
-            case Nil => Complement(Hole)
-            case arg :: Nil => Complement(arg)
-            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
-
-        case TypeConstructor.Union =>
-          // collapse into a chain of unions
-          t.typeArguments.map(visit).map(splitUnions) match {
-            // Case 1: No args. ? + ?
-            case Nil => Union(Hole :: Hole :: Nil)
-            // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
-            case args :: Nil => Union(args :+ Hole)
-            // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
-            case args1 :: args2 :: Nil => Union(args1 ++ args2)
-            // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
-
-        case TypeConstructor.Intersection =>
-          // collapse into a chain of intersections
-          t.typeArguments.map(visit).map(splitIntersections) match {
-            // Case 1: No args. ? & ?
-            case Nil => Intersection(Hole :: Hole :: Nil)
-            // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
-            case args :: Nil => Intersection(args :+ Hole)
-            // Case 3: Complement on the right: sugar it into a difference.
-            case args :: List(Complement(tpe)) :: Nil => Difference(joinIntersection(args), tpe)
-            // Case 4: Complement on the left: sugar it into a difference.
-            case List(Complement(tpe)) :: args :: Nil => Difference(joinIntersection(args), tpe)
-            // Case 5: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
-            case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
-            // Case 6: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
-          }
-
         case TypeConstructor.CaseSet(syms, _) =>
           val names = syms.toList.map(sym => SimpleType.Name(sym.name))
           val set = SimpleType.Union(names)
@@ -570,8 +502,6 @@ object SimpleType {
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
-        case TypeConstructor.Empty => SimpleType.Empty
-        case TypeConstructor.All => SimpleType.All
       }
     }
 

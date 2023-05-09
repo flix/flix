@@ -93,7 +93,7 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
-    case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
+    case Expression.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
     case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
 
@@ -104,7 +104,7 @@ object CodeHinter {
     case Expression.Lambda(_, exp, _, _) =>
       checkPurity(exp.pur, exp.loc) ++ visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, pur, _, loc) =>
+    case Expression.Apply(exp, exps, _, pur, loc) =>
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
           checkPurity(sym, lambda.tpe, loc)
@@ -113,186 +113,189 @@ object CodeHinter {
       val hints1 = checkPurity(pur, loc)
       hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
 
-    case Expression.Unary(_, exp, _, _, _, _) =>
+    case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, pur, eff, loc) =>
+    case Expression.Let(_, _, exp1, exp2, _, pur, loc) =>
       checkPurity(pur, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, _, _, loc) =>
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Region(_, _) => Nil
 
-    case Expression.Scope(_, _, exp, _, _, _, _) =>
+    case Expression.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, pur, eff, loc) =>
+    case Expression.Stm(exp1, exp2, _, pur,  loc) =>
       checkPurity(pur, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Discard(exp, _, _, _) =>
+    case Expression.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Match(matchExp, rules, _, _, _, _) =>
+    case Expression.Match(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
         case MatchRule(_, guard, exp) => guard.toList.flatMap(visitExp) ::: visitExp(exp)
       }
 
-    case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
+    case Expression.TypeMatch(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
         case MatchTypeRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ rules.flatMap {
         case RelationalChoiceRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case RestrictableChoiceRule(_, body) => visitExp(body)
       }
 
-    case Expression.Tag(_, exp, _, _, _, _) =>
+    case Expression.Tag(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
+    case Expression.RestrictableTag(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Tuple(exps, _, _, _, _) =>
+    case Expression.Tuple(exps, _, _, _) =>
       visitExps(exps)
 
     case Expression.RecordEmpty(_, _) => Nil
 
-    case Expression.RecordSelect(exp, _, _, _, _, _) =>
+    case Expression.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RecordExtend(_, exp1, exp2, _, _, _, _) =>
+    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
       visitExp(exp2) ++ visitExp(exp1)
 
-    case Expression.RecordRestrict(_, exp, _, _, _, _) =>
+    case Expression.RecordRestrict(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArrayLit(exps, exp, _, _, _, _) =>
+    case Expression.ArrayLit(exps, exp, _, _, _) =>
       visitExps(exps) ++ visitExp(exp)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.ArrayLoad(exp1, exp2, _, _, _, _) =>
+    case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.ArrayLength(exp, _, _, _) =>
+    case Expression.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.VectorLit(exps, exp, _, _, _) =>
+    case Expression.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+    case Expression.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expression.Ref(exp1, exp2, _, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Deref(exp, _, _, _, _) =>
+    case Expression.Deref(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _, _) =>
+    case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Ascribe(exp, _, _, _, _) =>
+    case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.CheckedCast(_, exp, _, _, _, _) =>
+    case Expression.InstanceOf(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.UncheckedCast(exp, _, _, _, tpe, pur, _, loc) =>
+    case Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, tpe, pur, loc) =>
       visitExp(exp)
 
-    case Expression.Without(exp, _, _, _, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _, _) =>
+    case Expression.Without(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+    case Expression.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case HandlerRule(_, _, e) => visitExp(e)
       }
 
-    case Expression.Do(_, exps, _, _, _) =>
+    case Expression.Do(_, exps, _, _) =>
       exps.flatMap(visitExp)
 
     case Expression.Resume(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.InvokeConstructor(_, args, _, _, _, _) =>
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.GetField(_, exp, _, _, _, _) =>
+    case Expression.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetStaticField(_, _, _, _, _) =>
+    case Expression.GetStaticField(_, _, _, _) =>
       Nil
 
-    case Expression.PutStaticField(_, exp, _, _, _, _) =>
+    case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _, methods, _) =>
+    case Expression.NewObject(_, _, _, _, methods, _) =>
       methods.flatMap {
-        case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
+        case JvmMethod(_, _, exp, _, _, _) => visitExp(exp)
       }
 
-    case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+    case Expression.NewChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetChannel(exp, _, _, _, _) =>
+    case Expression.GetChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _, _, _) =>
+    case Expression.SelectChannel(rules, default, _, _, _) =>
       rules.flatMap {
         case SelectChannelRule(_, chan, exp) => visitExp(chan) ++ visitExp(exp)
       } ++ default.map(visitExp).getOrElse(Nil)
 
-    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+    case Expression.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Par(exp, _) =>
       visitExp(exp)
 
-    case Expression.ParYield(frags, exp, _, _, _, _) =>
+    case Expression.ParYield(frags, exp, _, _, _) =>
       frags.flatMap {
         case ParYieldFragment(_, e, _) => visitExp(e)
       } ++ visitExp(exp)
@@ -300,31 +303,31 @@ object CodeHinter {
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Force(exp, _, _, _, _) =>
+    case Expression.Force(exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.flatMap(visitConstraint)
 
-    case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, _, _, _, _, _) =>
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointFilter(_, exp, _, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointInject(exp, _, _, _, _, _) =>
+    case Expression.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _, _) =>
+    case Expression.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Error(_, _, _, _) =>
+    case Expression.Error(_, _, _) =>
       Nil
 
   }
@@ -353,8 +356,8 @@ object CodeHinter {
     */
   private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
+    case Body.Functional(_, exp, _) => visitExp(exp)
     case Body.Guard(exp, _) => visitExp(exp)
-    case Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**

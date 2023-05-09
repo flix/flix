@@ -322,11 +322,11 @@ object Bootstrap {
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
-  def bootstrap(path: Path)(implicit out: PrintStream): Result[Bootstrap, BootstrapError] = {
+  def bootstrap(path: Path, apiKey: Option[String])(implicit out: PrintStream): Result[Bootstrap, BootstrapError] = {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
     //
-    val bootstrap = new Bootstrap(path)
+    val bootstrap = new Bootstrap(path, apiKey)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
       out.println("Found `flix.toml'. Checking dependencies...")
@@ -338,7 +338,7 @@ object Bootstrap {
   }
 }
 
-class Bootstrap(val projectPath: Path) {
+class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   // Timestamps at the point the sources were loaded
   private var timestamps: Map[Path, Long] = Map.empty
@@ -362,11 +362,11 @@ class Bootstrap(val projectPath: Path) {
     }
 
     // 2. Check each dependency is available or download it.
-    val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath) match {
+    val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
       case Ok(l) => l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
-    FlixPackageManager.installAll(manifests, projectPath) match {
+    FlixPackageManager.installAll(manifests, projectPath, apiKey) match {
       case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
@@ -577,10 +577,10 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Runs the main function in flix package for the project.
     */
-  def run(o: Options): Result[Unit, List[String]] = {
+  def run(o: Options, args: Array[String]): Result[Unit, List[String]] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     build().map(_.getMain).map {
-      case Some(main) => main(Array.empty)
+      case Some(main) => main(args)
       case None => ()
     }
   }
@@ -590,8 +590,12 @@ class Bootstrap(val projectPath: Path) {
     */
   def test(o: Options): Result[Unit, List[String]] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    build() map {
-      compilationResult => Tester.run(Nil, compilationResult)
+    build() flatMap {
+      compilationResult =>
+        Tester.run(Nil, compilationResult) match {
+          case Ok(_) => ().toOk
+          case Err(_) => Err(List("Tester Error"))
+        }
     }
   }
 }

@@ -40,6 +40,13 @@ mod BigDecimal {
         abs(x)
 
     ///
+    /// Returns `x` raised to the power of `n`.
+    ///
+    pub def pow(x: BigDecimal, n: Int32): BigDecimal =
+        import java.math.BigDecimal.pow(Int32): ##java.math.BigDecimal \ {};
+        pow(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     ///
     pub def dist(x: BigDecimal, y: BigDecimal): BigDecimal = abs(x - y)

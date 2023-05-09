@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestFormatType extends FunSuite with TestUtils {
+class TestFormatType extends AnyFunSuite with TestUtils {
 
   private val loc = SourceLocation.Unknown
   private val standardFormat = FormatOptions(
@@ -97,7 +97,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatType.Arrow.External.01") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
-    val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, Type.Empty, paramType, loc)
+    val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
     val expected = "t0! -> t0!"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
@@ -109,9 +109,9 @@ class TestFormatType extends FunSuite with TestUtils {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = true, loc), loc)
-    val tpe = Type.mkArrowWithEffect(paramType, effectType, Type.Empty, returnType, loc)
+    val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
-    val expected = "t0! -> t1! & b2!"
+    val expected = raw"t0! -> t1! \ b2!"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -120,9 +120,9 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.Arrow.External.03") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
-    val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, Type.Empty, returnType, loc)
+    val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType, loc)
 
-    val expected = "t0! -> t1! & Impure"
+    val expected = raw"t0! -> t1! \ IO"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -131,7 +131,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.Arrow.External.04") {
     val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
 
-    val expected = "Int8 -> (Int16 -> Int32 & Impure)"
+    val expected = raw"Int8 -> (Int16 -> Int32 \ IO)"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -139,9 +139,9 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatType.Arrow.External.05") {
     val eff = Type.mkAnd(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Bool, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = false, loc), loc), loc)
-    val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Empty, Type.Bool, loc)
+    val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
-    val expected = "BigInt -> Bool & b1 and b2"
+    val expected = raw"BigInt -> Bool \ b1 and b2"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -266,7 +266,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatType.Arrow.Internal.01") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
-    val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, Type.Empty, paramType, loc)
+    val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
     val expected = "t0! -> t0!"
     val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
@@ -278,9 +278,9 @@ class TestFormatType extends FunSuite with TestUtils {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = true, loc), loc)
-    val tpe = Type.mkArrowWithEffect(paramType, effectType, Type.Empty, returnType, loc)
+    val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
-    val expected = "t0! -> t1! & b2!"
+    val expected = raw"t0! -> t1! \ b2!"
     val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
 
     assert(actual == expected)
@@ -387,18 +387,18 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatPartialType.Arrow.External.01") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(Type.Pure, Type.Empty), loc)
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(Type.Pure), loc)
 
-    val expected = "? -> ?"
+    val expected = raw"? -> ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
   test("FormatPartialType.Arrow.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Empty, Type.Str), loc)
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Str), loc)
 
-    val expected = "String -> (? -> ? & Impure)"
+    val expected = raw"String -> (? -> ? \ IO)"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -407,7 +407,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatPartialType.Arrow.External.03") {
     val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
 
-    val expected = "? -> (? -> (? -> ? & ? \\ ?))"
+    val expected = raw"? -> (? -> (? -> ? \ ?))"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -433,96 +433,6 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val expected = "m[a]"
     val actual = FormatType.formatTypeWithOptions(ma, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatType.Eff.External.01") {
-    val e = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "E", loc)), loc)
-    val f = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "F", loc)), loc)
-    val g = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "G", loc)), loc)
-
-    val tpe = Type.mkUnion(List(e, f, g), loc)
-
-    val expected = "{E, F, G}"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatType.Eff.External.02") {
-    val e = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "E", loc)), loc)
-    val f = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "F", loc)), loc)
-
-    val tpe = Type.mkIntersection(e, Type.mkComplement(f, loc), loc)
-
-    val expected = "E - F"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatType.Eff.External.03") {
-    val e = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "E", loc)), loc)
-    val f = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "F", loc)), loc)
-
-    val tpe = Type.mkIntersection(f, Type.mkComplement(e, loc), loc)
-
-    val expected = "F - E"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatType.Eff.External.04") {
-    val ef1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("ef1"), Kind.Star, false, loc), loc)
-    val ef2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("ef2"), Kind.Star, false, loc), loc)
-    val e = Type.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "E", loc)), loc)
-
-    val tpe = Type.mkIntersection(
-      Type.mkUnion(ef1, ef2, loc),
-      e,
-      loc
-    )
-
-    val expected = "{ef1, ef2} & E"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
-
-    assert(actual == expected)
-  }
-
-  test("FormatType.NoSet.01") {
-    val pur = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("pur"), Kind.Effect, false, loc), loc)
-    val eff = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("eff"), Kind.Effect, false, loc), loc)
-
-    val tpe = Type.mkArrowWithEffect(Type.Int64, pur, eff, Type.Int64, loc)
-
-    val expected = "Int64 -> Int64 & pur"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignoreEff = true))
-
-    assert(actual == expected)
-  }
-
-  test("FormatType.NoBool.01") {
-    val pur = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("pur"), Kind.Effect, false, loc), loc)
-    val eff = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("eff"), Kind.Effect, false, loc), loc)
-
-    val tpe = Type.mkArrowWithEffect(Type.Int64, pur, eff, Type.Int64, loc)
-
-    val expected = "Int64 -> Int64 \\ eff"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignorePur = true))
-
-    assert(actual == expected)
-  }
-
-  test("FormatType.NoBoolNoSet.01") {
-    val pur = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("pur"), Kind.Effect, false, loc), loc)
-    val eff = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("eff"), Kind.Effect, false, loc), loc)
-
-    val tpe = Type.mkArrowWithEffect(Type.Int64, pur, eff, Type.Int64, loc)
-
-    val expected = "Int64 -> Int64"
-    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat.copy(ignoreEff = true, ignorePur = true))
 
     assert(actual == expected)
   }

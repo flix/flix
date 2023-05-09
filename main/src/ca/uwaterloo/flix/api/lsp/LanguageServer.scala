@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
+import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -93,7 +94,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The current delta context. Initially has no changes.
     */
-  private var delta: DeltaContext = DeltaContext(Nil)
+  private var delta: DeltaContext = DeltaContext(Map.empty)
 
   /**
     * A Boolean that records if the root AST is current (i.e. up-to-date).
@@ -268,10 +269,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      if (current)
-        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
-      else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
 
     case Request.Complete(id, uri, pos) =>
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
@@ -365,7 +363,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
-    this.delta = Differ.difference(oldRoot, root)
+    this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.current = true
     this.currentErrors = errors.toList
 

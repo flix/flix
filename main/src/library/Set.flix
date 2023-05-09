@@ -23,8 +23,6 @@ pub enum Set[t] with Sendable {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]] with Boxable[t]
-
 instance Eq[Set[a]] with Eq[a] {
     pub def eq(s1: Set[a], s2: Set[a]): Bool =
         Set.toList(s1) == Set.toList(s2)
@@ -102,8 +100,8 @@ mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(s: Set[a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -130,7 +128,7 @@ mod Set {
     ///
     def useParallelEvaluation(s: Set[a]): Bool =
         let Set(t) = s;
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///

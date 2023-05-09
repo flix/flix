@@ -524,6 +524,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the literal.
       */
     case class Str(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
+      * Regex Pattern Literal.
+      *
+      * @param sp1   the position of the first character in the literal.
+      * @param chars the regular expression pattern
+      * @param sp2   the position of the last character in the literal.
+      */
+    case class Regex(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+
   }
 
   /**
@@ -870,15 +880,6 @@ object ParsedAst {
     case class RecordSelect(exp: ParsedAst.Expression, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Record Select Lambda Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param field the field to select from the record.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class RecordSelectLambda(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Record Operation Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1000,6 +1001,15 @@ object ParsedAst {
       * @param sp2       the position of the last character in the expression.
       */
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * InstanceOf expression.
+      *
+      * @param exp  the expression.
+      * @param name the Java class or interface name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class InstanceOf(exp: ParsedAst.Expression, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Checked Type Cast expression.
@@ -1369,6 +1379,16 @@ object ParsedAst {
       case class Atom(sp1: SourcePosition, polarity: Ast.Polarity, fixity: Ast.Fixity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
+        * Functional Predicate.
+        *
+        * @param sp1    the position of the first character in the predicate.
+        * @param idents the out variables of the predicate.
+        * @param exp    the expression to iterate over.
+        * @param sp2    the position of the last character in the predicate.
+        */
+      case class Functional(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
         * Guard Predicate.
         *
         * @param sp1 the position of the first character in the predicate.
@@ -1376,16 +1396,6 @@ object ParsedAst {
         * @param sp2 the position of the last character in the predicate.
         */
       case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
-      /**
-        * Loop Predicate.
-        *
-        * @param sp1    the position of the first character in the predicate.
-        * @param idents the variable bound by the predicate.
-        * @param exp    the expression to iterate over.
-        * @param sp2    the position of the last character in the predicate.
-        */
-      case class Loop(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
     }
 

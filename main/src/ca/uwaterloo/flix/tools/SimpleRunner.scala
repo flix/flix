@@ -18,11 +18,9 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util._
 
-import java.io.PrintWriter
 import java.nio.file.Path
 
 /**
@@ -64,7 +62,7 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd)(System.out) match {
+      Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
         case Result.Ok(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
@@ -111,15 +109,6 @@ object SimpleRunner {
             // Exit.
             System.exit(0)
         }
-
-        if (cmdOpts.benchmark) {
-          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-        }
-
-        if (cmdOpts.test) {
-          Tester.run(Nil, compilationResult)(flix)
-        }
-
         ().toOk
 
       case failure =>

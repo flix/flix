@@ -324,6 +324,33 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal regex pattern.
+    *
+    * @param loc the location where the illegal pattern occurs.
+    */
+  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal Regex pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal Regex pattern.
+         |
+         |${code(loc, "illegal Regex pattern.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A Regex cannot be used as a pattern. It can be used `if` guard with a predicate from the Regex module, e.g `isMatch` or `isSubmatch`."
+    })
+
+  }
+
+  /**
     * An error raised to indicate an illegal jvm field or method name.
     *
     * @param loc the location of the name.
@@ -680,6 +707,32 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param patt     the invalid regular expression
+    * @param loc      the location where the error occurred
+    */
+  case class InvalidRegularExpression(patt: String, err: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid regular expression pattern literal.
+         |
+         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
+         |
+         |Pattern compilation error:
+         |${err}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"A pattern literal must be a valid regular expression."
+    })
+  }
+
+  /**
     * An error raised to indicate an empty interpolated expression (`"${}"`)
     *
     * @param loc the location where the error occurred.
@@ -880,20 +933,20 @@ object WeederError {
     * An error raised to indicate that an imported Java name is not a valid Flix identifier
     */
   case class IllegalJavaClass(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "${name} is not a valid Flix identifer."
+    def summary: String = "${name} is not a valid Flix identifier."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> ${red(name)} is not a valid Flix identifer.
+         |>> ${red(name)} is not a valid Flix identifier.
          |
-         |${code(loc, "identifer")}
+         |${code(loc, "identifier")}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""Not every valid Java identifer is a valid Flix identifer.
+      s"""Not every valid Java identifier is a valid Flix identifier.
          |
          |If you need to use such a class or interface, alias it during import, e.g.:
          |
@@ -988,6 +1041,31 @@ object WeederError {
          |If a name is lowercase, the alias must be lowercase.
          |If a name is uppercase, the alias must be uppercase.
          |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate that the name of a module does not begin with an uppercase symbol.
+    *
+    * @param name the part of the module name that does not begin with an uppercase symbol.
+    * @param loc  the location where the error occurred
+    */
+  case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError {
+
+    override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Lowercase module name.
+         |
+         |${code(loc, s"Module name '$name' does not begin with an uppercase letter.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      "A module name must begin with an uppercase letter."
     })
   }
 

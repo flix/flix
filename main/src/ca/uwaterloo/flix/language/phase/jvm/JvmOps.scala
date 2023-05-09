@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, RigidityEnv, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.Finalize
+import ca.uwaterloo.flix.language.phase.MonoTyper
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -62,6 +62,7 @@ object JvmOps {
     case MonoType.Int64 => JvmType.PrimLong
     case MonoType.BigInt => JvmType.BigInteger
     case MonoType.Str => JvmType.String
+    case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
 
     // Compound
@@ -541,6 +542,7 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
+    case MonoType.Regex => Type.Regex
     case MonoType.Region => Type.mkRegion(Type.Unit, SourceLocation.Unknown) // hack
     case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
@@ -572,7 +574,7 @@ object JvmOps {
   }
 
   // TODO: Remove
-  private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
+  private def hackType2MonoType(tpe: Type): MonoType = MonoTyper.visitType(tpe)
 
   // TODO: Remove
   private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, Ast.VarText.Absent, Kind.Wild, isRegion = false, SourceLocation.Unknown)
@@ -649,13 +651,13 @@ object JvmOps {
       }
 
       // Compute the types in the expression.
-      val expressionTypes = visitExp(defn.exp)
+      val expressionTypes = visitStmt(defn.stmt)
 
       // Return the types in the defn.
       formalParamTypes ++ expressionTypes + defn.tpe
     }
 
-    def visitExps(exps: Iterable[Expression]): Set[MonoType] = {
+    def visitExps(exps: Iterable[Expr]): Set[MonoType] = {
       exps.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -664,30 +666,36 @@ object JvmOps {
     /**
       * Returns the set of types which occur in the given expression `exp0`.
       */
-    def visitExp(exp0: Expression): Set[MonoType] = (exp0 match {
-      case Expression.Var(_, _, _) => Set.empty
+    def visitExp(exp0: Expr): Set[MonoType] = (exp0 match {
+      case Expr.Cst(_, tpe, _) => Set(tpe)
 
-      case Expression.Binary(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Var(_, tpe, _) => Set(tpe)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expr.ApplyClo(exp, exps, _, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
 
-      case Expression.Branch(exp, branches, _, _) =>
+      case Expr.ApplyDef(_, exps, _, tpe, _) => visitExps(exps) ++ Set(tpe)
+
+      case Expr.ApplySelfTail(_, _, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expr.Branch(exp, branches, _, _) =>
         val exps = branches.map {
           case (_, e) => e
         }
         visitExp(exp) ++ visitExps(exps)
 
-      case Expression.JumpTo(_, _, _) => Set.empty
+      case Expr.JumpTo(_, _, _) => Set.empty
 
-      case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Scope(_, exp, _, _) => visitExp(exp)
+      case Expr.Scope(_, exp, _, _) => visitExp(exp)
 
-      case Expression.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+      case Expr.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expression.NewObject(_, _, _, methods, _) =>
+      case Expr.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
             val fs = fparams.foldLeft(Set(retTpe)) {
@@ -696,19 +704,16 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
         }
 
-      case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
-
-      case Expression.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
-
-      case Expression.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
-
-      case Expression.IntrinsicN(_, exps, tpe, _) => visitExps(exps) + tpe
-
-      case Expression.Intrinsic1N(_, exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) + tpe
+      case Expr.ApplyAtomic(_, exps, tpe, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
+
+    /**
+      * Returns the set of types which occur in the given expression `exp0`.
+      */
+    def visitStmt(s: Stmt): Set[MonoType] = s match {
+      case Stmt.Ret(e, tpe, loc) => visitExp(e)
+    }
 
     // TODO: Magnus: Look for types in other places.
 
@@ -745,6 +750,7 @@ object JvmOps {
       case MonoType.Int64 => Set(tpe)
       case MonoType.BigInt => Set(tpe)
       case MonoType.Str => Set(tpe)
+      case MonoType.Regex => Set(tpe)
       case MonoType.Region => Set(tpe)
 
       case MonoType.Array(elm) => nestedTypesOf(elm) + tpe

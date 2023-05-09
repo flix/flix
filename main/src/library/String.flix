@@ -16,6 +16,8 @@
 
 mod String {
 
+    use Regex.Flag
+
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
@@ -61,9 +63,9 @@ mod String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex = String}, s: String): List[String] = region r {
-        import java.lang.String.split(String): Array[String, r] \ Write(r);
-        let _ = r; // This avoids a redundancy error.
+    pub def split(regex: {regex = String}, s: String): List[String] = region rc {
+        import java.lang.String.split(String): Array[String, rc] \ Write(rc);
+        let _ = rc; // This avoids a redundancy error.
         Array.toList(split(s, regex.regex))
     }
 
@@ -109,6 +111,41 @@ mod String {
         Array.init(r, i -> charAt(i, s), length(s))
 
     ///
+    /// Compile the regular expression `regex` into a Regex object (internally
+    /// a Regex is `java.util.regex.Pattern`).
+    ///
+    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
+    ///
+    /// The syntax of regular expressions is the same as Java, see the JDK Javadocs
+    /// of the class `util.regex.Pattern` for reference.
+    ///
+    /// Warning: It is strongly recommended to use a Regex literal instead of `toRegex`.
+    /// Regex literals are checked at compile time.
+    ///
+    pub def toRegex(regex: String): Result[String, Regex] =
+        Result.tryCatch(_ -> {
+            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
+            compile(regex)
+        })
+
+
+    ///
+    /// Compile the regular expression `regex` into a Regex with the supplied flags.
+    ///
+    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
+    ///
+    /// Warning: It is strongly recommended to use a Regex literal instead of `toRegexWithFlags`.
+    /// Regex literals are checked at compile time. See the JDK documentation of
+    /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
+    ///
+    pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
+        Result.tryCatch(_ -> {
+            import static java.util.regex.Pattern.compile(String, Int32): ##java.util.regex.Pattern \ {};
+            compile(regex, Regex.sumFlags(flags))
+        })
+
+
+    ///
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> Char \ ef, len: Int32): String \ ef =
@@ -119,8 +156,8 @@ mod String {
     ///
     /// Assumes that `len > 0`.
     ///
-    def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region r {
-        let sb = StringBuilder.new(r);
+    def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region rc {
+        let sb = StringBuilder.new(rc);
         def loop(i) = {
             if (i >= len)
                 StringBuilder.toString(sb)
@@ -136,8 +173,8 @@ mod String {
     ///
     /// Concatenate a list of strings into a single string.
     ///
-    pub def flatten(xs: List[String]): String = region r {
-        let sb = StringBuilder.new(r);
+    pub def flatten(xs: List[String]): String = region rc {
+        let sb = StringBuilder.new(rc);
         List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
     }
@@ -146,9 +183,9 @@ mod String {
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
-    pub def intercalate(sep: String, xs: List[String]): String = region r {
-        let sb = StringBuilder.new(r);
-        let arr = List.toArray(r, xs);
+    pub def intercalate(sep: String, xs: List[String]): String = region rc {
+        let sb = StringBuilder.new(rc);
+        let arr = List.toArray(rc, xs);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
     }
@@ -159,8 +196,8 @@ mod String {
     ///
     pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil     => ""
-        case x :: rs => region r {
-            let sb = StringBuilder.new(r);
+        case x :: rs => region rc {
+            let sb = StringBuilder.new(rc);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.forEach(appendStep, rs);
@@ -251,11 +288,11 @@ mod String {
     ///
     /// Helper function for `isSubmatch`.
     ///
-    def isSubmatchHelper(pattern: String, s: String): Bool = region r {
-        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ Write(r);
-        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ Read(r);
-        import java.util.regex.Matcher.find(Int32): Bool \ Write(r);
-        let _ = r; // This avoids a redundancy error.
+    def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
+        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ Write(rc);
+        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ Read(rc);
+        import java.util.regex.Matcher.find(Int32): Bool \ Write(rc);
+        let _ = rc; // This avoids a redundancy error.
         try {
             let p1 = compile(pattern);
             let m1 = matcher(p1, checked_cast(s));
@@ -567,8 +604,8 @@ mod String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region r {
-        let sb = StringBuilder.new(r);
+    pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region rc {
+        let sb = StringBuilder.new(rc);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -590,8 +627,8 @@ mod String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region r {
-        let sb = StringBuilder.new(r);
+    pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region rc {
+        let sb = StringBuilder.new(rc);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -609,8 +646,8 @@ mod String {
     ///
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
-    pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region r {
-        let sb = StringBuilder.new(r);
+    pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region rc {
+        let sb = StringBuilder.new(rc);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -632,8 +669,8 @@ mod String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region r {
-        let sb = StringBuilder.new(r);
+    pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region rc {
+        let sb = StringBuilder.new(rc);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -796,8 +833,8 @@ mod String {
     ///
     /// Helper function for `indent`.
     ///
-    def indentHelper(n: Int32, s: String): String = region r {
-        let sb = StringBuilder.new(r);
+    def indentHelper(n: Int32, s: String): String = region rc {
+        let sb = StringBuilder.new(rc);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -826,8 +863,8 @@ mod String {
     ///
     /// Helper function for `stripIndent`.
     ///
-    def stripIndentHelper(n: Int32, s: String): String = region r {
-        let sb = StringBuilder.new(r);
+    def stripIndentHelper(n: Int32, s: String): String = region rc {
+        let sb = StringBuilder.new(rc);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -861,8 +898,8 @@ mod String {
     /// Join the list of strings `a` separating each pair of strings and
     /// ending the result string with the system dependent line separator.
     ///
-    pub def unlines(a: List[String]): String = region r {
-        let sb = StringBuilder.new(r);
+    pub def unlines(a: List[String]): String = region rc {
+        let sb = StringBuilder.new(rc);
         List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
     }
@@ -882,8 +919,8 @@ mod String {
     ///
     pub def unwords(l: List[String]): String = match l {
         case Nil     => ""
-        case x :: xs => region r {
-            let sb = StringBuilder.new(r);
+        case x :: xs => region rc {
+            let sb = StringBuilder.new(rc);
             StringBuilder.appendString!(x, sb);
             let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
             List.forEach(f, xs);
@@ -1024,11 +1061,11 @@ mod String {
     /// The answer is the number deletions, insertions or substitutions needed to turn
     /// string `s` into string `t`.
     ///
-    pub def levenshteinDistance(s: String, t: String): Int32 = region r {
+    pub def levenshteinDistance(s: String, t: String): Int32 = region rc {
         let m = length(s);
         let n = length(t);
-        let v0 = Array.repeat(r, n + 1, 0);
-        let v1 = Array.repeat(r, n + 1, 0);
+        let v0 = Array.repeat(rc, n + 1, 0);
+        let v1 = Array.repeat(rc, n + 1, 0);
         forIndex(0, n, i -> Array.put(i, i, v0));
         forIndex(0, m - 1, i -> {
             Array.put(i + 1, 0, v1);

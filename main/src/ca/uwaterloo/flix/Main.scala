@@ -91,6 +91,7 @@ object Main {
       documentor = cmdOpts.documentor,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
+      githubKey = cmdOpts.githubKey,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
@@ -122,7 +123,7 @@ object Main {
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -152,7 +153,7 @@ object Main {
           }
 
         case Command.Check =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.check(options)
               printErrors(System.err, result)
@@ -163,7 +164,7 @@ object Main {
           }
 
         case Command.Build =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
               val result = bootstrap.build(loadClasses = false)
@@ -175,7 +176,7 @@ object Main {
           }
 
         case Command.BuildJar =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildJar(options)
               printErrors(System.err, result)
@@ -186,7 +187,7 @@ object Main {
           }
 
         case Command.BuildPkg =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildPkg(options)
               printErrors(System.err, result)
@@ -197,9 +198,14 @@ object Main {
           }
 
         case Command.Run =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = bootstrap.run(options)
+              // Compute the arguments to be passed to main.
+              val args: Array[String] = cmdOpts.args match {
+                case None => Array.empty
+                case Some(a) => a.split(" ")
+              }
+              val result = bootstrap.run(options, args)
               printErrors(System.err, result)
               System.exit(getCode(result))
             case Result.Err(e) =>
@@ -209,7 +215,7 @@ object Main {
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.benchmark(o)
               printErrors(System.err, result)
@@ -221,7 +227,7 @@ object Main {
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.test(o)
               printErrors(System.err, result)
@@ -236,7 +242,7 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
@@ -286,15 +292,14 @@ object Main {
     */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
-                     benchmark: Boolean = false,
                      documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
+                     githubKey: Option[String] = None,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
-                     test: Boolean = false,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
@@ -403,9 +408,6 @@ object Main {
         valueName("<a1, a2, ...>").
         text("arguments passed to main. Must be a single quoted string.")
 
-      opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
-        text("runs benchmarks.")
-
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
         text("generates HTML documentation.")
 
@@ -413,7 +415,10 @@ object Main {
         text("specifies the main entry point.")
 
       opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
-        text("provides suggestions on how to solve a problem")
+        text("provides suggestions on how to solve a problem.")
+
+      opt[String]("github-key").action((s, c) => c.copy(githubKey = Some(s))).
+        text("API key to use for GitHub dependency resolution.")
 
       help("help").text("prints this usage information.")
 
@@ -428,14 +433,11 @@ object Main {
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
 
-      opt[Unit]("test").action((_, c) => c.copy(test = true)).
-        text("runs unit tests.")
+      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
+        text("disables automatic installation of dependencies.")
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
-
-      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
-        text("disables automatic installation of dependencies.")
 
       version("version").text("prints the version number.")
 

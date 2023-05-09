@@ -1,4 +1,4 @@
-pub def travelWithLimitedBusses(trainConnections: List[(city, city)], busConnections: List[(city, city)], source: city, destination: city, maxBusTrips: Int32): Bool with Boxable[city] =
+pub def travelWithLimitedBusses(trainConnections: List[(city, city)], busConnections: List[(city, city)], source: city, destination: city, maxBusTrips: Int32): Bool with Order[city] =
     let tc = inject trainConnections into Train;
     let bc = inject busConnections into Bus;
     let lp = #{

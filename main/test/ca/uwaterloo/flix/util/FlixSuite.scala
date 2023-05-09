@@ -19,12 +19,12 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.Validation.Success
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path, Paths}
 import scala.jdk.CollectionConverters._
 
-class FlixSuite(incremental: Boolean) extends FunSuite {
+class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
   /**
     * A global Flix instance that is used if incremental compilation is enabled.

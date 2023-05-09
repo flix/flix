@@ -121,4 +121,60 @@ mod Char {
     ///
     pub def maxValue(): Char = '\uffff'
 
+    ///
+    /// Returns the integer value representated by Char `c` (e.g. '1' => `Some(1)``)
+    /// or `None` if `c` does not represent a number.
+    ///
+    /// This function cannot handle supplementary characters.
+    ///
+    pub def getNumericValue(c: Char): Option[Int32] =
+        import static java.lang.Character.getNumericValue(Char): Int32 \ {};
+        match getNumericValue(c) {
+            case i if i < 0 => None
+            case i          => Some(i)
+        }
+
+    ///
+    /// Returns the integer value representated by the codepoint `cp` e.g. codepoint 0x0031
+    /// which is the char '1' returns `Some(1)`.
+    ///
+    /// Returns `None` if `cp` does not represent a number.
+    ///
+    /// This function handles supplementary characters.
+    ///
+    pub def getCodePointNumericValue(cp: Int32): Option[Int32] =
+        import static java.lang.Character.getNumericValue(Int32): Int32 \ {};
+        match getNumericValue(cp) {
+            case i if i < 0 => None
+            case i          => Some(i)
+        }
+
+    ///
+    /// Returns the integer value representated by Char `c` with respect to `radix`. E.g.
+    /// `digit(radix = 10, '1') => Some(1)`
+    /// `digit(radix = 16, 'a') => Some(11)`
+    ///
+    /// Returns `None` if `cp` does not represent a number.
+    ///
+    pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
+        import static java.lang.Character.digit(Char, Int32): Int32 \ {};
+        match digit(c, radix.radix) {
+            case i if i < 0 => None
+            case i          => Some(i)
+        }
+
+    ///
+    /// Returns a character representation of the integer `n` with respect to `radix`. E.g.
+    /// `forDigit(radix = 10, 1) => Some('1')`
+    /// `forDigit(radix = 16, 11) => Some('a')`
+    ///
+    /// Returns `None` if `n` is not representable as single character in the radix.
+    ///
+    pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
+        import static java.lang.Character.forDigit(Int32, Int32): Char \ {};
+        match forDigit(n, radix.radix) {
+            case c if c == '\u0000' => None
+            case c                  => Some(c)
+        }
+
 }
