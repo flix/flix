@@ -111,7 +111,17 @@ object GenExpression {
 
       case Ast.Constant.Int16(s) =>
         addSourceLine(visitor, loc)
-        compileInt(visitor, s)
+        s match {
+          case -1 => visitor.visitInsn(ICONST_M1)
+          case 0 => visitor.visitInsn(ICONST_0)
+          case 1 => visitor.visitInsn(ICONST_1)
+          case 2 => visitor.visitInsn(ICONST_2)
+          case 3 => visitor.visitInsn(ICONST_3)
+          case 4 => visitor.visitInsn(ICONST_4)
+          case 5 => visitor.visitInsn(ICONST_5)
+          case _ if scala.Byte.MinValue <= s && s <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, s.toInt)
+          case _ => visitor.visitIntInsn(SIPUSH, s.toInt)
+        }
       /*
             private def compileInt(visitor: MethodVisitor, i: Long, isLong: Boolean = false): Unit = {
               i match {
