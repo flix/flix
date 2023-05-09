@@ -63,12 +63,12 @@ object SimpleRunner {
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
       Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-        case Result.Ok(bootstrap) =>
+        case Validation.Success(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
           System.exit(0)
-        case Result.Err(e) =>
-          println(e.message(Formatter.getDefault))
+        case failure =>
+          failure.errors.map(_.message(Formatter.getDefault)).foreach(println)
           System.exit(1)
       }
     }
