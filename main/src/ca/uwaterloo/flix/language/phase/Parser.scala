@@ -825,7 +825,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block |
-        SelectChannel | Spawn | ParYield | Par | Lazy | Force |
+        SelectChannel | Spawn | ParYield | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | Interpolation | Literal | Resume | Do |
@@ -1119,10 +1119,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
       SP ~ keyword("spawn") ~ WS ~ Expression ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
-    }
-
-    def Par: Rule1[ParsedAst.Expression.Par] = rule {
-      SP ~ keyword("par") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Par
     }
 
     def ParYield: Rule1[ParsedAst.Expression.ParYield] = {
