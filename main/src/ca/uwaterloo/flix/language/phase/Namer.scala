@@ -1017,11 +1017,6 @@ object Namer {
           NamedAst.Expression.Spawn(e1, e2, loc)
       }
 
-    case WeededAst.Expression.Par(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Par(e, loc)
-      }
-
     case WeededAst.Expression.ParYield(frags, exp, loc) =>
       val fragsVal = traverse(frags) {
         case WeededAst.ParYieldFragment(pat, e, l) =>
