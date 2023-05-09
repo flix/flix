@@ -142,7 +142,7 @@ object GenExpression {
         l match {
           case -1 =>
             visitor.visitInsn(ICONST_M1)
-            visitor.visitInsn(I2L)
+            visitor.visitInsn(I2L) // Sign extend to Long
 
           case 0 =>
             visitor.visitInsn(LCONST_0)
@@ -152,31 +152,27 @@ object GenExpression {
 
           case 2 =>
             visitor.visitInsn(ICONST_2)
-            visitor.visitInsn(I2L)
+            visitor.visitInsn(I2L) // Sign extend to Long
 
           case 3 =>
             visitor.visitInsn(ICONST_3)
-            visitor.visitInsn(I2L)
+            visitor.visitInsn(I2L) // Sign extend to Long
 
           case 4 =>
             visitor.visitInsn(ICONST_4)
-            visitor.visitInsn(I2L)
+            visitor.visitInsn(I2L) // Sign extend to Long
 
           case 5 =>
             visitor.visitInsn(ICONST_5)
-            visitor.visitInsn(I2L)
+            visitor.visitInsn(I2L) // Sign extend to Long
 
           case _ if scala.Byte.MinValue <= l && l <= scala.Byte.MaxValue =>
             visitor.visitIntInsn(BIPUSH, l.toInt)
-            visitor.visitInsn(I2L)
+            visitor.visitInsn(I2L) // Sign extend to Long
 
           case _ if scala.Short.MinValue <= l && l <= scala.Short.MaxValue =>
             visitor.visitIntInsn(SIPUSH, l.toInt)
-            visitor.visitInsn(I2L)
-
-          case _ if scala.Int.MinValue <= l && l <= scala.Int.MaxValue =>
-            visitor.visitLdcInsn(l.toInt)
-            visitor.visitInsn(I2L)
+            visitor.visitInsn(I2L) // Sign extend to Long
 
           case _ =>
             visitor.visitLdcInsn(l)
