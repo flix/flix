@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintStream}
@@ -149,13 +150,12 @@ object Main {
           }
 
         case Command.Check =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.check(options)
-              printErrors(System.err, result)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.check(options)
+          } match {
+            case Validation.Success(_) => System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -260,7 +260,9 @@ object Main {
           System.exit(0)
 
       }
-    } catch {
+    }
+
+    catch {
       case ex: RuntimeException =>
         ex.printStackTrace()
         System.exit(1)
