@@ -312,26 +312,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.NonPublicClass](result)
   }
 
-  test("TestIllegalParExpression.01") {
-    val input =
-      """
-        |def f(): Int32 =
-        |    par 1
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalParExpression](result)
-  }
-
-  test("TestIllegalParExpression.02") {
-    val input =
-      """
-        |def f(): Int32 =
-        |    par par f()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalParExpression](result)
-  }
-
   test("TestMissingDefaultMatchTypeCase.01") {
     val input =
       """
