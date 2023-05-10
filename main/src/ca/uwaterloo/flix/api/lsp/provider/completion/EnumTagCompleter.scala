@@ -38,8 +38,8 @@ object EnumTagCompleter extends Completer {
     // We know that there is at least one dot, so we split the context.word and
     // make a fqn from the everything but the the last (hence it could be the tag).
     val word = context.word.split('.').toList
-    val fqnWithTag = word.init.mkString(".")
-    val tag = word.last
+    val fqnWithTag = word.dropRight(1).mkString(".")
+    val tag = word.takeRight(1).toString()
     val enumSymWithTag = Symbol.mkEnumSym(fqnWithTag)
 
     // We have to try both options, since we don't know if the user has provided a possible tag
