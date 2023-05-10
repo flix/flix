@@ -59,7 +59,7 @@ mod Seq {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: Seq[s][a]): String with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -182,14 +182,13 @@ mod Seq {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool \ ef, l: Seq[s][a]): SOption[a] \ ef =
-        findRightHelper(f, l, upcast(() -> open Seq.Nil))
+        findRightHelper(f, l, () -> open Seq.Nil)
 
     def findRightHelper(f: a -> Bool \ ef1, l: Seq[s][a], k: Unit -> SOption[a] \ ef2): SOption[a] \ {ef1, ef2} = choose* l {
         case Seq.Nil            => k()
         case Seq.One(x)         => if (f(x)) open Seq.One(x) else k()
         case Seq.Cons(x, xs)    => findRightHelper(f, xs, () -> if (f(x)) open Seq.One(x) else k())
     }
-        
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -239,7 +238,7 @@ mod Seq {
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: Seq[s][a]): SNel[b] \ ef = choose* l {
         case Seq.Nil            => Seq.One(s)
         case Seq.One(x)         => open Seq.Cons(f(x, s), Seq.One(s))
-        case Seq.Cons(x, xs)    => 
+        case Seq.Cons(x, xs)    =>
             let r = scanRight(f, s, xs);
             open Seq.Cons(f(x, head(r)), r)
     }
@@ -366,7 +365,7 @@ mod Seq {
     pub def isInfixOf(l1: Seq[s1][a], l2: Seq[s2][a]): Bool with Eq[a] = choose l1 {
         case Seq.Nil            => true
         case Seq.One(x)         => memberOf(x, l2)
-        case Seq.Cons(x, xs)    => 
+        case Seq.Cons(x, xs)    =>
             choose l2 {
                 case Seq.Nil            => false
                 case Seq.One(y)         => x == y and isEmpty(xs)
@@ -414,7 +413,7 @@ mod Seq {
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: Seq[s][a]): b \ ef = choose l {
         case Seq.Nil            => z
-        case Seq.One(x)         => f(x, upcast(_ -> z))
+        case Seq.One(x)         => f(x, _ -> checked_ecast(z))
         case Seq.Cons(x, xs)    => f(x, _ -> foldRightWithCont(f, z, xs))
     }
 
@@ -426,7 +425,7 @@ mod Seq {
     /// Returns `None` if `l` is empty.
     ///
     pub def reduceLeft(f: (a, a) -> a \ ef, l: Seq[s -- <Seq.Nil>][a]): a \ ef = choose l {
-        case Seq.One(x)         => x 
+        case Seq.One(x)         => x
         case Seq.Cons(x, xs)    => foldLeft(f, x, xs)
     }
 
@@ -447,18 +446,6 @@ mod Seq {
     ///
     pub def count(f: a -> Bool \ ef, l: Seq[s][a]): Int32 \ ef =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
-
-    ///
-    /// Returns the product of all elements in the list `l`.
-    ///
-    pub def product(l: Seq[s][Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the list `l` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, l: Seq[s][a]): Int32 \ ef =
-        Foldable.productWith(f, l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
@@ -745,7 +732,7 @@ mod Seq {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], l: Seq[s][a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -875,8 +862,6 @@ mod Seq {
 
 }
 
-
-instance Boxable[Seq.Seq[s][t]] with Boxable[t]
 
 instance ToString[Seq.Seq[s][a]] with ToString[a] {
     pub def toString(l: Seq.Seq[s][a]): String = Seq.toString(l)
