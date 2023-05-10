@@ -28,17 +28,17 @@ object EnumTagCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumTagCompletion] = {
     // We don't know if the user has provided a tag, so we have to try both cases
+    val word = context.word.split('.').toList
 
     // The user hasn't provided a tag
     // We match on either `A.B.C` or `A.B.C.` In the latter case we have to remove the dot.
-    val fqnWithoutTag = if (context.word.last == '.') context.word.dropRight(1) else context.word
+    val fqnWithoutTag = word
     val enumSymWithoutTag = mkEnumSym(fqnWithoutTag)
 
     // The user has provided a tag
     // We know that there is at least one dot, so we split the context.word and
     // make a fqn from the everything but the the last (hence it could be the tag).
-    val word = context.word.split('.').toList
-    val fqnWithTag = word.dropRight(1).mkString(".")
+    val fqnWithTag = word.dropRight(1)
     val tag = word.takeRight(1).mkString
     val enumSymWithTag = mkEnumSym(fqnWithTag)
 
@@ -83,18 +83,18 @@ object EnumTagCompleter extends Completer {
   private def matchesTag(caseSym: CaseSym, tag: String): Boolean = caseSym.name.startsWith(tag)
 
   /**
-    * Generates and enumSym with a correct nameSpace. This is different from the one in Symbol.scala.
+    * Generates an enumSym with a correct nameSpace. This is different from the one in Symbol.scala.
     *
     * Symbol.mkEnumSym("A.B.C.Color") would make an enumSym with namespace=List("A"), and name = "B.C.Color"
     *
-    * This function: mkEnumSym("A.B.C.Color") makes an enumSym with namespace=List("A","B","C") and name = "Color"
+    * This function: mkEnumSym(List["A","B","C","Color"]) makes an enumSym with namespace=List("A","B","C") and name = "Color"
     *
-    * @param fqn the fully qualified name.
+    * @param fqn the fully qualified name as a List[String].
     * @return    the enum symbol for the given fully qualified name.
     */
-  private def mkEnumSym(fqn: String): EnumSym = {
-    val ns = fqn.split('.').toList.dropRight(1)
-    val name = fqn.split('.').toList.takeRight(1).mkString
+  private def mkEnumSym(fqn: List[String]): EnumSym = {
+    val ns = fqn.dropRight(1)
+    val name = fqn.takeRight(1).mkString
     new EnumSym(None, ns, name, SourceLocation.Unknown)
   }
 }
