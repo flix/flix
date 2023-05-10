@@ -51,7 +51,6 @@ mod Channel {
     /// Identical to `send` but doesn't require `Sendable`.
     /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
     ///
-    @Unsafe
     pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ Write(r) = $CHANNEL_PUT$(sender, m)
 
     ///
