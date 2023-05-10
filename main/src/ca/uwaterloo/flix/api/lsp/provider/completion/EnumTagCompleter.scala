@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
-import ca.uwaterloo.flix.language.ast.{TypedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object EnumTagCompleter extends Completer {
 
@@ -26,21 +27,58 @@ object EnumTagCompleter extends Completer {
     * Returns a List of Completion for enum tags.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumTagCompletion] = {
-    //
+    // We don't know if the user has provided a tag, so we have to try both cases
+
+    // The user hasn't provided a tag
     // We match on either `A.B.C` or `A.B.C.` In the latter case we have to remove the dot.
-    //
-    val fqn = if (context.word.last == '.') context.word.dropRight(1) else context.word
+    val fqnWithoutTag = if (context.word.last == '.') context.word.dropRight(1) else context.word
+    val enumSymWithoutTag = Symbol.mkEnumSym(fqnWithoutTag)
 
-    val enumSym = Symbol.mkEnumSym(fqn)
+    // The user has provided a tag
+    // We know that there is at least one dot, so we split the context.word and
+    // make a fqn from the everything but the the last (hence it could be the tag).
+    val word = context.word.split('.').toList
+    val fqnWithTag = word.init.mkString(".")
+    val tag = word.last
+    val enumSymWithTag = Symbol.mkEnumSym(fqnWithTag)
 
+    // We have to try both options, since we don't know if the user has provided a possible tag
+    getEnumTagCompletion(enumSymWithoutTag, None) ++
+      getEnumTagCompletion(enumSymWithTag, Some(tag))
+  }
+
+  /**
+    * Gets completions for enum tags
+    */
+  private def getEnumTagCompletion(enumSym: EnumSym, tagOption: Option[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     root.enums.get(enumSym) match {
       case None => // Case 1: Enum does not exist.
         Nil
-      case Some(enm) =>
-      // Case 2: Enum found, get the cases:
-      enm.cases.map {
-        case (caseSym, _) => EnumTagCompletion(enumSym, caseSym)
-      }
+      case Some(emn) =>
+        emn.cases.flatMap {
+          case (caseSym, _) =>
+            tagOption match {
+              case None => // Case 2: No tag provided
+                Some(EnumTagCompletion(enumSym, caseSym))
+              case Some(tag) => // Case 3: Tag is provided
+                if (matchesTag(caseSym, tag)) {
+                  // Case 3.1: Tag provided and it matches the case
+                  Some(EnumTagCompletion(enumSym, caseSym))
+                } else {
+                  // Case 3.2: Tag provided doesn't match the case
+                  None
+                }
+            }
+        }
     }
   }
+
+  /**
+    * Checks if the provided tag matches the case.
+    *
+    * @param caseSym the caseSym of the case from the enum.
+    * @param tag     the provided tag.
+    * @return        true, if the provided tag matches the case, false otherwise.
+    */
+  private def matchesTag(caseSym: CaseSym, tag: String): Boolean = caseSym.name.startsWith(tag)
 }
