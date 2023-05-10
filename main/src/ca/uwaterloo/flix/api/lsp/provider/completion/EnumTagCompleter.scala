@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 object EnumTagCompleter extends Completer {
 
@@ -32,15 +32,15 @@ object EnumTagCompleter extends Completer {
     // The user hasn't provided a tag
     // We match on either `A.B.C` or `A.B.C.` In the latter case we have to remove the dot.
     val fqnWithoutTag = if (context.word.last == '.') context.word.dropRight(1) else context.word
-    val enumSymWithoutTag = Symbol.mkEnumSym(fqnWithoutTag)
+    val enumSymWithoutTag = mkEnumSym(fqnWithoutTag)
 
     // The user has provided a tag
     // We know that there is at least one dot, so we split the context.word and
     // make a fqn from the everything but the the last (hence it could be the tag).
     val word = context.word.split('.').toList
     val fqnWithTag = word.dropRight(1).mkString(".")
-    val tag = word.takeRight(1).toString()
-    val enumSymWithTag = Symbol.mkEnumSym(fqnWithTag)
+    val tag = word.takeRight(1).mkString
+    val enumSymWithTag = mkEnumSym(fqnWithTag)
 
     // We have to try both options, since we don't know if the user has provided a possible tag
     getEnumTagCompletion(enumSymWithoutTag, None) ++
@@ -81,4 +81,20 @@ object EnumTagCompleter extends Completer {
     * @return        true, if the provided tag matches the case, false otherwise.
     */
   private def matchesTag(caseSym: CaseSym, tag: String): Boolean = caseSym.name.startsWith(tag)
+
+  /**
+    * Generates and enumSym with a correct nameSpace. This is different from the one in Symbol.scala.
+    *
+    * Symbol.mkEnumSym("A.B.C.Color") would make an enumSym with namespace=List("A"), and name = "B.C.Color"
+    *
+    * This function: mkEnumSym("A.B.C.Color") makes an enumSym with namespace=List("A","B","C") and name = "Color"
+    *
+    * @param fqn the fully qualified name.
+    * @return    the enum symbol for the given fully qualified name.
+    */
+  private def mkEnumSym(fqn: String): EnumSym = {
+    val ns = fqn.split('.').toList.dropRight(1)
+    val name = fqn.split('.').toList.takeRight(1).mkString
+    new EnumSym(None, ns, name, SourceLocation.Unknown)
+  }
 }
