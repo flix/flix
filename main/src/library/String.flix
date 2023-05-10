@@ -1234,7 +1234,7 @@ mod String {
     /// such a prefix exists.
     ///
     pub def stripMarginWith(margin: {margin = String}, s: String): String =
-        let l = debug(linesWithNewLine(s));
+        let l = linesWithNewLine(s);
         intercalate("", List.map(stripMarginWithSingleLine(margin), l))
 
     ///
