@@ -124,18 +124,7 @@ object GenExpression {
 
       case Ast.Constant.Int32(i) =>
         addSourceLine(visitor, loc)
-        i match {
-          case -1 => visitor.visitInsn(ICONST_M1)
-          case 0 => visitor.visitInsn(ICONST_0)
-          case 1 => visitor.visitInsn(ICONST_1)
-          case 2 => visitor.visitInsn(ICONST_2)
-          case 3 => visitor.visitInsn(ICONST_3)
-          case 4 => visitor.visitInsn(ICONST_4)
-          case 5 => visitor.visitInsn(ICONST_5)
-          case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
-          case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
-          case _ => visitor.visitLdcInsn(i)
-        }
+        compileInt32(visitor, i)
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(visitor, loc)
@@ -1065,9 +1054,7 @@ object GenExpression {
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We push the 'length' of the array on top of stack
-        val arrLengthCst = Ast.Constant.Int32(exps.length)
-        val arrLengthExp = Expr.Cst(arrLengthCst, MonoType.Int32, loc.asSynthetic)
-        compileExpression(arrLengthExp, visitor, currentClass, lenv0, entryPoint)
+        compileInt32(visitor, exps.length)
         // We get the inner type of the array
         val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
         // Instantiating a new array of type jvmType
@@ -1078,14 +1065,11 @@ object GenExpression {
             visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
         }
         // For each element we generate code to store it into the array
-        val locs = exps.map(_.loc)
-        for ((i, l) <- exps.indices.zip(locs)) {
+        for (i <- exps.indices) {
           // Duplicates the 'array reference'
           visitor.visitInsn(DUP)
           // We push the 'index' of the current element on top of stack
-          val idxCst = Ast.Constant.Int32(i)
-          val idxExp = Expr.Cst(idxCst, MonoType.Int32, l.asSynthetic)
-          compileExpression(idxExp, visitor, currentClass, lenv0, entryPoint)
+          compileInt32(visitor, i)
           // Evaluating the 'element' to be stored
           compileExpression(exps(i), visitor, currentClass, lenv0, entryPoint)
           // Stores the 'element' at the given 'index' in the 'array'
@@ -1882,6 +1866,18 @@ object GenExpression {
 
   }
 
+  def compileInt32(visitor: MethodVisitor, i: Int): Unit = i match {
+    case -1 => visitor.visitInsn(ICONST_M1)
+    case 0 => visitor.visitInsn(ICONST_0)
+    case 1 => visitor.visitInsn(ICONST_1)
+    case 2 => visitor.visitInsn(ICONST_2)
+    case 3 => visitor.visitInsn(ICONST_3)
+    case 4 => visitor.visitInsn(ICONST_4)
+    case 5 => visitor.visitInsn(ICONST_5)
+    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
+    case _ => visitor.visitLdcInsn(i)
+  }
 
   /**
     * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
