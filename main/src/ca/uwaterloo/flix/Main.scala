@@ -138,8 +138,10 @@ object Main {
       cmdOpts.command match {
         case Command.None =>
           SimpleRunner.run(cwd, cmdOpts, options) match {
-            case Result.Ok(_) => System.exit(0)
-            case Result.Err(_) => System.exit(1)
+            case Validation.Success(_) =>
+              System.exit(0)
+            case _ =>
+              System.exit(1)
           }
 
         case Command.Init =>
