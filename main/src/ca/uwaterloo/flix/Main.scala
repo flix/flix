@@ -137,8 +137,10 @@ object Main {
 
       cmdOpts.command match {
         case Command.None =>
-          val result = SimpleRunner.run(cwd, cmdOpts, options)
-          System.exit(getCode(result))
+          SimpleRunner.run(cwd, cmdOpts, options) match {
+            case Result.Ok(_) => System.exit(0)
+            case Result.Err(_) => System.exit(1)
+          }
 
         case Command.Init =>
           Bootstrap.init(cwd, options)(System.out) match {
@@ -267,14 +269,6 @@ object Main {
         ex.printStackTrace()
         System.exit(1)
     }
-  }
-
-  /**
-    * Extracts the exit code from the given result.
-    */
-  private def getCode[T, E](result: Result[T, E]): Int = result match {
-    case Result.Ok(_) => 0
-    case Result.Err(_) => 1
   }
 
   /**
