@@ -211,6 +211,13 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = CompletionItemKind.EnumMember)
+    case Completion.ModCompletion(ns) =>
+      val name = ns.mkString(".")
+      CompletionItem(
+        label = name,
+        sortText = Priority.normal(name),
+        textEdit = TextEdit(context.range, name),
+        kind = CompletionItemKind.Module)
   }
 }
 
@@ -407,4 +414,11 @@ object Completion {
     * @param caseSym the sym of the case (for that specific enum).
     */
   case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym) extends Completion
+
+  /**
+    * Represents a Module completion.
+    *
+    * @param ns the nameSpace of the module completion.
+    */
+  case class ModCompletion(ns: List[String]) extends Completion
 }
