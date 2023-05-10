@@ -128,44 +128,7 @@ object GenExpression {
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(visitor, loc)
-        l match {
-          case -1 =>
-            visitor.visitInsn(ICONST_M1)
-            visitor.visitInsn(I2L) // Sign extend to Long
-
-          case 0 =>
-            visitor.visitInsn(LCONST_0)
-
-          case 1 =>
-            visitor.visitInsn(LCONST_1)
-
-          case 2 =>
-            visitor.visitInsn(ICONST_2)
-            visitor.visitInsn(I2L) // Sign extend to Long
-
-          case 3 =>
-            visitor.visitInsn(ICONST_3)
-            visitor.visitInsn(I2L) // Sign extend to Long
-
-          case 4 =>
-            visitor.visitInsn(ICONST_4)
-            visitor.visitInsn(I2L) // Sign extend to Long
-
-          case 5 =>
-            visitor.visitInsn(ICONST_5)
-            visitor.visitInsn(I2L) // Sign extend to Long
-
-          case _ if scala.Byte.MinValue <= l && l <= scala.Byte.MaxValue =>
-            visitor.visitIntInsn(BIPUSH, l.toInt)
-            visitor.visitInsn(I2L) // Sign extend to Long
-
-          case _ if scala.Short.MinValue <= l && l <= scala.Short.MaxValue =>
-            visitor.visitIntInsn(SIPUSH, l.toInt)
-            visitor.visitInsn(I2L) // Sign extend to Long
-
-          case _ =>
-            visitor.visitLdcInsn(l)
-        }
+        compileInt64(visitor, l)
 
       case Ast.Constant.BigInt(ii) =>
         addSourceLine(visitor, loc)
@@ -1866,7 +1829,48 @@ object GenExpression {
 
   }
 
-  def compileInt32(visitor: MethodVisitor, i: Int): Unit = i match {
+  private def compileInt64(visitor: MethodVisitor, l: Long): Unit = {
+    l match {
+      case -1 =>
+        visitor.visitInsn(ICONST_M1)
+        visitor.visitInsn(I2L) // Sign extend to Long
+
+      case 0 =>
+        visitor.visitInsn(LCONST_0)
+
+      case 1 =>
+        visitor.visitInsn(LCONST_1)
+
+      case 2 =>
+        visitor.visitInsn(ICONST_2)
+        visitor.visitInsn(I2L) // Sign extend to Long
+
+      case 3 =>
+        visitor.visitInsn(ICONST_3)
+        visitor.visitInsn(I2L) // Sign extend to Long
+
+      case 4 =>
+        visitor.visitInsn(ICONST_4)
+        visitor.visitInsn(I2L) // Sign extend to Long
+
+      case 5 =>
+        visitor.visitInsn(ICONST_5)
+        visitor.visitInsn(I2L) // Sign extend to Long
+
+      case _ if scala.Byte.MinValue <= l && l <= scala.Byte.MaxValue =>
+        visitor.visitIntInsn(BIPUSH, l.toInt)
+        visitor.visitInsn(I2L) // Sign extend to Long
+
+      case _ if scala.Short.MinValue <= l && l <= scala.Short.MaxValue =>
+        visitor.visitIntInsn(SIPUSH, l.toInt)
+        visitor.visitInsn(I2L) // Sign extend to Long
+
+      case _ =>
+        visitor.visitLdcInsn(l)
+    }
+  }
+
+  private def compileInt32(visitor: MethodVisitor, i: Int): Unit = i match {
     case -1 => visitor.visitInsn(ICONST_M1)
     case 0 => visitor.visitInsn(ICONST_0)
     case 1 => visitor.visitInsn(ICONST_1)
