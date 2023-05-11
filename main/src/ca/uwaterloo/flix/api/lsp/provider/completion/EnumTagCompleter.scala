@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypeConstructor, TypedAst}
 
 object EnumTagCompleter extends Completer {
 
@@ -43,7 +43,9 @@ object EnumTagCompleter extends Completer {
       case None => // Case 1: Enum does not exist.
         Nil
       case Some(enm) => // Case 2: Enum does exist -> Get cases.
-        enm.cases.keys.map(caseSym => EnumTagCompletion(enumSym, caseSym))
+        enm.cases.map {
+          case (caseSym, cas) => EnumTagCompletion(enumSym, caseSym, getSnippetForEnumTag(cas))
+        }
     }
   }
 
@@ -62,16 +64,32 @@ object EnumTagCompleter extends Completer {
       case None => // Case 1: Enum does not exist.
         Nil
       case Some(enm) => // Case 2: Enum does exist
-        enm.cases.keys.flatMap {
-          caseSym =>
+        enm.cases.flatMap {
+          case (caseSym, cas) =>
             if (matchesTag(caseSym, tag)) {
               // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, caseSym))
+              Some(EnumTagCompletion(enumSym, caseSym, getSnippetForEnumTag(cas)))
             } else {
               // Case 2.2: Tag provided doesn't match the case
               None
             }
         }
+    }
+  }
+
+  /**
+    * Provides the snippet if the enumTag has "Tag(type)"
+    *
+    * @param cas the case.
+    * @return    the string with placeholders for the input.
+    */
+  private def getSnippetForEnumTag(cas: TypedAst.Case): String = {
+    cas.tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) => s""
+      case Some(TypeConstructor.Tuple(arity)) => List.range(1, arity + 1)
+        .map(elem => s"?elem$elem")
+        .mkString(s"(", ", ", s")")
+      case _ => s"(?elem)"
     }
   }
 
