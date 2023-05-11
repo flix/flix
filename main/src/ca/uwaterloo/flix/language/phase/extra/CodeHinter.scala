@@ -86,7 +86,6 @@ object CodeHinter {
       checkDeprecated(sym, loc) ++
         checkExperimental(sym, loc) ++
         checkParallel(sym, loc) ++
-        checkUnsafe(sym, loc) ++
         checkLazy(sym, loc)
 
     case Expression.Sig(_, _, _) => Nil
@@ -450,19 +449,6 @@ object CodeHinter {
     val isParallel = defn.spec.ann.isParallel
     if (isParallel) {
       CodeHint.Parallel(loc) :: Nil
-    } else {
-      Nil
-    }
-  }
-
-  /**
-    * Checks whether the given definition symbol `sym` is unsafe.
-    */
-  private def checkUnsafe(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    val defn = root.defs(sym)
-    val isUnsafe = defn.spec.ann.isUnsafe
-    if (isUnsafe) {
-      CodeHint.Unsafe(loc) :: Nil
     } else {
       Nil
     }
