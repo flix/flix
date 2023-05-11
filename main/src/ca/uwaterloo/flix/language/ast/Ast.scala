@@ -246,15 +246,6 @@ object Ast {
       override def toString: String = "@Test"
     }
 
-    /**
-      * An annotation that marks a function definition as being inherently unsafe.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Unsafe(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Unsafe"
-    }
-
   }
 
   /**
@@ -326,11 +317,6 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@Unsafe` annotation.
-      */
-    def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
   }
 
   /**

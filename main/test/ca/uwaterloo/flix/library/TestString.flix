@@ -3353,6 +3353,41 @@ def countSubstring11(): Bool = String.countSubstring({substr = "abc"}, "ABC abc 
 def countSubstring12(): Bool = String.countSubstring({substr = "abc"}, "aBC::abc::AbC::abc::Abc") == 2
 
 /////////////////////////////////////////////////////////////////////////////
+// stripMarginWith                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def stripMarginWith01(): Bool = String.stripMarginWith({margin = "|"}, "") == ""
+
+@test
+def stripMarginWith02(): Bool = String.stripMarginWith({margin = "|"}, "abc") == "abc"
+
+@test
+def stripMarginWith03(): Bool = String.stripMarginWith({margin = "|"}, "${'\t'}") == "${'\t'}"
+
+@test
+def stripMarginWith04(): Bool = String.stripMarginWith({margin = "|"}, "    |abc") == "abc"
+
+@test
+def stripMarginWith05(): Bool = String.stripMarginWith({margin = "|"}, "${'\t'} |abc") == "abc"
+
+@test
+def stripMarginWith06(): Bool = String.stripMarginWith({margin = "|"}, " | abc") == " abc"
+
+@test
+def stripMarginWith07(): Bool = String.stripMarginWith({margin = "|"}, " ||abc") == "|abc"
+
+@test
+def stripMarginWith08(): Bool = String.stripMarginWith({margin = "| "}, " | abc") == "abc"
+
+@test
+def stripMarginWith09(): Bool = String.stripMarginWith({margin = "|"}, String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+@test
+def stripMarginWith10(): Bool = String.stripMarginWith({margin = "|"}, String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+
+/////////////////////////////////////////////////////////////////////////////
 // stripPrefix                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
