@@ -252,12 +252,6 @@ object TypedAst {
 
     case class Spawn(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Par(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = exp.tpe
-
-      def pur: Type = exp.pur
-    }
-
     case class ParYield(frags: List[TypedAst.ParYieldFragment], exp: TypedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Lazy(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {

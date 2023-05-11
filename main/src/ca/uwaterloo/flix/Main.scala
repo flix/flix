@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util._
 
 import java.io.File
@@ -136,103 +137,118 @@ object Main {
 
       cmdOpts.command match {
         case Command.None =>
-          val result = SimpleRunner.run(cwd, cmdOpts, options)
-          System.exit(getCode(result))
+          SimpleRunner.run(cwd, cmdOpts, options) match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case _ =>
+              System.exit(1)
+          }
 
         case Command.Init =>
-          val result = Bootstrap.init(cwd, options)(System.out)
-          System.exit(getCode(result))
+          Bootstrap.init(cwd, options)(System.out) match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
         case Command.Check =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.check(options)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.check(options)
+          } match {
+            case Validation.Success(_) => System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Build =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
-              val result = bootstrap.build(loadClasses = false)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+              bootstrap.build(loadClasses = false)
+          } match {
+            case Validation.Success(_) => System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildJar =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.buildJar(options)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.buildJar(options)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildPkg =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.buildPkg(options)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.buildPkg(options)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Run =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              // Compute the arguments to be passed to main.
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap =>
               val args: Array[String] = cmdOpts.args match {
                 case None => Array.empty
                 case Some(a) => a.split(" ")
               }
-              val result = bootstrap.run(options, args)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+              bootstrap.run(options, args)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.benchmark(o)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.benchmark(o)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.test(o)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.test(o)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
-            println("The `repl' command cannot be used with a list of files.")
+            println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
+            case Validation.Success(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
               System.exit(0)
-            case Result.Err(e) =>
-              println(e.message(formatter))
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -248,19 +264,13 @@ object Main {
           System.exit(0)
 
       }
-    } catch {
+    }
+
+    catch {
       case ex: RuntimeException =>
         ex.printStackTrace()
         System.exit(1)
     }
-  }
-
-  /**
-    * Extracts the exit code from the given result.
-    */
-  private def getCode(result: Result[_, Int]): Int = result match {
-    case Result.Ok(_) => 0
-    case Result.Err(code) => code
   }
 
   /**

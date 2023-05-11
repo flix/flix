@@ -467,7 +467,7 @@ class Flix {
 
   /**
     * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to print the explanation.
+    * Decides whether or not to append the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain)

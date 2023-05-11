@@ -525,8 +525,6 @@ object SemanticTokensProvider {
 
     case Expression.Spawn(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Par(exp, _) => visitExp(exp)
-
     case Expression.ParYield(frags, exp, _, _, _) =>
       val e0 = visitExp(exp)
       frags.foldLeft(e0) {

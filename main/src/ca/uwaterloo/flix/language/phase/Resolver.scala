@@ -1582,13 +1582,7 @@ object Resolver {
               ResolvedAst.Expression.Spawn(e1, e2, loc)
           }
 
-        case NamedAst.Expression.Par(exp, loc) =>
-          mapN(visitExp(exp, env0)) {
-            e => ResolvedAst.Expression.Par(e, loc)
-          }
-
         case NamedAst.Expression.ParYield(frags, exp, loc) =>
-
           // mutable env to be updated during traversal
           var finalUenv = env0
 
