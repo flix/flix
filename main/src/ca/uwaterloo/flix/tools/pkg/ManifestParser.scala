@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
-import java.net.{MalformedURLException, URL}
+import java.net.{MalformedURLException, URI, URL}
 import java.nio.file.Path
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.SetHasAsScala
@@ -313,7 +313,7 @@ object ManifestParser {
       try {
         if (url.startsWith("url:")) {
           val removeTag = url.substring(4)
-          Ok(new URL(removeTag))
+          Ok(new URI(removeTag).toURL)
         } else {
           Err(ManifestError.JarUrlFormatError(p, url))
         }
