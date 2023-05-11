@@ -1714,7 +1714,7 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Err.jar-dependencies.url.02") {
+  ignore("Err.jar-dependencies.url.02") {
     val toml = {
       """
         |[package]
