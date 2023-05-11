@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import java.net.URL
+
 sealed trait Repository
 
 object Repository {
@@ -28,5 +30,7 @@ object Dependency {
   case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, kind: DependencyKind) extends Dependency
 
   case class MavenDependency(groupId: String, artifactId: String, version: SemVer, kind: DependencyKind) extends Dependency
+
+  case class JarDependency(url: URL, fileName: String) extends Dependency
 
 }

@@ -1229,6 +1229,43 @@ mod String {
             loop(0, 0)
 
     ///
+    /// For every line in string `s`, strip a leading prefix consisting of
+    /// blanks or control characters followed by `margin` from the line, if
+    /// such a prefix exists.
+    ///
+    pub def stripMarginWith(margin: {margin = String}, s: String): String =
+        let l = linesWithNewLine(s);
+        intercalate("", List.map(stripMarginWithSingleLine(margin), l))
+
+    ///
+    /// Helper function for `stripMarginWith`.
+    /// From a single line, strips a leading prefix consisting of blanks or
+    /// control characters followed by `margin`, if such a prefix exists.
+    ///
+    def stripMarginWithSingleLine(margin: {margin = String}, s: String): String =
+        let marginLen = length(margin.margin);
+        let trimmed = dropWhile(c -> c <= ' ', s);
+        if (startsWith(prefix = margin.margin, trimmed))
+            sliceRight(start = marginLen, trimmed)
+        else
+            s
+
+    ///
+    /// Helper function for `stripMarginWith`.
+    ///
+    /// Split the string `s` into an array of lines, breaking on newline,
+    /// while keeping the newline at the end of each line.
+    ///
+    /// Newline is recognized as any Unicode linebreak sequence including
+    /// Windows (carriage return, line feed) or Unix (line feed).
+    ///
+    def linesWithNewLine(s: String): List[String] =
+        if (isEmpty(s))
+            Nil
+        else
+            split({regex = "(?<=\\R)"}, s)
+
+    ///
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
     pub def stripPrefix(substr: {substr = String}, s: String): Option[String] =

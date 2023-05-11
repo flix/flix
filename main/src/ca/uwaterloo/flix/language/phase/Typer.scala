@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, Denotation, Stratification}
+import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -68,7 +69,23 @@ object Typer {
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
-      val syms = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
+      val syms0 = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
+
+      // collect namespaces from prefixes of other symbols
+      // TODO this should be done in resolver once the duplicate namespace issue is managed
+      val namespaces = syms0.collect {
+        case sym: Symbol.DefnSym => sym.namespace
+        case sym: Symbol.EnumSym => sym.namespace
+        case sym: Symbol.RestrictableEnumSym => sym.namespace
+        case sym: Symbol.ClassSym => sym.namespace
+        case sym: Symbol.TypeAliasSym => sym.namespace
+        case sym: Symbol.EffectSym => sym.namespace
+      }.flatMap {
+        fullNs => fullNs.inits.collect {
+          case ns@(_ :: _) => new Symbol.ModuleSym(ns)
+        }
+      }.toSet
+      val syms = syms0 ++ namespaces
 
       val groups = syms.groupBy {
         case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
@@ -82,9 +99,10 @@ object Typer {
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
         case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
 
+        case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
+
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
