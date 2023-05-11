@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
 
 object EnumTagCompleter extends Completer {
 
@@ -44,7 +44,7 @@ object EnumTagCompleter extends Completer {
         Nil
       case Some(enm) => // Case 2: Enum does exist -> Get cases.
         enm.cases.map {
-          case (caseSym, cas) => EnumTagCompletion(enumSym, caseSym, getSnippetForEnumTag(cas))
+          case (caseSym, cas) => EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe))
         }
     }
   }
@@ -68,7 +68,7 @@ object EnumTagCompleter extends Completer {
           case (caseSym, cas) =>
             if (matchesTag(caseSym, tag)) {
               // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, caseSym, getSnippetForEnumTag(cas)))
+              Some(EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe)))
             } else {
               // Case 2.2: Tag provided doesn't match the case
               None
@@ -78,18 +78,17 @@ object EnumTagCompleter extends Completer {
   }
 
   /**
-    * Provides the snippet if the enumTag has "Tag(type)"
     *
-    * @param cas the case.
-    * @return    the string with placeholders for the input.
+    * Returns the arity of the given enumTag type `tpe`
+    *
+    * @param tpe the type.
+    * @return    the arity.
     */
-  private def getSnippetForEnumTag(cas: TypedAst.Case): String = {
-    cas.tpe.typeConstructor match {
-      case Some(TypeConstructor.Unit) => s""
-      case Some(TypeConstructor.Tuple(arity)) => List.range(1, arity + 1)
-        .map(elem => s"?elem$elem")
-        .mkString(s"(", ", ", s")")
-      case _ => s"(?elem)"
+  private def getArityForEnumTag(tpe: Type): Int = {
+    tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) => 0
+      case Some(TypeConstructor.Tuple(arity)) => arity
+      case _ => 1
     }
   }
 

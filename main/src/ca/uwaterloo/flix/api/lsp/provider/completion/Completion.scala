@@ -203,12 +203,13 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
-    case Completion.EnumTagCompletion(enumSym, caseSym, snippet) =>
+    case Completion.EnumTagCompletion(enumSym, caseSym, arity) =>
+      val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
       val name = s"${enumSym.toString}.${caseSym.name}"
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),
-        textEdit = TextEdit(context.range, name + snippet),
+        textEdit = TextEdit(context.range, s"$name($args)"),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
@@ -406,6 +407,7 @@ object Completion {
     *
     * @param enumSym the sym of the enum.
     * @param caseSym the sym of the case (for that specific enum).
+    * @param arity   the arity of the enumTag.
     */
-  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym, snippet: String) extends Completion
+  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym, arity: Int) extends Completion
 }
