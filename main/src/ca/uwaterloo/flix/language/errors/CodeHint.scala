@@ -136,15 +136,4 @@ object CodeHint {
     def severity: Severity = Severity.Info
   }
 
-  /**
-    * A code hint that indicates unsafeness.
-    *
-    * @param loc the location of the expression.
-    */
-  case class Unsafe(loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Use of unsafe feature."
-
-    def severity: Severity = Severity.Info
-  }
-
 }
