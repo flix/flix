@@ -404,11 +404,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     sourcePaths = filesHere ++ filesSrc ++ filesTest
 
     // 2. Grab all jars in lib/external
-    val mavenFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.folderName), "jar")
+    val mavenFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), "jar")
     mavenPackagePaths = mavenFilesLib
 
     // 3. Grab all jars in lib/external
-    val jarFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.folderName), "jar")
+    val jarFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.FolderName), "jar")
     jarPackagePaths = jarFilesLib
 
     // 3. Grab all flix packages in lib/
@@ -443,7 +443,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
-    println(currentSources)
 
     val deletedSources = previousSources -- currentSources
     for (path <- deletedSources) {

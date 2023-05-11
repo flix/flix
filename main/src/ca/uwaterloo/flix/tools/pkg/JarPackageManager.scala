@@ -7,17 +7,18 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import java.io.{IOException, InputStream, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
+import scala.util.Using
 
 object JarPackageManager {
 
-  val folderName = "external"
+  val FolderName = "external"
 
   /**
     * Installs all the jar dependencies for a list of Manifests at the /lib/external folder
     * of `path` and returns a list of paths to all the dependencies.
     */
   def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
-    out.println("Downloading jar dependencies...")
+    out.println("Downloading external jar dependencies...")
 
     val allJarDeps: List[JarDependency] = manifests.foldLeft(List.empty[JarDependency])((l, m) => l ++ findJarDependencies(m))
 
@@ -34,13 +35,13 @@ object JarPackageManager {
   /**
     * Installs a jar file from a URL given by `dep.url`.
     *
-    * The file is installed at `dep.fileName`.
+    * The file is installed at lib/external/`dep.fileName`.
     *
     * Returns the path to the downloaded file.
     */
   private def install(dep: JarDependency, p: Path)(implicit out: PrintStream): Result[Path, PackageError] = {
     val lib = Bootstrap.getLibraryDirectory(p)
-    val folderPath = lib.resolve(folderName).resolve(dep.website)
+    val folderPath = lib.resolve(FolderName)
 
     //create the folder if it does not exist
     Files.createDirectories(folderPath)
@@ -53,8 +54,9 @@ object JarPackageManager {
       out.print(s"  Downloading `${dep.fileName}` from `${dep.url.toString}`... ")
       out.flush()
       try {
-        val stream: InputStream = dep.url.openStream()
-        Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+        Using(dep.url.openStream()) {
+          stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+        }
       } catch {
         case e: IOException =>
           out.println(s"ERROR: ${e.getMessage}.");
@@ -65,7 +67,7 @@ object JarPackageManager {
         Ok(assetPath)
       } else {
         out.println(s"ERROR.")
-        Err(PackageError.DownloadErrorJar(dep.url.toString, dep.fileName, None))
+        return Err(PackageError.DownloadErrorJar(dep.url.toString, dep.fileName, None))
       }
     }
     Ok(assetPath)

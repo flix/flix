@@ -106,15 +106,6 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class JarUrlWebsiteError(path: Path, url: String) extends ManifestError {
-    override def message(f: Formatter): String =
-      s"""
-         | The website to get a jar from should be formatted like so: 'website/fileName.jar'.
-         | Instead found: ${f.red(url)}.
-         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
-         |""".stripMargin
-  }
-
   case class JarUrlExtensionError(path: Path, depName: String, extension: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""

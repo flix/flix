@@ -313,8 +313,7 @@ object ManifestParser {
       try {
         if (url.startsWith("url:")) {
           val removeTag = url.substring(4)
-          val urlHttps = if(removeTag.startsWith("https://")) removeTag else "https://" + removeTag
-          Ok(new URL(urlHttps))
+          Ok(new URL(removeTag))
         } else {
           Err(ManifestError.JarUrlFormatError(p, url))
         }
@@ -326,28 +325,6 @@ object ManifestParser {
       case e: ClassCastException =>
         Err(ManifestError.JarUrlTypeError(p, e.getMessage))
 
-    }
-  }
-
-  /**
-    * Converts `depUrl` to a String and retrieves the website name for a jar dependency.
-    * Returns an error if it is not formatted correctly or has characters that are not allowed.
-    */
-  private def getWebsite(depUrl: AnyRef, p: Path): Result[String, ManifestError] = {
-    try {
-      val url = depUrl.asInstanceOf[String]
-      val removeTag = url.substring(4)
-      val removeHttps = if(removeTag.startsWith("https://")) removeTag.substring(8) else removeTag
-      val split = removeHttps.split('/')
-      if (split.length >= 2) {
-        val website = split.apply(0)
-        checkNameCharacters(website, p)
-      } else {
-        Err(ManifestError.JarUrlWebsiteError(p, url))
-      }
-    } catch {
-      case e: ClassCastException =>
-        Err(ManifestError.JarUrlTypeError(p, e.getMessage))
     }
   }
 
@@ -462,10 +439,9 @@ object ManifestParser {
   private def createJarDep(depName: String, depUrl: AnyRef, p: Path): Result[JarDependency, ManifestError] = {
     for (
       url <- getUrl(depUrl, p);
-      website <- getWebsite(depUrl, p);
       fileName <- getFileName(depName, p)
     ) yield {
-      Dependency.JarDependency(url, website, fileName)
+      Dependency.JarDependency(url, fileName)
     }
   }
 
