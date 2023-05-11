@@ -30,44 +30,46 @@ object EnumTagCompleter extends Completer {
     // We don't know if the user has provided a tag, so we have to try both cases
     val word = context.word.split('.').toList
 
-    // The user hasn't provided a tag
-    // We match on either `A.B.C` or `A.B.C.` In the latter case we have to remove the dot.
-    val fqnWithoutTag = word
-    val enumSymWithoutTag = mkEnumSym(fqnWithoutTag)
+    getEnumTagCompletionsWithoutTag(word) ++
+      getEnumTagCompletionsWithTag(word)
+  }
 
+  /**
+    * Gets completions for enum tags without tag provided
+    */
+  private def getEnumTagCompletionsWithoutTag(word: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
+    val enumSym = mkEnumSym(word)
+    root.enums.get(enumSym) match {
+      case None => // Case 1: Enum does not exist.
+        Nil
+      case Some(enm) => // Case 2: Enum does exist -> Get cases.
+        enm.cases.keys.map(caseSym => EnumTagCompletion(enumSym, caseSym))
+    }
+  }
+
+  /**
+    * Gets completions for enum tags with tag provided
+    */
+  private def getEnumTagCompletionsWithTag(word: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     // The user has provided a tag
     // We know that there is at least one dot, so we split the context.word and
     // make a fqn from the everything but the the last (hence it could be the tag).
     val fqnWithTag = word.dropRight(1)
     val tag = word.takeRight(1).mkString
-    val enumSymWithTag = mkEnumSym(fqnWithTag)
+    val enumSym = mkEnumSym(fqnWithTag)
 
-    // We have to try both options, since we don't know if the user has provided a possible tag
-    getEnumTagCompletion(enumSymWithoutTag, None) ++
-      getEnumTagCompletion(enumSymWithTag, Some(tag))
-  }
-
-  /**
-    * Gets completions for enum tags
-    */
-  private def getEnumTagCompletion(enumSym: EnumSym, tagOption: Option[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     root.enums.get(enumSym) match {
       case None => // Case 1: Enum does not exist.
         Nil
-      case Some(emn) =>
-        emn.cases.flatMap {
-          case (caseSym, _) =>
-            tagOption match {
-              case None => // Case 2: No tag provided
-                Some(EnumTagCompletion(enumSym, caseSym))
-              case Some(tag) => // Case 3: Tag is provided
-                if (matchesTag(caseSym, tag)) {
-                  // Case 3.1: Tag provided and it matches the case
-                  Some(EnumTagCompletion(enumSym, caseSym))
-                } else {
-                  // Case 3.2: Tag provided doesn't match the case
-                  None
-                }
+      case Some(enm) => // Case 2: Enum does exist
+        enm.cases.keys.flatMap {
+          caseSym =>
+            if (matchesTag(caseSym, tag)) {
+              // Case 2.1: Tag provided and it matches the case
+              Some(EnumTagCompletion(enumSym, caseSym))
+            } else {
+              // Case 2.2: Tag provided doesn't match the case
+              None
             }
         }
     }
