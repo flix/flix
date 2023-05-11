@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
-import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, ModuleSym, TypeAliasSym}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -213,8 +213,8 @@ sealed trait Completion {
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
-    case Completion.ModCompletion(ns) =>
-      val name = ns.mkString(".")
+    case Completion.ModCompletion(modSym) =>
+      val name = modSym.ns.mkString(".")
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),
@@ -421,7 +421,7 @@ object Completion {
   /**
     * Represents a Module completion.
     *
-    * @param ns the nameSpace of the module completion.
+    * @param modSym the module symbol.
   */
-  case class ModCompletion(ns: List[String]) extends Completion
+  case class ModCompletion(modSym: ModuleSym) extends Completion
 }
