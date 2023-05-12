@@ -46,11 +46,9 @@ object ModuleCompleter extends Completer {
 
     if (fqnWithOutLastWord.isEmpty) {
       // Case 1: We don't have a dot, therefore the module we are looking for only has ns of length 1
-      root.modules.keys.collect {
-        case mod if mod.ns.length == 1 => mod
-      }.flatMap {
+      root.modules.keys.flatMap {
         mod =>
-          if (matchesMod(mod, subWord)) {
+          if (mod.ns.length == 1 && matchesMod(mod, subWord)) {
             Some(ModCompletion(mod))
           } else {
             None
