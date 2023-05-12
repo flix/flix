@@ -2794,6 +2794,28 @@ object Weeder {
           purOpt.getOrElse(WeededAst.Type.True(loc))
       }
 
+    case ParsedAst.Type.Read(sp1, tpes0, sp2) =>
+      val tpesVal = traverse(tpes0)(visitType)
+      val loc = mkSL(sp1, sp2)
+      mapN(tpesVal) {
+        case tpes =>
+          val purOpt = tpes.reduceLeftOption({
+            case (acc, tpe) => WeededAst.Type.And(acc, WeededAst.Type.Read(tpe, loc), loc)
+          }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
+          purOpt.getOrElse(WeededAst.Type.True(loc))
+      }
+
+    case ParsedAst.Type.Write(sp1, tpes0, sp2) =>
+      val tpesVal = traverse(tpes0)(visitType)
+      val loc = mkSL(sp1, sp2)
+      mapN(tpesVal) {
+        case tpes =>
+          val purOpt = tpes.reduceLeftOption({
+            case (acc, tpe) => WeededAst.Type.And(acc, WeededAst.Type.Write(tpe, loc), loc)
+          }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
+          purOpt.getOrElse(WeededAst.Type.True(loc))
+      }
+
     case ParsedAst.Type.CaseSet(sp1, cases, sp2) =>
       val loc = mkSL(sp1, sp2)
       WeededAst.Type.CaseSet(cases.toList, loc).toSuccess
@@ -3424,6 +3446,8 @@ object Weeder {
     case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Union(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.EffectSet(sp1, _, _) => sp1
+    case ParsedAst.Type.Read(sp1, _, _) => sp1
+    case ParsedAst.Type.Write(sp1, _, _) => sp1
     case ParsedAst.Type.CaseComplement(sp1, _, _) => sp1
     case ParsedAst.Type.CaseDifference(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.CaseIntersection(tpe1, _, _) => leftMostSourcePosition(tpe1)

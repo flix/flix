@@ -1562,6 +1562,24 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * A type representing a read of a region.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param tpes the regions.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Read(sp1: SourcePosition, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a read of a region.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param tpes the regions.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Write(sp1: SourcePosition, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * A type representing a case set.
       *
       * @param sp1   the position of the first character in the type.
@@ -1613,38 +1631,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Ascribe(tpe: ParsedAst.Type, kind: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Type
-
-  }
-
-  /**
-    * Represents a purity.
-    */
-  sealed trait Purity
-
-  object Purity {
-
-    /**
-      * Represents a purity variable.
-      *
-      * @param sp1   the position of the first character in the type.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the type.
-      */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Purity
-
-    /**
-      * Represents a read of the region variables `idents`.
-      *
-      * @param idents the region variables that are read.
-      */
-    case class Read(idents: Seq[Name.Ident]) extends ParsedAst.Purity
-
-    /**
-      * Represents a write of the region variables `idents`.
-      *
-      * @param idents the region variables that are written.
-      */
-    case class Write(idents: Seq[Name.Ident]) extends ParsedAst.Purity
 
   }
 
