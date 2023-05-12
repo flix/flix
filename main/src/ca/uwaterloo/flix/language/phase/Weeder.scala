@@ -1235,8 +1235,8 @@ object Weeder {
                 val call = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
                 val lambdaBody = WeededAst.Expression.UncheckedCast(call, Some(tpe), pur, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
-                return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess // MATT evil early return
-              }
+                WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+              } else {
 
               // Introduce a formal parameter (of appropriate type) for each declared argument.
               val fs = ts.zipWithIndex.map {
@@ -1257,7 +1257,7 @@ object Weeder {
               val lambdaBody = WeededAst.Expression.UncheckedCast(call, Some(tpe), pur, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }
+          }}
 
         case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, pur0, identOpt) =>
 
@@ -1773,11 +1773,10 @@ object Weeder {
 
     case ParsedAst.Expression.Ascribe(exp, expectedType, expectedEff, sp2) =>
       val eVal = visitExp(exp, senv)
-      val tVal = visitType(expectedType)
-      // MATT make tVal None if wild
+      val tVal = visitTypeNoWild(expectedType)
       val fVal = traverseOpt(expectedEff)(visitType)
       mapN(eVal, tVal, fVal) {
-        case (e, t, f) => WeededAst.Expression.Ascribe(e, Some(t), f, mkSL(leftMostSourcePosition(exp), sp2))
+        case (e, t, f) => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
     case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
@@ -1799,11 +1798,10 @@ object Weeder {
 
     case ParsedAst.Expression.UncheckedCast(sp1, exp, declaredType, declaredEff, sp2) =>
       val eVal = visitExp(exp, senv)
-      val tVal = visitType(declaredType)
-      // MATT None when declared type is wild
+      val tVal = visitTypeNoWild(declaredType)
       val fVal = traverseOpt(declaredEff)(visitType)
       mapN(eVal, tVal, fVal) {
-        case (e, t, f) => WeededAst.Expression.UncheckedCast(e, Some(t), f, mkSL(sp1, sp2))
+        case (e, t, f) => WeededAst.Expression.UncheckedCast(e, t, f, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.UncheckedMaskingCast(sp1, exp, sp2) =>
@@ -2861,6 +2859,14 @@ object Weeder {
       mapN(tVal) {
         case t => WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
       }
+  }
+
+  /**
+    * Weeds the given type. Returns None if the type is a wildcard.
+    */
+  private def visitTypeNoWild(tpe: ParsedAst.Type): Validation[Option[WeededAst.Type], WeederError] = tpe match {
+    case ParsedAst.Type.Var(_, ident, _) if ident.isWild => None.toSuccess
+    case _ => visitType(tpe).map(t => Some(t))
   }
 
   /**

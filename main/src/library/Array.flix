@@ -1648,7 +1648,7 @@ mod Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit & r \ NonDet =
+    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, NonDet} =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {
