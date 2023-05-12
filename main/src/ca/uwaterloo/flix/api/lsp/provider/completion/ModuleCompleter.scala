@@ -33,40 +33,55 @@ object ModuleCompleter extends Completer {
       getNextModuleCompletion(word)
   }
 
+  /**
+    * Gets completions for modules when not having a fqn
+    */
   private def getCurrentModuleCompletion(word: List[String])(implicit root: TypedAst.Root): Iterable[ModCompletion] = {
     // The user has provided a subWord
     // We know that there is at least one dot, so we split the word and
     // make a fqn from the everything but the the last (hence it is the subWord).
     val fqnWithOutLastWord = word.dropRight(1)
-    val lastWord = word.takeRight(1).toString()
+    val subWord = word.takeRight(1)(0)
     val moduleSym = mkModuleSym(fqnWithOutLastWord)
 
-    root.modules.flatMap {
-      case (mod, syms) =>
-        if (fqnWithOutLastWord.isEmpty) {
-          if (matchesMod(mod, lastWord)) {
+    if (fqnWithOutLastWord.isEmpty) {
+      // Case 1: We don't have a dot, therefore the module we are looking for only has ns of length 1
+      root.modules.keys.collect {
+        case mod if mod.ns.length == 1 => mod
+      }.flatMap {
+        mod =>
+          if (matchesMod(mod, subWord)) {
             Some(ModCompletion(mod))
           } else {
             None
           }
-        } else {
-          if (mod.equals(moduleSym)) {
-            syms.flatMap {
-              case mod: ModuleSym =>
-                if (matchesMod(mod, lastWord)) {
-                  Some(ModCompletion(mod))
-                } else {
-                  None
-                }
-              case _ => None
-            }
-          } else {
-            None
+      }
+    } else {
+      // Case 2: We have a dot, make a fqn to find the next part of NS the user is typing
+      root.modules.get(moduleSym) match {
+        case None =>
+          // Not a valid module
+          Nil
+        case Some(syms) =>
+          // Is a valid module, get all possible moduleCompletions that matches subWord
+          syms.flatMap {
+            case mod: ModuleSym =>
+              if (matchesMod(mod, subWord)) {
+                // Case 3.1: The subWord matches a valid module
+                Some(ModCompletion(mod))
+              } else {
+                // Case 3.2: The subWord doesn't match
+                None
+              }
+            case _ => None
           }
-        }
+      }
     }
   }
 
+  /**
+    * Gets completions for modules when having a fqn
+    */
   private def getNextModuleCompletion(word: List[String])(implicit root: TypedAst.Root): Iterable[ModCompletion] = {
     val moduleSym = mkModuleSym(word)
     root.modules.get(moduleSym) match {
@@ -95,10 +110,10 @@ object ModuleCompleter extends Completer {
     *
     * @param mod     the moduleSym.
     * @param subWord the subWord provided by the user.
-    * @return        true, if the subWord matches the modulesNamespace
+    * @return        true, if the subWord matches the last part of nameSpace, false otherwise.
     */
   private def matchesMod(mod: ModuleSym, subWord: String): Boolean = {
-    val lastNs = mod.ns.takeRight(1).toString()
+    val lastNs = mod.ns.takeRight(1)(0)
     lastNs.startsWith(subWord)
   }
 }
