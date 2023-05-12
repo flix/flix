@@ -214,7 +214,7 @@ sealed trait Completion {
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
     case Completion.ModCompletion(modSym) =>
-      val name = modSym.ns.mkString(".")
+      val name = modSym.toString
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),

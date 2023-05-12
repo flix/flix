@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
 
 object ModuleCompleter extends Completer {
   /**
-    * Returns a List of Completion for completer.
+    * Returns a List of ModCompletion for modules.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
     root.modules.keys.map(mod => ModCompletion(mod))
