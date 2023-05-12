@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{TypeParams}
-import ca.uwaterloo.flix.language.ast.WeededAst.{Pattern}
-import ca.uwaterloo.flix.language.ast.{Type, _}
+import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
+import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
@@ -514,10 +514,10 @@ object Weeder {
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val argVal0 = args0.toList match {
         case hd :: Nil => hd.toSuccess
-        case ts => NonUnaryAssocType(ts.length, ident.loc).toFailure
+        case ts => (NonUnaryAssocType(ts.length, ident.loc): WeederError).toFailure
       }
       // TODO avoid short-circuiting with flatMap
-      val argVal = flatMapN(argVal)(visitType)
+      val argVal = flatMapN(argVal0)(visitType)
       val tpeVal = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
 
@@ -1169,22 +1169,23 @@ object Weeder {
       }
     }
 
-    case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe0, exp1, exp2, sp2) =>
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
       //
       val loc = mkSL(sp1, sp2)
 
       val patVal = visitPattern(pat)
+      val tpeVal = traverseOpt(tpe0)(visitType)
       val exp1Val = visitExp(exp1, senv)
       val exp2Val = visitExp(exp2, senv)
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
 
-      mapN(patVal, exp1Val, exp2Val, modVal) {
-        case (WeededAst.Pattern.Var(ident, _), value, body, mod) =>
+      mapN(patVal, tpeVal, exp1Val, exp2Val, modVal) {
+        case (WeededAst.Pattern.Var(ident, _), tpe, value, body, mod) =>
           // No pattern match.
           WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
-        case (pat, value, body, _) =>
+        case (pat, tpe, value, body, _) =>
           // Full-blown pattern match.
           val rule = WeededAst.MatchRule(pat, None, body)
           WeededAst.Expression.Match(withAscription(value, tpe), List(rule), loc)
@@ -1771,10 +1772,12 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Ascribe(exp, expectedType, expectedEff, sp2) =>
-      val t = expectedType.map(visitType)
-      val f = visitPurityAndEffect(expectedEff)
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+      val eVal = visitExp(exp, senv)
+      val tVal = visitType(expectedType)
+      // MATT make tVal None if wild
+      val fVal = traverseOpt(expectedEff)(visitType)
+      mapN(eVal, tVal, fVal) {
+        case (e, t, f) => WeededAst.Expression.Ascribe(e, Some(t), f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
     case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
@@ -1795,10 +1798,12 @@ object Weeder {
       }
 
     case ParsedAst.Expression.UncheckedCast(sp1, exp, declaredType, declaredEff, sp2) =>
-      val t = declaredType.map(visitType)
-      val f = visitPurityAndEffect(declaredEff)
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.UncheckedCast(e, t, f, mkSL(sp1, sp2))
+      val eVal = visitExp(exp, senv)
+      val tVal = visitType(declaredType)
+      // MATT None when declared type is wild
+      val fVal = traverseOpt(declaredEff)(visitType)
+      mapN(eVal, tVal, fVal) {
+        case (e, t, f) => WeededAst.Expression.UncheckedCast(e, Some(t), f, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.UncheckedMaskingCast(sp1, exp, sp2) =>
@@ -1944,10 +1949,11 @@ object Weeder {
       }
 
     case ParsedAst.Expression.FixpointLambda(sp1, pparams, exp, sp2) =>
-      val ps = pparams.map(visitPredicateParam)
+      val psVal = traverse(pparams)(visitPredicateParam)
+      val eVal = visitExp(exp, senv)
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.FixpointLambda(ps.toList, e, loc)
+      mapN(psVal, eVal) {
+        case (ps, e) => WeededAst.Expression.FixpointLambda(ps, e, loc)
       }
 
     case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
@@ -2670,7 +2676,7 @@ object Weeder {
     * Returns an error if a type is present.
     */
   private def requireNoEffect(tpe: Option[ParsedAst.Type], loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case Some(_) => WeederError.IllegalOperationEffect(loc)
+    case Some(_) => WeederError.IllegalOperationEffect(loc).toFailure
     case None => ().toSuccess
   }
 
@@ -2768,15 +2774,15 @@ object Weeder {
       }
 
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
-      val checkVal = traverse(tpes0)(checkEffectSetElement)
+      val checkVal = traverseX(tpes0)(checkEffectSetElement)
       val tpesVal = traverse(tpes0)(visitType)
       val loc = mkSL(sp1, sp2)
       mapN(checkVal, tpesVal) {
         case ((), tpes) =>
           val purOpt = tpes.reduceLeftOption({
-          case (acc, tpe) => WeededAst.Type.And(acc, tpe, loc)
-        })
-        purOpt.getOrElse(WeededAst.Type.True(loc))
+            case (acc, tpe) => WeededAst.Type.And(acc, tpe, loc)
+          }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
+          purOpt.getOrElse(WeededAst.Type.True(loc))
       }
 
     case ParsedAst.Type.CaseSet(sp1, cases, sp2) =>
@@ -2846,7 +2852,7 @@ object Weeder {
     val fieldsVal = traverse(fields0) {
       case ParsedAst.RecordFieldType(sp1, ident, tpe, sp2) =>
         mapN(visitType(tpe)) {
-          case t => (Name.mkField(ident), tpe)
+          case t => (Name.mkField(ident), t)
         }
     }
 
@@ -2944,22 +2950,23 @@ object Weeder {
     val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
 
     traverse(fparams) {
-      case param@ParsedAst.FormalParam(sp1, mods, ident, typeOpt, sp2) => seen.get(ident.name) match {
+      case param@ParsedAst.FormalParam(sp1, mods, ident, tpeOpt0, sp2) => seen.get(ident.name) match {
         case None =>
           if (!ident.name.startsWith("_")) {
             // Wildcards cannot be duplicate.
             seen += (ident.name -> param)
           }
+          val tpeOptVal = traverseOpt(tpeOpt0)(visitType)
 
-          flatMapN(visitModifiers(mods, legalModifiers = Set.empty)) {
-            case mod =>
-              (typeOpt, typePresence) match {
+          flatMapN(visitModifiers(mods, legalModifiers = Set.empty), tpeOptVal) {
+            case (mod, tpeOpt) =>
+              (tpeOpt, typePresence) match {
                 // Case 1: Required but missing. Error.
                 case (None, Presence.Required) => MissingFormalParamAscription(ident.name, mkSL(sp1, sp2)).toFailure
                 // Case 2: Forbidden but present. Error.
-                case (Some(tpe), Presence.Forbidden) => IllegalFormalParamAscription(mkSL(sp1, sp2)).toFailure
+                case (Some(_), Presence.Forbidden) => IllegalFormalParamAscription(mkSL(sp1, sp2)).toFailure
                 // Case 3: No violation. Good to go.
-                case _ => WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), mkSL(sp1, sp2)).toSuccess
+                case _ => WeededAst.FormalParam(ident, mod, tpeOpt, mkSL(sp1, sp2)).toSuccess
               }
           }
         case Some(otherParam) =>
@@ -2978,23 +2985,27 @@ object Weeder {
   /**
     * Weeds the given predicate param `pparam`.
     */
-  private def visitPredicateParam(pparam: ParsedAst.PredicateParam): WeededAst.PredicateParam = pparam match {
+  private def visitPredicateParam(pparam: ParsedAst.PredicateParam): Validation[WeededAst.PredicateParam, WeederError] = pparam match {
     case ParsedAst.PredicateParam.UntypedPredicateParam(sp1, ident, sp2) =>
       val pred = Name.mkPred(ident)
-      WeededAst.PredicateParam.PredicateParamUntyped(pred, mkSL(sp1, sp2))
+      WeededAst.PredicateParam.PredicateParamUntyped(pred, mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.PredicateParam.RelPredicateParam(sp1, ident, tpes, sp2) =>
       val pred = Name.mkPred(ident)
       val den = Ast.Denotation.Relational
-      val ts = tpes.map(visitType).toList
-      WeededAst.PredicateParam.PredicateParamWithType(pred, den, ts, mkSL(sp1, sp2))
+      val tsVal = traverse(tpes)(visitType)
+      mapN(tsVal) {
+        case ts => WeededAst.PredicateParam.PredicateParamWithType(pred, den, ts, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.PredicateParam.LatPredicateParam(sp1, ident, tpes, tpe, sp2) =>
       val pred = Name.mkPred(ident)
       val den = Ast.Denotation.Latticenal
-      val ts = tpes.map(visitType).toList
-      val t = visitType(tpe)
-      WeededAst.PredicateParam.PredicateParamWithType(pred, den, ts ::: t :: Nil, mkSL(sp1, sp2))
+      val tsVal = traverse(tpes)(visitType)
+      val tVal = visitType(tpe)
+      mapN(tsVal, tVal) {
+        case (ts, t) => WeededAst.PredicateParam.PredicateParamWithType(pred, den, ts ::: t :: Nil, mkSL(sp1, sp2))
+      }
   }
 
   /**
@@ -3077,11 +3088,14 @@ object Weeder {
     */
   private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
     case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
-      val tpe = visitType(tparam0)
-      if (isAllVars(tpe)) {
-        WeededAst.TypeConstraint(clazz, tpe, mkSL(sp1, sp2)).toSuccess
+      val tpeVal = visitType(tparam0)
+      val checkVal = if (isAllVars(tparam0)) {
+        ().toSuccess
       } else {
         WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
+      }
+      mapN(tpeVal, checkVal) {
+        case (tpe, check) => WeededAst.TypeConstraint(clazz, tpe, mkSL(sp1, sp2))
       }
   }
 
@@ -3090,12 +3104,16 @@ object Weeder {
     */
   private def visitEqualityConstraint(econstr: ParsedAst.EqualityConstraint): Validation[WeededAst.EqualityConstraint, WeederError] = econstr match {
     case ParsedAst.EqualityConstraint(sp1, tpe1, tpe2, sp2) =>
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
+      val t1Val = visitType(tpe1)
+      val t2Val = visitType(tpe2)
       val loc = mkSL(sp1, sp2)
-      t1 match {
-        case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, _) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
-        case _ => WeederError.IllegalEqualityConstraint(loc).toFailure
+      // TODO don't short-circuit
+      flatMapN(t1Val, t2Val) {
+        case (t1, t2) =>
+          t1 match {
+            case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, _) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
+            case _ => WeederError.IllegalEqualityConstraint(loc).toFailure
+          }
       }
   }
 
@@ -3114,7 +3132,7 @@ object Weeder {
     * Performs weeding on the given effect `ident`.
     * Checks whether it is actually the keyword `Static`.
     */
-    // TODO remove
+  // TODO remove
   private def visitEffectIdent(ident: Name.Ident): WeededAst.Type = {
     if (ident.name == "Static")
       WeededAst.Type.False(ident.loc)
@@ -3126,20 +3144,22 @@ object Weeder {
     * Performs weeding on the given JvmMethod
     */
   private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = method match {
-    case ParsedAst.JvmMethod(sp1, ident, fparams0, tpe, purAndEff, exp0, sp2) =>
+    case ParsedAst.JvmMethod(sp1, ident, fparams0, tpe, pur0, exp0, sp2) =>
+      val fparamsVal = visitFormalParams(fparams0, Presence.Required)
       val tpeVal = visitType(tpe)
-      val purAndEffVal = visitPurityAndEffect(purAndEff)
-      mapN(visitFormalParams(fparams0, Presence.Required), visitExp(exp0, senv)) {
-        case (fparams, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpeVal, purAndEffVal, mkSL(sp1, sp2))
+      val purVal = traverseOpt(pur0)(visitType)
+      val expVal = visitExp(exp0, senv)
+      mapN(fparamsVal, tpeVal, purVal, expVal) {
+        case (fparams, tpe, pur, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpe, pur, mkSL(sp1, sp2))
       }
   }
 
   /**
     * Returns true iff the type is composed only of type variables possibly applied to other type variables.
     */
-  private def isAllVars(tpe: WeededAst.Type): Boolean = tpe match {
-    case _: WeededAst.Type.Var => true
-    case WeededAst.Type.Apply(tpe1, tpe2, _) => isAllVars(tpe1) && isAllVars(tpe2)
+  private def isAllVars(tpe: ParsedAst.Type): Boolean = tpe match {
+    case _: ParsedAst.Type.Var => true
+    case ParsedAst.Type.Apply(tpe1, tpes, _) => (tpe1 +: tpes).forall(isAllVars)
     case _ => false
   }
 
@@ -3178,11 +3198,11 @@ object Weeder {
   /**
     * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
     */
-  private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = {
+  private def withAscription(exp0: WeededAst.Expression, tpe0: Option[WeededAst.Type])(implicit flix: Flix): WeededAst.Expression = {
     val l = exp0.loc.asSynthetic
     tpe0 match {
       case None => exp0
-      case Some(t) => WeededAst.Expression.Ascribe(exp0, Some(visitType(t)), WeededAst.PurityAndEffect(None, None), l)
+      case Some(t) => WeededAst.Expression.Ascribe(exp0, Some(t), None, l)
     }
   }
 

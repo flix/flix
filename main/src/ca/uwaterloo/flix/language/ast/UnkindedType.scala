@@ -84,10 +84,7 @@ sealed trait UnkindedType {
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
-    case UnkindedType.Arrow(UnkindedType.PurityAndEffect(pur, eff), _, _) =>
-      val p = pur.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
-      val e = eff.iterator.flatMap(_.flatMap(_.definiteTypeVars)).to(SortedSet)
-      p ++ e
+    case UnkindedType.Arrow(pur, _, _) => pur.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
     case UnkindedType.CaseComplement(tpe, _) => tpe.definiteTypeVars
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
@@ -195,13 +192,13 @@ object UnkindedType {
   /**
     * A function type.
     */
-  case class Arrow(purAndEff: PurityAndEffect, arity: Int, loc: SourceLocation) extends UnkindedType {
+  case class Arrow(pur: Option[UnkindedType], arity: Int, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case Arrow(purAndEff2, arity2, _) => purAndEff2 == purAndEff && arity == arity2
+      case Arrow(pur2, arity2, _) => pur2 == pur && arity == arity2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(purAndEff, arity)
+    override def hashCode(): Int = Objects.hash(pur, arity)
   }
 
   /**
@@ -300,13 +297,6 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(cst, arg)
   }
 
-  case class PurityAndEffect(pur: Option[UnkindedType], eff: Option[List[UnkindedType]]) {
-    /**
-      * Maps the function `f` over the contents of this PurityAndEffect
-      */
-    def map(f: UnkindedType => UnkindedType): PurityAndEffect = PurityAndEffect(pur.map(f), eff.map(_.map(f)))
-  }
-
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
@@ -369,8 +359,8 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val purAndEff = PurityAndEffect(None, Some(List(UnkindedType.Cst(TypeConstructor.False, loc))))
-    mkApply(UnkindedType.Arrow(purAndEff, 2, loc), List(a, b), loc)
+    val pur = Some(UnkindedType.Cst(TypeConstructor.False, loc))
+    mkApply(UnkindedType.Arrow(pur, 2, loc), List(a, b), loc)
   }
 
   /**
@@ -488,7 +478,7 @@ object UnkindedType {
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
-  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType.PurityAndEffect, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: Option[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = {
     val arrow = UnkindedType.Arrow(e, as.length + 1, loc)
     val inner = as.foldLeft(arrow: UnkindedType) {
       case (acc, x) => UnkindedType.Apply(acc, x, loc)

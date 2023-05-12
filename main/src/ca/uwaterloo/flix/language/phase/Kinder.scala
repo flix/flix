@@ -1465,44 +1465,16 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given purity and effect.
-    * Defaults to the respective `Pure` value for each component if absent.
-    */
-  private def visitPurityAndEffect(purAndEff: UnkindedType.PurityAndEffect, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = purAndEff match {
-    case UnkindedType.PurityAndEffect(_, eff0) =>
-      val effs0 = eff0.getOrElse(Nil)
-      val effsVal = traverse(effs0)(visitType(_, Kind.Bool, kenv, taenv, root))
-
-      mapN(effsVal) {
-        case effs =>
-          effs.reduceLeftOption({
-            case (acc, t) => Type.mkAnd(acc, t, t.loc.asSynthetic)
-          }: (Type, Type) => Type).getOrElse(Type.True)
-      }
-  }
-
-  /**
-    * Performs kinding on the given optional purity and effect.
-    */
-  private def visitOptionalPurityAndEffect(purAndEff0: UnkindedType.PurityAndEffect, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Option[Type], KindError] = purAndEff0 match {
-    case UnkindedType.PurityAndEffect(None, None) => None.toSuccess
-    case purAndEff =>
-      mapN(visitPurityAndEffect(purAndEff, kenv, taenv, root)) {
-        case pur => Some(pur)
-      }
-  }
-
-  /**
     * Performs kinding on the given JVM method.
     */
   private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix) = method match {
-    case ResolvedAst.JvmMethod(_, fparams, exp, tpe0, _, _) =>
+    case ResolvedAst.JvmMethod(_, fparams, exp, tpe0, pur, loc) =>
       val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, taenv, root))
       val expVal = visitExp(exp, kenv, taenv, henv, root)
-      val purAndEffVal = visitPurityAndEffect(method.purAndEff, kenv, taenv, root)
+      val purAndEffVal = visitType(pur, Kind.Bool, kenv, taenv, root)
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, taenv, root)
       mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
-        case (f, e, tpe, pur) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, method.loc)
+        case (f, e, tpe, pur) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, loc)
       }
   }
 
