@@ -87,7 +87,7 @@ mod Choice {
     ///
     @Experimental
     pub def withDefault[s : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-                       (default: {default = Choice[s, a2, p2]}, c: Choice[s, a1, p1]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
+                       (default: {default = Choice[s, a2, p2]}, c: Choice[s, a1, p1]): Choice[s, a1 + a2, p1 & (a1 + p2)] =
         relational_choose* c {
             case Absent     => default.default
             case Present(v) => Present(v)
@@ -121,7 +121,7 @@ mod Choice {
     ///
     @Experimental
     pub def flatMap[s : Type, t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-                   (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 or (p1 and a2), p1 and p2] =
+                   (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 & (p1 + a2), p1 + p2] =
         relational_choose* c {
             case Absent     => Absent
             case Present(v) => f(v)
@@ -132,7 +132,7 @@ mod Choice {
     ///
     @Experimental
     pub def flatten[t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, (a1 and p2) or a2, p1 and p2] =
+        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, (a1 + p2) & a2, p1 + p2] =
         relational_choose* c {
             case Absent     => Absent
             case Present(v) => v
