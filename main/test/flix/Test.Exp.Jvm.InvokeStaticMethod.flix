@@ -1,4 +1,4 @@
-namespace Test/Exp/Jvm/InvokeStaticMethod {
+mod Test.Exp.Jvm.InvokeStaticMethod {
 
     @test
     def testInvokeStaticMethod01(): Bool \ IO =

@@ -2,6 +2,7 @@
 
 By adding your name to this document, you agree to release all your contributions to Flix under the [Apache 2.0 License](LICENSE.md).
 
+- [Nathan Bedell](https://github.com/sintrastes)
 - [Luqman Aden](https://github.com/luqmana)
 - [Nada Amin](https://github.com/namin)
 - [Ondřej Lhoták](https://github.com/olhotak)
@@ -57,3 +58,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Lukas Rønn](https://github.com/LukasRonn)
 - [Magnus Holm Rasmussen](https://github.com/mR4smussen)
 - [Daniel Welch](https://github.com/dtwelch)
+- [Sam Ezeh](https://github.com/dignissimus)
+- [Holger Dal Mogensen](https://github.com/sockmaster27)
+- [Roland Csaszar](https://github.com/Release-Candidate/)
+- [Ziyao Wei](https://github.com/ZiyaoWei)

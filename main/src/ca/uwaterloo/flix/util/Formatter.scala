@@ -283,6 +283,11 @@ object Formatter {
   }
 
   /**
+    * Returns the default formatter based on the detected color support.
+    */
+  def getDefault: Formatter = if (hasColorSupport) AnsiTerminalFormatter else NoFormatter
+
+  /**
     * Returns `true` if the terminal appears to support at least 256 colors.
     */
   def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal || isIdeaTerminal

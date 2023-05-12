@@ -4,7 +4,7 @@
 /// Given two railroad stations a and b, if they are only connected through some station c,
 /// then they are unsafely connected. Because if c fails there is no way to get from a to b.
 ///
-def safeConnects(src: n, links: f[(n, n)]): {safe = List[n], unsafe = List[n]} with Foldable[f], Boxable[n] =
+def safeConnects(src: n, links: f[(n, n)]): {safe = List[n], unsafe = List[n]} with Foldable[f], Order[n] =
     let db = inject links into Link;
     let pr = #{
         // Directly linked stations.

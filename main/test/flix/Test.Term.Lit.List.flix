@@ -1,4 +1,4 @@
-namespace Test/Term/Lit/List {
+mod Test.Term.Lit.List {
 
     @test
     def testLitList01(): Bool =

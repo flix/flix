@@ -15,22 +15,20 @@
  */
 
 instance LowerBound[Char] {
-    pub def minValue(): Char = '\u0000'
+    pub def minValue(): Char = Char.minValue()
 }
 
 instance UpperBound[Char] {
-    pub def maxValue(): Char = '\uffff'
+    pub def maxValue(): Char = Char.maxValue()
 }
 
-namespace Char {
+mod Char {
 
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
-    pub def isAscii(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0000 and i <= 0x007F => true        // 'NUL'..'DEL'
-        case _ => false
-    }
+    pub def isAscii(c: Char): Bool =
+        c <= '\u0080'
 
     ///
     /// Returns `true` if the given char `c` is a letter character.
@@ -50,26 +48,22 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
     ///
-    pub def isAsciiDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
-        case _ => false
-    }
+    pub def isAsciiDigit(c: Char): Bool =
+        isAscii(c) and isDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
-    pub def isOctDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 and i <= 0x0037 => true        // '0'..'7'
-        case _ => false
-    }
+    pub def isOctDigit(c: Char): Bool =
+        '0' <= c and c <= '7'     // '0'..'7'
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
     ///
-    pub def isHexDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
-        case i if i >= 0x0041 and i <= 0x0046 => true        // 'A'..'F'
-        case i if i >= 0x0061 and i <= 0x0066 => true        // 'a'..'f'
+    pub def isHexDigit(c: Char): Bool = match c {
+        case i if '0' <= i and i <= '9' => true        // '0'..'9'
+        case i if 'A' <= i and i <= 'F' => true        // 'A'..'F'
+        case i if 'a' <= i and i <= 'f' => true        // 'a'..'f'
         case _ => false
     }
 
@@ -118,15 +112,69 @@ namespace Char {
     pub def toString(c: Char): String = ToString.toString(c)
 
     ///
-    /// Returns the character `c` as an Int32.
+    /// Returns the character given by the all zero byte.
     ///
-    pub def toInt32(c: Char): Int32 =
-        unchecked_cast(c as Int32)
+    pub def minValue(): Char = '\u0000'
 
     ///
-    /// Returns the respective character for the int `i`.
+    /// Returns the character given by the maximum valued byte.
     ///
-    pub def fromInt32(i: Int32): Char =
-        unchecked_cast(i as Char)
+    pub def maxValue(): Char = '\uffff'
+
+    ///
+    /// Returns the integer value representated by Char `c` (e.g. '1' => `Some(1)``)
+    /// or `None` if `c` does not represent a number.
+    ///
+    /// This function cannot handle supplementary characters.
+    ///
+    pub def getNumericValue(c: Char): Option[Int32] =
+        import static java.lang.Character.getNumericValue(Char): Int32 \ {};
+        match getNumericValue(c) {
+            case i if i < 0 => None
+            case i          => Some(i)
+        }
+
+    ///
+    /// Returns the integer value representated by the codepoint `cp` e.g. codepoint 0x0031
+    /// which is the char '1' returns `Some(1)`.
+    ///
+    /// Returns `None` if `cp` does not represent a number.
+    ///
+    /// This function handles supplementary characters.
+    ///
+    pub def getCodePointNumericValue(cp: Int32): Option[Int32] =
+        import static java.lang.Character.getNumericValue(Int32): Int32 \ {};
+        match getNumericValue(cp) {
+            case i if i < 0 => None
+            case i          => Some(i)
+        }
+
+    ///
+    /// Returns the integer value representated by Char `c` with respect to `radix`. E.g.
+    /// `digit(radix = 10, '1') => Some(1)`
+    /// `digit(radix = 16, 'a') => Some(11)`
+    ///
+    /// Returns `None` if `cp` does not represent a number.
+    ///
+    pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
+        import static java.lang.Character.digit(Char, Int32): Int32 \ {};
+        match digit(c, radix.radix) {
+            case i if i < 0 => None
+            case i          => Some(i)
+        }
+
+    ///
+    /// Returns a character representation of the integer `n` with respect to `radix`. E.g.
+    /// `forDigit(radix = 10, 1) => Some('1')`
+    /// `forDigit(radix = 16, 11) => Some('a')`
+    ///
+    /// Returns `None` if `n` is not representable as single character in the radix.
+    ///
+    pub def forDigit(radix: {radix = Int32}, n: Int32): Option[Char] =
+        import static java.lang.Character.forDigit(Int32, Int32): Char \ {};
+        match forDigit(n, radix.radix) {
+            case c if c == '\u0000' => None
+            case c                  => Some(c)
+        }
 
 }

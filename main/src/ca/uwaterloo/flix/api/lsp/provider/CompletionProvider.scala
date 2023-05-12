@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.completion._
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -83,11 +85,17 @@ object CompletionProvider {
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
     // to the source (which would imply a bug in VSCode?).
     //
-    val completions = source.flatMap(getContext(_, uri, pos)) match {
+    val completions = source.flatMap(getContext(_, uri, pos, currentErrors)) match {
       case None => Nil
       case Some(context) =>
         root match {
-          case Some(nonOptionRoot) => getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
+          case Some(nonOptionRoot) =>
+            // Get all completions
+            val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext)
+
+            // Find the best completion
+            val best = CompletionRanker.findBest(completions)
+            boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
           case None => Nil
         }
     }
@@ -102,12 +110,12 @@ object CompletionProvider {
     if (root.isEmpty) return Nil
     val entity = index.query(uri, pos)
     entity match {
-      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, _, loc))) =>
+      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, loc))) =>
         HoleCompletion.candidates(sourceType, targetType, root.get)
-          .map((root.get.defs(_)))
+          .map(root.get.defs(_))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex
-          .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", uri, loc, sym, decl, root) }
+          .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", loc, sym, decl) }
       case _ => Nil
     }
   }
@@ -115,7 +123,7 @@ object CompletionProvider {
   /**
     * Creates a completion item from a hole with expression and a def.
     */
-  private def holeDefCompletion(priority: String, uri: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def, root: Option[TypedAst.Root])(implicit flix: Flix): CompletionItem = {
+  private def holeDefCompletion(priority: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def)(implicit flix: Flix): CompletionItem = {
     val name = decl.sym.toString
     val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
@@ -132,114 +140,92 @@ object CompletionProvider {
       kind = CompletionItemKind.Function)
   }
 
-  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[CompletionItem] = {
-    // If we match one of the we know what type of completion we need
-    val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
-    val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasRegex = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val effectRegex = raw".*[\\]\s*[^\s]*".r
-    val importRegex = raw"\s*import\s+.*".r
-    val useRegex = raw"\s*use\s+[^\s]*".r
-    val instanceRegex = raw"\s*instance\s+[^s]*".r
-
-    // if any of the following matches we do not want any completions
-    val defRegex = raw"\s*def\s+[^=]*".r
-    val enumRegex = raw"\s*enum\s+.*".r
-    val incompleteTypeAliasRegex = raw"\s*type\s+alias\s+.*".r
-    val classRegex = raw"\s*class\s+.*".r
-    val letRegex = raw"\s*let\s+[^\s]*".r
-    val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
-    val modRegex = raw"\s*mod\s+.*".r
-    val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
-    val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
-
-    // if any of the following matches we know the next must be an expression
-    val channelKeywordRegex = raw".*<-\s*[^\s]*".r
-    val doubleColonRegex = raw".*::\s*[^\s]*".r
-    val tripleColonRegex = raw".*:::\s*[^\s]*".r
-
-    // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
-    context.prefix match {
-      case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
-      case withRegex() => WithCompleter.getCompletions(context) map (withComp => withComp.toCompletionItem(context))
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context) map (typ => typ.toCompletionItem(context))
-      case effectRegex() => EffectCompleter.getCompletions(context) map (effect => effect.toCompletionItem(context))
-      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
-      case importRegex() =>
-        (ImportNewCompleter.getCompletions(context)
-        ++ ImportMethodCompleter.getCompletions(context)
-        ++ ImportFieldCompleter.getCompletions(context)
-        ++ ClassCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context)))
-      case useRegex() => UseCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context))
-      case instanceRegex() => InstanceCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context))
+  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+    context.sctx match {
       //
-      // The order of this list doesn't matter because suggestions are ordered
-      // through sortText
+      // Expressions.
       //
-      case _ => getExpCompletions() ++
-        (PredicateCompleter.getCompletions(context) ++
-          TypeCompleter.getCompletions(context) ++
-          EffectCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context)))
+      case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
+      case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
+
+      //
+      // Declarations.
+      //
+      case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
+      case _: SyntacticContext.Decl =>
+        KeywordOtherCompleter.getCompletions(context) ++
+          InstanceCompleter.getCompletions(context) ++
+          SnippetCompleter.getCompletions(context)
+
+      //
+      // Imports.
+      //
+      case SyntacticContext.Import => ImportCompleter.getCompletions(context)
+
+      //
+      // Types.
+      //
+      case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context)
+
+      //
+      // Patterns.
+      //
+      case _: SyntacticContext.Pat => Nil
+
+      //
+      // Uses.
+      //
+      case SyntacticContext.Use => UseCompleter.getCompletions(context)
+
+      //
+      // With.
+      //
+      case SyntacticContext.WithClause =>
+        // A with context could also be just a type context.
+        TypeCompleter.getCompletions(context) ++ WithCompleter.getCompletions(context)
+
+      //
+      // Fallthrough.
+      //
+      case SyntacticContext.Unknown =>
+        KeywordOtherCompleter.getCompletions(context) ++ SnippetCompleter.getCompletions(context)
     }
   }
 
   /**
-    * Returns a list of completions that may be used in a position where an expression is needed.
-    * This should include all completions supported that could be an expression.
-    * All of the completions are not necessarily sound.
-    */
-  private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[CompletionItem] = {
-    KeywordCompleter.getCompletions(context) ++
-      SnippetCompleter.getCompletions(context) ++
-      VarCompleter.getCompletions(context) ++
-      DefCompleter.getCompletions(context) ++
-      SignatureCompleter.getCompletions(context) ++
-      FieldCompleter.getCompletions(context) ++
-      OpCompleter.getCompletions(context) ++
-      MatchCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context))
-  }
-
-  /**
-    * Returns a list of completions based on the given compilation messages.
-    */
-  private def getCompletionsFromErrors(pos: Position, errors: List[CompilationMessage])(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root]): Iterator[CompletionItem] = {
-    val undefinedNames = errors.collect {
-      case m: ResolutionError.UndefinedName => m
-    }
-    closest(pos, undefinedNames) match {
-      case None => Iterator.empty
-      case Some(undefinedNameError) =>
-        val suggestions = undefinedNameError.env.map {
-          case (name, sym) => CompletionItem(label = name,
-            sortText = Priority.high(name),
-            textEdit = TextEdit(context.range, name + " "),
-            detail = None,
-            kind = CompletionItemKind.Variable)
-        }
-        suggestions.iterator
-    }
-  }
-
-  /**
-    * Optionally returns the error message in `l` closest to the given position `pos`.
-    */
-  private def closest[T <: CompilationMessage](pos: Position, l: List[T]): Option[T] = {
-    if (l.isEmpty)
-      None
-    else
-      Some(l.minBy(msg => lineDistance(pos, msg.loc)))
-  }
-
-  /**
-    * Returns the line distance between `pos` and `loc`.
+    * Boosts a best completion to the top of the pop-up-pane.
     *
-    * Returns `Int.MaxValue` if `loc` is Unknown.
+    * @param comp the completion to boost.
+    * @return nil, if no we have no completion to boost,
+    *         otherwise a List consisting only of the boosted completion as CompletionItem.
     */
-  private def lineDistance(pos: Position, loc: SourceLocation): Int =
-    if (loc == SourceLocation.Unknown)
-      Int.MaxValue
-    else
-      Math.abs(pos.line - loc.beginLine)
+  private def boostBestCompletion(comp: Option[Completion])(implicit context: CompletionContext, flix: Flix): List[CompletionItem] = {
+    comp match {
+      case None =>
+        // No best completion to boost
+        Nil
+      case Some(best) =>
+        // We have a better completion, boost that to top priority
+        val compForBoost = best.toCompletionItem(context)
+        // Change documentation to include "Best pick"
+        val bestPickDocu = compForBoost.documentation match {
+          case Some(oldDocu) =>
+            // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
+            // visible to the user, that it's the best pick.
+            "Best pick \n\n" + oldDocu
+          case None => "Best pick"
+        }
+        // Boosting by changing priority in sortText
+        // This is done by removing the old int at the first position in the string, and changing it to 1
+        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
+          documentation = Some(bestPickDocu))
+        List(boostedComp)
+    }
+  }
 
   /**
     * Characters that constitute a word.
@@ -251,7 +237,7 @@ object CompletionProvider {
   /**
     * Returns the word at the end of a string, discarding trailing whitespace first
     */
-  private def getLastWord(s: String) = {
+  private def getLastWord(s: String): String = {
     s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
@@ -259,14 +245,14 @@ object CompletionProvider {
     * Returns the second-to-last word at the end of a string, *not* discarding
     * trailing whitespace first.
     */
-  private def getSecondLastWord(s: String) = {
+  private def getSecondLastWord(s: String): String = {
     s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
   /**
     * Find context from the source, and cursor position within it.
     */
-  private def getContext(source: String, uri: String, pos: Position): Option[CompletionContext] = {
+  private def getContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
     val x = pos.character - 1
     val y = pos.line - 1
     val lines = source.linesWithSeparators.toList
@@ -285,9 +271,25 @@ object CompletionProvider {
         case Some(s) => getLastWord(s)
       }
       val range = Range(Position(y, start), Position(y, end))
-      CompletionContext(uri, range, word, previousWord, prefix)
+      val sctx = getSyntacticContext(uri, pos, errors)
+      CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
     }
   }
 
+  /**
+    * Optionally returns the syntactic context from the given list of errors.
+    *
+    * We have to check that the syntax error occurs after the position of the completion.
+    */
+  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
+    errors.filter({
+      case err => pos.line <= err.loc.beginLine
+    }).collectFirst({
+      case ParseError(_, ctx, _) => ctx
+      case WeederError.IllegalJavaClass(_, _) => SyntacticContext.Import
+      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
+      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) SyntacticContext.Use else SyntacticContext.Expr.OtherExpr
+      case ResolutionError.UndefinedVar(_, _) => SyntacticContext.Expr.OtherExpr
+    }).getOrElse(SyntacticContext.Unknown)
 
 }

@@ -18,7 +18,7 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
     case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
 }
 
-namespace Iterator {
+mod Iterator {
     use Step.{Ans, Skip, Done}
 
 
@@ -474,12 +474,8 @@ namespace Iterator {
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
     pub def unfoldWithOk(rc: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, ef, r] =
-        def loop() = match f() {
-            case Ok(a)  => Ans(a)
-            case Err(_) => Done
-        };
-        let iterF = () -> checked_ecast(loop());
-        Iterator(rc, iterF)
+        let iterF = () -> Result.toOption(f());
+        Iterator.iterate(rc, iterF)
 
     ///
     /// Returns `iter` without the first `n` elements.

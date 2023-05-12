@@ -1,11 +1,10 @@
-namespace Reflect {
+mod Reflect {
 
     ///
     /// Returns a default value for the inferred type.
     /// The value returned should not be depended on;
     /// it acts as a placeholder to be replaced by a proper value.
     ///
-    @Unsafe
     pub def default(): a = typematch (Proxy.Proxy: Proxy[a]) {
         case _: Proxy[Unit]         => unchecked_cast(() as a)
         case _: Proxy[Bool]         => unchecked_cast(false as a)

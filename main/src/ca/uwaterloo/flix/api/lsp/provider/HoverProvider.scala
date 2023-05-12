@@ -50,7 +50,7 @@ object HoverProvider {
 
     case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
 
-    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.loc, current).getOrElse(mkNotFound(uri, pos))
 
     case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current).getOrElse(mkNotFound(uri, pos))
 
@@ -69,6 +69,7 @@ object HoverProvider {
     case Entity.Effect(_) => mkNotFound(uri, pos)
     case Entity.Enum(_) => mkNotFound(uri, pos)
     case Entity.TypeAlias(_) => mkNotFound(uri, pos)
+    case Entity.AssocType(_) => mkNotFound(uri, pos)
     case Entity.Field(_) => mkNotFound(uri, pos)
     case Entity.Op(_) => mkNotFound(uri, pos)
     case Entity.Sig(_) => mkNotFound(uri, pos)
@@ -93,17 +94,16 @@ object HoverProvider {
     }
   }
 
-  private def hoverTypeAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
+  private def hoverTypeAndEff(tpe: Type, pur: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
     root.map {
       case r =>
         val minPur = minimizeType(pur)
-        val minEff = minimizeType(eff)
         val minTpe = minimizeType(tpe)
         val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)(r)
         val markup =
           s"""${mkCurrentMsg(current)}
              |```flix
-             |${formatTypAndEff(minTpe, minPur, minEff)}$lowerAndUpperBounds
+             |${formatTypAndEff(minTpe, minPur)}$lowerAndUpperBounds
              |```
              |""".stripMargin
         val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -170,7 +170,7 @@ object HoverProvider {
     }
   }
 
-  private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type)(implicit flix: Flix): String = {
+  private def formatTypAndEff(tpe0: Type, pur0: Type)(implicit flix: Flix): String = {
     // TODO deduplicate with CompletionProvider
     val t = FormatType.formatType(tpe0)
 
@@ -185,16 +185,7 @@ object HoverProvider {
       }
     }
 
-    // don't show effect if set effects are turned off
-    val e = if (flix.options.xnoseteffects) {
-      ""
-    } else {
-      eff0 match {
-        case Type.Cst(TypeConstructor.Empty, _) => ""
-        case eff => " \\ " + FormatType.formatType(eff)
-      }
-    }
-    s"$t$p$e"
+    s"$t$p"
   }
 
   private def hoverKind(t: Type, current: Boolean)(implicit index: Index, root: Option[Root]): JObject = {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
-    use Fixpoint/Ast.Denotation
+    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
+    use Fixpoint.Ast.Denotation
 
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Vector[v], v, r], r]
     type alias SearchEnv[v: Type, r: Region] = (Array[Vector[v], r], Array[v, r])
@@ -56,10 +56,11 @@ namespace Fixpoint {
         }
 
     def allocEnv(r: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ Write(r) = match relOp {
-        case RelOp.Search(_, _, body) => allocEnv(r, depth + 1, body)
-        case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
-        case RelOp.Project(_) => (Array.repeat(r, depth, Vector.empty()), Array.new(r, depth))
-        case RelOp.If(_, then) => allocEnv(r, depth, then)
+        case RelOp.Search(_, _, body)           => allocEnv(r, depth + 1, body)
+        case RelOp.Query(_, _, _, body)         => allocEnv(r, depth + 1, body)
+        case RelOp.Functional(_, _, _, body)    => allocEnv(r, depth + 1, body)
+        case RelOp.Project(_)                   => (Array.repeat(r, depth, Vector.empty()), Array.new(r, depth))
+        case RelOp.If(_, then)                  => allocEnv(r, depth, then)
     }
 
     def evalOp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { Read(r1), Write(r1), Read(r2), Write(r2) } with Order[v] =
@@ -78,6 +79,15 @@ namespace Fixpoint {
                     Array.put(l, i, latEnv);
                     evalOp(r1, db, env, body)
                 }, MutMap.getWithDefault(ramSym, MutMap.new(r1), db))
+            case RelOp.Functional(RowVar.Index(i), f, terms, body) =>
+                let args = terms |> Vector.map(evalTerm(env));
+                let result = f(args): Vector[Vector[v]];
+
+                let (tupleEnv, _latEnv) = env; // TODO: Do we ever need to use latEnv?
+                foreach (t <- result) {
+                    Array.put(t, i, tupleEnv);
+                    evalOp(r1, db, env, body)
+                }
             case RelOp.Project(terms, ramSym) =>
                 let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r1), db);
                 match toDenotation(ramSym) {
@@ -205,6 +215,7 @@ namespace Fixpoint {
             let v4 = evalTerm(env, t4);
             let v5 = evalTerm(env, t5);
             f(v1)(v2)(v3)(v4)(v5)
+        case RamTerm.RowLoad(rowVar, index) => bug!("Illegal RowLoad with ${rowVar} ${index}")
         case _ => bug!("Illegal term ${term}")
     }
 }

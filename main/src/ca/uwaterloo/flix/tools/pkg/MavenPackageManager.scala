@@ -30,6 +30,7 @@ import java.nio.file.{Files, Path, Paths}
 
 object MavenPackageManager {
 
+  val FolderName = "cache"
   private val scalaVersion = "2.13"
 
   /**
@@ -37,12 +38,12 @@ object MavenPackageManager {
     * dependencies using coursier in the /lib/cache folder of `path`.
     * Returns a list of paths to the downloadet .jars.
     */
-  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Resolving Maven dependencies...")
 
-    val depStrings = getMavenDependencyStrings(manifest)
+    val depStrings = manifests.flatMap(manifest => getMavenDependencyStrings(manifest))
 
-    val libPath = Bootstrap.getLibraryDirectory(path).resolve("cache")
+    val libPath = Bootstrap.getLibraryDirectory(path).resolve(FolderName)
     val cacheString = libPath.toString
     Files.createDirectories(Paths.get(cacheString))
 
@@ -72,10 +73,10 @@ object MavenPackageManager {
         resList.toList
       } catch {
         case e: Exception =>
-          out.println(e)
+          out.println(e.getMessage)
           //Shortens the error message to just give the name of the dependency
           val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
-          return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
+          return Err(PackageError.CoursierError(message))
       }
       l.toOk
     }
@@ -85,7 +86,7 @@ object MavenPackageManager {
     * Finds the MavenDependencies for a Manifest
     * and converts them to Strings.
     */
-  private def getMavenDependencyStrings(manifest: Manifest): List[String] = {
+  def getMavenDependencyStrings(manifest: Manifest): List[String] = {
     manifest.dependencies.collect {
       case dep: MavenDependency => dep
     }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.version.toString}")

@@ -192,8 +192,8 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) = region r2 {
-        let l = MutList.new(r2);
+    pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) = region rc2 {
+        let l = MutList.new(rc2);
         Foldable.forEach(a -> MutList.push!(a, l), t);
         MutList.toArray(r, l)
     }
@@ -209,8 +209,8 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], t: t[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, Foldable.toArray(r2, t))
+    pub def toMutList(r: Region[r], t: t[a]): MutList[a, r] \ Write(r) = region rc2 {
+        Array.toMutList(r, Foldable.toArray(rc2, t))
     }
 
     ///
@@ -344,17 +344,17 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the concatenation of the string representation
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ ef = region r {
+    pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         t |> Foldable.forEach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
 }
 
-namespace Foldable {
+mod Foldable {
 
     use Applicative.{*>}
 

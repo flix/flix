@@ -17,13 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
@@ -46,12 +43,12 @@ object Documentor {
     */
   val OutputDirectory: Path = Paths.get("./build/api")
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("Documentor") {
     //
     // Determine whether to generate documentation.
     //
     if (!flix.options.documentor) {
-      return root.toSuccess
+      return root
     }
 
     //
@@ -156,7 +153,7 @@ object Documentor {
         ("namespaces" -> namespacesSorted) ~
         ("classes" -> classesByNS) ~
         ("enums" -> enumsByNS) ~
-        ("restrictableEnums" -> restrictableEnumsByNS)
+        ("restrictableEnums" -> restrictableEnumsByNS) ~
         ("typeAliases" -> typeAliasesByNS) ~
         ("defs" -> defsByNS)
 
@@ -169,7 +166,7 @@ object Documentor {
     // Write the string to the path.
     writeString(s, p)
 
-    root.toSuccess
+    root
   }
 
   /**
@@ -199,7 +196,7 @@ object Documentor {
     if (namespace == Nil)
       RootNS
     else
-      namespace.mkString("/")
+      namespace.mkString(".")
   }
 
   /**
@@ -209,7 +206,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given enum `decl`.
@@ -218,7 +215,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given definition `decl`.
@@ -227,7 +224,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given type alias `decl`.
@@ -236,7 +233,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the given definition `defn0` as a JSON object.
@@ -250,7 +247,7 @@ object Documentor {
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
       ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
       ("eff" -> FormatType.formatType(defn0.spec.pur)) ~ // TODO change JSON name to `pur`
-      ("tcs" -> defn0.spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
+      ("tcs" -> defn0.spec.declaredScheme.tconstrs.map(visitTypeConstraint)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
 
@@ -258,7 +255,7 @@ object Documentor {
     * Returns the given instance `inst` as a JSON value.
     */
   private def visitInstance(sym: Symbol.ClassSym, inst: Instance)(implicit flix: Flix): JObject = inst match {
-    case Instance(_, ann, _, _, tpe, tcs, _, _, loc) =>
+    case Instance(_, ann, _, _, tpe, tcs, _, _, _, loc) => // TODO ASSOC-TYPES visit assocs
       ("sym" -> visitClassSym(sym)) ~
         ("ann" -> visitAnnotations(ann)) ~
         ("tpe" -> visitType(tpe)) ~
@@ -334,10 +331,8 @@ object Documentor {
   def visitKind(kind: Kind): String = kind match {
     case Kind.Wild => ""
     case Kind.WildCaseSet => ""
-    case Kind.Beef => "Bool or Effect"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
-    case Kind.Effect => "Effect"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
     case Kind.Predicate => ""
@@ -410,7 +405,7 @@ object Documentor {
         ("fparams" -> spec.fparams.map(visitFormalParam)) ~
         ("tpe" -> visitType(spec.retTpe)) ~
         ("eff" -> visitType(spec.pur)) ~ // TODO change JSON to `pur`
-        ("tcs" -> spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
+        ("tcs" -> spec.declaredScheme.tconstrs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(spec.loc))
   }
 
@@ -467,7 +462,7 @@ object Documentor {
     * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class)(implicit root: Root, flix: Flix): JObject = cla match {
-    case Class(doc, ann, mod, sym, tparam, superClasses, signatures0, _, loc) =>
+    case Class(doc, ann, mod, sym, tparam, superClasses, _, signatures0, _, loc) => // TODO ASSOC-TYPES visit assocs
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)

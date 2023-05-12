@@ -21,13 +21,13 @@ pub enum MutSet[t: Type, r: Region] {
     case MutSet(Region[r], Ref[Set[t], r])
 }
 
-namespace MutSet {
+mod MutSet {
 
     ///
     /// Returns a string representation of the given mutable set `s`.
     ///
-    pub def toString(s: MutSet[a, r]): String \Read(r) with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(s: MutSet[a, r]): String \Read(r) with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -382,8 +382,8 @@ namespace MutSet {
     ///
     /// Applies `f` to every element of the mutable set `s` along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } = region rh {
-        let ix = ref 0 @ rh;
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } = region rc {
+        let ix = ref 0 @ rc;
         forEach(x -> {let i = deref ix; f(i, x); ix := i+1}, s)
     }
 

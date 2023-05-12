@@ -35,7 +35,7 @@ pub lawful class Functor[m : Type -> Type] {
     law composition: forall(f: b -> c, g: a -> b, v: m[a]) with Eq[m[c]] . Functor.map(g >> f, v) == Functor.map(f, Functor.map(g, v))
 }
 
-namespace Functor {
+mod Functor {
 
     ///
     /// Replaces the value `a` in `s` by the given value `x` preserving the structure of `s`.

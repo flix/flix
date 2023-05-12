@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestFloat32 {
+mod TestFloat32 {
 
     use Mul.mul
 
@@ -62,19 +62,19 @@ namespace TestFloat32 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Float32.maxValue() == ((2.0f32 - 2.0f32 ** -23.0f32) * (2.0f32 ** 127.0f32))
+    def maxValue01(): Bool = Float32.maxValue() == ((2.0f32 - Float32.pow(2.0f32, -23.0f32)) * Float32.pow(2.0f32, 127.0f32))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Float32.minValue() == (-(2.0f32 - 2.0f32 ** -23.0f32) * (2.0f32 ** 127.0f32))
+    def minValue01(): Bool = Float32.minValue() == (-(2.0f32 - Float32.pow(2.0f32, -23.0f32)) * Float32.pow(2.0f32, 127.0f32))
 
     /////////////////////////////////////////////////////////////////////////////
     // minPositiveValue                                                        //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minPositiveValue01(): Bool = Float32.minPositiveValue() == (2.0f32 ** -149.0f32)
+    def minPositiveValue01(): Bool = Float32.minPositiveValue() == Float32.pow(2.0f32, -149.0f32)
 
     /////////////////////////////////////////////////////////////////////////////
     // nan                                                                     //
@@ -715,5 +715,23 @@ namespace TestFloat32 {
     @test
     def round11(): Bool =
         equalsEps(Float32.round(2.5f32), 2.0f32, 0.001f32)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // pow                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def pow01(): Bool = equalsEps(Float32.pow(0.0f32, 0.0f32), 1.0f32, 0.001f32)
+
+    @test
+    def pow02(): Bool = equalsEps(Float32.pow(0.0f32, 1.0f32), 0.0f32, 0.001f32)
+
+    @test
+    def pow03(): Bool = equalsEps(Float32.pow(1.0f32, 0.0f32), 1.0f32, 0.001f32)
+
+    @test
+    def pow04(): Bool = equalsEps(Float32.pow(1.0f32, 1.0f32), 1.0f32, 0.001f32)
+
+    @test
+    def pow05(): Bool = equalsEps(Float32.pow(5.0f32, 2.0f32), 25.0f32, 0.001f32)
 
 }

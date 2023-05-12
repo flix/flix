@@ -49,6 +49,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
+    case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -62,6 +63,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
+    case Type.AssocType(_, arg, _, _) => arg.effects// TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -75,6 +77,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
+    case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -102,6 +105,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
+    case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
   }
 
   /**
@@ -128,6 +132,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
+    case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
   }
 
   /**
@@ -158,6 +163,7 @@ sealed trait Type {
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
+    case Type.AssocType(sym, args, kind, loc) => Type.AssocType(sym, args.map(_.map(f)), kind, loc)
   }
 
   /**
@@ -166,7 +172,7 @@ sealed trait Type {
     * NB: Assumes that `this` type is an arrow.
     */
   def arrowArgTypes: List[Type] = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(2).dropRight(1)
+    case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(1).dropRight(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
@@ -208,6 +214,7 @@ sealed trait Type {
     case Type.Cst(_, _) => 1
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
+    case Type.AssocType(_, arg, kind, _) => arg.size + 1
   }
 
   /**
@@ -290,6 +297,11 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
 
   /**
+    * Represents the Regex pattern type.
+    */
+  val Regex: Type = Type.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
+
+  /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -356,16 +368,6 @@ object Type {
     * NB: This type has kind: * -> (* -> *).
     */
   val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
-
-  /**
-    * Represents the Empty effect type.
-    */
-  val Empty: Type = Type.Cst(TypeConstructor.Empty, SourceLocation.Unknown)
-
-  /**
-    * Represents the All effect type.
-    */
-  val All: Type = Type.Cst(TypeConstructor.All, SourceLocation.Unknown)
 
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
@@ -455,6 +457,11 @@ object Type {
     override def kind: Kind = tpe.kind
   }
 
+  /**
+    * An associated type.
+    */
+  case class AssocType(cst: Ast.AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
+
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
   /////////////////////////////////////////////////////////////////////////////
@@ -533,6 +540,11 @@ object Type {
   def mkString(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Str, loc)
 
   /**
+    * Returns the Regex pattern type with the given source location `loc`.
+    */
+  def mkRegex(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Regex, loc)
+
+  /**
     * Returns the True type with the given source location `loc`.
     */
   def mkTrue(loc: SourceLocation): Type = Type.Cst(TypeConstructor.True, loc)
@@ -585,52 +597,52 @@ object Type {
   /**
     * Constructs the pure arrow type A -> B.
     */
-  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, Empty, b, loc)
+  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
 
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, Empty, b, loc)
+  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
 
   /**
-    * Constructs the arrow type A -> B & e.
+    * Constructs the arrow type A -> B & p.
     */
-  def mkArrowWithEffect(a: Type, p: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(p, e, a, b), loc)
+  def mkArrowWithEffect(a: Type, p: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(p, a, b), loc)
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
     */
-  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, Empty, b, loc)
+  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
     */
-  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, Empty, b, loc)
+  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
     */
-  def mkCurriedArrowWithEffect(as: List[Type], p: Type, e: Type, b: Type, loc: SourceLocation): Type = {
+  def mkCurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val a = as.last
-    val base = mkArrowWithEffect(a, p, e, b, loc)
+    val base = mkArrowWithEffect(a, p, b, loc)
     as.init.foldRight(base)(mkPureArrow(_, _, loc))
   }
 
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
     */
-  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, Empty, b, loc)
+  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
     */
-  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, Empty, b, loc)
+  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
-  def mkUncurriedArrowWithEffect(as: List[Type], p: Type, e: Type, b: Type, loc: SourceLocation): Type = {
-    val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p, e), loc)
+  def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
+    val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x, loc)
     }
@@ -837,57 +849,10 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkComplement(tpe: Type, loc: SourceLocation): Type = tpe match {
-    case Type.Empty => Type.All
-    case Type.All => Type.Empty
-    case t => Type.Apply(Type.Cst(TypeConstructor.Complement, loc), t, loc)
-  }
-
-  /**
-    * Returns the complement of the given type.
-    *
-    * Must not be used before kinding.
-    */
   def mkCaseComplement(tpe: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe2, _) => tpe2
     // TODO RESTR-VARS use universe?
     case t => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(sym), loc), t, loc)
-  }
-
-  /**
-    * Returns the type `tpe1 + tpe2`
-    *
-    * Must not be used before kinding.
-    */
-  def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    case (Empty, t) => t
-    case (t, Empty) => t
-    case (All, t) => All
-    case (t, All) => All
-    case _ => mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
-  }
-
-  /**
-    * Returns the union of all the given types.
-    *
-    * Must not be used before kinding.
-    */
-  def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.Empty
-    case x :: xs => mkUnion(x, mkUnion(xs, loc), loc)
-  }
-
-  /**
-    * Returns the type `tpe1 & tpe2`
-    *
-    * Must not be used before kinding.
-    */
-  def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    case (Empty, _) => Empty
-    case (_, Empty) => Empty
-    case (All, t) => t
-    case (t, All) => t
-    case _ => mkApply(Type.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
   }
 
   /**
@@ -917,23 +882,6 @@ object Type {
     // TODO RESTR-VARS ALL case: universe
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
-
-  /**
-    * Returns the intersection of all the given types.
-    *
-    * Must not be used before kinding.
-    */
-  def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.All
-    case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
-  }
-
-  /**
-    * Returns the difference of the given types.
-    *
-    * Must not be used before kinding.
-    */
-  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
 
   /**
     * Returns the difference of the given types.
@@ -972,6 +920,7 @@ object Type {
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
+    case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
   }
 
   /**
@@ -983,6 +932,17 @@ object Type {
   def eraseTopAliases(t: Type): Type = t match {
     case Type.Alias(_, _, tpe, _) => eraseTopAliases(tpe)
     case tpe => tpe
+  }
+
+  /**
+    * Returns true if the given type contains an associated type somewhere within it.
+    */
+  def hasAssocType(t: Type): Boolean = t match {
+    case Var(_, _) => false
+    case Cst(_, _) => false
+    case Apply(tpe1, tpe2, _) => hasAssocType(tpe1) || hasAssocType(tpe2)
+    case Alias(_, _, tpe, _) => hasAssocType(tpe)
+    case AssocType(_, _, _, _) => true
   }
 
   /**
@@ -1021,6 +981,9 @@ object Type {
     }
     else if (c == classOf[java.lang.String]) {
       Type.Str
+    }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      Type.Regex
     }
     else if (c == java.lang.Void.TYPE) {
       Type.Unit

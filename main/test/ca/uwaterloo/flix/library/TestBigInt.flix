@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestBigInt {
+mod TestBigInt {
 
     use Mul.mul
 
@@ -177,6 +177,24 @@ namespace TestBigInt {
 
     @test
     def signum05(): Bool = BigInt.signum(-10ii) == -1
+
+    /////////////////////////////////////////////////////////////////////////////
+    // pow                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def pow01(): Bool = BigInt.pow(0ii, 0) == 1ii
+
+    @test
+    def pow02(): Bool = BigInt.pow(0ii, 1) == 0ii
+
+    @test
+    def pow03(): Bool = BigInt.pow(1ii, 0) == 1ii
+
+    @test
+    def pow04(): Bool = BigInt.pow(1ii, 1) == 1ii
+
+    @test
+    def pow05(): Bool = BigInt.pow(5ii, 2) == 25ii
 
     /////////////////////////////////////////////////////////////////////////////
     // gcd                                                                     //
@@ -430,6 +448,120 @@ namespace TestBigInt {
     @test
     def flipBit13(): Bool = BigInt.flipBit(-1ii, 32) == -4294967297ii
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // leftShift
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseLeftShift01(): Bool = BigInt.leftShift(8ii, 0) == 8ii
+
+    @test
+    def testBitwiseLeftShift02(): Bool = BigInt.leftShift(8ii, 32) == 34359738368ii
+
+    @test
+    def testBitwiseLeftShift03(): Bool = BigInt.leftShift(8ii, 64) == 147573952589676412928ii
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rightShift                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseRightShift04(): Bool = BigInt.rightShift(1200000000000000000000ii, 0) == 1200000000000000000000ii
+
+    @test
+    def testBitwiseRightShift05(): Bool = BigInt.rightShift(1200000000000000000000ii, 2) == 300000000000000000000ii
+
+    @test
+    def testBitwiseRightShift06(): Bool = BigInt.rightShift(1200000000000000000000ii, 72) == 0ii
+
+    @test
+    def testBitwiseRightShift07(): Bool = BigInt.rightShift(-1200000000000000000000ii, 2) == -300000000000000000000ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseAnd                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseAnd01(): Bool = BigInt.bitwiseAnd(0ii, 0ii) == 0ii
+
+    @test
+    def bitwiseAnd02(): Bool = BigInt.bitwiseAnd(127ii, 0ii) == 0ii
+
+    @test
+    def bitwiseAnd03(): Bool = BigInt.bitwiseAnd(-128ii, 0ii) == 0ii
+
+    @test
+    def bitwiseAnd04(): Bool = BigInt.bitwiseAnd(0ii, 1ii) == 0ii
+
+    @test
+    def bitwiseAnd05(): Bool = BigInt.bitwiseAnd(127ii, 1ii) == 1ii
+
+    @test
+    def bitwiseAnd06(): Bool = BigInt.bitwiseAnd(-128ii, 1ii) == 0ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseNot                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseNot01(): Bool = BigInt.bitwiseNot(0ii) == -1ii
+
+    @test
+    def bitwiseNot02(): Bool = BigInt.bitwiseNot(1ii) == -2ii
+
+    @test
+    def bitwiseNot03(): Bool = BigInt.bitwiseNot(-1ii) == -0ii
+
+    @test
+    def bitwiseNot04(): Bool = BigInt.bitwiseNot(127ii) == -128ii
+
+    @test
+    def bitwiseNot05(): Bool = BigInt.bitwiseNot(-128ii) == 127ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseOr                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseOr01(): Bool = BigInt.bitwiseOr(0ii, 0ii) == 0ii
+
+    @test
+    def bitwiseOr02(): Bool = BigInt.bitwiseOr(127ii, 0ii) == 127ii
+
+    @test
+    def bitwiseOr03(): Bool = BigInt.bitwiseOr(-128ii, 0ii) == -128ii
+
+    @test
+    def bitwiseOr04(): Bool = BigInt.bitwiseOr(0ii, 1ii) == 1ii
+
+    @test
+    def bitwiseOr05(): Bool = BigInt.bitwiseOr(127ii, 1ii) == 127ii
+
+    @test
+    def bitwiseOr06(): Bool = BigInt.bitwiseOr(-128ii, 1ii) == -127ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseXor                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseXor01(): Bool = BigInt.bitwiseXor(0ii, 0ii) == 0ii
+
+    @test
+    def bitwiseXor02(): Bool = BigInt.bitwiseXor(127ii, 0ii) == 127ii
+
+    @test
+    def bitwiseXor03(): Bool = BigInt.bitwiseXor(-128ii, 0ii) == -128ii
+
+    @test
+    def bitwiseXor04(): Bool = BigInt.bitwiseXor(0ii, 1ii) == 1ii
+
+    @test
+    def bitwiseXor05(): Bool = BigInt.bitwiseXor(127ii, 1ii) == 126ii
+
+    @test
+    def bitwiseXor06(): Bool = BigInt.bitwiseXor(-128ii, 1ii) == -127ii
+
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -585,37 +717,41 @@ namespace TestBigInt {
 
     @test
     def tryToFloat3204(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float32.maxValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(max)
+            forM (
+                max <- Float32.maxValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(max)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat3205(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float32.maxValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(max + 1ii)
+            forM (
+                max <- Float32.maxValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(max + 1ii)
+            ) yield res
         };
         step() == None
 
     @test
     def tryToFloat3206(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float32.minValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(min)
+            forM (
+                min <- Float32.minValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(min)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat3207(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float32.minValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(min - 1ii)
+            forM (
+                min <- Float32.minValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(min - 1ii)
+            ) yield res
         };
         step() == None
 
@@ -633,37 +769,41 @@ namespace TestBigInt {
 
     @test
     def tryToFloat6404(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float64.maxValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(max)
+            forM (
+                max <- Float64.maxValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(max)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat6405(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float64.maxValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(max + 1ii)
+            forM (
+                max <- Float64.maxValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(max + 1ii)
+            ) yield res
         };
         step() == None
 
     @test
     def tryToFloat6406(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float64.minValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(min)
+            forM (
+                min <- Float64.minValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(min)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat6407(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float64.minValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(min - 1ii)
+            forM (
+                min <- Float64.minValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(min - 1ii)
+            ) yield res
         };
         step() == None
 

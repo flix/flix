@@ -21,7 +21,7 @@
 ///
 
 
-namespace GetOpt {
+mod GetOpt {
 
     ///
     /// `ArgOrder` defines how to parse further arguments that follow non-options.

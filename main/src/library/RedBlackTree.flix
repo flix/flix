@@ -91,7 +91,7 @@ instance Iterable[RedBlackTree[k]] {
             RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
 }
 
-namespace RedBlackTree {
+mod RedBlackTree {
 
     ///
     /// The color of a red-black tree node.
@@ -122,7 +122,7 @@ namespace RedBlackTree {
     /// By default we only enable parallel evaluation if the tree has a certain size.
     ///
     def useParallelEvaluation(t: RedBlackTree[k, v]): Bool =
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -463,8 +463,8 @@ namespace RedBlackTree {
     ///
     /// Applies `f` to every key-value pair of `t` along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region r {
-        let ix = ref 0 @ r;
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region rc {
+        let ix = ref 0 @ rc;
         def loop(tt) = match tt {
             case Node(_, a, k, v, b) => loop(a); let i = deref ix; f(i, k, v); ix := i+1; loop(b)
             case _                   => ()
@@ -577,8 +577,8 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region r {
-        let buffer = MutList.new(r);
+    pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
+        let buffer = MutList.new(rc);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
         MutList.toList(buffer)
@@ -918,10 +918,10 @@ namespace RedBlackTree {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region r {
+    pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         forEach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

@@ -70,10 +70,6 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
 
             // Simplify set expressions
-            case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
-            case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
-            case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
-
             case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
@@ -85,6 +81,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
           val args = args0.map(visit)
           val tpe = visit(tpe0)
           Type.Alias(sym, args, tpe, loc)
+        case Type.AssocType(cst, args0, kind, loc) =>
+          val args = args0.map(visit)
+          Type.AssocType(cst, args, kind, loc)
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
@@ -107,11 +106,25 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     * NB: Throws an InternalCompilerException if quantifiers are present in the substitution.
     */
   def apply(sc: Scheme): Scheme = sc match {
-    case Scheme(quantifiers, constraints, base) =>
+    case Scheme(quantifiers, tconstrs, econstrs, base) =>
       if (sc.quantifiers.exists(m.contains)) {
         throw InternalCompilerException("Quantifier in substitution.", base.loc)
       }
-      Scheme(quantifiers, constraints.map(apply), apply(base))
+      Scheme(quantifiers, tconstrs.map(apply), econstrs.map(apply), apply(base))
+  }
+
+  /**
+    * Applies `this` substitution to the given equality constraint.
+    */
+  def apply(ec: Ast.EqualityConstraint): Ast.EqualityConstraint = if (isEmpty) ec else ec match {
+    case Ast.EqualityConstraint(cst, t1, t2, loc) => Ast.EqualityConstraint(cst, apply(t1), apply(t2), loc)
+  }
+
+  /**
+    * Applies `this` substitution to the given equality constraint.
+    */
+  def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
+    case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
   }
 
   /**

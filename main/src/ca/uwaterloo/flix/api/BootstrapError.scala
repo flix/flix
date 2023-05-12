@@ -16,15 +16,39 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
+import ca.uwaterloo.flix.util.Formatter
 
-import java.nio.file.Path
-
-sealed trait BootstrapError
+sealed trait BootstrapError {
+  /**
+    * Returns a human-readable and formatted string representation of this error.
+    */
+  def message(f: Formatter): String
+}
 
 object BootstrapError {
-  case class ManifestParseError(e: ManifestError) extends BootstrapError
+  case class ManifestParseError(e: ManifestError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
 
-  case class FlixPackageError(e: PackageError) extends BootstrapError
+  case class FlixPackageError(e: PackageError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
 
-  case class MavenPackageError(e: PackageError) extends BootstrapError
+  case class MavenPackageError(e: PackageError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
+
+  case class JarPackageError(e: PackageError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
+
+  case class FileError(e: String) extends BootstrapError {
+    override def message(f: Formatter): String = e
+  }
+
+  case class GeneralError(e: List[String]) extends BootstrapError {
+    override def message(f: Formatter): String = e.reduce[String] {
+      case (acc, s) => acc + System.lineSeparator() + s
+    }
+  }
 }

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.ClassContext
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
 
@@ -113,15 +114,15 @@ object ClassEnvironment {
     */
   private def byInst(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val matchingInstances = classEnv.get(tconstr.head.sym).map(_.instances).getOrElse(Nil)
-    val tconstrSc = Scheme.generalize(Nil, tconstr.arg)
+    val tconstrSc = Scheme.generalize(Nil, Nil, tconstr.arg) // TODO ASSOC-TYPES Nil right?
 
     def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
-      val instSc = Scheme.generalize(Nil, inst.tpe)
+      val instSc = Scheme.generalize(Nil, Nil, inst.tpe) // TODO ASSOC-TYPES Nil right?
 
       // NB: This is different from the THIH implementation.
       // We also check `leq` instead of just `unifies` in order to support complex types in instances.
       for {
-        subst <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty)
+        subst <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty, ListMap.empty) // TODO ASSOC-TYPES ListMap.empty right?
       } yield inst.tconstrs.map(subst(_))
     }
 

@@ -1,4 +1,4 @@
-namespace Test/Java/Function {
+mod Test.Java.Function {
     import java.lang.Object
     import java.util.function.Function
     import java.util.function.Consumer
@@ -174,7 +174,7 @@ namespace Test/Java/Function {
     def testDoubleConsumer(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Array[Float64, Static]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.forEach(DoubleConsumer): Unit \ IO;
-        let st = ref 0.0f64;
+        let st = ref 0.0f64 @ Static;
         let stream = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ Static);
         let _ = forEach(stream, i -> st := i);
         let last = deref st;

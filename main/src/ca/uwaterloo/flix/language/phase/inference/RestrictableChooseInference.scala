@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.phase.unification.InferMonad
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.traverseM
 import ca.uwaterloo.flix.language.phase.unification.Unification.{expectTypeM, liftM, unifyTypeM}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import scala.collection.immutable.SortedSet
 
@@ -74,7 +73,7 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable choose expression.
     */
-  def infer(exp: KindedAst.Expression.RestrictableChoose, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+  def infer(exp: KindedAst.Expression.RestrictableChoose, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     exp match {
       case KindedAst.Expression.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
@@ -92,7 +91,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, pur, eff) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, pur) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -103,14 +102,13 @@ object RestrictableChooseInference {
           _ <- if (domSet != universe) unifySubset(indexVar, domM, enumSym, root, loc.asSynthetic) else InferMonad.point(())
 
           // Γ, x_i: τ_i ⊢ e_i: τ_out
-          (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
+          (constrss, tpes, purs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
           resultTconstrs = constrs ::: constrss.flatten
 
           // τ_out
           resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
           resultPur = Type.mkAnd(pur :: purs, loc)
-          resultEff = Type.mkUnion(eff :: effs, loc)
-        } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+        } yield (resultTconstrs, resultTpe, resultPur)
 
       case KindedAst.Expression.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
 
@@ -138,7 +136,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, pur, eff) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, pur) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -149,7 +147,7 @@ object RestrictableChooseInference {
           _ <- unifySubset(indexInVar, domM, enumSym, root, loc.asSynthetic)
 
           // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
-          (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
+          (constrss, tpes, purs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
           _ <- traverseM(tpes.zip(bodyTypes)) { case (t1, t2) => unifyTypeM(t1, t2, loc) }
 
           // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
@@ -173,8 +171,7 @@ object RestrictableChooseInference {
           // τ_out
           resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
           resultPur = Type.mkAnd(pur :: purs, loc)
-          resultEff = Type.mkUnion(eff :: effs, loc)
-        } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+        } yield (resultTconstrs, resultTpe, resultPur)
 
     }
   }
@@ -182,7 +179,7 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
+  def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp match {
     case KindedAst.Expression.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
 
       // Lookup the enum declaration.
@@ -236,45 +233,14 @@ object RestrictableChooseInference {
       //
       for {
         // Γ ⊢ e: τ
-        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
+        (constrs, tpe, pur) <- Typer.inferExp(exp, root)
         _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
         _ <- traverseM(targs.zip(targsOut)) { case (targ, targOut) => unifyTypeM(targ, targOut, loc) }
         _ <- indexUnification
         _ <- unifyTypeM(enumTypeOut, tvar, loc)
         resultTyp = tvar
         resultPur = pur
-        resultEff = eff
-      } yield (constrs, resultTyp, resultPur, resultEff)
-  }
-
-  /**
-    * Performs type inference on the given `of` expression.
-    */
-  def inferOf(exp0: KindedAst.Expression.Of, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
-    case KindedAst.Expression.Of(symUse, exp, tvar, loc) =>
-
-      // Must check that the type of the expression cannot return anything but our symbol
-
-      val enumSym = symUse.sym.enumSym
-      val enum = root.restrictableEnums(enumSym)
-
-      val caseType = Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), symUse.loc)
-
-      val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-
-      for {
-        // infer the inner expression type
-        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
-
-        // set the expected type to (...)[TheCase]
-        _ <- unifyTypeM(indexVar, caseType, loc)
-
-        // check that the expression type matches the expected type
-        _ <- expectTypeM(expected = enumType, actual = tpe, loc)
-
-        // unify with the tvar
-        _ <- unifyTypeM(tvar, tpe, loc)
-      } yield (constrs, tpe, pur, eff)
+      } yield (constrs, resultTyp, resultPur)
   }
 
   /**
@@ -283,11 +249,11 @@ object RestrictableChooseInference {
     * `OpenAs X e` requires that `e` have the type X[s] for some s
     * The result type of the expression is X[s + φ] for some free φ
     *
-    *         Γ ⊢ e : X[s][α1 ... αn]
+    * Γ ⊢ e : X[s][α1 ... αn]
     * -------------------------------------
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
-  def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
+  def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
     case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
       val enum = root.restrictableEnums(sym)
 
@@ -297,7 +263,7 @@ object RestrictableChooseInference {
 
       for {
         // infer the inner expression type τ
-        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
+        (constrs, tpe, pur) <- Typer.inferExp(exp, root)
 
         // make sure the expression has type EnumType[s][α1 ... αn]
         _ <- expectTypeM(expected = enumType, actual = tpe, loc)
@@ -315,7 +281,7 @@ object RestrictableChooseInference {
         // unify the tvar
         _ <- unifyTypeM(tvar, resultType, loc)
 
-      } yield (constrs, resultType, pur, eff)
+      } yield (constrs, resultType, pur)
 
   }
 

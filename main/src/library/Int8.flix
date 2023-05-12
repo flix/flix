@@ -22,7 +22,7 @@ instance UpperBound[Int8] {
     pub def maxValue(): Int8 = Int8.maxValue()
 }
 
-namespace Int8 {
+mod Int8 {
 
     ///
     /// Returns the number of bits used to represent an `Int8`.
@@ -32,12 +32,12 @@ namespace Int8 {
     ///
     /// Returns the minimum number representable by an `Int8`.
     ///
-    pub def minValue(): Int8 = 1i8 <<< (size() - 1)
+    pub def minValue(): Int8 = leftShift(1i8, size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int8`.
     ///
-    pub def maxValue(): Int8 = ~~~minValue()
+    pub def maxValue(): Int8 = bitwiseNot(minValue())
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -106,15 +106,21 @@ namespace Int8 {
     pub def signum(x: Int8): Int32 = compare(x, 0i8)
 
     ///
+    /// Returns `b` raised to the power of `n`.
+    ///
+    pub def pow(b: Int8, n: Int8): Int8 = $INT8_EXP$(b, n)
+
+
+    ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
         if (x < 0i8 and Int32.rem(dist.dist, 32) != 0)
-            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
         else
-            x >>> dist.dist
+            rightShift(x, dist.dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -133,7 +139,7 @@ namespace Int8 {
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
         let rem1 = dist.dist `Int32.rem` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
-        (logicalRightShift(dist = rot, x)) ||| (x <<< (size() - rot))
+        bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
@@ -142,7 +148,7 @@ namespace Int8 {
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
         let rem1 = dist.dist `Int32.rem` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
-        (logicalRightShift(dist = size() - rot, x)) ||| (x <<< rot)
+        bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -218,7 +224,7 @@ namespace Int8 {
     /// Returns 0 if `position` is outside the range 0-7 inclusive.
     ///
     def bitPositionToInt8(position: Int32): Int8 =
-        if (position < 0 or position > size() - 1) 0i8 else 1i8 <<< position
+        if (position < 0 or position > size() - 1) 0i8 else leftShift(1i8, position)
 
     ///
     /// Returns the number of zero bits preceding the
@@ -242,28 +248,28 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int8): Int32 =
-        if ((x >>> pos.pos) `rem` 2i8 == 0i8) 0 else 1
+        if (rightShift(x, pos.pos) `rem` 2i8 == 0i8) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = x ||| (1i8 <<< pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseOr(x, leftShift(1i8, pos.pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = x &&& ~~~(1i8 <<< pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseAnd(x, bitwiseNot(leftShift(1i8, pos.pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = x ^^^ (1i8 <<< pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseXor(x, leftShift(1i8, pos.pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -276,6 +282,36 @@ namespace Int8 {
             let position = highestOneBitPosition(x);
             Int32.clampToInt8(min = 0i8, max = Int8.maxValue(), position)
         }
+
+    ///
+    /// Returns `x` with the bits shifted left by `y` places
+    ///
+    pub def leftShift(x: Int8, y: Int32): Int8 = $INT8_SHL$(x, y)
+
+    ///
+    /// Returns `x` with the bits shifted right by `y` places
+    ///
+    pub def rightShift(x: Int8, y: Int32): Int8 = $INT8_SHR$(x, y)
+
+    ///
+    /// Returns the bitwise AND of `x` and `y`.
+    ///
+    pub def bitwiseAnd(x: Int8, y: Int8): Int8 = $INT8_AND$(x, y)
+
+    ///
+    /// Returns the bitwise NOT of `x`.
+    ///
+    pub def bitwiseNot(x: Int8): Int8 = $INT8_NOT$(x)
+
+    ///
+    /// Returns the bitwise OR of `x` and `y`.
+    ///
+    pub def bitwiseOr(x: Int8, y: Int8): Int8 = $INT8_OR$(x, y)
+
+    ///
+    /// Returns the bitwise XOR of `x` and `y`.
+    ///
+    pub def bitwiseXor(x: Int8, y: Int8): Int8 = $INT8_XOR$(x, y)
 
     ///
     /// Returns the factorial of `x`.

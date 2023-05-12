@@ -47,7 +47,7 @@ pub class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
 }
 
 
-namespace Traversable {
+mod Traversable {
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
@@ -66,8 +66,8 @@ namespace Traversable {
     /// of the initial structure, like `foldLeft` it passes an updating accumulator through each step of the traversal.
     ///
     pub def mapAccumLeft(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ ef with Traversable[t] =
-        region r {
-            let acc = ref start @ r;
+        region rc {
+            let acc = ref start @ rc;
             let Identity.Identity(tb) = t |> Traversable.traverse(x -> {
                 let st = deref acc;
                 let (acc1, b) = f(st, x);

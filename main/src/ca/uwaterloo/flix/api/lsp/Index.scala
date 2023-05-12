@@ -27,7 +27,7 @@ object Index {
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -60,6 +60,11 @@ object Index {
   def occurrenceOf(alias0: TypeAlias): Index = empty + Entity.TypeAlias(alias0)
 
   /**
+    * Returns an index for the given `alias0`.
+    */
+  def occurrenceOf(assoc: AssocTypeSig): Index = empty + Entity.AssocType(assoc)
+
+  /**
     * Returns an index for the given `exp0`.
     */
   def occurrenceOf(exp0: Expression): Index = empty + Entity.Exp(exp0)
@@ -82,7 +87,7 @@ object Index {
   /**
     * Returns an index for the given atom `a0`.
     */
-  def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = empty + Entity.Pred(pred, tpe0)
+  def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = Index.empty.copy(predTypes = MultiMap.singleton(pred, (tpe0, pred.loc))) + Entity.Pred(pred, tpe0)
 
   /**
     * Returns an index for the given type `t`.
@@ -140,6 +145,11 @@ object Index {
     * Returns an index with the symbol `sym` used at location `loc.`
     */
   def useOf(sym: Symbol.TypeAliasSym, loc: SourceLocation): Index = Index.empty.copy(aliasUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.AssocTypeSym, loc: SourceLocation): Index = Index.empty.copy(assocUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
@@ -202,11 +212,13 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  aliasUses: MultiMap[Symbol.TypeAliasSym, SourceLocation],
+                 assocUses: MultiMap[Symbol.AssocTypeSym, SourceLocation],
                  tagUses: MultiMap[Symbol.CaseSym, SourceLocation],
                  fieldDefs: MultiMap[Name.Field, SourceLocation],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
                  predDefs: MultiMap[Name.Pred, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
+                 predTypes: MultiMap[Name.Pred, (Type, SourceLocation)],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation],
                  tvarUses: MultiMap[Symbol.KindedTypeVarSym, SourceLocation],
                  effUses: MultiMap[Symbol.EffectSym, SourceLocation],
@@ -301,6 +313,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.TypeAliasSym): Set[SourceLocation] = aliasUses(sym)
 
   /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.AssocTypeSym): Set[SourceLocation] = assocUses(sym)
+
+  /**
     * Returns all uses of the given symbol `sym` and `tag`.
     */
   def usesOf(sym: Symbol.CaseSym): Set[SourceLocation] = tagUses(sym)
@@ -386,11 +403,13 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
       this.aliasUses ++ that.aliasUses,
+      this.assocUses ++ that.assocUses,
       this.tagUses ++ that.tagUses,
       this.fieldDefs ++ that.fieldDefs,
       this.fieldUses ++ that.fieldUses,
       this.predDefs ++ that.predDefs,
       this.predUses ++ that.predUses,
+      this.predTypes ++ that.predTypes,
       this.varUses ++ that.varUses,
       this.tvarUses ++ that.tvarUses,
       this.effUses ++ that.effUses,

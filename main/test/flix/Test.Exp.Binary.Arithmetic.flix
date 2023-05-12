@@ -1,4 +1,4 @@
-namespace Test/Exp/Binary/Arithmetic {
+mod Test.Exp.Binary.Arithmetic {
 
     @test
     def testBinaryPlus01(): Bool = (2147483647 + 1) == -2147483648
@@ -594,99 +594,99 @@ namespace Test/Exp/Binary/Arithmetic {
     def testBinaryDivide51(): Bool = (1ii / 0ii) == 0ii
 
     @test
-    def testBinaryExponentiate01(): Bool = (2 ** 0) == 1
+    def testBinaryExponentiate01(): Bool = Int32.pow(2, 0) == 1
 
     @test
-    def testBinaryExponentiate02(): Bool = (-2 ** 1) == -2
+    def testBinaryExponentiate02(): Bool = Int32.pow(-2, 1) == -2
 
     @test
-    def testBinaryExponentiate03(): Bool = (2 ** 2) == 4
+    def testBinaryExponentiate03(): Bool = Int32.pow(2, 2) == 4
 
     @test
-    def testBinaryExponentiate04(): Bool = (-2 ** 31) == -2147483648
+    def testBinaryExponentiate04(): Bool = Int32.pow(-2, 31) == -2147483648
 
     @test
-    def testBinaryExponentiate05(): Bool = (2i8 ** 0i8) == 1i8
+    def testBinaryExponentiate05(): Bool = Int8.pow(2i8, 0i8) == 1i8
 
     @test
-    def testBinaryExponentiate06(): Bool = (-2i8 ** 1i8) == -2i8
+    def testBinaryExponentiate06(): Bool = Int8.pow(-2i8, 1i8) == -2i8
 
     @test
-    def testBinaryExponentiate07(): Bool = (2i8 ** 2i8) == 4i8
+    def testBinaryExponentiate07(): Bool = Int8.pow(2i8, 2i8) == 4i8
 
     @test
-    def testBinaryExponentiate08(): Bool = (-2i8 ** 7i8) == -128i8
+    def testBinaryExponentiate08(): Bool = Int8.pow(-2i8, 7i8) == -128i8
 
     @test
-    def testBinaryExponentiate09(): Bool = (2i16 ** 0i16) == 1i16
+    def testBinaryExponentiate09(): Bool = Int16.pow(2i16, 0i16) == 1i16
 
     @test
-    def testBinaryExponentiate10(): Bool = (-2i16 ** 1i16) == -2i16
+    def testBinaryExponentiate10(): Bool = Int16.pow(-2i16, 1i16) == -2i16
 
     @test
-    def testBinaryExponentiate11(): Bool = (2i16 ** 2i16) == 4i16
+    def testBinaryExponentiate11(): Bool = Int16.pow(2i16, 2i16) == 4i16
 
     @test
-    def testBinaryExponentiate12(): Bool = (-2i16 ** 15i16) == -32768i16
+    def testBinaryExponentiate12(): Bool = Int16.pow(-2i16, 15i16) == -32768i16
 
     @test
-    def testBinaryExponentiate13(): Bool = (2i32 ** 0i32) == 1i32
+    def testBinaryExponentiate13(): Bool = Int32.pow(2i32, 0i32) == 1i32
 
     @test
-    def testBinaryExponentiate14(): Bool = (-2i32 ** 1i32) == -2i32
+    def testBinaryExponentiate14(): Bool = Int32.pow(-2i32, 1i32) == -2i32
 
     @test
-    def testBinaryExponentiate15(): Bool = (2i32 ** 2i32) == 4i32
+    def testBinaryExponentiate15(): Bool = Int32.pow(2i32, 2i32) == 4i32
 
     @test
-    def testBinaryExponentiate16(): Bool = (-2i32 ** 31i32) == -2147483648
+    def testBinaryExponentiate16(): Bool = Int32.pow(-2i32, 31i32) == -2147483648
 
     @test
-    def testBinaryExponentiate17(): Bool = (2i64 ** 0i64) == 1i64
+    def testBinaryExponentiate17(): Bool = Int64.pow(2i64, 0i64) == 1i64
 
     @test
-    def testBinaryExponentiate18(): Bool = (-2i64 ** 1i64) == -2i64
+    def testBinaryExponentiate18(): Bool = Int64.pow(-2i64, 1i64) == -2i64
 
     @test
-    def testBinaryExponentiate19(): Bool = (2i64 ** 2i64) == 4i64
+    def testBinaryExponentiate19(): Bool = Int64.pow(2i64, 2i64) == 4i64
 
     @test
-    def testBinaryExponentiate20(): Bool = (-2i64 ** 63i64) == -9223372036854775808i64
+    def testBinaryExponentiate20(): Bool = Int64.pow(-2i64, 63i64) == -9223372036854775808i64
 
     @test
-    def testBinaryExponentiate21(): Bool = (2.0 ** 0.0) == 1.0
+    def testBinaryExponentiate21(): Bool = Float64.pow(2.0, 0.0) == 1.0
 
     @test
-    def testBinaryExponentiate22(): Bool = (-2.0 ** -1.0) == -0.5
+    def testBinaryExponentiate22(): Bool = Float64.pow(-2.0, -1.0) == -0.5
 
     @test
-    def testBinaryExponentiate23(): Bool = (0.01 ** 0.5) == 0.1
+    def testBinaryExponentiate23(): Bool = Float64.pow(0.01, 0.5) == 0.1
 
     @test
-    def testBinaryExponentiate24(): Bool = (-2.0 ** 100.0) == 1267650600228229400000000000000.0
+    def testBinaryExponentiate24(): Bool = Float64.pow(-2.0, 100.0) == 1267650600228229400000000000000.0
 
     @test
-    def testBinaryExponentiate25(): Bool = (2.0f32 ** 0.0f32) == 1.0f32
+    def testBinaryExponentiate25(): Bool = Float32.pow(2.0f32, 0.0f32) == 1.0f32
 
     @test
-    def testBinaryExponentiate26(): Bool = (-2.0f32 ** -1.0f32) == -0.5f32
+    def testBinaryExponentiate26(): Bool = Float32.pow(-2.0f32, -1.0f32) == -0.5f32
 
     @test
-    def testBinaryExponentiate27(): Bool = (0.01f32 ** 0.5f32) == 0.1f32
+    def testBinaryExponentiate27(): Bool = Float32.pow(0.01f32, 0.5f32) == 0.1f32
 
     @test
-    def testBinaryExponentiate28(): Bool = (-2.0f32 ** 100.0f32) == 1267650600000000000000000000000.0f32
+    def testBinaryExponentiate28(): Bool = Float32.pow(-2.0f32, 100.0f32) == 1267650600000000000000000000000.0f32
 
     @test
-    def testBinaryExponentiate29(): Bool = (2.0f64 ** 0.0f64) == 1.0f64
+    def testBinaryExponentiate29(): Bool = Float64.pow(2.0f64, 0.0f64) == 1.0f64
 
     @test
-    def testBinaryExponentiate30(): Bool = (-2.0f64 ** -1.0f64) == -0.5f64
+    def testBinaryExponentiate30(): Bool = Float64.pow(-2.0f64, -1.0f64) == -0.5f64
 
     @test
-    def testBinaryExponentiate31(): Bool = (0.01f64 ** 0.5f64) == 0.1f64
+    def testBinaryExponentiate31(): Bool = Float64.pow(0.01f64, 0.5f64) == 0.1f64
 
     @test
-    def testBinaryExponentiate32(): Bool = (-2.0f64 ** 100.0f64) == 1267650600228229400000000000000.0f64
+    def testBinaryExponentiate32(): Bool = Float64.pow(-2.0f64, 100.0f64) == 1267650600228229400000000000000.0f64
 
 }

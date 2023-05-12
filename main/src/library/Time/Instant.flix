@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-namespace Time {
+mod Time {
 
     ///
     /// A wrapper around a Java instant.
     ///
     enum Instant(##java.time.Instant)
 
-    namespace Instant {
+    mod Instant {
 
         ///
         /// Returns the current time from the system clock.
@@ -29,7 +29,7 @@ namespace Time {
         @Experimental
         pub def now(): Time.Instant \ IO =
             import static java.time.Instant.now(): ##java.time.Instant \ IO;
-            Time/Instant.Instant(now())
+            Time.Instant.Instant(now())
 
         ///
         /// Returns `true` if `x` is before `y`.
@@ -37,8 +37,8 @@ namespace Time {
         @Experimental
         pub def before(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isBefore(##java.time.Instant): Bool \ {};
-            let Time/Instant.Instant(t1) = x;
-            let Time/Instant.Instant(t2) = y;
+            let Time.Instant.Instant(t1) = x;
+            let Time.Instant.Instant(t2) = y;
             (t1 `isBefore` t2)
 
         ///
@@ -47,8 +47,8 @@ namespace Time {
         @Experimental
         pub def after(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isAfter(##java.time.Instant): Bool \ {};
-            let Time/Instant.Instant(t1) = x;
-            let Time/Instant.Instant(t2) = y;
+            let Time.Instant.Instant(t1) = x;
+            let Time.Instant.Instant(t2) = y;
             (t1 `isAfter` t2)
 
         ///
@@ -57,8 +57,8 @@ namespace Time {
         @Experimental
         pub def plus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.plusNanos(Int64): ##java.time.Instant \ {};
-            let Time/Instant.Instant(t) = x;
-            Time/Instant.Instant(t `plusNanos` d)
+            let Time.Instant.Instant(t) = x;
+            Time.Instant.Instant(t `plusNanos` d)
 
         ///
         /// Returns the given instant `x` minus `d` number of nano seconds.
@@ -66,8 +66,8 @@ namespace Time {
         @Experimental
         pub def minus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.minusNanos(Int64): ##java.time.Instant \ {};
-            let Time/Instant.Instant(t) = x;
-            Time/Instant.Instant(t `minusNanos` d)
+            let Time.Instant.Instant(t) = x;
+            Time.Instant.Instant(t `minusNanos` d)
 
     }
 

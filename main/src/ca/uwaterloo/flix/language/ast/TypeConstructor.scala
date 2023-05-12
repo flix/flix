@@ -99,9 +99,16 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of strings.
+    * A type constructor that represents the type of strings.
     */
   case object Str extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represents the type of regex patterns.
+    */
+  case object Regex extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
@@ -110,7 +117,7 @@ object TypeConstructor {
     */
   @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.Effect ->: Kind.mkArrow(arity)
+    def kind: Kind = Kind.Bool ->: Kind.mkArrow(arity)
   }
 
   /**
@@ -308,45 +315,10 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the complement of an effect set.
-    */
-  case object Complement extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect
-  }
-
-  /**
-    * A type constructor that represents the union of two effect sets.
-    */
-  case object Union extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
-  }
-
-  /**
-    * A type constructor that represents the intersection of two effect sets.
-    */
-  case object Intersection extends TypeConstructor {
-    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
-  }
-
-  /**
     * A type constructor that represents a single effect.
     */
   case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {
-    def kind: Kind = Kind.Effect
-  }
-
-  /**
-    * A type constructor that represents the empty effect.
-    */
-  case object Empty extends TypeConstructor {
-    def kind: Kind = Kind.Effect
-  }
-
-  /**
-    * A type constructor that represents the set of all effects.
-    */
-  case object All extends TypeConstructor {
-    def kind: Kind = Kind.Effect
+    def kind: Kind = Kind.Bool
   }
 
   /**

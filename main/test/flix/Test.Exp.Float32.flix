@@ -1,4 +1,4 @@
-namespace Test/Exp/Float32 {
+mod Test.Exp.Float32 {
 
     @test
     def testFloat32_01(): Float32 = +0.0f32

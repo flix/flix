@@ -22,7 +22,7 @@ pub enum Benchmark {
     case Benchmark({name = String, f = Unit -> Unit \ IO})
 }
 
-namespace Benchmark {
+mod Benchmark {
 
 
     ///
@@ -63,7 +63,7 @@ namespace Benchmark {
     /// One seconds is `1_000_000_000i64`.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region r {
+    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region rc {
         if (Array.length(bs) == 0) {
             println("No benchmarks");
             1
@@ -72,7 +72,7 @@ namespace Benchmark {
             let t = nanoTime();
             printHeader();
             println("");
-            let benchmarksWithEstimates = warmupAndEstimate(r, bs);
+            let benchmarksWithEstimates = warmupAndEstimate(rc, bs);
             println("");
             println("");
             printCols();

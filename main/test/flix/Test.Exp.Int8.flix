@@ -1,4 +1,4 @@
-namespace Test/Exp/Int8 {
+mod Test.Exp.Int8 {
 
     @test
     def testInt8_01(): Int8 = -105i8

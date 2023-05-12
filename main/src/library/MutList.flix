@@ -25,7 +25,7 @@ pub enum MutList[a: Type, r: Region] {
     case MutList(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
-namespace MutList {
+mod MutList {
 
     ///
     /// Constant which stores the minimum capacity of a MutList.
@@ -36,8 +36,8 @@ namespace MutList {
     ///
     /// Returns a string representation of the given MutList `l`.
     ///
-    pub def toString(l: MutList[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = StringBuilder.new(r2);
+    pub def toString(l: MutList[a, r]): String \ Read(r) with ToString[a] = region rc2 {
+        let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -772,8 +772,8 @@ namespace MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
-        let sb = StringBuilder.new(r1);
+    pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region rc1 {
+        let sb = StringBuilder.new(rc1);
         let step = (i, x) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
@@ -937,8 +937,8 @@ namespace MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region r2 {
-        toArray(r2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
+    pub def shuffle(r1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region rc2 {
+        toArray(rc2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
     }
 
 }

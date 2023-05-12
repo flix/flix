@@ -19,7 +19,7 @@
 ///
 enum StringBuilder[_: Region](##java.lang.StringBuilder)
 
-namespace StringBuilder {
+mod StringBuilder {
 
     ///
     /// Returns a new mutable StringBuilder.
@@ -74,7 +74,7 @@ namespace StringBuilder {
     ///
     /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
     ///
-    pub def appendLinesWith(f: a -> String & ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, Write(r) } with Foldable[t] =
+    pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, Write(r) } with Foldable[t] =
         Foldable.forEach(x -> appendLineWith!(f, x, sb), t)
 
     ///

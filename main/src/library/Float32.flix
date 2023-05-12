@@ -22,7 +22,7 @@ instance UpperBound[Float32] {
     pub def maxValue(): Float32 = Float32.maxValue()
 }
 
-namespace Float32 {
+mod Float32 {
 
     ///
     /// Returns the number of bits used to represent a `Float32`.
@@ -42,7 +42,7 @@ namespace Float32 {
     ///
     /// Returns the maximum number representable by a `Float32`.
     ///
-    pub def maxValue(): Float32 = (2.0f32 - 2.0f32 ** -23.0f32) * (2.0f32 ** 127.0f32)
+    pub def maxValue(): Float32 = (2.0f32 - pow(2.0f32, -23.0f32)) * pow(2.0f32, 127.0f32)
 
     ///
     /// Returns the minimum number representable by a `Float32`.
@@ -52,7 +52,7 @@ namespace Float32 {
     ///
     /// Returns the minimum positive number representable by a `Float32`.
     ///
-    pub def minPositiveValue(): Float32 = 2.0f32 ** -149.0f32
+    pub def minPositiveValue(): Float32 = pow(2.0f32, -149.0f32)
 
     ///
     /// Returns the NaN (not a number) value of type `Float32`.
@@ -343,5 +343,10 @@ namespace Float32 {
         import java.lang.Float.doubleValue(): Float64 \ {};
         let x1 = rint(doubleValue(valueOfF32(x)));
         floatValue(valueOfF64(x1))
+
+    ///
+    /// Returns `b` raised to the power of `n`.
+    ///
+    pub def pow(b: Float32, n: Float32): Float32 = $FLOAT32_EXP$(b, n)
 
 }

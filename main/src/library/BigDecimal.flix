@@ -20,7 +20,7 @@
 /// equality (`==` and the `Eq` typeclass) consider both value and scale,
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
-namespace BigDecimal {
+mod BigDecimal {
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -38,6 +38,13 @@ namespace BigDecimal {
     pub def abs(x: BigDecimal): BigDecimal =
         import java.math.BigDecimal.abs(): BigDecimal \ {};
         abs(x)
+
+    ///
+    /// Returns `x` raised to the power of `n`.
+    ///
+    pub def pow(x: BigDecimal, n: Int32): BigDecimal =
+        import java.math.BigDecimal.pow(Int32): ##java.math.BigDecimal \ {};
+        pow(x, n)
 
     ///
     /// Returns the distance between `x` and `y`.

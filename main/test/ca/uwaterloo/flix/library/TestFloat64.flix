@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestFloat64 {
+mod TestFloat64 {
 
     use Mul.mul
 
@@ -62,19 +62,19 @@ namespace TestFloat64 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Float64.maxValue() == ((2.0f64 - 2.0f64 ** -52.0f64) * (2.0f64 ** 1023.0f64))
+    def maxValue01(): Bool = Float64.maxValue() == ((2.0f64 - Float64.pow(2.0f64, -52.0f64)) * Float64.pow(2.0f64, 1023.0f64))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Float64.minValue() == (-(2.0f64 - 2.0f64 ** -52.0f64) * (2.0f64 ** 1023.0f64))
+    def minValue01(): Bool = Float64.minValue() == (-(2.0f64 - Float64.pow(2.0f64, -52.0f64)) * Float64.pow(2.0f64, 1023.0f64))
 
     /////////////////////////////////////////////////////////////////////////////
     // minPositiveValue                                                        //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minPositiveValue01(): Bool = Float64.minPositiveValue() == (2.0f64 ** -1074.0f64)
+    def minPositiveValue01(): Bool = Float64.minPositiveValue() == Float64.pow(2.0f64, -1074.0f64)
 
     /////////////////////////////////////////////////////////////////////////////
     // nan                                                                     //
@@ -745,5 +745,35 @@ namespace TestFloat64 {
     @test
     def round11(): Bool =
         equalsEps(Float64.round(2.5f64), 2.0f64, 0.001f64)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // pow                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def pow01(): Bool = equalsEps(Float64.pow(0.0f64, 0.0f64), 1.0f64, 0.001f64)
+
+    @test
+    def pow02(): Bool = equalsEps(Float64.pow(0.0f64, 1.0f64), 0.0f64, 0.001f64)
+
+    @test
+    def pow03(): Bool = equalsEps(Float64.pow(1.0f64, 0.0f64), 1.0f64, 0.001f64)
+
+    @test
+    def pow04(): Bool = equalsEps(Float64.pow(1.0f64, 1.0f64), 1.0f64, 0.001f64)
+
+    @test
+    def pow05(): Bool = equalsEps(Float64.pow(5.0f64, 2.0f64), 25.0f64, 0.001f64)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exp                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def exp01(): Bool = equalsEps(Float64.exp(0.0f64), 1.0f64, 0.001f64)
+
+    @test
+    def exp02(): Bool = equalsEps(Float64.exp(1.0f64), 2.718281f64, 0.001f64)
+
+    @test
+    def exp03(): Bool = equalsEps(Float64.exp(5.0f64), 148.413159f64, 0.001f64)
 
 }

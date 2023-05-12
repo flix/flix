@@ -19,39 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestNamer extends FunSuite with TestUtils {
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("AmbiguousVarOrUse.01") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use Foo.f;
-         |    let f = _ -> true;
-         |    f(123)
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.AmbiguousVarOrUse](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("AmbiguousVarOrUse.02") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use Foo.f;
-         |    let f = _ -> true;
-         |    use Foo.g;
-         |    let g = _ -> true;
-         |    f(g(123))
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.AmbiguousVarOrUse](result)
-  }
+class TestNamer extends AnyFunSuite with TestUtils {
 
   test("DuplicateLowerName.01") {
     val input =
@@ -99,11 +69,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.05") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
+         |mod A {
          |  def f(): Int = 21
          |}
        """.stripMargin
@@ -114,13 +84,13 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.06") {
     val input =
       s"""
-         |namespace A/B/C {
+         |mod A.B.C {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
-         |  namespace B {
-         |    namespace C {
+         |mod A {
+         |  mod B {
+         |    mod C {
          |      def f(): Int = 21
          |    }
          |  }
@@ -162,7 +132,7 @@ class TestNamer extends FunSuite with TestUtils {
          |  pub def f(x: a): Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  pub def f(): Int = 21
          |}
        """.stripMargin
@@ -173,12 +143,12 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.10") {
     val input =
       s"""
-         |namespace A/B/C {
+         |mod A.B.C {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
-         |  namespace B {
+         |mod A {
+         |  mod B {
          |    class C[a] {
          |      pub def f(x: a): Int
          |    }
@@ -192,11 +162,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.11") {
     val input =
       s"""
-         |namespace A/C {
+         |mod A.C {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
+         |mod A {
          |  class C[a] {
          |    pub def f(x: a): Int
          |  }
@@ -209,7 +179,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.12") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    def f(): Int32 = 123
         |}
         |
@@ -231,428 +201,6 @@ class TestNamer extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateLowerName](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseLower.01") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use A.f;
-         |    use B.f;
-         |    f() == f()
-         |
-         |namespace A {
-         |    def f(): Int = 1
-         |}
-         |
-         |namespace B {
-         |    def f(): Int = 1
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseLower.02") {
-    val input =
-      s"""
-         |use A.f
-         |use B.f
-         |
-         |def foo(): Bool =
-         |    f() == f()
-         |
-         |namespace A {
-         |    pub def f(): Int = 1
-         |}
-         |
-         |namespace B {
-         |    pub def f(): Int = 1
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseLower.03") {
-    val input =
-      s"""
-         |use A.f
-         |
-         |def foo(): Bool =
-         |    use B.f;
-         |    f() == f()
-         |
-         |namespace A {
-         |    pub def f(): Int = 1
-         |}
-         |
-         |namespace B {
-         |    pub def f(): Int = 1
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseLower.04") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use A.{f => g, f => g};
-         |    g() == g()
-         |
-         |namespace A {
-         |    pub def f(): Int = 1
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-
-  ignore("DuplicateUseLower.05") {
-    val input =
-      s"""
-         |namespace T {
-         |    def foo(): Bool =
-         |        use A.f;
-         |        use B.f;
-         |        f() == f()
-         |}
-         |
-         |namespace A {
-         |    pub def f(): Int = 1
-         |}
-         |
-         |namespace B {
-         |    pub def f(): Int = 1
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseLower.06") {
-    val input =
-      s"""
-         |namespace T {
-         |    use A.f
-         |    use B.f
-         |    def foo(): Bool =
-         |        f() == f()
-         |}
-         |
-         |namespace A {
-         |    pub def f(): Int = 1
-         |}
-         |
-         |namespace B {
-         |    pub def f(): Int = 1
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseLower.07") {
-    val input =
-      s"""
-         |namespace T {
-         |    use A.{f => g, f => g}
-         |    def foo(): Bool =
-         |        g() == g()
-         |}
-         |
-         |namespace A {
-         |    pub def f(): Int = 1
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseLower.08") {
-    val input =
-      s"""
-         |namespace T {
-         |    use A.f
-         |    def foo(): Bool =
-         |        use B.f;
-         |        f() == f()
-         |}
-         |
-         |namespace A {
-         |    pub def f(): Int = 1
-         |}
-         |
-         |namespace B {
-         |    pub def f(): Int = 1
-         |}
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseLower](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseUpper.01") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use A.Color;
-         |    use B.Color;
-         |    true
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blue
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blue
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseUpper.02") {
-    val input =
-      s"""
-         |use A.Color
-         |use B.Color
-         |
-         |def foo(): Bool = true
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blue
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blue
-         |    }
-         |}
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseUpper.03") {
-    val input =
-      s"""
-         |namespace T {
-         |    use A.Color
-         |    use B.Color
-         |    def foo(): Bool =
-         |        true
-         |}
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blue
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blue
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseTag.01") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use A.Color.Red;
-         |    use B.Color.Red;
-         |    Red == Red
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseTag](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseTag.02") {
-    val input =
-      s"""
-         |use A.Color.Red
-         |use B.Color.Red
-         |def foo(): Bool =
-         |    Red == Red
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseTag](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseTag.03") {
-    val input =
-      s"""
-         |
-         |use A.Color.Red
-         |def foo(): Bool =
-         |    use B.Color.Red;
-         |    Red == Red
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseTag](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseTag.04") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use B.Color.{Red => R};
-         |    use B.Color.{Blu => R};
-         |    R == R
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseTag](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseTag.05") {
-    val input =
-      s"""
-         |namespace T {
-         |    use A.Color.Red
-         |    use B.Color.Red
-         |    def foo(): Bool =
-         |        Red == Red
-         |}
-         |
-         |def foo(): Bool =
-         |    use A.Color.Red;
-         |    use B.Color.Red;
-         |    Red == Red
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseTag](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseTag.06") {
-    val input =
-      s"""
-         |namespace T {
-         |    use A.Color.Red
-         |    def foo(): Bool =
-         |        use B.Color.Red;
-         |        Red == Red
-         |}
-         |
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-         |
-         |namespace B {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseTag](result)
-  }
-
-  // TODO NS-REFACTOR move to redundancy
-  ignore("DuplicateUseTag.07") {
-    val input =
-      s"""
-         |namespace T {
-         |    use B.Color.{Red => R}
-         |    use B.Color.{Blu => R}
-         |    def foo(): Bool =
-         |        R == R
-         |}
-         |namespace A {
-         |    enum Color {
-         |        case Red, Blu
-         |    }
-         |}
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUseTag](result)
   }
 
   test("DuplicateUpperName.01") {
@@ -679,11 +227,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.03") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
        """.stripMargin
@@ -719,11 +267,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.06") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case B
          |  }
@@ -767,13 +315,13 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.09") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case A
          |  }
          |}
          |
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case B
          |  }
@@ -807,11 +355,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.12") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
        """.stripMargin
@@ -849,13 +397,13 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.15") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case A
          |  }
          |}
          |
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
        """.stripMargin
@@ -887,11 +435,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.18") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
          |
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
        """.stripMargin
@@ -955,7 +503,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateUpperName.24") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    import java.sql.Statement
         |    enum Statement
         |}
@@ -968,7 +516,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateUpperName.25") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    use B.Statement
         |    import java.sql.Statement
         |}
@@ -982,7 +530,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |enum Statement
-        |namespace A {
+        |mod A {
         |    use B.Statement
         |}
         |""".stripMargin
@@ -995,7 +543,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |enum Statement
-        |namespace A {
+        |mod A {
         |    import B.Statement
         |}
         |""".stripMargin
@@ -1067,7 +615,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateImport.03") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    import java.lang.StringBuffer
         |    import java.lang.StringBuffer
         |}
@@ -1080,7 +628,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateImport.04") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    import java.lang.{StringBuffer => StringThingy}
         |    import java.lang.{StringBuilder => StringThingy}
         |}

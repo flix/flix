@@ -32,7 +32,6 @@ object HoleCompletion {
     val matchType = Type.mkArrowWithEffect(
       sourceType,
       Type.freshVar(Kind.Bool, SourceLocation.Unknown),
-      Type.freshVar(Kind.Effect, SourceLocation.Unknown),
       targetType,
       SourceLocation.Unknown
     )
@@ -42,13 +41,12 @@ object HoleCompletion {
         val lastArrow = Type.mkArrowWithEffect(
           spec.fparams.last.tpe,
           spec.pur,
-          spec.eff,
           spec.retTpe,
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
         Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty) match {
-          case Result.Ok(subst) =>
+          case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
             // Track the size of all the types in the substitution.
             // A smaller substitution means a more precise unification match.
             val size = subst.m.values.map(_.size).sum

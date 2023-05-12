@@ -18,11 +18,9 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
-import java.io.PrintWriter
 import java.nio.file.Path
 
 /**
@@ -30,7 +28,7 @@ import java.nio.file.Path
   */
 object SimpleRunner {
 
-  def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Result[Unit, Int] = {
+  def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Validation[Unit, Int] = {
 
     // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
@@ -64,13 +62,13 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd)(System.out) match {
-        case Result.Ok(bootstrap) =>
+      Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
+        case Validation.Success(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
           System.exit(0)
-        case Result.Err(e) =>
-          println(e)
+        case failure =>
+          failure.errors.map(_.message(Formatter.getDefault)).foreach(println)
           System.exit(1)
       }
     }
@@ -89,8 +87,8 @@ object SimpleRunner {
           System.exit(1)
       }
     }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
+
+    flix.setFormatter(Formatter.getDefault)
 
     // evaluate main.
     val timer = new Timer(flix.compile())
@@ -111,23 +109,14 @@ object SimpleRunner {
             // Exit.
             System.exit(0)
         }
-
-        if (cmdOpts.benchmark) {
-          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-        }
-
-        if (cmdOpts.test) {
-          Tester.run(Nil, compilationResult)(flix)
-        }
-
-        ().toOk
+        ().toSuccess
 
       case failure =>
         flix.mkMessages(failure.errors.sortBy(_.source.name))
           .foreach(println)
         println()
         println(s"Compilation failed with ${failure.errors.length} error(s).")
-        1.toErr
+        1.toFailure
     }
   }
 }

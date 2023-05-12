@@ -1,4 +1,4 @@
-namespace Test/Exp/Let {
+mod Test.Exp.Let {
 
     @test
     def testLet01(): Bool =

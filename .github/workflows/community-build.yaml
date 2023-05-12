@@ -39,38 +39,31 @@ jobs:
       max-parallel: 1
       matrix:
         repo:
-          - "magnus-madsen/helloworld"
-          - "mlutze/fcwg"
           - "JonathanStarup/Flix-ANSI-Terminal"
-          - "mlutze/flix-json"
+          - "flix/museum"
           - "jaschdoc/flix-parsers"
+          - "mlutze/fcwg"
+          - "mlutze/flix-json"
+          - "mlutze/flixball"
+          - "stephentetley/flix-either"
+          - "stephentetley/flix-htmldoc"
+          - "stephentetley/flix-pretty"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Java
         uses: actions/setup-java@v1
         with:
           java-version: 17
+      - name: Check out project head
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ matrix.repo }}
       - name: Download Flix JAR
         uses: actions/download-artifact@v3
         with:
           name: flix-jar
-      - name: Initialize Flix Package
-        run: |
-          java -jar flix.jar init
-          
-          # Remove example code to avoid conflicts.
-          rm src/Main.flix
-          rm test/TestMain.flix
-      - name: Download Project Package
-        uses: robinraju/release-downloader@v1.7
-        with: 
-          repository: ${{ matrix.repo }}
-          latest: true
-          fileName: "*.fpkg"
-          out-file-path: lib/${{ matrix.repo }}
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build community project
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar flix.jar build
+          java -jar flix.jar build --github-key ${{ github.token }}

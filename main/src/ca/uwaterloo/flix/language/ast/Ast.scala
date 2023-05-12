@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.collection.ListMap
-
 import java.nio.file.Path
 import java.util.Objects
 
@@ -131,6 +129,8 @@ object Ast {
     case class BigInt(lit: java.math.BigInteger) extends Constant
 
     case class Str(lit: java.lang.String) extends Constant
+
+    case class Regex(lit: java.util.regex.Pattern) extends Constant
   }
 
   /**
@@ -246,15 +246,6 @@ object Ast {
       override def toString: String = "@Test"
     }
 
-    /**
-      * An annotation that marks a function definition as being inherently unsafe.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Unsafe(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Unsafe"
-    }
-
   }
 
   /**
@@ -326,11 +317,23 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+  }
+
+  /**
+    * A common super-type that represents a call type.
+    */
+  sealed trait CallType
+
+  object CallType {
+    /**
+      * Represents a call in tail position.
+      */
+    case object TailCall extends CallType
 
     /**
-      * Returns `true` if `this` sequence contains the `@Unsafe` annotation.
+      * Represents a call in non-tail position.
       */
-    def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
+    case object NonTailCall extends CallType
   }
 
   /**
@@ -600,6 +603,17 @@ object Ast {
   }
 
   /**
+    * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
+    */
+  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
+
+  /**
+    *
+    * Represents that `tpe1` and `tpe2` are equivalent types.
+    */
+  case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
+
+  /**
     * Represents a use of an effect sym.
     */
   case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
@@ -625,6 +639,11 @@ object Ast {
   case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
 
   /**
+    * Represents a use of an associated type sym.
+    */
+  case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
+
+  /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
@@ -633,6 +652,13 @@ object Ast {
     * Represents the super classes and instances available for a particular class.
     */
   case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
+
+  /**
+    * Represents the definition of an associated type.
+    * If this associated type is named `Assoc`, then
+    * Assoc[arg] = ret.
+    */
+  case class AssocTypeDef(arg: Type, ret: Type)
 
   /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
@@ -735,6 +761,11 @@ object Ast {
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /**
+    * A constructor for an associated type. (Not a valid type by itself).
+    */
+  case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)
+
+  /**
     * A use of a Flix symbol or import of a Java class.
     */
   sealed trait UseOrImport
@@ -751,4 +782,72 @@ object Ast {
       */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
+
+  /**
+    * A common super-type for syntactic contexts.
+    *
+    * A syntactic context is an estimate of the syntactic construct a specific source position is inside.
+    */
+  sealed trait SyntacticContext
+
+  object SyntacticContext {
+
+    sealed trait Decl extends SyntacticContext
+
+    object Decl {
+      case object Class extends Decl
+
+      case object Enum extends Decl
+
+      case object Instance extends Decl
+
+      case object OtherDecl extends Decl
+    }
+
+    sealed trait Expr extends SyntacticContext
+
+    object Expr {
+      case object Constraint extends Expr
+
+      case object Do extends Expr
+
+      case object OtherExpr extends Expr
+    }
+
+    case object Import extends SyntacticContext
+
+    sealed trait Pat extends SyntacticContext
+
+    object Pat {
+      case object OtherPat extends Pat
+    }
+
+    sealed trait Type extends SyntacticContext
+
+    object Type {
+      case object Eff extends Type
+
+      case object OtherType extends Type
+    }
+
+    case object Use extends SyntacticContext
+
+    case object WithClause extends SyntacticContext
+
+    case object Unknown extends SyntacticContext
+
+    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
+      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
+      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
+
+      case (_, SyntacticContext.Unknown) => ctx1
+      case (SyntacticContext.Unknown, _) => ctx2
+
+      case (SyntacticContext.Type.OtherType, SyntacticContext.WithClause) => SyntacticContext.WithClause
+      case (SyntacticContext.WithClause, SyntacticContext.Type.OtherType) => SyntacticContext.WithClause
+
+      case _ => ctx1
+    }
+  }
+
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace TestEnvironment {
+mod TestEnvironment {
 
     @test
     def testGetEnv01(): Bool =

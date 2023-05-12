@@ -1,4 +1,4 @@
-namespace Test/Exp/Binary/Comparison {
+mod Test.Exp.Binary.Comparison {
 
     @test
     def testBinaryLess01(): Bool = (120000 < 30000) == false

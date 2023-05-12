@@ -1,4 +1,4 @@
-namespace Test/Derives/Sendable {
+mod Test.Derives.Sendable {
 
     pub enum Enum1(Int32) with Sendable
 

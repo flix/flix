@@ -52,6 +52,8 @@ object MonoType {
 
   case object Str extends MonoType
 
+  case object Regex extends MonoType
+
   case object Region extends MonoType
 
   ///

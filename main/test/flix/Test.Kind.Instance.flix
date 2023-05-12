@@ -1,6 +1,6 @@
-namespace Test/Kind/Instance {
+mod Test.Kind.Instance {
 
-    namespace TypeConstraint {
+    mod TypeConstraint {
         pub enum EStar[_a: Type]
         pub enum EStarToStar[_a: Type -> Type]
         class CStar[a: Type]

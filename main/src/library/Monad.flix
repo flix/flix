@@ -52,7 +52,7 @@ pub lawful class Monad[m : Type -> Type] with Applicative[m] {
 }
 
 
-namespace Monad {
+mod Monad {
 
     ///
     /// The monadic `join` operator.

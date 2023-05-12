@@ -123,7 +123,7 @@ instance Iterable[DelayList] {
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
 }
 
-namespace DelayList {
+mod DelayList {
 
     ///
     /// Returns a string representation of `l`.
@@ -131,8 +131,8 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toString(l: DelayList[a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -658,8 +658,8 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region r {
-        let ix = ref 0 @ r;
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region rc {
+        let ix = ref 0 @ rc;
         let f1 = x -> {let i = deref ix; f(i, x); ix := i+1};
         forEach(f1, l)
     }
@@ -1235,8 +1235,8 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region rc2 {
+        Array.toMutList(r, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///
@@ -1340,8 +1340,8 @@ namespace DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: DelayList[a]): DelayList[a] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toDelayList
+    pub def shuffle(rnd: Random, l: DelayList[a]): DelayList[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toDelayList
     }
 
 }

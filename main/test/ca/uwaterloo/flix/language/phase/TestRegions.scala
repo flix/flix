@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestRegions extends FunSuite with TestUtils {
+class TestRegions extends AnyFunSuite with TestUtils {
 
   test("RegionVarEscapes.01") {
     val input =
@@ -32,7 +32,7 @@ class TestRegions extends FunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None;
+        |    let m = ref None @ Static;
         |    region r {
         |        let x = ref 123 @ r;
         |        m := Some(x);
@@ -52,7 +52,7 @@ class TestRegions extends FunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None;
+        |    let m = ref None @ Static;
         |    region r {
         |        let x = ref 123 @ r;
         |        m := Some(_ -> x);

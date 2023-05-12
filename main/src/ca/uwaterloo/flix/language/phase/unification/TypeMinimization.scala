@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Type}
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, fromEffType, toType}
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, toType}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable.minimizeFormula
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -32,13 +32,13 @@ object TypeMinimization {
     * Minimizes the given type, reducing it to a more concise equivalent form.
     */
   def minimizeType(t: Type)(implicit flix: Flix): Type = t.kind match {
-    case Kind.Effect => minimizeBoolAlg(t)
     case Kind.Bool => minimizeBoolAlg(t)
     case _ => t match {
       case tpe: Type.Var => tpe
       case tpe: Type.Cst => tpe
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(minimizeType(tpe1), minimizeType(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(minimizeType), minimizeType(tpe), loc)
+      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(minimizeType), kind, loc)
     }
   }
 
@@ -46,7 +46,7 @@ object TypeMinimization {
     * Minimizes the given scheme, reducing it to a more concise equivalent form.
     */
   def minimizeScheme(sc: Scheme)(implicit flix: Flix): Scheme = sc match {
-    case Scheme(quantifiers, constraints, base) =>
+    case Scheme(quantifiers, tconstrs, econstrs, base) =>
       val newBase = minimizeType(base)
       val tvars = newBase.typeVars.map(_.sym)
 
@@ -54,11 +54,11 @@ object TypeMinimization {
       val newQuants = quantifiers.filter(tvars.contains)
 
       // filter out unused type constraints
-      val newTconstrs = constraints.filter {
+      val newTconstrs = tconstrs.filter {
         case Ast.TypeConstraint(_, Type.Var(sym, _), _) if tvars.contains(sym) => true
         case _ => false
       }
-      Scheme(newQuants, newTconstrs, newBase)
+      Scheme(newQuants, newTconstrs, econstrs, newBase)
   }
 
   /**
@@ -75,7 +75,6 @@ object TypeMinimization {
     // Check that the `tpe` argument is a Boolean formula.
     tpe0.kind match {
       case Kind.Bool => // OK
-      case Kind.Effect => // OK
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.", tpe0.loc)
     }
 
@@ -103,7 +102,6 @@ object TypeMinimization {
     // Convert the type `tpe` to a Boolean formula.
     val input = tpe.kind match {
       case Kind.Bool => fromBoolType(tpe, m)
-      case Kind.Effect => fromEffType(tpe, m)
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect/non-Case kind: '${tpe.kind}'.", tpe.loc)
     }
 

@@ -432,12 +432,13 @@ object ResolutionError {
   /**
     * Undefined Name Error.
     *
-    * @param qn  the unresolved name.
-    * @param ns  the current namespace.
-    * @param env the variables in the scope.
-    * @param loc the location where the error occurred.
+    * @param qn    the unresolved name.
+    * @param ns    the current namespace.
+    * @param env   the variables in the scope.
+    * @param isUse true if the undefined name occurs in a use.
+    * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -611,6 +612,31 @@ object ResolutionError {
   }
 
   /**
+    * Undefined associated type error.
+    *
+    * @param qn  associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined associated type: '${qn}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined associated type'${red(qn.toString)}'.
+         |
+         |${code(loc, "associated type not found.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent associated type?"
+    })
+  }
+
+  /**
     * Undefined Type Error.
     *
     * @param qn  the name.
@@ -635,6 +661,31 @@ object ResolutionError {
       s"${underline("Tip:")} Possible typo or non-existent type?"
     })
 
+  }
+
+  /**
+    * Undefined Kind Error.
+    *
+    * @param qn  the name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined kind: '${qn.toString}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined kind '${red(qn.toString)}'.
+         |
+         |${code(loc, "undefined kind.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent kind?"
+    })
   }
 
   /**
@@ -979,6 +1030,31 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate an under-applied type alias.
+    *
+    * @param sym the associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied associated type: ${sym.name}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Under-applied associated type '${red(sym.name)}'.
+         |
+         |${code(loc, "Under-applied associated type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Associated types must be fully applied."
+    })
+
+  }
+
+  /**
     * An error raised to indicate that a signature does not include the class's type parameter.
     *
     * @param sym the symbol of the signature.
@@ -1052,6 +1128,37 @@ object ResolutionError {
         |    case E2(x) => E2 of f(x) // OK
         |    case E3(y) => y          // Not OK. Should be (e.g.) 'E3 of y'
         |}
+        |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate that an associated type definition is not allowed.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalAssocTypeDef(loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "Illegal associated type definition."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal associated type in associated type definition.
+         |
+         |${code(loc, "illegal associated type definition.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """The definition of an associate type may only contain associated types applied to variables.
+        |
+        |For example:
+        |
+        |instance C[List[a]] {
+        |    type T1[List[a]] = String            // OK
+        |    type T2[List[a]] = a                 // OK
+        |    type T3[List[a]] = D.T0[a]           // OK
+        |    type T4[List[a]] = D.T0[Option[a]]   // Not OK. Option[a] is not a variable.
         |""".stripMargin
     })
   }
