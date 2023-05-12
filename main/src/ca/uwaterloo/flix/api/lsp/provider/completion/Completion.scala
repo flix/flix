@@ -204,12 +204,13 @@ sealed trait Completion {
         detail = None,
         kind = CompletionItemKind.Variable)
     case Completion.EnumTagCompletion(enumSym, caseSym, arity) =>
-      val args = (1 until arity + 1).map(i => s"?elem$i").mkString("(", ", ", ")")
       val name = s"${enumSym.toString}.${caseSym.name}"
+      val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
+      val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),
-        textEdit = TextEdit(context.range, s"$name$args"),
+        textEdit = TextEdit(context.range, snippet),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
