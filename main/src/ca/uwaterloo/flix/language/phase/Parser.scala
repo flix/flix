@@ -433,7 +433,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Types.EffectSet | Type
     }
 
-    Type ~ optional(optWS ~ "\\" ~ optWS ~ EffectFirstType)
+    rule {
+      Type ~ optional(optWS ~ "\\" ~ optWS ~ EffectFirstType)
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

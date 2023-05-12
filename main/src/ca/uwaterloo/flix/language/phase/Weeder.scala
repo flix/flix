@@ -2773,6 +2773,15 @@ object Weeder {
         case (t1, t2) => WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Type.Difference(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val t1Val = visitType(tpe1)
+      val t2Val = visitType(tpe2)
+      val loc = mkSL(sp1, sp2)
+      mapN(t1Val, t2Val) {
+        case (t1, t2) => WeededAst.Type.And(t1, WeededAst.Type.Not(t2, loc), loc)
+      }
+
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
       val checkVal = traverseX(tpes0)(checkEffectSetElement)
       val tpesVal = traverse(tpes0)(visitType)
@@ -3410,6 +3419,11 @@ object Weeder {
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.True(sp1, _) => sp1
     case ParsedAst.Type.False(sp1, _) => sp1
+    case ParsedAst.Type.Complement(sp1, _, _) => sp1
+    case ParsedAst.Type.Difference(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Union(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.EffectSet(sp1, _, _) => sp1
     case ParsedAst.Type.CaseComplement(sp1, _, _) => sp1
     case ParsedAst.Type.CaseDifference(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.CaseIntersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
