@@ -100,7 +100,7 @@ mod Choice {
     ///
     @Experimental
     pub def filter[t : Type, a : Bool, p : Bool]
-                  (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a or p, p] =
+                  (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a & p, p] =
         relational_choose* c {
             case Absent     => Absent
             case Present(v) => if (f(v)) Present(v) else Absent
