@@ -61,7 +61,7 @@ mod Int32 {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
-    /// The Result is always non-negative.
+    /// The result is always non-negative.
     ///
     pub def mod(x: Int32, n: Int32): Int32 =
         if (n == 0i32)

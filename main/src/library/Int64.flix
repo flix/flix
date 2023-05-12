@@ -61,7 +61,7 @@ mod Int64 {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
-    /// The Result is always non-negative.
+    /// The result is always non-negative.
     ///
     pub def mod(x: Int64, n: Int64): Int64 =
         if (n == 0i64)

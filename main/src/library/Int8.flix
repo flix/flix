@@ -61,7 +61,7 @@ mod Int8 {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
-    /// The Result is always non-negative.
+    /// The result is always non-negative.
     ///
     pub def mod(x: Int8, n: Int8): Int8 =
         if (n == 0i8)
