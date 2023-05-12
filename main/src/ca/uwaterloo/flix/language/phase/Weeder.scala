@@ -2783,7 +2783,7 @@ object Weeder {
       }
 
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
-      val checkVal = traverseX(tpes0)(checkEffectSetElement)
+      val checkVal = traverseX(tpes0)(checkEffectSetMember)
       val tpesVal = traverse(tpes0)(visitType)
       val loc = mkSL(sp1, sp2)
       mapN(checkVal, tpesVal) {
@@ -2863,11 +2863,18 @@ object Weeder {
       }
   }
 
-  // MATT docs
-  private def checkEffectSetElement(t: ParsedAst.Type): Validation[Unit, WeederError] = t match {
+  /**
+    * Checks that the effect set member is valid: a variable or constant.
+    */
+  private def checkEffectSetMember(t: ParsedAst.Type): Validation[Unit, WeederError] = t match {
     case _: ParsedAst.Type.Var => ().toSuccess
     case _: ParsedAst.Type.Ambiguous => ().toSuccess
-    case _ => ??? // MATT weedererror bad type in set
+    case _: ParsedAst.Type.Read => ().toSuccess
+    case _: ParsedAst.Type.Write => ().toSuccess
+    case _ =>
+      val sp1 = leftMostSourcePosition(t)
+      val sp2 = t.sp2
+      WeederError.IllegalEffectSetMember(mkSL(sp1, sp2)).toFailure
   }
 
   /**

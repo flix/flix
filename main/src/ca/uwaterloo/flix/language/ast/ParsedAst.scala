@@ -1395,7 +1395,9 @@ object ParsedAst {
   /**
     * Types.
     */
-  sealed trait Type
+  sealed trait Type {
+    def sp2: SourcePosition
+  }
 
   object Type {
 
