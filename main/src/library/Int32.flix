@@ -60,8 +60,8 @@ mod Int32 {
     }
 
     ///
-    /// Returns the Euclidean modulo of `x` and `n`. This means
-    /// the the result is always non-negative.
+    /// Returns the Euclidean modulo of `x` and `n`.
+    /// The Result is always non-negative.
     ///
     pub def mod(x: Int32, n: Int32): Int32 =
         if (n == 0i32)
@@ -70,8 +70,8 @@ mod Int32 {
             $INT32_REM$($INT32_REM$(x, n) + n, n)
 
     ///
-    /// Returns the remainder of `x / n`. The result
-    /// can be negative.
+    /// Returns the remainder of `x / n`.
+    /// The result can be negative.
     ///
     /// See also `Int32.mod`.
     ///

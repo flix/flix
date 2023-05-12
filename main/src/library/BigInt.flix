@@ -40,6 +40,7 @@ mod BigInt {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
+    /// The Result is always non-negative.
     ///
     pub def mod(x: BigInt, n: BigInt): BigInt =
         if (n == 0ii)
@@ -49,6 +50,9 @@ mod BigInt {
 
     ///
     /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `BigInt.mod`.
     ///
     pub def rem(x: BigInt, n: BigInt): BigInt =
         if (n == 0ii)
