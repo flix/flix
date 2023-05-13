@@ -78,8 +78,8 @@ mod MultiMap {
     ///
     /// Returns a string representation of `m`.
     ///
-    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region rc {
+        let sb = StringBuilder.new(rc);
         let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);
         Map.forEachWithIndex((i, k, v) -> {
@@ -539,8 +539,8 @@ mod MultiMap {
     /// Applies `f` to tuple `(index, key, value)` formed of the keys and values of
     /// MultiMap `m` and the index of the traversal.
     ///
-    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef = region r {
-        let ix = ref 0 @ r;
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef = region rc {
+        let ix = ref 0 @ rc;
         let f1 = (k , v) -> {let i = deref ix; f(i, k, v); ix := i + 1};
         forEach(f1, m)
     }

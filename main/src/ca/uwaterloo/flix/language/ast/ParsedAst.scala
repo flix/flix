@@ -880,15 +880,6 @@ object ParsedAst {
     case class RecordSelect(exp: ParsedAst.Expression, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Record Select Lambda Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param field the field to select from the record.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class RecordSelectLambda(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Record Operation Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1012,6 +1003,15 @@ object ParsedAst {
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * InstanceOf expression.
+      *
+      * @param exp  the expression.
+      * @param name the Java class or interface name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class InstanceOf(exp: ParsedAst.Expression, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Checked Type Cast expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1106,15 +1106,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class Spawn(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Parallel expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Par(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ParYield expression.

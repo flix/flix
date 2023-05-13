@@ -842,6 +842,11 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
+    case WeededAst.Expression.InstanceOf(exp, className, loc) =>
+      visitExp(exp, ns0) map {
+        case e => NamedAst.Expression.InstanceOf(e, className, loc)
+      }
+
     case WeededAst.Expression.CheckedCast(c, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expression.CheckedCast(c, e, loc)
@@ -1010,11 +1015,6 @@ object Namer {
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) =>
           NamedAst.Expression.Spawn(e1, e2, loc)
-      }
-
-    case WeededAst.Expression.Par(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Par(e, loc)
       }
 
     case WeededAst.Expression.ParYield(frags, exp, loc) =>

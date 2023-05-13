@@ -54,8 +54,8 @@ mod DelayMap {
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
-    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
+        let sb = StringBuilder.new(rc);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
         forEachWithIndex((i, k, v) -> {
@@ -83,7 +83,7 @@ mod DelayMap {
     ///
     def useParallelEvaluation(m: DelayMap[k, v]): Bool =
         let DMap(t) = m;
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -818,8 +818,8 @@ mod DelayMap {
     /// DelayMap `m` and the index of the traversal.
     ///
     @Experimental
-    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region r {
-       let ix = ref 0 @ r;
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region rc {
+       let ix = ref 0 @ rc;
        let f1 = (k, v) -> {let i = deref ix; f(i, k, v); ix := i+1};
        forEach(f1, m)
     }

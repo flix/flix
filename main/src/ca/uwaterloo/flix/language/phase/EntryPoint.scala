@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN}
+import ca.uwaterloo.flix.util.Validation.{ToSoftFailure, ToSuccess, flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -31,19 +31,19 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * The argument to the `func` must have type `Unit`.
   *
   * If the result type of `func` has type `Unit`,
-  *   then the result is returned from `main%` as normal.
+  * then the result is returned from `main%` as normal.
   * If the result type of `func` is some other type with a `ToString` instance,
-  *   then the result is printed in `main%`.
+  * then the result is printed in `main%`.
   * If the result type of `func` is some other type without a `ToString` instance,
-  *   then an error is raised.
+  * then an error is raised.
   *
-  *  For example, given an entry point `func` with type `Unit -> Float64`,
-  *  we produce:
-  *  {{{
+  * For example, given an entry point `func` with type `Unit -> Float64`,
+  * we produce:
+  * {{{
   *  pub def main%(): Unit \ IO = {
   *      println(func(args))
   *  }
-  *  }}}
+  * }}}
   */
 object EntryPoint {
 
@@ -88,7 +88,7 @@ object EntryPoint {
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
       case Some(sym) => root.defs.get(sym) match {
-        case None => EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)).toFailure
+        case None => None.toSoftFailure(EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)))
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
     }
@@ -128,30 +128,29 @@ object EntryPoint {
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, loc), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, loc), _) =>
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
 
       // First check that there's exactly one argument.
       val argVal = declaredScheme.base.arrowArgTypes match {
         // Case 1: One arg. Ok :)
-        case arg :: Nil => arg.toSuccess
+        case arg :: Nil => Some(arg).toSuccess
         // Case 2: Multiple args. Error.
-        case _ :: _ :: _ => EntryPointError.IllegalEntryPointArgs(sym, sym.loc).toFailure
+        case _ :: _ :: _ => None.toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
 
-      flatMapN(argVal: Validation[Type, EntryPointError]) {
-        arg =>
-          val argSc = Scheme.generalize(Nil, Nil, arg)
+      flatMapN(argVal: Validation[Option[Type], EntryPointError]) {
+        // Case 1: Unit -> XYZ. We can ignore the args.
+        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg), classEnv, ListMap.empty) =>
+          // TODO ASSOC-TYPES better eqEnv
+          ().toSuccess
 
-          if (Scheme.equal(unitSc, argSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
-            // Case 1: Unit -> XYZ. We can ignore the args.
-            ().toSuccess
-          } else {
-            // Case 2: Bad arguments. Error.
-            EntryPointError.IllegalEntryPointArgs(sym, sym.loc).toFailure
-          }
+        // Case 2: Bad arguments. SoftError
+        // Case 3: argVal was None. SoftError
+        case _ =>
+          ().toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
       }
   }
 
@@ -160,7 +159,7 @@ object EntryPoint {
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe)
@@ -177,7 +176,7 @@ object EntryPoint {
           ().toSuccess
         } else {
           // Case 3: Bad result type. Error.
-          EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc).toFailure
+          ().toSoftFailure(EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
         }
       }
   }
@@ -198,7 +197,6 @@ object EntryPoint {
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
       pur = Type.Impure,
-      eff = Type.Empty,
       tconstrs = Nil,
       loc = SourceLocation.Unknown
     )
@@ -208,16 +206,16 @@ object EntryPoint {
     val func = TypedAst.Expression.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
 
     // func()
-    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowPurityType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
     val ioSym = root.effects(new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)).sym
     val ioTpe = Type.Cst(TypeConstructor.Effect(ioSym), SourceLocation.Unknown)
-    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Impure, ioTpe, Type.Unit, SourceLocation.Unknown)
+    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Impure, Type.Unit, SourceLocation.Unknown)
     val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
-    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, ioTpe, SourceLocation.Unknown)
+    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
 
     val impl = TypedAst.Impl(
       exp = print,

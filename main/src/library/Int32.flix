@@ -37,7 +37,7 @@ mod Int32 {
     ///
     /// Returns the maximum number representable by an `Int32`.
     ///
-    pub def maxValue(): Int32 = ~~~minValue()
+    pub def maxValue(): Int32 = bitwiseNot(minValue())
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -61,6 +61,7 @@ mod Int32 {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
     ///
     pub def mod(x: Int32, n: Int32): Int32 =
         if (n == 0i32)
@@ -70,6 +71,9 @@ mod Int32 {
 
     ///
     /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `Int32.mod`.
     ///
     pub def rem(x: Int32, n: Int32): Int32 =
         if (n == 0i32)
@@ -106,13 +110,18 @@ mod Int32 {
     pub def signum(x: Int32): Int32 = compare(x, 0)
 
     ///
+    /// Returns `b` raised to the power of `n`.
+    ///
+    pub def pow(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
+
+    ///
     /// Returns the logical right shift of `x` by `dist`.
     /// Only the rightmost 5 bits of `dist` are considered (ie. `dist rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int32): Int32 =
         if (x < 0 and rem(dist.dist, size()) != 0)
-            rightShift(rightShift(x, 1) &&& maxValue(), dist.dist - 1)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
         else
             rightShift(x, dist.dist)
 
@@ -131,14 +140,14 @@ mod Int32 {
     /// binary representation of `x` right by `dist` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int32): Int32 =
-        (logicalRightShift(dist = dist.dist, x)) ||| leftShift(x, -dist.dist)
+        bitwiseOr(logicalRightShift(dist = dist.dist, x), leftShift(x, -dist.dist))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `dist` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int32): Int32 =
-        (logicalRightShift(dist = -dist.dist, x)) ||| leftShift(x, dist.dist)
+        bitwiseOr(logicalRightShift(dist = -dist.dist, x), leftShift(x, dist.dist))
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -245,21 +254,21 @@ mod Int32 {
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int32): Int32 = x ||| leftShift(1, pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseOr(x, leftShift(1, pos.pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int32): Int32 = x &&& ~~~leftShift(1, pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseAnd(x, bitwiseNot(leftShift(1, pos.pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int32): Int32 = x ^^^ leftShift(1, pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int32): Int32 = bitwiseXor(x, leftShift(1, pos.pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -282,6 +291,25 @@ mod Int32 {
     ///
     pub def rightShift(x: Int32, y: Int32): Int32 = $INT32_SHR$(x, y)
 
+    ///
+    /// Returns the bitwise AND of `x` and `y`.
+    ///
+    pub def bitwiseAnd(x: Int32, y: Int32): Int32 = $INT32_AND$(x, y)
+
+    ///
+    /// Returns the bitwise NOT of `x`.
+    ///
+    pub def bitwiseNot(x: Int32): Int32 = $INT32_NOT$(x)
+
+    ///
+    /// Returns the bitwise OR of `x` and `y`.
+    ///
+    pub def bitwiseOr(x: Int32, y: Int32): Int32 = $INT32_OR$(x, y)
+
+    ///
+    /// Returns the bitwise XOR of `x` and `y`.
+    ///
+    pub def bitwiseXor(x: Int32, y: Int32): Int32 = $INT32_XOR$(x, y)
 
     ///
     /// Returns the factorial of `x`.

@@ -169,6 +169,8 @@ object NamedAst {
 
     case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
+    case class InstanceOf(exp: NamedAst.Expression, className: String, loc: SourceLocation) extends NamedAst.Expression
+
     case class CheckedCast(cast: Ast.CheckedCastType, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class UncheckedCast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
@@ -210,8 +212,6 @@ object NamedAst {
     case class SelectChannel(rules: List[NamedAst.SelectChannelRule], default: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class Spawn(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class ParYield(frags: List[NamedAst.ParYieldFragment], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 

@@ -17,11 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
 
@@ -38,13 +35,13 @@ object VarNumbering {
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("VarNumbering") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("VarNumbering") {
     // Compute stack offset for each definition.
     for ((_, defn) <- root.defs) {
       number(defn)
     }
 
-    root.toSuccess
+    root
   }
 
   /**
@@ -59,133 +56,54 @@ object VarNumbering {
       * @param e0 the current expression.
       * @param i0 the current stack offset.
       */
-    def visitExp(e0: Expression, i0: Int): Int = e0 match {
-      case Expression.Cst(_, _, _) => i0
+    def visitExp(e0: Expr, i0: Int): Int = e0 match {
+      case Expr.Cst(_, _, _) => i0
 
-      case Expression.Var(_, _, _) => i0
+      case Expr.Var(_, _, _) => i0
 
-      case Expression.Closure(_, args, _, _) =>
+      case Expr.Closure(_, args, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplyClo(exp, args, _, _, _) =>
+      case Expr.ApplyAtomic(_, exps, _, _, _) =>
+        visitExps(exps, i0)
+
+      case Expr.ApplyClo(exp, args, _, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
 
-      case Expression.ApplyDef(_, args, _, _, _) =>
+      case Expr.ApplyDef(_, args, _, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplyCloTail(exp, args, _, _, _) =>
-        val i = visitExp(exp, i0)
-        visitExps(args, i)
-
-      case Expression.ApplyDefTail(_, args, _, _, _) =>
+      case Expr.ApplySelfTail(_, _, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplySelfTail(_, _, args, _, _, _) =>
-        visitExps(args, i0)
-
-      case Expression.Unary(_, _, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)
 
-      case Expression.Branch(exp, branches, _, _, _) =>
+      case Expr.Branch(exp, branches, _, _, _) =>
         val i1 = visitExp(exp, i0)
         visitExps(branches.values.toList, i1)
 
-      case Expression.JumpTo(_, _, _, _) =>
+      case Expr.JumpTo(_, _, _, _) =>
         i0
 
-      case Expression.Let(sym, exp1, exp2, _, _, _) =>
+      case Expr.Let(sym, exp1, exp2, _, _, _) =>
         val i1 = visitSymbolAssignment(sym, exp1.tpe, i0)
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.LetRec(varSym, _, _, exp1, exp2, _, _, _) =>
+      case Expr.LetRec(varSym, _, _, exp1, exp2, _, _, _) =>
         val i1 = visitSymbolAssignment(varSym, exp1.tpe, i0)
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.Region(_, _) =>
-        i0
-
-      case Expression.Scope(sym, exp, _, _, _) =>
+      case Expr.Scope(sym, exp, _, _, _) =>
         val i1 = visitSymbolAssignment(sym, Type.Unit, i0)
         visitExp(exp, i1)
 
-      case Expression.ScopeExit(exp1, exp2, _, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.Is(_, exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Tag(_, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Untag(_, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Index(exp, _, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Tuple(elms, _, _, _) =>
-        visitExps(elms, i0)
-
-      case Expression.RecordEmpty(_, _) =>
-        i0
-
-      case Expression.RecordSelect(base, _, _, _, _) =>
-        visitExp(base, i0)
-
-      case Expression.RecordExtend(_, value, rest, _, _, _) =>
-        val i1 = visitExp(value, i0)
-        val i2 = visitExp(rest, i1)
-        i2
-
-      case Expression.RecordRestrict(_, rest, _, _, _) =>
-        visitExp(rest, i0)
-
-      case Expression.ArrayLit(elms, _, _) =>
-        visitExps(elms, i0)
-
-      case Expression.ArrayNew(elm, len, _, _) =>
-        val i1 = visitExp(elm, i0)
-        visitExp(len, i1)
-
-      case Expression.ArrayLoad(base, index, _, _) =>
-        val i1 = visitExp(base, i0)
-        visitExp(index, i1)
-
-      case Expression.ArrayStore(base, index, elm, _, _) =>
-        val i1 = visitExp(base, i0)
-        val i2 = visitExp(index, i1)
-        visitExp(elm, i2)
-
-      case Expression.ArrayLength(base, _, _, _) =>
-        visitExp(base, i0)
-
-      case Expression.Ref(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Deref(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Assign(exp1, exp2, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.Cast(exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.TryCatch(exp, rules, _, _, _) =>
+      case Expr.TryCatch(exp, rules, _, _, _) =>
         val i1 = visitExp(exp, i0)
         val i2 = i1 + 1
         for (CatchRule(sym, _, _) <- rules) {
@@ -194,59 +112,25 @@ object VarNumbering {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expression.InvokeConstructor(_, args, _, _, _) =>
-        visitExps(args, i0)
-
-      case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-        val i1 = visitExp(exp, i0)
-        visitExps(args, i1)
-
-      case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-        visitExps(args, i0)
-
-      case Expression.GetField(_, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.PutField(_, exp1, exp2, _, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.GetStaticField(_, _, _, _) =>
-        i0
-
-      case Expression.PutStaticField(_, exp, _, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.NewObject(_, _, _, _, _, _) =>
+      case Expr.NewObject(_, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
 
-      case Expression.Spawn(exp1, exp2, _, _) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.Lazy(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.Force(exp, _, _) =>
-        visitExp(exp, i0)
-
-      case Expression.HoleError(_, _, _) =>
-        i0
-
-      case Expression.MatchError(_, _) =>
-        i0
     }
 
     /**
       * Returns the next available stack offset.
       */
     @tailrec
-    def visitExps(es: List[Expression], i0: Int): Int = es match {
+    def visitExps(es: List[Expr], i0: Int): Int = es match {
       case Nil => i0
       case x :: xs =>
         val i2 = visitExp(x, i0)
         visitExps(xs, i2)
+    }
+
+    def visitStm(stmt: Stmt, i0: Int): Int = stmt match {
+      case Stmt.Ret(e, _, _) => visitExp(e, i0)
     }
 
     // Compute the stack offset for each formal parameter.
@@ -256,7 +140,7 @@ object VarNumbering {
     }
 
     // Compute stack offset for the body.
-    visitExp(defn.exp, offset)
+    visitStm(defn.stmt, offset)
   }
 
   /**

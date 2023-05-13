@@ -246,15 +246,6 @@ object Ast {
       override def toString: String = "@Test"
     }
 
-    /**
-      * An annotation that marks a function definition as being inherently unsafe.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Unsafe(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Unsafe"
-    }
-
   }
 
   /**
@@ -326,11 +317,23 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+  }
+
+  /**
+    * A common super-type that represents a call type.
+    */
+  sealed trait CallType
+
+  object CallType {
+    /**
+      * Represents a call in tail position.
+      */
+    case object TailCall extends CallType
 
     /**
-      * Returns `true` if `this` sequence contains the `@Unsafe` annotation.
+      * Represents a call in non-tail position.
       */
-    def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
+    case object NonTailCall extends CallType
   }
 
   /**
@@ -789,35 +792,62 @@ object Ast {
 
   object SyntacticContext {
 
-    /**
-      * Inside an class declaration.
-      */
-    case object ClassDecl extends SyntacticContext
+    sealed trait Decl extends SyntacticContext
 
-    /**
-      * Inside an enum declaration.
-      */
-    case object EnumDecl extends SyntacticContext
+    object Decl {
+      case object Class extends Decl
 
-    /**
-      * Inside an instance declaration.
-      */
-    case object InstanceDecl extends SyntacticContext
+      case object Enum extends Decl
 
-    /**
-      * Inside an expression.
-      */
-    case object Expr extends SyntacticContext
+      case object Instance extends Decl
 
-    /**
-      * Inside a type.
-      */
-    case object Type extends SyntacticContext
+      case object OtherDecl extends Decl
+    }
 
-    /**
-      * No known context.
-      */
+    sealed trait Expr extends SyntacticContext
+
+    object Expr {
+      case object Constraint extends Expr
+
+      case object Do extends Expr
+
+      case object OtherExpr extends Expr
+    }
+
+    case object Import extends SyntacticContext
+
+    sealed trait Pat extends SyntacticContext
+
+    object Pat {
+      case object OtherPat extends Pat
+    }
+
+    sealed trait Type extends SyntacticContext
+
+    object Type {
+      case object Eff extends Type
+
+      case object OtherType extends Type
+    }
+
+    case object Use extends SyntacticContext
+
+    case object WithClause extends SyntacticContext
+
     case object Unknown extends SyntacticContext
+
+    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
+      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
+      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
+
+      case (_, SyntacticContext.Unknown) => ctx1
+      case (SyntacticContext.Unknown, _) => ctx2
+
+      case (SyntacticContext.Type.OtherType, SyntacticContext.WithClause) => SyntacticContext.WithClause
+      case (SyntacticContext.WithClause, SyntacticContext.Type.OtherType) => SyntacticContext.WithClause
+
+      case _ => ctx1
+    }
   }
 
 }

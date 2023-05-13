@@ -37,7 +37,7 @@ mod Int8 {
     ///
     /// Returns the maximum number representable by an `Int8`.
     ///
-    pub def maxValue(): Int8 = ~~~minValue()
+    pub def maxValue(): Int8 = bitwiseNot(minValue())
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -61,6 +61,7 @@ mod Int8 {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
     ///
     pub def mod(x: Int8, n: Int8): Int8 =
         if (n == 0i8)
@@ -70,6 +71,9 @@ mod Int8 {
 
     ///
     /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `Int8.mod`.
     ///
     pub def rem(x: Int8, n: Int8): Int8 =
         if (n == 0i8)
@@ -106,13 +110,19 @@ mod Int8 {
     pub def signum(x: Int8): Int32 = compare(x, 0i8)
 
     ///
+    /// Returns `b` raised to the power of `n`.
+    ///
+    pub def pow(b: Int8, n: Int8): Int8 = $INT8_EXP$(b, n)
+
+
+    ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
         if (x < 0i8 and Int32.rem(dist.dist, 32) != 0)
-            rightShift(rightShift(x, 1) &&& maxValue(), dist.dist - 1)
+            rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
         else
             rightShift(x, dist.dist)
 
@@ -133,7 +143,7 @@ mod Int8 {
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
         let rem1 = dist.dist `Int32.rem` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
-        (logicalRightShift(dist = rot, x)) ||| leftShift(x, size() - rot)
+        bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
     ///
     /// Returns the the value obtained by rotating the two's complement
@@ -142,7 +152,7 @@ mod Int8 {
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
         let rem1 = dist.dist `Int32.rem` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
-        (logicalRightShift(dist = size() - rot, x)) ||| leftShift(x, rot)
+        bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -249,21 +259,21 @@ mod Int8 {
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = x ||| leftShift(1i8, pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseOr(x, leftShift(1i8, pos.pos))
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = x &&& ~~~leftShift(1i8, pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseAnd(x, bitwiseNot(leftShift(1i8, pos.pos)))
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = x ^^^ leftShift(1i8, pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int8): Int8 = bitwiseXor(x, leftShift(1i8, pos.pos))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -287,6 +297,25 @@ mod Int8 {
     ///
     pub def rightShift(x: Int8, y: Int32): Int8 = $INT8_SHR$(x, y)
 
+    ///
+    /// Returns the bitwise AND of `x` and `y`.
+    ///
+    pub def bitwiseAnd(x: Int8, y: Int8): Int8 = $INT8_AND$(x, y)
+
+    ///
+    /// Returns the bitwise NOT of `x`.
+    ///
+    pub def bitwiseNot(x: Int8): Int8 = $INT8_NOT$(x)
+
+    ///
+    /// Returns the bitwise OR of `x` and `y`.
+    ///
+    pub def bitwiseOr(x: Int8, y: Int8): Int8 = $INT8_OR$(x, y)
+
+    ///
+    /// Returns the bitwise XOR of `x` and `y`.
+    ///
+    pub def bitwiseXor(x: Int8, y: Int8): Int8 = $INT8_XOR$(x, y)
 
     ///
     /// Returns the factorial of `x`.

@@ -121,8 +121,8 @@ instance Reducible[Nec] {
 }
 
 instance ToString[Nec[a]] with ToString[a] {
-    pub def toString(c: Nec[a]): String = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(c: Nec[a]): String = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -753,8 +753,8 @@ mod Nec {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], c: Nec[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, c)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], c: Nec[a]): MutList[a, r] \ Write(r) = region rc2 {
+        Array.toMutList(r, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -839,8 +839,8 @@ mod Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(c: Nec[a]): Nec[a] with Order[a] = region r {
-        let ans = toArray(r, c) !> Array.sort! |> fromArray;
+    pub def sort(c: Nec[a]): Nec[a] with Order[a] = region rc {
+        let ans = toArray(rc, c) !> Array.sort! |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -855,8 +855,8 @@ mod Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region r {
-        let ans = toArray(r, c) !> Array.sortBy!(f) |> fromArray;
+    pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region rc {
+        let ans = toArray(rc, c) !> Array.sortBy!(f) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -870,8 +870,8 @@ mod Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region r {
-        let ans = toArray(r, c) !> Array.sortWith!(cmp) |> fromArray;
+    pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region rc {
+        let ans = toArray(rc, c) !> Array.sortWith!(cmp) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -1014,8 +1014,8 @@ mod Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ NonDet = region r {
-        toArray(r, c) !> Array.shuffle(rnd) |> Array.toNec
+    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ NonDet = region rc {
+        toArray(rc, c) !> Array.shuffle(rnd) |> Array.toNec
     }
 
 }

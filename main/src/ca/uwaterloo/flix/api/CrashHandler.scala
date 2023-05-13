@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.language.dbg.AstPrinter
+
 import java.io.{IOException, PrintWriter, StringWriter}
 import java.nio.file.{Files, Path}
 
@@ -37,10 +39,13 @@ object CrashHandler {
         try {
           Files.writeString(path, report)
         } catch {
-          case ex: IOException =>
+          case _: IOException =>
             println(s"Unable to write crash report to: '$path'.")
         }
     }
+
+    // Print asts.
+    AstPrinter.printAllAsts()
   }
 
   /**

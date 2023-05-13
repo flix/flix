@@ -15,12 +15,13 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, MavenDependency}
+import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
+import java.net.{MalformedURLException, URI, URL}
 import java.nio.file.Path
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.SetHasAsScala
@@ -90,23 +91,26 @@ object ManifestParser {
       authorsList <- convertTomlArrayToStringList(authors, p);
 
       deps <- getOptionalTableProperty("dependencies", parser, p);
-      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, p);
+      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p);
 
       devDeps <- getOptionalTableProperty("dev-dependencies", parser, p);
-      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, p);
+      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, jarDep = false, p);
 
       mvnDeps <- getOptionalTableProperty("mvn-dependencies", parser, p);
-      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, p);
+      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, jarDep = false, p);
 
       devMvnDeps <- getOptionalTableProperty("dev-mvn-dependencies", parser, p);
-      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, p)
+      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, jarDep = false, p);
 
-    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList)
+      jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
+      jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
+
+    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
     val keySet: Set[String] = parser.keySet().asScala.toSet
-    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies")
+    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies", "jar-dependencies")
     val illegalKeys = keySet.diff(allowedKeys)
 
     if(illegalKeys.nonEmpty) {
@@ -211,20 +215,24 @@ object ManifestParser {
     * the value of each entry is a String which can be converted to a
     * semantic version. `flixDep` decides whether the Dependency is a Flix
     * or MavenDependency and `prodDep` decides whether it is for production
-    * or development. Returns an error if anything is not as expected.
+    * or development. `jarDep` decides whether it is an external jar. This
+    * overrides `flixDep` and `prodDep`.
+    * Returns an error if anything is not as expected.
     */
-  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
     deps match {
       case None => Ok(List.empty)
       case Some(deps) =>
         val depsEntries = deps.entrySet().asScala
         traverse(depsEntries)(entry => {
-          val depName = entry.getKey
-          val depVer = entry.getValue
-          if (flixDep) {
-            createFlixDep(depName, depVer, prodDep, p)
+          val depKey = entry.getKey
+          val depValue = entry.getValue
+          if (jarDep) {
+            createJarDep(depKey, depValue, p)
+          } else if (flixDep) {
+            createFlixDep(depKey, depValue, prodDep, p)
           } else {
-            createMavenDep(depName, depVer, prodDep, p)
+            createMavenDep(depKey, depValue, prodDep, p)
           }
         })
     }
@@ -293,6 +301,51 @@ object ManifestParser {
       case Array(_, artifactId) => checkNameCharacters(artifactId, p)
       case _ => Err(ManifestError.MavenDependencyFormatError(p, depName))
     }
+  }
+
+  /**
+    * Converts `depUrl` to a String and retrieves the URL for a jar dependency.
+    * Returns an error if it is not formatted correctly.
+    */
+  private def getUrl(depUrl: AnyRef, p: Path): Result[URL, ManifestError] = {
+    try {
+      val url = depUrl.asInstanceOf[String]
+      try {
+        if (url.startsWith("url:")) {
+          val removeTag = url.substring(4)
+          Ok(new URI(removeTag).toURL)
+        } else {
+          Err(ManifestError.JarUrlFormatError(p, url))
+        }
+      } catch {
+        case e: MalformedURLException =>
+          Err(ManifestError.MalformedJarUrl(p, url, e.getMessage))
+      }
+    } catch {
+      case e: ClassCastException =>
+        Err(ManifestError.JarUrlTypeError(p, e.getMessage))
+
+    }
+  }
+
+  /**
+    * Retrieves the file name for a jar dependency
+    * and returns an error if it is not formatted correctly
+    * or has characters that are not allowed.
+    */
+  private def getFileName(depName: String, p: Path): Result[String, ManifestError] = {
+    val split = depName.split('.')
+    if(split.length >= 2) {
+      val extension = split.apply(split.length-1)
+      if (extension == "jar") {
+          checkNameCharacters(depName, p)
+        } else {
+          Err(ManifestError.JarUrlExtensionError(p, depName, extension))
+        }
+    } else {
+      Err(ManifestError.JarUrlFileNameError(p, depName))
+    }
+
   }
 
   /**
@@ -378,6 +431,21 @@ object ManifestParser {
   }
 
   /**
+    * Creates a JarDependency.
+    * URL and website is given by `depUrl`.
+    * The file name is given by `depName`.
+    * `p` is for reporting errors.
+    */
+  private def createJarDep(depName: String, depUrl: AnyRef, p: Path): Result[JarDependency, ManifestError] = {
+    for (
+      url <- getUrl(depUrl, p);
+      fileName <- getFileName(depName, p)
+    ) yield {
+      Dependency.JarDependency(url, fileName)
+    }
+  }
+
+  /**
     * Converts a TomlArray to a list of Strings. Returns
     * an error if anything in the array is not a String.
     */
@@ -399,7 +467,7 @@ object ManifestParser {
     * Checks that a package name does not include any illegal characters.
     */
   private def checkNameCharacters(name: String, p: Path): Result[String, ManifestError] = {
-    if(name.matches("^[a-zA-Z0-9._-]+$"))
+    if(name.matches("^[a-zA-Z0-9.:/_-]+$"))
       Ok(name)
     else
       Err(ManifestError.IllegalName(p, name))

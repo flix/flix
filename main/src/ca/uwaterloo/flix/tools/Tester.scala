@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.util.Duration
+import ca.uwaterloo.flix.util.{Duration, Result}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.io.{ByteArrayOutputStream, OutputStream, PrintStream, PrintWriter, StringWriter}
@@ -34,7 +34,7 @@ object Tester {
   /**
     * Runs all tests.
     */
-  def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Unit = {
+  def run(filters: List[Regex], compilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, Int] = {
     //
     // Find all test cases (both active and ignored).
     //
@@ -50,12 +50,25 @@ object Tester {
     // Wait for everything to complete.
     reporter.join()
     runner.join()
+
+    if (reporter.isSuccess()) {
+      Result.Ok(())
+    } else {
+      // Set exit code of program to 1.
+      Result.Err(1)
+    }
   }
 
   /**
     * A class that reports the results of test events as they come in.
     */
   private class TestReporter(queue: ConcurrentLinkedQueue[TestEvent], tests: Vector[TestCase])(implicit flix: Flix) extends Thread {
+
+    private val success = new java.util.concurrent.atomic.AtomicBoolean(true)
+
+    def isSuccess(): Boolean = {
+      success.get()
+    }
 
     override def run(): Unit = {
       // Silence JLine warnings about terminal type.
@@ -100,6 +113,7 @@ object Tester {
             val line = output.headOption.map(s => s"(${red(s)})").getOrElse("")
             writer.println(s"  ${bgRed(" FAIL ")} $sym $line")
             terminal.flush()
+            success.set(false)
 
           case TestEvent.Skip(sym) =>
             skipped = skipped + 1
@@ -114,6 +128,7 @@ object Tester {
               writer.println()
               for ((sym, output) <- failed; if output.nonEmpty) {
                 writer.println(s"  ${bgRed(" FAIL ")} $sym")
+                writer.println(s"         ${sym.loc.source.name}:${sym.loc.beginLine}")
                 for (line <- output) {
                   writer.println(s"    $line")
                 }

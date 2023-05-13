@@ -423,4 +423,24 @@ class TestParser extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
+
+  test("ParseError.InstanceOf.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    1000ii instanceof java.math.BigInteger
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.InstanceOf.02") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    1000ii instanceof BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
 }

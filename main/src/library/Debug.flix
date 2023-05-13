@@ -31,10 +31,10 @@ mod Debug {
     ///
     /// Returns an automatic string representation of `x`.
     ///
-    @Internal @Unsafe
-    pub def stringify(x: a): String = region r {
+    @Internal
+    pub def stringify(x: a): String = region rc {
         import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
-        let _ = r;
+        let _ = rc;
         typematch x {
             case _: Unit => "()"
             case b: Bool =>  if (b) "true" else "false"
@@ -77,48 +77,48 @@ mod Debug {
                 } else {
                     "\"" + escape(s) + "\""
                 }
-            case y: Array[Bool, r] =>
-                import static java.util.Arrays.toString(Array[Bool, r]): String \ {};
+            case y: Array[Bool, rc] =>
+                import static java.util.Arrays.toString(Array[Bool, rc]): String \ {};
                 toString(y)
-            case y: Array[Char, r] =>
-                import static java.util.Arrays.toString(Array[Char, r]): String \ {};
+            case y: Array[Char, rc] =>
+                import static java.util.Arrays.toString(Array[Char, rc]): String \ {};
                 toString(y)
-            case y: Array[Float32, r] =>
-                import static java.util.Arrays.toString(Array[Float32, r]): String \ {};
+            case y: Array[Float32, rc] =>
+                import static java.util.Arrays.toString(Array[Float32, rc]): String \ {};
                 toString(y)
-            case y: Array[Float64, r] =>
-                import static java.util.Arrays.toString(Array[Float64, r]): String \ {};
+            case y: Array[Float64, rc] =>
+                import static java.util.Arrays.toString(Array[Float64, rc]): String \ {};
                 toString(y)
-            case y: Array[Int8, r] =>
-                import static java.util.Arrays.toString(Array[Int8, r]): String \ {};
+            case y: Array[Int8, rc] =>
+                import static java.util.Arrays.toString(Array[Int8, rc]): String \ {};
                 toString(y)
-            case y: Array[Int16, r] =>
-                import static java.util.Arrays.toString(Array[Int16, r]): String \ {};
+            case y: Array[Int16, rc] =>
+                import static java.util.Arrays.toString(Array[Int16, rc]): String \ {};
                 toString(y)
-            case y: Array[Int32, r] =>
-                import static java.util.Arrays.toString(Array[Int32, r]): String \ {};
+            case y: Array[Int32, rc] =>
+                import static java.util.Arrays.toString(Array[Int32, rc]): String \ {};
                 toString(y)
-            case y: Array[Int64, r] =>
-                import static java.util.Arrays.toString(Array[Int64, r]): String \ {};
+            case y: Array[Int64, rc] =>
+                import static java.util.Arrays.toString(Array[Int64, rc]): String \ {};
                 toString(y)
-            case y: Array[Unit, r] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
-            case y: Array[BigInt, r] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
-            case y: Array[BigDecimal, r] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
-            case y: Array[String, r] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
+            case y: Array[Unit, rc] =>
+                import static java.util.Arrays.toString(Array[##java.lang.Object, rc]): String \ {};
+                toString(unchecked_cast(y as Array[##java.lang.Object, rc]))
+            case y: Array[BigInt, rc] =>
+                import static java.util.Arrays.toString(Array[##java.lang.Object, rc]): String \ {};
+                toString(unchecked_cast(y as Array[##java.lang.Object, rc]))
+            case y: Array[BigDecimal, rc] =>
+                import static java.util.Arrays.toString(Array[##java.lang.Object, rc]): String \ {};
+                toString(unchecked_cast(y as Array[##java.lang.Object, rc]))
+            case y: Array[String, rc] =>
+                import static java.util.Arrays.toString(Array[##java.lang.Object, rc]): String \ {};
+                toString(unchecked_cast(y as Array[##java.lang.Object, rc]))
             case y: Array[Array[_, _], _] =>
-                import static java.util.Arrays.deepToString(Array[##java.lang.Object, r]): String \ {};
-                deepToString(unchecked_cast(y as Array[##java.lang.Object, r]))
+                import static java.util.Arrays.deepToString(Array[##java.lang.Object, rc]): String \ {};
+                deepToString(unchecked_cast(y as Array[##java.lang.Object, rc]))
             case y: Array[_, _] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
+                import static java.util.Arrays.toString(Array[##java.lang.Object, rc]): String \ {};
+                toString(unchecked_cast(y as Array[##java.lang.Object, rc]))
             case y: _ =>
                 import static java.util.Objects.toString(##java.lang.Object): String \ {};
                 toString(unchecked_cast(y as ##java.lang.Object))

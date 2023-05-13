@@ -80,6 +80,19 @@ object PackageError {
          |""".stripMargin
   }
 
+  case class DownloadErrorJar(url: String, fileName: String, message: Option[String]) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | A download error occurred while downloading ${f.bold(fileName)} from $url
+         | ${
+        message match {
+          case Some(e) => e
+          case None => ""
+        }
+      }
+         |""".stripMargin
+  }
+
   case class CoursierError(errorMsg: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""

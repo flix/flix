@@ -44,7 +44,7 @@ mod TestInt32 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int32.maxValue() == ~~~Int32.leftShift(1, 31)
+    def maxValue01(): Bool = Int32.maxValue() == Int32.bitwiseNot(Int32.leftShift(1, 31))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -229,6 +229,27 @@ mod TestInt32 {
     @test
     def signum03(): Bool = Int32.signum(0) == 0
 
+    /////////////////////////////////////////////////////////////////////////////
+    // pow                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def pow01(): Bool = Int32.pow(0i32, 0i32) == 1i32
+
+    @test
+    def pow02(): Bool = Int32.pow(0i32, 1i32) == 0i32
+
+    @test
+    def pow03(): Bool = Int32.pow(1i32, 0i32) == 1i32
+
+    @test
+    def pow04(): Bool = Int32.pow(1i32, 1i32) == 1i32
+
+    @test
+    def pow05(): Bool = Int32.pow(5i32, 2i32) == 25i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rightShift                                                              //
+    /////////////////////////////////////////////////////////////////////////////
     @test
     def testBitwiseLeftShift01(): Bool = Int32.leftShift(8, 0) == 8
 
@@ -432,7 +453,7 @@ mod TestInt32 {
     def highestOneBitPosition06(): Bool = Int32.highestOneBitPosition(20) == 4
 
     @test
-    def highestOneBitPosition07(): Bool = Int32.highestOneBitPosition(2 ** 30) == 30
+    def highestOneBitPosition07(): Bool = Int32.highestOneBitPosition(Int32.pow(2, 30)) == 30
 
     @test
     def highestOneBitPosition08(): Bool = Int32.highestOneBitPosition(2147483647) == 30
@@ -441,10 +462,10 @@ mod TestInt32 {
     def highestOneBitPosition09(): Bool = Int32.highestOneBitPosition(0) == -1
 
     @test
-    def highestOneBitPosition10(): Bool = Int32.highestOneBitPosition(2 ** 18 + 2 ** 23) == 23
+    def highestOneBitPosition10(): Bool = Int32.highestOneBitPosition(Int32.pow(2, 18) + Int32.pow(2, 23)) == 23
 
     @test
-    def highestOneBitPosition11(): Bool = Int32.highestOneBitPosition(2 ** 3 + 2 ** 7) == 7
+    def highestOneBitPosition11(): Bool = Int32.highestOneBitPosition(Int32.pow(2, 3) + Int32.pow(2, 7)) == 7
 
     @test
     def highestOneBitPosition12(): Bool = Int32.highestOneBitPosition(-32767) == 31
@@ -471,7 +492,7 @@ mod TestInt32 {
     def highestOneBit06(): Bool = Int32.highestOneBit(20) == 16
 
     @test
-    def highestOneBit07(): Bool = Int32.highestOneBit(2 ** 30) == 1073741824
+    def highestOneBit07(): Bool = Int32.highestOneBit(Int32.pow(2, 30)) == 1073741824
 
     @test
     def highestOneBit08(): Bool = Int32.highestOneBit(2147483647) == 1073741824
@@ -480,7 +501,7 @@ mod TestInt32 {
     def highestOneBit09(): Bool = Int32.highestOneBit(0) == 0
 
     @test
-    def highestOneBit10(): Bool = Int32.highestOneBit(2 ** 18 + 2 ** 24) == 16777216
+    def highestOneBit10(): Bool = Int32.highestOneBit(Int32.pow(2, 18) + Int32.pow(2, 24)) == 16777216
 
     /////////////////////////////////////////////////////////////////////////////
     // numberOfLeadingZeros                                                    //
@@ -495,16 +516,16 @@ mod TestInt32 {
     def numberOfLeadingZeros03(): Bool = Int32.numberOfLeadingZeros(-1) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(~~~Int32.leftShift(1, 31)) == 1
+    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(Int32.bitwiseNot(Int32.leftShift(1, 31))) == 1
 
     @test
-    def numberOfLeadingZeros05(): Bool = Int32.numberOfLeadingZeros(2 ** 29) == 2
+    def numberOfLeadingZeros05(): Bool = Int32.numberOfLeadingZeros(Int32.pow(2, 29)) == 2
 
     @test
-    def numberOfLeadingZeros06(): Bool = Int32.numberOfLeadingZeros(2 ** 24 + 2 ** 18) == 7
+    def numberOfLeadingZeros06(): Bool = Int32.numberOfLeadingZeros(Int32.pow(2, 24) + Int32.pow(2, 18)) == 7
 
     @test
-    def numberOfLeadingZeros07(): Bool = Int32.numberOfLeadingZeros(2 ** 7 + 2 ** 6) == 24
+    def numberOfLeadingZeros07(): Bool = Int32.numberOfLeadingZeros(Int32.pow(2, 7) + Int32.pow(2, 6)) == 24
 
     @test
     def numberOfLeadingZeros08(): Bool = Int32.numberOfLeadingZeros(20) == 27
@@ -537,10 +558,10 @@ mod TestInt32 {
     def lowestOneBitPosition07(): Bool = Int32.lowestOneBitPosition(12) == 2
 
     @test
-    def lowestOneBitPosition08(): Bool = Int32.lowestOneBitPosition(2 ** 30) == 30
+    def lowestOneBitPosition08(): Bool = Int32.lowestOneBitPosition(Int32.pow(2, 30)) == 30
 
     @test
-    def lowestOneBitPosition09(): Bool = Int32.lowestOneBitPosition(2 ** 23 + 2 ** 18) == 18
+    def lowestOneBitPosition09(): Bool = Int32.lowestOneBitPosition(Int32.pow(2, 23) + Int32.pow(2, 18)) == 18
 
     @test
     def lowestOneBitPosition10(): Bool = Int32.lowestOneBitPosition(2147483647) == 0
@@ -570,13 +591,13 @@ mod TestInt32 {
     def lowestOneBit06(): Bool = Int32.lowestOneBit(12) == 4
 
     @test
-    def lowestOneBit07(): Bool = Int32.lowestOneBit(2 ** 6 + 2 ** 18 + 2 ** 27) == 64
+    def lowestOneBit07(): Bool = Int32.lowestOneBit(Int32.pow(2, 6) + Int32.pow(2, 18) + Int32.pow(2, 27)) == 64
 
     @test
-    def lowestOneBit08(): Bool = Int32.lowestOneBit(2 ** 30) == 1073741824
+    def lowestOneBit08(): Bool = Int32.lowestOneBit(Int32.pow(2, 30)) == 1073741824
 
     @test
-    def lowestOneBit09(): Bool = Int32.lowestOneBit(2 ** 18 + 2 ** 23) == 262144
+    def lowestOneBit09(): Bool = Int32.lowestOneBit(Int32.pow(2, 18) + Int32.pow(2, 23)) == 262144
 
     @test
     def lowestOneBit10(): Bool = Int32.lowestOneBit(2147483647) == 1
@@ -597,10 +618,10 @@ mod TestInt32 {
     def numberOfTrailingZeros03(): Bool = Int32.numberOfTrailingZeros(42) == 1
 
     @test
-    def numberOfTrailingZeros04(): Bool = Int32.numberOfTrailingZeros(2 ** 16 + 2 ** 22) == 16
+    def numberOfTrailingZeros04(): Bool = Int32.numberOfTrailingZeros(Int32.pow(2, 16) + Int32.pow(2, 22)) == 16
 
     @test
-    def numberOfTrailingZeros05(): Bool = Int32.numberOfTrailingZeros(2 ** 30) == 30
+    def numberOfTrailingZeros05(): Bool = Int32.numberOfTrailingZeros(Int32.pow(2, 30)) == 30
 
     @test
     def numberOfTrailingZeros06(): Bool = Int32.numberOfTrailingZeros(-1) == 0
@@ -618,19 +639,19 @@ mod TestInt32 {
     def getBit02(): Bool = Int32.getBit(pos = 31, -1000000) == 1
 
     @test
-    def getBit03(): Bool = Int32.getBit(pos = 23, 2 ** 23) == 1
+    def getBit03(): Bool = Int32.getBit(pos = 23, Int32.pow(2, 23)) == 1
 
     @test
-    def getBit04(): Bool = Int32.getBit(pos = 24, 2 ** 23) == 0
+    def getBit04(): Bool = Int32.getBit(pos = 24, Int32.pow(2, 23)) == 0
 
     @test
-    def getBit05(): Bool = Int32.getBit(pos = 22, 2 ** 23) == 0
+    def getBit05(): Bool = Int32.getBit(pos = 22, Int32.pow(2, 23)) == 0
 
     @test
-    def getBit06(): Bool = Int32.getBit(pos = 25, -1 - 2 ** 25) == 0
+    def getBit06(): Bool = Int32.getBit(pos = 25, -1 - Int32.pow(2, 25)) == 0
 
     @test
-    def getBit07(): Bool = Int32.getBit(pos = 26, -1 - 2 ** 25) == 1
+    def getBit07(): Bool = Int32.getBit(pos = 26, -1 - Int32.pow(2, 25)) == 1
 
     @test
     def getBit08(): Bool = Int32.getBit(pos = 15, 0) == 0
@@ -779,6 +800,91 @@ mod TestInt32 {
 
     @test
     def log209(): Bool = Int32.log2(-1) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseAnd                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseAnd01(): Bool = Int32.bitwiseAnd(0i32, 0i32) == 0i32
+
+    @test
+    def bitwiseAnd02(): Bool = Int32.bitwiseAnd(127i32, 0i32) == 0i32
+
+    @test
+    def bitwiseAnd03(): Bool = Int32.bitwiseAnd(-128i32, 0i32) == 0i32
+
+    @test
+    def bitwiseAnd04(): Bool = Int32.bitwiseAnd(0i32, 1i32) == 0i32
+
+    @test
+    def bitwiseAnd05(): Bool = Int32.bitwiseAnd(127i32, 1i32) == 1i32
+
+    @test
+    def bitwiseAnd06(): Bool = Int32.bitwiseAnd(-128i32, 1i32) == 0i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseNot                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseNot01(): Bool = Int32.bitwiseNot(0i32) == -1i32
+
+    @test
+    def bitwiseNot02(): Bool = Int32.bitwiseNot(1i32) == -2i32
+
+    @test
+    def bitwiseNot03(): Bool = Int32.bitwiseNot(-1i32) == -0i32
+
+    @test
+    def bitwiseNot04(): Bool = Int32.bitwiseNot(127i32) == -128i32
+
+    @test
+    def bitwiseNot05(): Bool = Int32.bitwiseNot(-128i32) == 127i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseOr                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseOr01(): Bool = Int32.bitwiseOr(0i32, 0i32) == 0i32
+
+    @test
+    def bitwiseOr02(): Bool = Int32.bitwiseOr(127i32, 0i32) == 127i32
+
+    @test
+    def bitwiseOr03(): Bool = Int32.bitwiseOr(-128i32, 0i32) == -128i32
+
+    @test
+    def bitwiseOr04(): Bool = Int32.bitwiseOr(0i32, 1i32) == 1i32
+
+    @test
+    def bitwiseOr05(): Bool = Int32.bitwiseOr(127i32, 1i32) == 127i32
+
+    @test
+    def bitwiseOr06(): Bool = Int32.bitwiseOr(-128i32, 1i32) == -127i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // bitwiseXor                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def bitwiseXor01(): Bool = Int32.bitwiseXor(0i32, 0i32) == 0i32
+
+    @test
+    def bitwiseXor02(): Bool = Int32.bitwiseXor(127i32, 0i32) == 127i32
+
+    @test
+    def bitwiseXor03(): Bool = Int32.bitwiseXor(-128i32, 0i32) == -128i32
+
+    @test
+    def bitwiseXor04(): Bool = Int32.bitwiseXor(0i32, 1i32) == 1i32
+
+    @test
+    def bitwiseXor05(): Bool = Int32.bitwiseXor(127i32, 1i32) == 126i32
+
+    @test
+    def bitwiseXor06(): Bool = Int32.bitwiseXor(-128i32, 1i32) == -127i32
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
