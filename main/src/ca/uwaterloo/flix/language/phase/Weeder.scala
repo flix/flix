@@ -1801,7 +1801,8 @@ object Weeder {
       val tVal = visitTypeNoWild(declaredType)
       val fVal = traverseOpt(declaredEff)(visitType)
       mapN(eVal, tVal, fVal) {
-        case (e, t, f) => WeededAst.Expression.UncheckedCast(e, t, f, mkSL(sp1, sp2))
+        case (e, t, f) =>
+          WeededAst.Expression.UncheckedCast(e, t, f, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.UncheckedMaskingCast(sp1, exp, sp2) =>
