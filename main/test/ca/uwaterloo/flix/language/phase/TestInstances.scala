@@ -200,7 +200,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |
         |class C[a]
         |
-        |instance C[Box[a] -> b & e]
+        |instance C[Box[a] -> b \ e]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)
