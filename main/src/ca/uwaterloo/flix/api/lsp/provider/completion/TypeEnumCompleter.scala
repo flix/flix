@@ -26,12 +26,24 @@ object TypeEnumCompleter extends Completer {
     * Returns a List of Completion for enum types.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[TypeEnumCompletion] = {
-    root.enums.collect {
-      case (_, t) if !t.ann.isInternal & matchesTypeEnum(t.sym, context.word) =>
-        val name = t.sym.name
-        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)(context)
-        Completion.TypeEnumCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name))(context),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
+    val word = context.word.split('.').toList
+    val ns = word.dropRight(1)
+    val currWord = word.takeRight(1).mkString
+
+    println(s"word: $word")
+    println(s"ns: $ns")
+    println(s"currWord: $currWord")
+
+    root.enums.flatMap {
+      case (enmSym, enm) =>
+        if (!enm.ann.isInternal && matchesTypeEnum(enmSym, currWord, ns)) {
+          val internalPriority = getInternalPriority(enm.loc, enm.sym.namespace)(context)
+          val name = enmSym.name
+          Some(Completion.TypeEnumCompletion(enmSym, formatTParams(enm.tparams), priorityBoostForTypes(internalPriority(name))(context),
+            TextEdit(context.range, s"$name${formatTParamsSnippet(enm.tparams)}"), Some(enm.doc.text)))
+        } else {
+          None
+        }
     }
   }
 
@@ -40,7 +52,14 @@ object TypeEnumCompleter extends Completer {
     *
     * @param sym  the enumSym.
     * @param word the current word.
-    * @return     true, if the enum matches word, false otherwise.
+    * @param ns   the provided namespace.
+    * @return     true, if the enum matches word and namespace, false otherwise.
     */
-  private def matchesTypeEnum(sym: Symbol.EnumSym, word: String): Boolean = sym.toString.startsWith(word)
+  private def matchesTypeEnum(sym: Symbol.EnumSym, word: String, ns: List[String]): Boolean = {
+    println(s"Sym.ns: ${sym.namespace}")
+    println(s"Sym.name: ${sym.name}")
+    val check = sym.namespace == ns && sym.name.startsWith(word)
+    println(s"matchesTypeEnum: $check")
+    check
+  }
 }
