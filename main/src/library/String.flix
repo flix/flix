@@ -1230,6 +1230,13 @@ mod String {
 
     ///
     /// For every line in string `s`, strip a leading prefix consisting of
+    /// blanks or control characters followed by `|` from the line, if
+    /// such a prefix exists.
+    ///
+    pub def stripMargin(s: String): String = stripMarginWith({margin = "|"}, s)
+
+    ///
+    /// For every line in string `s`, strip a leading prefix consisting of
     /// blanks or control characters followed by `margin` from the line, if
     /// such a prefix exists.
     ///
