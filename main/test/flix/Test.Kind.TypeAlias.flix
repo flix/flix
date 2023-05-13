@@ -6,8 +6,6 @@ mod Test.Kind.TypeAlias {
     }
 
     mod Explicit {
-        rel R(i: Int32)
-
         type alias TStar[a: Type] = a
 
         type alias TStarStar[a: Type, b: Type] = (a, b)
@@ -16,7 +14,7 @@ mod Test.Kind.TypeAlias {
 
         type alias TRecordRow[a: RecordRow] = { l = Int32 | a }
 
-        type alias TSchemaRow[a: SchemaRow] = #{ R | a }
+        type alias TSchemaRow[a: SchemaRow] = #{ R(Int32) | a }
 
         type alias TStarToStar[a: Type -> Type] = a[Int32]
 

@@ -2308,18 +2308,6 @@ object Resolver {
           r => UnkindedType.mkSchema(r, loc)
         }
 
-      case NamedAst.Type.Relation(tpes, loc) =>
-        val tsVal = traverse(tpes)(visit(_))
-        mapN(tsVal) {
-          ts => UnkindedType.mkRelation(ts, loc)
-        }
-
-      case NamedAst.Type.Lattice(tpes, loc) =>
-        val tsVal = traverse(tpes)(visit(_))
-        mapN(tsVal) {
-          ts => UnkindedType.mkLattice(ts, loc)
-        }
-
       case NamedAst.Type.Native(fqn, loc) =>
         mapN(lookupJvmClass(fqn, loc)) {
           case clazz => flixifyType(clazz, loc)

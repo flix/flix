@@ -11,14 +11,6 @@
 //
 
 //
-// We will represent the program-under-analysis using three input
-// relations. One for each type of statement:
-//
-rel LitStm(r: String, c: Int32)         // r = c
-rel AddStm(r: String, x: String, y: String) // r = x + y
-rel DivStm(r: String, x: String, y: String) // r = x / y
-
-//
 // The next step is to define the lattice LocalVar which maps every local
 // variable to an element of the constant propagation lattice (which we
 // define below.)
@@ -152,12 +144,6 @@ def div(e1: Constant, e2: Constant): Constant = match (e1, e2) {
 // add some features to look for a simple type of bugs: Possible division-
 // by-zero errors.
 //
-
-//
-// We define a relation to hold the names of local variables possibly
-// involved in a division-by-zero error:
-//
-rel ArithmeticError(r: String)
 
 
 

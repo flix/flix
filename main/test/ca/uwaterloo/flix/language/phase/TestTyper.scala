@@ -111,13 +111,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   }
 
   test("TestOccurs01") {
-    val input =
-      """
-        |rel A(v: Int32)
-        |rel B(v: Int32)
-        |
-        |def foo(a: #{A | r}, b: #{B | r}): #{A, B} = solve (a <+> b)
-        |""".stripMargin
+    val input = "def foo(a: #{A(Int32) | r}, b: #{B(Int32) | r}): #{A(Int32), B(Int32)} = solve (a <+> b)"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.OccursCheckError](result)
   }
@@ -347,8 +341,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub enum E {
         |   case E1
         |}
-        |
-        |rel R(e: E)
         |
         |pub def f(): Bool = {
         |   let _x = #{

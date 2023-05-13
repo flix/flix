@@ -339,10 +339,6 @@ object NamedAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
-    case class Relation(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
-
-    case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
-
     case class Arrow(tparams: List[NamedAst.Type], purAndEff: NamedAst.PurityAndEffect, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type

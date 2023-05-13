@@ -1,24 +1,3 @@
-// Inputs
-rel EshIntra(node: String, factin: String, factout: String)
-rel EshCallStart(node: String, factin: String, proc: String, factout: String)
-rel EshEndReturn(proc: String, factin: String, node: String, factout: String)
-
-// Call-to-Return edges should be included above in EshIntra
-rel CFG(from: String, to: String)
-rel CallGraph(site: String, proc: String)
-rel StartNode(proc: String, node: String) // TODO: should really be a function
-rel EndNode(proc: String, node: String)
-
-// Internal lattices
-rel PathEdge(factin: String, node: String, fact: String)
-rel SummaryEdge(node: String, factin: String, factout: String)
-
-// Output
-rel Results(node: String, fact: String)
-
-rel Facts(fact: String)
-rel Id(node: String)
-
 // Rules
 def main(): Unit =
     let p = #{

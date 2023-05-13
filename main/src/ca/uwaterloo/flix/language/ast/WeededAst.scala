@@ -326,10 +326,6 @@ object WeededAst {
 
     case class Schema(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
-
-    case class Lattice(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
-
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
     case class Arrow(tparams: List[WeededAst.Type], purAndEff: PurityAndEffect, tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
