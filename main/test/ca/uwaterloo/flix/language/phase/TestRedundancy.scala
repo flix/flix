@@ -1728,7 +1728,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantCheckedTypeCast.05") {
     val input =
       """
-        |def f(): Unit & Impure =
+        |def f(): Unit \ Impure =
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
