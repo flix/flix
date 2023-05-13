@@ -69,9 +69,9 @@ class TestInstances extends AnyFunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[a -> b & p \ ef1]
+        |instance C[a -> b \ ef1]
         |
-        |instance C[x -> y & q \ ef2]
+        |instance C[x -> y \ ef2]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
@@ -185,7 +185,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[Int32 -> b & e]
+        |instance C[Int32 -> b \ e]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)
@@ -233,7 +233,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[a -> a & p \ ef]
+        |instance C[a -> a \ ef]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
@@ -363,7 +363,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    pub def f(x: a, y: Int32): Int32 & e
+        |    pub def f(x: a, y: Int32): Int32 \ e
         |}
         |
         |instance C[Bool] {

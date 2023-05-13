@@ -1292,8 +1292,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
 
   test("UselessExpression.03") {
     val input =
-      s"""
-         |def hof(f: a -> b & e, x: a): b & e = f(x)
+      """
+         |def hof(f: a -> b & e, x: a): b \ e = f(x)
          |
          |def f(): Unit =
          |    hof(x -> (x, 21), 42);
@@ -1356,8 +1356,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
 
   test("RedundantPurityCast.01") {
     val input =
-      s"""
-         |pub def f(): Int32 = unchecked_cast(123 as _ & Pure)
+      """
+         |pub def f(): Int32 = unchecked_cast(123 as _ \ Pure)
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1369,7 +1369,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       raw"""
            |pub def f(): Array[Int32, false] \ IO =
            |  let x = Array#{1, 2, 3} @ Static;
-           |  unchecked_cast(x as _ & Pure)
+           |  unchecked_cast(x as _ \ Pure)
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1729,8 +1729,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit & Impure =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
