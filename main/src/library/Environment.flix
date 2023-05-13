@@ -19,7 +19,7 @@ mod Environment {
     /// Returns the arguments passed to the program via the command line.
     ///
     pub def getArgs(): List[String] = region rc {
-        import static dev.flix.runtime.Global.getArgs(): Array[String, rc] \ Write(rc);
+        import static dev.flix.runtime.Global.getArgs(): Array[String, rc] \ rc;
         let _ = rc; // Avoids redundancy error.
         Array.toList(getArgs())
     }
@@ -28,9 +28,9 @@ mod Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] = region rc {
-        import static java.lang.System.getenv(): ##java.util.Map \ Write(rc);
-        import java.util.Map.entrySet(): ##java.util.Set \ { Read(rc), Write(rc) };
-        import java.util.Set.iterator(): ##java.util.Iterator \ { Read(rc), Write(rc) };
+        import static java.lang.System.getenv(): ##java.util.Map \ rc;
+        import java.util.Map.entrySet(): ##java.util.Set \ { rc };
+        import java.util.Set.iterator(): ##java.util.Iterator \ { rc };
         let _ = rc; // Avoids redundancy error.
         try {
             let iter = getenv() |> entrySet |> iterator;

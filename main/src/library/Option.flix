@@ -150,7 +150,7 @@ instance Monoid[Option[a]] with Monoid[a] {
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
 instance Iterable[Option] {
-    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ Write(r) = Option.iterator(rc, o)
+    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
 }
 
 mod Option {
@@ -560,7 +560,7 @@ mod Option {
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
     ///
-    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ Write(r) = match o {
+    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = match o {
         case None    => Iterator.empty(rc)
         case Some(x) => Iterator.singleton(rc, x)
     }
@@ -568,7 +568,7 @@ mod Option {
     ///
     /// Returns an iterator over `o` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], o: Option[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(rc: Region[r], o: Option[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(rc, o) |> Iterator.zipWithIndex
 
 }

@@ -22,6 +22,6 @@ pub class Collectable[m: Type -> Type] {
     ///
     /// Run an Iterator collecting the results.
     ///
-    pub def collect(iter: Iterator[a, ef, r]): m[a] \ {ef, Read(r)} with Order[a]
+    pub def collect(iter: Iterator[a, ef, r]): m[a] \ {ef, r} with Order[a]
 
 }

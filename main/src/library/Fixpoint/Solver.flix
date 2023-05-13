@@ -757,7 +757,7 @@ mod Fixpoint {
     ///
     /// Returns the given database `db` as a Datalog value.
     ///
-    def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
+    def toModel(db: Database[v, r]): Datalog[v] \ r =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
         Model
