@@ -46,7 +46,7 @@ mod Test.Kind.Class {
             mod Mix {
                 // ensure we use `m`'s annotation
                 class CTypeBoolType[m: Type -> Bool -> Type] {
-                    pub def fAndM(f: a -> b \ ef1, x: m[a, ef2]): m[b, ef1 and ef2]
+                    pub def fAndM(f: a -> b \ ef1, x: m[a, ef2]): m[b, ef1 + ef2]
                 }
             }
         }
