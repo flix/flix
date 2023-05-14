@@ -46,6 +46,13 @@ mod Char {
         isDigit(c)
 
     ///
+    /// Returns `true` if the given char `c` is a recognized Unicode letter or digit.
+    ///
+    pub def isLetterOrDigit(c: Char): Bool =
+        import static java.lang.Character.isLetterOrDigit(Char): Bool \ {};
+        isLetterOrDigit(c)
+
+    ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
     ///
     pub def isAsciiDigit(c: Char): Bool =
@@ -82,11 +89,26 @@ mod Char {
         isUpperCase(c)
 
     ///
+    /// Returns `true` if the given char `c` is titlecase.
+    ///
+    pub def isTitleCase(c: Char): Bool =
+        import static java.lang.Character.isTitleCase(Char): Bool \ {};
+        isTitleCase(c)
+
+    ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     pub def isWhiteSpace(c: Char): Bool =
         import static java.lang.Character.isWhitespace(Char): Bool \ {};
         isWhitespace(c)
+
+    ///
+    /// Returns `true` if the given char `c` is defined either as a entry in the
+    /// UnicodeData file or a value within a range defined in the UnicodeData file.
+    ///
+    pub def isDefined(c: Char): Bool =
+        import static java.lang.Character.isDefined(Char): Bool \ {};
+        isDefined(c)
 
     ///
     /// Returns `true` if the given char `c` is an ISO control character.

@@ -38,6 +38,13 @@ mod Codepoint {
         isDigit(cp)
 
     ///
+    /// Returns `true` if the given ccodepoint `cp` represents a recognized Unicode letter or digit.
+    ///
+    pub def isLetterOrDigit(cp: Int32): Bool =
+        import static java.lang.Character.isLetterOrDigit(Int32): Bool \ {};
+        isLetterOrDigit(cp)
+
+    ///
     /// Returns `true` if the given codepoint `cp` represents a character strictly in the
     /// range of ASCII digits 0...9.
     ///
@@ -75,11 +82,38 @@ mod Codepoint {
         isUpperCase(cp)
 
     ///
+    /// Returns `true` if the given codepoint `cp` represents a titlecase letter.
+    ///
+    pub def isTitleCase(cp: Int32): Bool =
+        import static java.lang.Character.isTitleCase(Int32): Bool \ {};
+        isTitleCase(cp)
+
+    ///
     /// Returns `true` if the given codepoint `cp` represents a white space character.
     ///
     pub def isWhiteSpace(cp: Int32): Bool =
         import static java.lang.Character.isWhitespace(Int32): Bool \ {};
         isWhitespace(cp)
+
+    pub def isAlphabetic(cp: Int32): Bool =
+        import static java.lang.Character.isAlphabetic(Int32): Bool \ {};
+        isAlphabetic(cp)
+
+    pub def isBmpCodePoint(cp: Int32): Bool =
+        import static java.lang.Character.isBmpCodePoint(Int32): Bool \ {};
+        isBmpCodePoint(cp)
+
+    ///
+    /// Returns `true` if the given  codepoint `cp` is defined either as a entry in the
+    /// UnicodeData file or a value within a range defined in the UnicodeData file.
+    ///
+    pub def isDefined(cp: Int32): Bool =
+        import static java.lang.Character.isDefined(Int32): Bool \ {};
+        isDefined(cp)
+
+    pub def isIdeographic(cp: Int32): Bool =
+        import static java.lang.Character.isIdeographic(Int32): Bool \ {};
+        isIdeographic(cp)
 
     ///
     /// Returns `true` if the given codepoint `cp` is an ISO control character.
@@ -94,6 +128,17 @@ mod Codepoint {
     pub def isMirrored(cp: Int32): Bool =
         import static java.lang.Character.isMirrored(Int32): Bool \ {};
         isMirrored(cp)
+
+    pub def isSupplementaryCodePoint(cp: Int32): Bool =
+        import static java.lang.Character.isSupplementaryCodePoint(Int32): Bool \ {};
+        isSupplementaryCodePoint(cp)
+
+    ///
+    /// Returns `true` if the code point `cp` is between `U+0000` and `U+10FFFF`.
+    ///
+    pub def isValidCodePoint(cp: Int32): Bool =
+        import static java.lang.Character.isValidCodePoint(Int32): Bool \ {};
+        isValidCodePoint(cp)
 
     ///
     /// Converts a codepoint representing a letter to its lowercase version.
@@ -113,6 +158,13 @@ mod Codepoint {
         import static java.lang.Character.toUpperCase(Int32): Int32 \ {};
         toUpperCase(cp)
 
+    pub def getName(cp: Int32): Option[String] =
+        try {
+            import static java.lang.Character.getName(Int32): String \ {};
+            getName(cp) |> Object.toOption
+        } catch {
+            case _: ##java.lang.Exception => None
+        }
 
     ///
     /// Returns the integer value representated by the codepoint `cp` e.g. codepoint 0x0031
@@ -128,25 +180,6 @@ mod Codepoint {
             case i if i < 0 => None
             case i          => Some(i)
         }
-
-    ///
-    /// Returns `true` if the code point `cp` is between `U+0000` and `U+10FFFF`.
-    ///
-    pub def isValidCodePoint(cp: Int32): Bool =
-        import static java.lang.Character.isValidCodePoint(Int32): Bool \ {};
-        isValidCodePoint(cp)
-
-    pub def isBmpCodePoint(cp: Int32): Bool =
-        import static java.lang.Character.isBmpCodePoint(Int32): Bool \ {};
-        isBmpCodePoint(cp)
-
-    pub def isSupplementaryCodePoint(cp: Int32): Bool =
-        import static java.lang.Character.isSupplementaryCodePoint(Int32): Bool \ {};
-        isSupplementaryCodePoint(cp)
-
-    pub def isIdeographic(cp: Int32): Bool =
-        import static java.lang.Character.isIdeographic(Int32): Bool \ {};
-        isIdeographic(cp)
 
     pub def charCount(cp: Int32): Int32 =
         import static java.lang.Character.charCount(Int32): Int32 \ {};
