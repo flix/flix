@@ -111,12 +111,6 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       case _ => ""
     }
 
-    // --Xallow-redundancies
-    val xallowredundancies = json \\ "xallowredundancies" match {
-      case JBool(b) => b
-      case _ => true
-    }
-
     // --Xcore
     val xcore = json \\ "xcore" match {
       case JBool(b) => b
@@ -125,8 +119,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
     // Construct the options object.
     val opts = Options.Default.copy(
-      lib = if (xcore) LibLevel.Min else LibLevel.All,
-      xallowredundancies = xallowredundancies
+      lib = if (xcore) LibLevel.Min else LibLevel.All
     )
 
     // Return the source and options.
