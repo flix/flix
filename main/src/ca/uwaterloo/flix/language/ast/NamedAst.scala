@@ -66,7 +66,7 @@ object NamedAst {
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], econstrs: List[NamedAst.EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, pur: Option[NamedAst.Type], tconstrs: List[NamedAst.TypeConstraint], econstrs: List[NamedAst.EqualityConstraint], loc: SourceLocation)
 
 
   sealed trait UseOrImport {
@@ -167,13 +167,13 @@ object NamedAst {
 
     case class Assign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
+    case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: Option[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
     case class InstanceOf(exp: NamedAst.Expression, className: String, loc: SourceLocation) extends NamedAst.Expression
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class UncheckedCast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
+    case class UncheckedCast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: Option[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
     case class UncheckedMaskingCast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -343,7 +343,7 @@ object NamedAst {
 
     case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Arrow(tparams: List[NamedAst.Type], purAndEff: NamedAst.PurityAndEffect, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(tparams: List[NamedAst.Type], pur: Option[NamedAst.Type], tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
@@ -422,7 +422,7 @@ object NamedAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, tpe: NamedAst.Type, purAndEff: PurityAndEffect, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, tpe: NamedAst.Type, pur: Option[NamedAst.Type], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
 
@@ -459,8 +459,6 @@ object NamedAst {
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
   case class EqualityConstraint(qname: Name.QName, tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation)
-
-  case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 
   case class ParYieldFragment(pat: Pattern, exp: Expression, loc: SourceLocation)
 
