@@ -70,7 +70,7 @@ object CompletionUtils {
       } else {
         pur0 match {
           case Type.Cst(TypeConstructor.True, _) => ""
-          case Type.Cst(TypeConstructor.False, _) => raw" \ Impure"
+          case Type.Cst(TypeConstructor.False, _) => raw" \ IO"
           case p => raw" \ " + FormatType.formatType(p)
         }
       }
