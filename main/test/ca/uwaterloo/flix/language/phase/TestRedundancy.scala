@@ -1739,7 +1739,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 

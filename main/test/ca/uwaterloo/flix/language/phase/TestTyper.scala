@@ -1430,7 +1430,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1441,7 +1441,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1452,7 +1452,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ IO) }) yield (a, b);
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 

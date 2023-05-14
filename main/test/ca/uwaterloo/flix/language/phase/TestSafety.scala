@@ -447,7 +447,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCheckedTypeCast](result)
   }
 
@@ -458,7 +458,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCheckedTypeCast](result)
   }
 
@@ -469,7 +469,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
         |    checked_cast(valueOf(true))
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCheckedTypeCast](result)
   }
 
@@ -543,7 +543,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
@@ -554,7 +554,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
@@ -565,7 +565,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
         |    checked_cast(valueOf(true))
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
@@ -576,7 +576,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
@@ -588,7 +588,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
@@ -600,7 +600,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
         |    Boolean.Boolean(checked_cast(valueOf(true)))
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
@@ -611,7 +611,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
