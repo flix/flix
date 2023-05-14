@@ -327,7 +327,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalEffect.03") {
-    val input = raw"def f(): Int32 = 1: \ Int32"
+    val input = raw"def f(): Int32 = 1: _ \ Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -438,7 +438,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.02") {
     val input =
       """
-        |def f(): Int32 = 1: \ Unit
+        |def f(): Int32 = 1: _ \ Unit
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)

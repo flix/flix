@@ -608,7 +608,7 @@ mod File {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.PrintWriter.println(String): Unit \ IO;
+            import java.io.PrintWriter.print(String): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
@@ -617,7 +617,7 @@ mod File {
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            println(w, "${data}");
+            print(w, "${data}");
             close(w);
 
             if (checkError(w)) {

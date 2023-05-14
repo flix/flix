@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,13 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
 
-object ExprCompleter extends Completer {
-
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    DefCompleter.getCompletions(context) ++
-      FieldCompleter.getCompletions(context) ++
-      KeywordExprCompleter.getCompletions(context) ++
-      MatchCompleter.getCompletions(context) ++
-      VarCompleter.getCompletions(context) ++
-      SignatureCompleter.getCompletions(context) ++
-      EnumTagCompleter.getCompletions(context) ++
-      SnippetCompleter.getCompletions(context) ++
-      ModuleCompleter.getCompletions(context)
+object ModuleCompleter extends Completer {
+  /**
+    * Returns a List of ModCompletion for modules.
+    */
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
+    root.modules.keys.map(mod => ModCompletion(mod))
   }
 }

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
-import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, ModuleSym, TypeAliasSym}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -203,14 +203,24 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
-    case Completion.EnumTagCompletion(enumSym, caseSym) =>
+    case Completion.EnumTagCompletion(enumSym, caseSym, arity) =>
       val name = s"${enumSym.toString}.${caseSym.name}"
+      val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
+      val snippet = if (args.isEmpty) name else s"$name($args)"
+      CompletionItem(
+        label = name,
+        sortText = Priority.normal(name),
+        textEdit = TextEdit(context.range, snippet),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.EnumMember)
+    case Completion.ModCompletion(modSym) =>
+      val name = modSym.toString
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, name),
-        documentation = None,
-        kind = CompletionItemKind.EnumMember)
+        kind = CompletionItemKind.Module)
   }
 }
 
@@ -405,6 +415,14 @@ object Completion {
     *
     * @param enumSym the sym of the enum.
     * @param caseSym the sym of the case (for that specific enum).
+    * @param arity   the arity of the enumTag.
     */
-  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym) extends Completion
+  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym, arity: Int) extends Completion
+
+  /**
+    * Represents a Module completion.
+    *
+    * @param modSym the module symbol.
+  */
+  case class ModCompletion(modSym: ModuleSym) extends Completion
 }
