@@ -182,7 +182,7 @@ object InstanceError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables or Boolean types."
+      s"${underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables."
     })
   }
 
