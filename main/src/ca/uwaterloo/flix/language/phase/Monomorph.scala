@@ -65,7 +65,7 @@ object Monomorph {
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     private def default(tpe0: Type): Type = tpe0.kind match {
-      case Kind.Bool =>
+      case Kind.Eff =>
         // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
         // TODO: In the future we need to decide what should actually happen if such variables occur.
         // TODO: In particular, it seems there are two cases.
@@ -772,7 +772,7 @@ object Monomorph {
       sym.kind match {
         case Kind.CaseSet(enumSym) =>
           Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
-        case Kind.Bool =>
+        case Kind.Eff =>
           if (flix.options.xstrictmono)
             throw UnexpectedNonConstBool(tpe, loc)
           else {

@@ -358,7 +358,7 @@ object Regions {
     * Extracts all the boolean formulas from the given type `t0`.
     */
   private def boolTypesOf(t0: Type): List[Type] = t0 match {
-    case t if t.kind == Kind.Bool => List(t)
+    case t if t.kind == Kind.Eff => List(t)
     case _: Type.Var => Nil
     case _: Type.Cst => Nil
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
@@ -396,7 +396,7 @@ object Regions {
     */
   private def regionVarsOf(tpe: Type): SortedSet[Type.Var] = tpe.typeVars.filter {
     case tvar =>
-      val isBool = tvar.sym.kind == Kind.Bool
+      val isBool = tvar.sym.kind == Kind.Eff
       val isRegion = tvar.sym.isRegion
       isBool && isRegion
   }

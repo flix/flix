@@ -144,8 +144,8 @@ object Instances {
       * Converts `true` and `false` in the given type into type variables.
       */
     def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-      case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Bool, loc)
-      case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Bool, loc)
+      case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Eff, loc)
+      case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Eff, loc)
       case t: Type.Var => t
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)

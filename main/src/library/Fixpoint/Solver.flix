@@ -497,7 +497,7 @@ mod Fixpoint {
             Nil
         , p, ts)
 
-    def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
+    def injectIntoX[f: Type -> Type, t: Type, ef: Eff](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
         region r {
             let db = MutMap.new(r);
             Foldable.foldLeft(() -> t -> {

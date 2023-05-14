@@ -570,7 +570,7 @@ object Typer {
           // result type is whatever is needed for the hole
           resultTpe = tvar
           // purity type is AT LEAST the inner expression's purity/effect
-          atLeastPur = Type.mkAnd(pur, Type.freshVar(Kind.Bool, loc.asSynthetic), loc.asSynthetic)
+          atLeastPur = Type.mkAnd(pur, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
           resultPur <- unifyTypeM(atLeastPur, pvar, loc)
         } yield (tconstrs, resultTpe, resultPur)
 
@@ -677,7 +677,7 @@ object Typer {
             // Default Case: Apply.
             //
             val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-            val lambdaBodyPur = Type.freshVar(Kind.Bool, loc)
+            val lambdaBodyPur = Type.freshVar(Kind.Eff, loc)
             for {
               (constrs1, tpe, pur) <- visitExp(exp)
               (constrs2, tpes, purs) <- traverseM(exps)(visitExp).map(_.unzip3)
@@ -960,7 +960,7 @@ object Typer {
         // Ensure that `exp1` is a lambda.
         val a = Type.freshVar(Kind.Star, loc)
         val b = Type.freshVar(Kind.Star, loc)
-        val p = Type.freshVar(Kind.Bool, loc)
+        val p = Type.freshVar(Kind.Eff, loc)
         val expectedType = Type.mkArrowWithEffect(a, p, b, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -987,9 +987,9 @@ object Typer {
         } yield (constrs, resultTyp, resultPur)
 
       case KindedAst.Expression.ScopeExit(exp1, exp2, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
-        val p = Type.freshVar(Kind.Bool, loc)
+        val p = Type.freshVar(Kind.Eff, loc)
         for {
           (constrs1, tpe1, _) <- visitExp(exp1)
           (constrs2, tpe2, _) <- visitExp(exp2)
@@ -1074,8 +1074,8 @@ object Typer {
             case KindedAst.RelationalChoiceRule(r, exp0) =>
               val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
               val innerType = Type.freshVar(Kind.Star, exp0.loc)
-              val isAbsentVar = Type.freshVar(Kind.Bool, exp0.loc)
-              val isPresentVar = Type.freshVar(Kind.Bool, exp0.loc)
+              val isAbsentVar = Type.freshVar(Kind.Eff, exp0.loc)
+              val isPresentVar = Type.freshVar(Kind.Eff, exp0.loc)
               for {
                 choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar, loc), loc)
               } yield (Type.mkAnd(cond, isAbsentVar, loc), Type.mkAnd(cond, isPresentVar, loc), innerType)
@@ -1172,12 +1172,12 @@ object Typer {
         //
         // Introduce an isAbsent variable for each match expression in `exps`.
         //
-        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
+        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Eff, exp0.loc))
 
         //
         // Introduce an isPresent variable for each math expression in `exps`.
         //
-        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
+        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Eff, exp0.loc))
 
         //
         // Extract the choice pattern match matrix.
@@ -1218,7 +1218,7 @@ object Typer {
             // Case 1.1: Absent Tag.
             val elmVar = Type.freshVar(Kind.Star, loc)
             val isAbsent = Type.True
-            val isPresent = Type.freshVar(Kind.Bool, loc)
+            val isPresent = Type.freshVar(Kind.Eff, loc)
             for {
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent, loc), loc)
               resultPur = Type.Pure
@@ -1226,7 +1226,7 @@ object Typer {
           }
           else if (symUse.sym.name == "Present") {
             // Case 1.2: Present Tag.
-            val isAbsent = Type.freshVar(Kind.Bool, loc)
+            val isAbsent = Type.freshVar(Kind.Eff, loc)
             val isPresent = Type.True
             for {
               (constrs, tpe, pur) <- visitExp(exp)
@@ -1320,7 +1320,7 @@ object Typer {
         } yield (constrs, resultTyp, resultPur)
 
       case KindedAst.Expression.ArrayLit(exps, exp, tvar, pvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, elmTypes, pur1) <- traverseM(exps)(visitExp).map(_.unzip3)
@@ -1332,7 +1332,7 @@ object Typer {
         } yield (constrs1.flatten ++ constrs2, resultTyp, resultPur)
 
       case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, pvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -1346,7 +1346,7 @@ object Typer {
 
       case KindedAst.Expression.ArrayLength(exp, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         for {
           (constrs, tpe, pur) <- visitExp(exp)
           _ <- expectTypeM(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
@@ -1357,7 +1357,7 @@ object Typer {
         } yield (constrs, resultTyp, resultPur)
 
       case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, pvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
           (constrs2, tpe2, pur2) <- visitExp(exp2)
@@ -1368,7 +1368,7 @@ object Typer {
 
       case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -1409,7 +1409,7 @@ object Typer {
         } yield (constrs, resultTyp, resultPur)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -1421,7 +1421,7 @@ object Typer {
 
       case KindedAst.Expression.Deref(exp, tvar, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val refType = Type.mkRef(elmVar, regionVar, loc)
 
         for {
@@ -1433,7 +1433,7 @@ object Typer {
 
       case KindedAst.Expression.Assign(exp1, exp2, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val refType = Type.mkRef(elmVar, regionVar, loc)
 
         for {
@@ -1450,7 +1450,7 @@ object Typer {
         for {
           (constrs, actualTyp, actualPur) <- visitExp(exp)
           resultTyp <- expectTypeM(expected = expectedTyp.getOrElse(Type.freshVar(Kind.Star, loc)), actual = actualTyp, bind = tvar, loc)
-          resultPur <- expectTypeM(expected = expectedPur.getOrElse(Type.freshVar(Kind.Bool, loc)), actual = actualPur, loc)
+          resultPur <- expectTypeM(expected = expectedPur.getOrElse(Type.freshVar(Kind.Eff, loc)), actual = actualPur, loc)
         } yield (constrs, resultTyp, resultPur)
 
       case KindedAst.Expression.InstanceOf(exp, className, loc) =>
@@ -1688,7 +1688,7 @@ object Typer {
 
 
       case KindedAst.Expression.NewChannel(exp1, exp2, tvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -1700,7 +1700,7 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val elmVar = Type.freshVar(Kind.Star, loc)
         val channelType = Type.mkReceiver(elmVar, regionVar, loc)
 
@@ -1712,7 +1712,7 @@ object Typer {
         } yield (constrs, resultTyp, resultPur)
 
       case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val elmVar = Type.freshVar(Kind.Star, loc)
         val channelType = Type.mkSender(elmVar, regionVar, loc)
 
@@ -1727,7 +1727,7 @@ object Typer {
 
       case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
 
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
 
         /**
           * Performs type inference on the given select rule `sr0`.
@@ -1762,7 +1762,7 @@ object Typer {
         } yield (resultCon, resultTyp, resultPur)
 
       case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, _) <- visitExp(exp1)
