@@ -1025,10 +1025,10 @@ mod String {
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
     ///
-    /// If the length of `s` exceeds `w` and `w >= 3" then `s` is truncated and the first
+    /// If the length of `s` exceeds `w` and `w >= 3` then `s` is truncated and the first
     /// three characters are replaced with ellipses.
     ///
-    /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
+    /// If the length of `s` exceeds `w` and `w < 3` then the empty string is returned.
     ///
     pub def abbreviateLeft(w: Int32, s: String): String =
         match length(s) {
@@ -1043,10 +1043,10 @@ mod String {
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
     ///
-    /// If the length of `s` exceeds `w` and `w >= 3" then `s` is truncated and the last
+    /// If the length of `s` exceeds `w` and `w >= 3` then `s` is truncated and the last
     /// three characters are replaced with ellipses.
     ///
-    /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
+    /// If the length of `s` exceeds `w` and `w < 3` then the empty string is returned.
     ///
     pub def abbreviateRight(w: Int32, s: String): String =
         match length(s) {
@@ -1227,6 +1227,13 @@ mod String {
             0
         else
             loop(0, 0)
+
+    ///
+    /// For every line in string `s`, strip a leading prefix consisting of
+    /// blanks or control characters followed by `|` from the line, if
+    /// such a prefix exists.
+    ///
+    pub def stripMargin(s: String): String = stripMarginWith({margin = "|"}, s)
 
     ///
     /// For every line in string `s`, strip a leading prefix consisting of
