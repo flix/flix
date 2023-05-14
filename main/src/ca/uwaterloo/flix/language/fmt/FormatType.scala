@@ -318,7 +318,7 @@ object FormatType {
           case Kind.Wild => "_" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
-          case Kind.Bool => "b" + id
+          case Kind.Eff => "b" + id
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString

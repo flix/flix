@@ -120,7 +120,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
       """
         | class C[a]
         |
-        |enum E[_: Bool]
+        |enum E[_: Eff]
         |
         |instance C[E[true]]
         |instance C[E[false]]
@@ -134,7 +134,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
       """
         | class C[a]
         |
-        |enum E[_: Bool, _: Type]
+        |enum E[_: Eff, _: Type]
         |
         |instance C[E[true, a]]
         |instance C[E[false, a]]

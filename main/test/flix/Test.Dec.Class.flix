@@ -86,7 +86,7 @@ mod Test.Dec.Class {
     }
 
     mod Test09 {
-        class Eff[ef : Bool] {
+        class Eff[ef : Eff] {
             pub def isPure(f: a -> b \ ef): Bool
         }
 
@@ -208,8 +208,8 @@ mod Test.Dec.Class {
     }
 
     mod Test18 {
-        pub enum E[_: Bool]
-        pub enum F[_: Bool, _: Type]
+        pub enum E[_: Eff]
+        pub enum F[_: Eff, _: Type]
 
         class C[a]
         class D[a: Type -> Type]
@@ -220,7 +220,7 @@ mod Test.Dec.Class {
     }
 
     mod Test19 {
-        pub enum M[_: Bool, a: Type] {
+        pub enum M[_: Eff, a: Type] {
             case M(a)
         }
 
