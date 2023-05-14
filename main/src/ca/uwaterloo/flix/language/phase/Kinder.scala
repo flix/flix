@@ -117,7 +117,7 @@ object Kinder {
     case ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives, cases0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
-      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv)).map(_.flatten)
+      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
 
       flatMapN(tparamsVal) {
         case tparams =>
@@ -144,7 +144,7 @@ object Kinder {
       val kenv = KindEnv.disjointAppend(kenvIndex, kenvTparams)
 
       val indexVal = visitIndex(index0, sym, kenv)
-      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv)).map(_.flatten)
+      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
 
       flatMapN(indexVal, tparamsVal) {
         case (index, tparams) =>
@@ -170,7 +170,7 @@ object Kinder {
     case ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
-      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv)).map(_.flatten)
+      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, taenv, root)
 
       mapN(tparamsVal, tpeVal) {
@@ -247,9 +247,7 @@ object Kinder {
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, kenv, taenv, root))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv))
       flatMapN(tparamsVal, superClassesVal, assocsVal) {
-        case (tparams, superClasses, assocs) =>
-          // tparams will always be a singleton
-          val tparam = tparams.head
+        case (tparam, superClasses, assocs) =>
           val sigsVal = traverse(sigs0) {
             case (sigSym, sig0) => visitSig(sig0, tparam, kenv, taenv, root).map(sig => sigSym -> sig)
           }
@@ -366,7 +364,7 @@ object Kinder {
     */
   private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, pur0, tconstrs0, econstrs0, loc) =>
-      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv)).map(_.flatten)
+      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val purAndEffVal = visitPurityDefaultPure(pur0, kenv, taenv, root)
@@ -390,7 +388,7 @@ object Kinder {
       val tparamVal = visitTypeParam(tparam0, kenv)
 
       mapN(tparamVal) {
-        case tparam => KindedAst.AssocTypeSig(doc, mod, sym, tparam.head, kind, loc) // TODO ASSOC-TYPES assuming no splitting happening here...
+        case tparam => KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
   }
 
@@ -1411,15 +1409,14 @@ object Kinder {
   /**
     * Performs kinding on the given type parameter under the given kind environment.
     */
-  private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[List[KindedAst.TypeParam], KindError] = {
+  private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = {
     val (name, sym0, loc) = tparam match {
       case ResolvedAst.TypeParam.Kinded(kName, kSym, _, kLoc) => (kName, kSym, kLoc)
       case ResolvedAst.TypeParam.Unkinded(uName, uSym, uLoc) => (uName, uSym, uLoc)
     }
-    // split the symbol if necessary
-    val syms = sym0 :: Nil // TODO EFF-MIGRATION this should just return single tparam
-    traverse(syms) {
-      sym => mapN(visitTypeVarSym(sym, Kind.Wild, kenv, loc))(KindedAst.TypeParam(name, _, loc))
+    val symVal = visitTypeVarSym(sym0, Kind.Wild, kenv, loc)
+    mapN(symVal) {
+      case sym => KindedAst.TypeParam(name, sym, loc)
     }
   }
 
