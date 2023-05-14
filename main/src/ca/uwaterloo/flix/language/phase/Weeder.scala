@@ -44,7 +44,7 @@ object Weeder {
   private val ReservedWords = Set(
     "!=", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<=",
     "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
-    "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "alias", "case", "catch", "chan",
+    "RecordRow", "Region", "SchemaRow", "Type", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "instanceof", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "null", "opaque", "override", "pub", "ref", "region",
@@ -2789,28 +2789,6 @@ object Weeder {
         case ((), tpes) =>
           val purOpt = tpes.reduceLeftOption({
             case (acc, tpe) => WeededAst.Type.And(acc, tpe, loc)
-          }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
-          purOpt.getOrElse(WeededAst.Type.True(loc))
-      }
-
-    case ParsedAst.Type.Read(sp1, tpes0, sp2) =>
-      val tpesVal = traverse(tpes0)(visitType)
-      val loc = mkSL(sp1, sp2)
-      mapN(tpesVal) {
-        case tpes =>
-          val purOpt = tpes.reduceLeftOption({
-            case (acc, tpe) => WeededAst.Type.And(acc, WeededAst.Type.Read(tpe, loc), loc)
-          }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
-          purOpt.getOrElse(WeededAst.Type.True(loc))
-      }
-
-    case ParsedAst.Type.Write(sp1, tpes0, sp2) =>
-      val tpesVal = traverse(tpes0)(visitType)
-      val loc = mkSL(sp1, sp2)
-      mapN(tpesVal) {
-        case tpes =>
-          val purOpt = tpes.reduceLeftOption({
-            case (acc, tpe) => WeededAst.Type.And(acc, WeededAst.Type.Write(tpe, loc), loc)
           }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
           purOpt.getOrElse(WeededAst.Type.True(loc))
       }

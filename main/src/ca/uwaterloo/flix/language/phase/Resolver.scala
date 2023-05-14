@@ -257,7 +257,6 @@ object Resolver {
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
-    case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
     case _: UnkindedType.CaseSet => Nil
     case UnkindedType.CaseComplement(tpe, loc) => getAliasUses(tpe)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
@@ -646,7 +645,6 @@ object Resolver {
         case RestrictableEnum(sym, loc) => ().toSuccess
         case Apply(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
         case Arrow(pur, arity, loc) => traverseX(pur.toList)(checkAssocTypes)
-        case ReadWrite(tpe, loc) => checkAssocTypes(tpe)
         case CaseSet(cases, loc) => ().toSuccess
         case CaseComplement(tpe, loc) => checkAssocTypes(tpe)
         case CaseUnion(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
@@ -2368,16 +2366,6 @@ object Resolver {
           case (t1, t2) => mkOr(t1, t2, loc)
         }
 
-      case NamedAst.Type.Read(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => UnkindedType.ReadWrite(t, loc)
-        }
-
-      case NamedAst.Type.Write(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => UnkindedType.ReadWrite(t, loc)
-        }
-
       case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
 
       case NamedAst.Type.CaseSet(cases0, loc) =>
@@ -2500,13 +2488,6 @@ object Resolver {
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(purVal, targsVal) {
           case (p, ts) => UnkindedType.mkApply(UnkindedType.Arrow(p, arity, loc), ts, tpe0.loc)
-        }
-
-      case UnkindedType.ReadWrite(tpe, loc) =>
-        val tpeVal = finishResolveType(tpe, taenv)
-        val targsVal = traverse(targs)(finishResolveType(_, taenv))
-        mapN(tpeVal, targsVal) {
-          case (t, ts) => UnkindedType.mkApply(UnkindedType.ReadWrite(t, loc), ts, tpe0.loc)
         }
 
       case UnkindedType.CaseComplement(tpe, loc) =>
@@ -3381,7 +3362,6 @@ object Resolver {
 
       // Case 5: Illegal type. Error.
       case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.ReadWrite => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseSet => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseComplement => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseUnion => ResolutionError.IllegalType(tpe, loc).toFailure
