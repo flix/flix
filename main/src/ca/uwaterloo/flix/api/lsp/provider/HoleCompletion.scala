@@ -31,7 +31,7 @@ object HoleCompletion {
   def candidates(sourceType: Type, targetType: Type, root: TypedAst.Root)(implicit flix: Flix): List[Symbol.DefnSym] = {
     val matchType = Type.mkArrowWithEffect(
       sourceType,
-      Type.freshVar(Kind.Bool, SourceLocation.Unknown),
+      Type.freshVar(Kind.Eff, SourceLocation.Unknown),
       targetType,
       SourceLocation.Unknown
     )

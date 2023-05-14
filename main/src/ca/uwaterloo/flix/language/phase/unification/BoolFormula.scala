@@ -142,7 +142,7 @@ object BoolFormula {
     * The map `m` must bind each free variable in `f` to a type variable.
     */
   def toType(f: BoolFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
-    case Kind.Bool => toBoolType(f, m, loc)
+    case Kind.Eff => toBoolType(f, m, loc)
     case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.", loc)
   }
 

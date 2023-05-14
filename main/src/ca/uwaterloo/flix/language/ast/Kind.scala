@@ -67,7 +67,7 @@ object Kind {
   /**
     * Represents the kind of boolean formulas.
     */
-  case object Bool extends Kind
+  case object Eff extends Kind
 
   /**
     * Represents the kind of record rows.
