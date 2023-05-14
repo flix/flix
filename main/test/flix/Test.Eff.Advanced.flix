@@ -62,7 +62,7 @@
 //    def requiresPureAndImpure1(_f: a -> b \ ef, _g: a -> b \ {(not e)}): Unit = ()
 //
 //    /// A function that requires a pure and an impure function.
-//    def requiresPureAndImpure2(_f: a -> b & (not e), _g: a -> b \ ef): Unit = ()
+//    def requiresPureAndImpure2(_f: a -> b \ (not e), _g: a -> b \ ef): Unit = ()
 //
 //    /// A function that requires at most one pure function.
 //    def requiresAtmostOnePure1(_f: a -> b \ ef1, _g: a -> b \ {(not ef1 and ef2)}): Unit = ()
@@ -74,7 +74,7 @@
 //    def requiresTwoAndOne(_f: a -> b \ ef, _g: a -> b \ {(not e)}, _h: a -> b \ ef): Unit = ()
 //
 //    // A unSAT instance.
-//    //pub def yikes(_f: a -> b & {{(x \/ y \/ z) /\ (x \/ y \/ not z) /\ (x \/ not y \/ z) /\ (x \/ not y \/ not z) /\ (not x \/ y \/ z) /\ (not x \/ y \/ not z) /\ (not x \/ not y \/ z) /\ (not x \/ not y \/ not z)}}): Unit = ()
+//    //pub def yikes(_f: a -> b \ {{(x \/ y \/ z) /\ (x \/ y \/ not z) /\ (x \/ not y \/ z) /\ (x \/ not y \/ not z) /\ (not x \/ y \/ z) /\ (not x \/ y \/ not z) /\ (not x \/ not y \/ z) /\ (not x \/ not y \/ not z)}}): Unit = ()
 //
 //    //@test
 //    //def testYikes(): Unit = yikes(pure)

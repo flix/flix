@@ -1168,7 +1168,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.02") {
     val input =
       """
-        |def f(): Int32 \ {} = unchecked_cast(123 as _ \ Impure)
+        |def f(): Int32 \ {} = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1426,33 +1426,33 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestParYield.01") {
     val input =
       """
-        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unchecked_cast(1 as _ \ Impure) }) yield x;
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
   test("TestParYield.02") {
     val input =
       """
-        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unchecked_cast(1 as _ \ Impure) }) yield x;
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
   test("TestParYield.03") {
     val input =
       """
-        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ Impure) }) yield (a, b);
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ IO) }) yield (a, b);
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 

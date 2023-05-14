@@ -1728,9 +1728,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantCheckedTypeCast.05") {
     val input =
       """
-        |def f(): Unit \ Impure =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |def f(): Unit \ IO =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
@@ -1739,7 +1739,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
@@ -1822,8 +1822,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))

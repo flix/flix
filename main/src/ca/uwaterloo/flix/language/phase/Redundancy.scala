@@ -985,7 +985,7 @@ object Redundancy {
     *
     * {{{
     * Int32                                        =>     throw
-    * Int32 -> String -> Int32 & Pure              =>     Pure
+    * Int32 -> String -> Int32 \ Pure              =>     Pure
     * (Int32, String) -> String -> Bool \ IO   =>     Impure
     * }}}
     *
@@ -997,28 +997,6 @@ object Redundancy {
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
       case _ => tpe.arrowPurityType
-    }
-  }
-
-  /**
-    * Returns the effect type of `this` curried arrow type.
-    *
-    * For example,
-    *
-    * {{{
-    * Int32                                        =>     throw
-    * Int32 -> String -> Int32 \ Eff               =>     Pure
-    * (Int32, String) -> String -> Bool & \ Eff    =>     Impure
-    * }}}
-    *
-    * NB: Assumes that `this` type is an arrow.
-    */
-  @tailrec
-  private def curriedArrowEffectType(tpe: Type): Type = {
-    val resType = tpe.arrowResultType
-    resType.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(resType)
-      case _ => tpe.arrowEffectType
     }
   }
 
