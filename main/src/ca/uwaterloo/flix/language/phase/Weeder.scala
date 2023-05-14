@@ -2683,7 +2683,7 @@ object Weeder {
     * Weeds the given parsed type `tpe`.
     */
   private def visitType(tpe: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = tpe match {
-    case ParsedAst.Type.Var(sp1, ident, sp2) => visitEffectIdent(ident).toSuccess
+    case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, ident.loc).toSuccess
 
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2)).toSuccess
 
@@ -3171,18 +3171,6 @@ object Weeder {
     } else {
       ().toSuccess
     }
-  }
-
-  /**
-    * Performs weeding on the given effect `ident`.
-    * Checks whether it is actually the keyword `Static`.
-    */
-  // TODO remove
-  private def visitEffectIdent(ident: Name.Ident): WeededAst.Type = {
-    if (ident.name == "Static")
-      WeededAst.Type.False(ident.loc)
-    else
-      WeededAst.Type.Var(ident, ident.loc)
   }
 
   /**
