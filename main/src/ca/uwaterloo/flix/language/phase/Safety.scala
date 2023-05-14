@@ -52,7 +52,7 @@ object Safety {
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
-        if (tpe.typeArguments.exists(_.kind == Kind.Bool))
+        if (tpe.typeArguments.exists(_.kind == Kind.Eff))
           List(SafetyError.SendableError(tpe, loc))
         else
           Nil
@@ -99,7 +99,7 @@ object Safety {
 
       case Expression.Hole(_, _, _) => Nil
 
-      case Expression.HoleWithExp(exp, _, _, _, _) =>
+      case Expression.HoleWithExp(exp, _, _, _) =>
         visit(exp)
 
       case Expression.OpenAs(_, exp, _, _) =>
@@ -111,44 +111,44 @@ object Safety {
       case Expression.Lambda(_, exp, _, _) =>
         visit(exp)
 
-      case Expression.Apply(exp, exps, _, _, _, _) =>
+      case Expression.Apply(exp, exps, _, _, _) =>
         visit(exp) ++ exps.flatMap(visit)
 
-      case Expression.Unary(_, exp, _, _, _, _) =>
+      case Expression.Unary(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
+      case Expression.Binary(_, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
+      case Expression.Let(_, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
+      case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
       case Expression.Region(_, _) =>
         Nil
 
-      case Expression.Scope(_, _, exp, _, _, _, _) =>
+      case Expression.Scope(_, _, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      case Expression.ScopeExit(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visit(exp1) ++ visit(exp2) ++ visit(exp3)
 
-      case Expression.Stm(exp1, exp2, _, _, _, _) =>
+      case Expression.Stm(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.Discard(exp, _, _, _) =>
+      case Expression.Discard(exp, _, _) =>
         visit(exp)
 
-      case Expression.Match(exp, rules, _, _, _, _) =>
+      case Expression.Match(exp, rules, _, _, _) =>
         visit(exp) ++
           rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit) ++ visit(e) }
 
-      case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+      case Expression.TypeMatch(exp, rules, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`
         val missingDefault = rules.last match {
           case MatchTypeRule(_, tpe, _) => tpe match {
@@ -159,76 +159,79 @@ object Safety {
         visit(exp) ++ missingDefault ++
           rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
 
-      case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
+      case Expression.RelationalChoose(exps, rules, _, _, _) =>
         exps.flatMap(visit) ++
           rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
 
-      case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp) ++
           rules.flatMap { case RestrictableChoiceRule(pat, exp) => visit(exp) }
 
-      case Expression.Tag(_, exp, _, _, _, _) =>
+      case Expression.Tag(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.RestrictableTag(_, exp, _, _, _, _) =>
+      case Expression.RestrictableTag(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.Tuple(elms, _, _, _, _) =>
+      case Expression.Tuple(elms, _, _, _) =>
         elms.flatMap(visit)
 
       case Expression.RecordEmpty(_, _) => Nil
 
-      case Expression.RecordSelect(exp, _, _, _, _, _) =>
+      case Expression.RecordSelect(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
+      case Expression.RecordExtend(_, value, rest, _, _, _) =>
         visit(value) ++ visit(rest)
 
-      case Expression.RecordRestrict(_, rest, _, _, _, _) =>
+      case Expression.RecordRestrict(_, rest, _, _, _) =>
         visit(rest)
 
-      case Expression.ArrayLit(elms, exp, _, _, _, _) =>
+      case Expression.ArrayLit(elms, exp, _, _, _) =>
         elms.flatMap(visit) ++ visit(exp)
 
-      case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
+      case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
         visit(exp1) ++ visit(exp2) ++ visit(exp3)
 
-      case Expression.ArrayLoad(base, index, _, _, _, _) =>
+      case Expression.ArrayLoad(base, index, _, _, _) =>
         visit(base) ++ visit(index)
 
-      case Expression.ArrayLength(base, _, _, _) =>
+      case Expression.ArrayLength(base, _, _) =>
         visit(base)
 
-      case Expression.ArrayStore(base, index, elm, _, _, _) =>
+      case Expression.ArrayStore(base, index, elm, _, _) =>
         visit(base) ++ visit(index) ++ visit(elm)
 
-      case Expression.VectorLit(elms, _, _, _, _) =>
+      case Expression.VectorLit(elms, _, _, _) =>
         elms.flatMap(visit)
 
-      case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      case Expression.VectorLoad(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
       case Expression.VectorLength(exp, _) =>
         visit(exp)
 
-      case Expression.Ref(exp1, exp2, _, _, _, _) =>
+      case Expression.Ref(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.Deref(exp, _, _, _, _) =>
+      case Expression.Deref(exp, _, _, _) =>
         visit(exp)
 
-      case Expression.Assign(exp1, exp2, _, _, _, _) =>
+      case Expression.Assign(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.Ascribe(exp, _, _, _, _) =>
+      case Expression.Ascribe(exp, _, _, _) =>
         visit(exp)
 
-      case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
+      case Expression.InstanceOf(exp, _, _) =>
+        visit(exp)
+
+      case Expression.CheckedCast(cast, exp, tpe, pur, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             val from = Type.eraseAliases(exp.tpe)
             val to = Type.eraseAliases(tpe)
-            val errors = verifyCheckedTypeCast(from, to, root, loc)
+            val errors = verifyCheckedTypeCast(from, to, loc)
             visit(exp) ++ errors
 
           case CheckedCastType.EffectCast =>
@@ -238,114 +241,107 @@ object Safety {
             visit(exp) ++ errors
         }
 
-      case e@Expression.UncheckedCast(exp, _, _, _, _, _, _, _) =>
+      case e@Expression.UncheckedCast(exp, _, _, _, _, _) =>
         val errors = verifyUncheckedCast(e)
         visit(exp) ++ errors
 
-      case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
+      case Expression.UncheckedMaskingCast(exp, _, _, _) =>
         visit(exp)
 
-      case Expression.Without(exp, _, _, _, _, _) =>
+      case Expression.Without(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.TryCatch(exp, rules, _, _, _, _) =>
+      case Expression.TryCatch(exp, rules, _, _, _) =>
         visit(exp) ++
           rules.flatMap { case CatchRule(_, _, e) => visit(e) }
 
-      case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+      case Expression.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
-      case Expression.Do(_, exps, _, _, _) =>
+      case Expression.Do(_, exps, _, _) =>
         exps.flatMap(visit)
 
       case Expression.Resume(exp, _, _) =>
         visit(exp)
 
-      case Expression.InvokeConstructor(_, args, _, _, _, _) =>
+      case Expression.InvokeConstructor(_, args, _, _, _) =>
         args.flatMap(visit)
 
-      case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
+      case Expression.InvokeMethod(_, exp, args, _, _, _) =>
         visit(exp) ++ args.flatMap(visit)
 
-      case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
+      case Expression.InvokeStaticMethod(_, args, _, _, _) =>
         args.flatMap(visit)
 
-      case Expression.GetField(_, exp, _, _, _, _) =>
+      case Expression.GetField(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
+      case Expression.PutField(_, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.GetStaticField(_, _, _, _, _) =>
+      case Expression.GetStaticField(_, _, _, _) =>
         Nil
 
-      case Expression.PutStaticField(_, exp, _, _, _, _) =>
+      case Expression.PutStaticField(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
+      case Expression.NewObject(_, clazz, tpe, _, methods, loc) =>
         val erasedType = Type.eraseAliases(tpe)
         checkObjectImplementation(clazz, erasedType, methods, loc) ++
           methods.flatMap {
-            case JvmMethod(_, _, exp, _, _, _, _) => visit(exp)
+            case JvmMethod(_, _, exp, _, _, _) => visit(exp)
           }
 
-      case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+      case Expression.NewChannel(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.GetChannel(exp, _, _, _, _) =>
+      case Expression.GetChannel(exp, _, _, _) =>
         visit(exp)
 
-      case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
+      case Expression.PutChannel(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.SelectChannel(rules, default, _, _, _, _) =>
+      case Expression.SelectChannel(rules, default, _, _, _) =>
         rules.flatMap { case SelectChannelRule(_, chan, body) => visit(chan) ++
           visit(body)
         } ++
           default.map(visit).getOrElse(Nil)
 
-      case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      case Expression.Spawn(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.Par(exp, _) =>
-        // Only tuple expressions are allowed to be parallelized with `par`.
-        exp match {
-          case e: Expression.Tuple => visit(e)
-          case _ => IllegalParExpression(exp, exp.loc) :: Nil
-        }
-
-      case Expression.ParYield(frags, exp, _, _, _, _) =>
+      case Expression.ParYield(frags, exp, _, _, _) =>
         frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ++ visit(exp)
 
       case Expression.Lazy(exp, _, _) =>
         visit(exp)
 
-      case Expression.Force(exp, _, _, _, _) =>
+      case Expression.Force(exp, _, _, _) =>
         visit(exp)
 
       case Expression.FixpointConstraintSet(cs, _, _, _) =>
         cs.flatMap(checkConstraint(_, renv, root))
 
-      case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
+      case Expression.FixpointLambda(_, exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
+      case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expression.FixpointSolve(exp, _, _, _, _, _) =>
+      case Expression.FixpointSolve(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.FixpointFilter(_, exp, _, _, _, _) =>
+      case Expression.FixpointFilter(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.FixpointInject(exp, _, _, _, _, _) =>
+      case Expression.FixpointInject(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.FixpointProject(_, exp, _, _, _, _) =>
+      case Expression.FixpointProject(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expression.Error(_, _, _, _) =>
+      case Expression.Error(_, _, _) =>
         Nil
 
     }
@@ -357,7 +353,7 @@ object Safety {
   /**
     * Checks if the given type cast is legal.
     */
-  private def verifyCheckedTypeCast(from: Type, to: Type, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def verifyCheckedTypeCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     (from.baseType, to.baseType) match {
 
       // Allow casting Null to a Java type.
@@ -717,7 +713,7 @@ object Safety {
     // Check that the first argument looks like "this"
     //
     val thisErrors = methods.flatMap {
-      case JvmMethod(ident, fparams, _, _, _, _, methodLoc) =>
+      case JvmMethod(ident, fparams, _, _, _, methodLoc) =>
         // Check that the declared type of `this` matches the type of the class or interface.
         val fparam = fparams.head
         val thisType = Type.eraseAliases(fparam.tpe)
@@ -761,7 +757,7 @@ object Safety {
     */
   private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
     methods.foldLeft(Map.empty[MethodSignature, JvmMethod]) {
-      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _, _)) =>
+      case (acc, m@JvmMethod(ident, fparams, _, retTpe, _, _)) =>
         // Drop the first formal parameter (which always represents `this`)
         val paramTypes = fparams.tail.map(_.tpe)
         val signature = MethodSignature(ident.name, paramTypes.map(t => Type.eraseAliases(t)), Type.eraseAliases(retTpe))

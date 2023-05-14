@@ -3,13 +3,16 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
+import java.io.File
+import java.net.URL
 import java.nio.file.Paths
 
-class TestManifestParser extends FunSuite {
+class TestManifestParser extends AnyFunSuite {
 
   val f: Formatter = Formatter.NoFormatter
+  val s: String = File.separator
   val tomlCorrect: String = {
     """
       |[package]
@@ -33,6 +36,9 @@ class TestManifestParser extends FunSuite {
       |
       |[dev-mvn-dependencies]
       |"org.junit:junit" = "1.2"
+      |
+      |[jar-dependencies]
+      |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
       |
       |""".stripMargin
   }
@@ -117,7 +123,8 @@ class TestManifestParser extends FunSuite {
                                  Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), Some(4), None), DependencyKind.Production),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), None, Some("M1")), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development)))(actual = {
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development),
+                                 Dependency.JarDependency(new URL("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"), "myJar.jar")))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
@@ -132,7 +139,7 @@ class TestManifestParser extends FunSuite {
   test("Err.file.missing") {
     val pathString = "main/test/ca/uwaterloo/flix/tools/missing.toml"
     val path = Paths.get(pathString)
-    assertResult(ManifestError.IOError(path).message(f))(ManifestParser.parse(path) match {
+    assertResult(ManifestError.IOError(path, s"main${s}test${s}ca${s}uwaterloo${s}flix${s}tools${s}missing.toml").message(f))(ManifestParser.parse(path) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -151,7 +158,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.name").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.MissingRequiredProperty(null, "package.name", None).message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -189,7 +196,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.name", "String").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.name", "String", "Value of 'package.name' is a integer").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -208,7 +215,7 @@ class TestManifestParser extends FunSuite {
       |
       |""".stripMargin
   }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.description").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.MissingRequiredProperty(null, "package.description", None).message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -246,7 +253,7 @@ class TestManifestParser extends FunSuite {
       |
       |""".stripMargin
   }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.description", "String").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.description", "String", "Value of 'package.description' is a integer").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -265,7 +272,7 @@ class TestManifestParser extends FunSuite {
       |
       |""".stripMargin
   }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.version").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.MissingRequiredProperty(null, "package.version", None).message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -303,7 +310,7 @@ class TestManifestParser extends FunSuite {
       |
       |""".stripMargin
   }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.version", "String").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.version", "String", "Value of 'package.version' is a array").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -360,7 +367,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.1.0").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "a.1.0", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -379,7 +386,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.b.0").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "0.b.0", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -398,7 +405,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.1.c").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "0.1.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -417,7 +424,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.flix").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.MissingRequiredProperty(null, "package.flix", None).message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -455,7 +462,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.flix", "String").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.flix", "String", "Value of 'package.flix' is a integer").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -512,7 +519,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "?.33.0").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "?.33.0", "For input string: \"?\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -531,7 +538,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.?.0").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "0.?.0", "For input string: \"?\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -550,7 +557,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "0.33.?").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "0.33.?", "For input string: \"?\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -570,7 +577,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.license", "String").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.license", "String", "Value of 'package.license' is a integer").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -608,7 +615,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MissingRequiredProperty(null, "package.authors").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.MissingRequiredProperty(null, "package.authors", None).message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -646,7 +653,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.authors", "Array").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.authors", "Array", "Value of 'package.authors' is a string").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -665,7 +672,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.AuthorNameError(null).message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.AuthorNameError(null, "key at index 0 is a integer").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -684,7 +691,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.AuthorNameError(null).message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.AuthorNameError(null, "key at index 1 is a integer").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -708,7 +715,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.DependencyFormatError(null, "123").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -892,7 +899,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.2.1").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "a.2.1", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -915,7 +922,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "3.b.1").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "3.b.1", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -938,7 +945,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "3.2.c").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "3.2.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -961,7 +968,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.DependencyFormatError(null, "789").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1093,7 +1100,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.2.3").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "a.2.3", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1115,7 +1122,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.b.3").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "1.b.3", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1137,7 +1144,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.2.c").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "1.2.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1161,7 +1168,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.DependencyFormatError(null, "470").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1202,12 +1209,12 @@ class TestManifestParser extends FunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
-        |"org.pos/gresql:post¤resql" = "1.2.3"
+        |"org.po)tgresql:postgresql" = "1.2.3"
         |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalName(null, "org.pos/gresql").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.IllegalName(null, "org.po)tgresql").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1345,7 +1352,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.7.0").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "a.7.0", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1368,7 +1375,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "4.b.0").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "4.b.0", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1391,7 +1398,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "4.7.c").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "4.7.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1414,7 +1421,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.DependencyFormatError(null, "123456").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1546,7 +1553,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.2.3").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "a.2.3", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1568,7 +1575,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.b.3").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "1.b.3", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1590,7 +1597,140 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.2.c").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.VersionNumberWrong(null, "1.2.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  //Jar-dependencies
+  test("Err.jar-dependencies.type") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jar" = ["url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlTypeError(null, "class org.tomlj.MutableTomlArray cannot be cast to class java.lang.String (org.tomlj.MutableTomlArray is in unnamed module of loader 'app'; java.lang.String is in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => println(e.message(f)); e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependences]
+        |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalTableFound(null, "jar-dependences").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.filename.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlFileNameError(null, "myJar").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.filename.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jsr" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlExtensionError(null, "myJar.jsr", "jsr").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.url.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jar" = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlFormatError(null, "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  ignore("Err.jar-dependencies.url.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jar" = "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.MalformedJarUrl(null, "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "no protocol: repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })

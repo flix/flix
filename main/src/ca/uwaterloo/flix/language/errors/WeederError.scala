@@ -933,20 +933,20 @@ object WeederError {
     * An error raised to indicate that an imported Java name is not a valid Flix identifier
     */
   case class IllegalJavaClass(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "${name} is not a valid Flix identifer."
+    def summary: String = "${name} is not a valid Flix identifier."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> ${red(name)} is not a valid Flix identifer.
+         |>> ${red(name)} is not a valid Flix identifier.
          |
-         |${code(loc, "identifer")}
+         |${code(loc, "identifier")}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""Not every valid Java identifer is a valid Flix identifer.
+      s"""Not every valid Java identifier is a valid Flix identifier.
          |
          |If you need to use such a class or interface, alias it during import, e.g.:
          |
@@ -1045,6 +1045,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the name of a module does not begin with an uppercase symbol.
+    *
+    * @param name the part of the module name that does not begin with an uppercase symbol.
+    * @param loc  the location where the error occurred
+    */
+  case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError {
+
+    override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Lowercase module name.
+         |
+         |${code(loc, s"Module name '$name' does not begin with an uppercase letter.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      "A module name must begin with an uppercase letter."
+    })
+  }
+
+  /**
     * An error raised to indicate a non-unary associated type.
     *
     * @param numParams the number of parameters of the associated type.
@@ -1087,4 +1112,24 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate an illegal effect set member.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectSetMember(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal effect set member."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal effect set member.
+         |
+         |${code(loc, s"Effect sets may only contain variables and constants.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 }

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -185,14 +185,14 @@ object Inliner {
       val fs = formals.map(visitFormalParam)
       LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      unaryFold(sop, op, e, tpe, purity, loc)
+      unaryFold(sop, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      binaryFold(sop, op, e1, e2, tpe, purity, loc)
+      binaryFold(sop, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -342,6 +342,10 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+
+    case OccurrenceAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp, subst0)
+      LiftedAst.Expression.InstanceOf(e, clazz, loc)
 
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -555,14 +559,14 @@ object Inliner {
       val fs = formals.map(visitFormalParam)
       LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      unaryFold(sop, op, e, tpe, purity, loc)
+      unaryFold(sop, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      binaryFold(sop, op, e1, e2, tpe, purity, loc)
+      binaryFold(sop, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
@@ -677,6 +681,10 @@ object Inliner {
       val e2 = substituteExp(exp2, env0)
       LiftedAst.Expression.Assign(e1, e2, tpe, loc)
 
+    case OccurrenceAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = substituteExp(exp, env0)
+      LiftedAst.Expression.InstanceOf(e, clazz, loc)
+
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Cast(e, tpe, purity, loc)
@@ -760,10 +768,10 @@ object Inliner {
    * Performs boolean folding on a given unary expression with the logic:
    * Folds not-true => false and not-false => true.
    */
-  private def unaryFold(sop: SemanticOperator, op: UnaryOperator,  e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+  private def unaryFold(sop: SemanticOperator, e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e) match {
       case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expression.Cst(Ast.Constant.Bool(!b), tpe, loc)
-      case _ => LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+      case _ => LiftedAst.Expression.Unary(sop, e, tpe, purity, loc)
     }
   }
 
@@ -777,7 +785,7 @@ object Inliner {
    * fold into false, if either the left or right expression is false.
    * if either the left or right expression is true, fold into the other expression.
    */
-  private def binaryFold(sop: SemanticOperator, op: BinaryOperator, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+  private def binaryFold(sop: SemanticOperator, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e1, e2) match {
       case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => e2
       case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) => e1
@@ -787,7 +795,7 @@ object Inliner {
       case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) => e1
       case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
-      case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+      case _ => LiftedAst.Expression.Binary(sop, e1, e2, tpe, purity, loc)
     }
   }
 
@@ -807,7 +815,7 @@ object Inliner {
         case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
           (outerElse, innerElse) match {
             case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
-              val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, outerCond, innerCond, outerCond.tpe, combine(outerCond.purity, innerCond.purity), loc)
+              val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, outerCond, innerCond, outerCond.tpe, combine(outerCond.purity, innerCond.purity), loc)
               LiftedAst.Expression.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
             case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
           }

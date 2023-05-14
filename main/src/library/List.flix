@@ -129,8 +129,8 @@ mod List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(l: List[a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -1090,8 +1090,8 @@ mod List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region rc2 {
+        Array.toMutList(r, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -1183,8 +1183,8 @@ mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: List[a]): List[a] with Order[a] = region r {
-        toArray(r, l) !> Array.sort! |> Array.toList
+    pub def sort(l: List[a]): List[a] with Order[a] = region rc {
+        toArray(rc, l) !> Array.sort! |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1194,8 +1194,8 @@ mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
-        toArray(r, l) !> Array.sortBy!(f) |> Array.toList
+    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region rc {
+        toArray(rc, l) !> Array.sortBy!(f) |> Array.toList
     }
 
     ///
@@ -1205,8 +1205,8 @@ mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
-        toArray(r, l) !> Array.sortWith!(cmp) |> Array.toList
+    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region rc {
+        toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList
     }
 
     ///
@@ -1384,8 +1384,8 @@ mod List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: List[a]): List[a] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toList
+    pub def shuffle(rnd: Random, l: List[a]): List[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toList
     }
 
 }

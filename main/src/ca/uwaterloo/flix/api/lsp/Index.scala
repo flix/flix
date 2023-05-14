@@ -27,7 +27,7 @@ object Index {
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -62,7 +62,7 @@ object Index {
   /**
     * Returns an index for the given `alias0`.
     */
-  def occurrenceOf(assoc: AssociatedTypeSig): Index = empty + Entity.AssocType(assoc)
+  def occurrenceOf(assoc: AssocTypeSig): Index = empty + Entity.AssocType(assoc)
 
   /**
     * Returns an index for the given `exp0`.
@@ -87,7 +87,7 @@ object Index {
   /**
     * Returns an index for the given atom `a0`.
     */
-  def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = empty + Entity.Pred(pred, tpe0)
+  def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = Index.empty.copy(predTypes = MultiMap.singleton(pred, (tpe0, pred.loc))) + Entity.Pred(pred, tpe0)
 
   /**
     * Returns an index for the given type `t`.
@@ -218,6 +218,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
                  predDefs: MultiMap[Name.Pred, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
+                 predTypes: MultiMap[Name.Pred, (Type, SourceLocation)],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation],
                  tvarUses: MultiMap[Symbol.KindedTypeVarSym, SourceLocation],
                  effUses: MultiMap[Symbol.EffectSym, SourceLocation],
@@ -408,6 +409,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.fieldUses ++ that.fieldUses,
       this.predDefs ++ that.predDefs,
       this.predUses ++ that.predUses,
+      this.predTypes ++ that.predTypes,
       this.varUses ++ that.varUses,
       this.tvarUses ++ that.tvarUses,
       this.effUses ++ that.effUses,

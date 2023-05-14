@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
+import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -268,10 +269,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      if (current)
-        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
-      else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
 
     case Request.Complete(id, uri, pos) =>
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
@@ -347,7 +345,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
           // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
-          ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
       case ex: Throwable =>
@@ -379,9 +377,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
 
     // Determine the status based on whether there are errors.
-    val status = if (errors.isEmpty) "success" else "failure"
     val results = PublishDiagnosticsParams.fromMessages(errors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
-    ("id" -> requestId) ~ ("status" -> status) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
   /**
@@ -407,12 +404,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Returns `true` if the given source location `loc` matches the given `uri`.
     */
   private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
-
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(requestId: String, uri: String, pos: Position): JValue =
-    ("id" -> requestId) ~ ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
     * Logs the given message `msg` along with information about the connection `ws`.

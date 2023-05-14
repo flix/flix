@@ -23,7 +23,7 @@ mod Test.Derives.ToString {
         case BothCase(a, b)
     }
 
-    pub enum PolyBoolEnum[ef: Bool] with ToString {
+    pub enum PolyBoolEnum[ef: Eff] with ToString {
         case EmptyCase
         case RecursiveCase(PolyBoolEnum[ef])
     }

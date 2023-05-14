@@ -41,9 +41,9 @@ mod Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = StringBuilder.new(r2);
-        let first = ref true @ r2;
+    pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] = region rc2 {
+        let sb = StringBuilder.new(rc2);
+        let first = ref true @ rc2;
 
         StringBuilder.appendString!("Array#{", sb);
 
@@ -580,10 +580,10 @@ mod Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } = region r3 {
+    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } = region rc3 {
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(r3, 0, size, a);
+        let sub = copyOfRange(rc3, 0, size, a);
         updateSequence!(i, sub, b)
     }
 
@@ -1378,7 +1378,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1) } =
+    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ { Write(r1) } =
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
@@ -1386,7 +1386,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 and r2, r1] \ { Write(r1) } =
+    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { Write(r1) } =
         iterator(rc, a) |> Iterator.zipWithIndex
 
     ///
@@ -1452,10 +1452,10 @@ mod Array {
     /// Returns the concatenation of the string representation
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, Read(r) } = region r1 {
+    pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, Read(r) } = region rc1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(r1);
+        let sb = StringBuilder.new(rc1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -1648,7 +1648,7 @@ mod Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit & r \ NonDet =
+    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, NonDet} =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

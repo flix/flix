@@ -32,7 +32,15 @@ mod BigInt {
     pub def abs(x: BigInt): BigInt = if (x >= 0ii) x else -x
 
     ///
+    /// Returns `x` raised to the power of `n`.
+    ///
+    pub def pow(x: BigInt, n: Int32): BigInt =
+        import java.math.BigInteger.pow(Int32): ##java.math.BigInteger \ {};
+        pow(x, n)
+
+    ///
     /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
     ///
     pub def mod(x: BigInt, n: BigInt): BigInt =
         if (n == 0ii)
@@ -42,6 +50,9 @@ mod BigInt {
 
     ///
     /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `BigInt.mod`.
     ///
     pub def rem(x: BigInt, n: BigInt): BigInt =
         if (n == 0ii)
@@ -84,17 +95,17 @@ mod BigInt {
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
     ///
-    pub def setBit(x: BigInt, position: Int32): BigInt = x ||| leftShift(1ii, position)
+    pub def setBit(x: BigInt, position: Int32): BigInt = bitwiseOr(x, leftShift(1ii, position))
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     ///
-    pub def clearBit(x: BigInt, position: Int32): BigInt = x &&& ~~~leftShift(1ii, position)
+    pub def clearBit(x: BigInt, position: Int32): BigInt = bitwiseAnd(x, bitwiseNot(leftShift(1ii, position)))
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     ///
-    pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ leftShift(1ii, position)
+    pub def flipBit(x: BigInt, position: Int32): BigInt = bitwiseXor(x, leftShift(1ii, position))
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -113,6 +124,25 @@ mod BigInt {
     ///
     pub def rightShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHR$(x, y)
 
+    ///
+    /// Returns the bitwise AND of `x` and `y`.
+    ///
+    pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt = $BIGINT_AND$(x, y)
+
+    ///
+    /// Returns the bitwise NOT of `x`.
+    ///
+    pub def bitwiseNot(x: BigInt): BigInt = $BIGINT_NOT$(x)
+
+    ///
+    /// Returns the bitwise OR of `x` and `y`.
+    ///
+    pub def bitwiseOr(x: BigInt, y: BigInt): BigInt = $BIGINT_OR$(x, y)
+
+    ///
+    /// Returns the bitwise XOR of `x` and `y`.
+    ///
+    pub def bitwiseXor(x: BigInt, y: BigInt): BigInt = $BIGINT_XOR$(x, y)
 
     ///
     /// Return a string representation of `x`.

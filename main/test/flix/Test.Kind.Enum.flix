@@ -26,7 +26,7 @@ mod Test.Kind.Enum {
             case CStarStar3(a -> b)
         }
 
-        pub enum EBool[a: Bool] {
+        pub enum EBool[a: Eff] {
             case CBool1(Int32 -> Int32 \ a)
         }
 

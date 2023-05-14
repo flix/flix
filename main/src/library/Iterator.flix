@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-pub enum Iterator[a: Type, ef: Bool, r: Region] {
+pub enum Iterator[a: Type, ef: Eff, r: Region] {
     case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
 }
 
@@ -244,7 +244,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def filter(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r] =
+    pub def filter(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 + ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
             case Ans(a) => if (f(a)) Ans(a) else Skip
@@ -259,7 +259,7 @@ mod Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def map(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
+    pub def map(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
             case Ans(a) => Ans(f(a))
@@ -275,7 +275,7 @@ mod Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] \ Write(r) =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2, r] \ Write(r) =
         let Iterator(rc, iterF) = iter;
         let ix = ref 0 @ rc;
         let step = x -> match x {
@@ -301,7 +301,7 @@ mod Iterator {
     ///
     /// The original iterators `iterA` and `iterB` should *not* be reused.
     ///
-    pub def append(iter1: Iterator[a, ef1, r], iter2: Iterator[a, ef2, r]): Iterator[a, ef1 and ef2, r] =
+    pub def append(iter1: Iterator[a, ef1, r], iter2: Iterator[a, ef2, r]): Iterator[a, ef1 + ef2, r] =
         let Iterator(rc, iter1F) = iter1;
         let Iterator(_, iter2F) = iter2;
         def loop2(x) = match x {
@@ -329,7 +329,7 @@ mod Iterator {
     ///
     /// An iterator should *never* be zipped with itself.
     ///
-    pub def zip(iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[(a, b), r2 and ef1 and ef2, r1] =
+    pub def zip(iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[(a, b), r2 + ef1 + ef2, r1] =
         zipWith((a, b) -> (a, b), iterA, iterB)
 
     ///
@@ -344,7 +344,7 @@ mod Iterator {
     ///
     /// An iterator should *never* be zipped with itself.
     ///
-    pub def zipWith(f: (a, b) -> c \ ef3, iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[c, r2 and ef1 and ef2 and ef3, r1] =
+    pub def zipWith(f: (a, b) -> c \ ef3, iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[c, r2 + ef1 + ef2 + ef3, r1] =
         let Iterator(rc, iter1F) = iterA;
         let Iterator(_,  iter2F) = iterB;
         let step = (l, r) -> match (l, r) {
@@ -384,7 +384,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef and r, r] \ Write(r) =
+    pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ Write(r) =
         let Iterator(rc, _) = iter;
         let ix = ref 0 @ rc;
         map(x -> {let i = deref ix; ix:= i + 1; (i, x)}, iter)
@@ -392,7 +392,7 @@ mod Iterator {
     ///
     /// Alias for `zipWithIndex`.
     ///
-    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef and r, r] \ Write(r) =
+    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ Write(r) =
         zipWithIndex(iter)
 
     ///
@@ -487,7 +487,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef and r, r] \ Write(r) =
+    pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ Write(r) =
         let Iterator(rc, iterF) = iter;
         let ix = ref n @ rc;
         def loop() = {
@@ -512,7 +512,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef and r, r] \ Write(r) =
+    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ Write(r) =
         let Iterator(rc, iterF) = iter;
         let ix = ref n @ rc;
         def loop() = {
@@ -536,7 +536,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def takeWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r]=
+    pub def takeWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 + ef2, r]=
         let Iterator(rc, iterF) = iter;
         def loop(x) = match x {
             case Ans(a) => if (f(a)) Ans(a) else Done
@@ -553,7 +553,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r and ef1 and ef2, r] \ Write(r) =
+    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r + ef1 + ef2, r] \ Write(r) =
         let Iterator(rc, iterF) = iter;
         let start = ref true @ rc;
         def loop() = match iterF() {
@@ -576,7 +576,7 @@ mod Iterator {
     ///
     /// Currently `f` has to generate an iterator with region `r`.
     ///
-    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r and ef1 and ef2 and ef3, r] \ Write(r) =
+    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r + ef1 + ef2 + ef3, r] \ Write(r) =
         let Iterator(rc, iterF) = ma;
         let innerIter = ref polymorphicEmpty(rc) @ rc;
         let inside = ref false @ rc;
@@ -626,7 +626,7 @@ mod Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef and r, r] \ Write(r) =
+    pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ Write(r) =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
         let step = x ->
@@ -647,7 +647,7 @@ mod Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef and r, r] \ Write(r) with Foldable[t] =
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ Write(r) with Foldable[t] =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
         let sepL = Foldable.toList(sep);
@@ -712,7 +712,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def filterMap(f: a -> Option[b] \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
+    pub def filterMap(f: a -> Option[b] \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
             case Ans(a) => match (f(a)) {
@@ -754,7 +754,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r and ef1 and ef2, r] \ Write(r) =
+    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r + ef1 + ef2, r] \ Write(r) =
         flatMap(identity, iter)
 
 }

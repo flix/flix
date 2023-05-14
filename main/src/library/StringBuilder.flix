@@ -74,7 +74,7 @@ mod StringBuilder {
     ///
     /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
     ///
-    pub def appendLinesWith(f: a -> String & ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, Write(r) } with Foldable[t] =
+    pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, Write(r) } with Foldable[t] =
         Foldable.forEach(x -> appendLineWith!(f, x, sb), t)
 
     ///
@@ -99,7 +99,7 @@ mod StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2, r1] \ { Read(r2), Write(r1) } =
+    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { Read(r2), Write(r1) } =
         import java.lang.StringBuilder.charAt(Int32): Char \ Read(r2);
         let StringBuilder(msb) = sb;
         Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(msb, i))
@@ -107,7 +107,7 @@ mod StringBuilder {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 and r2, r1] \ { Read(r2), Write(r1) } =
+    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 + r2, r1] \ { Read(r2), Write(r1) } =
         iterator(r1, sb) |> Iterator.zipWithIndex
 
     ///

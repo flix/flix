@@ -30,6 +30,7 @@ object Options {
     documentor = false,
     entryPoint = None,
     explain = false,
+    githubKey = None,
     installDeps = false,
     incremental = true,
     json = false,
@@ -39,7 +40,6 @@ object Options {
     target = JvmTarget.Version18,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
-    xallowredundancies = false,
     xbddthreshold = None,
     xboolclassic = false,
     xnoboolcache = false,
@@ -89,6 +89,7 @@ object Options {
   * @param documentor          enables generation of flixdoc.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
+  * @param githubKey           the API key to use for GitHub dependency resolution.
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
@@ -98,7 +99,6 @@ object Options {
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
-  * @param xallowredundancies  disables the redundancy checker.
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
@@ -115,6 +115,7 @@ case class Options(lib: LibLevel,
                    documentor: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
+                   githubKey: Option[String],
                    incremental: Boolean,
                    installDeps: Boolean,
                    json: Boolean,
@@ -124,7 +125,6 @@ case class Options(lib: LibLevel,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
-                   xallowredundancies: Boolean,
                    xbddthreshold: Option[Int],
                    xboolclassic: Boolean,
                    xnoboolcache: Boolean,

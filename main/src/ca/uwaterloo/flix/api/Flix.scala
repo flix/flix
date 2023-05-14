@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -38,6 +39,21 @@ object Flix {
     * The reserved Flix delimiter.
     */
   val Delimiter: String = "$"
+
+  /**
+    * The file extension for intermediate representation files.
+    */
+  val IrFileExtension = "flixir"
+
+  /**
+    * The maximum width of the intermediate representation files.
+    */
+  val IrFileWidth = 80
+
+  /**
+    * The number of spaces per indentation in the intermediate representation files.
+    */
+  val IrFileIndentation = 4
 }
 
 /**
@@ -56,13 +72,24 @@ class Flix {
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
-    * A cache of compiled ASTs (for incremental compilation).
+    * A cache of ASTs for incremental compilation.
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
+
+  /**
+    * A cache of ASTs for debugging.
+    */
+  private var cachedLiftedAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
+  private var cachedErasedAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
+
+  /**
+    * Returns the cached LiftedAST.
+    */
+  def getLiftedAst: LiftedAst.Root = cachedLiftedAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -82,11 +109,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
-    "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
-    "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
-    "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
-    "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads
@@ -448,7 +470,7 @@ class Flix {
 
   /**
     * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to print the explanation.
+    * Decides whether or not to append the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain)
@@ -505,6 +527,10 @@ class Flix {
       afterSafety
     }
 
+    // Write formatted asts to disk based on options.
+    // (Possible duplicate files in codeGen will just be empty and overwritten there)
+    AstPrinter.printAsts()
+
     // Shutdown fork join pool.
     shutdownForkJoin()
 
@@ -528,30 +554,31 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
-    import Validation.Implicit.AsMonad
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
     // Initialize fork join pool.
     initForkJoin()
 
-    val result = for {
-      afterDocumentor <- Documentor.run(typedAst)
-      afterLowering <- Lowering.run(afterDocumentor)
-      afterEarlyTreeShaker <- EarlyTreeShaker.run(afterLowering)
-      afterMonomorph <- Monomorph.run(afterEarlyTreeShaker)
-      afterSimplifier <- Simplifier.run(afterMonomorph)
-      afterClosureConv <- ClosureConv.run(afterSimplifier)
-      afterLambdaLift <- LambdaLift.run(afterClosureConv)
-      afterTailrec <- Tailrec.run(afterLambdaLift)
-      afterOptimizer <- Optimizer.run(afterTailrec)
-      afterLateTreeShaker <- LateTreeShaker.run(afterOptimizer)
-      afterVarNumbering <- VarNumbering.run(afterLateTreeShaker)
-      afterFinalize <- Finalize.run(afterVarNumbering)
-      afterEraser <- Eraser.run(afterFinalize)
-      afterJvmBackend <- JvmBackend.run(afterEraser)
-      afterFinish <- Finish.run(afterJvmBackend)
-    } yield afterFinish
+    val afterDocumentor = Documentor.run(typedAst)
+    val afterLowering = Lowering.run(afterDocumentor)
+    val afterEarlyTreeShaker = EarlyTreeShaker.run(afterLowering)
+    val afterMonomorph = Monomorph.run(afterEarlyTreeShaker)
+    val afterSimplifier = Simplifier.run(afterMonomorph)
+    val afterClosureConv = ClosureConv.run(afterSimplifier)
+    cachedLiftedAst = LambdaLift.run(afterClosureConv)
+    val afterTailrec = Tailrec.run(cachedLiftedAst)
+    val afterOptimizer = Optimizer.run(afterTailrec)
+    val afterLateTreeShaker = LateTreeShaker.run(afterOptimizer)
+    val afterReducer = Reducer.run(afterLateTreeShaker)
+    val afterVarNumbering = VarNumbering.run(afterReducer)
+    val afterMonoTyper = MonoTyper.run(afterVarNumbering)
+    cachedErasedAst = Eraser.run(afterMonoTyper)
+    val afterJvmBackend = JvmBackend.run(cachedErasedAst)
+    val result = Finish.run(afterJvmBackend)
+
+    // Write formatted asts to disk based on options.
+    AstPrinter.printAsts()
 
     // Shutdown fork join pool.
     shutdownForkJoin()

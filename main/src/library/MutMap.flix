@@ -26,8 +26,8 @@ mod MutMap {
     ///
     /// Returns a string representation of the given MutMap `m`.
     ///
-    pub def toString(m: MutMap[k, v, r]): String \ Read(r) with ToString[k], ToString[v] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(m: MutMap[k, v, r]): String \ Read(r) with ToString[k], ToString[v] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -559,29 +559,29 @@ mod MutMap {
     /// Apply the effectful function `f` to all the `(key, value)` pairs in the mutable map `m`
     /// along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } = region rh {
-        let ix = ref 0 @ rh;
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } = region rc {
+        let ix = ref 0 @ rc;
         forEach((k, v) -> {let i = deref ix; f(i, k, v); ix := i+1}, m)
     }
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { Write(r1), Read(r2) } =
         let MutMap(_, mm) = m;
         Map.iterator(rc, deref mm) |> Iterator.map(x -> {discard deref mm; x})
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { Write(r1), Read(r2) } =
         let MutMap(_, mm) = m;
         Map.iteratorKeys(rc, deref mm) |> Iterator.map(x -> {discard deref mm; x})
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { Write(r1), Read(r2) } =
         let MutMap(_, mm) = m;
         Map.iteratorValues(rc, deref mm) |> Iterator.map(x -> {discard deref mm; x})
 

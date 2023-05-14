@@ -61,8 +61,8 @@ mod MutDeque {
     ///
     /// Returns a string representation of the given MutDeque `d`.
     ///
-    pub def toString(d: MutDeque[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = StringBuilder.new(r2);
+    pub def toString(d: MutDeque[a, r]): String \ Read(r) with ToString[a] = region rc2 {
+        let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutDeque#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -130,7 +130,7 @@ mod MutDeque {
             if (i == e)
                 acc
             else
-                loop((i + 1) &&& c, e, f(acc, Array.get(i, ar)));
+                loop(Int32.bitwiseAnd(i + 1, c), e, f(acc, Array.get(i, ar)));
         loop(front, back, s)
 
     ///
@@ -148,7 +148,7 @@ mod MutDeque {
             if (i == e)
                 acc
             else {
-                let j = (i - 1) &&& c;
+                let j = Int32.bitwiseAnd(i - 1, c);
                 loop(j, e, f(Array.get(j, ar), acc))
             };
         loop(back, front, s)
@@ -169,7 +169,7 @@ mod MutDeque {
             if (i == e)
                 s
             else {
-                f(Array.get(i, ar), _ -> loop((i + 1) &&& c, e))
+                f(Array.get(i, ar), _ -> loop(Int32.bitwiseAnd(i + 1, c), e))
             };
         loop(front, back)
 
@@ -258,7 +258,7 @@ mod MutDeque {
             None
         else
             let c = capacity(d) - 1;
-            let i = (b1 - 1) &&& c;
+            let i = Int32.bitwiseAnd(b1 - 1, c);
             Some(Array.get(i, deref a))
 
     ///
@@ -342,16 +342,16 @@ mod MutDeque {
     ///
     /// Returns `true` if `MutDeque`s `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
-    pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] = region r3 {
+    pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] = region rc3 {
         let aSize = size(d1);
         let bSize = size(d2);
         if (aSize == bSize) {
             let MutDeque(_, aArray, aFront, aBack) = d1;
             let MutDeque(_, bArray, bFront, bBack) = d2;
-            let a1 = Array.new(r3, aSize);
-            let b1 = Array.new(r3, bSize);
-            copyElements!(r3, deref aFront, deref aBack, deref aArray, a1);
-            copyElements!(r3, deref bFront, deref bBack, deref bArray, b1);
+            let a1 = Array.new(rc3, aSize);
+            let b1 = Array.new(rc3, bSize);
+            copyElements!(rc3, deref aFront, deref aBack, deref aArray, a1);
+            copyElements!(rc3, deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
         } else
             false
@@ -389,10 +389,10 @@ mod MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region r1 {
+    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region rc1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(r1);
+        let sb = StringBuilder.new(rc1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -402,13 +402,13 @@ mod MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { Write(r1), Read(r2) } =
         let MutDeque(_, a, f, b) = d;
         let i = ref (deref f) @ rc;
         let next = () -> {
             if (deref i < deref b) {
                 let x = Array.get(deref i, deref a);
-                i := deref i + 1 &&& (capacity(d) - 1);
+                i := deref i + Int32.bitwiseAnd(1, capacity(d) - 1);
                 Some(x)
             } else {
                 None
@@ -431,7 +431,7 @@ mod MutDeque {
                     case Some(x) => f(x)
                     case None    => bug!("An error occurred in MutDeque.forEach!")
                 };
-                loop((i + 1) &&& c)
+                loop(Int32.bitwiseAnd(i + 1, c))
             }
         };
         loop(deref front)
@@ -440,16 +440,16 @@ mod MutDeque {
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`
     /// along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } = region rh {
-        let ix = ref 0 @ rh;
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } = region rc {
+        let ix = ref 0 @ rc;
         forEach(x -> {let i = deref ix; f(i, x); ix := i+1}, d)
     }
 
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
-        toArray(r3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
+    pub def shuffle(r1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region rc3 {
+        toArray(rc3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
     }
 
 }

@@ -26,8 +26,8 @@ mod MutSet {
     ///
     /// Returns a string representation of the given mutable set `s`.
     ///
-    pub def toString(s: MutSet[a, r]): String \Read(r) with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(s: MutSet[a, r]): String \Read(r) with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -382,22 +382,22 @@ mod MutSet {
     ///
     /// Applies `f` to every element of the mutable set `s` along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } = region rh {
-        let ix = ref 0 @ rh;
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } = region rc {
+        let ix = ref 0 @ rc;
         forEach(x -> {let i = deref ix; f(i, x); ix := i+1}, s)
     }
 
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { Write(r1), Read(r2) } =
         let MutSet(_, ms) = s;
         Set.iterator(rc, deref ms) |> Iterator.map(x -> {discard deref ms; x})
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { Write(r1), Read(r2) } =
         iterator(rc, s) |> Iterator.zipWithIndex
 
     ///

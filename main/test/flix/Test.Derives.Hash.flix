@@ -25,7 +25,7 @@ mod Test.Derives.Hash {
         case BothCase(a, b)
     }
 
-    pub enum PolyBoolEnum[ef: Bool] with Hash {
+    pub enum PolyBoolEnum[ef: Eff] with Hash {
         case EmptyCase
         case RecursiveCase(PolyBoolEnum[ef])
     }
