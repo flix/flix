@@ -701,11 +701,11 @@ object Resolver {
       if (qname.isUnqualified) {
         qname.ident.name match {
           case "Type" => Kind.Star.toSuccess
-          case "Bool" => Kind.Bool.toSuccess
+          case "Eff" => Kind.Eff.toSuccess
           case "RecordRow" => Kind.RecordRow.toSuccess
           case "SchemaRow" => Kind.SchemaRow.toSuccess
           case "Predicate" => Kind.Predicate.toSuccess
-          case "Region" => Kind.Bool.toSuccess
+          case "Region" => Kind.Eff.toSuccess
           case _ =>
             lookupRestrictableEnum(qname, env, ns0, root) match {
               case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess

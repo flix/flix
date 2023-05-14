@@ -108,7 +108,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   test("FormatType.Arrow.External.02") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
-    val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = true, loc), loc)
+    val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
     val expected = raw"t0! -> t1! \ b2!"
@@ -138,7 +138,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.External.05") {
-    val eff = Type.mkAnd(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Bool, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = false, loc), loc), loc)
+    val eff = Type.mkAnd(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Eff, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = false, loc), loc), loc)
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
     val expected = raw"BigInt -> Bool \ b1 and b2"
@@ -277,7 +277,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   test("FormatType.Arrow.Internal.02") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
-    val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, isRegion = true, loc), loc)
+    val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
     val expected = raw"t0! -> t1! \ b2!"
@@ -321,9 +321,9 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   }
 
   test("FormatType.Boolean.External.01") {
-    val tvar1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
-    val tvar2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
-    val tvar3 = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
+    val tvar1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Eff, isRegion = false, loc), loc)
+    val tvar2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Eff, isRegion = false, loc), loc)
+    val tvar3 = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Eff, isRegion = false, loc), loc)
     val tpe = Type.mkAnd(List(tvar1, tvar2, tvar3), loc)
 
     val expected = "a and b and c"
