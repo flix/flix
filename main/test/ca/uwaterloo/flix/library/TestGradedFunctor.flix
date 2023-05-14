@@ -24,7 +24,7 @@ mod TestGradedFunctor {
     ///
     /// A Reader functor with the environment type restricted to `Int32`.
     ///
-    pub enum Int32Reader[ef: Bool, a: Type](Int32 -> a \ ef)
+    pub enum Int32Reader[ef: Eff, a: Type](Int32 -> a \ ef)
 
     ///
     /// Run an Int32Reader computation.
@@ -42,15 +42,15 @@ mod TestGradedFunctor {
     ///
     /// Use an array computation which changes the effect type (i.e. the "grade") of the Int32Reader.
     ///
-    def genArray(rc: Region[r], n: Int32): Int32Reader[ef and r, Array[Int32, r]] =
+    def genArray(rc: Region[r], n: Int32): Int32Reader[ef + r, Array[Int32, r]] =
         Int32Reader(i ->
             checked_ecast(Array.repeat(rc, n, i))
         )
 
     instance GradedFunctor[Int32Reader] {
-        pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef and ef1, b] =
+        pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef + ef1, b] =
             Int32Reader(i ->
-                let a = runReader(unchecked_cast(ma as Int32Reader[ef and ef1, a]), i);
+                let a = runReader(unchecked_cast(ma as Int32Reader[ef + ef1, a]), i);
                 f(a)
             )
     }

@@ -23,7 +23,7 @@ mod TestGradedApplicative {
     use TestGradedApplicative.Int32Reader
     use TestGradedApplicative.Int32Reader.{Int32Reader}
 
-    pub enum Int32Reader[ef: Bool, a: Type](Int32 -> a \ ef)
+    pub enum Int32Reader[ef: Eff, a: Type](Int32 -> a \ ef)
 
     ///
     /// Helper function for the implementation of `map` and `ap` etc.
@@ -41,15 +41,15 @@ mod TestGradedApplicative {
     ///
     /// Use an array computation which changes the effect type (i.e. the "grade") of the Int32Reader.
     ///
-    def genArray(rc: Region[r], n: Int32): Int32Reader[ef and r, Array[Int32, r]] =
+    def genArray(rc: Region[r], n: Int32): Int32Reader[ef + r, Array[Int32, r]] =
         Int32Reader(i ->
             checked_ecast(Array.repeat(rc, n, i))
         )
 
     instance GradedFunctor[Int32Reader] {
-        pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef and ef1, b] =
+        pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef + ef1, b] =
             Int32Reader(i ->
-                let a = runReader(unchecked_cast(ma as Int32Reader[ef and ef1, a]), i);
+                let a = runReader(unchecked_cast(ma as Int32Reader[ef + ef1, a]), i);
                 f(a)
             )
     }
@@ -58,10 +58,10 @@ mod TestGradedApplicative {
         pub def point(x: a): Int32Reader[ef, a] =
             Int32Reader(_ -> checked_ecast(x))
 
-        pub def ap(mf: Int32Reader[ef1, a -> b \ ef2], ma: Int32Reader[ef, a]): Int32Reader[ef and ef1 and ef2, b] =
+        pub def ap(mf: Int32Reader[ef1, a -> b \ ef2], ma: Int32Reader[ef, a]): Int32Reader[ef + ef1 + ef2, b] =
             Int32Reader(i ->
-                let f = runReader(unchecked_cast(mf as Int32Reader[ef and ef1 and ef2, a -> b \ ef2]), i);
-                let a = runReader(unchecked_cast(ma as Int32Reader[ef and ef1 and ef2, a]), i);
+                let f = runReader(unchecked_cast(mf as Int32Reader[ef + ef1 + ef2, a -> b \ ef2]), i);
+                let a = runReader(unchecked_cast(ma as Int32Reader[ef + ef1 + ef2, a]), i);
                 f(a)
             )
     }

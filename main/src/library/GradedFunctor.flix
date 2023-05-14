@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-pub class GradedFunctor[m: Bool -> Type -> Type] {
-    pub def map(f: a -> b \ ef1, x: m[ef, a]): m[ef and ef1, b]
+pub class GradedFunctor[m: Eff -> Type -> Type] {
+    pub def map(f: a -> b \ ef1, x: m[ef, a]): m[ef + ef1, b]
 }
 
 mod GradedFunctor {
@@ -23,7 +23,7 @@ mod GradedFunctor {
     ///
     /// Replaces the value `a` in `ma` by the given value `x` preserving the structure of `ma`.
     ///
-    pub def replace[a: Type, b: Type, ef: Bool, m: Bool -> Type -> Type]
+    pub def replace[a: Type, b: Type, ef: Eff, m: Eff -> Type -> Type]
                     (ma: m[ef, a], x: b): m[ef, b] with GradedFunctor[m] = GradedFunctor.map(_ -> x, ma)
 
     ///
@@ -31,31 +31,31 @@ mod GradedFunctor {
     ///
     /// This function is typically used to discard the return value of computing `ma`.
     ///
-    pub def ignore[a: Type, ef: Bool, m: Bool -> Type -> Type]
+    pub def ignore[a: Type, ef: Eff, m: Eff -> Type -> Type]
                   (ma: m[ef, a]): m[ef, Unit] with GradedFunctor[m] = replace(ma, ())
 
     ///
     /// `<$>` is an operator alias for `gmap`.
     ///
-    pub def <$>[a: Type, b: Type, ef: Bool, ef1: Bool, m: Bool -> Type -> Type]
-               (f: a -> b \ ef1, x: m[ef, a]): m[ef and ef1, b] with GradedFunctor[m] = GradedFunctor.map(f, x)
+    pub def <$>[a: Type, b: Type, ef: Eff, ef1: Eff, m: Eff -> Type -> Type]
+               (f: a -> b \ ef1, x: m[ef, a]): m[ef + ef1, b] with GradedFunctor[m] = GradedFunctor.map(f, x)
 
     ///
     /// `<$$>` is the operator `<$>` with its arguments flipped.
     ///
-    pub def <$$>[a: Type, b: Type, ef: Bool, ef1: Bool, m: Bool -> Type -> Type]
-                (x: m[ef, a], f: a -> b \ ef1): m[ef and ef1, b] with GradedFunctor[m] = GradedFunctor.map(f, x)
+    pub def <$$>[a: Type, b: Type, ef: Eff, ef1: Eff, m: Eff -> Type -> Type]
+                (x: m[ef, a], f: a -> b \ ef1): m[ef + ef1, b] with GradedFunctor[m] = GradedFunctor.map(f, x)
 
     ///
     /// `<$` is the operator `$>` with its arguments flipped.
     ///
-    pub def <$[a: Type, b: Type, ef: Bool, m: Bool -> Type -> Type]
+    pub def <$[a: Type, b: Type, ef: Eff, m: Eff -> Type -> Type]
               (x: a, ma: m[ef, b]): m[ef, a] with GradedFunctor[m] = replace(ma, x)
 
     ///
     /// `$>` is an operator alias for `replace`.
     ///
-    pub def $>[a: Type, b: Type, ef: Bool, m: Bool -> Type -> Type]
+    pub def $>[a: Type, b: Type, ef: Eff, m: Eff -> Type -> Type]
               (ma: m[ef, a], x: b): m[ef, b] with GradedFunctor[m] = replace(ma, x)
 
 }
