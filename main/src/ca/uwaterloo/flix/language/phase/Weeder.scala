@@ -1220,7 +1220,7 @@ object Weeder {
           val purVal = traverseOpt(pur0)(visitType)
 
           //
-          // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args) as tpe & pur
+          // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args) as tpe \ pur
           //
           mapN(tsVal, e2Val, tpeVal, purVal) {
             case (ts, e2, tpe, pur) =>
@@ -1268,7 +1268,7 @@ object Weeder {
           val e2Val = visitExp(exp2, senv)
 
           //
-          // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe & pur
+          // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe \ pur
           //
           mapN(classMethodVal, tsVal, tpeVal, purVal, e2Val) {
             case ((className, methodName), ts, tpe, pur, e2) =>
@@ -1312,7 +1312,7 @@ object Weeder {
           val e2Val = visitExp(exp2, senv)
 
           //
-          // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe & pur
+          // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe \ pur
           //
           mapN(classMethodVal, tsVal, tpeVal, purVal, e2Val) {
             case ((className, methodName), ts, tpe, pur, e2) =>
@@ -1360,7 +1360,7 @@ object Weeder {
           val e2Val = visitExp(exp2, senv)
 
           //
-          // Introduce a let-bound lambda: o -> GetField(o) as tpe & pur
+          // Introduce a let-bound lambda: o -> GetField(o) as tpe \ pur
           //
           mapN(classMethodVal, tpeVal, purVal, e2Val) {
             case ((className, fieldName), tpe, pur, e2) =>
@@ -1382,7 +1382,7 @@ object Weeder {
           val e2Val = visitExp(exp2, senv)
 
           //
-          // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe & pur
+          // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe \ pur
           //
           mapN(classMethodVal, tpeVal, purVal, e2Val) {
             case ((className, fieldName), tpe, pur, e2) =>
@@ -2960,18 +2960,6 @@ object Weeder {
     val l = loc.asSynthetic
     val base = mkArrow(tparams.last, pur, tresult, l)
     tparams.init.foldRight(base)(mkArrow(_, None, _, l))
-  }
-
-  /**
-    * Constructs the type equivalent to the type (tpe1 - tpe2)
-    */
-  private def mkDifference(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
-    // (ef1 - ef2) is sugar for (ef1 && (~ef2))
-    WeededAst.Type.Intersection(
-      tpe1,
-      WeededAst.Type.Complement(tpe2, loc),
-      loc
-    )
   }
 
   /**

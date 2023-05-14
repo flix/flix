@@ -476,7 +476,7 @@ object UnkindedType {
   def mkOr(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
 
   /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
     */
   def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: Option[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = {
     val arrow = UnkindedType.Arrow(e, as.length + 1, loc)

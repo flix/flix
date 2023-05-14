@@ -1061,7 +1061,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |def isThisThingNull(x: a): Bool =
-        |    import static java.util.Objects.isNull(a): Bool & Pure;
+        |    import static java.util.Objects.isNull(a): Bool \ Pure;
         |    isNull(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

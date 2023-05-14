@@ -1822,8 +1822,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
