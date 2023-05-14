@@ -89,6 +89,35 @@ mod Char {
         isWhitespace(c)
 
     ///
+    /// Returns `true` if the given char `c` is an ISO control character.
+    ///
+    pub def isISOControl(c: Char): Bool =
+        import static java.lang.Character.isISOControl(Char): Bool \ {};
+        isISOControl(c)
+
+    ///
+    /// Returns `true` if the given char `c` is mirrored.
+    ///
+    pub def isMirrored(c: Char): Bool =
+        import static java.lang.Character.isMirrored(Char): Bool \ {};
+        isMirrored(c)
+
+    ///
+    /// Returns `true` if the given char `c` is a surrogate code unit.
+    ///
+    pub def isSurrogate(c: Char): Bool =
+        import static java.lang.Character.isSurrogate(Char): Bool \ {};
+        isSurrogate(c)
+
+    ///
+    /// Returns `true` if the given characters `high` and `low` represent a valid
+    /// Unicode surrogate pair.
+    ///
+    pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
+        import static java.lang.Character.isSurrogatePair(Char, Char): Bool \ {};
+        isSurrogatePair(high.high, low.low)
+
+    ///
     /// Converts a letter to its lowercase version.
     ///
     /// Returns the original character if it does not have a lowercase version.
@@ -134,27 +163,13 @@ mod Char {
             case i          => Some(i)
         }
 
-    ///
-    /// Returns the integer value representated by the codepoint `cp` e.g. codepoint 0x0031
-    /// which is the char '1' returns `Some(1)`.
-    ///
-    /// Returns `None` if `cp` does not represent a number.
-    ///
-    /// This function handles supplementary characters.
-    ///
-    pub def getCodePointNumericValue(cp: Int32): Option[Int32] =
-        import static java.lang.Character.getNumericValue(Int32): Int32 \ {};
-        match getNumericValue(cp) {
-            case i if i < 0 => None
-            case i          => Some(i)
-        }
 
     ///
     /// Returns the integer value representated by Char `c` with respect to `radix`. E.g.
     /// `digit(radix = 10, '1') => Some(1)`
     /// `digit(radix = 16, 'a') => Some(11)`
     ///
-    /// Returns `None` if `cp` does not represent a number.
+    /// Returns `None` if `c` does not represent a number.
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
         import static java.lang.Character.digit(Char, Int32): Int32 \ {};
@@ -176,5 +191,6 @@ mod Char {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
+
 
 }

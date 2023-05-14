@@ -159,6 +159,7 @@ class Flix {
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
+    "Codepoint.flix" -> LocalResource.get("/src/library/Codepoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
