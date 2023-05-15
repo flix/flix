@@ -1214,16 +1214,6 @@ object Namer {
           r => NamedAst.Type.Schema(r, loc)
         }
 
-      case WeededAst.Type.Relation(tpes, loc) =>
-        mapN(traverse(tpes)(visit)) {
-          case ts => NamedAst.Type.Relation(ts, loc)
-        }
-
-      case WeededAst.Type.Lattice(tpes, loc) =>
-        mapN(traverse(tpes)(visit)) {
-          case ts => NamedAst.Type.Lattice(ts, loc)
-        }
-
       case WeededAst.Type.Native(fqn, loc) =>
         NamedAst.Type.Native(fqn, loc).toSuccess
 
@@ -1380,8 +1370,6 @@ object Namer {
     case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case WeededAst.Type.Schema(row, loc) => freeTypeVars(row)
-    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeTypeVars)
-    case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeTypeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, pur, tresult, loc) => tparams.flatMap(freeTypeVars) ::: pur.toList.flatMap(freeTypeVars) ::: freeTypeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
