@@ -120,26 +120,6 @@ class Flix {
   def getEraserAst: ErasedAst.Root = cachedEraserAst
 
   /**
-    * Set all backend asts to the empty root.
-    */
-  def clearBackendCaches(): Unit = {
-    cachedDocumentorAst = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
-    cachedLoweringAst = LoweredAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty)
-    cachedEarlyTreeShakerAst = LoweredAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty)
-    cachedMonomorphAst = LoweredAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty)
-    cachedSimplifierAst = SimplifiedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedClosureConvAst = SimplifiedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedLambdaLiftAst = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedTailrecAst = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedOptimizerAst = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedLateTreeShakerAst = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedReducerAst = ReducedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedVarNumberingAst = ReducedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedMonoTyperAst = MonoTypedAst.Root(Map.empty, Map.empty, None, Map.empty)
-    cachedEraserAst = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
-  }
-
-  /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
     *
     * The core library *must* be present for any program to compile.
@@ -604,9 +584,6 @@ class Flix {
 
     // Initialize fork join pool.
     initForkJoin()
-
-    // clear caches to avoid asts from previous compilations on crashes
-    clearBackendCaches()
 
     cachedDocumentorAst = Documentor.run(typedAst)
     cachedLoweringAst = Lowering.run(cachedDocumentorAst)
