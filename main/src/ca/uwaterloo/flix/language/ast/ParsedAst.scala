@@ -202,32 +202,6 @@ object ParsedAst {
     case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition)
 
     /**
-      * Relation Declaration.
-      *
-      * @param doc     the optional comment associated with the definition.
-      * @param mod     the associated modifiers.
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the relation.
-      * @param tparams the type parameters.
-      * @param attr    the attributes (columns) of the relation.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class Relation(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * Lattice Declaration.
-      *
-      * @param doc     the optional comment associated with the definition.
-      * @param mod     the associated modifiers.
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the lattice.
-      * @param tparams the type parameters.
-      * @param attr    the attributes (columns) of the relation.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
       * Typeclass Declaration.
       *
       * @param doc          the optional comment associated with the declaration.
