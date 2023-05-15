@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
 
+  val empty: Root = Root(Map.empty, None, MultiMap.empty)
+
   case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   case class CompilationUnit(usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation)

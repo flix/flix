@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -74,11 +73,11 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedParserAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None, MultiMap.empty)
-  private var cachedWeederAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
-  private var cachedKinderAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
-  private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
-  private var cachedTyperAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
+  private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
+  private var cachedWeederAst: WeededAst.Root = WeededAst.empty
+  private var cachedKinderAst: KindedAst.Root = KindedAst.empty
+  private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
+  private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   def getParserAst: ParsedAst.Root = cachedParserAst
   def getWeederAst: WeededAst.Root = cachedWeederAst
@@ -89,20 +88,20 @@ class Flix {
   /**
     * A cache of ASTs for debugging.
     */
-  private var cachedDocumentorAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
-  private var cachedLoweringAst: LoweredAst.Root = LoweredAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty)
-  private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty)
-  private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty)
-  private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedTailrecAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedReducerAst: ReducedAst.Root = ReducedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedMonoTyperAst: MonoTypedAst.Root = MonoTypedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedEraserAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
+  private var cachedDocumentorAst: TypedAst.Root = TypedAst.empty
+  private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
+  private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
+  private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedMonoTyperAst: MonoTypedAst.Root = MonoTypedAst.empty
+  private var cachedEraserAst: ErasedAst.Root = ErasedAst.empty
 
   def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst

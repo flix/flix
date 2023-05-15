@@ -30,7 +30,7 @@ object AstPrinter {
     * Writes all the formatted asts, requested by the flix options, to disk.
     */
   def printAsts()(implicit flix: Flix): Unit = {
-    val asts = flix.options.xprintphaseasts
+    val asts = flix.options.xprintphase
     if (asts.nonEmpty) {
       if (asts.contains("Parser")) () // wip
       if (asts.contains("Weeder")) () // wip

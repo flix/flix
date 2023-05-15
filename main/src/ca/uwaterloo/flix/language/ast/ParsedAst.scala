@@ -21,6 +21,11 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 object ParsedAst {
 
   /**
+    * Represents the empty AST.
+    */
+  val empty: Root = Root(Map.empty, None, MultiMap.empty)
+
+  /**
     * A collection of abstract syntax trees.
     *
     * @param units      the abstract syntax trees of the parsed compilation units.
