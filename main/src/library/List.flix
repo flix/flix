@@ -121,7 +121,7 @@ instance Collectable[List] {
 }
 
 instance Iterable[List] {
-    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
 }
 
 mod List {
@@ -1082,7 +1082,7 @@ mod List {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -1090,7 +1090,7 @@ mod List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region rc2 {
+    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ r = region rc2 {
         Array.toMutList(r, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
@@ -1139,7 +1139,7 @@ mod List {
     ///
     /// Returns the list `l` as an array.
     ///
-    pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
+    pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ r = match head(l) {
         case None    => Array#{} @ r
         case Some(_) =>
             let a = Array.new(r, length(l));
@@ -1306,7 +1306,7 @@ mod List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
         let ls = ref xs @ rc;
         let next = () -> {
             match (deref ls) {
@@ -1319,7 +1319,7 @@ mod List {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

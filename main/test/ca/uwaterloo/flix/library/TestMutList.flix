@@ -22,7 +22,7 @@ mod TestMutList {
     ///
     /// Helper function to test capacity of internal array.
     ///
-    def capacity(v: MutList[a, r]): Int32 \ Read(r) =
+    def capacity(v: MutList[a, r]): Int32 \ r =
         let MutList(_, a, _) = v;
         Array.length(deref a)
 
@@ -1955,7 +1955,7 @@ mod TestMutList {
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
+    def testSortVsSortWith(a: MutList[Int32, r]): Bool \ r = region r1 {
         MutList.sort(r1, a) `sameElements` MutList.sortWith(r1, cmp, a)
     }
 
@@ -2102,7 +2102,7 @@ mod TestMutList {
     // sort!                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSort!VsSortWith!(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
+    def testSort!VsSortWith!(a: MutList[Int32, r]): Bool \ r = region r1 {
         let b = MutList.copy(r1, a);
         let c = MutList.copy(r1, a);
         MutList.sort!(b);
@@ -2160,7 +2160,7 @@ mod TestMutList {
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
+    def testSortByVsSort(a: MutList[Int32, r]): Bool \ r = region r1 {
         (MutList.sortBy(r1, identity, a) `sameElements` MutList.sort(r1, a)) and
         (MutList.sortBy(r1, x -> 4 * x + 7, a) `sameElements` MutList.sort(r1, a)) and
         (MutList.sortBy(r1, x -> -x, a) `sameElements` MutList.sortWith(r1, flip(cmp),a))
@@ -2233,7 +2233,7 @@ mod TestMutList {
     // sortBy!                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortBy!VsSortBy(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
+    def testSortBy!VsSortBy(a: MutList[Int32, r]): Bool \ r = region r1 {
         let b = MutList.copy(r1, a);
         let c = MutList.copy(r1, a);
         MutList.sortBy!(identity, b);

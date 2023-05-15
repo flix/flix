@@ -98,7 +98,7 @@ instance Collectable[Vector] {
 }
 
 instance Iterable[Vector] {
-    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ Write(r) = Vector.iterator(rc, v)
+    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r = Vector.iterator(rc, v)
 }
 
 mod Vector {
@@ -148,7 +148,7 @@ mod Vector {
     /// Version of `Array.updateSequence!` where sub is a vector rather than an array,
     /// so a extra copy of `sub` is avoided.
     ///
-    def arrayUpdateSeqV!(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ Write(r)  =
+    def arrayUpdateSeqV!(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ r  =
         let end = Array.length(arr);
         let subLen = length(sub);
         def loop(ri, wi) = {
@@ -213,7 +213,7 @@ mod Vector {
     ///
     /// Returns the vector `v` as an array.
     ///
-    pub def toArray(rc: Region[r], v: Vector[a]): Array[a, r] \ Write(r) =
+    pub def toArray(rc: Region[r], v: Vector[a]): Array[a, r] \ r =
         let arr = Array.new(rc, length(v));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), v);
         arr
@@ -264,7 +264,7 @@ mod Vector {
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ Write(r)   =
+    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r   =
         let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
@@ -522,7 +522,7 @@ mod Vector {
     ///
     /// Helper for `sequence`, `traverse` and `zipWithA`.
     ///
-    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ Write(r) with Applicative[m] =
+    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ r with Applicative[m] =
         use Functor.{<$>};
         use Applicative.{<*>};
         (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr
@@ -1271,7 +1271,7 @@ mod Vector {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(rc: Region[r], v: Vector[a]): MutList[a, r] \ Write(r) =
+    pub def toMutList(rc: Region[r], v: Vector[a]): MutList[a, r] \ r =
         toArray(rc, v) |> Array.toMutList(rc)
 
     ///
@@ -1363,7 +1363,7 @@ mod Vector {
     ///
     /// Returns an iterator over `v`
     ///
-    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ { Write(r) } =
+    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r =
         Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get(i, v))
 
     ///
@@ -1371,7 +1371,7 @@ mod Vector {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(rc: Region[r], v: Vector[a]): Iterator[(Int32, a), r, r] \ { Write(r) } =
+    pub def enumerator(rc: Region[r], v: Vector[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(rc, v) |> Iterator.zipWithIndex
 
 

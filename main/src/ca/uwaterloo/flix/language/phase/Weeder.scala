@@ -44,11 +44,11 @@ object Weeder {
   private val ReservedWords = Set(
     "!=", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<=",
     "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
-    "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "alias", "case", "catch", "chan",
+    "RecordRow", "Region", "SchemaRow", "Type", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
-    "if", "import", "inline", "instance", "instanceof", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
+    "if", "import", "inline", "instance", "instanceof", "into", "law", "lawful", "lazy", "let", "let*", "match",
     "null", "opaque", "override", "pub", "ref", "region",
-    "rel", "sealed", "set", "spawn", "Static", "true",
+    "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "discard", "object"
   )
 
@@ -140,10 +140,6 @@ object Weeder {
     case d: ParsedAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
-
-    case d: ParsedAst.Declaration.Relation => visitRelation(d)
-
-    case d: ParsedAst.Declaration.Lattice => visitLattice(d)
 
     case d: ParsedAst.Declaration.Class => visitClass(d)
 
@@ -524,48 +520,6 @@ object Weeder {
       mapN(modVal, argVal, tpeVal) {
         case (mod, arg, tpe) =>
           List(WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc))
-      }
-  }
-
-  /**
-    * Rewrites the given relation declaration `r0` to a type alias.
-    */
-  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = r0 match {
-    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
-      val doc = visitDoc(doc0)
-      val loc = mkSL(sp1, sp2)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparamsVal = visitTypeParams(tparams0)
-      val termTypesVal = traverse(attr)(a => visitType(a.tpe))
-
-      //
-      // Rewrite the relation declaration to a type alias.
-      //
-      mapN(modVal, tparamsVal, termTypesVal) {
-        case (mod, tparams, termTypes) =>
-          val tpe = WeededAst.Type.Relation(termTypes, ident.loc)
-          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
-      }
-  }
-
-  /**
-    * Performs weeding on the given lattice `r0`.
-    */
-  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = l0 match {
-    case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
-      val doc = visitDoc(doc0)
-      val loc = mkSL(sp1, sp2)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparamsVal = visitTypeParams(tparams0)
-      val termTypesVal = traverse(attr)(a => visitType(a.tpe))
-
-      //
-      // Rewrite the lattice declaration to a type alias.
-      //
-      mapN(modVal, tparamsVal, termTypesVal) {
-        case (mod, tparams, termTypes) =>
-          val tpe = WeededAst.Type.Lattice(termTypes, ident.loc)
-          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
       }
   }
 
@@ -1455,7 +1409,7 @@ object Weeder {
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val tpe = Type.mkRegion(Type.False, loc)
+      val tpe = Type.mkRegion(Type.All, loc)
       WeededAst.Expression.Region(tpe, loc).toSuccess
 
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
@@ -2753,7 +2707,7 @@ object Weeder {
     case ParsedAst.Type.Complement(sp1, tpe, sp2) =>
       val tVal = visitType(tpe)
       mapN(tVal) {
-        case t => WeededAst.Type.Not(t, mkSL(sp1, sp2))
+        case t => WeededAst.Type.Complement(t, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Type.Union(tpe1, tpe2, sp2) =>
@@ -2761,7 +2715,7 @@ object Weeder {
       val t1Val = visitType(tpe1)
       val t2Val = visitType(tpe2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => WeededAst.Type.And(t1, t2, mkSL(sp1, sp2))
+        case (t1, t2) => WeededAst.Type.Union(t1, t2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Type.Intersection(tpe1, tpe2, sp2) =>
@@ -2769,7 +2723,7 @@ object Weeder {
       val t1Val = visitType(tpe1)
       val t2Val = visitType(tpe2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
+        case (t1, t2) => WeededAst.Type.Intersection(t1, t2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Type.Difference(tpe1, tpe2, sp2) =>
@@ -2778,7 +2732,7 @@ object Weeder {
       val t2Val = visitType(tpe2)
       val loc = mkSL(sp1, sp2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => WeededAst.Type.And(t1, WeededAst.Type.Not(t2, loc), loc)
+        case (t1, t2) => WeededAst.Type.Intersection(t1, WeededAst.Type.Complement(t2, loc), loc)
       }
 
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
@@ -2789,28 +2743,6 @@ object Weeder {
         case ((), tpes) =>
           val purOpt = tpes.reduceLeftOption({
             case (acc, tpe) => WeededAst.Type.And(acc, tpe, loc)
-          }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
-          purOpt.getOrElse(WeededAst.Type.True(loc))
-      }
-
-    case ParsedAst.Type.Read(sp1, tpes0, sp2) =>
-      val tpesVal = traverse(tpes0)(visitType)
-      val loc = mkSL(sp1, sp2)
-      mapN(tpesVal) {
-        case tpes =>
-          val purOpt = tpes.reduceLeftOption({
-            case (acc, tpe) => WeededAst.Type.And(acc, WeededAst.Type.Read(tpe, loc), loc)
-          }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
-          purOpt.getOrElse(WeededAst.Type.True(loc))
-      }
-
-    case ParsedAst.Type.Write(sp1, tpes0, sp2) =>
-      val tpesVal = traverse(tpes0)(visitType)
-      val loc = mkSL(sp1, sp2)
-      mapN(tpesVal) {
-        case tpes =>
-          val purOpt = tpes.reduceLeftOption({
-            case (acc, tpe) => WeededAst.Type.And(acc, WeededAst.Type.Write(tpe, loc), loc)
           }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
           purOpt.getOrElse(WeededAst.Type.True(loc))
       }
@@ -2876,8 +2808,6 @@ object Weeder {
   private def checkEffectSetMember(t: ParsedAst.Type): Validation[Unit, WeederError] = t match {
     case _: ParsedAst.Type.Var => ().toSuccess
     case _: ParsedAst.Type.Ambiguous => ().toSuccess
-    case _: ParsedAst.Type.Read => ().toSuccess
-    case _: ParsedAst.Type.Write => ().toSuccess
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
@@ -3436,8 +3366,6 @@ object Weeder {
     case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Union(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.EffectSet(sp1, _, _) => sp1
-    case ParsedAst.Type.Read(sp1, _, _) => sp1
-    case ParsedAst.Type.Write(sp1, _, _) => sp1
     case ParsedAst.Type.CaseComplement(sp1, _, _) => sp1
     case ParsedAst.Type.CaseDifference(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.CaseIntersection(tpe1, _, _) => leftMostSourcePosition(tpe1)

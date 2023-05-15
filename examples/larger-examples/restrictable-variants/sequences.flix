@@ -731,7 +731,7 @@ mod Seq {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: Seq[s][a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: Seq[s][a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -739,7 +739,7 @@ mod Seq {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], l: Seq[s][a]): MutList[a, r] \ Write(r) = region r2 {
+    pub def toMutList(r: Region[r], l: Seq[s][a]): MutList[a, r] \ r = region r2 {
         Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
@@ -786,7 +786,7 @@ mod Seq {
     ///
     /// Returns the list `l` as an array.
     ///
-    pub def toArray(r: Region[r], l: Seq[s][a]): Array[a, r] \ Write(r) = {
+    pub def toArray(r: Region[r], l: Seq[s][a]): Array[a, r] \ r = {
             let a = Array.new(r, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
@@ -833,7 +833,7 @@ mod Seq {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
         let ls = ref open_as Seq xs @ rc;
         let next = () -> {
             choose (deref ls) {
@@ -847,7 +847,7 @@ mod Seq {
     //
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: Seq[s][a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: Seq[s][a]): Iterator[(Int32, a), r, r] \ r =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///
@@ -905,5 +905,5 @@ instance Foldable[Seq.Seq[s]] {
 }
 
 instance Iterable[Seq.Seq[s]] {
-    pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ Write(r) = Seq.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ r = Seq.iterator(rc, l)
 }

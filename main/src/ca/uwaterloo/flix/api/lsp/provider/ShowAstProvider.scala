@@ -34,18 +34,42 @@ object ShowAstProvider {
   def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = root match {
     case None =>
       val text = "No IR available. Does the program not compile?"
-      ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+      astObject(phase, text)
     case Some(r) =>
       // We have to compile the program to obtain the relevant AST.
       flix.codeGen(r)
 
+      val phases = List("Parser", "Weeder", "Kinder", "Resolver", "TypedAst",
+        "Documentor", "Lowering", "EarlyTreeShaker", "Monomorph", "Simplifier",
+        "ClosureConv", "LambdaLift", "Tailrec", "Optimizer", "LateTreeShaker",
+        "Reducer", "VarNumbering", "MonoTyper", "Eraser")
+
       phase match {
-        case "TypedAst" =>
-          val text = AstPrinter.formatLiftedAst(flix.getLiftedAst)
-          ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+        case "Parser" => astObject(phase, "Work In Progress")
+        case "Weeder" => astObject(phase, "Work In Progress")
+        case "Kinder" => astObject(phase, "Work In Progress")
+        case "Resolver" => astObject(phase, "Work In Progress")
+        case "TypedAst" => astObject(phase, "Work In Progress")
+        case "Documentor" => astObject(phase, "Work In Progress")
+        case "Lowering" => astObject(phase, "Work In Progress")
+        case "EarlyTreeShaker" => astObject(phase, "Work In Progress")
+        case "Monomorph" => astObject(phase, "Work In Progress")
+        case "Simplifier" => astObject(phase, "Work In Progress")
+        case "ClosureConv" => astObject(phase, "Work In Progress")
+        case "LambdaLift" => astObject(phase, AstPrinter.formatLiftedAst(flix.getLambdaLiftAst))
+        case "Tailrec" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTailrecAst))
+        case "Optimizer" => astObject(phase, AstPrinter.formatLiftedAst(flix.getOptimizerAst))
+        case "LateTreeShaker" => astObject(phase, AstPrinter.formatLiftedAst(flix.getLateTreeShakerAst))
+        case "Reducer" => astObject(phase, "Work In Progress")
+        case "VarNumbering" => astObject(phase, "Work In Progress")
+        case "MonoTyper" => astObject(phase, AstPrinter.formatMonoTypedAst(flix.getMonoTyperAst))
+        case "Eraser" => astObject(phase, AstPrinter.formatErasedAst(flix.getEraserAst))
         case _ =>
-          ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> s"Unknown phase: '$phase'.")
+          astObject(phase, s"Unknown phase: '$phase'. Try one of these ${phases.map(s => s"'$s'").mkString(", ")}")
       }
   }
 
+  private def astObject(phase: String, text: String): JObject = {
+    ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+  }
 }

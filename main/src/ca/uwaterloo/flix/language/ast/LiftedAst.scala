@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 
 object LiftedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
+
   case class Root(defs: Map[Symbol.DefnSym, LiftedAst.Def],
                   enums: Map[Symbol.EnumSym, LiftedAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
