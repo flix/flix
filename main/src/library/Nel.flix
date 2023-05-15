@@ -102,7 +102,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
-    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ Write(r) = Nel.toArray(rc, l)
+    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
@@ -111,7 +111,7 @@ instance SemiGroup[Nel[a]] {
 }
 
 instance Iterable[Nel] {
-    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
 mod Nel {
@@ -119,9 +119,9 @@ mod Nel {
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region r {
+    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
         let Nel(x, xs) = l;
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nel(${x}, ", sb);
 
         let list = List.toString(xs);
@@ -393,7 +393,7 @@ mod Nel {
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef1 \ ef1_, g: a -> b & ef2 \ ef2_, l: Nel[a]): b & (ef1 and ef2) \ (ef1_ + ef2_) =
+    pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, l: Nel[a]): b \ {ef1, ef2} =
         def loop(ll, k) = match ll {
             case x :: Nil => k(g(x))
             case x :: xs  => loop(xs, ks -> k(f(x, ks)))
@@ -545,13 +545,13 @@ mod Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ r =
         l |> toList |> List.toArray(r)
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -571,8 +571,8 @@ mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
-        let list = toArray(r, l) !> Array.sort! |> Array.toList;
+    pub def sort(l: Nel[a]): Nel[a] with Order[a] = region rc {
+        let list = toArray(rc, l) !> Array.sort! |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -587,8 +587,8 @@ mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
-        let list = toArray(r, l) !> Array.sortBy!(f) |> Array.toList;
+    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region rc {
+        let list = toArray(rc, l) !> Array.sortBy!(f) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -603,8 +603,8 @@ mod Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
-        let list = toArray(r, l) !> Array.sortWith!(cmp) |> Array.toList;
+    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region rc {
+        let list = toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList;
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -614,14 +614,14 @@ mod Nel {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r =
        let Nel(x, xs) = l;
        List.iterator(rc, x :: xs)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///
@@ -681,8 +681,8 @@ mod Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toNel
+    pub def shuffle(rnd: Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toNel
     }
 
 }

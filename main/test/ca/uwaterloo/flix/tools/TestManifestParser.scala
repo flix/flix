@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
+import java.net.URL
 import java.nio.file.Paths
 
 class TestManifestParser extends AnyFunSuite {
@@ -35,6 +36,9 @@ class TestManifestParser extends AnyFunSuite {
       |
       |[dev-mvn-dependencies]
       |"org.junit:junit" = "1.2"
+      |
+      |[jar-dependencies]
+      |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
       |
       |""".stripMargin
   }
@@ -119,7 +123,8 @@ class TestManifestParser extends AnyFunSuite {
                                  Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), Some(4), None), DependencyKind.Production),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), None, Some("M1")), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development)))(actual = {
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development),
+                                 Dependency.JarDependency(new URL("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"), "myJar.jar")))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
@@ -1204,12 +1209,12 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[mvn-dependencies]
-        |"org.pos/gresql:post¤resql" = "1.2.3"
+        |"org.po)tgresql:postgresql" = "1.2.3"
         |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.IllegalName(null, "org.pos/gresql").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.IllegalName(null, "org.po)tgresql").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1593,6 +1598,139 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.VersionNumberWrong(null, "1.2.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  //Jar-dependencies
+  test("Err.jar-dependencies.type") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jar" = ["url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlTypeError(null, "class org.tomlj.MutableTomlArray cannot be cast to class java.lang.String (org.tomlj.MutableTomlArray is in unnamed module of loader 'app'; java.lang.String is in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => println(e.message(f)); e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependences]
+        |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalTableFound(null, "jar-dependences").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.filename.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlFileNameError(null, "myJar").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.filename.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jsr" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlExtensionError(null, "myJar.jsr", "jsr").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.jar-dependencies.url.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jar" = "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.JarUrlFormatError(null, "https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+  
+  test("Err.jar-dependencies.url.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[jar-dependencies]
+        |"myJar.jar" = "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.WrongUrlFormat(null, "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "URI is not absolute").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })

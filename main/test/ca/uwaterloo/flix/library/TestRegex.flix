@@ -198,7 +198,6 @@ mod TestRegex {
     def indices13(): Bool =
         Regex.indices(substr = regex":{2}", "::::") == List#{0, 2}
 
-
     /////////////////////////////////////////////////////////////////////////////
     // submatches                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -254,7 +253,6 @@ mod TestRegex {
     @test
     def submatches13(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "::::") == List#{}
-
 
     /////////////////////////////////////////////////////////////////////////////
     // countSubmatches                                                         //
@@ -441,6 +439,62 @@ mod TestRegex {
         Regex.endsWith(suffix = regex"\\p{Alpha}+", "AA BBB CCCC") == true
 
     /////////////////////////////////////////////////////////////////////////////
+    // getPrefix                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getPrefix01(): Bool =
+        Regex.getPrefix(substr = Regex.unmatchable(), "") == None
+
+    @test
+    def getPrefix02(): Bool =
+        Regex.getPrefix(substr = Regex.unmatchable(), "A B C") == None
+
+    @test
+    def getPrefix03(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "") == None
+
+    @test
+    def getPrefix04(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "   A B C") == None
+
+    @test
+    def getPrefix05(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "A B C") == Some("A")
+
+    @test
+    def getPrefix06(): Bool =
+        Regex.getPrefix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("AA")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getSuffix                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getSuffix01(): Bool =
+        Regex.getSuffix(substr = Regex.unmatchable(), "") == None
+
+    @test
+    def getSuffix02(): Bool =
+        Regex.getSuffix(substr = Regex.unmatchable(), "A B C") == None
+
+    @test
+    def getSuffix03(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "") == None
+
+    @test
+    def getSuffix04(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "A B C  ") == None
+
+    @test
+    def getSuffix05(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "A B C") == Some("C")
+
+    @test
+    def getSuffix06(): Bool =
+        Regex.getSuffix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("CCCC")
+
+    /////////////////////////////////////////////////////////////////////////////
     // stripPrefix                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -491,6 +545,7 @@ mod TestRegex {
     @test
     def stripSuffix05(): Bool =
         Regex.stripSuffix(substr = regex"\\p{Alpha}+", "A B C") == Some("A B ")
+
     @test
     def stripSuffix06(): Bool =
         Regex.stripSuffix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("AA BBB ")
@@ -576,7 +631,87 @@ mod TestRegex {
         Regex.indexOfLast(substr = regex"\\p{Alpha}{2}", "abcd") == Some(2)
 
     /////////////////////////////////////////////////////////////////////////////
-    // indexOfFirstWithOffset                                                   //
+    // getFirst                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getFirst01(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "") == None
+
+    @test
+    def getFirst02(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "_") == None
+
+    @test
+    def getFirst03(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "a") == Some("a")
+
+    @test
+    def getFirst04(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "__") == None
+
+    @test
+    def getFirst05(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "ab") == Some("ab")
+
+    @test
+    def getFirst06(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "_b") == Some("b")
+
+    @test
+    def getFirst07(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "a_") == Some("a")
+
+    @test
+    def getFirst08(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "ab_") == Some("ab")
+
+    @test
+    def getFirst09(): Bool =
+        Regex.getFirst(substr = regex"\\p{Alpha}+", "_bc") == Some("bc")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getLast                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getLast01(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}+", "") == None
+
+    @test
+    def getLast02(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}+", "_") == None
+
+    @test
+    def getLast03(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}+", "a") == Some("a")
+
+    @test
+    def getLast04(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}+", "__") == None
+
+    @test
+    def getLast05(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}+", "a_") == Some("a")
+
+    @test
+    def getLast06(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}+", "_b") == Some("b")
+
+    @test
+    def getLast07(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}+", "aa") == Some("aa")
+
+    @test
+    def getLast08(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}{2}", "ab") == Some("ab")
+
+    @test
+    def getLast09(): Bool =
+        Regex.getLast(substr = regex"\\p{Alpha}{2}", "abcd") == Some("cd")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfFirstWithOffset                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -678,6 +813,110 @@ mod TestRegex {
     @test
     def indexOfLastWithOffset13(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "ab __") == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getFirstWithOffset                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getFirstWithOffset01(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "") == None
+
+    @test
+    def getFirstWithOffset02(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_") == None
+
+    @test
+    def getFirstWithOffset03(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "a") == Some("a")
+
+    @test
+    def getFirstWithOffset04(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "a") == None
+
+    @test
+    def getFirstWithOffset05(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab") == Some("ab")
+
+    @test
+    def getFirstWithOffset06(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "aa") == Some("a")
+
+    @test
+    def getFirstWithOffset07(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_b") == Some("b")
+
+    @test
+    def getFirstWithOffset08(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab cd") == Some("ab")
+
+    @test
+    def getFirstWithOffset09(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab cd") == Some("b")
+
+    @test
+    def getFirstWithOffset10(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "ab cd") == Some("cd")
+
+    @test
+    def getFirstWithOffset11(): Bool =
+        Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab cd") == Some("cd")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getLastWithOffset                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getLastWithOffset01(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "") == None
+
+    @test
+    def getLastWithOffset02(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_") == None
+
+    @test
+    def getLastWithOffset03(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "a") == Some("a")
+
+    @test
+    def getLastWithOffset04(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "a") == None
+
+    @test
+    def getLastWithOffset05(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab") == Some("b")
+
+    @test
+    def getLastWithOffset06(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "aa") == None
+
+    @test
+    def getLastWithOffset07(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab") == None
+
+    @test
+    def getLastWithOffset08(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab cd") == Some("cd")
+
+    @test
+    def getLastWithOffset09(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset= 2, "ab cd") == Some("cd")
+
+    @test
+    def getLastWithOffset10(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab cd") == Some("cd")
+
+    @test
+    def getLastWithOffset11(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab cd") == Some("cd")
+
+    @test
+    def getLastWithOffset12(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = -1, "ab cd") == None
+
+    @test
+    def getLastWithOffset13(): Bool =
+        Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "ab __") == None
 
     /////////////////////////////////////////////////////////////////////////////
     // breakOnFirst                                                            //
@@ -822,5 +1061,289 @@ mod TestRegex {
     @test
     def breakBeforeLast08(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "aaa::bbb::ccc") == ("aaa::bbb", "::ccc")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isMatchWithBounds                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isMatchWithBounds01(): Bool =
+        Regex.isMatchWithBounds(regex"a+", start = 0, end = 1, "") == false
+
+    @test
+    def isMatchWithBounds02(): Bool =
+        Regex.isMatchWithBounds(regex"a+", start = 0, end = 1, "a") == true
+
+    @test
+    def isMatchWithBounds03(): Bool =
+        Regex.isMatchWithBounds(regex"a+", start = 0, end = 3, "a") == false
+
+    @test
+    def isMatchWithBounds04(): Bool =
+        Regex.isMatchWithBounds(regex"a+", start = 0, end = 1, "aa") == true
+
+    @test
+    def isMatchWithBounds05(): Bool =
+        Regex.isMatchWithBounds(regex"a+", start = 2, end = 3, "aab") == false
+
+    @test
+    def isMatchWithBounds06(): Bool =
+        Regex.isMatchWithBounds(regex"b+", start = 2, end = 3, "aab") == true
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isSubmatchWithBounds                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isSubmatchWithBounds01(): Bool =
+        Regex.isSubmatchWithBounds(regex"a+", start = 0, end = 1, "") == false
+
+    @test
+    def isSubmatchWithBounds02(): Bool =
+        Regex.isSubmatchWithBounds(regex"a+", start = 0, end = 1, "a") == true
+
+    @test
+    def isSubmatchWithBounds03(): Bool =
+        Regex.isSubmatchWithBounds(regex"a+", start = 1, end = 2, "aa") == true
+
+    @test
+    def isSubmatchWithBounds04(): Bool =
+        Regex.isSubmatchWithBounds(regex"a+", start = -1, end = 1, "aab") == false
+
+    @test
+    def isSubmatchWithBounds05(): Bool =
+        Regex.isSubmatchWithBounds(regex"a+", start = 0, end = 2, "aab") == true
+
+    @test
+    def isSubmatchWithBounds06(): Bool =
+        Regex.isSubmatchWithBounds(regex"b+", start = 2, end = 3, "aab") == true
+
+    @test
+    def isSubmatchWithBounds07(): Bool =
+        Regex.isSubmatchWithBounds(regex"b+", start = 1, end = 2, "bbbc") == true
+
+    @test
+    def isSubmatchWithBounds08(): Bool =
+        Regex.isSubmatchWithBounds(regex"b+", start = 0, end = 5, "aabbbc") == true
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indicesWithBounds                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indicesWithBounds01(): Bool =
+        Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 1, "") == List#{}
+
+    @test
+    def indicesWithBounds02(): Bool =
+        Regex.indicesWithBounds(substr = regex":{2}", start = -1, end = 10, "a::b::c") == List#{}
+
+    @test
+    def indicesWithBounds03(): Bool =
+        Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 7, "a::b::c") == List#{1, 4}
+
+    @test
+    def indicesWithBounds04(): Bool =
+        Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 3, "a::b::c") == List#{1}
+
+    @test
+    def indicesWithBounds05(): Bool =
+        Regex.indicesWithBounds(substr = regex":{2}", start = 3, end = 7, "a::b::c") == List#{4}
+
+    @test
+    def indicesWithBounds06(): Bool =
+        Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 3, "a:b") == List#{}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // submatchesWithBounds                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def submatchesWithBounds01(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == List#{}
+
+    @test
+    def submatchesWithBounds02(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 10, "a::b::c") == List#{}
+
+    @test
+    def submatchesWithBounds03(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "aaa") == List#{"aaa"}
+
+    @test
+    def submatchesWithBounds04(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 10, "aaa") == List#{}
+
+    @test
+    def submatchesWithBounds05(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "::") == List#{}
+
+    @test
+    def submatchesWithBounds06(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "ab") == List#{"ab"}
+
+    @test
+    def submatchesWithBounds07(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "::a") == List#{"a"}
+
+    @test
+    def submatchesWithBounds08(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::") == List#{"a"}
+
+    @test
+    def submatchesWithBounds09(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::b::") == List#{"a"}
+
+    @test
+    def submatchesWithBounds10(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 7, "a::b::c") == List#{"b", "c"}
+
+    @test
+    def submatchesWithBounds11(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c:") == List#{"a", "b", "c"}
+
+    @test
+    def submatchesWithBounds12(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 6, ":a::b::c") == List#{"a", "b"}
+
+    @test
+    def submatchesWithBounds13(): Bool =
+        Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "::::") == List#{}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // countSubmatchesWithBounds                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def countSubmatchesWithBounds01(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == 0
+
+    @test
+    def countSubmatchesWithBounds02(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 10, "a::b::c") == 0
+
+    @test
+    def countSubmatchesWithBounds03(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == 3
+
+    @test
+    def countSubmatchesWithBounds04(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "a::b::c") == 2
+
+    @test
+    def countSubmatchesWithBounds05(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 7, "a::b::c") == 2
+
+    @test
+    def countSubmatchesWithBounds06(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "ab") == 1
+
+    @test
+    def countSubmatchesWithBounds07(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 3, "::a") == 1
+
+    @test
+    def countSubmatchesWithBounds08(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "a::") == 1
+
+    @test
+    def countSubmatchesWithBounds09(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "a::b::") == 2
+
+    @test
+    def countSubmatchesWithBounds10(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "a::b::c") == 2
+
+    @test
+    def countSubmatchesWithBounds11(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 4, end = 8, "a::b::c:") == 1
+
+    @test
+    def countSubmatchesWithBounds12(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, ":a::b::c") == 1
+
+    @test
+    def countSubmatchesWithBounds13(): Bool =
+        Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "::::") == 0
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getFirstWithBounds                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getFirstWithBounds01(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
+
+    @test
+    def getFirstWithBounds02(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
+
+    @test
+    def getFirstWithBounds03(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some("a")
+
+    @test
+    def getFirstWithBounds04(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some("a")
+
+    @test
+    def getFirstWithBounds05(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "a::b::c") == Some("a")
+
+    @test
+    def getFirstWithBounds06(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 3, end = 7, "a::b::c") == Some("b")
+
+    @test
+    def getFirstWithBounds07(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 6, end = 7, "a::b::c") == Some("c")
+
+    @test
+    def getFirstWithBounds08(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some("b")
+
+    @test
+    def getFirstWithBounds09(): Bool =
+        Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 7, end = 9, "a::b::c::") == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getLastWithBounds                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getLastWithBounds01(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
+
+    @test
+    def getLastWithBounds02(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
+
+    @test
+    def getLastWithBounds03(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some("a")
+
+    @test
+    def getLastWithBounds04(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some("c")
+
+    @test
+    def getLastWithBounds05(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 5, end = 7, "a::b::c") == Some("c")
+
+    @test
+    def getLastWithBounds06(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 6, "a::b::c") == Some("b")
+
+    @test
+    def getLastWithBounds07(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::b::c") == Some("a")
+
+    @test
+    def getLastWithBounds08(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some("b")
+
+    @test
+    def getLastWithBounds09(): Bool =
+        Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "::a::b::c") == None
 
 }

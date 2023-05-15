@@ -19,19 +19,19 @@ mod Ref {
     ///
     /// Returns a new reference to `x` in the region `rh`.
     ///
-    pub def new(rh: Region[r], x: a): Ref[a, r] \ Write(r) =
+    pub def new(rh: Region[r], x: a): Ref[a, r] \ r =
         ref x @ rh
 
     ///
     /// Returns the element referenced by `rf`.
     ///
-    pub def get(rf: Ref[a, r]): a \ Read(r) =
+    pub def get(rf: Ref[a, r]): a \ r =
         deref rf
 
     ///
     /// Updates `rf` to reference `x`.
     ///
-    pub def put(x: a, rf: Ref[a, r]): Unit \ Write(r) =
+    pub def put(x: a, rf: Ref[a, r]): Unit \ r =
         rf := x
 
     ///
@@ -39,7 +39,7 @@ mod Ref {
     ///
     /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.
     ///
-    pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { Read(r), Write(r), ef } =
+    pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { r, ef } =
         rf := f(Ref.get(rf))
 
 }

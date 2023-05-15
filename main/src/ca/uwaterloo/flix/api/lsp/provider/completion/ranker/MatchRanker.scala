@@ -16,15 +16,18 @@
 
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MatchCompletion
 
-object MatchRanker {
-
+object MatchRanker extends Ranker {
   /**
     * Find the best match completion.
+    *
+    * @param completions the list of decided completions.
+    * @return            Some(MatchCompletion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion]): Option[MatchCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[MatchCompletion] = {
     // TODO
     None
   }

@@ -69,7 +69,7 @@ mod Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v], r], stratum: List[Constraint[v]]): Unit \ Write(r) = region r {
+    def compileStratum(stmts: MutList[RamStmt[v], r], stratum: List[Constraint[v]]): Unit \ r = region r {
         let idb = List.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = List.length(terms);
             Map.insert(pred, (arity, den))
@@ -123,7 +123,7 @@ mod Fixpoint {
     ///         end
     ///     end
     ///
-    def compileRule(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ Write(r) = match rule {
+    def compileRule(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ r = match rule {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
@@ -178,7 +178,7 @@ mod Fixpoint {
     /// Note that there are two join loops, because there are two positive atoms.
     /// Also note how in the first loop, `B` is the focused atom and `C` is focused in the second loop.
     ///
-    def compileRuleIncr(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ Write(r) = match rule {
+    def compileRuleIncr(stmts: MutList[RamStmt[v], r], rule: Constraint[v]): Unit \ r = match rule {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);

@@ -38,7 +38,7 @@ object Command {
   /**
     * Displays documentation about the fqn s
     */
-  case class Doc(s: String) extends Command
+  case class Info(s: String) extends Command
 
   /**
     * Creates a new project in the current directory
@@ -123,11 +123,11 @@ object Command {
       return Command.Reload
 
     //
-    // Doc
+    // Info
     //
-    val docPattern = raw":d(oc)?\s+(\S+)\s*".r
+    val infoPattern = raw":i(nfo)?\s+(\S+)\s*".r
     input match {
-      case docPattern(_, s) => return Command.Doc(s)
+      case infoPattern(_, s) => return Command.Info(s)
       case _ => // no-op
     }
 

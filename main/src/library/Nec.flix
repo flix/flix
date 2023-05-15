@@ -116,13 +116,13 @@ instance Reducible[Nec] {
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ Write(r) = Nec.toArray(r, l)
+    override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 instance ToString[Nec[a]] with ToString[a] {
-    pub def toString(c: Nec[a]): String = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(c: Nec[a]): String = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -136,7 +136,7 @@ instance ToString[Nec[a]] with ToString[a] {
 }
 
 instance Iterable[Nec] {
-    pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r, r] \ Write(r) = Nec.iterator(r, l)
+    pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(r, l)
 }
 
 mod Nec {
@@ -745,7 +745,7 @@ mod Nec {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ Write(r)  =
+    pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
@@ -753,8 +753,8 @@ mod Nec {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], c: Nec[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, c)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], c: Nec[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(r, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -782,7 +782,7 @@ mod Nec {
     ///
     /// Returns the Nec `c` as an array.
     ///
-    pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ r =
         let x = head(c);
         let arr = Array.repeat(r, length(c), x);
         forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
@@ -791,13 +791,13 @@ mod Nec {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(rc: Region[r], c: Nec[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], c: Nec[a]): Iterator[a, r, r] \ r =
         iteratorHelper(rc, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ Write(r) =
+    def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ r =
         let cursor = ref vl @ rc;
         let next = () -> match (deref cursor) {
             case None             => None
@@ -815,13 +815,13 @@ mod Nec {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(rc: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Helper for the `sort` functions.
     ///
-    def fromArray(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
+    def fromArray(arr: Array[a, r]): Option[Nec[a]] \ r =
         def loop(ix, end, acc) = if (ix >= end) acc else {let x = Array.get(ix, arr); loop(ix+1, end, snoc(acc, x))};
         let len = Array.length(arr);
         if (len < 1)
@@ -839,8 +839,8 @@ mod Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(c: Nec[a]): Nec[a] with Order[a] = region r {
-        let ans = toArray(r, c) !> Array.sort! |> fromArray;
+    pub def sort(c: Nec[a]): Nec[a] with Order[a] = region rc {
+        let ans = toArray(rc, c) !> Array.sort! |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -855,8 +855,8 @@ mod Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region r {
-        let ans = toArray(r, c) !> Array.sortBy!(f) |> fromArray;
+    pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region rc {
+        let ans = toArray(rc, c) !> Array.sortBy!(f) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -870,8 +870,8 @@ mod Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region r {
-        let ans = toArray(r, c) !> Array.sortWith!(cmp) |> fromArray;
+    pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region rc {
+        let ans = toArray(rc, c) !> Array.sortWith!(cmp) |> fromArray;
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
@@ -1014,8 +1014,8 @@ mod Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ NonDet = region r {
-        toArray(r, c) !> Array.shuffle(rnd) |> Array.toNec
+    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ NonDet = region rc {
+        toArray(rc, c) !> Array.shuffle(rnd) |> Array.toNec
     }
 
 }

@@ -94,7 +94,7 @@ object CompletionProvider {
             val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext)
 
             // Find the best completion
-            val best = CompletionRanker.findBest(completions, index, deltaContext)
+            val best = CompletionRanker.findBest(completions)
             boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
           case None => Nil
         }
@@ -110,7 +110,7 @@ object CompletionProvider {
     if (root.isEmpty) return Nil
     val entity = index.query(uri, pos)
     entity match {
-      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, _, loc))) =>
+      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, loc))) =>
         HoleCompletion.candidates(sourceType, targetType, root.get)
           .map(root.get.defs(_))
           .filter(_.spec.mod.isPublic)

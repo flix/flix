@@ -1,5 +1,15 @@
 # Changelog
 
+Version 0.36.0:
+
+- Language: Added support for regular expressions literals (thanks Stephen!)
+- Language: Added support for `functional` predicates (thanks Magnus!)
+- Language: Reworked and removed the need for `Boxable` (thanks Magnus!)
+- VSCode: Added support for parser-guided auto-completion (thanks Magnus)
+- VSCode: Improved auto-completion of predicates (thanks Magnus!)
+- VSCode: Improved "best pick" algorithm (thanks Lukas!)
+- Compiler: Enabled package management command in repl (thanks Magnus!)
+
 Version 0.35.0:
 
 - Language: Added region capabilities (thanks Jonathan, Magnus)
@@ -391,3 +401,5 @@ HEAD (in progress, not released):
 - Inliner
 - Datalog abstraction
 - Restrictable variants
+- Associated types
+- 

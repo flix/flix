@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
-import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, LiftedAst, SourceLocation}
-import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, FinalAstPrinter, LiftedAstPrinter}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, MonoTypedAst, LiftedAst, SourceLocation}
+import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, MonoTypedAstPrinter, LiftedAstPrinter}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
@@ -33,8 +33,6 @@ object AstPrinter {
     val asts = flix.options.xprintasts
     if (asts.contains("LateTreeShaker") || asts.contains("Pre"))
       writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
-    if (asts.contains("Undo") || asts.contains("Post"))
-      writeToDisk("Undo", formatLiftedAst(flix.getUndoAst))
   }
 
   /**
@@ -42,7 +40,6 @@ object AstPrinter {
     */
   def printAllAsts()(implicit flix: Flix): Unit = {
     writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
-    writeToDisk("Undo", formatLiftedAst(flix.getUndoAst))
   }
 
   /**
@@ -62,8 +59,8 @@ object AstPrinter {
   /**
     * Formats `root` for display.
     */
-  def formatFinalAst(root: FinalAst.Root): String = {
-    formatDocProgram(FinalAstPrinter.print(root))
+  def formatMonoTypedAst(root: MonoTypedAst.Root): String = {
+    formatDocProgram(MonoTypedAstPrinter.print(root))
   }
 
   /**

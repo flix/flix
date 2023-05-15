@@ -18,7 +18,7 @@
  * The Choice data type.
  */
 @Internal
-pub enum Choice[a: Type, _isAbsent : Bool, _isPresent : Bool] {
+pub enum Choice[a: Type, _isAbsent : Eff, _isPresent : Eff] {
     case Absent
     case Present(a)
 }
@@ -86,8 +86,8 @@ mod Choice {
     /// Returns `c` if it is `Present(v)`. Otherwise returns `default`.
     ///
     @Experimental
-    pub def withDefault[s : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-                       (default: {default = Choice[s, a2, p2]}, c: Choice[s, a1, p1]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
+    pub def withDefault[s : Type, a1 : Eff, p1 : Eff, a2 : Eff, p2 : Eff]
+                       (default: {default = Choice[s, a2, p2]}, c: Choice[s, a1, p1]): Choice[s, a1 + a2, p1 & (a1 + p2)] =
         relational_choose* c {
             case Absent     => default.default
             case Present(v) => Present(v)
@@ -99,8 +99,8 @@ mod Choice {
     /// The function `f` must be pure.
     ///
     @Experimental
-    pub def filter[t : Type, a : Bool, p : Bool]
-                  (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a or p, p] =
+    pub def filter[t : Type, a : Eff, p : Eff]
+                  (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a & p, p] =
         relational_choose* c {
             case Absent     => Absent
             case Present(v) => if (f(v)) Present(v) else Absent
@@ -110,7 +110,7 @@ mod Choice {
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
     @Experimental
-    pub def map[s: Type, t: Type, a: Bool, p: Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
+    pub def map[s: Type, t: Type, a: Eff, p: Eff](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
         relational_choose* c {
             case Absent     => Absent
             case Present(x) => Present(f(x))
@@ -120,8 +120,8 @@ mod Choice {
     /// Returns `f(v)` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
     @Experimental
-    pub def flatMap[s : Type, t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-                   (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 or (p1 and a2), p1 and p2] =
+    pub def flatMap[s : Type, t : Type, a1 : Eff, p1 : Eff, a2 : Eff, p2 : Eff]
+                   (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 & (p1 + a2), p1 + p2] =
         relational_choose* c {
             case Absent     => Absent
             case Present(v) => f(v)
@@ -131,8 +131,8 @@ mod Choice {
     /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
     @Experimental
-    pub def flatten[t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, (a1 and p2) or a2, p1 and p2] =
+    pub def flatten[t : Type, a1 : Eff, p1 : Eff, a2 : Eff, p2 : Eff]
+        (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, (a1 + p2) & a2, p1 + p2] =
         relational_choose* c {
             case Absent     => Absent
             case Present(v) => v
@@ -142,7 +142,7 @@ mod Choice {
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
     ///
     @Experimental
-    pub def invert[s: Type, a: Bool, p: Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = relational_choose* c {
+    pub def invert[s: Type, a: Eff, p: Eff](c: Choice[s, a, p], v: s): Choice[s, p, a] = relational_choose* c {
         case Absent     => Present(v)
         case Present(_) => Absent
     }

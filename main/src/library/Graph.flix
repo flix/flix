@@ -314,7 +314,7 @@ mod Graph {
     ///
     /// OBS: No cycles must be present.
     ///
-    pub def topologicalSort(g: m[(t, t)]): List[t] with Foldable[m], Order[t] = region r {
+    pub def topologicalSort(g: m[(t, t)]): List[t] with Foldable[m], Order[t] = region rc {
         // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/topological_ordering
         let edges = inject g into Edge;
         let topSort = #{
@@ -333,7 +333,7 @@ mod Graph {
                                After(x, y), Index(y; i).
         };
         let res = query edges, nodes(), topSort select (x, i) from Index(x; i);
-        let ml = MutList.new(r);
+        let ml = MutList.new(rc);
         // Extract nodes in fixed order.
         res |>
             List.sortBy(match (x, i) -> (i, x)) |>
@@ -474,8 +474,8 @@ mod Graph {
     /// The strings of nodes are put in quotes but DOT identifier validity is
     /// up to the caller.
     ///
-    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Order[t], ToString[t] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
+        let sb = StringBuilder.new(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, y) -> {
@@ -490,8 +490,8 @@ mod Graph {
     /// The strings of nodes are put in quotes and existing quotes are escaped.
     /// Other than that, DOT identifier validity is up to the caller.
     ///
-    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Order[t], ToString[t] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
+        let sb = StringBuilder.new(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, w, y) -> {

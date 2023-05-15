@@ -96,8 +96,8 @@ instance Filterable[Chain] {
 instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
-    pub def toString(c: Chain[a]): String = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(c: Chain[a]): String = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Chain#{", sb);
         Chain.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -115,7 +115,7 @@ instance Collectable[Chain] {
 }
 
 instance Iterable[Chain] {
-    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rc, c)
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
 mod Chain {
@@ -747,7 +747,7 @@ mod Chain {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
@@ -755,8 +755,8 @@ mod Chain {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], c: Chain[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, c)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], c: Chain[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(r, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -777,7 +777,7 @@ mod Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
+    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
         case None    => Array#{} @ r
         case Some(_) =>
             let arr = Array.new(r, length(c));
@@ -788,7 +788,7 @@ mod Chain {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
         let cursor = ref viewLeft(c) @ rc;
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
@@ -802,7 +802,7 @@ mod Chain {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
@@ -858,8 +858,8 @@ mod Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
-        toArray(r, c) !> Array.sort! |> Array.toChain
+    pub def sort(c: Chain[a]): Chain[a] with Order[a] = region rc {
+        toArray(rc, c) !> Array.sort! |> Array.toChain
     }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
@@ -869,8 +869,8 @@ mod Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
-        toArray(r, c) !> Array.sortBy!(f) |> Array.toChain
+    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region rc {
+        toArray(rc, c) !> Array.sortBy!(f) |> Array.toChain
     }
 
     ///
@@ -880,8 +880,8 @@ mod Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
-        toArray(r, c) !> Array.sortWith!(cmp) |> Array.toChain
+    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region rc {
+        toArray(rc, c) !> Array.sortWith!(cmp) |> Array.toChain
     }
 
     ///
@@ -942,8 +942,8 @@ mod Chain {
     ///
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Chain[a]): Chain[a] \ NonDet = region r {
-        toArray(r, c) !> Array.shuffle(rnd) |> Array.toChain
+    pub def shuffle(rnd: Random, c: Chain[a]): Chain[a] \ NonDet = region rc {
+        toArray(rc, c) !> Array.shuffle(rnd) |> Array.toChain
     }
 
 }

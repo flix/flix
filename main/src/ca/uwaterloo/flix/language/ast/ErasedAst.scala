@@ -30,7 +30,7 @@ object ErasedAst {
                   closures: Set[ClosureInfo],
                   anonClasses: Set[AnonClassInfo])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
   }
 
@@ -50,13 +50,9 @@ object ErasedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyCloTail(exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
-
-    case class ApplyDefTail(sym: Symbol.DefnSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
@@ -78,6 +74,18 @@ object ErasedAst {
 
   }
 
+  sealed trait Stmt {
+    def tpe: MonoType
+
+    def loc: SourceLocation
+  }
+
+  object Stmt {
+
+    case class Ret(expr: Expr, tpe: MonoType, loc: SourceLocation) extends Stmt
+
+  }
+
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, loc: SourceLocation)
@@ -85,4 +93,5 @@ object ErasedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
+
 }

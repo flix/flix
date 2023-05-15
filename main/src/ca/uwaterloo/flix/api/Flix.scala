@@ -83,19 +83,14 @@ class Flix {
   /**
     * A cache of ASTs for debugging.
     */
+  private var cachedLiftedAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
   private var lateTreeShakerAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var undoAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
   private var cachedErasedAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
 
   /**
     * Returns the cached [[LiftedAst]] after [[LateTreeShaker]].
     */
   def getLateTreeShakerAst: LiftedAst.Root = lateTreeShakerAst
-
-  /**
-    * Returns the cached [[LiftedAst]] after [[Undo]]
-    */
-  def getUndoAst: LiftedAst.Root = undoAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -115,11 +110,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
-    "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
-    "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
-    "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
-    "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads
@@ -478,7 +468,7 @@ class Flix {
 
   /**
     * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to print the explanation.
+    * Decides whether or not to append the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain)
@@ -574,15 +564,16 @@ class Flix {
     val afterMonomorph = Monomorph.run(afterEarlyTreeShaker)
     val afterSimplifier = Simplifier.run(afterMonomorph)
     val afterClosureConv = ClosureConv.run(afterSimplifier)
-    val afterLift = LambdaLift.run(afterClosureConv)
-    val afterTailRec = Tailrec.run(afterLift)
-    val afterOptimizer = Optimizer.run(afterTailRec)
+    cachedLiftedAst = LambdaLift.run(afterClosureConv)
+    val afterTailrec = Tailrec.run(cachedLiftedAst)
+    val afterOptimizer = Optimizer.run(afterTailrec)
     lateTreeShakerAst = LateTreeShaker.run(afterOptimizer)
-    val afterControlSeperator = ControlSeparator.run(lateTreeShakerAst)
-    undoAst = Undo.run(afterControlSeperator)
-    val afterVarNumbering = VarNumbering.run(undoAst)
-    val afterFinalize = Finalize.run(afterVarNumbering)
-    cachedErasedAst = Eraser.run(afterFinalize)
+    val afterReducer = Reducer.run(lateTreeShakerAst)
+    val afterControlSeperator = ControlSeparator.run(afterReducer)
+    val afterUndo = Undo.run(afterControlSeperator)
+    val afterVarNumbering = VarNumbering.run(afterUndo)
+    val afterMonoTyper = MonoTyper.run(afterVarNumbering)
+    cachedErasedAst = Eraser.run(afterMonoTyper)
     val afterJvmBackend = JvmBackend.run(cachedErasedAst)
     val result = Finish.run(afterJvmBackend)
 

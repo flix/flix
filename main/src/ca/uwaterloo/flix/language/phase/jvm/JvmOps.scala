@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, RigidityEnv, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.Finalize
+import ca.uwaterloo.flix.language.phase.MonoTyper
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -574,7 +574,7 @@ object JvmOps {
   }
 
   // TODO: Remove
-  private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
+  private def hackType2MonoType(tpe: Type): MonoType = MonoTyper.visitType(tpe)
 
   // TODO: Remove
   private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, Ast.VarText.Absent, Kind.Wild, isRegion = false, SourceLocation.Unknown)
@@ -651,7 +651,7 @@ object JvmOps {
       }
 
       // Compute the types in the expression.
-      val expressionTypes = visitExp(defn.exp)
+      val expressionTypes = visitStmt(defn.stmt)
 
       // Return the types in the defn.
       formalParamTypes ++ expressionTypes + defn.tpe
@@ -671,13 +671,9 @@ object JvmOps {
 
       case Expr.Var(_, tpe, _) => Set(tpe)
 
-      case Expr.ApplyClo(exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyClo(exp, exps, _, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplyCloTail(exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
-
-      case Expr.ApplyDef(_, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
-
-      case Expr.ApplyDefTail(_, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyDef(_, exps, _, tpe, _) => visitExps(exps) ++ Set(tpe)
 
       case Expr.ApplySelfTail(_, _, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
 
@@ -711,6 +707,13 @@ object JvmOps {
       case Expr.ApplyAtomic(_, exps, tpe, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
+
+    /**
+      * Returns the set of types which occur in the given expression `exp0`.
+      */
+    def visitStmt(s: Stmt): Set[MonoType] = s match {
+      case Stmt.Ret(e, tpe, loc) => visitExp(e)
+    }
 
     // TODO: Magnus: Look for types in other places.
 
