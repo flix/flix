@@ -39,7 +39,6 @@ sealed trait UnkindedType {
     case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
-    case UnkindedType.ReadWrite(tpe, loc) => UnkindedType.ReadWrite(tpe.map(f), loc)
     case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(tpe.map(f), loc)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
@@ -89,7 +88,6 @@ sealed trait UnkindedType {
     case UnkindedType.CaseComplement(tpe, _) => tpe.definiteTypeVars
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
     case UnkindedType.CaseIntersection(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
-    case UnkindedType.ReadWrite(tpe, _) => tpe.definiteTypeVars
     case UnkindedType.Ascribe(tpe, _, _) => tpe.definiteTypeVars
 
     // For aliases we used the reduced type
@@ -199,18 +197,6 @@ object UnkindedType {
     }
 
     override def hashCode(): Int = Objects.hash(pur, arity)
-  }
-
-  /**
-    * A read or write type.
-    */
-  case class ReadWrite(tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: Any): Boolean = that match {
-      case ReadWrite(tpe2, _) => tpe == tpe2
-      case _ => false
-    }
-
-    override def hashCode(): Int = Objects.hash(tpe)
   }
 
   /**
@@ -497,7 +483,6 @@ object UnkindedType {
     case tpe: UnkindedType.CaseSet => tpe
     case Apply(tpe1, tpe2, loc) => Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Arrow(purAndEff, arity, loc) => Arrow(purAndEff.map(eraseAliases), arity, loc)
-    case ReadWrite(tpe, loc) => ReadWrite(eraseAliases(tpe), loc)
     case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(eraseAliases(tpe), loc)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
