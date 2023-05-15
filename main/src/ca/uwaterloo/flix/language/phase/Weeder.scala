@@ -1409,7 +1409,7 @@ object Weeder {
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val tpe = Type.mkRegion(Type.False, loc)
+      val tpe = Type.mkRegion(Type.All, loc)
       WeededAst.Expression.Region(tpe, loc).toSuccess
 
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
@@ -2707,7 +2707,7 @@ object Weeder {
     case ParsedAst.Type.Complement(sp1, tpe, sp2) =>
       val tVal = visitType(tpe)
       mapN(tVal) {
-        case t => WeededAst.Type.Not(t, mkSL(sp1, sp2))
+        case t => WeededAst.Type.Complement(t, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Type.Union(tpe1, tpe2, sp2) =>
@@ -2715,7 +2715,7 @@ object Weeder {
       val t1Val = visitType(tpe1)
       val t2Val = visitType(tpe2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => WeededAst.Type.And(t1, t2, mkSL(sp1, sp2))
+        case (t1, t2) => WeededAst.Type.Union(t1, t2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Type.Intersection(tpe1, tpe2, sp2) =>
@@ -2723,7 +2723,7 @@ object Weeder {
       val t1Val = visitType(tpe1)
       val t2Val = visitType(tpe2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
+        case (t1, t2) => WeededAst.Type.Intersection(t1, t2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Type.Difference(tpe1, tpe2, sp2) =>
@@ -2732,7 +2732,7 @@ object Weeder {
       val t2Val = visitType(tpe2)
       val loc = mkSL(sp1, sp2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => WeededAst.Type.And(t1, WeededAst.Type.Not(t2, loc), loc)
+        case (t1, t2) => WeededAst.Type.Intersection(t1, WeededAst.Type.Complement(t2, loc), loc)
       }
 
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>

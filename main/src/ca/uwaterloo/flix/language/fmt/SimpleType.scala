@@ -81,15 +81,11 @@ object SimpleType {
 
   case object Lazy extends SimpleType
 
-  case object True extends SimpleType
-
-  case object False extends SimpleType
-
-  case object Region extends SimpleType
-
   case object Empty extends SimpleType
 
   case object All extends SimpleType
+
+  case object Region extends SimpleType
 
   //////////
   // Records
@@ -328,7 +324,7 @@ object SimpleType {
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
             // Case 2: Pure function.
-            case pur :: tpes if pur == True || fmt.ignorePur =>
+            case pur :: tpes if pur == Empty || fmt.ignorePur =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
@@ -437,16 +433,16 @@ object SimpleType {
               Lattice(tpes, lat)
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
-        case TypeConstructor.True => True
-        case TypeConstructor.False => False
-        case TypeConstructor.Not =>
+        case TypeConstructor.Empty => Empty
+        case TypeConstructor.All => All
+        case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
             case Nil => Not(Hole)
             case arg :: Nil => Not(arg)
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.And =>
+        case TypeConstructor.Union =>
           // collapse into a chain of ands
           t.typeArguments.map(visit).map(splitAnds) match {
             // Case 1: No args. ? and ?
@@ -459,7 +455,7 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Or =>
+        case TypeConstructor.Intersection =>
           // collapse into a chain of ors
           t.typeArguments.map(visit).map(splitOrs) match {
             // Case 1: No args. ? or ?

@@ -107,7 +107,7 @@ object RestrictableChooseInference {
 
           // τ_out
           resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
-          resultPur = Type.mkAnd(pur :: purs, loc)
+          resultPur = Type.mkUnion(pur :: purs, loc)
         } yield (resultTconstrs, resultTpe, resultPur)
 
       case KindedAst.Expression.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
@@ -170,7 +170,7 @@ object RestrictableChooseInference {
 
           // τ_out
           resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
-          resultPur = Type.mkAnd(pur :: purs, loc)
+          resultPur = Type.mkUnion(pur :: purs, loc)
         } yield (resultTconstrs, resultTpe, resultPur)
 
     }
