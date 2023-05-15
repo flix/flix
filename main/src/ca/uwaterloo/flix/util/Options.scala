@@ -53,7 +53,7 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
-    xprintphaseasts = Set.empty,
+    xprintphase = Set.empty,
     xprintboolunif = false,
     xnoqmc = false,
     xflexibleregions = false,
@@ -107,7 +107,7 @@ object Options {
   * @param xstatistics         enables statistics collection.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono         enables strict monomorphization.
-  * @param xprintphaseasts     prints the chosen phase ASTs to the build folder.
+  * @param xprintphase     prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
   */
 case class Options(lib: LibLevel,
@@ -139,7 +139,7 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
-                   xprintphaseasts: Set[String],
+                   xprintphase: Set[String],
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
                    xsummary: Boolean
