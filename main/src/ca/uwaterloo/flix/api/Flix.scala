@@ -595,7 +595,7 @@ class Flix {
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
     cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
-    val afterControlSeparator = ControlSeparator.run(afterReducer)
+    val afterControlSeparator = ControlSeparator.run(cachedReducerAst)
     val afterUndo = Undo.run(afterControlSeparator)
     cachedVarNumberingAst = VarNumbering.run(afterUndo)
     cachedMonoTyperAst = MonoTyper.run(cachedVarNumberingAst)
