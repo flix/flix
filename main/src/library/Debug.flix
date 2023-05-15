@@ -119,6 +119,21 @@ mod Debug {
             case y: Array[_, _] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, rc]): String \ {};
                 toString(unchecked_cast(y as Array[##java.lang.Object, rc]))
+            case y: Vector[_] =>
+                let s = ref "Vector#{" @ rc;
+                let first = ref true @ rc;
+
+                def loop(i) = {
+                    let v = $VECTOR_GET$(y, i);
+                    if (not deref first) s := deref s + ", " else first := false;
+                    s := deref s + Debug.stringify(v);
+
+                    if (i < $VECTOR_LENGTH$(y)) loop(i + 1) else ()
+                };
+                loop(0);
+
+                s := deref s + "}";
+                deref s
             case y: _ =>
                 import static java.util.Objects.toString(##java.lang.Object): String \ {};
                 toString(unchecked_cast(y as ##java.lang.Object))

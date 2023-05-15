@@ -102,6 +102,8 @@ mod TestDebug {
     @test
     def testArrayOfStringStringify01(): Bool \ IO = stringify(Array#{"Hello", "World!"} @ Static) == "[Hello, World!]"
 
+    @test
+    def testArrayOfVectorOfIntStringify01(): Bool \ IO = stringify(Array#{Vector#{1, 2}, Vector#{3, 4}} @ Static) == "[Vector#{1, 2}, Vector#{3, 4}]"
 
     @test
     def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static) == "[[1, 2], [3, 4]]"
@@ -109,6 +111,22 @@ mod TestDebug {
 
     @test
     def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static, Array#{Array#{5, 6} @ Static, Array#{7, 8} @ Static} @ Static} @ Static) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
+
+
+    @test
+    def testVectorOfUnitStringify01(): Bool = stringify(Vector#{(), ()}) == "Vector#{(), ()}"
+
+    @test
+    def testVectorOfBoolStringify01(): Bool = stringify(Vector#{true, false}) == "Vector#{true, false}"
+
+    @test
+    def testVectorOfStringStringify01(): Bool = stringify(Vector#{"Hello", "World!"}) == "Vector#{Hello, World!}"
+
+    @test
+    def testVectorOfArrayOfIntStringify01(): Bool \ IO = stringify(Vector#{Array#{1, 2} @ Static, Array#{3, 4} @ Static}) == "Vector#{[1, 2], [3, 4]}"
+
+    @test
+    def testVectorOfVectorOfIntStringify01(): Bool = stringify(Vector#{Vector#{1, 2}, Vector#{3, 4}}) == "Vector#{Vector#{1, 2}, Vector#{3, 4}}"
 
 
     @test
