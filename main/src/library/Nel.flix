@@ -102,7 +102,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
-    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ Write(r) = Nel.toArray(rc, l)
+    override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
@@ -111,7 +111,7 @@ instance SemiGroup[Nel[a]] {
 }
 
 instance Iterable[Nel] {
-    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
 mod Nel {
@@ -545,13 +545,13 @@ mod Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ r =
         l |> toList |> List.toArray(r)
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
@@ -614,14 +614,14 @@ mod Nel {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r =
        let Nel(x, xs) = l;
        List.iterator(rc, x :: xs)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

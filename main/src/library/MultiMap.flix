@@ -522,7 +522,7 @@ mod MultiMap {
     ///
     /// Returns the MultiMap `m` as a list of singleton key-value pairs in ascending order.
     ///
-    pub def toMutDeque(r: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ r =
         let MultiMap(m1) = m;
         Map.toMutDeque(r, m1)
 
@@ -548,7 +548,7 @@ mod MultiMap {
     ///
     /// Returns an iterator over all key-value pairs in `m` i.e. `k => Set#{v_1, ..., v_n}`.
     ///
-    pub def iterator(rc: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r, r] \ r =
         let MultiMap(m1) = m;
         Map.iterator(rc, m1)
 

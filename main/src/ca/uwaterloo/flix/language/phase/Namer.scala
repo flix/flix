@@ -1266,16 +1266,6 @@ object Namer {
           case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
         }
 
-      case WeededAst.Type.Read(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => NamedAst.Type.Read(t, loc)
-        }
-
-      case WeededAst.Type.Write(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => NamedAst.Type.Write(t, loc)
-        }
-
       case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
 
       case WeededAst.Type.CaseSet(cases, loc) => NamedAst.Type.CaseSet(cases, loc).toSuccess
@@ -1391,8 +1381,6 @@ object Namer {
     case WeededAst.Type.Complement(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Union(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
-    case WeededAst.Type.Read(tpe, loc) => freeTypeVars(tpe)
-    case WeededAst.Type.Write(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Empty(_) => Nil
     case WeededAst.Type.CaseSet(_, _) => Nil
     case WeededAst.Type.CaseComplement(tpe, loc) => freeTypeVars(tpe)

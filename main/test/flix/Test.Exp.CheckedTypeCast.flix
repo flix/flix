@@ -31,14 +31,14 @@
     @test
     def testCheckedTypeCast05(): ##java.io.Serializable = region rh {
         let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Write(rh) as mkSb;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rh as mkSb;
         checked_cast(mkSb())
     }
 
     @test
     def testCheckedTypeCast06(): ##java.lang.Object = region rh {
         let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Write(rh) as mkSb;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rh as mkSb;
         checked_cast(mkSb())
     }
 

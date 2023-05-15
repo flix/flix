@@ -1472,7 +1472,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
       Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | CaseComplement | Complement |
-        Native | True | False | Pure | Impure | Read | Write | Var | Ambiguous
+        Native | True | False | Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1553,14 +1553,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Impure: Rule1[ParsedAst.Type] = rule {
       SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
-    }
-
-    def Read: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Read") ~ "(" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Type.Read
-    }
-
-    def Write: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Write") ~ "(" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Type.Write
     }
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {

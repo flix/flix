@@ -1538,24 +1538,6 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * A type representing a read of a region.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param tpes the regions.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Read(sp1: SourcePosition, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * A type representing a read of a region.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param tpes the regions.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Write(sp1: SourcePosition, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * A type representing a case set.
       *
       * @param sp1   the position of the first character in the type.

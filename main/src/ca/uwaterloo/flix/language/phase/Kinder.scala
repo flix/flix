@@ -1261,10 +1261,6 @@ object Kinder {
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
-    case UnkindedType.ReadWrite(tpe, _) =>
-      // erase the read/write wrapper
-      visitType(tpe, expectedKind, kenv, taenv, root)
-
     case UnkindedType.Enum(sym, loc) =>
       val kind = getEnumKind(root.enums(sym))
       unify(kind, expectedKind) match {
@@ -1584,8 +1580,6 @@ object Kinder {
       flatMapN(purKenvsVal, argKenvVal) {
         case (purKenvs, argKenv) => KindEnv.merge(purKenvs :+ argKenv)
       }
-
-    case UnkindedType.ReadWrite(t, _) => inferType(t, Kind.Eff, kenv0, taenv, root)
 
     case UnkindedType.Enum(sym, _) =>
       val tyconKind = getEnumKind(root.enums(sym))
