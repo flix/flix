@@ -327,7 +327,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    pub def foo(x: a): Int32
         |}
         |
-        |enum E[_: Bool] {
+        |enum E[_: Eff] {
         |    case E(Int32)
         |}
         |
@@ -449,7 +449,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -470,7 +470,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -491,7 +491,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -512,7 +512,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -533,7 +533,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, Present(123))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -554,7 +554,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -575,7 +575,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), Present(456))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -596,7 +596,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123), Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -617,7 +617,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, if (true) Absent else Present(123))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -638,7 +638,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -659,7 +659,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -680,7 +680,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), Present(456))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -701,7 +701,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123), Present(456))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -722,7 +722,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), if (true) Absent else Present(456))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -744,7 +744,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, Present(123))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -766,7 +766,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -788,7 +788,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -810,7 +810,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), Present(456))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -833,7 +833,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -856,7 +856,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), Present(456))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -878,7 +878,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, if (true) Absent else Present(456)) == 1
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -900,7 +900,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), if (true) Absent else Present(456)) == 1
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -922,7 +922,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -944,7 +944,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent, if (true) Absent else Present(456)) == 1
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -966,7 +966,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123), if (true) Absent else Present(456)) == 1
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -988,7 +988,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1006,7 +1006,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case Absent => 1
         |    }
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1024,7 +1024,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case Present(_) => 1
         |    }
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1048,7 +1048,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Absent)
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1072,7 +1072,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    f(Present(123))
         |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1085,7 +1085,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.ChooseStar.01") {
     val input =
       """
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1110,7 +1110,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.ChooseStar.02") {
     val input =
       """
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1134,7 +1134,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.ChooseStar.03") {
     val input =
       """
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
+        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1168,7 +1168,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.02") {
     val input =
       """
-        |def f(): Int32 \ {} = unchecked_cast(123 as _ \ Impure)
+        |def f(): Int32 \ {} = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1426,33 +1426,33 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestParYield.01") {
     val input =
       """
-        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unchecked_cast(1 as _ \ Impure) }) yield x;
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
   test("TestParYield.02") {
     val input =
       """
-        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unchecked_cast(1 as _ \ Impure) }) yield x;
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ IO) }) yield x;
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
   test("TestParYield.03") {
     val input =
       """
-        | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ Impure) }) yield (a, b);
+        | def f(g: Unit -> Unit \ IO): Unit \ IO =
+        |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ IO) }) yield (a, b);
         |     g()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedBools](result)
   }
 
@@ -1469,7 +1469,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.UnexpectedArgument.01") {
     val input =
       """
-        |def f[m: Bool -> Type, a: Bool](_: m[a]): m[a] = ???
+        |def f[m: Eff -> Type, a: Eff](_: m[a]): m[a] = ???
         |
         |enum Box[a](a)
         |
@@ -1527,7 +1527,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     // See https://github.com/flix/flix/issues/3634
     val input =
     """
-      |enum E[a: Type, ef: Bool](Unit)
+      |enum E[a: Type, ef: Eff](Unit)
       |def f(g: E[Int32, true]): Bool = ???
       |def mkE(): E[Int32, true] \ ef = ???
       |

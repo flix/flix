@@ -318,8 +318,8 @@ object ManifestParser {
           Err(ManifestError.JarUrlFormatError(p, url))
         }
       } catch {
-        case e: MalformedURLException =>
-          Err(ManifestError.MalformedJarUrl(p, url, e.getMessage))
+        case e: IllegalArgumentException =>
+          Err(ManifestError.WrongUrlFormat(p, url, e.getMessage))
       }
     } catch {
       case e: ClassCastException =>

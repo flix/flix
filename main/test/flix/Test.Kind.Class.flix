@@ -45,8 +45,8 @@ mod Test.Kind.Class {
 
             mod Mix {
                 // ensure we use `m`'s annotation
-                class CTypeBoolType[m: Type -> Bool -> Type] {
-                    pub def fAndM(f: a -> b \ ef1, x: m[a, ef2]): m[b, ef1 and ef2]
+                class CTypeBoolType[m: Type -> Eff -> Type] {
+                    pub def fAndM(f: a -> b \ ef1, x: m[a, ef2]): m[b, ef1 + ef2]
                 }
             }
         }
@@ -116,7 +116,7 @@ mod Test.Kind.Class {
             mod TypeConstraint {
                 class CStar[a: Type]
                 class CStarToStar[a: Type -> Type]
-                class CBoolToStar[a: Bool -> Type]
+                class CBoolToStar[a: Eff -> Type]
 
                 class CStar1[a: Type] {
                     pub def star(x: a): Int32 with CStar[a] = ???
@@ -126,7 +126,7 @@ mod Test.Kind.Class {
                     pub def starToStar(x: a[Int32]): Int32 with CStarToStar[a] = ???
                 }
 
-                class CBoolToStar1[a: Bool -> Type] {
+                class CBoolToStar1[a: Eff -> Type] {
                     pub def boolToStar(x: a[Pure]): Int32 with CBoolToStar[a] = ???
                 }
             }
@@ -165,7 +165,7 @@ mod Test.Kind.Class {
             mod TypeConstraint {
                 class CStar[a: Type]
                 class CStarToStar[a: Type -> Type]
-                class CBoolToStar[a: Bool -> Type]
+                class CBoolToStar[a: Eff -> Type]
 
                 class CStar1[a: Type] {
                     law star: forall(x: a) with CStar[a] . ???
@@ -175,7 +175,7 @@ mod Test.Kind.Class {
                     law starToStar: forall(x: a[Int32]) with CStarToStar[a] . ???
                 }
 
-                class CBoolToStar1[a: Bool -> Type] {
+                class CBoolToStar1[a: Eff -> Type] {
                     law boolToStar: forall(x: a[Pure]) with CBoolToStar[a] . ???
                 }
             }

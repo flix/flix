@@ -1713,8 +1713,8 @@ class TestManifestParser extends AnyFunSuite {
       case Err(e) => e.message(f)
     })
   }
-
-  ignore("Err.jar-dependencies.url.02") {
+  
+  test("Err.jar-dependencies.url.02") {
     val toml = {
       """
         |[package]
@@ -1730,7 +1730,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MalformedJarUrl(null, "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "no protocol: repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").message(f))(ManifestParser.parse(toml, null) match {
+    assertResult(ManifestError.WrongUrlFormat(null, "url:repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "URI is not absolute").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })

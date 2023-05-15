@@ -49,11 +49,6 @@ object Redundancy {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
-    // Return early if the redundancy phase is disabled.
-    if (flix.options.xallowredundancies) {
-      return root.toSuccess
-    }
-
     // Computes all used symbols in all top-level defs (in parallel).
     val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (_, decl)) => acc ++ visitDef(decl)(root, flix)
@@ -990,7 +985,7 @@ object Redundancy {
     *
     * {{{
     * Int32                                        =>     throw
-    * Int32 -> String -> Int32 & Pure              =>     Pure
+    * Int32 -> String -> Int32 \ Pure              =>     Pure
     * (Int32, String) -> String -> Bool \ IO   =>     Impure
     * }}}
     *
@@ -1002,28 +997,6 @@ object Redundancy {
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
       case _ => tpe.arrowPurityType
-    }
-  }
-
-  /**
-    * Returns the effect type of `this` curried arrow type.
-    *
-    * For example,
-    *
-    * {{{
-    * Int32                                        =>     throw
-    * Int32 -> String -> Int32 \ Eff               =>     Pure
-    * (Int32, String) -> String -> Bool & \ Eff    =>     Impure
-    * }}}
-    *
-    * NB: Assumes that `this` type is an arrow.
-    */
-  @tailrec
-  private def curriedArrowEffectType(tpe: Type): Type = {
-    val resType = tpe.arrowResultType
-    resType.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(resType)
-      case _ => tpe.arrowEffectType
     }
   }
 

@@ -390,14 +390,14 @@ mod MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutSet(_, ms) = s;
         Set.iterator(rc, deref ms) |> Iterator.map(x -> {discard deref ms; x})
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 and r2, r1] \ { r1, r2 } =
+    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { r1, r2 } =
         iterator(rc, s) |> Iterator.zipWithIndex
 
     ///

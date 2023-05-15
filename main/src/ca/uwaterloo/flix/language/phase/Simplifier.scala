@@ -247,7 +247,7 @@ object Simplifier {
         SimplifiedAst.Expression.Spawn(lambdaExp, e2, tpe, loc)
 
       case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
-        // Wrap the expression in a closure: () -> tpe & Pure
+        // Wrap the expression in a closure: () -> tpe \ Pure
         val e = visitExp(exp)
         val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe, loc)
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)

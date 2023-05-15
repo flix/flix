@@ -402,7 +402,7 @@ mod MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutDeque(_, a, f, b) = d;
         let i = ref (deref f) @ rc;
         let next = () -> {

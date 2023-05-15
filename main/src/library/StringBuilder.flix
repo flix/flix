@@ -99,7 +99,7 @@ mod StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2, r1] \ { r2, r1 } =
+    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
         import java.lang.StringBuilder.charAt(Int32): Char \ r2;
         let StringBuilder(msb) = sb;
         Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(msb, i))
@@ -107,7 +107,7 @@ mod StringBuilder {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 and r2, r1] \ { r2, r1 } =
+    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 + r2, r1] \ { r1, r2 } =
         iterator(r1, sb) |> Iterator.zipWithIndex
 
     ///
