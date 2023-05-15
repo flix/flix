@@ -98,7 +98,6 @@ object Main {
       test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
-      xallowredundancies = Options.Default.xallowredundancies,
       xbddthreshold = cmdOpts.xbddthreshold,
       xboolclassic = cmdOpts.xboolclassic,
       xnoboolcache = cmdOpts.xnoboolcache,

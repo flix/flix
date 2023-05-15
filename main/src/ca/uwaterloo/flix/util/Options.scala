@@ -40,7 +40,6 @@ object Options {
     target = JvmTarget.Version18,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
-    xallowredundancies = false,
     xbddthreshold = None,
     xboolclassic = false,
     xnoboolcache = false,
@@ -100,7 +99,6 @@ object Options {
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
-  * @param xallowredundancies  disables the redundancy checker.
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
@@ -127,7 +125,6 @@ case class Options(lib: LibLevel,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
-                   xallowredundancies: Boolean,
                    xbddthreshold: Option[Int],
                    xboolclassic: Boolean,
                    xnoboolcache: Boolean,

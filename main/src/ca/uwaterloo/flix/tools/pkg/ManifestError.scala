@@ -142,7 +142,7 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class MalformedJarUrl(path: Path, url: String, message: String) extends ManifestError {
+  case class WrongUrlFormat(path: Path, url: String, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
          | Could not construct a URL from ${f.red(url)}:

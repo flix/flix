@@ -3353,6 +3353,37 @@ def countSubstring11(): Bool = String.countSubstring({substr = "abc"}, "ABC abc 
 def countSubstring12(): Bool = String.countSubstring({substr = "abc"}, "aBC::abc::AbC::abc::Abc") == 2
 
 /////////////////////////////////////////////////////////////////////////////
+// stripMargin                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def stripMargin01(): Bool = String.stripMargin("") == ""
+
+@test
+def stripMargin02(): Bool = String.stripMargin("abc") == "abc"
+
+@test
+def stripMargin03(): Bool = String.stripMargin("${'\t'}") == "${'\t'}"
+
+@test
+def stripMargin04(): Bool = String.stripMargin("    |abc") == "abc"
+
+@test
+def stripMargin05(): Bool = String.stripMargin("${'\t'} |abc") == "abc"
+
+@test
+def stripMargin06(): Bool = String.stripMargin(" | abc") == " abc"
+
+@test
+def stripMargin07(): Bool = String.stripMargin(" ||abc") == "|abc"
+
+@test
+def stripMargin08(): Bool = String.stripMargin(String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+@test
+def stripMargin09(): Bool = String.stripMargin(String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // stripMarginWith                                                         //
 /////////////////////////////////////////////////////////////////////////////
 

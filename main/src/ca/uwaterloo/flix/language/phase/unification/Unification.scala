@@ -88,7 +88,7 @@ object Unification {
     //
     // Bools
     //
-    case (Kind.Bool, Kind.Bool) =>
+    case (Kind.Eff, Kind.Eff) =>
       // don't try to unify effects if the `no-bool-effects` flag is on
       if (flix.options.xnobooleffects) {
         Ok(Substitution.empty, Nil)

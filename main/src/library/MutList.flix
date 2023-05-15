@@ -790,7 +790,7 @@ mod MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { Write(r1), Read(r2) } =
         let MutList(_, a, len) = l;
         let len1 = deref len;
         let ix = ref 0 @ rc;

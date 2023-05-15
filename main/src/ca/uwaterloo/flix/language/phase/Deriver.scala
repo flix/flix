@@ -193,7 +193,7 @@ object Deriver {
               mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }
@@ -304,18 +304,18 @@ object Deriver {
               mkVarExpr(lambdaVarSym, loc),
               List(mkVarExpr(param1, loc)),
               Type.freshVar(Kind.Star, loc),
-              Type.freshVar(Kind.Bool, loc),
+              Type.freshVar(Kind.Eff, loc),
               loc
             ),
             KindedAst.Expression.Apply(
               mkVarExpr(lambdaVarSym, loc),
               List(mkVarExpr(param2, loc)),
               Type.freshVar(Kind.Star, loc),
-              Type.freshVar(Kind.Bool, loc),
+              Type.freshVar(Kind.Eff, loc),
               loc),
           ),
           Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Bool, loc),
+          Type.freshVar(Kind.Eff, loc),
           loc
         )
       )
@@ -399,7 +399,7 @@ object Deriver {
               mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }
@@ -416,7 +416,7 @@ object Deriver {
             KindedAst.Expression.Lazy(exp2, loc)
           ),
           Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Bool, loc),
+          Type.freshVar(Kind.Eff, loc),
           loc
         )
       }
@@ -546,7 +546,7 @@ object Deriver {
             KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star, loc), loc),
             List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }
@@ -686,12 +686,12 @@ object Deriver {
                 KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc), loc),
                 List(mkVarExpr(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
-                Type.freshVar(Kind.Bool, loc),
+                Type.freshVar(Kind.Eff, loc),
                 loc
               ),
             ),
             Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Eff, loc),
             loc
           )
       }

@@ -1112,4 +1112,24 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate an illegal effect set member.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectSetMember(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal effect set member."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal effect set member.
+         |
+         |${code(loc, s"Effect sets may only contain variables and constants.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 }

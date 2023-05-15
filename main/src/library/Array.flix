@@ -1378,7 +1378,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1) } =
+    pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ { Write(r1) } =
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
@@ -1386,7 +1386,7 @@ mod Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 and r2, r1] \ { Write(r1) } =
+    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { Write(r1) } =
         iterator(rc, a) |> Iterator.zipWithIndex
 
     ///
@@ -1648,7 +1648,7 @@ mod Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit & r \ NonDet =
+    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, NonDet} =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

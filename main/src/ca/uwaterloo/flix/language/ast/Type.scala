@@ -605,7 +605,7 @@ object Type {
   def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
 
   /**
-    * Constructs the arrow type A -> B & p.
+    * Constructs the arrow type A -> B \ p.
     */
   def mkArrowWithEffect(a: Type, p: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(p, a, b), loc)
 
@@ -620,7 +620,7 @@ object Type {
   def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
-    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
+    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
     */
   def mkCurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val a = as.last
@@ -639,7 +639,7 @@ object Type {
   def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
@@ -661,7 +661,7 @@ object Type {
     */
   def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
     val sym = Symbol.mkEnumSym("Choice")
-    val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
+    val kind = Kind.Star ->: Kind.Eff ->: Kind.Eff ->: Kind.Star
     val tc = TypeConstructor.Enum(sym, kind)
     Apply(Apply(Apply(Cst(tc, loc), tpe0, loc), isAbsent, loc), isPresent, loc)
   }
