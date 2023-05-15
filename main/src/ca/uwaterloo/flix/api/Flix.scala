@@ -88,9 +88,19 @@ class Flix {
   private var cachedErasedAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
 
   /**
+    * Returns the cached [[LiftedAst]].
+    */
+  def getLiftedAst: LiftedAst.Root = cachedLiftedAst
+
+  /**
     * Returns the cached [[LiftedAst]] after [[LateTreeShaker]].
     */
   def getLateTreeShakerAst: LiftedAst.Root = lateTreeShakerAst
+
+  /**
+    * Returns the cached [[ErasedAst]] after [[Eraser]].
+    */
+  def getEraserAst: ErasedAst.Root = cachedErasedAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.

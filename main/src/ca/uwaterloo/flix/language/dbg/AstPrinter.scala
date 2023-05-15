@@ -31,15 +31,21 @@ object AstPrinter {
     */
   def printAsts()(implicit flix: Flix): Unit = {
     val asts = flix.options.xprintasts
-    if (asts.contains("LateTreeShaker") || asts.contains("Pre"))
+    if (asts.contains("Lifted Ast"))
+      writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
+    if (asts.contains("LateTreeShaker"))
       writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
+    if (asts.contains("Eraser"))
+      writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
   }
 
   /**
     * Writes all the formatted asts to disk.
     */
   def printAllAsts()(implicit flix: Flix): Unit = {
+    writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
     writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
+    writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
   }
 
   /**

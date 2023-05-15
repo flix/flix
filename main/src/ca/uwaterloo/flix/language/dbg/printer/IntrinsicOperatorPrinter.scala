@@ -85,7 +85,7 @@ object IntrinsicOperatorPrinter {
 
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
 
-    case _ => throw InternalCompilerException("Mismatched Arity", SourceLocation.Unknown)
+    case (op, exps) => App(AsIs(op.toString), exps)
   }
 
 

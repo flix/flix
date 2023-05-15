@@ -2,13 +2,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.CallByValueAst.{Expr, Stmt}
-import ca.uwaterloo.flix.language.ast.{CallByValueAst, ReducedAst, SourceLocation}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.{CallByValueAst, ReducedAst}
 
 
 object Undo {
-
-  private def todo: Nothing = throw InternalCompilerException("WIP", SourceLocation.Unknown)
 
   def run(root: CallByValueAst.Root)(implicit flix: Flix): ReducedAst.Root = {
     val defs = root.defs.view.mapValues(visitDef).toMap
@@ -33,7 +30,7 @@ object Undo {
       val closureArgs = closureArgs0.map(visitExp)
       ReducedAst.Expr.Closure(sym, closureArgs, tpe, loc)
     case Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
-      val e = visitExp(exp)
+      val e = visitStmt(exp)
       val rules = rules0.map(visitCatchRule)
       ReducedAst.Expr.TryCatch(e, rules, tpe, purity, loc)
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
@@ -62,7 +59,7 @@ object Undo {
       val e1 = visitStmt(stmt1)
       val e2 = visitStmt(stmt2)
       ReducedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
-    case Stmt.LetRecVal(varSym, index, defSym, exp, stmt, tpe, purity, loc) =>
+    case Stmt.LetRec(varSym, index, defSym, exp, stmt, tpe, purity, loc) =>
       val e1 = visitExp(exp)
       val e2 = visitStmt(stmt)
       ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
@@ -89,7 +86,7 @@ object Undo {
 
   private def visitCatchRule(rule: CallByValueAst.CatchRule): ReducedAst.CatchRule = rule match {
     case CallByValueAst.CatchRule(sym, clazz, exp) =>
-      val e = visitExp(exp)
+      val e = visitStmt(exp)
       ReducedAst.CatchRule(sym, clazz, e)
   }
 

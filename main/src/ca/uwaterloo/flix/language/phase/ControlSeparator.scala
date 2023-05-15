@@ -7,8 +7,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object ControlSeparator {
 
-  private def todo: Nothing = throw InternalCompilerException("WIP", SourceLocation.Unknown)
-
   def run(root: ReducedAst.Root)(implicit flix: Flix): CallByValueAst.Root = flix.phase("ControlSeparator") {
     val ReducedAst.Root(defs0, enums0, entryPoint, sources) = root
     val defs = defs0.view.mapValues(visitDef).toMap
@@ -76,22 +74,42 @@ object ControlSeparator {
         val e3 = visitExpAsStmt(exp3)
         CallByValueAst.Stmt.IfThenElse(e1, e2, e3, tpe, purity, loc)
       })
-    case Expr.Branch(exp, branches, tpe, purity, loc) =>
-      todo
+    case Expr.Branch(exp, branches0, tpe, purity, loc) =>
+      val branches = branches0.view.mapValues(visitExpAsStmt).toMap
+      CallByValueAst.Stmt.Branch(visitExpAsStmt(exp), branches, tpe, purity, loc)
     case Expr.JumpTo(sym, tpe, purity, loc) =>
-      todo
+      CallByValueAst.Stmt.JumpTo(sym, tpe, purity, loc)
     case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val stmt1 = visitExpAsStmt(exp1)
       val stmt2 = visitExpAsStmt(exp2)
       CallByValueAst.Stmt.LetVal(sym, stmt1, stmt2, tpe, purity, loc)
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      todo
+      insertBindings { _ =>
+        val e1 = visitExpAsExpr(exp1)
+        CallByValueAst.Stmt.LetRec(varSym, index, defSym, e1, visitExpAsStmt(exp2), tpe, purity, loc)
+      }
     case Expr.Scope(sym, exp, tpe, purity, loc) =>
-      todo
-    case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
-      todo
-    case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-      todo
+      CallByValueAst.Stmt.Scope(sym, visitExpAsStmt(exp), tpe, purity, loc)
+    case Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
+      val e = visitExpAsStmt(exp)
+      val rules = rules0.map(visitCatchRule)
+      ret(CallByValueAst.Expr.TryCatch(e, rules, tpe, purity, loc))
+    case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+    insertBindings { _ =>
+      val methods = methods0.map(visitJvmMethod)
+      ret(CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc))
+    }
+  }
+
+  private def visitCatchRule(rule: ReducedAst.CatchRule)(implicit ctx: Context, flix: Flix): CallByValueAst.CatchRule = rule match {
+    case ReducedAst.CatchRule(sym, clazz, exp) =>
+      CallByValueAst.CatchRule(sym, clazz, visitExpAsStmt(exp))
+  }
+
+  private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: Context, flix: Flix): CallByValueAst.JvmMethod = method match {
+    case ReducedAst.JvmMethod(ident, fparams, clo0, retTpe, purity, loc) =>
+      val clo = visitExpAsExpr(clo0)
+      CallByValueAst.JvmMethod(ident, fparams.map(visitFormalParam), clo, retTpe, purity, loc)
   }
 
   sealed trait Binding
@@ -175,13 +193,25 @@ object ControlSeparator {
       val e3 = visitExpAsStmt(exp3)
       val ite = CallByValueAst.Stmt.IfThenElse(e1, e2, e3, tpe, purity, loc)
       ctx.bind(ite)
-    case ReducedAst.Expr.Branch(exp, branches, tpe, purity, loc) => todo
-    case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) => todo
-    case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) => todo
-    case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => todo
-    case ReducedAst.Expr.Scope(sym, exp, tpe, purity, loc) => todo
-    case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) => todo
-    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) => todo
+    case ReducedAst.Expr.Branch(exp, branches0, tpe, purity, loc) =>
+      val branches = branches0.view.mapValues(visitExpAsStmt).toMap
+      ctx.bind(CallByValueAst.Stmt.Branch(visitExpAsStmt(exp), branches, tpe, purity, loc))
+    case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
+      ctx.bind(CallByValueAst.Stmt.JumpTo(sym, tpe, purity, loc))
+    case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+      val stmt1 = visitExpAsStmt(exp1)
+      val stmt2 = visitExpAsStmt(exp2)
+      ctx.bind(CallByValueAst.Stmt.LetVal(sym, stmt1, stmt2, tpe, purity, loc))
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+      ctx.bind(CallByValueAst.Stmt.LetRec(varSym, index, defSym, visitExpAsExpr(exp1), visitExpAsStmt(exp2), tpe, purity, loc))
+    case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      ctx.bind(CallByValueAst.Stmt.Scope(sym, visitExpAsStmt(exp), tpe, purity, loc))
+    case Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
+      val e = visitExpAsStmt(exp)
+      val rules = rules0.map(visitCatchRule)
+      CallByValueAst.Expr.TryCatch(e, rules, tpe, purity, loc)
+    case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods.map(visitJvmMethod), loc)
   }
 
   private def visitFormalParam(p: ReducedAst.FormalParam): CallByValueAst.FormalParam = {

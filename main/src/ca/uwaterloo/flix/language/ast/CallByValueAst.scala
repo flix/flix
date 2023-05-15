@@ -54,7 +54,21 @@ object CallByValueAst {
       def purity: Purity = Pure
     }
 
-    case class TryCatch(exp: Expr, /* require body to be pure */ rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    /**
+      * Conceptually, we want `exp` and `rules` to be control-pure. It is very
+      * hard to do this with the structural transformation. So while these can
+      * be statements, we expect these statements to be control-pure. This means
+      * that
+      *
+      * `try { (x -> x + 1)(4+5) } catch { case e: Exception => ... }`
+      *
+      * becomes
+      *
+      * `try { letval cbv0 = (x -> x + 1); letval cbv1 = (4+5); cbv0(cbv1) } catch { case e: Exception => ... }`
+      *
+      * and likewise in the handler body
+      */
+    case class TryCatch(exp: Stmt, rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, /* no control effects */ methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
@@ -88,7 +102,7 @@ object CallByValueAst {
 
     case class LetVal(sym: Symbol.VarSym, stmt1: Stmt, stmt2: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class LetRecVal(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp: Expr, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp: Expr, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
     case class Scope(sym: Symbol.VarSym, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
@@ -104,7 +118,7 @@ object CallByValueAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[CallByValueAst.FormalParam], clo: CallByValueAst.Expr, retTpe: Type, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: CallByValueAst.Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: CallByValueAst.Stmt)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
