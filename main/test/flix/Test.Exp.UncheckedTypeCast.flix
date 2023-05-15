@@ -31,14 +31,14 @@
     @test
     def testUncheckedTypeCast05(): ##java.io.Serializable = region rh {
         let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Write(rh) as mkSb;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as mkSb;
         unchecked_cast(mkSb() as ##java.io.Serializable)
     }
 
     @test
     def testUncheckedTypeCast06(): ##java.lang.Object = region rh {
         let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Write(rh) as mkSb;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rh as mkSb;
         unchecked_cast(mkSb() as ##java.lang.Object)
     }
 
