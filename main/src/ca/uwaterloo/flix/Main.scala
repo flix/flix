@@ -112,7 +112,7 @@ object Main {
       xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
-      xprintasts = cmdOpts.xprintasts,
+      xprintphaseasts = cmdOpts.xprintphaseasts,
       xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary
@@ -307,7 +307,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
-                     xprintasts: Set[String] = Set.empty,
+                     xprintphaseasts: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
                      xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
@@ -486,8 +486,9 @@ object Main {
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
-      // xprint-asts
-      opt[Seq[String]]("Xprint-asts").action((m, c) => c.copy(xprintasts = m.toSet))
+      // xprint-phase-asts
+      opt[Seq[String]]("Xprint-phase-asts").action((m, c) => c.copy(xprintphaseasts = m.toSet)).
+        text("[experimental] prints the ASTs of the given phases to the build folder")
 
       // Xprint-bool-unif
       opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
