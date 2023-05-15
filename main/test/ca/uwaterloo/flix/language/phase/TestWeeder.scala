@@ -689,24 +689,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
-  test("ReservedName.Effect.02") {
-    val input =
-      """
-        |eff Read
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.ReservedName](result)
-  }
-
-  test("ReservedName.Effect.03") {
-    val input =
-      """
-        |eff Write
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.ReservedName](result)
-  }
-
   // TODO: IllegalFloat
 
   test("IllegalInt8.01") {

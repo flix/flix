@@ -30,21 +30,52 @@ object AstPrinter {
     * Writes all the formatted asts, requested by the flix options, to disk.
     */
   def printAsts()(implicit flix: Flix): Unit = {
-    val asts = flix.options.xprintasts
-    if (asts.contains("Lifted Ast"))
-      writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
-    if (asts.contains("LateTreeShaker"))
-      writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
-    if (asts.contains("Eraser"))
-      writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
+    val asts = flix.options.xprintphase
+    if (asts.nonEmpty) {
+      if (asts.contains("Parser")) () // wip
+      if (asts.contains("Weeder")) () // wip
+      if (asts.contains("Kinder")) () // wip
+      if (asts.contains("Resolver")) () // wip
+      if (asts.contains("TypedAst")) () // wip
+      if (asts.contains("Documentor")) () // wip
+      if (asts.contains("Lowering")) () // wip
+      if (asts.contains("EarlyTreeShaker")) () // wip
+      if (asts.contains("Monomorph")) () // wip
+      if (asts.contains("Simplifier")) () // wip
+      if (asts.contains("ClosureConv")) () // wip
+      if (asts.contains("LambdaLift")) writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
+      if (asts.contains("Tailrec")) writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
+      if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
+      if (asts.contains("LateTreeShaker")) writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
+      if (asts.contains("Reducer")) () // wip
+      if (asts.contains("VarNumbering")) () // wip
+      if (asts.contains("MonoTyper")) writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
+      if (asts.contains("Eraser")) writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
+    }
   }
 
   /**
     * Writes all the formatted asts to disk.
     */
   def printAllAsts()(implicit flix: Flix): Unit = {
-    writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
+    // Parser wip
+    // Weeder wip
+    // Kinder wip
+    // Resolver wip
+    // TypedAst wip
+    // Documentor wip
+    // Lowering wip
+    // EarlyTreeShaker wip
+    // Monomorph wip
+    // Simplifier wip
+    // ClosureConv wip
+    writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
+    writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
+    writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
     writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
+    // Reducer wip
+    // VarNumbering wip
+    writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
     writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
   }
 

@@ -339,10 +339,6 @@ object NamedAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
-    case class Relation(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
-
-    case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
-
     case class Arrow(tparams: List[NamedAst.Type], pur: Option[NamedAst.Type], tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
@@ -362,10 +358,6 @@ object NamedAst {
     case class Union(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
-
-    case class Read(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
-
-    case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Empty(loc: SourceLocation) extends NamedAst.Type
 
