@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
+import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -192,4 +193,11 @@ object CompletionUtils {
     }
   }
 
+  /**
+    * Generates an moduleSym with the given nameSpace.
+    *
+    * @param fqn the fully qualified name as a List[String].
+    * @return    the module symbol for the given fully qualified name.
+    */
+  def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn)
 }
