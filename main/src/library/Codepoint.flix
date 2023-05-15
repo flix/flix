@@ -185,7 +185,7 @@ mod Codepoint {
         import static java.lang.Character.charCount(Int32): Int32 \ {};
         charCount(cp)
 
-    pub def codepointToChars(cp: Int32): Option[Vector[Char]] = region rc {
+    pub def toChars(cp: Int32): Option[Vector[Char]] = region rc {
         try {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
             let arr = Array.new(rc, 2);
@@ -196,7 +196,7 @@ mod Codepoint {
         }
     }
 
-    pub def codepointToBmpChar(cp: Int32): Option[Char] = region rc {
+    pub def toBmpChar(cp: Int32): Option[Char] = region rc {
         try {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
             let arr = Array.new(rc, 2);
@@ -231,6 +231,20 @@ mod Codepoint {
         } catch {
             case _: ##java.lang.Exception => ""
         }
+
+    ///
+    ///
+    ///
+    pub def toBmpCodePoint(c: Char): Int32 =
+        unchecked_cast(c as Int32)
+
+    ///
+    ///
+    ///
+    pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
+        import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};
+        toCodePoint(high.high, low.low)
+
 
     pub def highSurrogate(cp: Int32): Option[Char] =
         import static java.lang.Character.highSurrogate(Int32): Char \ {};
