@@ -2320,41 +2320,41 @@ object Resolver {
           case (tpe1, tpe2) => UnkindedType.Apply(tpe1, tpe2, loc)
         }
 
-      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
+      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
 
-      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.False, loc).toSuccess
+      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.All, loc).toSuccess
 
       case NamedAst.Type.Not(tpe, loc) =>
         mapN(visit(tpe)) {
-          case t => mkNot(t, loc)
+          case t => mkComplement(t, loc)
         }
 
       case NamedAst.Type.And(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkAnd(t1, t2, loc)
+          case (t1, t2) => mkUnion(t1, t2, loc)
         }
 
       case NamedAst.Type.Or(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkOr(t1, t2, loc)
+          case (t1, t2) => mkIntersection(t1, t2, loc)
         }
 
       case NamedAst.Type.Complement(tpe, loc) =>
         mapN(visit(tpe)) {
-          t => mkNot(t, loc)
+          t => mkComplement(t, loc)
         }
 
       case NamedAst.Type.Union(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkAnd(t1, t2, loc)
+          case (t1, t2) => mkUnion(t1, t2, loc)
         }
 
       case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkOr(t1, t2, loc)
+          case (t1, t2) => mkIntersection(t1, t2, loc)
         }
 
-      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
+      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
 
       case NamedAst.Type.CaseSet(cases0, loc) =>
         val casesVal = traverse(cases0)(lookupRestrictableTag(_, env, ns0, root))
@@ -3289,21 +3289,21 @@ object Resolver {
 
         case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-        case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.All => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Complement => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Null => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Intersection => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RegionToStar => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Relation => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Empty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseSet(_, _) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure

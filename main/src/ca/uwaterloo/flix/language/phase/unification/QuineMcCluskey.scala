@@ -79,7 +79,7 @@ object QuineMcCluskey {
     if (typeList.size == 1) {
       typeList.head
     } else {
-      Type.mkOr(typeList, SourceLocation.Unknown)
+      Type.mkIntersection(typeList, SourceLocation.Unknown)
     }
   }
 
@@ -93,12 +93,12 @@ object QuineMcCluskey {
       case (formVar, boolValue) =>
       val symVar = env.getBackward(formVar).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: ${formVar}", SourceLocation.Unknown))
       if (boolValue == BoolVal.False) {
-        Type.mkNot(Type.Var(symVar, symVar.loc), symVar.loc)
+        Type.mkComplement(Type.Var(symVar, symVar.loc), symVar.loc)
       } else {
         Type.Var(symVar, symVar.loc)
       }
     }.toList
-    Type.mkAnd(typeVars, SourceLocation.Unknown)
+    Type.mkUnion(typeVars, SourceLocation.Unknown)
   }
 
   /**

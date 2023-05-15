@@ -345,7 +345,7 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val pur = Some(UnkindedType.Cst(TypeConstructor.False, loc))
+    val pur = Some(UnkindedType.Cst(TypeConstructor.All, loc))
     mkApply(UnkindedType.Arrow(pur, 2, loc), List(a, b), loc)
   }
 
@@ -447,19 +447,19 @@ object UnkindedType {
   }
 
   /**
-    * Returns the type `Not(tpe1)`.
+    * Returns the type `Complement(tpe1)`.
     */
-  def mkNot(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Not, loc), List(tpe1), loc)
+  def mkComplement(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
 
   /**
-    * Returns the type `And(tpe1, tpe2)`.
+    * Returns the type `Union(tpe1, tpe2)`.
     */
-  def mkAnd(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
+  def mkUnion(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
 
   /**
-    * Returns the type `Or(tpe1, tpe2)`.
+    * Returns the type `Intersection(tpe1, tpe2)`.
     */
-  def mkOr(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
+  def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
@@ -544,7 +544,7 @@ object UnkindedType {
       val elmType = getFlixType(comp)
       UnkindedType.mkApply(
         UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.False, SourceLocation.Unknown)),
+        List(elmType, UnkindedType.Cst(TypeConstructor.All, SourceLocation.Unknown)),
         SourceLocation.Unknown
       )
     }

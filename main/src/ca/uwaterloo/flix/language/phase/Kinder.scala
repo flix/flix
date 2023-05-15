@@ -1189,7 +1189,7 @@ object Kinder {
     // TODO EFF-MIGRATION temporary hack to maintain behavior of IO
     case UnkindedType.Cst(TypeConstructor.Effect(sym), loc) if (sym == IoSym || sym == NonDetSym) =>
       unify(expectedKind, Kind.Eff) match {
-        case Some(_) => Type.Cst(TypeConstructor.False, loc).toSuccess
+        case Some(_) => Type.Cst(TypeConstructor.All, loc).toSuccess
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc).toFailure
       }
 
@@ -1748,9 +1748,9 @@ object Kinder {
     * Creates the type application `t1[t2]`, while simplifying trivial boolean formulas.
     */
   private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
-    case Type.Apply(Type.Cst(TypeConstructor.And, _), arg, _) => Type.mkAnd(arg, t2, loc)
-    case Type.Apply(Type.Cst(TypeConstructor.Or, _), arg, _) => Type.mkOr(arg, t2, loc)
-    case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Union, _), arg, _) => Type.mkUnion(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), arg, _) => Type.mkIntersection(arg, t2, loc)
+    case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(t2, loc)
 
     case t => Type.Apply(t, t2, loc)
   }
