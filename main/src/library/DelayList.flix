@@ -120,7 +120,7 @@ instance Monoid[DelayList[a]] {
 }
 
 instance Iterable[DelayList] {
-    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 
 mod DelayList {
@@ -1174,7 +1174,7 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
+    pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ r =
         let a = Array.new(r, length(l));
         forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
         a
@@ -1197,7 +1197,7 @@ mod DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
         let cursor = ref l @ rc;
         let next = () -> match head(deref cursor) {
             case None    => None
@@ -1211,7 +1211,7 @@ mod DelayList {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///
@@ -1235,14 +1235,14 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region rc2 {
+    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
         Array.toMutList(r, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d

@@ -64,7 +64,7 @@ mod String {
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex = String}, s: String): List[String] = region rc {
-        import java.lang.String.split(String): Array[String, rc] \ Write(rc);
+        import java.lang.String.split(String): Array[String, rc] \ rc;
         let _ = rc; // This avoids a redundancy error.
         Array.toList(split(s, regex.regex))
     }
@@ -107,7 +107,7 @@ mod String {
     ///
     /// Returns the given string `s` as an array of characters.
     ///
-    pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
+    pub def toArray(r: Region[r], s: String): Array[Char, r] \ r =
         Array.init(r, i -> charAt(i, s), length(s))
 
     ///
@@ -289,9 +289,9 @@ mod String {
     /// Helper function for `isSubmatch`.
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
-        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ Write(rc);
-        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ Read(rc);
-        import java.util.regex.Matcher.find(Int32): Bool \ Write(rc);
+        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ rc;
+        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ rc;
+        import java.util.regex.Matcher.find(Int32): Bool \ rc;
         let _ = rc; // This avoids a redundancy error.
         try {
             let p1 = compile(pattern);
@@ -1092,7 +1092,7 @@ mod String {
     ///
     /// Helper function for `levenshteinDistance`.
     ///
-    def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { Read(r2), Write(r1) } =
+    def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { r2, r1 } =
         forIndex(0, Array.length(a) - 1, {i ->  Array.put(Array.get(i, b), i, a) })
 
     ///
@@ -1293,13 +1293,13 @@ mod String {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ r =
         Iterator.range(rc, 0, length(s)) |> Iterator.map(i -> charAt(i, s))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], s: String): Iterator[(Int32, Char), r, r] \ Write(r) =
+    pub def enumerator(rc: Region[r], s: String): Iterator[(Int32, Char), r, r] \ r =
         iterator(rc, s) |> Iterator.zipWithIndex
 
 }

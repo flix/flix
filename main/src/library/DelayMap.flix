@@ -44,7 +44,7 @@ instance Foldable[DelayMap[k]] {
 }
 
 instance Iterable[DelayMap[k]] {
-    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ r =
         DelayMap.iterator(rc, m) |> Iterator.map(snd)
 }
 
@@ -770,7 +770,7 @@ mod DelayMap {
     /// Returns `m` as a mutable map.
     ///
     @Experimental @Parallel
-    pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
         MutMap.MutMap(rc, ref toMap(m) @ rc)
 
     ///
@@ -791,7 +791,7 @@ mod DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r, r] \ r =
         let DMap(t) = m;
         RedBlackTree.iterator(rc, t) |> Iterator.map(match (k, v) -> (k, force v))
 
@@ -799,7 +799,7 @@ mod DelayMap {
     /// Returns the map `m` as a MutDeque of key-value pairs.
     ///
     @Experimental
-    pub def toMutDeque(r: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ r =
         let m1 = DelayMap.toMap(m);
         Map.toMutDeque(r, m1)
 
