@@ -195,7 +195,7 @@ mod Regex {
     /// Splits the string `s` around matches of the Regex `regex`.
     ///
     pub def split(regex: {regex = Regex}, s: String): List[String] = region rc {
-        import java.util.regex.Pattern.split(##java.lang.CharSequence): Array[String, rc] \ Write(rc);
+        import java.util.regex.Pattern.split(##java.lang.CharSequence): Array[String, rc] \ rc;
         let _ = rc; // This avoids a redundancy error.
         Array.toList(split(regex.regex, checked_cast(s)))
     }
@@ -543,7 +543,7 @@ mod Regex {
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input`.
     ///
-    def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ Write(r) =
+    def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ r =
         import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ r;
         Matcher(matcher(rgx, checked_cast(s)))
 
@@ -552,7 +552,7 @@ mod Regex {
     ///
     /// Returns `Ok(matcher)` if the bounds are valid for the input String `s` otherwise returns `Err(_)`.
     ///
-    def newMatcherWithBounds(rc: Region[r], rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Result[String, Matcher[r]] \ Write(r) =
+    def newMatcherWithBounds(rc: Region[r], rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Result[String, Matcher[r]] \ r =
         let m = newMatcher(rc, rgx, s);
         match setBounds!(start, end, m) {
             case Ok()     => Ok(m)
@@ -565,7 +565,7 @@ mod Regex {
     ///
     /// The internal state of the matcher is updated.
     ///
-    def find!(m: Matcher[r]): Bool \ Write(r) =
+    def find!(m: Matcher[r]): Bool \ r =
         import java.util.regex.Matcher.find(): Bool \ r;
         let Matcher(m1) = m;
         find(m1)
@@ -577,7 +577,7 @@ mod Regex {
     ///
     /// The internal state of the matcher is updated.
     ///
-    def findFrom!(pos: Int32, m: Matcher[r]): Bool \ Write(r) =
+    def findFrom!(pos: Int32, m: Matcher[r]): Bool \ r =
         Result.tryCatch(_ -> {
             import java.util.regex.Matcher.find(Int32): Bool \ r;
             let Matcher(m1) = m;
@@ -596,7 +596,7 @@ mod Regex {
     /// Note - there are no primitive Java functions for right-to-left scanning provided
     /// by Java's JDK so the performance of `findLast!` is disadvantaged compared to `find!`.
     ///
-    def findLast!(m: Matcher[r]): Bool \ Write(r) =
+    def findLast!(m: Matcher[r]): Bool \ r =
         def loop(lastPos) = {
             match find!(m) {
                 case true  => {let pos1 = matcherStart(m); loop(pos1)}
@@ -617,7 +617,7 @@ mod Regex {
     ///
     /// Set the bounds of the matcher's region.
     ///
-    def setBounds!(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ Write(r) =
+    def setBounds!(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
             import java.util.regex.Matcher.region(Int32, Int32): ##java.util.regex.Matcher \ r as region1;
             let Matcher(m1) = m;
@@ -628,7 +628,7 @@ mod Regex {
     ///
     /// Return the start position of the current match of Matcher `m`.
     ///
-    def matcherStart(m: Matcher[r]): Result[String, Int32] \ Read(r) =
+    def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             import java.util.regex.Matcher.start(): Int32 \ r;
             let Matcher(m1) = m;
@@ -638,7 +638,7 @@ mod Regex {
     ///
     /// Return the end position of the current match of Matcher `m`.
     ///
-    def matcherEnd(m: Matcher[r]): Result[String, Int32] \ Read(r) =
+    def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             import java.util.regex.Matcher.end(): Int32 \ r;
             let Matcher(m1) = m;
@@ -648,7 +648,7 @@ mod Regex {
     ///
     /// Return the start and end positions of the matcher `m`.
     ///
-    def matcherRange(m: Matcher[r]): Result[String, {start = Int32, end = Int32}] \ Read(r) =
+    def matcherRange(m: Matcher[r]): Result[String, {start = Int32, end = Int32}] \ r =
         forM (s <- matcherStart(m);
               e <- matcherEnd(m))
         yield ({start = s, end = e})
@@ -657,7 +657,7 @@ mod Regex {
     ///
     /// Return the text content of the current match of matcher `m`.
     ///
-    def matcherContent(m: Matcher[r]): Result[String, String] \ Read(r) =
+    def matcherContent(m: Matcher[r]): Result[String, String] \ r =
         Result.tryCatch(_ -> {
             import java.util.regex.Matcher.group(): String \ r;
             let Matcher(m1) = m;
@@ -667,14 +667,14 @@ mod Regex {
     ///
     /// `MatchQuery` is a read query applied to a the current match of a `Matcher`.
     ///
-    pub type alias MatchQuery[a: Type, r: Region] = Matcher[r] -> Result[String, a] \ Read(r)
+    pub type alias MatchQuery[a: Type, r: Region] = Matcher[r] -> Result[String, a] \ r
 
     ///
     /// Returns the first result found by applying the query `asks` to `m` going from left to right.
     ///
     /// If the query `asks` or no match is found `Err(_)` is returned.
     ///
-    def firstSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ { Read(r), Write(r) } =
+    def firstSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ r =
         if (find!(m))
             asks(m)
         else
@@ -686,7 +686,7 @@ mod Regex {
     ///
     /// If the query `asks` or no match is found `Err(_)` is returned.
     ///
-    def lastSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ { Read(r), Write(r) } =
+    def lastSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ r =
         if (findLast!(m))
             asks(m)
         else
@@ -700,7 +700,7 @@ mod Regex {
     /// `f` is applied to the result of applying the query `asks` and the folds accumulating value.
     /// The initial accumulating value is `x`.
     ///
-    def foldSubmatches(f: (b, a) -> b \ ef, x: b, asks: MatchQuery[a, r], m: Matcher[r]): Result[String, b] \ { Read(r), Write(r), ef } =
+    def foldSubmatches(f: (b, a) -> b \ ef, x: b, asks: MatchQuery[a, r], m: Matcher[r]): Result[String, b] \ { r, ef } =
         def loop(acc) = {
             match find!(m) {
                 case true  => match asks(m) {

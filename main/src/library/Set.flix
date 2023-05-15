@@ -92,7 +92,7 @@ instance Collectable[Set] {
 }
 
 instance Iterable[Set] {
-    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
 mod Set {
@@ -525,7 +525,7 @@ mod Set {
     ///
     /// Returns `s` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), s);
         d
@@ -533,7 +533,7 @@ mod Set {
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
+    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
         MutSet.MutSet(rc, ref s @ rc)
 
     ///
@@ -588,14 +588,14 @@ mod Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =
         let Set(t) = s;
         RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(r, s) |> Iterator.zipWithIndex
 
     ///

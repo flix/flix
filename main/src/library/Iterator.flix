@@ -59,7 +59,7 @@ mod Iterator {
     ///
     /// Returns an iterator containing only a single element, `x`.
     ///
-    pub def singleton(rc: Region[r], x: a): Iterator[a, r, r] \ Write(r) =
+    pub def singleton(rc: Region[r], x: a): Iterator[a, r, r] \ r =
         repeat(rc, 1, x)
 
     ///
@@ -67,7 +67,7 @@ mod Iterator {
     ///
     /// Consumes the head element of `iter`.
     ///
-    pub def next(iter: Iterator[a, ef, r]): Option[a] \ { ef, Read(r) } =
+    pub def next(iter: Iterator[a, ef, r]): Option[a] \ { ef, r } =
         let Iterator(_, iterF) = iter;
         def loop() = match iterF() {
             case Ans(a) => Some(a)
@@ -81,7 +81,7 @@ mod Iterator {
     ///
     /// Returns an empty iterator if `b >= e`.
     ///
-    pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, r, r] \ Write(r) =
+    pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, r, r] \ r =
         let pos = ref b @ rc;
         if (e <= b)
             empty(rc)
@@ -98,7 +98,7 @@ mod Iterator {
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ Write(r) =
+    pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ r =
         let ix = ref n @ rc;
         let iterF = () -> {
             let i = deref ix;
@@ -116,7 +116,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def sum(iter: Iterator[Int32, ef, r]): Int32 \ { ef, Read(r) } =
+    pub def sum(iter: Iterator[Int32, ef, r]): Int32 \ { ef, r } =
         foldLeft((acc, x) -> acc + x, 0, iter)
 
     ///
@@ -124,7 +124,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def sumWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, r } =
         foldLeft((acc, x) -> acc + f(x), 0, iter)
 
     ///
@@ -132,7 +132,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, Read(r2), Write(r1) } = region rc1 {
+    pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, r2, r1 } = region rc1 {
         let m = MutList.new(rc1);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toArray(rc, m)
@@ -143,7 +143,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, Read(r) } = region rc {
+    pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, r } = region rc {
         let m = MutList.new(rc);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toVector(m)
@@ -154,7 +154,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toList(iter: Iterator[a, ef, r]): List[a] \ { ef, Read(r) } =
+    pub def toList(iter: Iterator[a, ef, r]): List[a] \ { ef, r } =
         foldRight((a, acc) -> a :: acc, Nil, iter)
 
 
@@ -163,7 +163,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toChain(iter: Iterator[a, ef, r]): Chain[a] \ { ef, Read(r) } =
+    pub def toChain(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } =
         foldLeft((acc, a) -> Chain.snoc(acc, a), Chain.empty(), iter)
 
     ///
@@ -171,7 +171,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toMap(iter: Iterator[(k, v), ef, r]): Map[k, v] \ { ef, Read(r) } with Order[k] =
+    pub def toMap(iter: Iterator[(k, v), ef, r]): Map[k, v] \ { ef, r } with Order[k] =
         foldLeft((acc, a) -> (match (k, v) -> Map.insert(k, v, acc))(a), Map.empty(), iter)
 
     ///
@@ -179,7 +179,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toNel(iter: Iterator[a, ef, r]): Option[Nel[a]] \ { ef, Read(r) } =
+    pub def toNel(iter: Iterator[a, ef, r]): Option[Nel[a]] \ { ef, r } =
         toList(iter) |> List.toNel
 
     ///
@@ -187,7 +187,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toNec(iter: Iterator[a, ef, r]): Option[Nec[a]] \ { ef, Read(r) } = match next(iter) {
+    pub def toNec(iter: Iterator[a, ef, r]): Option[Nec[a]] \ { ef, r } = match next(iter) {
         case Some(a) => foldLeft((acc, x) -> Nec.snoc(acc, x), Nec.singleton(a), iter) |> Some
         case None    => None
     }
@@ -197,7 +197,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, Read(r2), Write(r1) } =
+    pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
         let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), iter);
         d
@@ -205,7 +205,7 @@ mod Iterator {
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
-    pub def toSet(iter: Iterator[a, ef, r]): Set[a] \ { ef, Read(r) } with Order[a] =
+    pub def toSet(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] =
         foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
 
     ///
@@ -213,7 +213,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def forEach(f: a -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, r } =
         let Iterator(_, iterF) = iter;
         def loop() = match iterF() {
             case Skip   => loop()
@@ -227,7 +227,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, r } =
         let Iterator(_, iterF) = iter;
         def loop(i) = match iterF() {
             case Skip   => loop(i)
@@ -275,7 +275,7 @@ mod Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2, r] \ Write(r) =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
         let ix = ref 0 @ rc;
         let step = x -> match x {
@@ -384,7 +384,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ Write(r) =
+    pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
         let Iterator(rc, _) = iter;
         let ix = ref 0 @ rc;
         map(x -> {let i = deref ix; ix:= i + 1; (i, x)}, iter)
@@ -392,7 +392,7 @@ mod Iterator {
     ///
     /// Alias for `zipWithIndex`.
     ///
-    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ Write(r) =
+    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
         zipWithIndex(iter)
 
     ///
@@ -402,7 +402,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
+    pub def foldLeft(f: (b, a) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, r } =
         let Iterator(_, iterF) = iter;
         def loop(acc) = match iterF() {
             case Skip   => loop(acc)
@@ -418,7 +418,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
+    pub def foldRight(f: (a, b) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, r } =
         let Iterator(_, iterF) = iter;
         def loop(k) = match iterF() {
             case Skip   => loop(k)
@@ -436,7 +436,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, r }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, r } =
         let Iterator(_, iterF) = iter;
         def loop() = match iterF() {
             case Skip   => loop()
@@ -448,7 +448,7 @@ mod Iterator {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, r } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
@@ -460,7 +460,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def reduceLeft(f: (a, a) -> a \ ef2, iter: Iterator[a, ef1, r]): Option[a] \ { ef1, ef2, Read(r) } =
+    pub def reduceLeft(f: (a, a) -> a \ ef2, iter: Iterator[a, ef1, r]): Option[a] \ { ef1, ef2, r } =
         match next(iter) {
             case Some(x) => foldLeft(f, x, iter) |> Some
             case None    => None
@@ -487,7 +487,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ Write(r) =
+    pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
         let ix = ref n @ rc;
         def loop() = {
@@ -512,7 +512,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ Write(r) =
+    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
         let ix = ref n @ rc;
         def loop() = {
@@ -553,7 +553,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r + ef1 + ef2, r] \ Write(r) =
+    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r + ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
         let start = ref true @ rc;
         def loop() = match iterF() {
@@ -576,7 +576,7 @@ mod Iterator {
     ///
     /// Currently `f` has to generate an iterator with region `r`.
     ///
-    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r + ef1 + ef2 + ef3, r] \ Write(r) =
+    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r + ef1 + ef2 + ef3, r] \ r =
         let Iterator(rc, iterF) = ma;
         let innerIter = ref polymorphicEmpty(rc) @ rc;
         let inside = ref false @ rc;
@@ -626,7 +626,7 @@ mod Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ Write(r) =
+    pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
         let step = x ->
@@ -647,7 +647,7 @@ mod Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ Write(r) with Foldable[t] =
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ r with Foldable[t] =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
         let sepL = Foldable.toList(sep);
@@ -667,7 +667,7 @@ mod Iterator {
     /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but
     /// then `intercalate` fails.
     ///
-    def ofList(rc: Region[r], xs: List[a]): Iterator[a, true, r] \ Write(r) =
+    def ofList(rc: Region[r], xs: List[a]): Iterator[a, true, r] \ r =
         let ls = ref xs @ rc;
         let next = () -> {
             match (deref ls) {
@@ -683,7 +683,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def join(sep: String, iter: Iterator[a, ef, r]): String \ { ef, Read(r) } with ToString[a] =
+    pub def join(sep: String, iter: Iterator[a, ef, r]): String \ { ef, r } with ToString[a] =
         joinWith(ToString.toString, sep, iter)
 
     ///
@@ -692,7 +692,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, Read(r) } = region rc {
+    pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, r } = region rc {
         let sb = StringBuilder.new(rc);
         match next(iter) {
             case Some(a) => {
@@ -733,7 +733,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ Write(r) =
+    pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
         let first = ref true @ rc;
         let f = () ->  {
@@ -754,7 +754,7 @@ mod Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r + ef1 + ef2, r] \ Write(r) =
+    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r + ef1 + ef2, r] \ r =
         flatMap(identity, iter)
 
 }

@@ -102,7 +102,7 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
 }
 
 instance Iterable[Map[k]] {
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r = Map.iteratorValues(rc, m)
 }
 
 mod Map {
@@ -768,7 +768,7 @@ mod Map {
     ///
     /// Returns `m` as a mutable map.
     ///
-    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
         MutMap.MutMap(rc, ref m @ rc)
 
     ///
@@ -804,7 +804,7 @@ mod Map {
     ///
     /// Returns `m` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
         let d = MutDeque.new(r);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
@@ -878,20 +878,20 @@ mod Map {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r =
         let Map(t) = m;
         RedBlackTree.iterator(rc, t)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r, r] \ Write(r) =
+    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r, r] \ r =
         iterator(r, m) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) =
+    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
         iterator(r, m) |> Iterator.map(snd)
 
     ///

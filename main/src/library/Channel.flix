@@ -20,28 +20,28 @@ mod Channel {
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
-    pub def buffered(r: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ Write(r) =
+    pub def buffered(r: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ r =
         let m = if (n < 0) 0 else n;
         $CHANNEL_NEW$(r, m)
 
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///
-    pub def unbuffered(r: Region[r]): (Sender[t, r], Receiver[t, r]) \ Write(r) = buffered(r, 0)
+    pub def unbuffered(r: Region[r]): (Sender[t, r], Receiver[t, r]) \ r = buffered(r, 0)
 
     ///
     /// Receives a message from the given channel `r`.
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(receiver: Receiver[t, r]): t \ { Read(r), Write(r) } = $CHANNEL_GET$(receiver)
+    pub def recv(receiver: Receiver[t, r]): t \ r = $CHANNEL_GET$(receiver)
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, sender: Sender[t, r]): Unit \ Write(r) with Sendable[t] = $CHANNEL_PUT$(sender, m)
+    pub def send(m: t, sender: Sender[t, r]): Unit \ r with Sendable[t] = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Sends the message `m` on the given channel `s`.
@@ -51,12 +51,12 @@ mod Channel {
     /// Identical to `send` but doesn't require `Sendable`.
     /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
     ///
-    pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ Write(r) = $CHANNEL_PUT$(sender, m)
+    pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ r = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
     ///
-    pub def timeout(r: Region[r], d: Duration): Receiver[Unit, r] \ { Read(r), Write(r), IO } =
+    pub def timeout(r: Region[r], d: Duration): Receiver[Unit, r] \ { r, IO } =
         let (tx, rx) = Channel.unbuffered(r);
         spawn { Thread.sleep(d); send((), tx) } @ r;
         rx
