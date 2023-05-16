@@ -3289,11 +3289,12 @@ object Resolver {
 
         case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-        case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
+
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.All => ResolutionError.IllegalType(tpe, loc).toFailure
