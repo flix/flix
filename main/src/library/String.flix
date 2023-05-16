@@ -26,7 +26,7 @@ mod String {
         charAt(s, i)
 
     ///
-    /// Optionally returns the character at position `i` in the string `s`.
+    /// Optionally return the character at position `i` in the string `s`.
     ///
     pub def nth(i: Int32, s: String): Option[Char] =
         if (0 <= i and i < length(s))
@@ -51,6 +51,8 @@ mod String {
             None
 
     ///
+=======
+>>>>>>> upstream/master
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =

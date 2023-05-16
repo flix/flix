@@ -30,6 +30,7 @@ object ExprCompleter extends Completer {
       SignatureCompleter.getCompletions(context) ++
       EnumTagCompleter.getCompletions(context) ++
       SnippetCompleter.getCompletions(context) ++
+      EnumCompleter.getCompletions(context) ++
       ModuleCompleter.getCompletions(context)
   }
 }

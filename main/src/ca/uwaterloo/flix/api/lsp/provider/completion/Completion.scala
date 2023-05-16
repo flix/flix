@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, ModuleSym, TypeAliasSym}
 
@@ -47,10 +47,11 @@ sealed trait Completion {
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
-    case Completion.FieldCompletion(name) =>
+    case Completion.FieldCompletion(field, prefix) =>
+      val name = s"$prefix.${field.name}"
       CompletionItem(label = name,
         sortText = Priority.high(name),
-        textEdit = TextEdit(context.range, s"$name "),
+        textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Variable)
 
     case Completion.PredicateCompletion(name, arity, detail) =>
@@ -70,8 +71,8 @@ sealed trait Completion {
         textEdit = textEdit,
         insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
-    case Completion.TypeEnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(label = s"${enumSym.name}$nameSuffix",
+    case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
+      CompletionItem(label = s"${enumSym.toString}$nameSuffix",
         sortText = priority,
         textEdit = textEdit,
         documentation = documentation,
@@ -203,7 +204,7 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
-    case Completion.EnumTagCompletion(enumSym, caseSym, arity) =>
+    case Completion.EnumTagCompletion(enumSym, caseSym, arity, detail) =>
       val name = s"${enumSym.toString}.${caseSym.name}"
       val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
@@ -211,6 +212,7 @@ sealed trait Completion {
         label = name,
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, snippet),
+        detail = Some(detail),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
@@ -244,9 +246,10 @@ object Completion {
   /**
     * Represents a field completion.
     *
-    * @param name the name of the field.
+    * @param field  the field.
+    * @param prefix the prefix.
     */
-  case class FieldCompletion(name: String) extends Completion
+  case class FieldCompletion(field: Name.Field, prefix: String) extends Completion
 
   /**
     * Represents a predicate completion.
@@ -272,13 +275,13 @@ object Completion {
     * Represents a type completion for enum
     *
     * @param enumSym       the enum symbol.
-    * @param nameSuffix    the suffix for the name of the EnumType.
-    * @param priority      the priority of the EnumType.
+    * @param nameSuffix    the suffix for the name of the Enum.
+    * @param priority      the priority of the Enum.
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class TypeEnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
-                                documentation: Option[String]) extends Completion
+  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+                            documentation: Option[String]) extends Completion
 
   /**
     * Represents a type completion for alias
@@ -416,8 +419,9 @@ object Completion {
     * @param enumSym the sym of the enum.
     * @param caseSym the sym of the case (for that specific enum).
     * @param arity   the arity of the enumTag.
+    * @param detail  the type of the enumTag.
     */
-  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym, arity: Int) extends Completion
+  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym, arity: Int, detail: String) extends Completion
 
   /**
     * Represents a Module completion.
