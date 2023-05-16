@@ -439,6 +439,7 @@ object SimpleType {
           }
         case TypeConstructor.Empty => Empty
         case TypeConstructor.All => All
+
         case TypeConstructor.True => True
         case TypeConstructor.False => False
 

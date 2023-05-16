@@ -652,8 +652,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Ref => true
     case TypeConstructor.Empty => true
     case TypeConstructor.All => true
-    case TypeConstructor.False => true
     case TypeConstructor.True => true
+    case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
 

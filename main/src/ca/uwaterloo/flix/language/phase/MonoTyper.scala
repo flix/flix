@@ -224,11 +224,12 @@ object MonoTyper {
 
             case TypeConstructor.Record => args.head
 
-            case TypeConstructor.False => MonoType.Unit
             case TypeConstructor.True => MonoType.Unit
+            case TypeConstructor.False => MonoType.Unit
+            case TypeConstructor.Not=> MonoType.Unit
             case TypeConstructor.And => MonoType.Unit
             case TypeConstructor.Or=> MonoType.Unit
-            case TypeConstructor.Not=> MonoType.Unit
+
             case TypeConstructor.Empty => MonoType.Unit
             case TypeConstructor.All => MonoType.Unit
             case TypeConstructor.Complement => MonoType.Unit
