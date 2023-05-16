@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Codepoint {
+mod CodePoint {
 
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
@@ -23,14 +23,14 @@ mod Codepoint {
         0x0000 <= cp  and cp <= 0x0080
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a letter character.
+    /// Returns `true` if the given code point `cp` represents a letter character.
     ///
     pub def isLetter(cp: Int32): Bool =
         import static java.lang.Character.isLetter(Int32): Bool \ {};
         isLetter(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a recognized Unicode digit.
+    /// Returns `true` if the given code point `cp` represents a recognized Unicode digit.
     /// This includes the ASCII range 0..9 but also Arabic-Indic digits, Devagari digits and Fullwidth digits.
     ///
     pub def isDigit(cp: Int32): Bool =
@@ -38,27 +38,27 @@ mod Codepoint {
         isDigit(cp)
 
     ///
-    /// Returns `true` if the given ccodepoint `cp` represents a recognized Unicode letter or digit.
+    /// Returns `true` if the given code point `cp` represents a recognized Unicode letter or digit.
     ///
     pub def isLetterOrDigit(cp: Int32): Bool =
         import static java.lang.Character.isLetterOrDigit(Int32): Bool \ {};
         isLetterOrDigit(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a character strictly in the
+    /// Returns `true` if the given code point `cp` represents a character strictly in the
     /// range of ASCII digits 0...9.
     ///
     pub def isAsciiDigit(cp: Int32): Bool =
         isAscii(cp) and isDigit(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a character in the range 0...7.
+    /// Returns `true` if the given code point `cp` represents a character in the range 0...7.
     ///
     pub def isOctDigit(cp: Int32): Bool =
         0x0030 <= cp and cp <= 0x0037     // '0'..'7'
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a character in the range 0...F.
+    /// Returns `true` if the given code point `cp` represents a character in the range 0...F.
     ///
     pub def isHexDigit(cp: Int32): Bool = match cp {
         case i if 0x0030 <= i and i <= 0x0039 => true        // '0'..'9'
@@ -68,28 +68,28 @@ mod Codepoint {
     }
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a lowercase letter.
+    /// Returns `true` if the given code point `cp` represents a lowercase letter.
     ///
     pub def isLowerCase(cp: Int32): Bool =
         import static java.lang.Character.isLowerCase(Int32): Bool \ {};
         isLowerCase(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents an uppercase letter.
+    /// Returns `true` if the given code point `cp` represents an uppercase letter.
     ///
     pub def isUpperCase(cp: Int32): Bool =
         import static java.lang.Character.isUpperCase(Int32): Bool \ {};
         isUpperCase(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a titlecase letter.
+    /// Returns `true` if the given code point `cp` represents a titlecase letter.
     ///
     pub def isTitleCase(cp: Int32): Bool =
         import static java.lang.Character.isTitleCase(Int32): Bool \ {};
         isTitleCase(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` represents a white space character.
+    /// Returns `true` if the given code point `cp` represents a white space character.
     ///
     pub def isWhiteSpace(cp: Int32): Bool =
         import static java.lang.Character.isWhitespace(Int32): Bool \ {};
@@ -104,7 +104,7 @@ mod Codepoint {
         isBmpCodePoint(cp)
 
     ///
-    /// Returns `true` if the given  codepoint `cp` is defined either as a entry in the
+    /// Returns `true` if the given code point `cp` is defined either as a entry in the
     /// UnicodeData file or a value within a range defined in the UnicodeData file.
     ///
     pub def isDefined(cp: Int32): Bool =
@@ -116,14 +116,14 @@ mod Codepoint {
         isIdeographic(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` is an ISO control character.
+    /// Returns `true` if the given code point `cp` is an ISO control character.
     ///
     pub def isISOControl(cp: Int32): Bool =
         import static java.lang.Character.isISOControl(Int32): Bool \ {};
         isISOControl(cp)
 
     ///
-    /// Returns `true` if the given codepoint `cp` is mirrored.
+    /// Returns `true` if the given code point `cp` is mirrored.
     ///
     pub def isMirrored(cp: Int32): Bool =
         import static java.lang.Character.isMirrored(Int32): Bool \ {};
@@ -141,18 +141,18 @@ mod Codepoint {
         isValidCodePoint(cp)
 
     ///
-    /// Converts a codepoint representing a letter to its lowercase version.
+    /// Converts a code point representing a letter to its lowercase version.
     ///
-    /// Returns the original codepoint if it does not have a lowercase version.
+    /// Returns the original code point if it does not have a lowercase version.
     ///
     pub def toLowerCase(cp: Int32): Int32 =
         import static java.lang.Character.toLowerCase(Int32): Int32 \ {};
         toLowerCase(cp)
 
     ///
-    /// Converts a codepoint representing a letter to its uppercase version.
+    /// Converts a code point representing a letter to its uppercase version.
     ///
-    /// Returns the original codepoint if it does not have a uppercase version.
+    /// Returns the original code point if it does not have a uppercase version.
     ///
     pub def toUpperCase(cp: Int32): Int32 =
         import static java.lang.Character.toUpperCase(Int32): Int32 \ {};
@@ -167,7 +167,7 @@ mod Codepoint {
         }
 
     ///
-    /// Returns the integer value representated by the codepoint `cp` e.g. codepoint 0x0031
+    /// Returns the integer value representated by the code point `cp` e.g. code point 0x0031
     /// which is the char '1' returns `Some(1)`.
     ///
     /// Returns `None` if `cp` does not represent a number.

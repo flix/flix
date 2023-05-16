@@ -158,6 +158,13 @@ mod Char {
         toUpperCase(c)
 
     ///
+    /// Returns the code point representation of Char `c`.
+    ///
+    pub def toCodePoint(c: Char): Int32 =
+        unchecked_cast(c as Int32)
+
+
+    ///
     /// Returns the character `c` as a string.
     ///
     pub def toString(c: Char): String = ToString.toString(c)
