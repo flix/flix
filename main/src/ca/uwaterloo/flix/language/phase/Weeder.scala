@@ -1147,13 +1147,23 @@ object Weeder {
         case err: WeederError => WeededAst.Expression.Error(err)
       }
 
-    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, _, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
 
-      mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
-        case (fp, e1, e2) =>
-          val lambda = mkCurried(fp, e1, e1.loc)
+      val tpeOpt = tpeAndEff.map(_._1)
+      val effOpt = tpeAndEff.flatMap(_._2)
+
+      val fpVal = visitFormalParams(fparams, Presence.Optional)
+      val e1Val = visitExp(exp1, senv)
+      val e2Val = visitExp(exp2, senv)
+      val tpeVal = traverseOpt(tpeOpt)(visitType)
+      val effVal = traverseOpt(effOpt)(visitType)
+
+      mapN(fpVal, e1Val, e2Val, tpeVal, effVal) {
+        case (fp, e1, e2, tpe, eff) =>
+          val ascription = WeededAst.Expression.Ascribe(e1, tpe, eff, e1.loc)
+          val lambda = mkCurried(fp, ascription, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }.recoverOne {
         case err: WeederError => WeededAst.Expression.Error(err)

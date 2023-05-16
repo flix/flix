@@ -1795,4 +1795,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
+
+  test("TestLetRec.01") {
+    val input =
+      """
+        |def f(): Int32 = {
+        |    def g(): Bool = 123;
+        |    g()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
 }
