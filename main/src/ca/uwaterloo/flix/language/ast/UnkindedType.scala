@@ -447,6 +447,21 @@ object UnkindedType {
   }
 
   /**
+    * Returns the type `Not(tpe1)`.
+    */
+  def mkNot(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Not, loc), List(tpe1), loc)
+
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    */
+  def mkAnd(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    */
+  def mkOr(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
+
+  /**
     * Returns the type `Complement(tpe1)`.
     */
   def mkComplement(tpe1: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
