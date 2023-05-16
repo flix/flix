@@ -71,8 +71,8 @@ sealed trait Completion {
         textEdit = textEdit,
         insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
-    case Completion.TypeEnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(label = s"${enumSym.name}$nameSuffix",
+    case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
+      CompletionItem(label = s"${enumSym.toString}$nameSuffix",
         sortText = priority,
         textEdit = textEdit,
         documentation = documentation,
@@ -274,13 +274,13 @@ object Completion {
     * Represents a type completion for enum
     *
     * @param enumSym       the enum symbol.
-    * @param nameSuffix    the suffix for the name of the EnumType.
-    * @param priority      the priority of the EnumType.
+    * @param nameSuffix    the suffix for the name of the Enum.
+    * @param priority      the priority of the Enum.
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class TypeEnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
-                                documentation: Option[String]) extends Completion
+  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+                            documentation: Option[String]) extends Completion
 
   /**
     * Represents a type completion for alias

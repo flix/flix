@@ -153,6 +153,11 @@ object Symbol {
   }
 
   /**
+    * Returns the module symbol for the given fully qualified name.
+    */
+  def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn)
+
+  /**
     * Returns the class symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkClassSym(ns: NName, ident: Ident): ClassSym = {
