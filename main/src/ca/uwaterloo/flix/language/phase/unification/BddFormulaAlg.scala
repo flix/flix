@@ -119,7 +119,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     if(!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
-      createTypeFromBDDAux(f, Type.Empty, env)
+      createTypeFromBDDAux(f, Type.All, env)
     }
   }
 
@@ -132,7 +132,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
     if (dd.isLeaf) {
-      return if (dd.isTrue) tpe else Type.All
+      return if (dd.isTrue) tpe else Type.Empty
     }
 
     val currentVar = dd.getVariable
@@ -141,16 +141,16 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
       case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", tpe.loc)
     }
 
-    val lowType = Type.mkApply(Type.Union, List(tpe, Type.Apply(Type.Complement, typeVar, typeVar.loc)), typeVar.loc)
+    val lowType = Type.mkApply(Type.Intersection, List(tpe, Type.Apply(Type.Complement, typeVar, typeVar.loc)), typeVar.loc)
     val lowRes = createTypeFromBDDAux(dd.getLow, lowType, env)
-    val highType = Type.mkApply(Type.Union, List(tpe, typeVar), typeVar.loc)
+    val highType = Type.mkApply(Type.Intersection, List(tpe, typeVar), typeVar.loc)
     val highRes = createTypeFromBDDAux(dd.getHigh, highType, env)
 
     (lowRes, highRes) match {
-      case (Type.All, Type.All) => Type.All
-      case (Type.All, _) => highRes
-      case (_, Type.All) => lowRes
-      case (t1, _) => Type.mkApply(Type.Intersection, List(lowRes, highRes), t1.loc)
+      case (Type.Empty, Type.Empty) => Type.Empty
+      case (Type.Empty, _) => highRes
+      case (_, Type.Empty) => lowRes
+      case (t1, _) => Type.mkApply(Type.Union, List(lowRes, highRes), t1.loc)
     }
   }
 
@@ -161,9 +161,9 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     //Easy shortcuts if formula is true, false or a variable
     if (f.isLeaf) {
       if (f.isTrue) {
-        return Type.Empty
-      } else {
         return Type.All
+      } else {
+        return Type.Empty
       }
     }
     if (isVar(f)) {
