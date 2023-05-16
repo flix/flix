@@ -14,7 +14,28 @@
  * limitations under the License.
  */
 
+///
+/// The `CodePoint` module complements the `Char` module. `Char` only
+/// represents characters in Unicode's _Basic Multilingual Plane_
+/// (U+0000 to U+FFFF).
+/// CodePoint extends access to include _supplementary characters_ so all
+/// Unicode characters can be represented.
+///
 mod CodePoint {
+
+    ///
+    /// Returns the minimum integer value of a Unicode code point.
+    ///
+    pub def minValue(): Int32 =
+        import static get java.lang.Character.MIN_CODE_POINT: Int32 \ {} as get_MIN_CODE_POINT;
+        get_MIN_CODE_POINT()
+
+    ///
+    /// Returns the maximum integer value of a Unicode code point.
+    ///
+    pub def maxValue(): Int32 =
+        import static get java.lang.Character.MAX_CODE_POINT: Int32 \ {} as get_MAX_CODE_POINT;
+        get_MAX_CODE_POINT()
 
     ///
     ///  Returns `true` if the given char `c` is an ascii character.

@@ -158,6 +158,16 @@ mod Char {
         toUpperCase(c)
 
     ///
+    /// Converts a letter to its titlecase version.
+    ///
+    /// Returns the original character if it does not have a titlecase version.
+    ///
+    pub def toTitleCase(c: Char): Char =
+        import static java.lang.Character.toTitleCase(Char): Char \ {};
+        toTitleCase(c)
+
+
+    ///
     /// Returns the code point representation of Char `c`.
     ///
     pub def toCodePoint(c: Char): Int32 =

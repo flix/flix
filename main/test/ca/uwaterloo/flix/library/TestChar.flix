@@ -564,40 +564,6 @@ def getNumericValue09(): Bool = Char.getNumericValue('+') == None
 def getNumericValue10(): Bool = Char.getNumericValue('-') == None
 
 /////////////////////////////////////////////////////////////////////////////
-// getCodePointNumericValue                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def getCodePointNumericValue01(): Bool = Char.getCodePointNumericValue(0x0030) == Some(0)       // '0'
-
-@test
-def getCodePointNumericValue02(): Bool = Char.getCodePointNumericValue(0x0031) == Some(1)       // '1'
-
-@test
-def getCodePointNumericValue03(): Bool = Char.getCodePointNumericValue(0x0039) == Some(9)       // '9'
-
-@test
-def getCodePointNumericValue04(): Bool = Char.getCodePointNumericValue(0x0041) == Some(10)      // 'A'
-
-@test
-def getCodePointNumericValue05(): Bool = Char.getCodePointNumericValue(0x0041) == Some(10)      // 'a'
-
-@test
-def getCodePointNumericValue06(): Bool = Char.getCodePointNumericValue(0x0046) == Some(15)      // 'F'
-
-@test
-def getCodePointNumericValue07(): Bool = Char.getCodePointNumericValue(0x0066) == Some(15)      // 'f'
-
-@test
-def getCodePointNumericValue08(): Bool = Char.getCodePointNumericValue(0x0020) == None          // ' ' (space)
-
-@test
-def getCodePointNumericValue09(): Bool = Char.getCodePointNumericValue(0x002b) == None          // '+'
-
-@test
-def getCodePointNumericValue10(): Bool = Char.getCodePointNumericValue(0x002d) == None          // '-'
-
-/////////////////////////////////////////////////////////////////////////////
 // digit                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
