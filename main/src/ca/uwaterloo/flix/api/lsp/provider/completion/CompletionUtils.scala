@@ -192,12 +192,4 @@ object CompletionUtils {
       }
     }
   }
-
-  /**
-    * Generates an moduleSym with the given nameSpace.
-    *
-    * @param fqn the fully qualified name as a List[String].
-    * @return    the module symbol for the given fully qualified name.
-    */
-  def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn)
 }

@@ -17,10 +17,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.mkModuleSym
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, ModuleSym}
+import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object EnumCompleter extends Completer {
@@ -34,9 +33,9 @@ object EnumCompleter extends Completer {
     val (fqn, subWord) = {
       // If the word provided ends with a dot, we should list all enums in that namespace
       if (context.word.takeRight(1) == ".") {
-        (mkModuleSym(word), "")
+        (Symbol.mkModuleSym(word), "")
       } else {
-        (mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
+        (Symbol.mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
       }
     }
 
@@ -46,28 +45,23 @@ object EnumCompleter extends Completer {
   /**
     * Get all Enum completions
     */
-  private def getEnumCompletion(context: CompletionContext, fqn: ModuleSym, subWord: String)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
-    // Use fqn to lookup in modules
-    root.modules.get(fqn) match {
-      case None =>
-        // Not a valid module, therefore no enums
-        Nil
-      case Some(syms) =>
-        syms.flatMap {
-          case enumSym: Symbol.EnumSym =>
-            // Collect all enums
-            if (matchesEnum(enumSym, subWord)) {
-              // Check if the word provided matches a valid enum
-              root.enums.get(enumSym) match {
-                case None => // not possible
-                  None
-                case Some(enm) =>
-                  Some(enumCompletion(context, enumSym, enm))
-              }
-            } else {
-              None
-            }
-          case _ => None
+  private def getEnumCompletion(context: CompletionContext, modSym: Symbol.ModuleSym, subWord: String)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
+    // Use fqn to lookup in modules and get all enums
+    val enumsInModule = root.modules.getOrElse(modSym, Nil)
+
+    // Get all enums that matches word
+    val enumsMatchingSubword = enumsInModule.collect {
+      case sym: EnumSym if matchesEnum(sym, subWord) => sym
+    }
+
+    // Generate completions
+    enumsMatchingSubword.flatMap {
+      enumSym =>
+        root.enums.get(enumSym) match {
+          case None => // not possible
+            None
+          case Some(enm) =>
+            Some(enumCompletion(context, enumSym, enm))
         }
     }
   }
