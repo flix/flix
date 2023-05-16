@@ -652,6 +652,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Ref => true
     case TypeConstructor.Empty => true
     case TypeConstructor.All => true
+    case TypeConstructor.False => true
+    case TypeConstructor.True => true
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
 
@@ -666,6 +668,9 @@ object SemanticTokensProvider {
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false
+    case TypeConstructor.Not => false
+    case TypeConstructor.And => false
+    case TypeConstructor.Or => false
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false

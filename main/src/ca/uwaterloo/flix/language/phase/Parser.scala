@@ -1457,7 +1457,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Intersection: Rule1[ParsedAst.Type] = rule {
-      Ascribe ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+      Or ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+    }
+
+    def Or: Rule1[ParsedAst.Type] = rule {
+      And ~ zeroOrMore(WS ~ atomic("or") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Or)
+    }
+
+    def And: Rule1[ParsedAst.Type] = rule {
+      Ascribe ~ zeroOrMore(WS ~ atomic("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
     }
 
     def Ascribe: Rule1[ParsedAst.Type] = rule {
