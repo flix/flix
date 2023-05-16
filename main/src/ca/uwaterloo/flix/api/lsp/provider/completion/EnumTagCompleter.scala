@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object EnumTagCompleter extends Completer {
 
@@ -37,14 +38,14 @@ object EnumTagCompleter extends Completer {
   /**
     * Gets completions for enum tags without tag provided
     */
-  private def getEnumTagCompletionsWithoutTag(word: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
+  private def getEnumTagCompletionsWithoutTag(word: List[String])(implicit root: TypedAst.Root, flix: Flix): Iterable[EnumTagCompletion] = {
     val enumSym = mkEnumSym(word)
     root.enums.get(enumSym) match {
       case None => // Case 1: Enum does not exist.
         Nil
       case Some(enm) => // Case 2: Enum does exist -> Get cases.
         enm.cases.map {
-          case (caseSym, cas) => EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe))
+          case (caseSym, cas) => EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe), FormatType.formatType(cas.tpe))
         }
     }
   }
@@ -52,7 +53,7 @@ object EnumTagCompleter extends Completer {
   /**
     * Gets completions for enum tags with tag provided
     */
-  private def getEnumTagCompletionsWithTag(word: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
+  private def getEnumTagCompletionsWithTag(word: List[String])(implicit root: TypedAst.Root, flix: Flix): Iterable[EnumTagCompletion] = {
     // The user has provided a tag
     // We know that there is at least one dot, so we split the context.word and
     // make a fqn from the everything but the the last (hence it could be the tag).
@@ -68,7 +69,7 @@ object EnumTagCompleter extends Completer {
           case (caseSym, cas) =>
             if (matchesTag(caseSym, tag)) {
               // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe)))
+              Some(EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe), FormatType.formatType(cas.tpe)))
             } else {
               // Case 2.2: Tag provided doesn't match the case
               None
