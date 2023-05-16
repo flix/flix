@@ -51,8 +51,6 @@ mod String {
             None
 
     ///
-=======
->>>>>>> upstream/master
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
