@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, ModuleSym, TypeAliasSym}
 
@@ -47,10 +47,11 @@ sealed trait Completion {
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
-    case Completion.FieldCompletion(name) =>
+    case Completion.FieldCompletion(field, prefix) =>
+      val name = s"$prefix.${field.name}"
       CompletionItem(label = name,
         sortText = Priority.high(name),
-        textEdit = TextEdit(context.range, s"$name "),
+        textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Variable)
 
     case Completion.PredicateCompletion(name, arity, detail) =>
@@ -244,9 +245,10 @@ object Completion {
   /**
     * Represents a field completion.
     *
-    * @param name the name of the field.
+    * @param field  the field.
+    * @param prefix the prefix.
     */
-  case class FieldCompletion(name: String) extends Completion
+  case class FieldCompletion(field: Name.Field, prefix: String) extends Completion
 
   /**
     * Represents a predicate completion.

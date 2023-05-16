@@ -85,6 +85,10 @@ object SimpleType {
 
   case object All extends SimpleType
 
+  case object False extends SimpleType
+
+  case object True extends SimpleType
+
   case object Region extends SimpleType
 
   //////////
@@ -435,6 +439,15 @@ object SimpleType {
           }
         case TypeConstructor.Empty => Empty
         case TypeConstructor.All => All
+
+        case TypeConstructor.True => True
+        case TypeConstructor.False => False
+
+        // TODO EFF-MIGRATION better formatting
+        case TypeConstructor.And => SimpleType.And(t.typeArguments.map(visit))
+        case TypeConstructor.Or => SimpleType.Or(t.typeArguments.map(visit))
+        case TypeConstructor.Not => SimpleType.Not(visit(t.typeArguments.head))
+
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)

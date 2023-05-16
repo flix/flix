@@ -29,7 +29,21 @@ object FieldRanker extends Ranker {
     * @return            Some(FieldCompletion) if a better completion is possible, else none.
     */
   override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[FieldCompletion] = {
-    // TODO
-    None
+    // Remove all none field completions
+    getFieldCompletions(completions)
+      // Find the field comp that has 0 uses
+      .find(fieldComp => index.fieldUses(fieldComp.field).isEmpty)
+  }
+
+  /**
+    * Returns a list only consisting of field completions.
+    *
+    * @param completions the list of all possible completions.
+    * @return            a List of FieldCompletions.
+    */
+  private def getFieldCompletions(completions: Iterable[Completion]): Iterable[FieldCompletion] = {
+    completions.collect {
+      case comp: FieldCompletion => comp
+    }
   }
 }
