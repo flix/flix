@@ -67,38 +67,38 @@ object BoolUnification {
       // Case 2: Common unification instances.
       // Note: Order determined by code coverage.
       (tpe1, tpe2) match {
-        case (Type.Var(x, _), Type.Var(y, _)) =>
-          if (renv0.isFlexible(x)) {
-            return Ok((Substitution.singleton(x, tpe2), Nil)) // 9000 hits
-          }
-          if (renv0.isFlexible(y)) {
-            return Ok((Substitution.singleton(y, tpe1), Nil)) // 1000 hits
-          }
-          if (x == y) {
-            return Ok((Substitution.empty, Nil)) // 1000 hits
-          }
-
-        case (Type.Cst(TypeConstructor.All, _), Type.Cst(TypeConstructor.All, _)) =>
-          return Ok((Substitution.empty, Nil)) // 6000 hits
-
         case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
-          case TypeConstructor.All =>
-            return Ok((Substitution.singleton(x, Type.All), Nil)) // 9000 hits
           case TypeConstructor.Empty =>
-            return Ok((Substitution.singleton(x, Type.Empty), Nil)) // 1000 hits
-          case _ => // nop
-        }
-
-        case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
+            return Ok((Substitution.singleton(x, Type.Empty), Nil)) // 10527 hits
           case TypeConstructor.All =>
-            return Ok((Substitution.singleton(y, Type.All), Nil)) // 7000 hits
-          case TypeConstructor.Empty =>
-            return Ok((Substitution.singleton(y, Type.Empty), Nil)) //  500 hits
+            return Ok((Substitution.singleton(x, Type.All), Nil)) // 598 hits
           case _ => // nop
         }
 
         case (Type.Cst(TypeConstructor.Empty, _), Type.Cst(TypeConstructor.Empty, _)) =>
-          return Ok((Substitution.empty, Nil)) //  100 hits
+          return Ok((Substitution.empty, Nil)) //  9845 hits
+
+        case (Type.Var(x, _), Type.Var(y, _)) =>
+          if (renv0.isFlexible(x)) {
+            return Ok((Substitution.singleton(x, tpe2), Nil)) // 7480 hits
+          }
+          if (x == y) {
+            return Ok((Substitution.empty, Nil)) // 1461 hits
+          }
+          if (renv0.isFlexible(y)) {
+            return Ok((Substitution.singleton(y, tpe1), Nil)) // 1118 hits
+          }
+
+        case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
+          case TypeConstructor.Empty =>
+            return Ok((Substitution.singleton(y, Type.Empty), Nil)) //  1592 hits
+          case TypeConstructor.All =>
+            return Ok((Substitution.singleton(y, Type.All), Nil)) // 249 hits
+          case _ => // nop
+        }
+
+        case (Type.Cst(TypeConstructor.All, _), Type.Cst(TypeConstructor.All, _)) =>
+          return Ok((Substitution.empty, Nil)) // 54 hits
 
         case _ => // nop
       }
