@@ -78,7 +78,7 @@ object BoolUnification {
             return Ok((Substitution.empty, Nil)) // 1000 hits
           }
 
-        case (Type.Cst(TypeConstructor.All, _), Type.Cst(TypeConstructor.Empty, _)) =>
+        case (Type.Cst(TypeConstructor.All, _), Type.Cst(TypeConstructor.All, _)) =>
           return Ok((Substitution.empty, Nil)) // 6000 hits
 
         case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
