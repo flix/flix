@@ -1061,7 +1061,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |def isThisThingNull(x: a): Bool =
-        |    import static java.util.Objects.isNull(a): Bool & Pure;
+        |    import static java.util.Objects.isNull(a): Bool \ Pure;
         |    isNull(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1407,7 +1407,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("IllegalWildType.04") {
     val input =
       """
-        |def foo(): String = unchecked_cast(123 as _)
+        |enum E[_]
+        |def foo(): String = unchecked_cast(123 as E[_])
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)

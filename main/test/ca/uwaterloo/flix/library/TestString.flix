@@ -39,6 +39,37 @@ def charAt05(): Bool = String.charAt(4, "Hello World!") == 'o'
 def charAt06(): Bool = String.charAt(5, "Hello World!") == ' '
 
 /////////////////////////////////////////////////////////////////////////////
+// nth                                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def nth01(): Bool = String.nth(0, "") == None
+
+@test
+def nth02(): Bool = String.nth(-1, "Hello World!") == None
+
+@test
+def nth03(): Bool = String.nth(15, "Hello World!") == None
+
+@test
+def nth04(): Bool = String.nth(0, "Hello World!") == Some('H')
+
+@test
+def nth05(): Bool = String.nth(1, "Hello World!") == Some('e')
+
+@test
+def nth06(): Bool = String.nth(2, "Hello World!") == Some('l')
+
+@test
+def nth07(): Bool = String.nth(3, "Hello World!") == Some('l')
+
+@test
+def nth08(): Bool = String.nth(4, "Hello World!") == Some('o')
+
+@test
+def nth09(): Bool = String.nth(5, "Hello World!") == Some(' ')
+
+/////////////////////////////////////////////////////////////////////////////
 // concat                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3351,6 +3382,37 @@ def countSubstring11(): Bool = String.countSubstring({substr = "abc"}, "ABC abc 
 
 @test
 def countSubstring12(): Bool = String.countSubstring({substr = "abc"}, "aBC::abc::AbC::abc::Abc") == 2
+
+/////////////////////////////////////////////////////////////////////////////
+// stripMargin                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def stripMargin01(): Bool = String.stripMargin("") == ""
+
+@test
+def stripMargin02(): Bool = String.stripMargin("abc") == "abc"
+
+@test
+def stripMargin03(): Bool = String.stripMargin("${'\t'}") == "${'\t'}"
+
+@test
+def stripMargin04(): Bool = String.stripMargin("    |abc") == "abc"
+
+@test
+def stripMargin05(): Bool = String.stripMargin("${'\t'} |abc") == "abc"
+
+@test
+def stripMargin06(): Bool = String.stripMargin(" | abc") == " abc"
+
+@test
+def stripMargin07(): Bool = String.stripMargin(" ||abc") == "|abc"
+
+@test
+def stripMargin08(): Bool = String.stripMargin(String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+@test
+def stripMargin09(): Bool = String.stripMargin(String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // stripMarginWith                                                         //

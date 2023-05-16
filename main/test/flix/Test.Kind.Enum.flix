@@ -13,8 +13,6 @@ mod Test.Kind.Enum {
     }
 
     mod Explicit {
-        rel R(i: Int32)
-
         pub enum EStar[a: Type] {
             case CStar1(a)
             case CStar2(a -> a)
@@ -26,7 +24,7 @@ mod Test.Kind.Enum {
             case CStarStar3(a -> b)
         }
 
-        pub enum EBool[a: Bool] {
+        pub enum EBool[a: Eff] {
             case CBool1(Int32 -> Int32 \ a)
         }
 
@@ -35,7 +33,7 @@ mod Test.Kind.Enum {
         }
 
         pub enum ESchemaRow[a: SchemaRow] {
-            case CSchemaRow1(#{ R | a })
+            case CSchemaRow1(#{ R(Int32) | a })
         }
 
         // TODO disabled during development

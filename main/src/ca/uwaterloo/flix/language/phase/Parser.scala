@@ -217,8 +217,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Enum |
       Declarations.RestrictableEnum |
       Declarations.TypeAlias |
-      Declarations.Relation |
-      Declarations.Lattice |
       Declarations.Class |
       Declarations.Instance |
       Declarations.Effect
@@ -325,14 +323,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
     }
 
-    def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("rel") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Relation
-    }
-
-    def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("lat") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Lattice
-    }
-
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
         Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ optWS ~ WithClause
@@ -426,13 +416,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndEffect: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
-    Type ~ PurityAndEffect
-  }
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = {
 
-  def PurityAndEffect: Rule1[ParsedAst.PurityAndEffect] = {
+    // First tries to parse the type as an effect set, so that {} is interpreted as a set rather than a record
+    def EffectFirstType: Rule1[ParsedAst.Type] = rule {
+      Types.EffectSet | Type
+    }
+
     rule {
-      optional(optWS ~ "&" ~ optWS ~ Type) ~ optional(optWS ~ "\\" ~ optWS ~ Effects.EffectSetOrEmpty) ~> ParsedAst.PurityAndEffect
+      Type ~ optional(optWS ~ "\\" ~ optWS ~ EffectFirstType)
     }
   }
 
@@ -798,27 +790,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Ascribe)
-    }
-
-    def TypAndPurFragment: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = {
-
-      def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-        // lookahead for purity/effect syntax
-        &("&" | "\\") ~ push(None) ~ PurityAndEffect
-      }
-
-      def SomeType: Rule1[Option[ParsedAst.Type]] = rule {
-        Type ~> ((o: ParsedAst.Type) => Some(o))
-      }
-
-      def Both: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-        SomeType ~ PurityAndEffect
-      }
-
-      rule {
-        PurAndEffOnly | Both
-      }
+      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -841,26 +813,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("checked_ecast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.CheckedEffectCast
     }
 
-    def UncheckedCast: Rule1[ParsedAst.Expression] = {
-      def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-        "_" ~ optWS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
-      }
-
-      def SomeType: Rule1[Option[ParsedAst.Type]] = rule {
-        Type ~> ((o: ParsedAst.Type) => Some(o))
-      }
-
-      def Both: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-        SomeType ~ PurityAndEffect
-      }
-
-      def TypeAndPurity: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-        PurAndEffOnly | Both
-      }
-
-      rule {
-        SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
-      }
+    def UncheckedCast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndEffect ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
     }
 
     def UncheckedMaskingCast: Rule1[ParsedAst.Expression.UncheckedMaskingCast] = rule {
@@ -902,11 +856,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = {
-      def SomeTypeAndEffect: Rule1[Option[(ParsedAst.Type, ParsedAst.PurityAndEffect)]] = rule {
-        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect) => Some((tpe, purAndEff)))
+      def SomeTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {
+        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, pur: Option[ParsedAst.Type]) => Some((tpe, pur)))
       }
 
-      def NoTypeAndEffect: Rule1[Option[(ParsedAst.Type, ParsedAst.PurityAndEffect)]] = rule {
+      def NoTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {
         push(None)
       }
 
@@ -961,8 +915,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def Ascription: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
-        ":" ~ optWS ~ Type ~ PurityAndEffect
+      def Ascription: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
+        ":" ~ optWS ~ TypeAndEffect
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
@@ -1485,15 +1439,25 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def CaseIntersection: Rule1[ParsedAst.Type] = rule {
-      Or ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
+      UnionOrDifference ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
     }
 
-    def Or: Rule1[ParsedAst.Type] = rule {
-      And ~ zeroOrMore(WS ~ keyword("or") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Or)
+    def UnionOrDifference: Rule1[ParsedAst.Type] = {
+      def UnionTail = rule {
+        WS ~ atomic("+") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Union
+      }
+
+      def DifferenceTail = rule {
+        WS ~ atomic("-") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Difference
+      }
+
+      rule {
+        Intersection ~ zeroOrMore(UnionTail | DifferenceTail)
+      }
     }
 
-    def And: Rule1[ParsedAst.Type] = rule {
-      Ascribe ~ zeroOrMore(WS ~ keyword("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
+    def Intersection: Rule1[ParsedAst.Type] = rule {
+      Ascribe ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
     }
 
     def Ascribe: Rule1[ParsedAst.Type] = rule {
@@ -1505,7 +1469,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | CaseComplement | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
+      // NB: Record must come before EffectSet as they overlap
+      // NB: CaseComplement must come before Complement as they overlap
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | CaseComplement | Complement |
+        Native | True | False | Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1552,6 +1519,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("#(") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.SchemaRow
     }
 
+    def EffectSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
+    }
+
     private def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
       SP ~ Names.QualifiedPredicate ~ optional(TypeArguments) ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
     }
@@ -1584,14 +1555,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
     }
 
-    def Not: Rule1[ParsedAst.Type] = rule {
-      // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
-    }
-
     def CaseComplement: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
       SP ~ "~~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
+    }
+
+    def Complement: Rule1[ParsedAst.Type] = rule {
+      // NB: We must not use Type here because it gives the wrong precedence.
+      SP ~ "~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {
@@ -1602,10 +1573,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
     }
 
-    def Effect: Rule1[ParsedAst.Type] = rule {
-      SP ~ Effects.NonSingletonEffectSet ~ SP ~> ParsedAst.Type.Effect
-    }
-
     def CaseSet: Rule1[ParsedAst.Type] = rule {
       SP ~ "<" ~ optWS ~ zeroOrMore(Names.QName).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ">" ~ SP ~> ParsedAst.Type.CaseSet
     }
@@ -1614,103 +1581,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
 
-  }
-
-  object Effects {
-
-    // This should only be used where the effect is unambiguously an effect.
-    // NOT where it might be some other type, since this overlaps with the empty record type.
-    def EffectSetOrEmpty: Rule1[ParsedAst.EffectSet] = {
-      def Empty: Rule1[ParsedAst.EffectSet] = rule {
-        SP ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
-      }
-
-      rule {
-        Empty | EffectSet
-      }
-    }
-
-    def NonSingletonEffectSet: Rule1[ParsedAst.EffectSet] = rule {
-      // NB: Pure must come before Set since they overlap
-      Pure | Set
-    }
-
-    def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
-      // NB: Pure must come before Set since they overlap
-      Pure | Set | Singleton
-    }
-
-    def Singleton: Rule1[ParsedAst.EffectSet] = rule {
-      SP ~ Effect ~ SP ~> ParsedAst.EffectSet.Singleton
-    }
-
-    def Pure: Rule1[ParsedAst.EffectSet] = rule {
-      SP ~ "{" ~ optWS ~ keyword("Pure") ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
-    }
-
-    def Set: Rule1[ParsedAst.EffectSet] = rule {
-      SP ~ "{" ~ optWS ~ oneOrMore(Effect).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Set
-    }
-
-    def Effect: Rule1[ParsedAst.Effect] = rule {
-      Binary | SimpleEffect
-    }
-
-    def Var: Rule1[ParsedAst.Effect] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
-    }
-
-    def Read: Rule1[ParsedAst.Effect] = rule {
-      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Read
-    }
-
-    def Write: Rule1[ParsedAst.Effect] = rule {
-      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Write
-    }
-
-    def Impure: Rule1[ParsedAst.Effect] = rule {
-      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Effect.Impure
-    }
-
-    def Eff: Rule1[ParsedAst.Effect] = rule {
-      SP ~ Names.QualifiedEffect ~ SP ~> ParsedAst.Effect.Eff
-    }
-
-    def Complement: Rule1[ParsedAst.Effect] = rule {
-      SP ~ operatorX("~") ~ optWS ~ SimpleEffect ~ SP ~> ParsedAst.Effect.Complement
-    }
-
-    def UnionTail = rule {
-      operatorX("+") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
-    }
-
-    def IntersectionTail = rule {
-      operatorX("&") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
-    }
-
-    def DifferenceTail = rule {
-      operatorX("-") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
-    }
-
-    def BinaryTail = rule {
-      UnionTail | DifferenceTail | IntersectionTail
-    }
-
-    // We only allow chains of like operators.
-    // Unlike operators must be parenthesized.
-    // Illegal: a + b + c - d + e
-    // Legal: ((a + b + c) - d) + e
-    def Binary: Rule1[ParsedAst.Effect] = rule {
-      SimpleEffect ~ optional(optWS ~ BinaryTail)
-    }
-
-    def SimpleEffect: Rule1[ParsedAst.Effect] = rule {
-      Var | Impure | Read | Write | Eff | Complement | Parens
-    }
-
-    def Parens: Rule1[ParsedAst.Effect] = rule {
-      "(" ~ Effect ~ ")"
-    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

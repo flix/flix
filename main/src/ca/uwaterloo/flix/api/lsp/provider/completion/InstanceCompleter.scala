@@ -73,9 +73,9 @@ object InstanceCompleter extends Completer {
       val fparams = fmtFormalParams(clazz, sig.spec, hole)
       val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
       val pur = sig.spec.pur match {
-        case Type.Cst(TypeConstructor.True, _) => ""
-        case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case e => " & " + FormatType.formatType(e)
+        case Type.Cst(TypeConstructor.Empty, _) => ""
+        case Type.Cst(TypeConstructor.All, _) => raw" \ IO"
+        case e => raw" \ " + FormatType.formatType(e)
       }
       s"    pub def ${sig.sym.name}($fparams): $retTpe$pur = ???"
     }

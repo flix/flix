@@ -117,7 +117,7 @@ object TypeConstructor {
     */
   @IntroducedBy(Kinder.getClass)
   case class Arrow(arity: Int) extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.mkArrow(arity)
+    def kind: Kind = Kind.Eff ->: Kind.mkArrow(arity)
   }
 
   /**
@@ -182,7 +182,7 @@ object TypeConstructor {
     /**
       * The shape of a sender is Sender[t, r].
       */
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
   }
 
   /**
@@ -193,7 +193,7 @@ object TypeConstructor {
     /**
       * The shape of a sender is Receiver[t, r].
       */
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
   }
 
   /**
@@ -232,7 +232,7 @@ object TypeConstructor {
     /**
       * The shape of an array is `Array[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
   }
 
   /**
@@ -252,7 +252,7 @@ object TypeConstructor {
     /**
       * The shape of a reference is `Ref[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
   }
 
   /**
@@ -280,45 +280,45 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the Boolean True.
+    * A type constructor that represents the empty effect set.
     */
-  case object True extends TypeConstructor {
-    def kind: Kind = Kind.Bool
+  case object Empty extends TypeConstructor {
+    def kind: Kind = Kind.Eff
   }
 
   /**
-    * A type constructor that represents the Boolean False.
+    * A type constructor that represents the universal effect set.
     */
-  case object False extends TypeConstructor {
-    def kind: Kind = Kind.Bool
+  case object All extends TypeConstructor {
+    def kind: Kind = Kind.Eff
   }
 
   /**
-    * A type constructor that represents the negation of an effect.
+    * A type constructor that represents the complement of an effect set.
     */
-  case object Not extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.Bool
+  case object Complement extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff
   }
 
   /**
-    * A type constructor that represents the conjunction of two effects.
+    * A type constructor that represents the union of two effect sets.
     */
-  case object And extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
+  case object Union extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
   }
 
   /**
-    * A type constructor that represents the disjunction of two effects.
+    * A type constructor that represents the intersection of two effect sets.
     */
-  case object Or extends TypeConstructor {
-    def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
+  case object Intersection extends TypeConstructor {
+    def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
   }
 
   /**
     * A type constructor that represents a single effect.
     */
   case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {
-    def kind: Kind = Kind.Bool
+    def kind: Kind = Kind.Eff
   }
 
   /**
@@ -356,7 +356,7 @@ object TypeConstructor {
     /**
       * The shape of a star-kind region is Region[l].
       */
-    def kind: Kind = Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Eff ->: Kind.Star
   }
 
 }

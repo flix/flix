@@ -97,7 +97,7 @@ object Instances {
     /**
       * Checks that the instance type is simple:
       * * all type variables are unique
-      * * all type arguments are variables or booleans
+      * * all type arguments are variables
       */
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _, _) => tpe match {
@@ -113,11 +113,7 @@ object Instances {
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen, errs)
-            // Case 2: True. Continue.
-            case (acc, Type.Cst(TypeConstructor.True, _)) => acc
-            // Case 3: False. Continue.
-            case (acc, Type.Cst(TypeConstructor.False, _)) => acc
-            // Case 4: Some other type. Error.
+            // Case 2: Non-variable. Error.
             case ((seen, errs), _) => (seen, InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc) :: errs)
           }
           errs0
@@ -144,8 +140,8 @@ object Instances {
       * Converts `true` and `false` in the given type into type variables.
       */
     def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-      case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Bool, loc)
-      case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Bool, loc)
+      case Type.Cst(TypeConstructor.Empty, loc) => Type.freshVar(Kind.Eff, loc)
+      case Type.Cst(TypeConstructor.All, loc) => Type.freshVar(Kind.Eff, loc)
       case t: Type.Var => t
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)

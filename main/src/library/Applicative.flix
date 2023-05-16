@@ -31,8 +31,8 @@
 /// A minimal implementation must define `point` and at least one of `ap` and `map2` (if `map2` is implemented,
 /// `ap` can be defined based on `map2` as shown below). If both `ap` and `map2` are defined,
 /// they must be equivalent to their default definitions:
-///     `ap(f: m[a -> b & e], x: m[a]): m[b] \ ef = map2(identity, f, x)`
-///     `map2(f: a -> b -> c & e, x: m[a], y: m[b]): m[c] \ ef = ap(Functor.map(f, x), y)`
+///     `ap(f: m[a -> b \ e], x: m[a]): m[b] \ ef = map2(identity, f, x)`
+///     `map2(f: a -> b -> c \ e, x: m[a], y: m[b]): m[c] \ ef = ap(Functor.map(f, x), y)`
 ///
 pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     ///

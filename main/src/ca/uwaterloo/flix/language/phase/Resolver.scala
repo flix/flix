@@ -257,7 +257,6 @@ object Resolver {
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
-    case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
     case _: UnkindedType.CaseSet => Nil
     case UnkindedType.CaseComplement(tpe, loc) => getAliasUses(tpe)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
@@ -515,7 +514,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, econstrs0, loc) =>
+    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, pur0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -525,14 +524,14 @@ object Resolver {
             case fparams =>
               val env = env1 ++ mkFormalParamEnv(fparams)
               val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
-              val purAndEffVal = resolvePurityAndEffect(purAndEff0, Wildness.AllowWild, env, taenv, ns0, root)
+              val purVal = traverseOpt(pur0)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
               val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
               val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
-              mapN(tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
-                case (tpe, purAndEff, tconstrs, econstrs) =>
+              mapN(tpeVal, purVal, tconstrsVal, econstrsVal) {
+                case (tpe, pur, tconstrs, econstrs) =>
                   // add the inherited type constraint to the the list
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, econstrs, loc)
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstr.toList ::: tconstrs, econstrs, loc)
               }
           }
       }
@@ -645,8 +644,7 @@ object Resolver {
         case Enum(sym, loc) => ().toSuccess
         case RestrictableEnum(sym, loc) => ().toSuccess
         case Apply(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
-        case Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) => traverseX(pur.toList ::: eff.getOrElse(Nil))(checkAssocTypes)
-        case ReadWrite(tpe, loc) => checkAssocTypes(tpe)
+        case Arrow(pur, arity, loc) => traverseX(pur.toList)(checkAssocTypes)
         case CaseSet(cases, loc) => ().toSuccess
         case CaseComplement(tpe, loc) => checkAssocTypes(tpe)
         case CaseUnion(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
@@ -686,7 +684,7 @@ object Resolver {
     * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstrs, econstrs, loc) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
@@ -701,11 +699,11 @@ object Resolver {
       if (qname.isUnqualified) {
         qname.ident.name match {
           case "Type" => Kind.Star.toSuccess
-          case "Bool" => Kind.Bool.toSuccess
+          case "Eff" => Kind.Eff.toSuccess
           case "RecordRow" => Kind.RecordRow.toSuccess
           case "SchemaRow" => Kind.SchemaRow.toSuccess
           case "Predicate" => Kind.Predicate.toSuccess
-          case "Region" => Kind.Bool.toSuccess
+          case "Region" => Kind.Eff.toSuccess
           case _ =>
             lookupRestrictableEnum(qname, env, ns0, root) match {
               case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
@@ -1315,11 +1313,8 @@ object Resolver {
           }
 
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
-          val expectedTypVal = expectedType match {
-            case None => (None: Option[UnkindedType]).toSuccess
-            case Some(t) => mapN(resolveType(t, Wildness.AllowWild, env0, taenv, ns0, root))(x => Some(x))
-          }
-          val expectedEffVal = resolvePurityAndEffect(expectedEff, Wildness.AllowWild, env0, taenv, ns0, root)
+          val expectedTypVal = traverseOpt(expectedType)(resolveType(_, Wildness.AllowWild, env0, taenv, ns0, root))
+          val expectedEffVal = traverseOpt(expectedEff)(resolveType(_, Wildness.AllowWild, env0, taenv, ns0, root))
 
           val eVal = visitExp(exp, env0)
           mapN(eVal, expectedTypVal, expectedEffVal) {
@@ -1341,11 +1336,8 @@ object Resolver {
           }
 
         case NamedAst.Expression.UncheckedCast(exp, declaredType, declaredEff, loc) =>
-          val declaredTypVal = declaredType match {
-            case None => (None: Option[UnkindedType]).toSuccess
-            case Some(t) => mapN(resolveType(t, Wildness.ForbidWild, env0, taenv, ns0, root))(x => Some(x))
-          }
-          val declaredEffVal = resolvePurityAndEffect(declaredEff, Wildness.ForbidWild, env0, taenv, ns0, root)
+          val declaredTypVal = traverseOpt(declaredType)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
+          val declaredEffVal = traverseOpt(declaredEff)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
 
           val eVal = visitExp(exp, env0)
           mapN(eVal, declaredTypVal, declaredEffVal) {
@@ -1672,15 +1664,15 @@ object Resolver {
         * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
         */
       def visitJvmMethod(method: NamedAst.JvmMethod, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
-        case NamedAst.JvmMethod(ident, fparams, exp, tpe, purAndEff, loc) =>
+        case NamedAst.JvmMethod(ident, fparams, exp, tpe, pur, loc) =>
           val fparamsVal = resolveFormalParams(fparams, env0, taenv, ns0, root)
           flatMapN(fparamsVal) {
             case fparams =>
               val env = env0 ++ mkFormalParamEnv(fparams)
               val expVal = visitExp(exp, env)
               val tpeVal = resolveType(tpe, Wildness.ForbidWild, env, taenv, ns0, root)
-              val purAndEffVal = resolvePurityAndEffect(purAndEff, Wildness.ForbidWild, env, taenv, ns0, root)
-              mapN(expVal, tpeVal, purAndEffVal) {
+              val purVal = traverseOpt(pur)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+              mapN(expVal, tpeVal, purVal) {
                 case (e, t, p) => ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
               }
           }
@@ -2308,29 +2300,17 @@ object Resolver {
           r => UnkindedType.mkSchema(r, loc)
         }
 
-      case NamedAst.Type.Relation(tpes, loc) =>
-        val tsVal = traverse(tpes)(visit(_))
-        mapN(tsVal) {
-          ts => UnkindedType.mkRelation(ts, loc)
-        }
-
-      case NamedAst.Type.Lattice(tpes, loc) =>
-        val tsVal = traverse(tpes)(visit(_))
-        mapN(tsVal) {
-          ts => UnkindedType.mkLattice(ts, loc)
-        }
-
       case NamedAst.Type.Native(fqn, loc) =>
         mapN(lookupJvmClass(fqn, loc)) {
           case clazz => flixifyType(clazz, loc)
         }
 
-      case NamedAst.Type.Arrow(tparams0, purAndEff0, tresult0, loc) =>
-        val tparamsVal = traverse(tparams0)(visit(_))
+      case NamedAst.Type.Arrow(tparams0, pur0, tresult0, loc) =>
+        val tparamsVal = traverse(tparams0)(visit)
         val tresultVal = visit(tresult0)
-        val purAndEffVal = semiResolvePurityAndEffect(purAndEff0, wildness, env, ns0, root)
-        mapN(tparamsVal, tresultVal, purAndEffVal) {
-          case (tparams, tresult, purAndEff) => mkUncurriedArrowWithEffect(tparams, purAndEff, tresult, loc)
+        val purVal = traverseOpt(pur0)(visit)
+        mapN(tparamsVal, tresultVal, purVal) {
+          case (tparams, tresult, pur) => mkUncurriedArrowWithEffect(tparams, pur, tresult, loc)
         }
 
       case NamedAst.Type.Apply(base0, targ0, loc) =>
@@ -2340,51 +2320,41 @@ object Resolver {
           case (tpe1, tpe2) => UnkindedType.Apply(tpe1, tpe2, loc)
         }
 
-      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
+      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
 
-      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.False, loc).toSuccess
+      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.All, loc).toSuccess
 
       case NamedAst.Type.Not(tpe, loc) =>
         mapN(visit(tpe)) {
-          case t => mkNot(t, loc)
+          case t => mkComplement(t, loc)
         }
 
       case NamedAst.Type.And(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkAnd(t1, t2, loc)
+          case (t1, t2) => mkUnion(t1, t2, loc)
         }
 
       case NamedAst.Type.Or(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkOr(t1, t2, loc)
+          case (t1, t2) => mkIntersection(t1, t2, loc)
         }
 
       case NamedAst.Type.Complement(tpe, loc) =>
         mapN(visit(tpe)) {
-          t => mkNot(t, loc)
+          t => mkComplement(t, loc)
         }
 
       case NamedAst.Type.Union(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkAnd(t1, t2, loc)
+          case (t1, t2) => mkUnion(t1, t2, loc)
         }
 
       case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkOr(t1, t2, loc)
+          case (t1, t2) => mkIntersection(t1, t2, loc)
         }
 
-      case NamedAst.Type.Read(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => UnkindedType.ReadWrite(t, loc)
-        }
-
-      case NamedAst.Type.Write(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => UnkindedType.ReadWrite(t, loc)
-        }
-
-      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
+      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
 
       case NamedAst.Type.CaseSet(cases0, loc) =>
         val casesVal = traverse(cases0)(lookupRestrictableTag(_, env, ns0, root))
@@ -2501,18 +2471,11 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
-      case UnkindedType.Arrow(purAndEff, arity, loc) =>
-        val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
+      case UnkindedType.Arrow(pur, arity, loc) =>
+        val purVal = traverseOpt(pur)(finishResolveType(_, taenv))
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
-        mapN(purAndEffVal, targsVal) {
+        mapN(purVal, targsVal) {
           case (p, ts) => UnkindedType.mkApply(UnkindedType.Arrow(p, arity, loc), ts, tpe0.loc)
-        }
-
-      case UnkindedType.ReadWrite(tpe, loc) =>
-        val tpeVal = finishResolveType(tpe, taenv)
-        val targsVal = traverse(targs)(finishResolveType(_, taenv))
-        mapN(tpeVal, targsVal) {
-          case (t, ts) => UnkindedType.mkApply(UnkindedType.ReadWrite(t, loc), ts, tpe0.loc)
         }
 
       case UnkindedType.CaseComplement(tpe, loc) =>
@@ -2558,39 +2521,6 @@ object Resolver {
     val tVal = semiResolveType(tpe0, wildness, env, ns0, root)
     flatMapN(tVal) {
       t => finishResolveType(t, taenv)
-    }
-  }
-
-  /**
-    * Partially resolves the given purity and effect.
-    */
-  private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, wildness: Wildness, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
-    case NamedAst.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverseOpt(pur0)(semiResolveType(_, wildness, env, ns0, root))
-      val effVal = traverseOpt(eff0)(effs => traverse(effs)(semiResolveType(_, wildness, env, ns0, root)))
-      mapN(purVal, effVal) {
-        case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
-      }
-  }
-
-  /**
-    * Finishes resolution of the given purity and effect.
-    */
-  private def finishResolvePurityAndEffect(purAndEff0: UnkindedType.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
-    case UnkindedType.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverseOpt(pur0)(finishResolveType(_, taenv))
-      val effVal = traverseOpt(eff0)(effs => traverse(effs)(finishResolveType(_, taenv)))
-      mapN(purVal, effVal) {
-        case (pur, eff) => UnkindedType.PurityAndEffect(pur, eff)
-      }
-  }
-
-  /**
-    * Performs name resolution on the given purity and effect `purAndEff0` in the given namespace `ns0`.
-    */
-  private def resolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, wildness: Wildness, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = {
-    flatMapN(semiResolvePurityAndEffect(purAndEff0, wildness, env, ns0, root)) {
-      case purAndEff => finishResolvePurityAndEffect(purAndEff, taenv)
     }
   }
 
@@ -3359,21 +3289,21 @@ object Resolver {
 
         case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-        case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.All => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Complement => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Null => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Intersection => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RegionToStar => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Relation => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Empty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseSet(_, _) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -3420,7 +3350,6 @@ object Resolver {
 
       // Case 5: Illegal type. Error.
       case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.ReadWrite => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseSet => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseComplement => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseUnion => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -3580,7 +3509,7 @@ object Resolver {
     * Creates an environment from the given spec.
     */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstrs, econstrs, loc) =>
       mkTypeParamEnv(tparams.tparams) ++ mkFormalParamEnv(fparams)
   }
 

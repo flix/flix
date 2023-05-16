@@ -179,7 +179,7 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed03(): Bool = region rh {
-        def incr(x): Int \ { Read(rh), Write(rh) } = x := deref x + 1;
+        def incr(x): Int \ rh = x := deref x + 1;
         let r = ref 1 @ rh;
         incr(r);
         deref r == 2

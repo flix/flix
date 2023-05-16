@@ -22,6 +22,8 @@ import java.lang.reflect.Method
 
 object MonoTypedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
+
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],
