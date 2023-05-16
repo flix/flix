@@ -437,33 +437,33 @@ object SimpleType {
         case TypeConstructor.All => All
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
-            case Nil => Not(Hole)
-            case arg :: Nil => Not(arg)
+            case Nil => Complement(Hole)
+            case arg :: Nil => Complement(arg)
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.Union =>
           // collapse into a chain of ands
-          t.typeArguments.map(visit).map(splitAnds) match {
-            // Case 1: No args. ? and ?
-            case Nil => And(Hole :: Hole :: Nil)
+          t.typeArguments.map(visit).map(splitPluses) match {
+            // Case 1: No args. ? + ?
+            case Nil => Plus(Hole :: Hole :: Nil)
             // Case 2: One arg. Take the left and put a hole at the end: tpe1 and tpe2 and ?
-            case args :: Nil => And(args :+ Hole)
+            case args :: Nil => Plus(args :+ Hole)
             // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
-            case args1 :: args2 :: Nil => And(args1 ++ args2)
+            case args1 :: args2 :: Nil => Plus(args1 ++ args2)
             // Case 4: Too many args. Error.
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.Intersection =>
           // collapse into a chain of ors
-          t.typeArguments.map(visit).map(splitOrs) match {
-            // Case 1: No args. ? or ?
-            case Nil => Or(Hole :: Hole :: Nil)
-            // Case 2: One arg. Take the left and put a hole at the end: tpe1 or tpe2 or ?
-            case args :: Nil => Or(args :+ Hole)
-            // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
-            case args1 :: args2 :: Nil => Or(args1 ++ args2)
+          t.typeArguments.map(visit).map(splitIntersections) match {
+            // Case 1: No args. ? & ?
+            case Nil => Intersection(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
+            case args :: Nil => Intersection(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
+            case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
             // Case 4: Too many args. Error.
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
@@ -611,6 +611,15 @@ object SimpleType {
     */
   private def splitUnions(tpe: SimpleType): List[SimpleType] = tpe match {
     case Union(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-plus types as singletons.
+    */
+  private def splitPluses(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Plus(tpes) => tpes
     case t => List(t)
   }
 
