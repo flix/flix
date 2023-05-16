@@ -39,7 +39,7 @@ object FieldCompleter extends Completer {
           .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
           .map {
             case (field, _) =>
-              Completion.FieldCompletion(s"$prefix.${field.name}")
+              Completion.FieldCompletion(field, prefix)
           }
       case _ => Nil
     }
