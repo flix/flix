@@ -83,7 +83,7 @@ object MonoTypedAstPrinter {
     * Returns the [[DocAst.Expression]] representation of `s`.
     */
   def print(s: MonoTypedAst.Stmt): DocAst.Expression = s match {
-    case Stmt.Ret(e, _, _) => print(e)
+    case Stmt.Ret(e, _, _) => DocAst.Expression.Ret(print(e))
   }
 
   /**
