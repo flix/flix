@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
-import ca.uwaterloo.flix.language.ast.{ErasedAst, LiftedAst, MonoTypedAst, ReducedAst, SourceLocation}
-import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, LiftedAstPrinter, MonoTypedAstPrinter, ReducedAstPrinter}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, LiftedAst, MonoTypedAst, ReducedAst, SimplifiedAst, SourceLocation}
+import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, LiftedAstPrinter, MonoTypedAstPrinter, ReducedAstPrinter, SimplifiedAstPrinter}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
@@ -45,8 +45,8 @@ object AstPrinter {
       if (asts.contains("Lowering")) () // wip
       if (asts.contains("EarlyTreeShaker")) () // wip
       if (asts.contains("Monomorph")) () // wip
-      if (asts.contains("Simplifier")) () // wip
-      if (asts.contains("ClosureConv")) () // wip
+      if (asts.contains("Simplifier")) writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
+      if (asts.contains("ClosureConv")) writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
       if (asts.contains("LambdaLift")) writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
       if (asts.contains("Tailrec")) writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
       if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
@@ -71,8 +71,8 @@ object AstPrinter {
     // Lowering wip
     // EarlyTreeShaker wip
     // Monomorph wip
-    // Simplifier wip
-    // ClosureConv wip
+    writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
+    writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
     writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
     writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
     writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
@@ -81,6 +81,13 @@ object AstPrinter {
     writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
     writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
     writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
+  }
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatSimplifiedAst(root: SimplifiedAst.Root): String = {
+    formatDocProgram(SimplifiedAstPrinter.print(root))
   }
 
   /**

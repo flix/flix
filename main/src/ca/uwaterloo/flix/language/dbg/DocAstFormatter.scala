@@ -121,6 +121,9 @@ object DocAstFormatter {
         val bodyf = aux(d, paren = false, inBlock = true)
         val regionf = aux(v)
         text("region") +: regionf +: curly(bodyf)
+      case Lambda(fparams, body) =>
+        val params = fparams.map(_.v).map(aux(_, paren = false))
+        tuplish(params) +: text("->") :: breakIndent(aux(body, paren = false))
       case App(f, args) =>
         aux(f) :: tuple(args.map(aux(_, paren = false)))
       case SquareApp(f, args) =>
