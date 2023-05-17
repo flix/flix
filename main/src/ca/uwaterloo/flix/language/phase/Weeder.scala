@@ -1162,7 +1162,12 @@ object Weeder {
 
       mapN(fpVal, e1Val, e2Val, tpeVal, effVal) {
         case (fp, e1, e2, tpe, eff) =>
-          val ascription = WeededAst.Expression.Ascribe(e1, tpe, eff, e1.loc)
+          // skip ascription if it's empty
+          val ascription = if (tpe.isDefined || eff.isDefined) {
+            WeededAst.Expression.Ascribe(e1, tpe, eff, e1.loc)
+          } else {
+            e1
+          }
           val lambda = mkCurried(fp, ascription, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }.recoverOne {
