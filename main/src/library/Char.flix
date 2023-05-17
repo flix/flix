@@ -89,7 +89,8 @@ mod Char {
         isUpperCase(c)
 
     ///
-    /// Returns `true` if the given char `c` is titlecase.
+    /// Returns `true` if the given char `c` is titlecase, i.e. in the Unicode
+    /// category of title case letters.
     ///
     pub def isTitleCase(c: Char): Bool =
         import static java.lang.Character.isTitleCase(Char): Bool \ {};
@@ -160,7 +161,8 @@ mod Char {
     ///
     /// Converts a letter to its titlecase version.
     ///
-    /// Returns the original character if it does not have a titlecase version.
+    /// Returns the original character if it does not have either a titlecase
+    /// version or a mapping to uppercase.
     ///
     pub def toTitleCase(c: Char): Char =
         import static java.lang.Character.toTitleCase(Char): Char \ {};

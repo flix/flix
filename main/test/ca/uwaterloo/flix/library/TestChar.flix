@@ -364,6 +364,28 @@ def isUpperCase10(): Bool = Char.isUpperCase('â') == false
 def isUpperCase11(): Bool = Char.isUpperCase('Â') == true
 
 /////////////////////////////////////////////////////////////////////////////
+// isTitleCase                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isTitleCase01(): Bool = Char.isTitleCase('a') == false
+
+@test
+def isTitleCase02(): Bool = Char.isTitleCase('A') == false
+
+@test
+def isTitleCase03(): Bool = Char.isTitleCase(' ') == false
+
+@test
+def isTitleCase04(): Bool = Char.isTitleCase('\u01F2') == true      // Dz (single char, upper case)
+
+@test
+def isTitleCase05(): Bool = Char.isTitleCase('\u01F3') == false      // dz (single char, lower case)
+
+@test
+def isTitleCase06(): Bool = Char.isTitleCase('\u1F99') == true      // Greek Capital Letter Eta with Dasia and Prosgegrammeni
+
+/////////////////////////////////////////////////////////////////////////////
 // isWhiteSpace                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -417,6 +439,74 @@ def isWhiteSpace16(): Bool = Char.isWhiteSpace('\u000D') == true    // carriage-
 
 @test
 def isWhiteSpace17(): Bool = Char.isWhiteSpace('\r') == true        // carriage-return
+
+/////////////////////////////////////////////////////////////////////////////
+// isDefined                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isDefined01(): Bool = Char.isDefined('a') == true
+
+@test
+def isDefined02(): Bool = Char.isDefined('A') == true
+
+/////////////////////////////////////////////////////////////////////////////
+// isISOControl                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isISOControl01(): Bool = Char.isISOControl('a') == false
+
+@test
+def isISOControl02(): Bool = Char.isISOControl('A') == false
+
+@test
+def isISOControl03(): Bool = Char.isISOControl('\u0000') == true
+
+@test
+def isISOControl04(): Bool = Char.isISOControl('\u0015') == true        // NAK
+
+/////////////////////////////////////////////////////////////////////////////
+// isMirrored                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isMirrored01(): Bool = Char.isMirrored('a') == false
+
+@test
+def isMirrored02(): Bool = Char.isMirrored('A') == false
+
+@test
+def isMirrored03(): Bool = Char.isMirrored('[') == true
+
+@test
+def isMirrored04(): Bool = Char.isMirrored(']') == true
+
+/////////////////////////////////////////////////////////////////////////////
+// isSurrogate                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isSurrogate01(): Bool = Char.isSurrogate('a') == false
+
+@test
+def isSurrogate02(): Bool = Char.isSurrogate('A') == false
+
+@test
+def isSurrogate03(): Bool = Char.isSurrogate('\uD83C') == true
+
+@test
+def isSurrogate04(): Bool = Char.isSurrogate('\uDFDD') == true
+
+/////////////////////////////////////////////////////////////////////////////
+// isSurrogatePair                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isSurrogatePair01(): Bool = Char.isSurrogatePair(high = 'A', low = 'a') == false
+
+@test
+def isSurrogatePair02(): Bool = Char.isSurrogatePair(high = '\uD83C', low = '\uDFDD') == true
 
 /////////////////////////////////////////////////////////////////////////////
 // toLowerCase                                                             //
@@ -491,6 +581,44 @@ def toUpperCase10(): Bool = Char.toUpperCase('â') == 'Â'
 
 @test
 def toUpperCase11(): Bool = Char.toUpperCase('Â') == 'Â'
+
+/////////////////////////////////////////////////////////////////////////////
+// toTitleCase                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toTitleCase01(): Bool = Char.toTitleCase('a') == 'A'
+
+@test
+def toTitleCase02(): Bool = Char.toTitleCase('A') == 'A'
+
+@test
+def toTitleCase03(): Bool = Char.toTitleCase(' ') == ' '
+
+@test
+def toTitleCase04(): Bool = Char.toTitleCase('\u01F2') == '\u01F2'      // Dz (single char)
+
+@test
+def toTitleCase05(): Bool = Char.toTitleCase('\u01F3') == '\u01F2'      // dz (single char)
+
+/////////////////////////////////////////////////////////////////////////////
+// toCodePoint                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toCodePoint01(): Bool = Char.toCodePoint('a') == 0x0061
+
+@test
+def toCodePoint02(): Bool = Char.toCodePoint('A') == 0x0041
+
+@test
+def toCodePoint03(): Bool = Char.toCodePoint(' ') == 0x0020
+
+@test
+def toCodePoint04(): Bool = Char.toCodePoint('\u01F2') == 0x01F2      // Dz (single char)
+
+@test
+def toCodePoint05(): Bool = Char.toCodePoint('\u01F3') == 0x01F3      // dz (single char)
 
 /////////////////////////////////////////////////////////////////////////////
 // toString                                                                //
