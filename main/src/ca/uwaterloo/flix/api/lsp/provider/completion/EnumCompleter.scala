@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.generateModSymAndSubwordFromContext
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
@@ -27,17 +28,7 @@ object EnumCompleter extends Completer {
     * Returns a List of Completion for enums.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumCompletion] = {
-    // We use a fqn to lookup in the modules
-    // We therefore need to split the context.word at dots
-    val word = context.word.split('.').toList
-    val (fqn, subWord) = {
-      // If the word provided ends with a dot, we should list all enums in that namespace
-      if (context.word.takeRight(1) == ".") {
-        (Symbol.mkModuleSym(word), "")
-      } else {
-        (Symbol.mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
-      }
-    }
+    val (fqn, subWord) = generateModSymAndSubwordFromContext(context)
 
     getEnumCompletion(context, fqn, subWord)
   }
