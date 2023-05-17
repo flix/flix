@@ -163,7 +163,7 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed01(): Bool =
-        def succ(x): Int = x + 1;
+        def succ(x): Int32 = x + 1;
         succ(1) == 2
 
     ///
@@ -171,7 +171,7 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed02(): Bool =
-        def succ(x): Int \ {} = x + 1;
+        def succ(x): Int32 \ {} = x + 1;
         succ(1) == 2
 
     ///
@@ -179,7 +179,7 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed03(): Bool = region rh {
-        def incr(x): Int \ rh = x := deref x + 1;
+        def incr(x): Int32 \ rh = x := deref x + 1;
         let r = ref 1 @ rh;
         incr(r);
         deref r == 2

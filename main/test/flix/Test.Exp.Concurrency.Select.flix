@@ -410,7 +410,7 @@ mod Test.Exp.Concurrency.Select {
 
     @test
     def testSelectSideEffecting01(): Bool = region r {
-        def mkChan(): Channel[Int32] = {
+        def mkChan(): Receiver[Int32] = {
             let (tx, rx) = Channel.buffered(r, 1);
             Channel.send(42, tx);
             rx
