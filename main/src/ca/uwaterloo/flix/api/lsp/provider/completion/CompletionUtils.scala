@@ -48,7 +48,6 @@ object CompletionUtils {
     (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 
-
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)

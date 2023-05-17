@@ -23,65 +23,45 @@ import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object EnumCompleter extends Completer {
-  /**
-    * Returns a List of Completion for enums.
-    */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumCompletion] = {
-    // We use a fqn to lookup in the modules
-    // We therefore need to split the context.word at dots
-    val word = context.word.split('.').toList
-    val (fqn, subWord) = {
-      // If the word provided ends with a dot, we should list all enums in that namespace
-      if (context.word.takeRight(1) == ".") {
-        (Symbol.mkModuleSym(word), "")
-      } else {
-        (Symbol.mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
+
+  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumCompletion] = {
+    val enumsInModule = getEnumSymsInModule(ctx)
+    getEnumCompletions(enumsInModule, ctx)
+  }
+
+  private def getEnumSymsInModule(ctx: CompletionContext)(implicit root: TypedAst.Root): List[Symbol.EnumSym] = {
+    val modFragment = ModuleSymFragment.parseModuleSym(ctx.word)
+
+    modFragment match {
+      case ModuleSymFragment.Complete(modSym) => root.modules.getOrElse(modSym, Nil).collect {
+        case sym: EnumSym => sym
+      }
+      case ModuleSymFragment.Partial(modSym, suffix) => root.modules.getOrElse(modSym, Nil).collect {
+        case sym: EnumSym if matches(sym, suffix) => sym
       }
     }
-
-    getEnumCompletion(context, fqn, subWord)
   }
 
   /**
-    * Get all Enum completions
-    */
-  private def getEnumCompletion(context: CompletionContext, modSym: Symbol.ModuleSym, subWord: String)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
-    // Use fqn to lookup in modules and get all enums
-    val enumsInModule = root.modules.getOrElse(modSym, Nil)
-
-    // Get all enums that matches word
-    val enumsMatchingSubword = enumsInModule.collect {
-      case sym: EnumSym if matchesEnum(sym, subWord) => sym
-    }
-
-    // Generate completions
-    enumsMatchingSubword.flatMap {
-      enumSym =>
-        root.enums.get(enumSym) match {
-          case None => // not possible
-            None
-          case Some(enm) =>
-            Some(enumCompletion(context, enumSym, enm))
-        }
-    }
-  }
-
-  /**
-    * Generates an EnumCompletion
-    */
-  private def enumCompletion(context: CompletionContext, enumSym: EnumSym, enm: TypedAst.Enum): EnumCompletion = {
-    val internalPriority = getInternalPriority(enm.loc, enm.sym.namespace)(context)
-    val name = enumSym.name
-    Completion.EnumCompletion(enumSym, formatTParams(enm.tparams), priorityBoostForTypes(internalPriority(name))(context),
-      TextEdit(context.range, s"${enumSym.toString}${formatTParamsSnippet(enm.tparams)}"), Some(enm.doc.text))
-  }
-
-  /**
-    * Checks that the enumSym matches the word that the users is typing.
+    * Returns `true` if the given enum `sym` matches the given `suffix`.
     *
-    * @param sym  the enumSym.
-    * @param word the current word.
-    * @return     true, if the enum matches word, false otherwise.
+    * (Color, "Col") => true
+    * (Color, "Li")  => false
     */
-  private def matchesEnum(sym: Symbol.EnumSym, word: String): Boolean = sym.name.startsWith(word)
+  private def matches(sym: EnumSym, suffix: String): Boolean = {
+    sym.name.startsWith(suffix)
+  }
+
+  private def getEnumCompletions(enums: List[Symbol.EnumSym], ctx: CompletionContext)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
+    enums.map(sym => getEnumCompletion(root.enums(sym), ctx))
+  }
+
+  private def getEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): EnumCompletion = {
+    val sym = decl.sym
+    val name = decl.sym.name
+    val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
+    Completion.EnumCompletion(sym, formatTParams(decl.tparams), priorityBoostForTypes(internalPriority(name))(ctx),
+      TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))
+  }
+
 }
