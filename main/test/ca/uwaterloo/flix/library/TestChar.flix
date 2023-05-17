@@ -143,6 +143,31 @@ def isDigit14(): Bool = Char.isDigit('\u0966') == true          // Devanagari di
 def isDigit15(): Bool = Char.isDigit('\u096F') == true          // Devanagari digit nine
 
 /////////////////////////////////////////////////////////////////////////////
+// isLetterOrDigit                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isLetterOrDigit01(): Bool = Char.isLetterOrDigit('a') == true
+
+@test
+def isLetterOrDigit02(): Bool = Char.isLetterOrDigit('A') == true
+
+@test
+def isLetterOrDigit03(): Bool = Char.isLetterOrDigit(' ') == false
+
+@test
+def isLetterOrDigit04(): Bool = Char.isLetterOrDigit('+') == false
+
+@test
+def iisLetterOrDigit05(): Bool = Char.isLetterOrDigit('0') == true
+
+@test
+def iisLetterOrDigit06(): Bool = Char.isLetterOrDigit('9') == true
+
+@test
+def isLetterOrDigit07(): Bool = Char.isLetterOrDigit('†') == false
+
+/////////////////////////////////////////////////////////////////////////////
 // isAsciiDigit                                                            //
 /////////////////////////////////////////////////////////////////////////////
 

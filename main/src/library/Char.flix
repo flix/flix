@@ -168,7 +168,6 @@ mod Char {
         import static java.lang.Character.toTitleCase(Char): Char \ {};
         toTitleCase(c)
 
-
     ///
     /// Returns the code point representation of Char `c`.
     ///
@@ -232,6 +231,5 @@ mod Char {
             case c if c == '\u0000' => None
             case c                  => Some(c)
         }
-
 
 }

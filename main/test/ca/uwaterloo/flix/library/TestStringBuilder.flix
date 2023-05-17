@@ -53,6 +53,34 @@ mod TestStringBuilder {
         StringBuilder.toString(sb) == "hello world!"
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // appendCodePoint!                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def appendCodePoint01!(): Bool = region r {
+        let sb = StringBuilder.new(r);
+        StringBuilder.appendCodePoint!(0x1f3dd, sb);
+        StringBuilder.toString(sb) == CodePoint.toString(0x1f3dd)
+    }
+
+    @test
+    def appendCodePoint02!(): Bool = region r {
+        let sb = StringBuilder.new(r);
+        StringBuilder.appendCodePoint!(0x1f3dd, sb);
+        StringBuilder.appendCodePoint!(0x0020, sb);
+        StringBuilder.toString(sb) == CodePoint.toString(0x1f3dd) + " "
+    }
+
+    @test
+    def appendCodePoint03!(): Bool = region r {
+        let sb = StringBuilder.new(r);
+        StringBuilder.appendCodePoint!(0x0020, sb);
+        StringBuilder.appendCodePoint!(0x1f3dd, sb);
+        StringBuilder.appendCodePoint!(0x0020, sb);
+        StringBuilder.toString(sb) == " " + CodePoint.toString(0x1f3dd) + " "
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // append! (Char)                                                          //
