@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 import java.lang.reflect.{Constructor, Executable, Method}
@@ -47,33 +47,6 @@ object CompletionUtils {
     val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
     (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
-
-  /**
-    * Used to make a moduleSym from a fqn and the "subWord".
-    *
-    * This function splits the context.word at dots to make the best fqn.
-    * If the word ends at a dot, the subWord is the empty string.
-    *
-    * @param context the completionContext.
-    * @return        a moduleSym from a fqn and a subWord.
-    */
-  def getModuleAndFragment(context: CompletionContext): (Symbol.ModuleSym, String) = {
-    // We use a fqn to generate a modSym
-    // We therefore need to split the context.word at dots
-    val fqn = context.word.split('.').toList
-
-    if (fqn == Nil) {
-      (Symbol.mkModuleSym(Nil), "")
-    } else {
-      // If the word provided ends with a dot, the subWord is the empty string
-      if (context.word.takeRight(1) == ".") {
-        (Symbol.mkModuleSym(fqn), "")
-      } else {
-        (Symbol.mkModuleSym(fqn.dropRight(1)), fqn.takeRight(1)(0))
-      }
-    }
-  }
-
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 

@@ -26,40 +26,55 @@ object ModuleCompleter extends Completer {
     * Returns a List of ModCompletion for modules.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
-    val (modSym, fragment) = CompletionUtils.getModuleAndFragment(context)
-
-    getModuleCompletion(modSym, fragment)
+    val validMods =
+      ModuleSymFragment.parseModuleSym(context.word) match {
+        // We have a complete moduleSymFragment
+        case ModuleSymFragment.Complete(modSym) =>
+          // Lookup in modules
+          getSymsInModule(modSym)
+            // Collect all subModules
+            .collect {
+              case sym: ModuleSym => sym
+            }
+        // We have a partial moduleSymFragment
+        case ModuleSymFragment.Partial(modSym, suffix) =>
+          // Lookup in modules
+          getSymsInModule(modSym)
+            // Collect all subModules that matches suffix
+            .collect {
+              case sym: ModuleSym if matchesMod(sym, suffix) => sym
+            }
+        case _ => Nil
+      }
+    generateModCompletions(validMods)
   }
 
   /**
-    * Get all module completions
+    * Looks up in root.modules with key modSym.
+    * @return List[Symbol] if the key exists, Nil otherwise.
     */
-  private def getModuleCompletion(modSym: Symbol.ModuleSym, fragment: String)(implicit root: TypedAst.Root): Iterable[ModCompletion] = {
-    // Use fqn to lookup in modules and get all syms
-    val symsInModule = root.modules.getOrElse(modSym, Nil)
+  private def getSymsInModule(modSym: Symbol.ModuleSym)(implicit root: TypedAst.Root): List[Symbol] = root.modules.getOrElse(modSym, Nil)
 
-    // Get all modules that matches word
-    val validModsInModule = symsInModule.collect {
-      case sym: ModuleSym if matchesMod(sym, fragment) => sym
-    }
-
-    // Generate completions
-    validModsInModule.map(mod => ModCompletion(mod))
+  /**
+    * Generates ModuleCompletions
+    */
+  private def generateModCompletions(mods: List[Symbol.ModuleSym]): Iterable[ModCompletion] = {
+    mods.map(mod => ModCompletion(mod))
   }
 
   /**
-    * Checks if the last elem of the nameSpace matches the subWord (the word the user is currently typing).
+    * Checks if the last elem of the nameSpace matches the suffix (the word the user is currently typing).
     *
     * @param mod     the moduleSym.
-    * @param subWord the subWord provided by the user.
-    * @return        true, if the subWord matches the last part of nameSpace, false otherwise.
+    * @param suffix  the suffix of the module provided by the user.
+    * @return        true, if the suffix matches the last part of nameSpace, false otherwise.
     */
-  private def matchesMod(mod: ModuleSym, subWord: String): Boolean = {
+  private def matchesMod(mod: ModuleSym, suffix: String): Boolean = {
     val lastNs = mod.ns.takeRight(1)
     if (lastNs == Nil) {
       false
     } else {
-      lastNs(0).startsWith(subWord)
+      lastNs(0).startsWith(suffix)
     }
   }
 }
