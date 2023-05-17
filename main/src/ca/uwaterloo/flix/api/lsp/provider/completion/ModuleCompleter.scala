@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.generateModSymAndSubwordFromContext
 import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 
 object ModuleCompleter extends Completer {
@@ -27,7 +26,7 @@ object ModuleCompleter extends Completer {
     * Returns a List of ModCompletion for modules.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
-    val (modSym, subWord) = generateModSymAndSubwordFromContext(context)
+    val (modSym, subWord) = CompletionUtils.generateModSymAndSubwordFromContext(context)
 
     getModuleCompletion(modSym, subWord)
   }

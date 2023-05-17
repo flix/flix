@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.generateModSymAndSubwordFromContext
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
@@ -28,9 +27,9 @@ object EnumCompleter extends Completer {
     * Returns a List of Completion for enums.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumCompletion] = {
-    val (fqn, subWord) = generateModSymAndSubwordFromContext(context)
+    val (modSym, subWord) = CompletionUtils.generateModSymAndSubwordFromContext(context)
 
-    getEnumCompletion(context, fqn, subWord)
+    getEnumCompletion(context, modSym, subWord)
   }
 
   /**
