@@ -60,16 +60,16 @@ object CompletionUtils {
   def getModuleAndFragment(context: CompletionContext): (Symbol.ModuleSym, String) = {
     // We use a fqn to generate a modSym
     // We therefore need to split the context.word at dots
-    val word = context.word.split('.').toList
+    val fqn = context.word.split('.').toList
 
-    if (word == Nil) {
+    if (fqn == Nil) {
       (Symbol.mkModuleSym(Nil), "")
     } else {
       // If the word provided ends with a dot, the subWord is the empty string
       if (context.word.takeRight(1) == ".") {
-        (Symbol.mkModuleSym(word), "")
+        (Symbol.mkModuleSym(fqn), "")
       } else {
-        (Symbol.mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
+        (Symbol.mkModuleSym(fqn.dropRight(1)), fqn.takeRight(1)(0))
       }
     }
   }
