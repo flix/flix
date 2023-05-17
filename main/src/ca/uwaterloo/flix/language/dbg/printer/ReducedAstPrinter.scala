@@ -55,7 +55,7 @@ object ReducedAstPrinter {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVarSym(sym)
     case Expr.Closure(sym, closureArgs, _, _) => DocAst.Expression.ClosureLifted(sym, closureArgs.map(print))
-    case Expr.ApplyAtomic(op, exps, tpe, _, _) => IntrinsicOperatorPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
+    case Expr.ApplyAtomic(op, exps, tpe, _, _) => OperatorPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
     case Expr.ApplyClo(exp, exps, NonTailCall, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
     case Expr.ApplyClo(exp, exps, TailCall, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
     case Expr.ApplyDef(sym, exps, NonTailCall, _, _, _) => DocAst.Expression.ApplyDef(sym, exps.map(print))
