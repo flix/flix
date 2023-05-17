@@ -91,3 +91,7 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
 
 test.dependsOn testAll
 
+task vscode(type: Copy, dependsOn:[clean, jar]) {
+    from 'build/libs/flix.jar'
+    into providers.gradleProperty('dev.flix.vscode.project')
+}
