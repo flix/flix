@@ -60,8 +60,8 @@ object ShowAstProvider {
         case "Tailrec" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTailrecAst))
         case "Optimizer" => astObject(phase, AstPrinter.formatLiftedAst(flix.getOptimizerAst))
         case "LateTreeShaker" => astObject(phase, AstPrinter.formatLiftedAst(flix.getLateTreeShakerAst))
-        case "Reducer" => astObject(phase, "Work In Progress")
-        case "VarNumbering" => astObject(phase, "Work In Progress")
+        case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
+        case "VarNumbering" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarNumberingAst))
         case "MonoTyper" => astObject(phase, AstPrinter.formatMonoTypedAst(flix.getMonoTyperAst))
         case "Eraser" => astObject(phase, AstPrinter.formatErasedAst(flix.getEraserAst))
         case _ =>

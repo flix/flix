@@ -133,6 +133,10 @@ object DocAst {
     def Is(sym: Symbol.CaseSym, d: Expression): Expression =
       Binary(d, "is", AsIs(sym.toString))
 
+    /** The control separated return statement */
+    def Ret(d: Expression): Expression =
+      Keyword("ret", d)
+
     def Ref(d: Expression): Expression =
       Keyword("ref", d)
 
