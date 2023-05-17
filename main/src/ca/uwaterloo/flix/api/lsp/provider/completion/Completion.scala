@@ -221,7 +221,7 @@ sealed trait Completion {
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),
-        textEdit = TextEdit(context.range, name),
+        textEdit = TextEdit(context.range, s"$name."),
         kind = CompletionItemKind.Module)
   }
 }

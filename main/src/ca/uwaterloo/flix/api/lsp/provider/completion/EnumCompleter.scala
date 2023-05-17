@@ -27,35 +27,42 @@ object EnumCompleter extends Completer {
     * Returns a List of Completion for enums.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumCompletion] = {
-    // We use a fqn to lookup in the modules
-    // We therefore need to split the context.word at dots
-    val word = context.word.split('.').toList
-    val (fqn, subWord) = {
-      // If the word provided ends with a dot, we should list all enums in that namespace
-      if (context.word.takeRight(1) == ".") {
-        (Symbol.mkModuleSym(word), "")
-      } else {
-        (Symbol.mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
+    val enumsInModule =
+      ModuleSymFragment.parseModuleSym(context.word) match {
+        // We have a complete moduleSymFragment
+        case ModuleSymFragment.Complete(modSym) =>
+          // Lookup in modules
+          getSymsInModule(modSym)
+            // Collect all enums
+            .collect {
+              case sym: EnumSym => sym
+            }
+        // We have a partial moduleSymFragment
+        case ModuleSymFragment.Partial(modSym, suffix) =>
+          // Lookup in modules
+          getSymsInModule(modSym)
+            // Collect all enums that matches suffix
+            .collect {
+              case sym: EnumSym if matchesEnum(sym, suffix) => sym
+            }
+        case _ => Nil
       }
-    }
 
-    getEnumCompletion(context, fqn, subWord)
+    getEnumCompletion(context, enumsInModule)
   }
+
+  /**
+    * Looks up in root.modules with key modSym.
+    * @return List[Symbol] if the key exists, Nil otherwise.
+    */
+  private def getSymsInModule(modSym: Symbol.ModuleSym)(implicit root: TypedAst.Root): List[Symbol] = root.modules.getOrElse(modSym, Nil)
 
   /**
     * Get all Enum completions
     */
-  private def getEnumCompletion(context: CompletionContext, modSym: Symbol.ModuleSym, subWord: String)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
-    // Use fqn to lookup in modules and get all enums
-    val enumsInModule = root.modules.getOrElse(modSym, Nil)
-
-    // Get all enums that matches word
-    val enumsMatchingSubword = enumsInModule.collect {
-      case sym: EnumSym if matchesEnum(sym, subWord) => sym
-    }
-
+  private def getEnumCompletion(context: CompletionContext, enums: List[Symbol.EnumSym])(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
     // Generate completions
-    enumsMatchingSubword.flatMap {
+    enums.flatMap {
       enumSym =>
         root.enums.get(enumSym) match {
           case None => // not possible
