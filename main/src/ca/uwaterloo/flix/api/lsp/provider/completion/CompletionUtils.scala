@@ -57,16 +57,20 @@ object CompletionUtils {
     * @param context the completionContext.
     * @return        a moduleSym from a fqn and a subWord.
     */
-  def generateModSymAndSubwordFromContext(context: CompletionContext): (Symbol.ModuleSym, String) = {
+  def getModuleAndFragment(context: CompletionContext): (Symbol.ModuleSym, String) = {
     // We use a fqn to generate a modSym
     // We therefore need to split the context.word at dots
     val word = context.word.split('.').toList
 
-    // If the word provided ends with a dot, the subWord is the empty string
-    if (context.word.takeRight(1) == ".") {
-      (Symbol.mkModuleSym(word), "")
+    if (word == Nil) {
+      (Symbol.mkModuleSym(Nil), "")
     } else {
-      (Symbol.mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
+      // If the word provided ends with a dot, the subWord is the empty string
+      if (context.word.takeRight(1) == ".") {
+        (Symbol.mkModuleSym(word), "")
+      } else {
+        (Symbol.mkModuleSym(word.dropRight(1)), word.takeRight(1)(0))
+      }
     }
   }
 

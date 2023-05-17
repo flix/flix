@@ -26,21 +26,21 @@ object ModuleCompleter extends Completer {
     * Returns a List of ModCompletion for modules.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
-    val (modSym, subWord) = CompletionUtils.generateModSymAndSubwordFromContext(context)
+    val (modSym, fragment) = CompletionUtils.getModuleAndFragment(context)
 
-    getModuleCompletion(modSym, subWord)
+    getModuleCompletion(modSym, fragment)
   }
 
   /**
     * Get all module completions
     */
-  private def getModuleCompletion(modSym: Symbol.ModuleSym, subWord: String)(implicit root: TypedAst.Root): Iterable[ModCompletion] = {
+  private def getModuleCompletion(modSym: Symbol.ModuleSym, fragment: String)(implicit root: TypedAst.Root): Iterable[ModCompletion] = {
     // Use fqn to lookup in modules and get all syms
     val symsInModule = root.modules.getOrElse(modSym, Nil)
 
     // Get all modules that matches word
     val validModsInModule = symsInModule.collect {
-      case sym: ModuleSym if matchesMod(sym, subWord) => sym
+      case sym: ModuleSym if matchesMod(sym, fragment) => sym
     }
 
     // Generate completions
@@ -55,7 +55,11 @@ object ModuleCompleter extends Completer {
     * @return        true, if the subWord matches the last part of nameSpace, false otherwise.
     */
   private def matchesMod(mod: ModuleSym, subWord: String): Boolean = {
-    val lastNs = mod.ns.takeRight(1)(0)
-    lastNs.startsWith(subWord)
+    val lastNs = mod.ns.takeRight(1)
+    if (lastNs == Nil) {
+      false
+    } else {
+      lastNs(0).startsWith(subWord)
+    }
   }
 }

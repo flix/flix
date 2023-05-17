@@ -27,21 +27,21 @@ object EnumCompleter extends Completer {
     * Returns a List of Completion for enums.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumCompletion] = {
-    val (modSym, subWord) = CompletionUtils.generateModSymAndSubwordFromContext(context)
+    val (modSym, fragment) = CompletionUtils.getModuleAndFragment(context)
 
-    getEnumCompletion(context, modSym, subWord)
+    getEnumCompletion(context, modSym, fragment)
   }
 
   /**
     * Get all Enum completions
     */
-  private def getEnumCompletion(context: CompletionContext, modSym: Symbol.ModuleSym, subWord: String)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
+  private def getEnumCompletion(context: CompletionContext, modSym: Symbol.ModuleSym, fragment: String)(implicit root: TypedAst.Root): Iterable[EnumCompletion] = {
     // Use fqn to lookup in modules and get all enums
     val enumsInModule = root.modules.getOrElse(modSym, Nil)
 
     // Get all enums that matches word
     val enumsMatchingSubword = enumsInModule.collect {
-      case sym: EnumSym if matchesEnum(sym, subWord) => sym
+      case sym: EnumSym if matchesEnum(sym, fragment) => sym
     }
 
     // Generate completions
