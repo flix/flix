@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
 
 object DefRanker extends Ranker {
 
@@ -32,7 +32,7 @@ object DefRanker extends Ranker {
     * @param completions  the list of completions.
     * @return             Some(DefCompletion) if a better completion is possible, else none.
     */
-  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[DefCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[DefCompletion] = {
     getDefCompletions(completions)
       // If the map does not contain any of the keys, it unintentionally returns the first possible def completion.
       // The filter makes sure, that this does not happen.
