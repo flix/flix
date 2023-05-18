@@ -61,7 +61,7 @@ object GenExpression {
 
       case Ast.Constant.Char(c) =>
         addSourceLine(mv, loc)
-        compileInt(mv, c)
+        compileInt(c)
 
       case Ast.Constant.Float32(f) =>
         addSourceLine(mv, loc)
@@ -90,15 +90,15 @@ object GenExpression {
 
       case Ast.Constant.Int8(b) =>
         addSourceLine(mv, loc)
-        compileInt(mv, b)
+        compileInt(b)
 
       case Ast.Constant.Int16(s) =>
         addSourceLine(mv, loc)
-        compileInt(mv, s)
+        compileInt(s)
 
       case Ast.Constant.Int32(i) =>
         addSourceLine(mv, loc)
-        compileInt(mv, i)
+        compileInt(i)
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(mv, loc)
@@ -1837,17 +1837,17 @@ object GenExpression {
     * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
     * bytes.
     */
-  private def compileInt(visitor: MethodVisitor, i: Int): Unit = i match {
-    case -1 => visitor.visitInsn(ICONST_M1)
-    case 0 => visitor.visitInsn(ICONST_0)
-    case 1 => visitor.visitInsn(ICONST_1)
-    case 2 => visitor.visitInsn(ICONST_2)
-    case 3 => visitor.visitInsn(ICONST_3)
-    case 4 => visitor.visitInsn(ICONST_4)
-    case 5 => visitor.visitInsn(ICONST_5)
-    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
-    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
-    case _ => visitor.visitLdcInsn(i)
+  private def compileInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
+    case -1 => mv.visitInsn(ICONST_M1)
+    case 0 => mv.visitInsn(ICONST_0)
+    case 1 => mv.visitInsn(ICONST_1)
+    case 2 => mv.visitInsn(ICONST_2)
+    case 3 => mv.visitInsn(ICONST_3)
+    case 4 => mv.visitInsn(ICONST_4)
+    case 5 => mv.visitInsn(ICONST_5)
+    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => mv.visitIntInsn(BIPUSH, i)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => mv.visitIntInsn(SIPUSH, i)
+    case _ => mv.visitLdcInsn(i)
   }
 
   /**
