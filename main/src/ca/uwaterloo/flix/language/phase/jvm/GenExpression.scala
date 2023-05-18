@@ -208,31 +208,21 @@ object GenExpression {
         val List(exp1, exp2) = exps
         sop match {
           case BoolOp.And =>
-            val andFalseBranch = new Label()
             val andEnd = new Label()
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitJumpInsn(IFEQ, andFalseBranch)
+            visitor.visitInsn(DUP)
+            visitor.visitJumpInsn(IFEQ, andEnd)
+            visitor.visitInsn(POP)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitJumpInsn(IFEQ, andFalseBranch)
-            visitor.visitInsn(ICONST_1)
-            visitor.visitJumpInsn(GOTO, andEnd)
-            visitor.visitLabel(andFalseBranch)
-            visitor.visitInsn(ICONST_0)
             visitor.visitLabel(andEnd)
 
           case BoolOp.Or =>
-            val orTrueBranch = new Label()
-            val orFalseBranch = new Label()
             val orEnd = new Label()
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitJumpInsn(IFNE, orTrueBranch)
+            visitor.visitInsn(DUP)
+            visitor.visitJumpInsn(IFNE, orEnd)
+            visitor.visitInsn(POP)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitJumpInsn(IFEQ, orFalseBranch)
-            visitor.visitLabel(orTrueBranch)
-            visitor.visitInsn(ICONST_1)
-            visitor.visitJumpInsn(GOTO, orEnd)
-            visitor.visitLabel(orFalseBranch)
-            visitor.visitInsn(ICONST_0)
             visitor.visitLabel(orEnd)
 
           case Float32Op.Exp =>

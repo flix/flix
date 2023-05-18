@@ -174,7 +174,8 @@ object CompletionProvider {
       //
       // Patterns.
       //
-      case _: SyntacticContext.Pat => Nil
+      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(context) ++
+        EnumCompleter.getCompletions(context) ++ EnumTagCompleter.getCompletions(context)
 
       //
       // Uses.
