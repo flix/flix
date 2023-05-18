@@ -100,7 +100,7 @@ object GenExpression {
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(visitor, loc)
-        compileInt(visitor, l, isLong = true)
+        compileLong(visitor, l)
 
       case Ast.Constant.BigInt(ii) =>
         addSourceLine(visitor, loc)
@@ -1843,26 +1843,59 @@ object GenExpression {
    *
    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
    * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
-   * bytes. The exception is if we set `isLong` to true, in which case a cast will be performed if necessary.
-   *
-   * This is needed because sometimes we expect the operands to be a long, which means two (int) values are popped from
-   * the stack and concatenated to form a long.
+   * bytes.
    */
-  private def compileInt(visitor: MethodVisitor, i: Long, isLong: Boolean = false): Unit = {
-    i match {
-      case -1 => visitor.visitInsn(ICONST_M1)
-      case 0 => if (!isLong) visitor.visitInsn(ICONST_0) else visitor.visitInsn(LCONST_0)
-      case 1 => if (!isLong) visitor.visitInsn(ICONST_1) else visitor.visitInsn(LCONST_1)
-      case 2 => visitor.visitInsn(ICONST_2)
-      case 3 => visitor.visitInsn(ICONST_3)
-      case 4 => visitor.visitInsn(ICONST_4)
-      case 5 => visitor.visitInsn(ICONST_5)
-      case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-      case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-      case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-      case _ => visitor.visitLdcInsn(i)
-    }
-    if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
+  private def compileInt(visitor: MethodVisitor, i: Int, isLong: Boolean = false): Unit = i match {
+    case -1 => visitor.visitInsn(ICONST_M1)
+    case 0 => visitor.visitInsn(ICONST_0)
+    case 1 => visitor.visitInsn(ICONST_1)
+    case 2 => visitor.visitInsn(ICONST_2)
+    case 3 => visitor.visitInsn(ICONST_3)
+    case 4 => visitor.visitInsn(ICONST_4)
+    case 5 => visitor.visitInsn(ICONST_5)
+    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
+    case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i)
+    case _ => visitor.visitLdcInsn(i)
+  }
+
+  private def compileLong(visitor: MethodVisitor, i: Long): Unit = i match {
+    case -1 =>
+      visitor.visitInsn(ICONST_M1)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case 0 => visitor.visitInsn(LCONST_0)
+    case 1 => visitor.visitInsn(LCONST_1)
+
+    case 2 =>
+      visitor.visitInsn(ICONST_2)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case 3 =>
+      visitor.visitInsn(ICONST_3)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case 4 =>
+      visitor.visitInsn(ICONST_4)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case 5 =>
+      visitor.visitInsn(ICONST_5)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue =>
+      visitor.visitIntInsn(BIPUSH, i.toInt)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue =>
+      visitor.visitIntInsn(SIPUSH, i.toInt)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue =>
+      visitor.visitLdcInsn(i.toInt)
+      visitor.visitInsn(I2L) // Sign extend to long
+
+    case _ => visitor.visitLdcInsn(i)
   }
 
   /*
