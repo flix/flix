@@ -770,7 +770,6 @@ object Weeder {
 
           case ("BIGINT_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigIntOp.Neg, e1, loc).toSuccess
           case ("BIGINT_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigIntOp.Not, e1, loc).toSuccess
-          case ("BIGINT_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Add, e1, e2, loc).toSuccess
           case ("BIGINT_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Sub, e1, e2, loc).toSuccess
           case ("BIGINT_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Mul, e1, e2, loc).toSuccess
           case ("BIGINT_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Div, e1, e2, loc).toSuccess
