@@ -16,6 +16,13 @@
 
 mod TestCodePoint {
 
+def isSome(o: Option[a]): Bool = match o {
+    case Some(_) => true
+    case None    => false
+}
+
+def isNone(o: Option[a]): Bool = not (isSome(o))
+
 /////////////////////////////////////////////////////////////////////////////
 // isAscii                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -441,6 +448,138 @@ def isISOControl05(): Bool = CodePoint.isISOControl(0x0000) == true
 def isISOControl06(): Bool = CodePoint.isISOControl(0x0015) == true        // NAK
 
 /////////////////////////////////////////////////////////////////////////////
+// isMirrored                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isMirrored01(): Bool = CodePoint.isMirrored(0x0061) == false        // 'a'
+
+@test
+def isMirrored02(): Bool = CodePoint.isMirrored(0x0041) == false        // 'A'
+
+@test
+def isMirrored03(): Bool = CodePoint.isMirrored(0x005B) == true         // '['
+
+@test
+def isMirrored04(): Bool = CodePoint.isMirrored(0x005B) == true         // ']'
+
+@test
+def isMirrored05(): Bool = CodePoint.isMirrored(0x1f3dd) == false       // Desert Island pictogram
+
+/////////////////////////////////////////////////////////////////////////////
+// isSupplementaryCodePoint                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isSupplementaryCodePoint01(): Bool = CodePoint.isSupplementaryCodePoint(0x0031) == false      // '1'
+
+@test
+def isSupplementaryCodePoint02(): Bool = CodePoint.isSupplementaryCodePoint(0x0061) == false      // 'a'
+
+@test
+def isSupplementaryCodePoint03(): Bool = CodePoint.isSupplementaryCodePoint(0x1f3dd) == true       // Desert Island pictogram
+
+/////////////////////////////////////////////////////////////////////////////
+// isValidCodePoint                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isValidCodePoint01(): Bool = CodePoint.isValidCodePoint(0x0031) == true       // '1'
+
+@test
+def isValidCodePoint02(): Bool = CodePoint.isValidCodePoint(0x0061) == true       // 'a'
+
+@test
+def isValidCodePoint03(): Bool = CodePoint.isValidCodePoint(0x1f3dd) == true       // Desert Island pictogram
+
+@test
+def isValidCodePoint04(): Bool = CodePoint.isValidCodePoint(0x110000) == false      // out-of-range
+
+/////////////////////////////////////////////////////////////////////////////
+// toLowerCase                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toLowerCase01(): Bool = CodePoint.toLowerCase(0x0061) == 0x0061         // 'a'
+
+@test
+def toLowerCase02(): Bool = CodePoint.toLowerCase(0x0041) == 0x0061         // 'A' => 'a'
+
+@test
+def toLowerCase03(): Bool = CodePoint.toLowerCase(0x0020) == 0x0020         // ' ' (space)
+
+@test
+def toLowerCase04(): Bool = CodePoint.toLowerCase(0x01F2) == 0x01F3         // Dz (single char, title case) => dz
+
+@test
+def toLowerCase05(): Bool = CodePoint.toLowerCase(0x01F3) == 0x01F3         // dz (single char)
+
+@test
+def toLowerCase06(): Bool = CodePoint.toLowerCase(0x1f3dd) == 0x1f3dd       // Desert Island pictogram
+
+
+/////////////////////////////////////////////////////////////////////////////
+// toUpperCase                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toUpperCase01(): Bool = CodePoint.toUpperCase(0x0061) == 0x0041        // 'a' => 'A'
+
+@test
+def toUpperCase02(): Bool = CodePoint.toUpperCase(0x0041) == 0x0041         // 'A'
+
+@test
+def toUpperCase03(): Bool = CodePoint.toUpperCase(0x0020) == 0x0020         // ' ' (space)
+
+@test
+def toUpperCase04(): Bool = CodePoint.toUpperCase(0x01F2) == 0x01F1         // Dz (single char, title case) => DZ
+
+@test
+def toUpperCase05(): Bool = CodePoint.toUpperCase(0x01F3) == 0x01F1         // dz (single char) => DZ
+
+@test
+def toUpperCase06(): Bool = CodePoint.toUpperCase(0x1f3dd) == 0x1f3dd       // Desert Island pictogram
+
+
+/////////////////////////////////////////////////////////////////////////////
+// toTitleCase                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toTitleCase01(): Bool = CodePoint.toTitleCase(0x0061) == 0x0041         // 'a' => 'A'
+
+@test
+def toTitleCase02(): Bool = CodePoint.toTitleCase(0x0041) == 0x0041         // 'A'
+
+@test
+def toTitleCase03(): Bool = CodePoint.toTitleCase(0x0020) == 0x0020         // ' ' (space)
+
+@test
+def toTitleCase04(): Bool = CodePoint.toTitleCase(0x01F2) == 0x01F2         // Dz (single char, title case)
+
+@test
+def toTitleCase05(): Bool = CodePoint.toTitleCase(0x01F3) == 0x01F2         // dz (single char) => Dz
+
+@test
+def toTitleCase06(): Bool = CodePoint.toTitleCase(0x1f3dd) == 0x1f3dd       // Desert Island pictogram
+
+/////////////////////////////////////////////////////////////////////////////
+// getName                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def getName01(): Bool = CodePoint.getName(0x0061) |> isSome         // 'a'
+
+@test
+def getName02(): Bool = CodePoint.getName(0x0041) |> isSome         // 'A'
+
+@test
+def getName03(): Bool = CodePoint.getName(0x1f3dd) |> isSome        // Desert Island pictogram
+
+@test
+def getName04(): Bool = CodePoint.getName(0x110000) |> isNone       // out-of-range
+
+/////////////////////////////////////////////////////////////////////////////
 // getNumericValue                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -457,7 +596,7 @@ def getNumericValue03(): Bool = CodePoint.getNumericValue(0x0039) == Some(9)    
 def getNumericValue04(): Bool = CodePoint.getNumericValue(0x0041) == Some(10)      // 'A'
 
 @test
-def getNumericValue05(): Bool = CodePoint.getNumericValue(0x0041) == Some(10)      // 'a'
+def getNumericValue05(): Bool = CodePoint.getNumericValue(0x0061) == Some(10)      // 'a'
 
 @test
 def getNumericValue06(): Bool = CodePoint.getNumericValue(0x0046) == Some(15)      // 'F'
@@ -476,5 +615,70 @@ def getNumericValue10(): Bool = CodePoint.getNumericValue(0x002d) == None       
 
 @test
 def getNumericValue11(): Bool = CodePoint.getNumericValue(0x1f3dd) == None          // Desert Island pictogram
+
+/////////////////////////////////////////////////////////////////////////////
+// charCount                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def charCount01(): Bool = CodePoint.charCount(0x0031) == 1          // '1'
+
+@test
+def charCount02(): Bool = CodePoint.charCount(0x0041) == 1          // 'A'
+
+@test
+def charCount03(): Bool = CodePoint.charCount(0x1f3dd) == 2          // Desert Island pictogram
+
+/////////////////////////////////////////////////////////////////////////////
+// toChars                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toChars01(): Bool = CodePoint.toChars(0x0031) == Some(Vector#{'1'})     // '1'
+
+@test
+def toChars02(): Bool = CodePoint.toChars(0x0041) == Some(Vector#{'A'})     // 'A'
+
+@test
+def toChars03(): Bool = CodePoint.toChars(0x1f3dd) == Some(Vector#{'\uD83C', '\uDFDD'})     // Desert Island pictogram
+
+@test
+def toChars04(): Bool = CodePoint.toChars(0x110000) == None                 // out-of-range
+
+/////////////////////////////////////////////////////////////////////////////
+// toBmpChar                                                               //
+/////////////////////////////////////////////////////////////////////////////
+/*
+@test
+def toBmpChar01(): Bool = CodePoint.toBmpChar(0x0031) == Some('1')     // '1'
+
+@test
+def toBmpChar02(): Bool = CodePoint.toBmpChar(0x0041) == Some('A')     // 'A'
+
+@test
+def toBmpChar03(): Bool = CodePoint.toBmpChar(0x1f3dd) == None          // Desert Island pictogram
+
+@test
+def toBmpChar04(): Bool = CodePoint.toBmpChar(0x110000) == None         // out-of-range
+*/
+/////////////////////////////////////////////////////////////////////////////
+// toSupplementaryChars                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+// toSupplementaryCodePoint                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+// highSurrogate                                                           //
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+// lowSurrogate                                                            //
+/////////////////////////////////////////////////////////////////////////////
 
 }

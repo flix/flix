@@ -179,6 +179,16 @@ mod CodePoint {
         import static java.lang.Character.toUpperCase(Int32): Int32 \ {};
         toUpperCase(cp)
 
+    ///
+    /// Converts a code point representing a letter to its titlecase version.
+    ///
+    /// Returns the original character if it does not have either a titlecase
+    /// version or a mapping to uppercase.
+    ///
+    pub def toTitleCase(cp: Int32): Int32 =
+        import static java.lang.Character.toTitleCase(Int32): Int32 \ {};
+        toTitleCase(cp)
+
     pub def getName(cp: Int32): Option[String] =
         try {
             import static java.lang.Character.getName(Int32): String \ {};
@@ -206,19 +216,20 @@ mod CodePoint {
         import static java.lang.Character.charCount(Int32): Int32 \ {};
         charCount(cp)
 
-    pub def toChars(cp: Int32): Option[Vector[Char]] = region rc {
-        try {
+    pub def toChars(cp: Int32): Option[Vector[Char]] = try {
+        region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
             let arr = Array.new(rc, 2);
             let size = toChars(cp, arr, 0);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
-        } catch {
-            case _: ##java.lang.Exception => None
         }
+    } catch {
+        case _: ##java.lang.Throwable => None
     }
 
-    pub def toBmpChar(cp: Int32): Option[Char] = region rc {
-        try {
+
+    pub def toBmpChar(cp: Int32): Option[Char] = try {
+        region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
             let arr = Array.new(rc, 2);
             let i = toChars(cp, arr, 0);
@@ -226,13 +237,13 @@ mod CodePoint {
                 Array.nth(0, arr)
             else
                 None
-        } catch {
-            case _: ##java.lang.Exception => None
         }
+    } catch {
+        case _: ##java.lang.Exception => None
     }
 
-    pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = region rc {
-        try {
+    pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
+        region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
             let arr = Array.new(rc, 2);
             let i = toChars(cp, arr, 0);
@@ -240,9 +251,9 @@ mod CodePoint {
                 Some(Array.get(0, arr), Array.get(1, arr))
             else
                 None
-        } catch {
-            case _: ##java.lang.Exception => None
         }
+    } catch {
+        case _: ##java.lang.Exception => None
     }
 
     pub def toString(cp: Int32): String =
@@ -252,19 +263,6 @@ mod CodePoint {
         } catch {
             case _: ##java.lang.Exception => ""
         }
-
-    ///
-    ///
-    ///
-    pub def toBmpCodePoint(c: Char): Int32 =
-        unchecked_cast(c as Int32)
-
-    ///
-    ///
-    ///
-    pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
-        import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};
-        toCodePoint(high.high, low.low)
 
 
     pub def highSurrogate(cp: Int32): Option[Char] =

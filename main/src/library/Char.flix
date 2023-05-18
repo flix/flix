@@ -171,9 +171,15 @@ mod Char {
     ///
     /// Returns the code point representation of Char `c`.
     ///
-    pub def toCodePoint(c: Char): Int32 =
+    pub def toBmpCodePoint(c: Char): Int32 =
         unchecked_cast(c as Int32)
 
+    ///
+    ///
+    ///
+    pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
+        import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};
+        toCodePoint(high.high, low.low)
 
     ///
     /// Returns the character `c` as a string.

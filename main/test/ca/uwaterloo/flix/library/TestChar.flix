@@ -627,23 +627,32 @@ def toTitleCase04(): Bool = Char.toTitleCase('\u01F2') == '\u01F2'      // Dz (s
 def toTitleCase05(): Bool = Char.toTitleCase('\u01F3') == '\u01F2'      // dz (single char)
 
 /////////////////////////////////////////////////////////////////////////////
-// toCodePoint                                                             //
+// toBmpCodePoint                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def toCodePoint01(): Bool = Char.toCodePoint('a') == 0x0061
+def toBmpCodePoint01(): Bool = Char.toBmpCodePoint('a') == 0x0061
 
 @test
-def toCodePoint02(): Bool = Char.toCodePoint('A') == 0x0041
+def toBmpCodePoint02(): Bool = Char.toBmpCodePoint('A') == 0x0041
 
 @test
-def toCodePoint03(): Bool = Char.toCodePoint(' ') == 0x0020
+def toBmpCodePoint03(): Bool = Char.toBmpCodePoint(' ') == 0x0020
 
 @test
-def toCodePoint04(): Bool = Char.toCodePoint('\u01F2') == 0x01F2      // Dz (single char)
+def toBmpCodePoint04(): Bool = Char.toBmpCodePoint('\u01F2') == 0x01F2      // Dz (single char)
 
 @test
-def toCodePoint05(): Bool = Char.toCodePoint('\u01F3') == 0x01F3      // dz (single char)
+def toBmpCodePoint05(): Bool = Char.toBmpCodePoint('\u01F3') == 0x01F3      // dz (single char)
+
+/////////////////////////////////////////////////////////////////////////////
+// toSupplementaryCodePoint                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toSupplementaryCodePoint01(): Bool =
+    Char.toSupplementaryCodePoint(high = '\uD83C', low = '\uDFDD') == 0x1f3dd      // Desert Island pictogram
+
 
 /////////////////////////////////////////////////////////////////////////////
 // toString                                                                //
