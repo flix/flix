@@ -34,7 +34,7 @@ object FieldCompleter extends Completer {
     val regex = raw"(.*)[.].*".r
 
     context.word match {
-      case regex(prefix) =>
+      case regex(prefix) if isFirstCharLowerCase(prefix) =>
         index.fieldDefs.m.concat(index.fieldUses.m)
           .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
           .map {
@@ -44,4 +44,9 @@ object FieldCompleter extends Completer {
       case _ => Nil
     }
   }
+
+  /**
+    * Returns true if the first char of the string is lowerCase, false otherwise.
+    */
+  private def isFirstCharLowerCase(str: String): Boolean = str.headOption.exists(_.isLower)
 }

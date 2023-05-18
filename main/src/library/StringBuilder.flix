@@ -46,6 +46,15 @@ mod StringBuilder {
         ()
 
     ///
+    /// Append the code point `cp` to the StringBuilder `sb`.
+    ///
+    pub def appendCodePoint!(cp: Int32, sb: StringBuilder[r]): Unit \ r =
+        import java.lang.StringBuilder.appendCodePoint(Int32): ##java.lang.StringBuilder \ r;
+        let StringBuilder(msb) = sb;
+        discard msb `appendCodePoint` cp;
+        ()
+
+    ///
     /// Append the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLineSeparator!(sb: StringBuilder[r]): Unit \ r =
