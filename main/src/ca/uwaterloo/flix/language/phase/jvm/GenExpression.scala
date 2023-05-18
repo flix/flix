@@ -18,8 +18,13 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast.{MonoType, _}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
+import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
 
@@ -1823,12 +1828,12 @@ object GenExpression {
   }
 
   /**
-   * Generate code to load an integer constant.
-   *
-   * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
-   * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
-   * bytes.
-   */
+    * Generate code to load an integer constant.
+    *
+    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
+    * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
+    * bytes.
+    */
   private def compileInt(visitor: MethodVisitor, i: Int): Unit = i match {
     case -1 => visitor.visitInsn(ICONST_M1)
     case 0 => visitor.visitInsn(ICONST_0)
