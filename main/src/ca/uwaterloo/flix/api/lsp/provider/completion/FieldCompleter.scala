@@ -48,5 +48,5 @@ object FieldCompleter extends Completer {
   /**
     * Returns true if the first char of the string is lowerCase, false otherwise.
     */
-  private def isFirstCharLowerCase(str: String): Boolean = str.take(1).forall(_.isLower)
+  private def isFirstCharLowerCase(str: String): Boolean = str.headOption.exists(_.isLower)
 }
