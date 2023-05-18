@@ -712,12 +712,6 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(LREM)
 
-          case BigIntOp.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "add",
-              AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
-
           case BigIntOp.Sub =>
             compileExpr(exp1)
             compileExpr(exp2)
