@@ -981,7 +981,7 @@ object GenExpression {
         // Adding source line number for debugging
         addSourceLine(mv, loc)
         // We push the 'length' of the array on top of stack
-        compileInt(mv, exps.length)
+        compileInt(exps.length)
         // We get the inner type of the array
         val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
         // Instantiating a new array of type jvmType
@@ -996,7 +996,7 @@ object GenExpression {
           // Duplicates the 'array reference'
           mv.visitInsn(DUP)
           // We push the 'index' of the current element on top of stack
-          compileInt(mv, i)
+          compileInt(i)
           // Evaluating the 'element' to be stored
           compileExpr(exps(i))
           // Stores the 'element' at the given 'index' in the 'array'
