@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.FormatType
 
 object EnumTagCompleter extends Completer {
 
@@ -29,23 +28,23 @@ object EnumTagCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumTagCompletion] = {
     // We don't know if the user has provided a tag, so we have to try both cases
-    val word = context.word.split('.').toList
+    val fqn = context.word.split('.').toList
 
-    getEnumTagCompletionsWithoutTag(word) ++
-      getEnumTagCompletionsWithTag(word)
+    getEnumTagCompletionsWithoutTag(fqn) ++
+      getEnumTagCompletionsWithTag(fqn)
   }
 
   /**
     * Gets completions for enum tags without tag provided
     */
-  private def getEnumTagCompletionsWithoutTag(word: List[String])(implicit root: TypedAst.Root, flix: Flix): Iterable[EnumTagCompletion] = {
-    val enumSym = mkEnumSym(word)
+  private def getEnumTagCompletionsWithoutTag(fqn: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
+    val enumSym = mkEnumSym(fqn)
     root.enums.get(enumSym) match {
       case None => // Case 1: Enum does not exist.
         Nil
       case Some(enm) => // Case 2: Enum does exist -> Get cases.
         enm.cases.map {
-          case (caseSym, cas) => EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe), FormatType.formatType(cas.tpe))
+          case (_, cas) => EnumTagCompletion(enumSym, cas, getArityForEnumTag(cas.tpe))
         }
     }
   }
@@ -53,12 +52,16 @@ object EnumTagCompleter extends Completer {
   /**
     * Gets completions for enum tags with tag provided
     */
-  private def getEnumTagCompletionsWithTag(word: List[String])(implicit root: TypedAst.Root, flix: Flix): Iterable[EnumTagCompletion] = {
+  private def getEnumTagCompletionsWithTag(fqn: List[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     // The user has provided a tag
     // We know that there is at least one dot, so we split the context.word and
     // make a fqn from the everything but the the last (hence it could be the tag).
-    val fqnWithTag = word.dropRight(1)
-    val tag = word.takeRight(1).mkString
+    if (fqn.isEmpty) {
+      return Nil
+    }
+
+    val fqnWithTag = fqn.dropRight(1)
+    val tag = fqn.takeRight(1).mkString
     val enumSym = mkEnumSym(fqnWithTag)
 
     root.enums.get(enumSym) match {
@@ -69,7 +72,7 @@ object EnumTagCompleter extends Completer {
           case (caseSym, cas) =>
             if (matchesTag(caseSym, tag)) {
               // Case 2.1: Tag provided and it matches the case
-              Some(EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe), FormatType.formatType(cas.tpe)))
+              Some(EnumTagCompletion(enumSym, cas, getArityForEnumTag(cas.tpe)))
             } else {
               // Case 2.2: Tag provided doesn't match the case
               None
@@ -113,8 +116,12 @@ object EnumTagCompleter extends Completer {
     * @return    the enum symbol for the given fully qualified name.
     */
   private def mkEnumSym(fqn: List[String]): EnumSym = {
-    val ns = fqn.dropRight(1)
-    val name = fqn.takeRight(1).mkString
-    new EnumSym(None, ns, name, SourceLocation.Unknown)
+    if (fqn.isEmpty) {
+      new EnumSym(None, Nil, "", SourceLocation.Unknown)
+    } else {
+      val ns = fqn.dropRight(1)
+      val name = fqn.takeRight(1).mkString
+      new EnumSym(None, ns, name, SourceLocation.Unknown)
+    }
   }
 }

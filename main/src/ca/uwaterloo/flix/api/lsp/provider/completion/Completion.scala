@@ -204,15 +204,15 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
-    case Completion.EnumTagCompletion(enumSym, caseSym, arity, detail) =>
-      val name = s"${enumSym.toString}.${caseSym.name}"
+    case Completion.EnumTagCompletion(enumSym, cas, arity) =>
+      val name = s"${enumSym.toString}.${cas.sym.name}"
       val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
-        label = name,
+        label = CompletionUtils.getLabelForEnumTags(name, cas),
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, snippet),
-        detail = Some(detail),
+        detail = Some(enumSym.name),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
@@ -417,11 +417,10 @@ object Completion {
     * Represents an EnumTag completion
     *
     * @param enumSym the sym of the enum.
-    * @param caseSym the sym of the case (for that specific enum).
+    * @param cas     the case (for that specific enum).
     * @param arity   the arity of the enumTag.
-    * @param detail  the type of the enumTag.
     */
-  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym, arity: Int, detail: String) extends Completion
+  case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case, arity: Int) extends Completion
 
   /**
     * Represents a Module completion.
