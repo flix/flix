@@ -1822,7 +1822,7 @@ object GenExpression {
     visitComparisonEpilogue(visitor, condElse, condEnd)
   }
 
-  /*
+  /**
    * Generate code to load an integer constant.
    *
    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
@@ -1842,6 +1842,11 @@ object GenExpression {
     case _ => visitor.visitLdcInsn(i)
   }
 
+  /**
+    * Generate bytecode for the long `i`.
+    *
+    * Uses the smallest amount of bytes necessary to represent `i`.
+    */
   private def compileLong(visitor: MethodVisitor, i: Long): Unit = i match {
     case -1 =>
       visitor.visitInsn(ICONST_M1)
