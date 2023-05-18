@@ -64,7 +64,7 @@ object Safety {
     */
   private def visitDefs(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
     root.defs.flatMap {
-      case (_, defn) => visitDef(defn, root)
+      case (_, defn) => visitDef(defn, root) ::: visitTestEntryPoint(defn, root)
     }.toList
   }
 
@@ -72,6 +72,16 @@ object Safety {
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+    val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
+      case (acc, e) => acc.markRigid(e)
+    }
+    visitExp(def0.impl.exp, renv, root)
+  }
+
+  /**
+    * Checks that if `def0` is a test entry point that it is well-behaved.
+    */
+  private def visitTestEntryPoint(def0: Def, root: Root): List[CompilationMessage] = {
     def isTest(d: Def): Boolean = d.spec.ann.isTest
 
     def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
@@ -82,18 +92,14 @@ object Safety {
       case _ => true
     }
 
-    val errs = root.defs.get(def0.sym).map {
+    root.defs.get(def0.sym).map {
       case d if isTest(d) && hasParameters(d, d.spec.loc) =>
-        val err = SafetyError.IllegalTestParameters(d.spec.loc)
+        val fparam :: _ = d.spec.fparams
+        val err = SafetyError.IllegalTestParameters(fparam.loc)
         List(err)
 
       case _ => Nil
     }.getOrElse(Nil)
-
-    val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
-      case (acc, e) => acc.markRigid(e)
-    }
-    errs ::: visitExp(def0.impl.exp, renv, root)
   }
 
   /**
