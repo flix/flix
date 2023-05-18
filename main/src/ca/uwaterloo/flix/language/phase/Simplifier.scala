@@ -354,16 +354,6 @@ object Simplifier {
     }
 
     /**
-      * Returns an expression that adds e2 to e1
-      */
-    def mkAdd(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
-      val add = SemanticOperator.Int32Op.Add
-      val tpe = Type.Int32
-      val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(add, e1, e2, tpe, purity, loc)
-    }
-
-    /**
       * Returns an expression that subtracts e2 from e1
       */
     def mkSub(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
