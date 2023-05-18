@@ -52,6 +52,14 @@ object CompletionUtils {
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
 
+  def getLabelForEnumTags(name: String, cas: TypedAst.Case)(implicit flix: Flix): String = {
+    cas.tpe match {
+      case Type.Unit => name
+      case tpe: Type.Cst => s"$name(${FormatType.formatType(tpe)})"
+      case _ =>  s"$name${FormatType.formatType(cas.tpe)}"
+    }
+  }
+
   def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, _, _) =>
       val args = if (isUnitFunction(fparams))

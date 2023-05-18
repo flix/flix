@@ -140,7 +140,8 @@ object GenFunctionClasses {
     }
 
     // Generating the expression
-    GenExpression.compileStmt(defn.stmt, m, classType, Map(), enterLabel)
+    val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
+    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
 
     // Loading `this`
     m.visitVarInsn(ALOAD, 0)
