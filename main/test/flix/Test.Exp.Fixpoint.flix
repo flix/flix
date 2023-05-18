@@ -25,7 +25,7 @@ mod Test.Exp.Fixpoint {
         result == Set#{"x", "y", "w"}
 
     @test
-    def testOpenSchema01(): #{} -> #{ | r} = p1
+    def testOpenSchema01(): #{} -> #{ | r} = p1 -> p1
 
     @test
     def testOpenSchema02(): #{A()} -> #{A() | r} = p1 -> p1
