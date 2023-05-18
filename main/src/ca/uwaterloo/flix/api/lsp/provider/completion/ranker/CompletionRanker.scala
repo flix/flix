@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
 import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation}
 
 /**
@@ -33,7 +33,7 @@ object CompletionRanker extends Ranker {
     * @param completions  the list of decided completions.
     * @return             Some(Completion) if a better completion is possible, else none.
     */
-  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[Completion] = {
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[Completion] = {
     // TODO: Prioritize which completion is most important
     VarRanker.findBest(completions)
       .orElse(FieldRanker.findBest(completions))

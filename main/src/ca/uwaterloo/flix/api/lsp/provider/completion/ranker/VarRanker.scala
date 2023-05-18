@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.VarCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
 
 /**
   * Ranks the possible var completions.
@@ -31,7 +31,7 @@ object VarRanker extends Ranker{
     * @param completions the list of completions.
     * @return            Some(VarCompletion) if a better completion is possible, else none.
     */
-  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[VarCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[VarCompletion] = {
     // Remove all none var completions
     getVarCompletions(completions)
       // Find the var comp that has 0 uses
