@@ -92,14 +92,13 @@ object Safety {
       case _ => true
     }
 
-    root.defs.get(def0.sym).map {
-      case d if isTest(d) && hasParameters(d, d.spec.loc) =>
-        val fparam :: _ = d.spec.fparams
-        val err = SafetyError.IllegalTestParameters(fparam.loc)
-        List(err)
-
-      case _ => Nil
-    }.getOrElse(Nil)
+    if (isTest(def0) && hasParameters(def0, def0.spec.loc)) {
+      val fparam :: _ = def0.spec.fparams
+      val err = SafetyError.IllegalTestParameters(fparam.loc)
+      List(err)
+    } else {
+      Nil
+    }
   }
 
   /**
