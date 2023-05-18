@@ -1846,6 +1846,8 @@ object GenExpression {
     * Generate bytecode for the long `i`.
     *
     * Uses the smallest amount of bytes necessary to represent `i`.
+    * Similar to `compileInt`, but ensures that values take up 4 bytes
+    * on the stack which is expected for `Long`s.
     */
   private def compileLong(visitor: MethodVisitor, i: Long): Unit = i match {
     case -1 =>
