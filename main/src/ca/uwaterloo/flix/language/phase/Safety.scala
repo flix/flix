@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.math.BigInteger
 import scala.annotation.tailrec
@@ -93,7 +93,24 @@ object Safety {
 
       case Expression.Var(_, _, _) => Nil
 
-      case Expression.Def(_, _, _) => Nil
+      case Expression.Def(sym, _, loc) =>
+        def isTest(d: Def): Boolean = d.spec.ann.isTest
+
+        def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
+
+        def hasParameters(d: Def): Boolean = d.spec.fparams match {
+          case fparam :: Nil if isUnitType(fparam) => false
+          case Nil => throw InternalCompilerException("Unexpected empty formal parameter list near", loc)
+          case _ => true
+        }
+
+        root.defs.get(sym).map {
+          case d if isTest(d) && hasParameters(d) =>
+            val err = SafetyError.IllegalTestParameters(d.spec.loc)
+            List(err)
+
+          case _ => Nil
+        }.getOrElse(Nil)
 
       case Expression.Sig(_, _, _) => Nil
 
