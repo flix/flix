@@ -648,7 +648,7 @@ def toChars04(): Bool = CodePoint.toChars(0x110000) == None                 // o
 /////////////////////////////////////////////////////////////////////////////
 // toBmpChar                                                               //
 /////////////////////////////////////////////////////////////////////////////
-/*
+
 @test
 def toBmpChar01(): Bool = CodePoint.toBmpChar(0x0031) == Some('1')     // '1'
 
@@ -660,25 +660,64 @@ def toBmpChar03(): Bool = CodePoint.toBmpChar(0x1f3dd) == None          // Deser
 
 @test
 def toBmpChar04(): Bool = CodePoint.toBmpChar(0x110000) == None         // out-of-range
-*/
+
 /////////////////////////////////////////////////////////////////////////////
 // toSupplementaryChars                                                    //
 /////////////////////////////////////////////////////////////////////////////
+
+@test
+def toSupplementaryChars01(): Bool = CodePoint.toSupplementaryChars(0x0031) == None     // '1'
+
+@test
+def toSupplementaryChars02(): Bool = CodePoint.toSupplementaryChars(0x0041) == None     // 'A'
+
+@test
+def toSupplementaryChars03(): Bool = CodePoint.toSupplementaryChars(0x1F3DD) == Some(('\uD83C', '\uDFDD'))      // Desert Island pictogram
+
+@test
+def toSupplementaryChars04(): Bool = CodePoint.toSupplementaryChars(0x110000) == None   // out-of-range
 
 /////////////////////////////////////////////////////////////////////////////
 // toString                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// toSupplementaryCodePoint                                                //
-/////////////////////////////////////////////////////////////////////////////
+@test
+def toString01(): Bool = CodePoint.toString(0x0031) == "1"      // '1'
+
+@test
+def toString02(): Bool = CodePoint.toString(0x0041) == "A"      // 'A'
+
+@test
+def toString03(): Bool = CodePoint.toString(0x1F3DD) == "\uD83C\uDFDD"     // Desert Island pictogram
+
+@test
+def toString04(): Bool = CodePoint.toString(0x110000) == ""     // out-of-range
+
 
 /////////////////////////////////////////////////////////////////////////////
 // highSurrogate                                                           //
 /////////////////////////////////////////////////////////////////////////////
 
+@test
+def highSurrogate01(): Bool = CodePoint.highSurrogate(0x0041) == None      // 'A'
+
+@test
+def highSurrogate02(): Bool = CodePoint.highSurrogate(0x1F3DD) == Some('\uD83C')     // Desert Island pictogram
+
+@test
+def highSurrogate03(): Bool = CodePoint.highSurrogate(0x110000) == None     // out-of-range
+
 /////////////////////////////////////////////////////////////////////////////
 // lowSurrogate                                                            //
 /////////////////////////////////////////////////////////////////////////////
+
+@test
+def lowSurrogate01(): Bool = CodePoint.lowSurrogate(0x0041) == None         // 'A'
+
+@test
+def lowSurrogate02(): Bool = CodePoint.lowSurrogate(0x1F3DD) == Some('\uDFDD')     // Desert Island pictogram
+
+@test
+def lowSurrogate03(): Bool = CodePoint.lowSurrogate(0x110000) == None       // out-of-range
 
 }
