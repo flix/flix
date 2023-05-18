@@ -72,10 +72,28 @@ object Safety {
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+    def isTest(d: Def): Boolean = d.spec.ann.isTest
+
+    def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
+
+    def hasParameters(d: Def, loc: SourceLocation): Boolean = d.spec.fparams match {
+      case fparam :: Nil if isUnitType(fparam) => false
+      case Nil => throw InternalCompilerException("Unexpected empty formal parameter list near", loc)
+      case _ => true
+    }
+
+    val errs = root.defs.get(def0.sym).map {
+      case d if isTest(d) && hasParameters(d, d.spec.loc) =>
+        val err = SafetyError.IllegalTestParameters(d.spec.loc)
+        List(err)
+
+      case _ => Nil
+    }.getOrElse(Nil)
+
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.impl.exp, renv, root)
+    errs ::: visitExp(def0.impl.exp, renv, root)
   }
 
   /**
@@ -93,24 +111,7 @@ object Safety {
 
       case Expression.Var(_, _, _) => Nil
 
-      case Expression.Def(sym, _, loc) =>
-        def isTest(d: Def): Boolean = d.spec.ann.isTest
-
-        def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
-
-        def hasParameters(d: Def): Boolean = d.spec.fparams match {
-          case fparam :: Nil if isUnitType(fparam) => false
-          case Nil => throw InternalCompilerException("Unexpected empty formal parameter list near", loc)
-          case _ => true
-        }
-
-        root.defs.get(sym).map {
-          case d if isTest(d) && hasParameters(d) =>
-            val err = SafetyError.IllegalTestParameters(loc)
-            List(err)
-
-          case _ => Nil
-        }.getOrElse(Nil)
+      case Expression.Def(_, _, _) => Nil
 
       case Expression.Sig(_, _, _) => Nil
 
