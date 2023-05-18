@@ -94,7 +94,7 @@ object CompletionProvider {
             val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext)
 
             // Find the best completion
-            val best = CompletionRanker.findBest(completions)
+            val best = CompletionRanker.findBest(completions)(context, index, deltaContext)
             boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
           case None => Nil
         }
@@ -174,7 +174,8 @@ object CompletionProvider {
       //
       // Patterns.
       //
-      case _: SyntacticContext.Pat => Nil
+      case _: SyntacticContext.Pat => ModuleCompleter.getCompletions(context) ++
+        EnumCompleter.getCompletions(context) ++ EnumTagCompleter.getCompletions(context)
 
       //
       // Uses.
