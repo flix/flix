@@ -33,6 +33,8 @@ import org.objectweb.asm._
   */
 object GenExpression {
 
+  case class MethodContext(clazz: JvmType.Reference, entryPoint: Label, lenv: Map[Symbol.LabelSym, Label])
+
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
