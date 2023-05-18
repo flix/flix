@@ -131,7 +131,6 @@ object OperatorPrinter {
          Int32Op.Add |
          Int64Op.Add |
          Int64Op.And |
-         BigIntOp.Add |
          StringOp.Concat => plus
     case Float32Op.Sub |
          Float64Op.Sub |
