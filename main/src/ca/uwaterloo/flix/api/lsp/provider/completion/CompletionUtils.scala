@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 import java.lang.reflect.{Constructor, Executable, Method}
@@ -53,14 +53,10 @@ object CompletionUtils {
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
 
   def getLabelForEnumTags(name: String, cas: TypedAst.Case)(implicit flix: Flix): String = {
-    val regExpWithoutParen = """^[^()]*$""".r
-    val regExpWithParen = """^\(.*\)$""".r
-    val args = FormatType.formatType(cas.tpe)
-    args match {
-      case "Unit" => name
-      case regExpWithoutParen() => s"$name($args)"
-      case regExpWithParen() => s"$name$args"
-      case _ => name
+    cas.tpe match {
+      case Type.Unit => name
+      case tpe: Type.Cst => s"$name(${FormatType.formatType(tpe)})"
+      case _ =>  s"$name${FormatType.formatType(cas.tpe)}"
     }
   }
 
