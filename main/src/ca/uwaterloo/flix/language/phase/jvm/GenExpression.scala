@@ -989,7 +989,7 @@ object GenExpression {
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We push the 'length' of the array on top of stack
-        compileInt(visitor, exps.length, isLong = false)
+        compileInt(visitor, exps.length)
         // We get the inner type of the array
         val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
         // Instantiating a new array of type jvmType
@@ -1004,7 +1004,7 @@ object GenExpression {
           // Duplicates the 'array reference'
           visitor.visitInsn(DUP)
           // We push the 'index' of the current element on top of stack
-          compileInt(visitor, i, isLong = false)
+          compileInt(visitor, i)
           // Evaluating the 'element' to be stored
           compileExpression(exps(i), visitor, currentClass, lenv0, entryPoint)
           // Stores the 'element' at the given 'index' in the 'array'
@@ -1845,7 +1845,7 @@ object GenExpression {
    * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
    * bytes.
    */
-  private def compileInt(visitor: MethodVisitor, i: Int, isLong: Boolean = false): Unit = i match {
+  private def compileInt(visitor: MethodVisitor, i: Int): Unit = i match {
     case -1 => visitor.visitInsn(ICONST_M1)
     case 0 => visitor.visitInsn(ICONST_0)
     case 1 => visitor.visitInsn(ICONST_1)
