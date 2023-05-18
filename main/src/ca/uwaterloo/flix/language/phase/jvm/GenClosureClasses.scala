@@ -49,7 +49,7 @@ object GenClosureClasses {
     * Returns the byte code for the closure.
     *
     * For example, given the symbol `mkAdder` with type (Int32, Int32) -> Int32 and the free variable `x`, we create:
-    *
+    * {{{
     * public final class Clo$mkAdder implements Clo2$Int32$Int32$Int32 {
     * public int clo0;
     * public int arg0; // from Fn2$...
@@ -67,6 +67,7 @@ object GenClosureClasses {
     *   this.res = this.x + this.arg0;
     *   return null;
     * }
+    * }}}
     */
   private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
