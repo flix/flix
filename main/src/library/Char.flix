@@ -175,7 +175,9 @@ mod Char {
         unchecked_cast(c as Int32)
 
     ///
+    /// Returns the supplementary code point value of the surrogate pair `high` and `low`.
     ///
+    /// Caution - this function does no validation, use `isSurrogatePair` to check `high` and `low` are valid.
     ///
     pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
         import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};

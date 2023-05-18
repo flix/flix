@@ -116,10 +116,18 @@ mod CodePoint {
         import static java.lang.Character.isWhitespace(Int32): Bool \ {};
         isWhitespace(cp)
 
+    ///
+    /// Returns `true` if the given code point `cp` represents an alphabetic character.
+    ///
     pub def isAlphabetic(cp: Int32): Bool =
         import static java.lang.Character.isAlphabetic(Int32): Bool \ {};
         isAlphabetic(cp)
 
+    ///
+    /// Returns `true` if the given code point `cp` is within Unicode's Basic Multilingual Plane.
+    ///
+    /// If the code point is within the BMP it can be represented by Flix's `Char` datatype.
+    ///
     pub def isBmpCodePoint(cp: Int32): Bool =
         import static java.lang.Character.isBmpCodePoint(Int32): Bool \ {};
         isBmpCodePoint(cp)
@@ -132,6 +140,10 @@ mod CodePoint {
         import static java.lang.Character.isDefined(Int32): Bool \ {};
         isDefined(cp)
 
+    ///
+    /// Returns `true` if the given code point `cp` is Chinese, Japanase, Korean
+    /// or Vietnamese ideograph.
+    ///
     pub def isIdeographic(cp: Int32): Bool =
         import static java.lang.Character.isIdeographic(Int32): Bool \ {};
         isIdeographic(cp)
@@ -150,6 +162,9 @@ mod CodePoint {
         import static java.lang.Character.isMirrored(Int32): Bool \ {};
         isMirrored(cp)
 
+    ///
+    /// Returns `true` if the given code point `cp` is in Unicode's supplementary character range.
+    ///
     pub def isSupplementaryCodePoint(cp: Int32): Bool =
         import static java.lang.Character.isSupplementaryCodePoint(Int32): Bool \ {};
         isSupplementaryCodePoint(cp)
@@ -189,6 +204,12 @@ mod CodePoint {
         import static java.lang.Character.toTitleCase(Int32): Int32 \ {};
         toTitleCase(cp)
 
+    ///
+    /// Returns the name of the code point `cp`.
+    ///
+    /// See the Java JDK documentation of the method `java.lang.Character.getName` for a full
+    /// description of how names are derived.
+    ///
     pub def getName(cp: Int32): Option[String] =
         try {
             import static java.lang.Character.getName(Int32): String \ {};
@@ -212,10 +233,23 @@ mod CodePoint {
             case i          => Some(i)
         }
 
+    ///
+    /// Returns the number of Chars needed to represent the code point `cp`.
+    ///
+    /// The answer is either 2 for a supplementary character or 1 for any other character.
+    ///
     pub def charCount(cp: Int32): Int32 =
         import static java.lang.Character.charCount(Int32): Int32 \ {};
         charCount(cp)
 
+    ///
+    /// Optionally returns a vector of Chars representing the code point `cp`.
+    ///
+    /// A valid `Some(_)` answer is either a length 2 Vector for a supplementary character
+    /// or a length 1 Vector for any other valid character.
+    ///
+    /// Returns 'None' if `cp` is not a valid code point.
+    ///
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
@@ -227,7 +261,10 @@ mod CodePoint {
         case _: ##java.lang.Throwable => None
     }
 
-
+    ///
+    /// Optionally returns a Char represention the code point `cp` if `cp` is within
+    /// Unicode's Basic Multilingual Plane.
+    ///
     pub def toBmpChar(cp: Int32): Option[Char] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
@@ -242,6 +279,10 @@ mod CodePoint {
         case _: ##java.lang.Exception => None
     }
 
+    ///
+    /// Optionally returns a pair of Chars representing the high and low surrogate characters of the
+    /// code point `cp` if `cp` is a supplementary character.
+    ///
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
@@ -256,6 +297,9 @@ mod CodePoint {
         case _: ##java.lang.Exception => None
     }
 
+    ///
+    /// Returns a String representing the code point `cp`.
+    ///
     pub def toString(cp: Int32): String =
         try {
             import static java.lang.Character.toString(Int32): String \ {};
@@ -264,7 +308,10 @@ mod CodePoint {
             case _: ##java.lang.Exception => ""
         }
 
-
+    ///
+    /// Optionally returns the high surrogate character of the code point `cp`
+    /// if `cp` is a supplementary character.
+    ///
     pub def highSurrogate(cp: Int32): Option[Char] =
         import static java.lang.Character.highSurrogate(Int32): Char \ {};
         if (isSupplementaryCodePoint(cp))
@@ -272,6 +319,10 @@ mod CodePoint {
         else
             None
 
+    ///
+    /// Optionally returns the low surrogate character of the code point `cp`
+    /// if `cp` is a supplementary character.
+    ///
     pub def lowSurrogate(cp: Int32): Option[Char] =
         import static java.lang.Character.lowSurrogate(Int32): Char \ {};
         if (isSupplementaryCodePoint(cp))
