@@ -80,10 +80,10 @@ def nth10(): Bool = String.nth(11, "Hello World!") == Some('!')
 def codePointAt01(): Bool = String.codePointAt(0, CodePoint.toString(0x1f3dd)) == 0x1f3dd
 
 @test
-def codePointAt02(): Bool = String.codePointAt(2, CodePoint.toString(0x1f3dd) + ".") == 0x002E
+def codePointAt02(): Bool = String.codePointAt(2, "\uD83C\uDFDD.") == 0x002E
 
 @test
-def codePointAt03(): Bool = String.codePointAt(1, "." + CodePoint.toString(0x1f3dd)) == 0x1f3dd
+def codePointAt03(): Bool = String.codePointAt(1, ".\uD83C\uDFDD") == 0x1f3dd
 
 /////////////////////////////////////////////////////////////////////////////
 // nthCodePoint                                                            //
@@ -99,10 +99,10 @@ def nthCodePoint02(): Bool = String.nthCodePoint(0, CodePoint.toString(0x1f3dd))
 def nthCodePoint03(): Bool = String.nthCodePoint(2, CodePoint.toString(0x1f3dd)) == None
 
 @test
-def nthCodePoint04(): Bool = String.nthCodePoint(2, CodePoint.toString(0x1f3dd) + ".") == Some(0x002E)
+def nthCodePoint04(): Bool = String.nthCodePoint(2, "\uD83C\uDFDD.") == Some(0x002E)
 
 @test
-def nthCodePoint05(): Bool = String.nthCodePoint(1, "." + CodePoint.toString(0x1f3dd)) == Some(0x1f3dd)
+def nthCodePoint05(): Bool = String.nthCodePoint(1, ".\uD83C\uDFDD") == Some(0x1f3dd)
 
 /////////////////////////////////////////////////////////////////////////////
 // concat                                                                  //

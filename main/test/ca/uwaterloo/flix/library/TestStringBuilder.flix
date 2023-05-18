@@ -69,7 +69,7 @@ mod TestStringBuilder {
         let sb = StringBuilder.new(r);
         StringBuilder.appendCodePoint!(0x1f3dd, sb);
         StringBuilder.appendCodePoint!(0x0020, sb);
-        StringBuilder.toString(sb) == CodePoint.toString(0x1f3dd) + " "
+        StringBuilder.toString(sb) == "\uD83C\uDFDD "
     }
 
     @test
@@ -78,7 +78,7 @@ mod TestStringBuilder {
         StringBuilder.appendCodePoint!(0x0020, sb);
         StringBuilder.appendCodePoint!(0x1f3dd, sb);
         StringBuilder.appendCodePoint!(0x0020, sb);
-        StringBuilder.toString(sb) == " " + CodePoint.toString(0x1f3dd) + " "
+        StringBuilder.toString(sb) == " \uD83C\uDFDD "
     }
 
 
