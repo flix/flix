@@ -220,8 +220,8 @@ sealed trait Completion {
       val name = modSym.toString
       CompletionItem(
         label = name,
-        sortText = Priority.normal(name),
-        textEdit = TextEdit(context.range, s"$name."),
+        sortText = Priority.low(name),
+        textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Module)
   }
 }
