@@ -105,6 +105,8 @@ object DocAst {
 
     case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
 
+    case class Lambda(fparams: List[Expression.Ascription], body: Expression) extends Composite
+
     case class Native(clazz: Class[_]) extends Atom
 
     val Unknown: Expression =
@@ -133,11 +135,18 @@ object DocAst {
     def Is(sym: Symbol.CaseSym, d: Expression): Expression =
       Binary(d, "is", AsIs(sym.toString))
 
+    /** The control separated return statement */
+    def Ret(d: Expression): Expression =
+      Keyword("ret", d)
+
     def Ref(d: Expression): Expression =
       Keyword("ref", d)
 
     def Deref(d: Expression): Expression =
       Keyword("deref", d)
+
+    def Def(sym: Symbol.DefnSym): Expression =
+      AsIs(sym.toString)
 
     def ArrayNew(d1: Expression, d2: Expression): Expression =
       SquareApp(AsIs(""), List(Binary(d1, ";", d2)))
@@ -148,11 +157,11 @@ object DocAst {
     def ArrayLength(d: Expression): Expression =
       DoubleDot(d, AsIs("length"))
 
-    def ArrayLoad(d1: Expression, d2: Expression): Expression =
-      SquareApp(d1, List(d2))
+    def ArrayLoad(d1: Expression, index: Expression): Expression =
+      SquareApp(d1, List(index))
 
-    def ArrayStore(d1: Expression, d2: Expression, d3: Expression): Expression =
-      Assign(SquareApp(d1, List(d2)), d3)
+    def ArrayStore(d1: Expression, index: Expression, d2: Expression): Expression =
+      Assign(SquareApp(d1, List(index)), d2)
 
     def Lazy(d: Expression): Expression =
       Keyword("lazy", d)

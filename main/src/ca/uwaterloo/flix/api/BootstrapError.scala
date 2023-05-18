@@ -38,6 +38,10 @@ object BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
+  case class JarPackageError(e: PackageError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
+  }
+
   case class FileError(e: String) extends BootstrapError {
     override def message(f: Formatter): String = e
   }

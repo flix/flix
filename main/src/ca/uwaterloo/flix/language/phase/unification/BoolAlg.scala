@@ -133,11 +133,11 @@ trait BoolAlg[F] {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => mkVar(x)
     }
-    case Type.True => mkTrue
-    case Type.False => mkFalse
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => mkNot(fromType(tpe1, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Empty => mkTrue
+    case Type.All => mkFalse
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => mkNot(fromType(tpe1, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 

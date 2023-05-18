@@ -3952,7 +3952,7 @@ mod TestArray {
         unzip05Aux(r1, Array#{(1, "1"), (2, "2"), (3, "3")} @ r2) `Array.sameElements` (Array#{1, 2, 3} @ r2)
     }}
 
-    def unzip05Aux(r1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { Write(r1), Read(r2) } =
+    def unzip05Aux(r1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { r1, r2 } =
         region r3 {
             // snd is local, fst is for caller
             Array.unzip(r1, r3, a) |> fst
@@ -5090,7 +5090,7 @@ mod TestArray {
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
+    def testSortVsSortWith(a: Array[Int32, r]): Bool \ r = region r1 {
         Array.sort(r1, a) `sameElements` Array.sortWith(r1, cmp, a)
     }
 
@@ -5238,7 +5238,7 @@ mod TestArray {
     // sort!                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
+    def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ r = region r1 {
         let b = Array.slice(r1, start = 0, end = Array.length(a), a);
         let c = Array.slice(r1, start = 0, end = Array.length(a), a);
         Array.sort!(b);
@@ -5295,7 +5295,7 @@ mod TestArray {
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
+    def testSortByVsSort(a: Array[Int32, r]): Bool \ r = region r1 {
         (Array.sortBy(r1, identity, a) `sameElements` Array.sort(r1, a)) and
         (Array.sortBy(r1, x -> 4 * x + 7, a) `sameElements` Array.sort(r1, a)) and
         (Array.sortBy(r1, x -> -x, a) `sameElements` Array.sortWith(r1, flip(cmp),a))
@@ -5367,7 +5367,7 @@ mod TestArray {
     // sortBy!                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortBy!VsSortBy(a: Array[Int32, r]) : Bool \ { Read(r) } = region r1 {
+    def testSortBy!VsSortBy(a: Array[Int32, r]) : Bool \ r = region r1 {
         let b = Array.slice(r1, start = 0, end = Array.length(a), a);
         let c = Array.slice(r1, start = 0, end = Array.length(a), a);
         Array.sortBy!(identity, b);

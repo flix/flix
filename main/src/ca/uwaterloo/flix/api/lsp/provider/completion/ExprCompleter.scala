@@ -29,6 +29,8 @@ object ExprCompleter extends Completer {
       VarCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++
       EnumTagCompleter.getCompletions(context) ++
-      SnippetCompleter.getCompletions(context)
+      SnippetCompleter.getCompletions(context) ++
+      EnumCompleter.getCompletions(context) ++
+      ModuleCompleter.getCompletions(context)
   }
 }

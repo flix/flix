@@ -179,9 +179,9 @@ object HoverProvider {
       ""
     } else {
       pur0 match {
-        case Type.Cst(TypeConstructor.True, _) => ""
-        case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case pur => " & " + FormatType.formatType(pur)
+        case Type.Cst(TypeConstructor.Empty, _) => ""
+        case Type.Cst(TypeConstructor.All, _) => raw" \ IO"
+        case pur => raw" \ " + FormatType.formatType(pur)
       }
     }
 

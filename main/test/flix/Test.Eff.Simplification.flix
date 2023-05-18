@@ -22,5 +22,5 @@
 //    def pure(): Unit \ {} = ()
 //
 //    /// an impure function
-//    def impure(): Unit \ Impure = unchecked_cast(() as _ \ IO)
+//    def impure(): Unit \ IO = unchecked_cast(() as _ \ IO)
 //}

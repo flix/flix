@@ -78,26 +78,26 @@ object BoolUnification {
             return Ok((Substitution.empty, Nil)) // 1000 hits
           }
 
-        case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.True, _)) =>
+        case (Type.Cst(TypeConstructor.Empty, _), Type.Cst(TypeConstructor.Empty, _)) =>
           return Ok((Substitution.empty, Nil)) // 6000 hits
 
         case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
-          case TypeConstructor.True =>
-            return Ok((Substitution.singleton(x, Type.True), Nil)) // 9000 hits
-          case TypeConstructor.False =>
-            return Ok((Substitution.singleton(x, Type.False), Nil)) // 1000 hits
+          case TypeConstructor.Empty =>
+            return Ok((Substitution.singleton(x, Type.Empty), Nil)) // 9000 hits
+          case TypeConstructor.All =>
+            return Ok((Substitution.singleton(x, Type.All), Nil)) // 1000 hits
           case _ => // nop
         }
 
         case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
-          case TypeConstructor.True =>
-            return Ok((Substitution.singleton(y, Type.True), Nil)) // 7000 hits
-          case TypeConstructor.False =>
-            return Ok((Substitution.singleton(y, Type.False), Nil)) //  500 hits
+          case TypeConstructor.Empty =>
+            return Ok((Substitution.singleton(y, Type.Empty), Nil)) // 7000 hits
+          case TypeConstructor.All =>
+            return Ok((Substitution.singleton(y, Type.All), Nil)) //  500 hits
           case _ => // nop
         }
 
-        case (Type.Cst(TypeConstructor.False, _), Type.Cst(TypeConstructor.False, _)) =>
+        case (Type.Cst(TypeConstructor.All, _), Type.Cst(TypeConstructor.All, _)) =>
           return Ok((Substitution.empty, Nil)) //  100 hits
 
         case _ => // nop

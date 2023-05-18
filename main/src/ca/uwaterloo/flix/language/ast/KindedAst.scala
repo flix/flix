@@ -24,6 +24,8 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object KindedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
+
   case class Root(classes: Map[Symbol.ClassSym, KindedAst.Class],
                   instances: Map[Symbol.ClassSym, List[KindedAst.Instance]],
                   defs: Map[Symbol.DefnSym, KindedAst.Def],

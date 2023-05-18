@@ -48,7 +48,6 @@ object CompletionUtils {
     (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 
-
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
@@ -69,9 +68,9 @@ object CompletionUtils {
         ""
       } else {
         pur0 match {
-          case Type.Cst(TypeConstructor.True, _) => ""
-          case Type.Cst(TypeConstructor.False, _) => " & Impure"
-          case p => " & " + FormatType.formatType(p)
+          case Type.Cst(TypeConstructor.Empty, _) => ""
+          case Type.Cst(TypeConstructor.All, _) => raw" \ IO"
+          case p => raw" \ " + FormatType.formatType(p)
         }
       }
 

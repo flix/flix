@@ -1,5 +1,5 @@
 /// Sends the value `x` on the channel `c` after a delay.
-def slow(x: Int32, tx: Sender[Int32, r]): Unit \ { Write(r), IO } =
+def slow(x: Int32, tx: Sender[Int32, r]): Unit \ { r, IO } =
     use Time.Duration.fromSeconds;
     Thread.sleep(fromSeconds(10));
     Channel.send(x, tx);
@@ -7,7 +7,7 @@ def slow(x: Int32, tx: Sender[Int32, r]): Unit \ { Write(r), IO } =
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `1` if `c` is not ready.
-def recvWithDefault(rx: Receiver[Int32, r]): Int32 \ { Read(r), Write(r) } =
+def recvWithDefault(rx: Receiver[Int32, r]): Int32 \ r =
     select {
         case x <- recv(rx) => x
         case _             => 1
@@ -15,7 +15,7 @@ def recvWithDefault(rx: Receiver[Int32, r]): Int32 \ { Read(r), Write(r) } =
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `2` if after a timeout.
-def recvWithTimeout(r: Region[r], c: Receiver[Int32, r]): Int32 \ { Read(r), Write(r), IO } =
+def recvWithTimeout(r: Region[r], c: Receiver[Int32, r]): Int32 \ { r, IO } =
     use Time.Duration.fromSeconds;
     let t = Channel.timeout(r, fromSeconds(1));
     select {

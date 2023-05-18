@@ -52,7 +52,7 @@ object Safety {
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
-        if (tpe.typeArguments.exists(_.kind == Kind.Bool))
+        if (tpe.typeArguments.exists(_.kind == Kind.Eff))
           List(SafetyError.SendableError(tpe, loc))
         else
           Nil

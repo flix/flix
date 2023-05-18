@@ -128,11 +128,11 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
-    case Type.True => True
-    case Type.False => False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Not(fromBoolType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Empty => True
+    case Type.All => False
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromBoolType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
@@ -142,7 +142,7 @@ object BoolFormula {
     * The map `m` must bind each free variable in `f` to a type variable.
     */
   def toType(f: BoolFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
-    case Kind.Bool => toBoolType(f, m, loc)
+    case Kind.Eff => toBoolType(f, m, loc)
     case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.", loc)
   }
 
@@ -152,16 +152,16 @@ object BoolFormula {
     * The map `m` must bind each free variable in `f` to a type variable.
     */
   private def toBoolType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
-    case True => Type.True
-    case False => Type.False
+    case True => Type.Empty
+    case False => Type.All
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
     }
-    case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
-    case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
-    case Or(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Not(f1) => Type.mkComplement(toBoolType(f1, m, loc), loc)
+    case And(t1, t2) => Type.mkUnion(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Or(t1, t2) => Type.mkIntersection(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
   }
 
   /**

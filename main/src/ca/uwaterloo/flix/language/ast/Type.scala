@@ -329,45 +329,45 @@ object Type {
   val SchemaRowEmpty: Type = Type.Cst(TypeConstructor.SchemaRowEmpty, SourceLocation.Unknown)
 
   /**
-    * Represents the Boolean True.
+    * Represents the empty effect set.
     */
-  val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)
+  val Empty: Type = Type.Cst(TypeConstructor.Empty, SourceLocation.Unknown)
 
   /**
-    * Represents the Boolean False.
+    * Represents the universal effect set.
     */
-  val False: Type = Type.Cst(TypeConstructor.False, SourceLocation.Unknown)
+  val All: Type = Type.Cst(TypeConstructor.All, SourceLocation.Unknown)
 
   /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
     */
-  val Pure: Type = True
+  val Pure: Type = Empty
 
   /**
     * Represents the Impure effect. (FALSE in the Boolean algebra.)
     */
-  val Impure: Type = False
+  val Impure: Type = All
 
   /**
-    * Represents the Not type constructor.
+    * Represents the Complement type constructor.
     *
     * NB: This type has kind: * -> *.
     */
-  val Not: Type = Type.Cst(TypeConstructor.Not, SourceLocation.Unknown)
+  val Complement: Type = Type.Cst(TypeConstructor.Complement, SourceLocation.Unknown)
 
   /**
-    * Represents the And type constructor.
+    * Represents the Union type constructor.
     *
     * NB: This type has kind: * -> (* -> *).
     */
-  val And: Type = Type.Cst(TypeConstructor.And, SourceLocation.Unknown)
+  val Union: Type = Type.Cst(TypeConstructor.Union, SourceLocation.Unknown)
 
   /**
-    * Represents the Or type constructor.
+    * Represents the Intersection type constructor.
     *
     * NB: This type has kind: * -> (* -> *).
     */
-  val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
+  val Intersection: Type = Type.Cst(TypeConstructor.Intersection, SourceLocation.Unknown)
 
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
@@ -547,12 +547,12 @@ object Type {
   /**
     * Returns the True type with the given source location `loc`.
     */
-  def mkTrue(loc: SourceLocation): Type = Type.Cst(TypeConstructor.True, loc)
+  def mkTrue(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Empty, loc)
 
   /**
     * Returns the False type with the given source location `loc`.
     */
-  def mkFalse(loc: SourceLocation): Type = Type.Cst(TypeConstructor.False, loc)
+  def mkFalse(loc: SourceLocation): Type = Type.Cst(TypeConstructor.All, loc)
 
   /**
     * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
@@ -605,7 +605,7 @@ object Type {
   def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
 
   /**
-    * Constructs the arrow type A -> B & p.
+    * Constructs the arrow type A -> B \ p.
     */
   def mkArrowWithEffect(a: Type, p: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(p, a, b), loc)
 
@@ -620,7 +620,7 @@ object Type {
   def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
-    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
+    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
     */
   def mkCurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val a = as.last
@@ -639,7 +639,7 @@ object Type {
   def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)
@@ -661,7 +661,7 @@ object Type {
     */
   def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
     val sym = Symbol.mkEnumSym("Choice")
-    val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
+    val kind = Kind.Star ->: Kind.Eff ->: Kind.Eff ->: Kind.Star
     val tc = TypeConstructor.Enum(sym, kind)
     Apply(Apply(Apply(Cst(tc, loc), tpe0, loc), isAbsent, loc), isPresent, loc)
   }
@@ -772,26 +772,26 @@ object Type {
   }
 
   /**
-    * Returns the type `Not(tpe0)`.
+    * Returns the type `Complement(tpe0)`.
     */
-  def mkNot(tpe0: Type, loc: SourceLocation): Type = tpe0 match {
-    case Type.True => Type.mkFalse(loc)
-    case Type.False => Type.mkTrue(loc)
-    case _ => Type.Apply(Type.Cst(TypeConstructor.Not, loc), tpe0, loc)
+  def mkComplement(tpe0: Type, loc: SourceLocation): Type = tpe0 match {
+    case Type.Empty => Type.mkFalse(loc)
+    case Type.All => Type.mkTrue(loc)
+    case _ => Type.Apply(Type.Cst(TypeConstructor.Complement, loc), tpe0, loc)
   }
 
   /**
-    * Returns the type `And(tpe1, tpe2)`.
+    * Returns the type `Union(tpe1, tpe2)`.
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.True, _), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
-    case (Type.Cst(TypeConstructor.False, _), _) => Type.False
-    case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+  def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.Empty, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.Empty, _)) => tpe1
+    case (Type.Cst(TypeConstructor.All, _), _) => Type.All
+    case (_, Type.Cst(TypeConstructor.All, _)) => Type.All
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
-    case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
+    case _ => Type.Apply(Type.Apply(Type.Union, tpe1, loc), tpe2, loc)
   }
 
   /**
@@ -799,25 +799,25 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type =
-    mkAnd(tpe1, mkAnd(tpe2, tpe3, loc), loc)
+  def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type =
+    mkUnion(tpe1, mkUnion(tpe2, tpe3, loc), loc)
 
   /**
     * Returns the type `And(tpe1, And(tpe2, And(tpe3, tpe4)))`.
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): Type =
-    mkAnd(tpe1, mkAnd(tpe2, mkAnd(tpe3, tpe4, loc), loc), loc)
+  def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): Type =
+    mkUnion(tpe1, mkUnion(tpe2, mkUnion(tpe3, tpe4, loc), loc), loc)
 
   /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.True
-    case x :: xs => mkAnd(x, mkAnd(xs, loc), loc)
+  def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.Empty
+    case x :: xs => mkUnion(x, mkUnion(xs, loc), loc)
   }
 
   /**
@@ -825,13 +825,13 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.True, _), _) => Type.True
-    case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
-    case (Type.Cst(TypeConstructor.False, _), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+  def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.Empty, _), _) => Type.Empty
+    case (_, Type.Cst(TypeConstructor.Empty, _)) => Type.Empty
+    case (Type.Cst(TypeConstructor.All, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.All, _)) => tpe1
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
-    case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
+    case _ => Type.Apply(Type.Apply(Type.Intersection, tpe1, loc), tpe2, loc)
   }
 
   /**
@@ -839,9 +839,9 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkOr(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.False
-    case x :: xs => mkOr(x, mkOr(xs, loc), loc)
+  def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.All
+    case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
   }
 
   /**
@@ -901,14 +901,14 @@ object Type {
   /**
     * Returns the type `tpe1 => tpe2`.
     */
-  def mkImplies(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkOr(Type.mkNot(tpe1, loc), tpe2, loc)
+  def mkImplies(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(Type.mkComplement(tpe1, loc), tpe2, loc)
 
   /**
     * Returns a Boolean type that represents the equivalence of `x` and `y`.
     *
     * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
     */
-  def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
+  def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkIntersection(mkUnion(x, y, loc), mkUnion(Type.mkComplement(x, loc), Type.mkComplement(y, loc), loc), loc)
 
   /**
     * Replace type aliases with the types they represent.
@@ -992,7 +992,7 @@ object Type {
     else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.False, SourceLocation.Unknown)
+      Type.mkArray(elmType, Type.All, SourceLocation.Unknown)
     }
     // otherwise native type
     else {

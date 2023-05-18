@@ -32,6 +32,8 @@ dependencies {
     implementation('org.tomlj:tomlj:1.1.0')
     implementation('org.antlr:antlr4-runtime:4.11.1')
 
+    implementation('org.slf4j:slf4j-nop:2.0.7')
+
     testImplementation('org.scalatest:scalatest_2.13:3.2.15')
 }
 
@@ -89,3 +91,7 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
 
 test.dependsOn testAll
 
+task vscode(type: Copy, dependsOn:[clean, jar]) {
+    from 'build/libs/flix.jar'
+    into providers.gradleProperty('dev.flix.vscode.project')
+}

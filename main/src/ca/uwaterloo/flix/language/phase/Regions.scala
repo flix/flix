@@ -345,10 +345,10 @@ object Regions {
     */
   def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
     // t0 = tpe[tvar -> False]
-    val t0 = Substitution.singleton(tvar.sym, Type.False).apply(tpe)
+    val t0 = Substitution.singleton(tvar.sym, Type.All).apply(tpe)
 
     // t1 = tpe[tvar -> True]
-    val t1 = Substitution.singleton(tvar.sym, Type.True).apply(tpe)
+    val t1 = Substitution.singleton(tvar.sym, Type.Empty).apply(tpe)
 
     // tvar is essential if t0 != t1
     !sameType(t0, t1)
@@ -358,7 +358,7 @@ object Regions {
     * Extracts all the boolean formulas from the given type `t0`.
     */
   private def boolTypesOf(t0: Type): List[Type] = t0 match {
-    case t if t.kind == Kind.Bool => List(t)
+    case t if t.kind == Kind.Eff => List(t)
     case _: Type.Var => Nil
     case _: Type.Cst => Nil
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
@@ -378,11 +378,11 @@ object Regions {
       * and all other variables are ascribed the value FALSE.
       */
     def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
-      case Type.True => true
-      case Type.False => false
-      case Type.Apply(Type.Not, x, _) => eval(x, trueVars)
-      case Type.Apply(Type.Apply(Type.And, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
-      case Type.Apply(Type.Apply(Type.Or, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
+      case Type.Empty => true
+      case Type.All => false
+      case Type.Apply(Type.Complement, x, _) => eval(x, trueVars)
+      case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
+      case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
       case tvar: Type.Var => trueVars.contains(tvar)
       case _ => throw InternalCompilerException(s"unexpected type $tpe", tpe.loc)
     }
@@ -396,7 +396,7 @@ object Regions {
     */
   private def regionVarsOf(tpe: Type): SortedSet[Type.Var] = tpe.typeVars.filter {
     case tvar =>
-      val isBool = tvar.sym.kind == Kind.Bool
+      val isBool = tvar.sym.kind == Kind.Eff
       val isRegion = tvar.sym.isRegion
       isBool && isRegion
   }

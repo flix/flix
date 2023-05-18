@@ -18,7 +18,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
-import ca.uwaterloo.flix.language.ast.{TypedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object EnumTagCompleter extends Completer {
 
@@ -26,21 +28,93 @@ object EnumTagCompleter extends Completer {
     * Returns a List of Completion for enum tags.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EnumTagCompletion] = {
-    //
-    // We match on either `A.B.C` or `A.B.C.` In the latter case we have to remove the dot.
-    //
-    val fqn = if (context.word.last == '.') context.word.dropRight(1) else context.word
+    // We don't know if the user has provided a tag, so we have to try both cases
+    val word = context.word.split('.').toList
 
-    val enumSym = Symbol.mkEnumSym(fqn)
+    getEnumTagCompletionsWithoutTag(word) ++
+      getEnumTagCompletionsWithTag(word)
+  }
+
+  /**
+    * Gets completions for enum tags without tag provided
+    */
+  private def getEnumTagCompletionsWithoutTag(word: List[String])(implicit root: TypedAst.Root, flix: Flix): Iterable[EnumTagCompletion] = {
+    val enumSym = mkEnumSym(word)
+    root.enums.get(enumSym) match {
+      case None => // Case 1: Enum does not exist.
+        Nil
+      case Some(enm) => // Case 2: Enum does exist -> Get cases.
+        enm.cases.map {
+          case (caseSym, cas) => EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe), FormatType.formatType(cas.tpe))
+        }
+    }
+  }
+
+  /**
+    * Gets completions for enum tags with tag provided
+    */
+  private def getEnumTagCompletionsWithTag(word: List[String])(implicit root: TypedAst.Root, flix: Flix): Iterable[EnumTagCompletion] = {
+    // The user has provided a tag
+    // We know that there is at least one dot, so we split the context.word and
+    // make a fqn from the everything but the the last (hence it could be the tag).
+    val fqnWithTag = word.dropRight(1)
+    val tag = word.takeRight(1).mkString
+    val enumSym = mkEnumSym(fqnWithTag)
 
     root.enums.get(enumSym) match {
       case None => // Case 1: Enum does not exist.
         Nil
-      case Some(enm) =>
-      // Case 2: Enum found, get the cases:
-      enm.cases.map {
-        case (caseSym, _) => EnumTagCompletion(enumSym, caseSym)
-      }
+      case Some(enm) => // Case 2: Enum does exist
+        enm.cases.flatMap {
+          case (caseSym, cas) =>
+            if (matchesTag(caseSym, tag)) {
+              // Case 2.1: Tag provided and it matches the case
+              Some(EnumTagCompletion(enumSym, caseSym, getArityForEnumTag(cas.tpe), FormatType.formatType(cas.tpe)))
+            } else {
+              // Case 2.2: Tag provided doesn't match the case
+              None
+            }
+        }
     }
+  }
+
+  /**
+    *
+    * Returns the arity of the given enumTag type `tpe`
+    *
+    * @param tpe the type.
+    * @return    the arity.
+    */
+  private def getArityForEnumTag(tpe: Type): Int = {
+    tpe.typeConstructor match {
+      case Some(TypeConstructor.Unit) => 0
+      case Some(TypeConstructor.Tuple(arity)) => arity
+      case _ => 1
+    }
+  }
+
+  /**
+    * Checks if the provided tag matches the case.
+    *
+    * @param caseSym the caseSym of the case from the enum.
+    * @param tag     the provided tag.
+    * @return        true, if the provided tag matches the case, false otherwise.
+    */
+  private def matchesTag(caseSym: CaseSym, tag: String): Boolean = caseSym.name.startsWith(tag)
+
+  /**
+    * Generates an enumSym with a correct nameSpace. This is different from the one in Symbol.scala.
+    *
+    * Symbol.mkEnumSym("A.B.C.Color") would make an enumSym with namespace=List("A"), and name = "B.C.Color"
+    *
+    * This function: mkEnumSym(List["A","B","C","Color"]) makes an enumSym with namespace=List("A","B","C") and name = "Color"
+    *
+    * @param fqn the fully qualified name as a List[String].
+    * @return    the enum symbol for the given fully qualified name.
+    */
+  private def mkEnumSym(fqn: List[String]): EnumSym = {
+    val ns = fqn.dropRight(1)
+    val name = fqn.takeRight(1).mkString
+    new EnumSym(None, ns, name, SourceLocation.Unknown)
   }
 }
