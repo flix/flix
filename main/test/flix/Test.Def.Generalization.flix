@@ -172,22 +172,22 @@ mod Test.Def.Generalization {
         }*/
 
     @test
-    def testLeq30(x: Choice[String, _, true]): Int32 =
-        relational_choose x {
+    def testLeq30(): Choice[String, _, true] -> Int32 =
+        x -> relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }
 
     @test
-    def testLeq31(x: Choice[String, true, _]): Int32 =
-        relational_choose x {
+    def testLeq31(): Choice[String, true, _] -> Int32 =
+        x -> relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }
 
     @test
-    def testLeq32(x: Choice[String, _, _]): Int32 =
-        relational_choose x {
+    def testLeq32(): Choice[String, _, _] -> Int32 =
+        x -> relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }
