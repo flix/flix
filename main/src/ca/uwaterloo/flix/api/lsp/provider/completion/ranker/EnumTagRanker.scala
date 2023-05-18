@@ -30,11 +30,11 @@ object EnumTagRanker extends Ranker {
     * @return            Some(EnumTagCompletion) if a better completion is possible, else none.
     */
   override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[EnumTagCompletion] = {
-    // Remove all none typeEnum completions
+    // Remove all none enumTag completions
     getEnumTagCompletions(completions)
-      // Find the typeEnum comp that has 0 Real uses
+      // Find the enumTag comp that has 0 Real uses
       .find(enumTag =>
-        !hasRealSourceKinds(index.tagUses(enumTag.caseSym)))
+        !hasRealSourceKinds(index.tagUses(enumTag.cas.sym)))
   }
 
   /**
