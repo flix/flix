@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
 
 /**
   * Ranker
@@ -30,5 +30,5 @@ trait Ranker {
     * @param completions the list of decided completions.
     * @return            Some(Completion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[Completion]
+  def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[Completion]
 }

@@ -174,10 +174,10 @@ sealed trait Completion {
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Interface)
-    case Completion.MatchCompletion(sym, completion, priority) =>
-      val label = s"match $sym"
+    case Completion.MatchCompletion(enm, completion) =>
+      val label = s"match ${enm.sym.toString}"
       CompletionItem(label = label,
-        sortText = priority(label),
+        sortText = Priority.normal(label),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
@@ -220,8 +220,8 @@ sealed trait Completion {
       val name = modSym.toString
       CompletionItem(
         label = name,
-        sortText = Priority.normal(name),
-        textEdit = TextEdit(context.range, s"$name."),
+        sortText = Priority.low(name),
+        textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Module)
   }
 }
@@ -384,11 +384,10 @@ object Completion {
   /**
     * Represents an exhaustive Match completion
     *
-    * @param sym        the match sym (it's name).
+    * @param enm        the enum for the match.
     * @param completion the completion string (used as information for TextEdit).
-    * @param priority   the priority of the completion.
     */
-  case class MatchCompletion(sym: String, completion: String, priority: String => String) extends Completion
+  case class MatchCompletion(enm: TypedAst.Enum, completion: String) extends Completion
 
   /**
     * Represents an Instance completion (based on type classes)

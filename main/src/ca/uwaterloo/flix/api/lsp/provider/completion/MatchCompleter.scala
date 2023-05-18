@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.MatchCompletion
 import ca.uwaterloo.flix.language.ast.{TypeConstructor, TypedAst}
 
@@ -36,7 +35,7 @@ object MatchCompleter extends Completer {
     val currentWordIsMatch = wordPattern matches context.word
 
     root.enums.foldLeft[List[MatchCompletion]](Nil)((acc, enm) => {
-      if (enm._2.cases.size >= 2) matchCompletion(enm._2, currentWordIsMatch)(context) match {
+      if (enm._2.cases.size >= 2) matchCompletion(enm._2, currentWordIsMatch) match {
         case Some(v) => v :: acc
         case None => acc
       }
@@ -47,20 +46,11 @@ object MatchCompleter extends Completer {
   /**
     * Converts an enum into an exhaustive match completion
     */
-  private def matchCompletion(enm: TypedAst.Enum, currentWordIsMatch: Boolean)(implicit context: CompletionContext): Option[MatchCompletion] = {
+  private def matchCompletion(enm: TypedAst.Enum, currentWordIsMatch: Boolean): Option[MatchCompletion] = {
     val includeMatch = if (currentWordIsMatch) "match " else ""
-    val priority: String => String = if (enm.loc.source.name == context.uri) {
-      Priority.high
-    }
-    else if (enm.mod.isPublic && enm.sym.namespace.isEmpty) {
-      Priority.boost
-    }
-    else {
-      return None
-    }
     val (completion, _) = enm.cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
       case ((acc, z), (sym, cas)) =>
-        val enumName = enm.sym.name
+        val enumName = enm.sym.toString
         val caseName = sym.name
         val (str, k) = cas.tpe.typeConstructor match {
           case Some(TypeConstructor.Unit) => (s"$enumName.$caseName => $${${z + 1}:???}", z + 1)
@@ -71,6 +61,6 @@ object MatchCompleter extends Completer {
         }
         (acc + "    case " + str + "\n", k)
     })
-    Some(MatchCompletion(enm.sym.name, s"$includeMatch$${1:???} {\n$completion}", priority))
+    Some(MatchCompletion(enm, s"$includeMatch$${1:???} {\n$completion}"))
   }
 }

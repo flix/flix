@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
 
 object FieldRanker extends Ranker {
@@ -28,7 +28,7 @@ object FieldRanker extends Ranker {
     * @param completions the list of completions.
     * @return            Some(FieldCompletion) if a better completion is possible, else none.
     */
-  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[FieldCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[FieldCompletion] = {
     // Remove all none field completions
     getFieldCompletions(completions)
       // Find the field comp that has 0 uses
