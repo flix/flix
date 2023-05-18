@@ -354,16 +354,6 @@ object Simplifier {
     }
 
     /**
-      * Returns an expression that subtracts e2 from e1
-      */
-    def mkSub(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
-      val sub = SemanticOperator.Int32Op.Sub
-      val tpe = Type.Int32
-      val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(sub, e1, e2, tpe, purity, loc)
-    }
-
-    /**
       * Eliminates pattern matching by translations to labels and jumps.
       */
     def patternMatchWithLabels(exp0: LoweredAst.Expression, rules: List[LoweredAst.MatchRule], tpe: Type, loc: SourceLocation): SimplifiedAst.Expression = {
