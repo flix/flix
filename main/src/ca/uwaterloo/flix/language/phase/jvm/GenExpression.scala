@@ -18,13 +18,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.SemanticOperator._
-import ca.uwaterloo.flix.language.ast.{MonoType, _}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm
+import ca.uwaterloo.flix.language.ast._
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
 
@@ -1852,8 +1847,11 @@ object GenExpression {
       visitor.visitInsn(ICONST_M1)
       visitor.visitInsn(I2L) // Sign extend to long
 
-    case 0 => visitor.visitInsn(LCONST_0)
-    case 1 => visitor.visitInsn(LCONST_1)
+    case 0 =>
+      visitor.visitInsn(LCONST_0)
+
+    case 1 =>
+      visitor.visitInsn(LCONST_1)
 
     case 2 =>
       visitor.visitInsn(ICONST_2)
