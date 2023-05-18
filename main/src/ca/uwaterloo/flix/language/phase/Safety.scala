@@ -106,7 +106,7 @@ object Safety {
 
         root.defs.get(sym).map {
           case d if isTest(d) && hasParameters(d) =>
-            val err = SafetyError.IllegalTestParameters(d.spec.loc)
+            val err = SafetyError.IllegalTestParameters(loc)
             List(err)
 
           case _ => Nil
