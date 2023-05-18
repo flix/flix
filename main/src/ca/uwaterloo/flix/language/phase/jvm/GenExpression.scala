@@ -791,18 +791,12 @@ object GenExpression {
       // Normal Tag
       case AtomicOp.Tag(sym) =>
         val List(exp) = exps
-
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // Get the tag info.
         val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
         // We get the JvmType of the class for tag
         val classType = JvmOps.getTagClassType(tagInfo)
-        /*
-       If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
-       there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
-       a new one.
-       */
         // Creating a new instance of the class
         visitor.visitTypeInsn(NEW, classType.name.toInternalName)
         visitor.visitInsn(DUP)
