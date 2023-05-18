@@ -562,7 +562,7 @@ object SafetyError {
       s"""${line(kind, source.name)}
          |>> Test entry point must not have parameters.
 
-         |${code(loc, "test function with parameters occurs here.")}
+         |${code(loc, "Parameter for test function occurs here.")}
          |
          |""".stripMargin
     }
