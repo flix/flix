@@ -174,10 +174,10 @@ sealed trait Completion {
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Interface)
-    case Completion.MatchCompletion(sym, completion, priority) =>
-      val label = s"match $sym"
+    case Completion.MatchCompletion(enm, completion) =>
+      val label = s"match ${enm.sym.toString}"
       CompletionItem(label = label,
-        sortText = priority(label),
+        sortText = Priority.normal(label),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
@@ -204,15 +204,15 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
-    case Completion.EnumTagCompletion(enumSym, caseSym, arity, detail) =>
-      val name = s"${enumSym.toString}.${caseSym.name}"
+    case Completion.EnumTagCompletion(enumSym, cas, arity) =>
+      val name = s"${enumSym.toString}.${cas.sym.name}"
       val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
-        label = name,
+        label = CompletionUtils.getLabelForEnumTags(name, cas),
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, snippet),
-        detail = Some(detail),
+        detail = Some(enumSym.name),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.EnumMember)
@@ -384,11 +384,10 @@ object Completion {
   /**
     * Represents an exhaustive Match completion
     *
-    * @param sym        the match sym (it's name).
+    * @param enm        the enum for the match.
     * @param completion the completion string (used as information for TextEdit).
-    * @param priority   the priority of the completion.
     */
-  case class MatchCompletion(sym: String, completion: String, priority: String => String) extends Completion
+  case class MatchCompletion(enm: TypedAst.Enum, completion: String) extends Completion
 
   /**
     * Represents an Instance completion (based on type classes)
@@ -417,11 +416,10 @@ object Completion {
     * Represents an EnumTag completion
     *
     * @param enumSym the sym of the enum.
-    * @param caseSym the sym of the case (for that specific enum).
+    * @param cas     the case (for that specific enum).
     * @param arity   the arity of the enumTag.
-    * @param detail  the type of the enumTag.
     */
-  case class EnumTagCompletion(enumSym: EnumSym, caseSym: CaseSym, arity: Int, detail: String) extends Completion
+  case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case, arity: Int) extends Completion
 
   /**
     * Represents a Module completion.
