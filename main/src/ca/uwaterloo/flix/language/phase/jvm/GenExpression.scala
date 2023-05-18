@@ -59,16 +59,7 @@ object GenExpression {
 
       case Ast.Constant.Char(c) =>
         addSourceLine(visitor, loc)
-        c match {
-          case 0 => visitor.visitInsn(ICONST_0)
-          case 1 => visitor.visitInsn(ICONST_1)
-          case 2 => visitor.visitInsn(ICONST_2)
-          case 3 => visitor.visitInsn(ICONST_3)
-          case 4 => visitor.visitInsn(ICONST_4)
-          case 5 => visitor.visitInsn(ICONST_5)
-          case _ if scala.Byte.MinValue <= c && c <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, c.toInt)
-          case _ => visitor.visitIntInsn(SIPUSH, c.toInt)
-        }
+        compileInt(visitor, c)
 
       case Ast.Constant.Float32(f) =>
         addSourceLine(visitor, loc)
@@ -97,34 +88,15 @@ object GenExpression {
 
       case Ast.Constant.Int8(b) =>
         addSourceLine(visitor, loc)
-        b match {
-          case -1 => visitor.visitInsn(ICONST_M1)
-          case 0 => visitor.visitInsn(ICONST_0)
-          case 1 => visitor.visitInsn(ICONST_1)
-          case 2 => visitor.visitInsn(ICONST_2)
-          case 3 => visitor.visitInsn(ICONST_3)
-          case 4 => visitor.visitInsn(ICONST_4)
-          case 5 => visitor.visitInsn(ICONST_5)
-          case _ => visitor.visitIntInsn(BIPUSH, b.toInt)
-        }
+        compileInt(visitor, b)
 
       case Ast.Constant.Int16(s) =>
         addSourceLine(visitor, loc)
-        s match {
-          case -1 => visitor.visitInsn(ICONST_M1)
-          case 0 => visitor.visitInsn(ICONST_0)
-          case 1 => visitor.visitInsn(ICONST_1)
-          case 2 => visitor.visitInsn(ICONST_2)
-          case 3 => visitor.visitInsn(ICONST_3)
-          case 4 => visitor.visitInsn(ICONST_4)
-          case 5 => visitor.visitInsn(ICONST_5)
-          case _ if scala.Byte.MinValue <= s && s <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, s.toInt)
-          case _ => visitor.visitIntInsn(SIPUSH, s.toInt)
-        }
+        compileInt(visitor, s)
 
       case Ast.Constant.Int32(i) =>
         addSourceLine(visitor, loc)
-        compileInt32(visitor, i)
+        compileInt(visitor, i)
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(visitor, loc)
