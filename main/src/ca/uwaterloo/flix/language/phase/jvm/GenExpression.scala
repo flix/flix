@@ -1829,60 +1829,6 @@ object GenExpression {
 
   }
 
-  private def compileInt64(visitor: MethodVisitor, l: Long): Unit = {
-    l match {
-      case -1 =>
-        visitor.visitInsn(ICONST_M1)
-        visitor.visitInsn(I2L) // Sign extend to Long
-
-      case 0 =>
-        visitor.visitInsn(LCONST_0)
-
-      case 1 =>
-        visitor.visitInsn(LCONST_1)
-
-      case 2 =>
-        visitor.visitInsn(ICONST_2)
-        visitor.visitInsn(I2L) // Sign extend to Long
-
-      case 3 =>
-        visitor.visitInsn(ICONST_3)
-        visitor.visitInsn(I2L) // Sign extend to Long
-
-      case 4 =>
-        visitor.visitInsn(ICONST_4)
-        visitor.visitInsn(I2L) // Sign extend to Long
-
-      case 5 =>
-        visitor.visitInsn(ICONST_5)
-        visitor.visitInsn(I2L) // Sign extend to Long
-
-      case _ if scala.Byte.MinValue <= l && l <= scala.Byte.MaxValue =>
-        visitor.visitIntInsn(BIPUSH, l.toInt)
-        visitor.visitInsn(I2L) // Sign extend to Long
-
-      case _ if scala.Short.MinValue <= l && l <= scala.Short.MaxValue =>
-        visitor.visitIntInsn(SIPUSH, l.toInt)
-        visitor.visitInsn(I2L) // Sign extend to Long
-
-      case _ =>
-        visitor.visitLdcInsn(l)
-    }
-  }
-
-  private def compileInt32(visitor: MethodVisitor, i: Int): Unit = i match {
-    case -1 => visitor.visitInsn(ICONST_M1)
-    case 0 => visitor.visitInsn(ICONST_0)
-    case 1 => visitor.visitInsn(ICONST_1)
-    case 2 => visitor.visitInsn(ICONST_2)
-    case 3 => visitor.visitInsn(ICONST_3)
-    case 4 => visitor.visitInsn(ICONST_4)
-    case 5 => visitor.visitInsn(ICONST_5)
-    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
-    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
-    case _ => visitor.visitLdcInsn(i)
-  }
-
   /**
     * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
     */
