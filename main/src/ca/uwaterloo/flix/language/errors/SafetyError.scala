@@ -554,6 +554,12 @@ object SafetyError {
     )
   }
 
+  /**
+    * An error raised to indicate that a function marked with the `@test` annotation
+    * has at least one non-unit parameter.
+    *
+    * @param loc the source location of the parameter.
+    */
   case class IllegalTestParameters(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Test entry point must not have parameters."
 
