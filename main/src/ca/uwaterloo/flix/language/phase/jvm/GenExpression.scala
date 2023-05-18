@@ -61,7 +61,7 @@ object GenExpression {
 
       case Ast.Constant.Char(c) =>
         addSourceLine(mv, loc)
-        compileInt(mv, c)
+        compileInt(c)
 
       case Ast.Constant.Float32(f) =>
         addSourceLine(mv, loc)
@@ -90,19 +90,19 @@ object GenExpression {
 
       case Ast.Constant.Int8(b) =>
         addSourceLine(mv, loc)
-        compileInt(mv, b)
+        compileInt(b)
 
       case Ast.Constant.Int16(s) =>
         addSourceLine(mv, loc)
-        compileInt(mv, s)
+        compileInt(s)
 
       case Ast.Constant.Int32(i) =>
         addSourceLine(mv, loc)
-        compileInt(mv, i)
+        compileInt(i)
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(mv, loc)
-        compileInt(mv, l, isLong = true)
+        compileLong(l)
 
       case Ast.Constant.BigInt(ii) =>
         addSourceLine(mv, loc)
@@ -951,7 +951,7 @@ object GenExpression {
         // Adding source line number for debugging
         addSourceLine(mv, loc)
         // We push the 'length' of the array on top of stack
-        compileInt(mv, exps.length, isLong = false)
+        compileInt(exps.length)
         // We get the inner type of the array
         val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
         // Instantiating a new array of type jvmType
@@ -966,7 +966,7 @@ object GenExpression {
           // Duplicates the 'array reference'
           mv.visitInsn(DUP)
           // We push the 'index' of the current element on top of stack
-          compileInt(mv, i, isLong = false)
+          compileInt(i)
           // Evaluating the 'element' to be stored
           compileExpr(exps(i))
           // Stores the 'element' at the given 'index' in the 'array'
@@ -1764,7 +1764,6 @@ object GenExpression {
 
   }
 
-
   /**
     * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
     */
@@ -1801,31 +1800,73 @@ object GenExpression {
     visitComparisonEpilogue(mv, condElse, condEnd)
   }
 
-  /*
-   * Generate code to load an integer constant.
-   *
-   * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
-   * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
-   * bytes. The exception is if we set `isLong` to true, in which case a cast will be performed if necessary.
-   *
-   * This is needed because sometimes we expect the operands to be a long, which means two (int) values are popped from
-   * the stack and concatenated to form a long.
-   */
-  private def compileInt(visitor: MethodVisitor, i: Long, isLong: Boolean = false): Unit = {
-    i match {
-      case -1 => visitor.visitInsn(ICONST_M1)
-      case 0 => if (!isLong) visitor.visitInsn(ICONST_0) else visitor.visitInsn(LCONST_0)
-      case 1 => if (!isLong) visitor.visitInsn(ICONST_1) else visitor.visitInsn(LCONST_1)
-      case 2 => visitor.visitInsn(ICONST_2)
-      case 3 => visitor.visitInsn(ICONST_3)
-      case 4 => visitor.visitInsn(ICONST_4)
-      case 5 => visitor.visitInsn(ICONST_5)
-      case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i.toInt)
-      case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i.toInt)
-      case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i.toInt)
-      case _ => visitor.visitLdcInsn(i)
-    }
-    if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
+  /**
+    * Generate code to load an integer constant.
+    *
+    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
+    * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
+    * bytes.
+    */
+  private def compileInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
+    case -1 => mv.visitInsn(ICONST_M1)
+    case 0 => mv.visitInsn(ICONST_0)
+    case 1 => mv.visitInsn(ICONST_1)
+    case 2 => mv.visitInsn(ICONST_2)
+    case 3 => mv.visitInsn(ICONST_3)
+    case 4 => mv.visitInsn(ICONST_4)
+    case 5 => mv.visitInsn(ICONST_5)
+    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => mv.visitIntInsn(BIPUSH, i)
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => mv.visitIntInsn(SIPUSH, i)
+    case _ => mv.visitLdcInsn(i)
+  }
+
+  /**
+    * Generate bytecode for the long `i`.
+    *
+    * Uses the smallest amount of bytes necessary to represent `i`.
+    * Similar to `compileInt`, but ensures that values take up 4 bytes
+    * on the stack, which is expected for `Long`s.
+    */
+  private def compileLong(i: Long)(implicit mv: MethodVisitor): Unit = i match {
+    case -1 =>
+      mv.visitInsn(ICONST_M1)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case 0 =>
+      mv.visitInsn(LCONST_0)
+
+    case 1 =>
+      mv.visitInsn(LCONST_1)
+
+    case 2 =>
+      mv.visitInsn(ICONST_2)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case 3 =>
+      mv.visitInsn(ICONST_3)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case 4 =>
+      mv.visitInsn(ICONST_4)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case 5 =>
+      mv.visitInsn(ICONST_5)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue =>
+      mv.visitIntInsn(BIPUSH, i.toInt)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue =>
+      mv.visitIntInsn(SIPUSH, i.toInt)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue =>
+      mv.visitLdcInsn(i.toInt)
+      mv.visitInsn(I2L) // Sign extend to long
+
+    case _ => mv.visitLdcInsn(i)
   }
 
   /*
