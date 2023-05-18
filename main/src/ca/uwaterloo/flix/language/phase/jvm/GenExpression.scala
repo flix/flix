@@ -1854,7 +1854,6 @@ object GenExpression {
     case 5 => visitor.visitInsn(ICONST_5)
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(BIPUSH, i)
     case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(SIPUSH, i)
-    case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i)
     case _ => visitor.visitLdcInsn(i)
   }
 
