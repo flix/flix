@@ -24,31 +24,31 @@ mod Test.Exp.Fixpoint {
         let result = query db, pr select x from Win(x) |> List.toSet;
         result == Set#{"x", "y", "w"}
 
-    @Test
+    @test
     def testOpenSchema01(): #{} -> #{ | r} = p1
 
-    @Test
+    @test
     def testOpenSchema02(): #{A()} -> #{A() | r} = p1 -> p1
 
-    @Test
+    @test
     def testOpenSchema03(): #{A(), B()} -> #{A(), B() | r} = p1 -> p1
 
-    @Test
+    @test
     def testOpenSchema04(): #{} -> #{A()} -> #{A() | r} = p1 -> p2 -> p1 <+> p2
 
-    @Test
+    @test
     def testOpenSchema05(): #{A()} -> #{} -> #{A() | r} = p1 -> p2 -> p1 <+> p2
 
-    @Test
+    @test
     def testOpenSchema06(): #{A()} -> #{B()} -> #{A(), B() | r} = p1 -> p2 -> p1 <+> p2
 
-    @Test
+    @test
     def testOpenSchema07(): #{A()} -> #{B()} -> #{B(), A() | r} = p1 -> p2 -> p1 <+> p2
 
-    @Test
+    @test
     def testOpenSchema08(): #{A(), B()} -> #{B(), C()} -> #{A(), B(), C() | r} = p1 -> p2 -> p1 <+> p2
 
-    @Test
+    @test
     def testOpenSchema09(): #{A(), B()} -> #{B(), C()} -> #{C(), B(), A() | r} = p1 -> p2 -> p1 <+> p2
 
 }
