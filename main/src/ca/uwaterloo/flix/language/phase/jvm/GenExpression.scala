@@ -102,7 +102,7 @@ object GenExpression {
 
       case Ast.Constant.Int64(l) =>
         addSourceLine(mv, loc)
-        compileLong(mv, l)
+        compileLong(l)
 
       case Ast.Constant.BigInt(ii) =>
         addSourceLine(mv, loc)
@@ -1857,46 +1857,46 @@ object GenExpression {
     * Similar to `compileInt`, but ensures that values take up 4 bytes
     * on the stack, which is expected for `Long`s.
     */
-  private def compileLong(visitor: MethodVisitor, i: Long): Unit = i match {
+  private def compileLong(i: Long)(implicit mv: MethodVisitor): Unit = i match {
     case -1 =>
-      visitor.visitInsn(ICONST_M1)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(ICONST_M1)
+      mv.visitInsn(I2L) // Sign extend to long
 
     case 0 =>
-      visitor.visitInsn(LCONST_0)
+      mv.visitInsn(LCONST_0)
 
     case 1 =>
-      visitor.visitInsn(LCONST_1)
+      mv.visitInsn(LCONST_1)
 
     case 2 =>
-      visitor.visitInsn(ICONST_2)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(ICONST_2)
+      mv.visitInsn(I2L) // Sign extend to long
 
     case 3 =>
-      visitor.visitInsn(ICONST_3)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(ICONST_3)
+      mv.visitInsn(I2L) // Sign extend to long
 
     case 4 =>
-      visitor.visitInsn(ICONST_4)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(ICONST_4)
+      mv.visitInsn(I2L) // Sign extend to long
 
     case 5 =>
-      visitor.visitInsn(ICONST_5)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitInsn(ICONST_5)
+      mv.visitInsn(I2L) // Sign extend to long
 
     case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue =>
-      visitor.visitIntInsn(BIPUSH, i.toInt)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitIntInsn(BIPUSH, i.toInt)
+      mv.visitInsn(I2L) // Sign extend to long
 
     case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue =>
-      visitor.visitIntInsn(SIPUSH, i.toInt)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitIntInsn(SIPUSH, i.toInt)
+      mv.visitInsn(I2L) // Sign extend to long
 
     case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue =>
-      visitor.visitLdcInsn(i.toInt)
-      visitor.visitInsn(I2L) // Sign extend to long
+      mv.visitLdcInsn(i.toInt)
+      mv.visitInsn(I2L) // Sign extend to long
 
-    case _ => visitor.visitLdcInsn(i)
+    case _ => mv.visitLdcInsn(i)
   }
 
   /*
