@@ -674,4 +674,14 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalCastToVar](result)
   }
 
+  test("IllegalParametersToTestEntryPoint.01") {
+    val input =
+      """
+        |@test
+        |def f(x: Int32): Int32 = x
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalTestParameters](result)
+  }
+
 }

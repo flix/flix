@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
@@ -550,6 +550,31 @@ object SafetyError {
          |An example of a type parameter of kind 'Region':
          |
          |enum MyEnum[r: Region] { ... }
+         |""".stripMargin
+    )
+  }
+
+  case class IllegalTestParameters(loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Test entry point must not have parameters."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Test entry point must not have parameters.
+
+         |${code(loc, "test function with parameters occurs here.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""
+         |A test function must not have parameters.
+         |
+         |If you need to test your code with different values,
+         |you can create a helper function that takes parameters.
+         |Then, you can call the helper function with different
+         |values to perform various tests.
          |""".stripMargin
     )
   }
