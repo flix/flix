@@ -1898,7 +1898,6 @@ object GenExpression {
   }
 
   /*
->>>>>>> refactor5871-2
    * Adding the source of the line for debugging
    */
   private def addSourceLine(visitor: MethodVisitor, loc: SourceLocation): Unit = {
