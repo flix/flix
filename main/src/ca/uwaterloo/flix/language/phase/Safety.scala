@@ -64,7 +64,7 @@ object Safety {
     */
   private def visitDefs(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
     root.defs.flatMap {
-      case (_, defn) => visitDef(defn, root) ::: visitTestEntryPoint(defn, root)
+      case (_, defn) => visitDef(defn, root)
     }.toList
   }
 
@@ -75,7 +75,7 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.impl.exp, renv, root)
+    visitTestEntryPoint(def0, root) ::: visitExp(def0.impl.exp, renv, root)
   }
 
   /**
