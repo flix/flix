@@ -754,6 +754,11 @@ object Symbol {
     */
   final class ModuleSym(val ns: List[String]) extends Symbol {
     /**
+      * Returns `true` if this is the root module.
+      */
+    def isRoot: Boolean = ns.isEmpty
+
+    /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
