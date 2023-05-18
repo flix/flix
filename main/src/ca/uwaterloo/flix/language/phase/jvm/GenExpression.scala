@@ -217,18 +217,12 @@ object GenExpression {
             visitor.visitLabel(andEnd)
 
           case BoolOp.Or =>
-            val orTrueBranch = new Label()
-            val orFalseBranch = new Label()
             val orEnd = new Label()
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitJumpInsn(IFNE, orTrueBranch)
+            visitor.visitInsn(DUP)
+            visitor.visitJumpInsn(IFNE, orEnd)
+            visitor.visitInsn(POP)
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-            visitor.visitJumpInsn(IFEQ, orFalseBranch)
-            visitor.visitLabel(orTrueBranch)
-            visitor.visitInsn(ICONST_1)
-            visitor.visitJumpInsn(GOTO, orEnd)
-            visitor.visitLabel(orFalseBranch)
-            visitor.visitInsn(ICONST_0)
             visitor.visitLabel(orEnd)
 
           case Float32Op.Exp =>
