@@ -59,13 +59,13 @@ object GenClosureClasses {
     * public Clo$mkAdder() { }
     *
     * public Clo2$Int32$Int32$Int32 getUniqueThreadClosure() {
-    *   Clo$mkAdder res = new Clo$mkAdder();
-    *   res.clo0 = this.clo0;
-    *   return res;
+    * Clo$mkAdder res = new Clo$mkAdder();
+    * res.clo0 = this.clo0;
+    * return res;
     *
     * public Cont$Int32 invoke() {
-    *   this.res = this.x + this.arg0;
-    *   return null;
+    * this.res = this.x + this.arg0;
+    * return null;
     * }
     */
   private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
@@ -161,7 +161,8 @@ object GenClosureClasses {
     }
 
     // Generating the expression
-    GenExpression.compileStmt(defn.stmt, invokeMethod, classType, Map(), enterLabel)
+    val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
+    GenExpression.compileStmt(defn.stmt)(invokeMethod, ctx, root, flix)
 
     // Loading `this`
     invokeMethod.visitVarInsn(ALOAD, 0)
