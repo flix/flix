@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, Denotation, Stratification}
-import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -81,9 +80,10 @@ object Typer {
         case sym: Symbol.TypeAliasSym => sym.namespace
         case sym: Symbol.EffectSym => sym.namespace
       }.flatMap {
-        fullNs => fullNs.inits.collect {
-          case ns@(_ :: _) => new Symbol.ModuleSym(ns)
-        }
+        fullNs =>
+          fullNs.inits.collect {
+            case ns@(_ :: _) => new Symbol.ModuleSym(ns)
+          }
       }.toSet
       val syms = syms0 ++ namespaces
 
@@ -848,7 +848,7 @@ object Typer {
             resultPur = Type.mkUnion(pur1, pur2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Add | SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
+        case SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
              | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -1492,7 +1492,7 @@ object Typer {
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
-//        val expected = Type.mkDifference(Type.freshVar(Kind.Bool, loc), effType, loc)
+        //        val expected = Type.mkDifference(Type.freshVar(Kind.Bool, loc), effType, loc)
         // TODO EFF-MIGRATION use expected
         for {
           (tconstrs, tpe, pur) <- visitExp(exp)

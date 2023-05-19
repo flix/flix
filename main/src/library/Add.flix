@@ -53,7 +53,9 @@ instance Add[Int64] {
 }
 
 instance Add[BigInt] {
-    pub def add(x: BigInt, y: BigInt): BigInt = $BIGINT_ADD$(x, y)
+    pub def add(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.add(BigInt): BigInt \ {};
+        x `add` y
 }
 
 instance Add[String] {
