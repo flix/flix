@@ -107,7 +107,7 @@ object DocAstFormatter {
         }
         group(
           text("branch") +: curlyOpen(branchHead) +:
-            text("with") +: curlyOpen(semiSepOpt(delimitedBranches))
+            text("labels") +: curlyOpen(semiSepOpt(delimitedBranches))
         )
       case Dot(d1, d2) =>
         aux(d1) :: text(".") :: aux(d2)
