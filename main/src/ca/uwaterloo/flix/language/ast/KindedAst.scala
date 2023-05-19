@@ -68,8 +68,6 @@ object KindedAst {
 
   object Expression {
 
-    case class Wild(tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
-
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends KindedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression

@@ -580,9 +580,6 @@ object Namer {
   // TODO NS-REFACTOR can remove ns0 too?
   private def visitExp(exp0: WeededAst.Expression, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
 
-    case WeededAst.Expression.Wild(loc) =>
-      NamedAst.Expression.Wild(loc).toSuccess
-
     case WeededAst.Expression.Ambiguous(name, loc) =>
       NamedAst.Expression.Ambiguous(name, loc).toSuccess
 

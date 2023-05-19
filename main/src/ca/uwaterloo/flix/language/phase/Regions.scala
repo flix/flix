@@ -51,8 +51,6 @@ object Regions {
   private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = exp0 match {
     case Expression.Cst(_, _, _) => Nil
 
-    case Expression.Wild(_, _) => Nil
-
     case Expression.Var(_, tpe, loc) => checkType(tpe, loc)
 
     case Expression.Def(_, _, _) => Nil

@@ -283,8 +283,6 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Iterator[SemanticToken] = exp0 match {
-    case Expression.Wild(_, _) => Iterator.empty
-
     case Expression.Var(sym, tpe, loc) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, loc)

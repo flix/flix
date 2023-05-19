@@ -125,9 +125,6 @@ object EarlyTreeShaker {
     case Expression.Cst(_, _, _) =>
       Set.empty
 
-    case Expression.Wild(_, _) =>
-      Set.empty
-
     case Expression.Var(_, _, _) =>
       Set.empty
 
