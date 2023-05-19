@@ -65,8 +65,8 @@ object SimplifiedAstPrinter {
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
-    case Let(sym, exp1, exp2, tpe, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(tpe)), print(exp1), print(exp2))
-    case LetRec(sym, exp1, exp2, tpe, _, _) => DocAst.Expression.LetRec(printVarSym(sym), Some(TypePrinter.print(tpe)), print(exp1), print(exp2))
+    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LetRec(sym, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Region(_, _) => DocAst.Expression.Region
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case ScopeExit(exp1, exp2, _, _, _) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
