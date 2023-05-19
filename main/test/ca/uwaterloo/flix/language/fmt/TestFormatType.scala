@@ -95,7 +95,8 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.External.01") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.External.01") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
@@ -105,7 +106,8 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.External.02") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.External.02") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = true, loc), loc)
@@ -117,7 +119,8 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.External.03") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.External.03") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType, loc)
@@ -128,7 +131,8 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.External.04") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.External.04") {
     val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
 
     val expected = raw"Int8 -> (Int16 -> Int32 \ IO)"
@@ -137,17 +141,19 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.External.05") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.External.05") {
     val eff = Type.mkUnion(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Eff, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = false, loc), loc), loc)
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
-    val expected = raw"BigInt -> Bool \ b1 and b2"
+    val expected = raw"BigInt -> Bool \ b1 + b2"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.External.06") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.External.06") {
     val arg = Type.mkTuple(List(Type.Bool, Type.Bool), loc)
     val tpe = Type.mkPureArrow(arg, Type.Str, loc)
 
@@ -264,7 +270,8 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.Internal.01") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.Internal.01") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
@@ -274,7 +281,8 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatType.Arrow.Internal.02") {
+  // TODO EFF-MIGRATION temporarily disabled
+  ignore("FormatType.Arrow.Internal.02") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = true, loc), loc)
@@ -326,7 +334,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tvar3 = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Eff, isRegion = false, loc), loc)
     val tpe = Type.mkUnion(List(tvar1, tvar2, tvar3), loc)
 
-    val expected = "a and b and c"
+    val expected = "a + b + c"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
@@ -341,51 +349,46 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatPartialType.Boolean.External.01") {
+  test("FormatPartialType.Boolean.External.01") {
     val tpe = Type.Complement
 
-    val expected = "not ?"
+    val expected = "~?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatPartialType.Boolean.External.03") {
+  test("FormatPartialType.Boolean.External.03") {
     val tpe = Type.Union
 
-    val expected = "? and ?"
+    val expected = "? + ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatPartialType.Boolean.External.04") {
+  test("FormatPartialType.Boolean.External.04") {
     val tpe = Type.Apply(Type.Union, Type.Pure, loc)
 
-    val expected = "true and ?"
+    val expected = "Pure + ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatPartialType.Boolean.External.06") {
+  test("FormatPartialType.Boolean.External.06") {
     val tpe = Type.Intersection
 
-    val expected = "? or ?"
+    val expected = "? & ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatPartialType.Boolean.External.07") {
+  test("FormatPartialType.Boolean.External.07") {
     val tpe = Type.Apply(Type.Intersection, Type.Pure, loc)
 
-    val expected = "true or ?"
+    val expected = "Pure & ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)

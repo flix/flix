@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
-import ca.uwaterloo.flix.language.ast.{ErasedAst, MonoTypedAst, LiftedAst, SourceLocation}
-import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, MonoTypedAstPrinter, LiftedAstPrinter}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, LiftedAst, MonoTypedAst, ReducedAst, SimplifiedAst, SourceLocation}
+import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, LiftedAstPrinter, MonoTypedAstPrinter, ReducedAstPrinter, SimplifiedAstPrinter}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
@@ -31,7 +31,11 @@ object AstPrinter {
     */
   def printAsts()(implicit flix: Flix): Unit = {
     val asts = flix.options.xprintphase
-    if (asts.nonEmpty) {
+    if (asts.isEmpty)
+      ()
+    else if (asts.contains("all") || asts.contains("All"))
+      printAllAsts()
+    else {
       if (asts.contains("Parser")) () // wip
       if (asts.contains("Weeder")) () // wip
       if (asts.contains("Kinder")) () // wip
@@ -41,14 +45,14 @@ object AstPrinter {
       if (asts.contains("Lowering")) () // wip
       if (asts.contains("EarlyTreeShaker")) () // wip
       if (asts.contains("Monomorph")) () // wip
-      if (asts.contains("Simplifier")) () // wip
-      if (asts.contains("ClosureConv")) () // wip
+      if (asts.contains("Simplifier")) writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
+      if (asts.contains("ClosureConv")) writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
       if (asts.contains("LambdaLift")) writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
       if (asts.contains("Tailrec")) writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
       if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
       if (asts.contains("LateTreeShaker")) writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
-      if (asts.contains("Reducer")) () // wip
-      if (asts.contains("VarNumbering")) () // wip
+      if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
+      if (asts.contains("VarNumbering")) writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
       if (asts.contains("MonoTyper")) writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
       if (asts.contains("Eraser")) writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
     }
@@ -67,14 +71,14 @@ object AstPrinter {
     // Lowering wip
     // EarlyTreeShaker wip
     // Monomorph wip
-    // Simplifier wip
-    // ClosureConv wip
+    writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
+    writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
     writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
     writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
     writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
     writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
-    // Reducer wip
-    // VarNumbering wip
+    writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
+    writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
     writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
     writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
   }
@@ -82,8 +86,22 @@ object AstPrinter {
   /**
     * Formats `root` for display.
     */
+  def formatSimplifiedAst(root: SimplifiedAst.Root): String = {
+    formatDocProgram(SimplifiedAstPrinter.print(root))
+  }
+
+  /**
+    * Formats `root` for display.
+    */
   def formatLiftedAst(root: LiftedAst.Root): String = {
     formatDocProgram(LiftedAstPrinter.print(root))
+  }
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatReducedAst(root: ReducedAst.Root): String = {
+    formatDocProgram(ReducedAstPrinter.print(root))
   }
 
   /**

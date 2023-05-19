@@ -2326,17 +2326,17 @@ object Resolver {
 
       case NamedAst.Type.Not(tpe, loc) =>
         mapN(visit(tpe)) {
-          case t => mkComplement(t, loc)
+          case t => mkNot(t, loc)
         }
 
       case NamedAst.Type.And(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkUnion(t1, t2, loc)
+          case (t1, t2) => mkAnd(t1, t2, loc)
         }
 
       case NamedAst.Type.Or(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
-          case (t1, t2) => mkIntersection(t1, t2, loc)
+          case (t1, t2) => mkOr(t1, t2, loc)
         }
 
       case NamedAst.Type.Complement(tpe, loc) =>
@@ -3288,6 +3288,12 @@ object Resolver {
         case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
+
+        case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
 
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure

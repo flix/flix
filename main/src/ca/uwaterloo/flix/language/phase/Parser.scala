@@ -418,9 +418,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = {
 
-    // First tries to parse the type as an effect set, so that {} is interpreted as a set rather than a record
+    def EmptyEffectSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
+    }
+
+    // First tries to parse the type as an empty effect set, so that {} is interpreted as a set rather than a record
     def EffectFirstType: Rule1[ParsedAst.Type] = rule {
-      Types.EffectSet | Type
+      EmptyEffectSet | Type
     }
 
     rule {
@@ -1457,7 +1461,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Intersection: Rule1[ParsedAst.Type] = rule {
-      Ascribe ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+      Or ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+    }
+
+    def Or: Rule1[ParsedAst.Type] = rule {
+      And ~ zeroOrMore(WS ~ atomic("or") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Or)
+    }
+
+    def And: Rule1[ParsedAst.Type] = rule {
+      Ascribe ~ zeroOrMore(WS ~ atomic("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
     }
 
     def Ascribe: Rule1[ParsedAst.Type] = rule {

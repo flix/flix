@@ -770,7 +770,6 @@ object Weeder {
 
           case ("BIGINT_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigIntOp.Neg, e1, loc).toSuccess
           case ("BIGINT_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigIntOp.Not, e1, loc).toSuccess
-          case ("BIGINT_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Add, e1, e2, loc).toSuccess
           case ("BIGINT_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Sub, e1, e2, loc).toSuccess
           case ("BIGINT_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Mul, e1, e2, loc).toSuccess
           case ("BIGINT_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Div, e1, e2, loc).toSuccess
@@ -1147,13 +1146,28 @@ object Weeder {
         case err: WeederError => WeededAst.Expression.Error(err)
       }
 
-    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, _, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
 
-      mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
-        case (fp, e1, e2) =>
-          val lambda = mkCurried(fp, e1, e1.loc)
+      val tpeOpt = tpeAndEff.map(_._1)
+      val effOpt = tpeAndEff.flatMap(_._2)
+
+      val fpVal = visitFormalParams(fparams, Presence.Optional)
+      val e1Val = visitExp(exp1, senv)
+      val e2Val = visitExp(exp2, senv)
+      val tpeVal = traverseOpt(tpeOpt)(visitType)
+      val effVal = traverseOpt(effOpt)(visitType)
+
+      mapN(fpVal, e1Val, e2Val, tpeVal, effVal) {
+        case (fp, e1, e2, tpe, eff) =>
+          // skip ascription if it's empty
+          val ascription = if (tpe.isDefined || eff.isDefined) {
+            WeededAst.Expression.Ascribe(e1, tpe, eff, e1.loc)
+          } else {
+            e1
+          }
+          val lambda = mkCurried(fp, ascription, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }.recoverOne {
         case err: WeederError => WeededAst.Expression.Error(err)
@@ -2704,6 +2718,28 @@ object Weeder {
     case ParsedAst.Type.False(sp1, sp2) =>
       WeededAst.Type.False(mkSL(sp1, sp2)).toSuccess
 
+    case ParsedAst.Type.Not(sp1, tpe, sp2) =>
+      val tVal = visitType(tpe)
+      mapN(tVal) {
+        case t => WeededAst.Type.Not(t, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Type.And(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val t1Val = visitType(tpe1)
+      val t2Val = visitType(tpe2)
+      mapN(t1Val, t2Val) {
+        case (t1, t2) => WeededAst.Type.And(t1, t2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Type.Or(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val t1Val = visitType(tpe1)
+      val t2Val = visitType(tpe2)
+      mapN(t1Val, t2Val) {
+        case (t1, t2) => WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Type.Complement(sp1, tpe, sp2) =>
       val tVal = visitType(tpe)
       mapN(tVal) {
@@ -2742,7 +2778,7 @@ object Weeder {
       mapN(checkVal, tpesVal) {
         case ((), tpes) =>
           val purOpt = tpes.reduceLeftOption({
-            case (acc, tpe) => WeededAst.Type.And(acc, tpe, loc)
+            case (acc, tpe) => WeededAst.Type.Union(acc, tpe, loc)
           }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
           purOpt.getOrElse(WeededAst.Type.True(loc))
       }
@@ -2808,6 +2844,8 @@ object Weeder {
   private def checkEffectSetMember(t: ParsedAst.Type): Validation[Unit, WeederError] = t match {
     case _: ParsedAst.Type.Var => ().toSuccess
     case _: ParsedAst.Type.Ambiguous => ().toSuccess
+    case _: ParsedAst.Type.True => ().toSuccess
+    case _: ParsedAst.Type.False => ().toSuccess
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
@@ -3361,6 +3399,9 @@ object Weeder {
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.True(sp1, _) => sp1
     case ParsedAst.Type.False(sp1, _) => sp1
+    case ParsedAst.Type.Not(sp1, _, _) => sp1
+    case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Complement(sp1, _, _) => sp1
     case ParsedAst.Type.Difference(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)

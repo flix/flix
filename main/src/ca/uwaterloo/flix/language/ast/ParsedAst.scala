@@ -1543,6 +1543,32 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * A type representing a logical conjunction.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a logical disjunction.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a logical negation.
+      *
+      * @param tpe the complemented type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * A type representing a case set.
       *
       * @param sp1   the position of the first character in the type.

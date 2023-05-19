@@ -26,6 +26,31 @@ mod String {
         charAt(s, i)
 
     ///
+    /// Optionally return the character at position `i` in the string `s`.
+    ///
+    pub def nth(i: Int32, s: String): Option[Char] =
+        if (0 <= i and i < length(s))
+            Some(charAt(i, s))
+        else
+            None
+
+    ///
+    /// Returns the code point at position `i` in the string `s`.
+    ///
+    pub def codePointAt(i: Int32, s: String): Int32 =
+        import java.lang.String.codePointAt(Int32): Int32 \ {};
+        codePointAt(s, i)
+
+    ///
+    /// Optionally returns the code point at position `i` in the string `s`.
+    ///
+    pub def nthCodePoint(i: Int32, s: String): Option[Int32] =
+        if (0 <= i and i < length(s))
+            Some(codePointAt(i, s))
+        else
+            None
+
+    ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
