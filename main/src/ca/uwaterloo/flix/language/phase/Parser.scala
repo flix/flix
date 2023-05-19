@@ -418,9 +418,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = {
 
-    // First tries to parse the type as an effect set, so that {} is interpreted as a set rather than a record
+    def EmptyEffectSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
+    }
+
+    // First tries to parse the type as an empty effect set, so that {} is interpreted as a set rather than a record
     def EffectFirstType: Rule1[ParsedAst.Type] = rule {
-      Types.EffectSet | Type
+      EmptyEffectSet | Type
     }
 
     rule {

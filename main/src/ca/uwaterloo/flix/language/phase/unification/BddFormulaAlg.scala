@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
@@ -115,7 +115,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   override def satisfiable(f: DD): Boolean = !f.isFalse
 
-  override def toType(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  override def toType(f: DD, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if(!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
@@ -130,15 +130,16 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     * if it is true returns the path, otherwise returns false.
     * ORs all returned paths together.
     */
-  private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if (dd.isLeaf) {
       return if (dd.isTrue) tpe else Type.All
     }
 
     val currentVar = dd.getVariable
     val typeVar = env.getBackward(currentVar) match {
-      case Some(sym) => Type.Var(sym, sym.loc)
-      case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", tpe.loc)
+      case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+      case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", SourceLocation.Unknown)
     }
 
     val lowType = Type.mkApply(Type.Union, List(tpe, Type.Apply(Type.Complement, typeVar, typeVar.loc)), typeVar.loc)
@@ -157,7 +158,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
   /**
     * Converting a BDD to a Type using the Quine-McCluskey algorithm
     */
-  private def toTypeQMC(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  private def toTypeQMC(f: DD, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     //Easy shortcuts if formula is true, false or a variable
     if (f.isLeaf) {
       if (f.isTrue) {
@@ -168,8 +169,12 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     }
     if (isVar(f)) {
       val id = f.getVariable
-      val typeVar = env.getBackward(id).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown))
-      return Type.Var(typeVar, typeVar.loc)
+      val tpe = env.getBackward(id) match {
+        case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+        case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
+      }
+      return tpe
     }
 
     //Otherwise find the cover and convert it to a Type

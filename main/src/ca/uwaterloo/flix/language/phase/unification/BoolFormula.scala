@@ -128,6 +128,10 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
+    case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(VarOrEff.Eff(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
+      case Some(x) => Var(x)
+    }
     case Type.Empty => True
     case Type.All => False
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromBoolType(tpe1, m))
@@ -157,7 +161,7 @@ object BoolFormula {
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
+      case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
     }
     case Not(f1) => Type.mkComplement(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkUnion(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)

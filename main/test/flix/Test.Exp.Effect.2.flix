@@ -1,54 +1,53 @@
 // TODO rename file and consolidate with Test.Exp.Effect.flix
-// TODO EFF-MIGRATION re-enable after migration
-//mod Test.Exp.Effect {
-//    use Test.Exp.Effect.Ding.ding
-//    use Test.Exp.Effect.Print.print
-//    use Test.Exp.Effect.Print.println
-//    use Test.Exp.Effect.Throw.throw
-//
-//    eff Print {
-//        pub def println(): Unit
-//        pub def print(s: String): Unit
-//    }
-//
-//    eff Throw {
-//        pub def throw(): Unit
-//    }
-//
+mod Test.Exp.Effect {
+    use Test.Exp.Effect.Print.print
+    use Test.Exp.Effect.Print.println
+    use Test.Exp.Effect.Throw.throw
+
+    eff Print {
+        pub def println(): Unit
+        pub def print(s: String): Unit
+    }
+
+    eff Throw {
+        pub def throw(): Unit
+    }
+
+// TODO EFF-MIGRATION temporarily disabled
 //    eff Ding {
 //        pub def ding(): Unit
 //    }
-//
-//    @test
-//    def testInferEffect01(): Unit \ Print = {
-//        do Print.println()
-//    }
-//
-//    @test
-//    def testInferEffect02(): Unit \ Print = {
-//        do Print.print("hello");
-//        do Print.println()
-//    }
-//
-//    @test
-//    def testInferEffect03(): Unit \ {Print, Throw} = {
-//        do Print.println();
-//        do Throw.throw()
-//    }
-//
-//    @test
-//    def testInferEffect04(): Unit \ {Print, Throw} = {
-//        do Throw.throw();
-//        do Print.print("hello")
-//    }
-//
-//// TODO EFF-MIGRATION re-enable after migration
-//    @test
-//    def testInferEffect05(): Unit \ {Print, Throw} = {
-//        do Throw.throw() without Print;
-//        do Print.println() without Throw
-//    }
-//
+
+    @test
+    def testInferEffect01(): Unit \ Print = {
+        do Print.println()
+    }
+
+    @test
+    def testInferEffect02(): Unit \ Print = {
+        do Print.print("hello");
+        do Print.println()
+    }
+
+    @test
+    def testInferEffect03(): Unit \ {Print, Throw} = {
+        do Print.println();
+        do Throw.throw()
+    }
+
+    @test
+    def testInferEffect04(): Unit \ {Print, Throw} = {
+        do Throw.throw();
+        do Print.print("hello")
+    }
+
+    @test
+    def testInferEffect05(): Unit \ {Print, Throw} = {
+        do Throw.throw() without Print;
+        do Print.println() without Throw
+    }
+
+// TODO EFF-MIGRATION temporarily disabled
 //    @test
 //    def testWithout01(): Unit = {
 //        () without Print
@@ -99,11 +98,11 @@
 //        yesPrintNoThrow(_ -> { do Print.println(); do ding() })
 //    }
 //
-//    def noPrint(f: Unit -> Unit \ {ef - Print}): Unit \ {ef - Print} = {
+//    def noPrint(f: Unit -> Unit \ ef - Print): Unit \ ef - Print = {
 //        f() without Print
 //    }
 //
-//    def noPrintNoThrow(f: Unit -> Unit \ {ef - Print - Throw}): Unit \ {ef - Print - Throw} = {
+//    def noPrintNoThrow(f: Unit -> Unit \ ef - {Print, Throw}): Unit \ ef - {Print, Throw} = {
 //        f() without {Print, Throw}
 //    }
 //
@@ -115,19 +114,20 @@
 //        f()
 //    }
 //
-//    def yesPrintNoThrow(f: Unit -> Unit \ {(ef + Print) - Throw}): Unit \ {(ef + Print) - Throw} = {
+//    def yesPrintNoThrow(f: Unit -> Unit \ {ef, Print} - Throw): Unit \ {ef, Print} - Throw = {
 //        f() without Throw
 //    }
-//
-//    // @test
-//    pub def compose(f: a -> a \ ef, g: a -> a \ ef): (a -> a \ ef) = x -> f(g(x))
-//
-//    // @test
-//    pub def compose3(f: a -> b \ ef, g: b -> a \ ef): (a -> a \ ef) = x -> g(f(x))
-//
-//    // @test
-//    pub def doBoth(f: Unit -> Unit \ ef, g: Unit -> Unit \ ef): Unit \ ef = f(); g()
-//
-//    // @test
-//    pub def doBoth2(f: Unit -> Unit \ {ef - Print}, g: Unit -> Unit \ {ef - Throw}): Unit \ ef = f(); g()
-//}
+
+    // @test
+    pub def compose(f: a -> a \ ef, g: a -> a \ ef): (a -> a \ ef) = x -> f(g(x))
+
+    // @test
+    pub def compose3(f: a -> b \ ef, g: b -> a \ ef): (a -> a \ ef) = x -> g(f(x))
+
+    // @test
+    pub def doBoth(f: Unit -> Unit \ ef, g: Unit -> Unit \ ef): Unit \ ef = f(); g()
+
+    // @test
+// TODO EFF-MIGRATION temporarily disabled
+//    pub def doBoth2(f: Unit -> Unit \ ef - Print, g: Unit -> Unit \ ef - Throw): Unit \ ef = f(); g()
+}
