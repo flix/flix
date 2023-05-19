@@ -1209,11 +1209,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
   ignore("Test.EffectGeneralizationError.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 \ (ef1 and ef2) = 123
+        |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 \ {ef1, ef2} = 123
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1487,8 +1486,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnexpectedArgument](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.UnexpectedArgument.03") {
+  test("Test.UnexpectedArgument.03") {
     val input =
       """
         |eff E {

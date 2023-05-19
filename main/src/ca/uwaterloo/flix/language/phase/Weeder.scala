@@ -2844,6 +2844,8 @@ object Weeder {
   private def checkEffectSetMember(t: ParsedAst.Type): Validation[Unit, WeederError] = t match {
     case _: ParsedAst.Type.Var => ().toSuccess
     case _: ParsedAst.Type.Ambiguous => ().toSuccess
+    case _: ParsedAst.Type.True => ().toSuccess
+    case _: ParsedAst.Type.False => ().toSuccess
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
