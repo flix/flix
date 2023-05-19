@@ -584,15 +584,15 @@ object SafetyError {
          |
          |Example
          |
-         |@test
-         |def test01(x: Int32): Int32 = x + 1
+         |    @test
+         |    def test01(x: Int32): Int32 = x + 1
          |
          |Should be
          |
-         |@test
-         |def test01(): Int32 = testHelper(1)
+         |    @test
+         |    def test01(): Int32 = testHelper(1)
          |
-         |def testHelper(x: Int32): Int32 = x + 1
+         |    def testHelper(x: Int32): Int32 = x + 1
          |
          |""".stripMargin
     )
