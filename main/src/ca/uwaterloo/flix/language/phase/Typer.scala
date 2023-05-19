@@ -1581,7 +1581,7 @@ object Typer {
             (tconstrss, _, purs) <- seqM(argM).map(_.unzip3)
             resultTconstrs = tconstrss.flatten
             resultTpe = operation.spec.tpe
-            resultPur = Type.mkUnion(operation.spec.pur :: purs, loc)
+            resultPur = Type.mkUnion(effTpe :: operation.spec.pur :: purs, loc)
           } yield (resultTconstrs, resultTpe, resultPur)
         }
 
@@ -2302,7 +2302,8 @@ object Typer {
 
       case KindedAst.Expression.Do(op, exps, loc) =>
         val es = exps.map(visitExp(_, subst0))
-        val pur = Type.mkUnion(es.map(_.pur), loc)
+        val eff = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.loc.asSynthetic)
+        val pur = Type.mkUnion(eff :: es.map(_.pur), loc)
         TypedAst.Expression.Do(op, es, pur, loc)
 
       case KindedAst.Expression.Resume(exp, _, retTvar, loc) =>
