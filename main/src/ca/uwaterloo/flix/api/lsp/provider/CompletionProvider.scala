@@ -169,7 +169,7 @@ object CompletionProvider {
       // Types.
       //
       case SyntacticContext.Type.Eff => EffSymCompleter.getCompletions(context)
-      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context)
+      case SyntacticContext.Type.OtherType => TypeCompleter.getCompletions(context) ++ EffSymCompleter.getCompletions(context)
 
       //
       // Patterns.
