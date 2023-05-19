@@ -74,7 +74,7 @@ object Parser {
         val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
-        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e, new ErrorFormatter(showTraces = true)), mostLikelyContext, loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown).toFailure
     }
@@ -418,9 +418,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = {
 
-    // First tries to parse the type as an effect set, so that {} is interpreted as a set rather than a record
+    def EmptyEffectSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
+    }
+
+    // First tries to parse the type as an empty effect set, so that {} is interpreted as a set rather than a record
     def EffectFirstType: Rule1[ParsedAst.Type] = rule {
-      Types.EffectSet | Type
+      EmptyEffectSet | Type
     }
 
     rule {
