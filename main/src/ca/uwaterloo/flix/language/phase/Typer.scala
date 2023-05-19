@@ -538,9 +538,6 @@ object Typer {
       */
     def visitExp(e0: KindedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
-      case KindedAst.Expression.Wild(tvar, _) =>
-        liftM(List.empty, tvar, Type.Pure)
-
       case KindedAst.Expression.Var(sym, loc) =>
         liftM(List.empty, sym.tvar, Type.Pure)
 
@@ -1958,9 +1955,6 @@ object Typer {
       * Applies the given substitution `subst0` to the given expression `exp0`.
       */
     def visitExp(exp0: KindedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
-
-      case KindedAst.Expression.Wild(tvar, loc) =>
-        TypedAst.Expression.Wild(subst0(tvar), loc)
 
       case KindedAst.Expression.Var(sym, loc) =>
         TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)

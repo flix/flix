@@ -78,10 +78,6 @@ object LoweredAst {
       def pur: Type = Type.Pure
     }
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def pur: Type = Type.Pure
-    }
-
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = Type.Pure
     }

@@ -187,9 +187,6 @@ object Indexer {
     case Expression.Cst(_, _, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expression.Wild(_, _) =>
-      Index.occurrenceOf(exp0)
-
     case Expression.Var(sym, _, loc) =>
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)

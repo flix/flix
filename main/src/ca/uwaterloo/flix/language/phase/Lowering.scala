@@ -345,10 +345,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Cst(cst, t, loc)
 
-    case TypedAst.Expression.Wild(tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expression.Wild(t, loc)
-
     case TypedAst.Expression.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expression.Var(sym, t, loc)
@@ -1907,8 +1903,6 @@ object Lowering {
     */
   private def substExp(exp0: LoweredAst.Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Expression = exp0 match {
     case LoweredAst.Expression.Cst(_, _, _) => exp0
-
-    case LoweredAst.Expression.Wild(_, _) => exp0
 
     case LoweredAst.Expression.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)

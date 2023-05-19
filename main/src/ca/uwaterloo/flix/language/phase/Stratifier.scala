@@ -98,8 +98,6 @@ object Stratifier {
   private def visitExp(exp0: Expression)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Cst(_, _, _) => exp0.toSuccess
 
-    case Expression.Wild(_, _) => exp0.toSuccess
-
     case Expression.Var(_, _, _) => exp0.toSuccess
 
     case Expression.Def(_, _, _) => exp0.toSuccess
@@ -553,8 +551,6 @@ object Stratifier {
     */
   private def labelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
     case Expression.Cst(_, _, _) => LabelledGraph.empty
-
-    case Expression.Wild(_, _) => LabelledGraph.empty
 
     case Expression.Var(_, _, _) => LabelledGraph.empty
 

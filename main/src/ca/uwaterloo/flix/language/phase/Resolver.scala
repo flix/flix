@@ -944,9 +944,6 @@ object Resolver {
         */
       def visitExp(e0: NamedAst.Expression, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
 
-        case NamedAst.Expression.Wild(loc) =>
-          ResolvedAst.Expression.Wild(loc).toSuccess
-
         case NamedAst.Expression.Ambiguous(name, loc) =>
           mapN(lookupTerm(name, env0, ns0, root)) {
             case ResolvedTerm.Def(defn) => visitDef(defn, loc)

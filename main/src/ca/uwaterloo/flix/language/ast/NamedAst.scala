@@ -87,8 +87,6 @@ object NamedAst {
 
   object Expression {
 
-    case class Wild(loc: SourceLocation) extends NamedAst.Expression
-
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Open(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression

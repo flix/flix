@@ -82,8 +82,6 @@ object ResolvedAst {
 
   object Expression {
 
-    case class Wild(loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, loc: SourceLocation) extends ResolvedAst.Expression
