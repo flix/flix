@@ -581,6 +581,19 @@ object SafetyError {
          |you can create a helper function that takes parameters.
          |Then, you can call the helper function with different
          |values to perform various tests.
+         |
+         |Example
+         |
+         |@test
+         |def test01(x: Int32): Int32 = x + 1
+         |
+         |Should be
+         |
+         |@test
+         |def test01(): Int32 = testHelper(1)
+         |
+         |def testHelper(x: Int32): Int32 = x + 1
+         |
          |""".stripMargin
     )
   }
