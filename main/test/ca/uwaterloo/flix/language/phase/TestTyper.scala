@@ -1209,7 +1209,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
-  ignore("Test.EffectGeneralizationError.02") {
+  test("Test.EffectGeneralizationError.02") {
     val input =
       """
         |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 \ {ef1, ef2} = 123
