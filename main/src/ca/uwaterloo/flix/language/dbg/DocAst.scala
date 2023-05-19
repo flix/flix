@@ -81,6 +81,10 @@ object DocAst {
 
     case class Branch(d: Expression, branches: Map[Symbol.LabelSym, Expression]) extends Atom
 
+    case class Match(d: Expression, branches: List[(Expression, Option[Expression], Expression)]) extends Atom
+
+    case class TypeMatch(d: Expression, branches: List[(Expression, Type, Expression)]) extends Atom
+
     /** e.g. `r.x` */
     case class Dot(d1: Expression, d2: Expression) extends Atom
 
@@ -88,6 +92,8 @@ object DocAst {
     case class DoubleDot(d1: Expression, d2: Expression) extends Atom
 
     case class TryCatch(d: Expression, rules: List[(Symbol.VarSym, Class[_], Expression)]) extends Atom
+
+    case class Stm(d1: Expression, d2: Expression) extends LetBinder
 
     case class Let(v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
 
@@ -115,9 +121,15 @@ object DocAst {
     def Var(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString)
 
+    val Wild: Expression =
+      AsIs("_")
+
     /** e.g. `x_2` */
     def VarWithOffset(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString + "_" + sym.getStackOffset.toString)
+
+    def Hole(sym: Symbol.HoleSym): Expression =
+      AsIs("?" + sym.toString)
 
     def HoleError(sym: Symbol.HoleSym): Expression =
       AsIs(sym.toString)
@@ -145,7 +157,13 @@ object DocAst {
     def Deref(d: Expression): Expression =
       Keyword("deref", d)
 
+    def Discard(d: Expression): Expression =
+      Keyword("discard", d)
+
     def Def(sym: Symbol.DefnSym): Expression =
+      AsIs(sym.toString)
+
+    def Sig(sym: Symbol.SigSym): Expression =
       AsIs(sym.toString)
 
     def ArrayNew(d1: Expression, d2: Expression): Expression =
@@ -246,6 +264,12 @@ object DocAst {
 
     def Regex(p: java.util.regex.Pattern): Expression =
       App(AsIs("Regex"), List(AsIs(s""""${p.toString}"""")))
+
+    val Absent: Expression =
+      AsIs("Absent")
+
+    def Present(d: Expression): Expression =
+      App(AsIs("Present"), List(d))
 
   }
 

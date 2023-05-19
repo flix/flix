@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.dbg.Doc._
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
 import ca.uwaterloo.flix.language.dbg.DocAst._
+import ca.uwaterloo.flix.language.dbg.printer.TypePrinter
 
 import scala.annotation.tailrec
 
@@ -109,10 +110,41 @@ object DocAstFormatter {
           text("branch") +: curlyOpen(branchHead) +:
             text("labels") +: curlyOpen(semiSepOpt(delimitedBranches))
         )
+      case Match(d, branches) =>
+        val scrutineeF = aux(d, paren = false)
+        val branchesF = branches.map { case (pat, guard, body) =>
+          val patF = aux(pat, paren = false)
+          val guardF = guard match {
+            case None => Doc.empty
+            case Some(g) => text("if") +: aux(g, paren = false, inBlock = true) +: Doc.empty
+          }
+          val bodyF = aux(body, paren = false, inBlock = true)
+          text("case") +: patF +: guardF :: text("=>") :: breakIndent(bodyF)
+        }
+        group(
+          text("match") +: scrutineeF +: curlyOpen(
+            sep(breakWith(" "), branchesF)
+          )
+        )
+      case TypeMatch(d, branches) =>
+        val scrutineeF = aux(d, paren = false)
+        val branchesF = branches.map { case (pat, tpe, body) =>
+          val patF = aux(pat, paren = false)
+          val tpeF = formatType(tpe, paren = false)
+          val bodyF = aux(body, paren = false, inBlock = true)
+          text("case") +: patF  +: text(":") +: tpeF :: text("=>") :: breakIndent(bodyF)
+        }
+        group(
+          text("typematch") +: scrutineeF +: curlyOpen(
+            sep(breakWith(" "), branchesF)
+          )
+        )
       case Dot(d1, d2) =>
         aux(d1) :: text(".") :: aux(d2)
       case DoubleDot(d1, d2) =>
         aux(d1) :: text("..") :: aux(d2)
+      case s: Stm =>
+        formatLetBlock(s, inBlock)
       case l: Let =>
         formatLetBlock(l, inBlock)
       case l: LetRec =>
@@ -181,6 +213,8 @@ object DocAstFormatter {
     val (binders, body) = collectLetBinders(d)
     val bodyf = aux(body, paren = false)
     val bindersf = binders.map {
+      case Stm(d1, _) =>
+        aux(d1, paren = false)
       case Let(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
         text("let") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
@@ -218,6 +252,8 @@ object DocAstFormatter {
     @tailrec
     def chase(d0: Expression, acc: List[LetBinder]): (List[LetBinder], Expression) = {
       d0 match {
+        case s@Stm(_, d2) =>
+          chase(d2, s :: acc)
         case l@Let(_, _, _, body) =>
           chase(body, l :: acc)
         case l@LetRec(_, _, _, body) =>
