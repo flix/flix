@@ -30,13 +30,9 @@ object TypePrinter {
     // try to unpack one arrow type only for the sake of signatures
     tpe.baseType match {
       case Type.Cst(TypeConstructor.Arrow(_), _) =>
-        val targs = tpe.typeArguments
-        if (targs.nonEmpty) {
-          val args = targs.dropRight(1)
-          val res = targs.last
-          DocAst.Type.Arrow(args.map(printHelper), printHelper(res))
-        } else
-          printHelper(tpe)
+        val args = tpe.arrowArgTypes
+        val res = tpe.arrowResultType
+        DocAst.Type.Arrow(args.map(printHelper), printHelper(res))
       case _ => printHelper(tpe)
     }
   }
