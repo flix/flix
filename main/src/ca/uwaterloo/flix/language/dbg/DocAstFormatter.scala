@@ -103,10 +103,10 @@ object DocAstFormatter {
         val branchHead = aux(d, paren = false, inBlock = true)
         val delimitedBranches = branches.toList.map { case (sym, dd) =>
           val labelf = aux(dd, paren = false, inBlock = true)
-          text("label") +: text(sym.toString) :: text(":") +: breakIndent(labelf)
+          text(sym.toString) :: text(":") +: breakIndent(labelf)
         }
         group(
-          text("branching") +: curlyOpen(branchHead) +:
+          text("branch") +: curlyOpen(branchHead) +:
             text("with") +: curlyOpen(semiSepOpt(delimitedBranches))
         )
       case Dot(d1, d2) =>
