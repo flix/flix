@@ -323,7 +323,7 @@ class TestFlixPackageManager extends AnyFunSuite {
         case Err(e) => fail(e.message(f))
       }
       FlixPackageManager.installAll(manifests, path, None)(System.out) match {
-        case Ok(l) => println(l) //TODO: remove
+        case Ok(l) =>
           l.exists(p => p.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg")) &&
           l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")) &&
           l.exists(p => p.endsWith(s"flix${s}museum-entrance${s}1.2.0${s}museum-entrance-1.2.0.fpkg")) &&
