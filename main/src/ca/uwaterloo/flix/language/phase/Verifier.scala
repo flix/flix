@@ -37,33 +37,47 @@ object Verifier {
   private def visitExpr(expr: MonoTypedAst.Expr): MonoType = expr match {
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => expect(expected = MonoType.Unit, actual = tpe, loc)
-      case Constant.Null => ???
-      case Constant.Bool(lit) => ???
-      case Constant.Char(lit) => ???
-      case Constant.Float32(lit) => ???
-      case Constant.Float64(lit) => ???
-      case Constant.BigDecimal(lit) => ???
-      case Constant.Int8(lit) => ???
-      case Constant.Int16(lit) => ???
-      case Constant.Int32(lit) => ???
-      case Constant.Int64(lit) => ???
-      case Constant.BigInt(lit) => ???
-      case Constant.Str(lit) => ???
-      case Constant.Regex(lit) => ???
+      case Constant.Null => tpe // TODO
+      case Constant.Bool(_) => expect(expected = MonoType.Bool, actual = tpe, loc)
+      case Constant.Char(_) => expect(expected = MonoType.Char, actual = tpe, loc)
+      case Constant.Float32(_) => expect(expected = MonoType.Float32, actual = tpe, loc)
+      case Constant.Float64(_) => expect(expected = MonoType.Float64, actual = tpe, loc)
+      case Constant.BigDecimal(_) => expect(expected = MonoType.BigDecimal, actual = tpe, loc)
+      case Constant.Int8(_) => expect(expected = MonoType.Int8, actual = tpe, loc)
+      case Constant.Int16(_) => expect(expected = MonoType.Int16, actual = tpe, loc)
+      case Constant.Int32(_) => expect(expected = MonoType.Int32, actual = tpe, loc)
+      case Constant.Int64(_) => expect(expected = MonoType.Int64, actual = tpe, loc)
+      case Constant.BigInt(_) => expect(expected = MonoType.BigInt, actual = tpe, loc)
+      case Constant.Str(_) => expect(expected = MonoType.Bool, actual = tpe, loc)
+      case Constant.Regex(_) => tpe //  TODO
     }
+
     case Expr.Var(sym, tpe, loc) => tpe
+
     case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe
+
     case Expr.ApplyClo(exp, args, ct, tpe, loc) => tpe
+
     case Expr.ApplyDef(sym, args, ct, tpe, loc) => tpe
+
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe
+
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) => tpe
+
     case Expr.Branch(exp, branches, tpe, loc) => tpe
+
     case Expr.JumpTo(sym, tpe, loc) => tpe
+
     case Expr.Let(sym, exp1, exp2, tpe, loc) => tpe
+
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe
+
     case Expr.Scope(sym, exp, tpe, loc) => tpe
+
     case Expr.TryCatch(exp, rules, tpe, loc) => tpe
+
     case Expr.NewObject(name, clazz, tpe, methods, loc) => tpe
+
     case Expr.Spawn(exp1, exp2, tpe, loc) => tpe
   }
 
