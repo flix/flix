@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.{MonoType, MonoTypedAst, SourceLocation}
-import ca.uwaterloo.flix.language.ast.MonoTypedAst.{Def, Expr, Stmt}
+import ca.uwaterloo.flix.language.ast.MonoTypedAst.{Def, Expr, Root, Stmt}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -27,17 +27,17 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   */
 object Verifier {
 
-  def run(root: MonoTypedAst.Root)(implicit flix: Flix): MonoTypedAst.Root = flix.phase("Verifier") {
-    root.defs.values.foreach(visitDef)
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
+    root.defs.values.foreach(d => visitDef(d)(root))
     root
   }
 
-  private def visitDef(decl: Def): Unit = {
+  private def visitDef(decl: Def)(implicit root: Root): Unit = {
     val env = decl.formals.foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
     try {
-      visitStmt(decl.stmt)(env, Map.empty)
+      visitStmt(decl.stmt)(root, env, Map.empty)
     } catch {
       case MismatchedTypes(tpe1, tpe2, loc) =>
         println(s"Mismatched types near ${loc.format}")
@@ -48,7 +48,7 @@ object Verifier {
     }
   }
 
-  private def visitExpr(expr: MonoTypedAst.Expr)(implicit env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
+  private def visitExpr(expr: MonoTypedAst.Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => check(expect = MonoType.Unit, actual = tpe, loc)
@@ -73,27 +73,26 @@ object Verifier {
         check(expect = declaredType, actual = tpe, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, loc) =>
-      // TODO
+    case Expr.ApplyAtomic(op, exps, tpe, loc) => // TODO
       val types = exps.map(visitExpr)
-
       tpe
 
     case Expr.ApplyClo(exp, exps, ct, tpe, loc) =>
       val t = visitExpr(exp)
       val ts = exps.map(visitExpr)
-
-      tpe // TODO
+      check(expect = t, actual = MonoType.Arrow(ts, tpe), loc)
+      tpe
 
     case Expr.ApplyDef(sym, exps, ct, tpe, loc) =>
+      val t = root.defs(sym).tpe
       val ts = exps.map(visitExpr)
+      check(expect = t, actual = MonoType.Arrow(ts, tpe), loc)
+      tpe
 
-      tpe // TODO
-
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => // TODO
       val ts = actuals.map(visitExpr)
 
-      tpe // TODO
+      tpe
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val condType = visitExpr(exp1)
@@ -104,8 +103,12 @@ object Verifier {
       check(expect = tpe, actual = elseType, loc)
 
     case Expr.Branch(exp, branches, tpe, loc) =>
+      val lenv1 = branches.foldLeft(lenv) {
+        case (acc, (label, _)) => acc + (label -> tpe)
+      }
       branches.foreach {
-        case (label, body) => check(expect = tpe, actual = visitExpr(body), loc)
+        case (label, body) =>
+          check(expect = tpe, actual = visitExpr(body)(root, env, lenv1), loc)
       }
       tpe
 
@@ -116,7 +119,7 @@ object Verifier {
 
     case Expr.Let(sym, exp1, exp2, tpe, loc) =>
       val letBoundType = visitExpr(exp1)
-      val bodyType = visitExpr(exp2)(env + (sym -> letBoundType), lenv)
+      val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
       check(expect = bodyType, actual = tpe, loc)
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe // TODO
@@ -133,7 +136,7 @@ object Verifier {
       check(expect = tpe, actual = tpe2, loc)
   }
 
-  private def visitStmt(stmt: MonoTypedAst.Stmt)(implicit env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = stmt match {
+  private def visitStmt(stmt: MonoTypedAst.Stmt)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = stmt match {
     case Stmt.Ret(expr, tpe, loc) =>
       visitExpr(expr)
   }
