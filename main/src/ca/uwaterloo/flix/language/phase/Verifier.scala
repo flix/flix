@@ -78,20 +78,21 @@ object Verifier {
       tpe
 
     case Expr.ApplyClo(exp, exps, ct, tpe, loc) =>
-      val t = visitExpr(exp)
-      val ts = exps.map(visitExpr)
-      check(expect = t, actual = MonoType.Arrow(ts, tpe), loc)
+      val inferredType = visitExpr(exp)
+      val actualType = MonoType.Arrow(exps.map(visitExpr), tpe)
+      check(expect = inferredType, actual = actualType, loc)
       tpe
 
     case Expr.ApplyDef(sym, exps, ct, tpe, loc) =>
-      val t = root.defs(sym).tpe
-      val ts = exps.map(visitExpr)
-      check(expect = t, actual = MonoType.Arrow(ts, tpe), loc)
+      val declaredType = root.defs(sym).tpe
+      val actualType = MonoType.Arrow(exps.map(visitExpr), tpe)
+      check(expect = declaredType, actual = actualType, loc)
       tpe
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => // TODO
-      val ts = actuals.map(visitExpr)
-
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+      val declaredType = root.defs(sym).tpe
+      val actualType = MonoType.Arrow(actuals.map(visitExpr), tpe)
+      check(expect = declaredType, actual = actualType, loc)
       tpe
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
@@ -141,6 +142,7 @@ object Verifier {
       visitExpr(expr)
   }
 
+  // TODO: Need different helpers.
   private def check(expect: MonoType, actual: MonoType, loc: SourceLocation): MonoType = {
     if (expect == actual)
       actual
