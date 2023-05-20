@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Verifier {
 
   def run(root: MonoTypedAst.Root)(implicit flix: Flix): MonoTypedAst.Root = flix.phase("Verifier") {
-    //ParOps.parMap(root.defs.values)(visitDef)
     root.defs.values.foreach(visitDef)
     root
   }
