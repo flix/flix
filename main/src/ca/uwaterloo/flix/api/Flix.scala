@@ -598,7 +598,6 @@ class Flix {
     cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
     cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
     cachedMonoTyperAst = MonoTyper.run(cachedVarNumberingAst)
-    Verifier.run(cachedMonoTyperAst)
     cachedEraserAst = Eraser.run(cachedMonoTyperAst)
     val afterJvmBackend = JvmBackend.run(cachedEraserAst)
     val result = Finish.run(afterJvmBackend)
