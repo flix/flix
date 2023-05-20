@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.{MonoType, MonoTypedAst, SourceLocation}
-import ca.uwaterloo.flix.language.ast.MonoTypedAst.{Def, Expr, Root, Stmt}
+import ca.uwaterloo.flix.language.ast.MonoTypedAst.{CatchRule, Def, Expr, Root, Stmt}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -123,13 +123,22 @@ object Verifier {
       val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
       check(expect = bodyType, actual = tpe, loc)
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe // TODO
+    case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, loc) =>
+      tpe
 
-    case Expr.Scope(sym, exp, tpe, loc) => tpe // TODO
+    case Expr.Scope(sym, exp, tpe, loc) =>
+      check(expect = tpe, actual = visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
 
-    case Expr.TryCatch(exp, rules, tpe, loc) => tpe // TODO
+    case Expr.TryCatch(exp, rules, tpe, loc) =>
+      for (CatchRule(sym, clazz, exp) <- rules) {
+        check(expect = tpe, actual = visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), loc)
+      }
+      val t = visitExpr(exp)
+      check(expect = tpe, actual = t, loc)
 
-    case Expr.NewObject(name, clazz, tpe, methods, loc) => tpe // TODO
+    case Expr.NewObject(name, clazz, tpe, methods, loc) =>
+      // TODO: VERIFIER: Add support for NewObject.
+      tpe
 
     case Expr.Spawn(exp1, exp2, tpe, loc) =>
       val tpe1 = visitExpr(exp1)
@@ -149,6 +158,8 @@ object Verifier {
     else
       throw MismatchedTypes(expect, actual, loc)
   }
+
+  // TODO: Add context
 
   private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
 
