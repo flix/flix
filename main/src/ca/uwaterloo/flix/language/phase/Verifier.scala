@@ -40,6 +40,7 @@ object Verifier {
   }
 
   private def visitExpr(expr: MonoTypedAst.Expr)(implicit env: Map[Symbol.VarSym, MonoType]): MonoType = expr match {
+
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => expect(expected = MonoType.Unit, actual = tpe, loc)
       case Constant.Null => tpe
