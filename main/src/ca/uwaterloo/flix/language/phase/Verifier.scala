@@ -37,7 +37,7 @@ object Verifier {
   private def visitExpr(expr: MonoTypedAst.Expr): MonoType = expr match {
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => expect(expected = MonoType.Unit, actual = tpe, loc)
-      case Constant.Null => tpe // TODO
+      case Constant.Null => tpe
       case Constant.Bool(_) => expect(expected = MonoType.Bool, actual = tpe, loc)
       case Constant.Char(_) => expect(expected = MonoType.Char, actual = tpe, loc)
       case Constant.Float32(_) => expect(expected = MonoType.Float32, actual = tpe, loc)
@@ -49,10 +49,10 @@ object Verifier {
       case Constant.Int64(_) => expect(expected = MonoType.Int64, actual = tpe, loc)
       case Constant.BigInt(_) => expect(expected = MonoType.BigInt, actual = tpe, loc)
       case Constant.Str(_) => expect(expected = MonoType.Bool, actual = tpe, loc)
-      case Constant.Regex(_) => tpe //  TODO
+      case Constant.Regex(_) => expect(expected = MonoType.Regex, actual = tpe, loc)
     }
 
-    case Expr.Var(sym, tpe, loc) => tpe
+    case Expr.Var(_, tpe, _) => tpe
 
     case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe
 
@@ -62,7 +62,10 @@ object Verifier {
 
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) => tpe
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      expect(expected = MonoType.Bool, actual = exp1.tpe, loc)
+      expect(expected = tpe, actual = exp2.tpe, loc)
+      expect(expected = tpe, actual = exp3.tpe, loc)
 
     case Expr.Branch(exp, branches, tpe, loc) => tpe
 
@@ -91,6 +94,13 @@ object Verifier {
       actual
     else
       throw InternalCompilerException(s"Expected: '$expected', but got: '$actual'.", loc)
+  }
+
+  private def expectEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
+    if (tpe1 == tpe2)
+      tpe1
+    else
+      throw InternalCompilerException(s"Expected equal types: $tpe1 and $tpe2", loc)
   }
 
 }
