@@ -76,9 +76,15 @@ object Verifier {
 
       tpe // TODO
 
-    case Expr.ApplyDef(sym, args, ct, tpe, loc) => tpe // TODO
+    case Expr.ApplyDef(sym, exps, ct, tpe, loc) =>
+      val ts = exps.map(visitExpr)
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe // TODO
+      tpe // TODO
+
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+      val ts = actuals.map(visitExpr)
+
+      tpe // TODO
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val condType = visitExpr(exp1)
@@ -88,7 +94,11 @@ object Verifier {
       expect(expected = tpe, actual = thenType, loc)
       expect(expected = tpe, actual = elseType, loc)
 
-    case Expr.Branch(exp, branches, tpe, loc) => tpe // TODO
+    case Expr.Branch(exp, branches, tpe, loc) =>
+      branches.map {
+        case (label, body) => visitExpr(body)
+      }
+      tpe // TODO
 
     case Expr.JumpTo(sym, tpe, loc) => tpe // TODO
 
