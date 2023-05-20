@@ -49,9 +49,9 @@ object MonoTypedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
