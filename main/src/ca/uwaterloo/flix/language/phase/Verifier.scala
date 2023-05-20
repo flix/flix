@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.{MonoType, MonoTypedAst, SourceLocation}
 import ca.uwaterloo.flix.language.ast.MonoTypedAst.{Def, Expr, Stmt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -27,15 +28,16 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Verifier {
 
   def run(root: MonoTypedAst.Root)(implicit flix: Flix): MonoTypedAst.Root = flix.phase("Verifier") {
-    ParOps.parMap(root.defs.values)(visitDef)
+    //ParOps.parMap(root.defs.values)(visitDef)
+    root.defs.values.foreach(visitDef)
     root
   }
 
   private def visitDef(def0: Def): Unit = {
-    visitStmt(def0.stmt)
+    visitStmt(def0.stmt)(Map.empty) // TODO: Formalparams.
   }
 
-  private def visitExpr(expr: MonoTypedAst.Expr): MonoType = expr match {
+  private def visitExpr(expr: MonoTypedAst.Expr)(implicit env: Map[Symbol.VarSym, MonoType]): MonoType = expr match {
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => expect(expected = MonoType.Unit, actual = tpe, loc)
       case Constant.Null => tpe
@@ -49,43 +51,44 @@ object Verifier {
       case Constant.Int32(_) => expect(expected = MonoType.Int32, actual = tpe, loc)
       case Constant.Int64(_) => expect(expected = MonoType.Int64, actual = tpe, loc)
       case Constant.BigInt(_) => expect(expected = MonoType.BigInt, actual = tpe, loc)
-      case Constant.Str(_) => expect(expected = MonoType.Bool, actual = tpe, loc)
+      case Constant.Str(_) => expect(expected = MonoType.Str, actual = tpe, loc)
       case Constant.Regex(_) => expect(expected = MonoType.Regex, actual = tpe, loc)
     }
 
     case Expr.Var(_, tpe, _) => tpe
 
-    case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe  // TODO
+    case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe // TODO
 
-    case Expr.ApplyClo(exp, args, ct, tpe, loc) => tpe  // TODO
+    case Expr.ApplyClo(exp, args, ct, tpe, loc) => tpe // TODO
 
-    case Expr.ApplyDef(sym, args, ct, tpe, loc) => tpe  // TODO
+    case Expr.ApplyDef(sym, args, ct, tpe, loc) => tpe // TODO
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe  // TODO
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe // TODO
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      expect(expected = MonoType.Bool, actual = exp1.tpe, loc)
-      expect(expected = tpe, actual = exp2.tpe, loc)
-      expect(expected = tpe, actual = exp3.tpe, loc)
+      // TODO: Need to recurse
+      expect(expected = MonoType.Bool, actual = visitExpr(exp1), loc)
+      expect(expected = tpe, actual = visitExpr(exp2), loc)
+      expect(expected = tpe, actual = visitExpr(exp3), loc)
 
-    case Expr.Branch(exp, branches, tpe, loc) => tpe  // TODO
+    case Expr.Branch(exp, branches, tpe, loc) => tpe // TODO
 
-    case Expr.JumpTo(sym, tpe, loc) => tpe  // TODO
+    case Expr.JumpTo(sym, tpe, loc) => tpe // TODO
 
-    case Expr.Let(sym, exp1, exp2, tpe, loc) => tpe  // TODO
+    case Expr.Let(sym, exp1, exp2, tpe, loc) => tpe // TODO
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe  // TODO
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe // TODO
 
-    case Expr.Scope(sym, exp, tpe, loc) => tpe  // TODO
+    case Expr.Scope(sym, exp, tpe, loc) => tpe // TODO
 
-    case Expr.TryCatch(exp, rules, tpe, loc) => tpe  // TODO
+    case Expr.TryCatch(exp, rules, tpe, loc) => tpe // TODO
 
-    case Expr.NewObject(name, clazz, tpe, methods, loc) => tpe  // TODO
+    case Expr.NewObject(name, clazz, tpe, methods, loc) => tpe // TODO
 
     case Expr.Spawn(exp1, exp2, tpe, loc) => tpe // TODO
   }
 
-  private def visitStmt(stmt: MonoTypedAst.Stmt): MonoType = stmt match {
+  private def visitStmt(stmt: MonoTypedAst.Stmt)(implicit env: Map[Symbol.VarSym, MonoType]): MonoType = stmt match {
     case Stmt.Ret(expr, tpe, loc) =>
       visitExpr(expr)
   }
