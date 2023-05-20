@@ -730,8 +730,7 @@ object Lowering {
       }
       val e = visitExp(exp)
       val t = visitType(tpe)
-    val res =   mkParYield(fs, e, t, pur, loc)
-      res
+      mkParYield(fs, e, t, pur, loc)
 
     case TypedAst.Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
