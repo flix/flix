@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
   * We use this phase to catch miscompilation before we do bytecode generation.
   */
 object Verifier {
+
   def run(root: MonoTypedAst.Root)(implicit flix: Flix): MonoTypedAst.Root = flix.phase("Verifier") {
     ParOps.parMap(root.defs.values)(visitDef)
     root
@@ -54,34 +55,34 @@ object Verifier {
 
     case Expr.Var(_, tpe, _) => tpe
 
-    case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe
+    case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe  // TODO
 
-    case Expr.ApplyClo(exp, args, ct, tpe, loc) => tpe
+    case Expr.ApplyClo(exp, args, ct, tpe, loc) => tpe  // TODO
 
-    case Expr.ApplyDef(sym, args, ct, tpe, loc) => tpe
+    case Expr.ApplyDef(sym, args, ct, tpe, loc) => tpe  // TODO
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe  // TODO
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       expect(expected = MonoType.Bool, actual = exp1.tpe, loc)
       expect(expected = tpe, actual = exp2.tpe, loc)
       expect(expected = tpe, actual = exp3.tpe, loc)
 
-    case Expr.Branch(exp, branches, tpe, loc) => tpe
+    case Expr.Branch(exp, branches, tpe, loc) => tpe  // TODO
 
-    case Expr.JumpTo(sym, tpe, loc) => tpe
+    case Expr.JumpTo(sym, tpe, loc) => tpe  // TODO
 
-    case Expr.Let(sym, exp1, exp2, tpe, loc) => tpe
+    case Expr.Let(sym, exp1, exp2, tpe, loc) => tpe  // TODO
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe  // TODO
 
-    case Expr.Scope(sym, exp, tpe, loc) => tpe
+    case Expr.Scope(sym, exp, tpe, loc) => tpe  // TODO
 
-    case Expr.TryCatch(exp, rules, tpe, loc) => tpe
+    case Expr.TryCatch(exp, rules, tpe, loc) => tpe  // TODO
 
-    case Expr.NewObject(name, clazz, tpe, methods, loc) => tpe
+    case Expr.NewObject(name, clazz, tpe, methods, loc) => tpe  // TODO
 
-    case Expr.Spawn(exp1, exp2, tpe, loc) => tpe
+    case Expr.Spawn(exp1, exp2, tpe, loc) => tpe // TODO
   }
 
   private def visitStmt(stmt: MonoTypedAst.Stmt): MonoType = stmt match {
