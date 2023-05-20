@@ -33,8 +33,11 @@ object Verifier {
     root
   }
 
-  private def visitDef(def0: Def): Unit = {
-    visitStmt(def0.stmt)(Map.empty) // TODO: Formalparams.
+  private def visitDef(decl: Def): Unit = {
+    val env = decl.formals.foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
+      case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
+    }
+    visitStmt(decl.stmt)(env)
   }
 
   private def visitExpr(expr: MonoTypedAst.Expr)(implicit env: Map[Symbol.VarSym, MonoType]): MonoType = expr match {
@@ -55,7 +58,11 @@ object Verifier {
       case Constant.Regex(_) => expect(expected = MonoType.Regex, actual = tpe, loc)
     }
 
-    case Expr.Var(_, tpe, _) => tpe
+    case Expr.Var(sym, tpe, loc) => env.get(sym) match {
+      case None => throw InternalCompilerException(s"Unbound local variable: '$sym", loc)
+      case Some(declaredType) =>
+        expect(expected = declaredType, actual = tpe, loc)
+    }
 
     case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe // TODO
 
@@ -66,10 +73,12 @@ object Verifier {
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) => tpe // TODO
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      // TODO: Need to recurse
-      expect(expected = MonoType.Bool, actual = visitExpr(exp1), loc)
-      expect(expected = tpe, actual = visitExpr(exp2), loc)
-      expect(expected = tpe, actual = visitExpr(exp3), loc)
+      val condType = visitExpr(exp1)
+      val thenType = visitExpr(exp2)
+      val elseType = visitExpr(exp3)
+      expect(expected = MonoType.Bool, actual = condType, loc)
+      expect(expected = tpe, actual = thenType, loc)
+      expect(expected = tpe, actual = elseType, loc)
 
     case Expr.Branch(exp, branches, tpe, loc) => tpe // TODO
 
