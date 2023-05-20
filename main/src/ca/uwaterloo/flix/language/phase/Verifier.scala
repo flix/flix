@@ -84,7 +84,10 @@ object Verifier {
 
     case Expr.JumpTo(sym, tpe, loc) => tpe // TODO
 
-    case Expr.Let(sym, exp1, exp2, tpe, loc) => tpe // TODO
+    case Expr.Let(sym, exp1, exp2, tpe, loc) =>
+      val letBoundType = visitExpr(exp1)
+      val bodyType = visitExpr(exp2)(env + (sym -> letBoundType))
+      expect(expected = bodyType, actual = tpe, loc)
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe // TODO
 
