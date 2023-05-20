@@ -730,7 +730,8 @@ object Lowering {
       }
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkParYield(fs, e, t, pur, loc)
+    val res =   mkParYield(fs, e, t, pur, loc)
+      res
 
     case TypedAst.Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -1684,7 +1685,7 @@ object Lowering {
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
         val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        LoweredAst.Expression.Stm(e3, acc, e1.tpe, Type.mkUnion(e3.pur, acc.pur, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        LoweredAst.Expression.Stm(e3, acc, acc.tpe, Type.mkUnion(e3.pur, acc.pur, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
