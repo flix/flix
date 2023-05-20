@@ -17,8 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.{MonoType, MonoTypedAst, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, MonoTypedAst, SemanticOperator, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.MonoTypedAst.{CatchRule, Def, Expr, Root, Stmt}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -55,26 +54,24 @@ object Verifier {
     }
   }
 
-  // TODO: Add context
-
 
   private def visitExpr(expr: MonoTypedAst.Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit => check(expected = MonoType.Unit, actual = tpe, loc)
+      case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
       case Constant.Null => tpe
-      case Constant.Bool(_) => check(expected = MonoType.Bool, actual = tpe, loc)
-      case Constant.Char(_) => check(expected = MonoType.Char, actual = tpe, loc)
-      case Constant.Float32(_) => check(expected = MonoType.Float32, actual = tpe, loc)
-      case Constant.Float64(_) => check(expected = MonoType.Float64, actual = tpe, loc)
-      case Constant.BigDecimal(_) => check(expected = MonoType.BigDecimal, actual = tpe, loc)
-      case Constant.Int8(_) => check(expected = MonoType.Int8, actual = tpe, loc)
-      case Constant.Int16(_) => check(expected = MonoType.Int16, actual = tpe, loc)
-      case Constant.Int32(_) => check(expected = MonoType.Int32, actual = tpe, loc)
-      case Constant.Int64(_) => check(expected = MonoType.Int64, actual = tpe, loc)
-      case Constant.BigInt(_) => check(expected = MonoType.BigInt, actual = tpe, loc)
-      case Constant.Str(_) => check(expected = MonoType.Str, actual = tpe, loc)
-      case Constant.Regex(_) => check(expected = MonoType.Regex, actual = tpe, loc)
+      case Constant.Bool(_) => check(expected = MonoType.Bool)(actual = tpe, loc)
+      case Constant.Char(_) => check(expected = MonoType.Char)(actual = tpe, loc)
+      case Constant.Float32(_) => check(expected = MonoType.Float32)(actual = tpe, loc)
+      case Constant.Float64(_) => check(expected = MonoType.Float64)(actual = tpe, loc)
+      case Constant.BigDecimal(_) => check(expected = MonoType.BigDecimal)(actual = tpe, loc)
+      case Constant.Int8(_) => check(expected = MonoType.Int8)(actual = tpe, loc)
+      case Constant.Int16(_) => check(expected = MonoType.Int16)(actual = tpe, loc)
+      case Constant.Int32(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
+      case Constant.Int64(_) => check(expected = MonoType.Int64)(actual = tpe, loc)
+      case Constant.BigInt(_) => check(expected = MonoType.BigInt)(actual = tpe, loc)
+      case Constant.Str(_) => check(expected = MonoType.Str)(actual = tpe, loc)
+      case Constant.Regex(_) => check(expected = MonoType.Regex)(actual = tpe, loc)
     }
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
@@ -84,9 +81,27 @@ object Verifier {
     }
 
     case Expr.ApplyAtomic(op, exps, tpe, loc) =>
-      val types = exps.map(visitExpr)
-      // TODO: Check that types are compatible with op.
-      tpe
+      val ts = exps.map(visitExpr)
+
+      op match {
+        case AtomicOp.Unary(sop) => sop match {
+          case op: SemanticOperator.BoolOp =>
+            val List(t) = ts
+            check(expected = MonoType.Bool)(actual = t, loc)
+          case _ => tpe // TODO: VERIFIER: Add rest
+        }
+        case AtomicOp.Binary(sop) => sop match {
+          case SemanticOperator.Int32Op.Add =>
+            val List(t1, t2) = ts
+            check(expected = MonoType.Int32)(t1, loc)
+            check(expected = MonoType.Int32)(t2, loc)
+
+          case _ => tpe // TODO: VERIFIER: Add rest
+
+        }
+        case _ => tpe // TODO: VERIFIER: Add rest
+
+      }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, loc) =>
       val lamType1 = visitExpr(exp)
@@ -97,20 +112,20 @@ object Verifier {
     case Expr.ApplyDef(sym, exps, ct, tpe, loc) =>
       val declared = root.defs(sym).tpe
       val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
-      check(expected = declared, actual = actual, loc)
+      check(expected = declared)(actual = actual, loc)
       tpe
 
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       val declared = root.defs(sym).tpe
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
-      check(expected = declared, actual = actual, loc)
+      check(expected = declared)(actual = actual, loc)
       tpe
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
       val elseType = visitExpr(exp3)
-      check(expected = MonoType.Bool, actual = condType, loc)
+      check(expected = MonoType.Bool)(actual = condType, loc)
       checkEq(tpe, thenType, loc)
       checkEq(tpe, elseType, loc)
 
@@ -168,7 +183,7 @@ object Verifier {
   /**
     * Asserts that the the given type `expected` is equal to the `actual` type.
     */
-  private def check(expected: MonoType, actual: MonoType, loc: SourceLocation): MonoType = {
+  private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
     else
@@ -196,4 +211,3 @@ object Verifier {
   private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
 
 }
-
