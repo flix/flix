@@ -64,9 +64,17 @@ object Verifier {
         expect(expected = declaredType, actual = tpe, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, loc) => tpe // TODO
+    case Expr.ApplyAtomic(op, exps, tpe, loc) =>
+      // TODO
+      val types = exps.map(visitExpr)
 
-    case Expr.ApplyClo(exp, args, ct, tpe, loc) => tpe // TODO
+      tpe
+
+    case Expr.ApplyClo(exp, exps, ct, tpe, loc) =>
+      val t = visitExpr(exp)
+      val ts = exps.map(visitExpr)
+
+      tpe // TODO
 
     case Expr.ApplyDef(sym, args, ct, tpe, loc) => tpe // TODO
 
