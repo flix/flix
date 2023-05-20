@@ -124,7 +124,10 @@ object Verifier {
       check(expect = bodyType, actual = tpe, loc)
 
     case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, loc) =>
-      tpe
+      val env1 = env + (varSym -> exp1.tpe)
+      val letBoundType = visitExpr(exp1)(root, env1, lenv)
+      val bodyType = visitExpr(exp2)(root, env1, lenv)
+      check(expect = bodyType, actual = tpe, loc)
 
     case Expr.Scope(sym, exp, tpe, loc) =>
       check(expect = tpe, actual = visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
