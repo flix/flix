@@ -20,10 +20,10 @@ import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.{MonoType, MonoTypedAst, SourceLocation}
 import ca.uwaterloo.flix.language.ast.MonoTypedAst.{Def, Expr, Stmt}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
-  * We use this phase to catch miscompilation before we do bytecode generation.
+  * Verify the AST before bytecode generation.
   */
 object Verifier {
 
@@ -36,32 +36,41 @@ object Verifier {
     val env = decl.formals.foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    visitStmt(decl.stmt)(env)
+    try {
+      visitStmt(decl.stmt)(env, Map.empty)
+    } catch {
+      case MismatchedTypes(tpe1, tpe2, loc) =>
+        println(s"Mismatched types near ${loc.format}")
+        println()
+        println(s"  tpe1 = $tpe1")
+        println(s"  tpe2 = $tpe2")
+        println()
+    }
   }
 
-  private def visitExpr(expr: MonoTypedAst.Expr)(implicit env: Map[Symbol.VarSym, MonoType]): MonoType = expr match {
+  private def visitExpr(expr: MonoTypedAst.Expr)(implicit env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit => expect(expected = MonoType.Unit, actual = tpe, loc)
+      case Constant.Unit => check(expect = MonoType.Unit, actual = tpe, loc)
       case Constant.Null => tpe
-      case Constant.Bool(_) => expect(expected = MonoType.Bool, actual = tpe, loc)
-      case Constant.Char(_) => expect(expected = MonoType.Char, actual = tpe, loc)
-      case Constant.Float32(_) => expect(expected = MonoType.Float32, actual = tpe, loc)
-      case Constant.Float64(_) => expect(expected = MonoType.Float64, actual = tpe, loc)
-      case Constant.BigDecimal(_) => expect(expected = MonoType.BigDecimal, actual = tpe, loc)
-      case Constant.Int8(_) => expect(expected = MonoType.Int8, actual = tpe, loc)
-      case Constant.Int16(_) => expect(expected = MonoType.Int16, actual = tpe, loc)
-      case Constant.Int32(_) => expect(expected = MonoType.Int32, actual = tpe, loc)
-      case Constant.Int64(_) => expect(expected = MonoType.Int64, actual = tpe, loc)
-      case Constant.BigInt(_) => expect(expected = MonoType.BigInt, actual = tpe, loc)
-      case Constant.Str(_) => expect(expected = MonoType.Str, actual = tpe, loc)
-      case Constant.Regex(_) => expect(expected = MonoType.Regex, actual = tpe, loc)
+      case Constant.Bool(_) => check(expect = MonoType.Bool, actual = tpe, loc)
+      case Constant.Char(_) => check(expect = MonoType.Char, actual = tpe, loc)
+      case Constant.Float32(_) => check(expect = MonoType.Float32, actual = tpe, loc)
+      case Constant.Float64(_) => check(expect = MonoType.Float64, actual = tpe, loc)
+      case Constant.BigDecimal(_) => check(expect = MonoType.BigDecimal, actual = tpe, loc)
+      case Constant.Int8(_) => check(expect = MonoType.Int8, actual = tpe, loc)
+      case Constant.Int16(_) => check(expect = MonoType.Int16, actual = tpe, loc)
+      case Constant.Int32(_) => check(expect = MonoType.Int32, actual = tpe, loc)
+      case Constant.Int64(_) => check(expect = MonoType.Int64, actual = tpe, loc)
+      case Constant.BigInt(_) => check(expect = MonoType.BigInt, actual = tpe, loc)
+      case Constant.Str(_) => check(expect = MonoType.Str, actual = tpe, loc)
+      case Constant.Regex(_) => check(expect = MonoType.Regex, actual = tpe, loc)
     }
 
     case Expr.Var(sym, tpe, loc) => env.get(sym) match {
-      case None => throw InternalCompilerException(s"Unbound local variable: '$sym", loc)
+      case None => throw InternalCompilerException(s"Unknown variable sym: '$sym", loc)
       case Some(declaredType) =>
-        expect(expected = declaredType, actual = tpe, loc)
+        check(expect = declaredType, actual = tpe, loc)
     }
 
     case Expr.ApplyAtomic(op, exps, tpe, loc) =>
@@ -90,22 +99,25 @@ object Verifier {
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
       val elseType = visitExpr(exp3)
-      expect(expected = MonoType.Bool, actual = condType, loc)
-      expect(expected = tpe, actual = thenType, loc)
-      expect(expected = tpe, actual = elseType, loc)
+      check(expect = MonoType.Bool, actual = condType, loc)
+      check(expect = tpe, actual = thenType, loc)
+      check(expect = tpe, actual = elseType, loc)
 
     case Expr.Branch(exp, branches, tpe, loc) =>
-      branches.map {
-        case (label, body) => visitExpr(body)
+      branches.foreach {
+        case (label, body) => check(expect = tpe, actual = visitExpr(body), loc)
       }
-      tpe // TODO
+      tpe
 
-    case Expr.JumpTo(sym, tpe, loc) => tpe // TODO
+    case Expr.JumpTo(sym, tpe, loc) => lenv.get(sym) match {
+      case None => throw InternalCompilerException(s"Unknown label sym: '$sym'.", loc)
+      case Some(declaredType) => check(expect = declaredType, actual = tpe, loc)
+    }
 
     case Expr.Let(sym, exp1, exp2, tpe, loc) =>
       val letBoundType = visitExpr(exp1)
-      val bodyType = visitExpr(exp2)(env + (sym -> letBoundType))
-      expect(expected = bodyType, actual = tpe, loc)
+      val bodyType = visitExpr(exp2)(env + (sym -> letBoundType), lenv)
+      check(expect = bodyType, actual = tpe, loc)
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => tpe // TODO
 
@@ -115,27 +127,25 @@ object Verifier {
 
     case Expr.NewObject(name, clazz, tpe, methods, loc) => tpe // TODO
 
-    case Expr.Spawn(exp1, exp2, tpe, loc) => tpe // TODO
+    case Expr.Spawn(exp1, exp2, tpe, loc) =>
+      val tpe1 = visitExpr(exp1)
+      val tpe2 = visitExpr(exp2)
+      check(expect = tpe, actual = tpe2, loc)
   }
 
-  private def visitStmt(stmt: MonoTypedAst.Stmt)(implicit env: Map[Symbol.VarSym, MonoType]): MonoType = stmt match {
+  private def visitStmt(stmt: MonoTypedAst.Stmt)(implicit env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = stmt match {
     case Stmt.Ret(expr, tpe, loc) =>
       visitExpr(expr)
   }
 
-  private def expect(expected: MonoType, actual: MonoType, loc: SourceLocation): MonoType = {
-    if (expected == actual)
+  private def check(expect: MonoType, actual: MonoType, loc: SourceLocation): MonoType = {
+    if (expect == actual)
       actual
     else
-      throw InternalCompilerException(s"Expected: '$expected', but got: '$actual'.", loc)
+      throw MismatchedTypes(expect, actual, loc)
   }
 
-  private def expectEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
-    if (tpe1 == tpe2)
-      tpe1
-    else
-      throw InternalCompilerException(s"Expected equal types: $tpe1 and $tpe2", loc)
-  }
+  private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
 
 }
 
