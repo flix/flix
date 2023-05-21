@@ -91,8 +91,7 @@ object Safety {
       }
 
       if (!hasUnitParameter) {
-        val fparam :: _ = def0.spec.fparams
-        val err = SafetyError.IllegalTestParameters(fparam.loc)
+        val err = SafetyError.IllegalTestParameters(def0.sym.loc)
         List(err)
       } else {
         Nil
