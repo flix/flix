@@ -132,7 +132,9 @@ mod BigInt {
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: BigInt): BigInt = $BIGINT_NOT$(x)
+    pub def bitwiseNot(x: BigInt): BigInt =
+        import java.math.BigInteger.not(): BigInt \ {};
+        not(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.

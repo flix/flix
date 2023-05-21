@@ -52,8 +52,7 @@ object OperatorPrinter {
          Int8Op.Not |
          Int16Op.Not |
          Int32Op.Not |
-         Int64Op.Not |
-         BigIntOp.Not => not
+         Int64Op.Not => not
     case BoolOp.And |
          Int8Op.And |
          Int16Op.And |

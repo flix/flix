@@ -719,11 +719,6 @@ object SemanticOperator {
   object BigIntOp {
 
     /**
-      * Bitwise Not.
-      */
-    case object Not extends BigIntOp
-
-    /**
       * Multiplication.
       */
     case object Mul extends BigIntOp

@@ -195,10 +195,6 @@ object GenExpression {
             mv.visitInsn(I2L)
             mv.visitInsn(LXOR)
 
-          case BigIntOp.Not =>
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
-              AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-
           case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", exp.loc)
         }
 

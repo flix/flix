@@ -743,13 +743,6 @@ object Typer {
             resultPur = pur
           } yield (constrs, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Not =>
-          for {
-            (constrs, tpe, pur) <- visitExp(exp)
-            resultTyp <- expectTypeM(expected = Type.BigInt, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
-
         case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
