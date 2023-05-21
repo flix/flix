@@ -167,8 +167,7 @@ object OperatorPrinter {
          Int8Op.Neg |
          Int16Op.Neg |
          Int32Op.Neg |
-         Int64Op.Neg |
-         BigIntOp.Neg => neg
+         Int64Op.Neg => neg
     case Int8Op.Rem |
          Int16Op.Rem |
          Int32Op.Rem |

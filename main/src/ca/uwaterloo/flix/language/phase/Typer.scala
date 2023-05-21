@@ -743,7 +743,7 @@ object Typer {
             resultPur = pur
           } yield (constrs, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not =>
+        case SemanticOperator.BigIntOp.Not =>
           for {
             (constrs, tpe, pur) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.BigInt, actual = tpe, bind = tvar, exp.loc)

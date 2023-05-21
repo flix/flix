@@ -186,10 +186,6 @@ object GenExpression {
 
           case Int64Op.Neg => mv.visitInsn(LNEG)
 
-          case BigIntOp.Neg =>
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
-              AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-
           case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
             mv.visitInsn(ICONST_M1)
             mv.visitInsn(IXOR)
