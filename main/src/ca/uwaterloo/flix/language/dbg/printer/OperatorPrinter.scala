@@ -138,8 +138,7 @@ object OperatorPrinter {
          Int8Op.Sub |
          Int16Op.Sub |
          Int32Op.Sub |
-         Int64Op.Sub |
-         BigIntOp.Sub => minus
+         Int64Op.Sub => minus
     case Float32Op.Mul |
          Float64Op.Mul |
          BigDecimalOp.Mul |
