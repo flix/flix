@@ -114,6 +114,9 @@ mod TestDebug {
 
 
     @test
+    def testEmptyVectorStringify01(): Bool = stringify(Vector#{}) == "Vector#{}"
+
+    @test
     def testVectorOfUnitStringify01(): Bool = stringify(Vector#{(), ()}) == "Vector#{(), ()}"
 
     @test

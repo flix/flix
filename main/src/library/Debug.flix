@@ -123,12 +123,16 @@ mod Debug {
                 let s = ref "Vector#{" @ rc;
                 let first = ref true @ rc;
 
+                let len = $VECTOR_LENGTH$(y)
                 def loop(i) = {
-                    let v = $VECTOR_GET$(y, i);
-                    if (not deref first) s := deref s + ", " else first := false;
-                    s := deref s + Debug.stringify(v);
-
-                    if (i < $VECTOR_LENGTH$(y)) loop(i + 1) else ()
+                    if (i >= len)
+                        ()
+                    else {
+                        let v = $VECTOR_GET$(y, i);
+                        if (not deref first) s := deref s + ", " else first := false;
+                        s := deref s + Debug.stringify(v);
+                        loop(i + 1)
+                    }
                 };
                 loop(0);
 
