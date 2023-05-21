@@ -75,13 +75,13 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitTestEntryPoint(def0, root) ::: visitExp(def0.impl.exp, renv, root)
+    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root)
   }
 
   /**
     * Checks that if `def0` is a test entry point that it is well-behaved.
     */
-  private def visitTestEntryPoint(def0: Def, root: Root): List[CompilationMessage] = {
+  private def visitTestEntryPoint(def0: Def): List[CompilationMessage] = {
     if (def0.spec.ann.isTest) {
       def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
 
