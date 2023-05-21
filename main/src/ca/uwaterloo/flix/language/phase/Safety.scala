@@ -112,8 +112,6 @@ object Safety {
     def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
       case Expression.Cst(_, _, _) => Nil
 
-      case Expression.Wild(_, _) => Nil
-
       case Expression.Var(_, _, _) => Nil
 
       case Expression.Def(_, _, _) => Nil

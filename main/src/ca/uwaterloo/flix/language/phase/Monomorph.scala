@@ -287,8 +287,6 @@ object Monomorph {
     * definition and substitution is enqueued.
     */
   private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Wild(tpe, loc) => Expression.Wild(subst(tpe), loc)
-
     case Expression.Var(sym, tpe, loc) =>
       Expression.Var(env0(sym), subst(tpe), loc)
 

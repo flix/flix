@@ -260,9 +260,6 @@ object Simplifier {
       case LoweredAst.Expression.Sig(_, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.Wild(_, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
       case LoweredAst.Expression.Without(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
