@@ -112,7 +112,7 @@ object Main {
       xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
-      xprintasts = cmdOpts.xprintasts,
+      xprintphase = cmdOpts.xprintphase,
       xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary
@@ -307,7 +307,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
-                     xprintasts: Set[String] = Set.empty,
+                     xprintphase: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
                      xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
@@ -480,18 +480,19 @@ object Main {
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
-        text("[experimental] disables compiler optimizations")
+        text("[experimental] disables compiler optimizations.")
 
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
-      // xprint-asts
-      opt[Seq[String]]("Xprint-asts").action((m, c) => c.copy(xprintasts = m.toSet))
+      // Xprint-phase
+      opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
+        text("[experimental] prints the AST(s) after the given phase(s). 'all' prints all ASTs.")
 
       // Xprint-bool-unif
       opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
-        text("[experimental] prints boolean unification queries")
+        text("[experimental] prints boolean unification queries.")
 
       //
       // Boolean unification flags.

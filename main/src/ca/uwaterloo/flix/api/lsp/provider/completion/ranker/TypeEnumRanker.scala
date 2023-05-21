@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeEnumCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker.hasRealSourceKinds
 
 object TypeEnumRanker extends Ranker {
@@ -29,7 +29,7 @@ object TypeEnumRanker extends Ranker {
     * @param completions the list of completions.
     * @return            Some(TypeEnumCompletion) if a better completion is possible, else none.
     */
-  override def findBest(completions: Iterable[Completion])(implicit index: Index, deltaContext: DeltaContext): Option[TypeEnumCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[EnumCompletion] = {
     // Remove all none typeEnum completions
     getTypeEnumCompletions(completions)
       // Find the typeEnum comp that has 0 Real uses
@@ -43,9 +43,9 @@ object TypeEnumRanker extends Ranker {
     * @param  completions the list of all possible completions.
     * @return a List of TypeEnumCompletion.
     */
-  private def getTypeEnumCompletions(completions: Iterable[Completion]): Iterable[TypeEnumCompletion] = {
+  private def getTypeEnumCompletions(completions: Iterable[Completion]): Iterable[EnumCompletion] = {
     completions.collect {
-      case comp: TypeEnumCompletion => comp
+      case comp: EnumCompletion => comp
     }
   }
 }

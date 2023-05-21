@@ -345,10 +345,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Cst(cst, t, loc)
 
-    case TypedAst.Expression.Wild(tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expression.Wild(t, loc)
-
     case TypedAst.Expression.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expression.Var(sym, t, loc)
@@ -1688,7 +1684,7 @@ object Lowering {
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
         val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        LoweredAst.Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        LoweredAst.Expression.Stm(e3, acc, acc.tpe, Type.mkUnion(e3.pur, acc.pur, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
@@ -1696,7 +1692,7 @@ object Lowering {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
         val chan = mkNewChannel(LoweredAst.Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, loc) // The channel exp `chan 1`
-        LoweredAst.Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), loc) // The let-binding `let ch = chan 1`
+        LoweredAst.Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkUnion(e.pur, acc.pur, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
 
@@ -1716,7 +1712,7 @@ object Lowering {
   def mkLetMatch(pat: LoweredAst.Pattern, exp: LoweredAst.Expression, body: LoweredAst.Expression): LoweredAst.Expression = {
     val loc = exp.loc.asSynthetic
     val rule = List(LoweredAst.MatchRule(pat, None, body))
-    val pur = Type.mkAnd(exp.pur, body.pur, loc)
+    val pur = Type.mkUnion(exp.pur, body.pur, loc)
     LoweredAst.Expression.Match(exp, rule, body.tpe, pur, loc)
   }
 
@@ -1849,7 +1845,7 @@ object Lowering {
         val l = e.loc.asSynthetic
         val mods = Ast.Modifiers.Empty
         val t = parTuple.tpe
-        val p = Type.mkAnd(e.pur, parTuple.pur, l)
+        val p = Type.mkUnion(e.pur, parTuple.pur, l)
         LoweredAst.Expression.Let(s, mods, e, parTuple, t, p, l)
     }
 
@@ -1907,8 +1903,6 @@ object Lowering {
     */
   private def substExp(exp0: LoweredAst.Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Expression = exp0 match {
     case LoweredAst.Expression.Cst(_, _, _) => exp0
-
-    case LoweredAst.Expression.Wild(_, _) => exp0
 
     case LoweredAst.Expression.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)

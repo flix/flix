@@ -217,8 +217,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Enum |
       Declarations.RestrictableEnum |
       Declarations.TypeAlias |
-      Declarations.Relation |
-      Declarations.Lattice |
       Declarations.Class |
       Declarations.Instance |
       Declarations.Effect
@@ -325,14 +323,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
     }
 
-    def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("rel") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Relation
-    }
-
-    def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("lat") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Lattice
-    }
-
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
         Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ optWS ~ WithClause
@@ -428,9 +418,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = {
 
-    // First tries to parse the type as an effect set, so that {} is interpreted as a set rather than a record
+    def EmptyEffectSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ push(Nil) ~ "}" ~ SP ~> ParsedAst.Type.EffectSet
+    }
+
+    // First tries to parse the type as an empty effect set, so that {} is interpreted as a set rather than a record
     def EffectFirstType: Rule1[ParsedAst.Type] = rule {
-      Types.EffectSet | Type
+      EmptyEffectSet | Type
     }
 
     rule {
@@ -1467,7 +1461,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Intersection: Rule1[ParsedAst.Type] = rule {
-      Ascribe ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+      Or ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+    }
+
+    def Or: Rule1[ParsedAst.Type] = rule {
+      And ~ zeroOrMore(WS ~ atomic("or") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Or)
+    }
+
+    def And: Rule1[ParsedAst.Type] = rule {
+      Ascribe ~ zeroOrMore(WS ~ atomic("and") ~ WS ~ Type ~ SP ~> ParsedAst.Type.And)
     }
 
     def Ascribe: Rule1[ParsedAst.Type] = rule {
@@ -1482,7 +1484,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
       Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | CaseComplement | Complement |
-        Native | True | False | Pure | Impure | Read | Write | Var | Ambiguous
+        Native | True | False | Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1563,14 +1565,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Impure: Rule1[ParsedAst.Type] = rule {
       SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
-    }
-
-    def Read: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Read") ~ "(" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Type.Read
-    }
-
-    def Write: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Write") ~ "(" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Type.Write
     }
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {

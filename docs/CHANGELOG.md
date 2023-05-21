@@ -1,5 +1,17 @@
 # Changelog
 
+Version 0.37.0:
+
+- Language: Uniform effect syntax (thanks Matthew!)
+- Library: Added `CodePoint` module (thanks Stephen!)
+- Library: Expanded `Regex` module (thanks Stephen!)
+- Library: Added `String.stripMargin` (thanks Ziyao!)
+- VSCode: Improved auto-completion for tags (thanks Lukas!)
+- VSCode: Added support for auto-completion of modules (thanks Lukas!)
+- VSCode: Use parser for auto-completion (thanks Magnus!)
+- Compiler: Allow inclusion of external JARs (thanks Anna!)
+- Compiler: Lots of internal improvements (thanks everyone!)
+
 Version 0.36.0:
 
 - Language: Added support for regular expressions literals (thanks Stephen!)

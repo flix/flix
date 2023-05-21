@@ -51,8 +51,6 @@ object Regions {
   private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = exp0 match {
     case Expression.Cst(_, _, _) => Nil
 
-    case Expression.Wild(_, _) => Nil
-
     case Expression.Var(_, tpe, loc) => checkType(tpe, loc)
 
     case Expression.Def(_, _, _) => Nil
@@ -345,10 +343,10 @@ object Regions {
     */
   def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
     // t0 = tpe[tvar -> False]
-    val t0 = Substitution.singleton(tvar.sym, Type.False).apply(tpe)
+    val t0 = Substitution.singleton(tvar.sym, Type.All).apply(tpe)
 
     // t1 = tpe[tvar -> True]
-    val t1 = Substitution.singleton(tvar.sym, Type.True).apply(tpe)
+    val t1 = Substitution.singleton(tvar.sym, Type.Empty).apply(tpe)
 
     // tvar is essential if t0 != t1
     !sameType(t0, t1)
@@ -378,11 +376,11 @@ object Regions {
       * and all other variables are ascribed the value FALSE.
       */
     def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
-      case Type.True => true
-      case Type.False => false
-      case Type.Apply(Type.Not, x, _) => eval(x, trueVars)
-      case Type.Apply(Type.Apply(Type.And, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
-      case Type.Apply(Type.Apply(Type.Or, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
+      case Type.Empty => true
+      case Type.All => false
+      case Type.Apply(Type.Complement, x, _) => eval(x, trueVars)
+      case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
+      case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
       case tvar: Type.Var => trueVars.contains(tvar)
       case _ => throw InternalCompilerException(s"unexpected type $tpe", tpe.loc)
     }

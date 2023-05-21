@@ -17,14 +17,43 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ModCompletion
+import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 
 object ModuleCompleter extends Completer {
+
+  def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
+    val nestedModules = getNestedModules(ctx)
+    nestedModules.map(mod => ModCompletion(mod))
+  }
+
+  private def getNestedModules(ctx: CompletionContext)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
+    ModuleSymFragment.parseModuleSym(ctx.word) match {
+      case ModuleSymFragment.Complete(modSym) =>
+        root.modules.getOrElse(modSym, Nil).collect {
+          case sym: ModuleSym => sym
+        }
+      case ModuleSymFragment.Partial(modSym, suffix) =>
+        root.modules.getOrElse(modSym, Nil).collect {
+          case sym: ModuleSym if matches(sym, suffix) => sym
+        }
+      case _ => Nil
+    }
+  }
+
   /**
-    * Returns a List of ModCompletion for modules.
+    * Returns `true` if the given module `sym` matches the given `suffix`.
+    *
+    * (Aaa.Bbb.Ccc, Cc) => true
+    * (Aaa.Bbb.Ccc, Dd) => false
+    * (/, Cc)           => true
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ModCompletion] = {
-    root.modules.keys.map(mod => ModCompletion(mod))
+  private def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
+    if (sym.isRoot) {
+      true
+    } else {
+      sym.ns.last.startsWith(suffix) // We know that ns cannot be empty because it is not the root.
+    }
   }
 }

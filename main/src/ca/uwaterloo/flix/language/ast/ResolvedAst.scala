@@ -24,6 +24,8 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object ResolvedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
+
   case class Root(classes: Map[Symbol.ClassSym, ResolvedAst.Declaration.Class],
                   instances: Map[Symbol.ClassSym, List[ResolvedAst.Declaration.Instance]],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
@@ -79,8 +81,6 @@ object ResolvedAst {
   }
 
   object Expression {
-
-    case class Wild(loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
 

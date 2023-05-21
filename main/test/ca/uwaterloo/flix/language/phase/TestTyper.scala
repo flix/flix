@@ -111,13 +111,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   }
 
   test("TestOccurs01") {
-    val input =
-      """
-        |rel A(v: Int32)
-        |rel B(v: Int32)
-        |
-        |def foo(a: #{A | r}, b: #{B | r}): #{A, B} = solve (a <+> b)
-        |""".stripMargin
+    val input = "def foo(a: #{A(Int32) | r}, b: #{B(Int32) | r}): #{A(Int32), B(Int32)} = solve (a <+> b)"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.OccursCheckError](result)
   }
@@ -347,8 +341,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |pub enum E {
         |   case E1
         |}
-        |
-        |rel R(e: E)
         |
         |pub def f(): Bool = {
         |   let _x = #{
@@ -1217,11 +1209,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.EffectGeneralizationError.02") {
+  test("Test.EffectGeneralizationError.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 \ (ef1 and ef2) = 123
+        |def f(g: Int32 -> Int32 \ ef1, h: Int32 -> Int32 \ ef2): Int32 \ {ef1, ef2} = 123
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1495,8 +1486,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnexpectedArgument](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.UnexpectedArgument.03") {
+  test("Test.UnexpectedArgument.03") {
     val input =
       """
         |eff E {
@@ -1802,5 +1792,17 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def isRed(c: Color[s -- <Color.Red> ++ <Color.Green>]): Color[(s -- <Color.Red>) ++ <Color.Green>] = c
         |""".stripMargin
     expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestLetRec.01") {
+    val input =
+      """
+        |def f(): Int32 = {
+        |    def g(): Bool = 123;
+        |    g()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
   }
 }

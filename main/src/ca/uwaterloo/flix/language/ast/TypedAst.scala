@@ -24,6 +24,8 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
+
   case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
                   classes: Map[Symbol.ClassSym, TypedAst.Class],
                   instances: Map[Symbol.ClassSym, List[TypedAst.Instance]],
@@ -79,10 +81,6 @@ object TypedAst {
   object Expression {
 
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def pur: Type = Type.Pure
-    }
-
-    case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
     }
 

@@ -729,11 +729,6 @@ object SemanticOperator {
     case object Not extends BigIntOp
 
     /**
-      * Addition.
-      */
-    case object Add extends BigIntOp
-
-    /**
       * Subtraction.
       */
     case object Sub extends BigIntOp

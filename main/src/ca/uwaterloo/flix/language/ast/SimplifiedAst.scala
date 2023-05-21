@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift}
 
 object SimplifiedAst {
 
+  val empty: Root = SimplifiedAst.Root(Map.empty, Map.empty, None, Map.empty)
+
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],

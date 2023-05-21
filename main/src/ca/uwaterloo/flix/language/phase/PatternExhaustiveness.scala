@@ -135,7 +135,6 @@ object PatternExhaustiveness {
     */
   private def visitExp(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = {
     tast match {
-      case Expression.Wild(_, _) => Nil
       case Expression.Var(_, _, _) => Nil
       case Expression.Def(_, _, _) => Nil
       case Expression.Sig(_, _, _) => Nil

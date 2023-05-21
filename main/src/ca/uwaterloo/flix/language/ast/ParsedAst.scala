@@ -21,6 +21,11 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 object ParsedAst {
 
   /**
+    * Represents the empty AST.
+    */
+  val empty: Root = Root(Map.empty, None, MultiMap.empty)
+
+  /**
     * A collection of abstract syntax trees.
     *
     * @param units      the abstract syntax trees of the parsed compilation units.
@@ -200,32 +205,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the declaration.
       */
     case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition)
-
-    /**
-      * Relation Declaration.
-      *
-      * @param doc     the optional comment associated with the definition.
-      * @param mod     the associated modifiers.
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the relation.
-      * @param tparams the type parameters.
-      * @param attr    the attributes (columns) of the relation.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class Relation(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * Lattice Declaration.
-      *
-      * @param doc     the optional comment associated with the definition.
-      * @param mod     the associated modifiers.
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the lattice.
-      * @param tparams the type parameters.
-      * @param attr    the attributes (columns) of the relation.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass Declaration.
@@ -1564,22 +1543,30 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * A type representing a read of a region.
+      * A type representing a logical conjunction.
       *
-      * @param sp1 the position of the first character in the type.
-      * @param tpes the regions.
-      * @param sp2 the position of the last character in the type.
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
       */
-    case class Read(sp1: SourcePosition, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+    case class And(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * A type representing a read of a region.
+      * A type representing a logical disjunction.
       *
-      * @param sp1 the position of the first character in the type.
-      * @param tpes the regions.
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a logical negation.
+      *
+      * @param tpe the complemented type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Write(sp1: SourcePosition, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+    case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * A type representing a case set.

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -48,7 +48,7 @@ object QuineMcCluskey {
     * Note: the implementation does not find a
     * minimal, but instead a greedy cover
     */
-  def qmcToType(minTerms: Set[IntMap[BoolVal]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  def qmcToType(minTerms: Set[IntMap[BoolVal]], env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     val primeImplicants = collectPrimeImplicants(minTerms)
     val cover = findCover(minTerms, primeImplicants)
     coverToType(cover, env)
@@ -74,12 +74,12 @@ object QuineMcCluskey {
     * Converting a cover to a Type by making each prime
     * implicant into an AND and OR'ing them together
     */
-  private def coverToType(cover: Set[IntMap[BoolVal]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  private def coverToType(cover: Set[IntMap[BoolVal]], env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     val typeList = cover.foldLeft(List.empty[Type])((acc, m) => acc ++ List(primeImpToType(m, env)))
     if (typeList.size == 1) {
       typeList.head
     } else {
-      Type.mkOr(typeList, SourceLocation.Unknown)
+      Type.mkIntersection(typeList, SourceLocation.Unknown)
     }
   }
 
@@ -88,17 +88,21 @@ object QuineMcCluskey {
     * "Don't care"'s are thrown away, 0's are mapped to
     * NOTs of vars and 1's are mapped to vars
     */
-  private def primeImpToType(primeImp: IntMap[BoolVal], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  private def primeImpToType(primeImp: IntMap[BoolVal], env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     val typeVars = primeImp.filter{ case (_, boolValue) => boolValue != BoolVal.DontCare}.map[Type]{
       case (formVar, boolValue) =>
-      val symVar = env.getBackward(formVar).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: ${formVar}", SourceLocation.Unknown))
+      val tpe = env.getBackward(formVar) match {
+        case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+        case None => throw InternalCompilerException(s"unexpected unknown ID: $formVar", SourceLocation.Unknown)
+      }
       if (boolValue == BoolVal.False) {
-        Type.mkNot(Type.Var(symVar, symVar.loc), symVar.loc)
+        Type.mkComplement(tpe, SourceLocation.Unknown)
       } else {
-        Type.Var(symVar, symVar.loc)
+        tpe
       }
     }.toList
-    Type.mkAnd(typeVars, SourceLocation.Unknown)
+    Type.mkUnion(typeVars, SourceLocation.Unknown)
   }
 
   /**

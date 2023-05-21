@@ -44,7 +44,7 @@ import scala.collection.immutable.SortedSet
   *     This inference uses the following rules:
   *       - If the type variable is the type of a formal parameter, it is ascribed kind Star.
   *       - If the type variable is the return type of the function, it is ascribed kind Star.
-  *       - If the type variable is the purity type of the function, it is ascribed kind Bool.
+  *       - If the type variable is the purity type of the function, it is ascribed kind Eff.
   *       - If the type variable is an argument to a type constraint, it is ascribed the class's parameter kind
   *       - If the type variable is an argument to a type constructor, it is ascribed the type constructor's parameter kind.
   *       - If the type variable is used as an type constructor, it is ascribed the kind Star -> Star ... -> Star -> X,
@@ -409,8 +409,6 @@ object Kinder {
     * Performs kinding on the given expression under the given kind environment.
     */
   private def visitExp(exp00: ResolvedAst.Expression, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv0: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Expression, KindError] = exp00 match {
-
-    case ResolvedAst.Expression.Wild(loc) => KindedAst.Expression.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
     case ResolvedAst.Expression.Var(sym, loc) => KindedAst.Expression.Var(sym, loc).toSuccess
 
@@ -1189,7 +1187,7 @@ object Kinder {
     // TODO EFF-MIGRATION temporary hack to maintain behavior of IO
     case UnkindedType.Cst(TypeConstructor.Effect(sym), loc) if (sym == IoSym || sym == NonDetSym) =>
       unify(expectedKind, Kind.Eff) match {
-        case Some(_) => Type.Cst(TypeConstructor.False, loc).toSuccess
+        case Some(_) => Type.Cst(TypeConstructor.All, loc).toSuccess
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc).toFailure
       }
 
@@ -1260,10 +1258,6 @@ object Kinder {
           }
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
-
-    case UnkindedType.ReadWrite(tpe, _) =>
-      // erase the read/write wrapper
-      visitType(tpe, expectedKind, kenv, taenv, root)
 
     case UnkindedType.Enum(sym, loc) =>
       val kind = getEnumKind(root.enums(sym))
@@ -1585,8 +1579,6 @@ object Kinder {
         case (purKenvs, argKenv) => KindEnv.merge(purKenvs :+ argKenv)
       }
 
-    case UnkindedType.ReadWrite(t, _) => inferType(t, Kind.Eff, kenv0, taenv, root)
-
     case UnkindedType.Enum(sym, _) =>
       val tyconKind = getEnumKind(root.enums(sym))
       val args = Kind.kindArgs(tyconKind)
@@ -1754,9 +1746,9 @@ object Kinder {
     * Creates the type application `t1[t2]`, while simplifying trivial boolean formulas.
     */
   private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
-    case Type.Apply(Type.Cst(TypeConstructor.And, _), arg, _) => Type.mkAnd(arg, t2, loc)
-    case Type.Apply(Type.Cst(TypeConstructor.Or, _), arg, _) => Type.mkOr(arg, t2, loc)
-    case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Union, _), arg, _) => Type.mkUnion(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), arg, _) => Type.mkIntersection(arg, t2, loc)
+    case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(t2, loc)
 
     case t => Type.Apply(t, t2, loc)
   }

@@ -260,9 +260,6 @@ object Simplifier {
       case LoweredAst.Expression.Sig(_, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.Wild(_, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
       case LoweredAst.Expression.Without(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
@@ -351,26 +348,6 @@ object Simplifier {
       }
       val purity = combine(e1.purity, e2.purity)
       SimplifiedAst.Expression.Binary(sop, e1, e2, Type.Bool, purity, loc)
-    }
-
-    /**
-      * Returns an expression that adds e2 to e1
-      */
-    def mkAdd(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
-      val add = SemanticOperator.Int32Op.Add
-      val tpe = Type.Int32
-      val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(add, e1, e2, tpe, purity, loc)
-    }
-
-    /**
-      * Returns an expression that subtracts e2 from e1
-      */
-    def mkSub(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
-      val sub = SemanticOperator.Int32Op.Sub
-      val tpe = Type.Int32
-      val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(sub, e1, e2, tpe, purity, loc)
     }
 
     /**

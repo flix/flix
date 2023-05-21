@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
 
+  val empty: Root = Root(Map.empty, None, MultiMap.empty)
+
   case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
   case class CompilationUnit(usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation)
@@ -74,8 +76,6 @@ object WeededAst {
   }
 
   object Expression {
-
-    case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
@@ -326,10 +326,6 @@ object WeededAst {
 
     case class Schema(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
-
-    case class Lattice(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
-
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
     case class Arrow(tparams: List[WeededAst.Type], pur: Option[WeededAst.Type], tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
@@ -351,10 +347,6 @@ object WeededAst {
     case class Union(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Intersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
-
-    case class Read(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
-
-    case class Write(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Empty(loc: SourceLocation) extends WeededAst.Type
 

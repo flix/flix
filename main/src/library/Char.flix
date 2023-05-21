@@ -46,6 +46,13 @@ mod Char {
         isDigit(c)
 
     ///
+    /// Returns `true` if the given char `c` is a recognized Unicode letter or digit.
+    ///
+    pub def isLetterOrDigit(c: Char): Bool =
+        import static java.lang.Character.isLetterOrDigit(Char): Bool \ {};
+        isLetterOrDigit(c)
+
+    ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
     ///
     pub def isAsciiDigit(c: Char): Bool =
@@ -82,11 +89,56 @@ mod Char {
         isUpperCase(c)
 
     ///
+    /// Returns `true` if the given char `c` is titlecase, i.e. in the Unicode
+    /// category of title case letters.
+    ///
+    pub def isTitleCase(c: Char): Bool =
+        import static java.lang.Character.isTitleCase(Char): Bool \ {};
+        isTitleCase(c)
+
+    ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     pub def isWhiteSpace(c: Char): Bool =
         import static java.lang.Character.isWhitespace(Char): Bool \ {};
         isWhitespace(c)
+
+    ///
+    /// Returns `true` if the given char `c` is defined either as a entry in the
+    /// UnicodeData file or a value within a range defined in the UnicodeData file.
+    ///
+    pub def isDefined(c: Char): Bool =
+        import static java.lang.Character.isDefined(Char): Bool \ {};
+        isDefined(c)
+
+    ///
+    /// Returns `true` if the given char `c` is an ISO control character.
+    ///
+    pub def isISOControl(c: Char): Bool =
+        import static java.lang.Character.isISOControl(Char): Bool \ {};
+        isISOControl(c)
+
+    ///
+    /// Returns `true` if the given char `c` is mirrored.
+    ///
+    pub def isMirrored(c: Char): Bool =
+        import static java.lang.Character.isMirrored(Char): Bool \ {};
+        isMirrored(c)
+
+    ///
+    /// Returns `true` if the given char `c` is a surrogate code unit.
+    ///
+    pub def isSurrogate(c: Char): Bool =
+        import static java.lang.Character.isSurrogate(Char): Bool \ {};
+        isSurrogate(c)
+
+    ///
+    /// Returns `true` if the given characters `high` and `low` represent a valid
+    /// Unicode surrogate pair.
+    ///
+    pub def isSurrogatePair(high: {high = Char}, low: {low = Char}): Bool =
+        import static java.lang.Character.isSurrogatePair(Char, Char): Bool \ {};
+        isSurrogatePair(high.high, low.low)
 
     ///
     /// Converts a letter to its lowercase version.
@@ -105,6 +157,31 @@ mod Char {
     pub def toUpperCase(c: Char): Char =
         import static java.lang.Character.toUpperCase(Char): Char \ {};
         toUpperCase(c)
+
+    ///
+    /// Converts a letter to its titlecase version.
+    ///
+    /// Returns the original character if it does not have either a titlecase
+    /// version or a mapping to uppercase.
+    ///
+    pub def toTitleCase(c: Char): Char =
+        import static java.lang.Character.toTitleCase(Char): Char \ {};
+        toTitleCase(c)
+
+    ///
+    /// Returns the code point representation of Char `c`.
+    ///
+    pub def toBmpCodePoint(c: Char): Int32 =
+        unchecked_cast(c as Int32)
+
+    ///
+    /// Returns the supplementary code point value of the surrogate pair `high` and `low`.
+    ///
+    /// Caution - this function does no validation, use `isSurrogatePair` to check `high` and `low` are valid.
+    ///
+    pub def toSupplementaryCodePoint(high: {high = Char}, low: {low = Char}): Int32 =
+        import static java.lang.Character.toCodePoint(Char, Char): Int32 \ {};
+        toCodePoint(high.high, low.low)
 
     ///
     /// Returns the character `c` as a string.
@@ -134,27 +211,13 @@ mod Char {
             case i          => Some(i)
         }
 
-    ///
-    /// Returns the integer value representated by the codepoint `cp` e.g. codepoint 0x0031
-    /// which is the char '1' returns `Some(1)`.
-    ///
-    /// Returns `None` if `cp` does not represent a number.
-    ///
-    /// This function handles supplementary characters.
-    ///
-    pub def getCodePointNumericValue(cp: Int32): Option[Int32] =
-        import static java.lang.Character.getNumericValue(Int32): Int32 \ {};
-        match getNumericValue(cp) {
-            case i if i < 0 => None
-            case i          => Some(i)
-        }
 
     ///
     /// Returns the integer value representated by Char `c` with respect to `radix`. E.g.
     /// `digit(radix = 10, '1') => Some(1)`
     /// `digit(radix = 16, 'a') => Some(11)`
     ///
-    /// Returns `None` if `cp` does not represent a number.
+    /// Returns `None` if `c` does not represent a number.
     ///
     pub def digit(radix: {radix = Int32}, c: Char): Option[Int32] =
         import static java.lang.Character.digit(Char, Int32): Int32 \ {};

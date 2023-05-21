@@ -359,9 +359,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("IllegalTypeApplication.03") {
     val input =
       """
-        |rel A(a: Int32)
-        |
-        |type alias S = #{ A }
+        |type alias S = #{ A(Int32) }
         |
         |def f(p: S[Int32]): Int32 = 123
         |""".stripMargin
@@ -838,12 +836,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("KindError.TypeAlias.Type.03") {
-    val input =
-      """
-        |rel A(x: Int32)
-        |
-        |type alias Z[r] = #{ A | r }
-        |""".stripMargin
+    val input = "type alias Z[r] = #{ A(Int32) | r }"
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }

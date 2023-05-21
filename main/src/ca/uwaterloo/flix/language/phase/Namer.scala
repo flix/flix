@@ -580,9 +580,6 @@ object Namer {
   // TODO NS-REFACTOR can remove ns0 too?
   private def visitExp(exp0: WeededAst.Expression, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
 
-    case WeededAst.Expression.Wild(loc) =>
-      NamedAst.Expression.Wild(loc).toSuccess
-
     case WeededAst.Expression.Ambiguous(name, loc) =>
       NamedAst.Expression.Ambiguous(name, loc).toSuccess
 
@@ -1214,16 +1211,6 @@ object Namer {
           r => NamedAst.Type.Schema(r, loc)
         }
 
-      case WeededAst.Type.Relation(tpes, loc) =>
-        mapN(traverse(tpes)(visit)) {
-          case ts => NamedAst.Type.Relation(ts, loc)
-        }
-
-      case WeededAst.Type.Lattice(tpes, loc) =>
-        mapN(traverse(tpes)(visit)) {
-          case ts => NamedAst.Type.Lattice(ts, loc)
-        }
-
       case WeededAst.Type.Native(fqn, loc) =>
         NamedAst.Type.Native(fqn, loc).toSuccess
 
@@ -1274,16 +1261,6 @@ object Namer {
       case WeededAst.Type.Intersection(tpe1, tpe2, loc) =>
         mapN(visit(tpe1), visit(tpe2)) {
           case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
-        }
-
-      case WeededAst.Type.Read(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => NamedAst.Type.Read(t, loc)
-        }
-
-      case WeededAst.Type.Write(tpe, loc) =>
-        mapN(visit(tpe)) {
-          case t => NamedAst.Type.Write(t, loc)
         }
 
       case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
@@ -1390,8 +1367,6 @@ object Namer {
     case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case WeededAst.Type.Schema(row, loc) => freeTypeVars(row)
-    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeTypeVars)
-    case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeTypeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, pur, tresult, loc) => tparams.flatMap(freeTypeVars) ::: pur.toList.flatMap(freeTypeVars) ::: freeTypeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
@@ -1403,8 +1378,6 @@ object Namer {
     case WeededAst.Type.Complement(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Union(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
-    case WeededAst.Type.Read(tpe, loc) => freeTypeVars(tpe)
-    case WeededAst.Type.Write(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Empty(_) => Nil
     case WeededAst.Type.CaseSet(_, _) => Nil
     case WeededAst.Type.CaseComplement(tpe, loc) => freeTypeVars(tpe)

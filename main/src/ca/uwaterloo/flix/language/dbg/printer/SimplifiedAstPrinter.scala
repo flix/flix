@@ -16,26 +16,25 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
-object LiftedAstPrinter {
+object SimplifiedAstPrinter {
 
   /**
     * Returns the [[DocAst.Program]] representation of `root`.
     */
-  def print(root: LiftedAst.Root): DocAst.Program = {
+  def print(root: SimplifiedAst.Root): DocAst.Program = {
     val enums = root.enums.values.map {
-      case LiftedAst.Enum(ann, mod, sym, cases0, _, _) =>
+      case SimplifiedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case LiftedAst.Case(sym, _, _) => DocAst.Case(sym)
+          case SimplifiedAst.Case(sym, _, _) => DocAst.Case(sym)
         }.toList
         DocAst.Enum(ann, mod, sym, cases)
     }.toList
     val defs = root.defs.values.map {
-      case LiftedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
+      case SimplifiedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,
@@ -51,22 +50,23 @@ object LiftedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: LiftedAst.Expression): DocAst.Expression = e match {
+  def print(e: SimplifiedAst.Expression): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case Closure(sym, closureArgs, _, _) => DocAst.Expression.ClosureLifted(sym, closureArgs.map(print))
+    case Def(sym, _, _) => DocAst.Expression.Def(sym)
+    case Lambda(fparams, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
+    case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
+    case LambdaClosure(fparams, _, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
+    case Closure(sym, _, _) => DocAst.Expression.Def(sym)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
-    case ApplyCloTail(exp, args, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
-    case ApplyDefTail(sym, args, _, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
-    case ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case Unary(sop, exp, _, _, _) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
     case Binary(sop, exp1, exp2, _, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LetRec(sym, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Region(_, _) => DocAst.Expression.Region
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case ScopeExit(exp1, exp2, _, _, _) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
@@ -90,7 +90,8 @@ object LiftedAstPrinter {
     case InstanceOf(exp, clazz, _) => DocAst.Expression.InstanceOf(print(exp), clazz)
     case Cast(exp, tpe, _, _) => DocAst.Expression.Cast(print(exp), TypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
-      case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
+      case SimplifiedAst.CatchRule(sym, clazz, exp) =>
+        (sym, clazz, print(exp))
     })
     case InvokeConstructor(constructor, args, _, _, _) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
     case InvokeMethod(method, exp, args, _, _, _) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
@@ -100,8 +101,8 @@ object LiftedAstPrinter {
     case GetStaticField(field, _, _, _) => DocAst.Expression.JavaGetStaticField(field)
     case PutStaticField(field, exp, _, _, _) => DocAst.Expression.JavaPutStaticField(field, print(exp))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methods.map {
-      case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), TypePrinter.print(retTpe))
+      case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
+        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
     })
     case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
     case Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
@@ -113,8 +114,8 @@ object LiftedAstPrinter {
   /**
     * Returns the [[DocAst.Expression.Ascription]] representation of `fp`.
     */
-  private def printFormalParam(fp: LiftedAst.FormalParam): DocAst.Expression.Ascription = {
-    val LiftedAst.FormalParam(sym, _, tpe, _) = fp
+  private def printFormalParam(fp: SimplifiedAst.FormalParam): DocAst.Expression.Ascription = {
+    val SimplifiedAst.FormalParam(sym, _, tpe, _) = fp
     DocAst.Expression.Ascription(printVarSym(sym), TypePrinter.print(tpe))
   }
 

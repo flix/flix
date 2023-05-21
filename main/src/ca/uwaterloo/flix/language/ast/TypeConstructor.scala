@@ -280,37 +280,72 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the Boolean True.
+    * A type constructor that represents the Boolean value TRUE.
     */
   case object True extends TypeConstructor {
-    def kind: Kind = Kind.Eff
+    def kind: Kind = Kind.Bool
   }
 
   /**
-    * A type constructor that represents the Boolean False.
+    * A type constructor that represents the Boolean value FALSE.
     */
   case object False extends TypeConstructor {
+    def kind: Kind = Kind.Bool
+  }
+
+  /**
+    * A type constructor that represents Boolean negation.
+    */
+  case object Not extends TypeConstructor {
+    def kind: Kind = Kind.Bool ->: Kind.Bool
+  }
+
+  /**
+    * A type constructor that represents Boolean conjunction.
+    */
+  case object And extends TypeConstructor {
+    def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
+  }
+
+  /**
+    * A type constructor that represents Boolean disjunction.
+    */
+  case object Or extends TypeConstructor {
+    def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
+  }
+
+  /**
+    * A type constructor that represents the empty effect set.
+    */
+  case object Empty extends TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 
   /**
-    * A type constructor that represents the negation of an effect.
+    * A type constructor that represents the universal effect set.
     */
-  case object Not extends TypeConstructor {
+  case object All extends TypeConstructor {
+    def kind: Kind = Kind.Eff
+  }
+
+  /**
+    * A type constructor that represents the complement of an effect set.
+    */
+  case object Complement extends TypeConstructor {
     def kind: Kind = Kind.Eff ->: Kind.Eff
   }
 
   /**
-    * A type constructor that represents the conjunction of two effects.
+    * A type constructor that represents the union of two effect sets.
     */
-  case object And extends TypeConstructor {
+  case object Union extends TypeConstructor {
     def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
   }
 
   /**
-    * A type constructor that represents the disjunction of two effects.
+    * A type constructor that represents the intersection of two effect sets.
     */
-  case object Or extends TypeConstructor {
+  case object Intersection extends TypeConstructor {
     def kind: Kind = Kind.Eff ->: Kind.Eff ->: Kind.Eff
   }
 

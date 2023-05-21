@@ -39,6 +39,72 @@ def charAt05(): Bool = String.charAt(4, "Hello World!") == 'o'
 def charAt06(): Bool = String.charAt(5, "Hello World!") == ' '
 
 /////////////////////////////////////////////////////////////////////////////
+// nth                                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def nth01(): Bool = String.nth(0, "") == None
+
+@test
+def nth02(): Bool = String.nth(-1, "Hello World!") == None
+
+@test
+def nth03(): Bool = String.nth(15, "Hello World!") == None
+
+@test
+def nth04(): Bool = String.nth(0, "Hello World!") == Some('H')
+
+@test
+def nth05(): Bool = String.nth(1, "Hello World!") == Some('e')
+
+@test
+def nth06(): Bool = String.nth(2, "Hello World!") == Some('l')
+
+@test
+def nth07(): Bool = String.nth(3, "Hello World!") == Some('l')
+
+@test
+def nth08(): Bool = String.nth(4, "Hello World!") == Some('o')
+
+@test
+def nth09(): Bool = String.nth(5, "Hello World!") == Some(' ')
+
+@test
+def nth10(): Bool = String.nth(11, "Hello World!") == Some('!')
+
+/////////////////////////////////////////////////////////////////////////////
+// codePointAt                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def codePointAt01(): Bool = String.codePointAt(0, CodePoint.toString(0x1f3dd)) == 0x1f3dd
+
+@test
+def codePointAt02(): Bool = String.codePointAt(2, "\uD83C\uDFDD.") == 0x002E
+
+@test
+def codePointAt03(): Bool = String.codePointAt(1, ".\uD83C\uDFDD") == 0x1f3dd
+
+/////////////////////////////////////////////////////////////////////////////
+// nthCodePoint                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def nthCodePoint01(): Bool = String.nthCodePoint(0, "") == None
+
+@test
+def nthCodePoint02(): Bool = String.nthCodePoint(0, CodePoint.toString(0x1f3dd)) == Some(0x1f3dd)
+
+@test
+def nthCodePoint03(): Bool = String.nthCodePoint(2, CodePoint.toString(0x1f3dd)) == None
+
+@test
+def nthCodePoint04(): Bool = String.nthCodePoint(2, "\uD83C\uDFDD.") == Some(0x002E)
+
+@test
+def nthCodePoint05(): Bool = String.nthCodePoint(1, ".\uD83C\uDFDD") == Some(0x1f3dd)
+
+/////////////////////////////////////////////////////////////////////////////
 // concat                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 

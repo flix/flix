@@ -48,10 +48,17 @@ object CompletionUtils {
     (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 
-
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
+
+  def getLabelForEnumTags(name: String, cas: TypedAst.Case)(implicit flix: Flix): String = {
+    cas.tpe match {
+      case Type.Unit => name
+      case tpe: Type.Cst => s"$name(${FormatType.formatType(tpe)})"
+      case _ =>  s"$name${FormatType.formatType(cas.tpe)}"
+    }
+  }
 
   def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, _, _) =>
@@ -69,8 +76,8 @@ object CompletionUtils {
         ""
       } else {
         pur0 match {
-          case Type.Cst(TypeConstructor.True, _) => ""
-          case Type.Cst(TypeConstructor.False, _) => raw" \ IO"
+          case Type.Cst(TypeConstructor.Empty, _) => ""
+          case Type.Cst(TypeConstructor.All, _) => raw" \ IO"
           case p => raw" \ " + FormatType.formatType(p)
         }
       }
