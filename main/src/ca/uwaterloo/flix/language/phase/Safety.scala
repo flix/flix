@@ -82,23 +82,26 @@ object Safety {
     * Checks that if `def0` is a test entry point that it is well-behaved.
     */
   private def visitTestEntryPoint(def0: Def, root: Root): List[CompilationMessage] = {
-    def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
+    if (def0.spec.ann.isTest) {
+      def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
 
-    val isTest = def0.spec.ann.isTest
+      val hasParameters = def0.spec.fparams match {
+        case fparam :: Nil if isUnitType(fparam) => false
+        case Nil => throw InternalCompilerException("Unexpected empty formal parameter list near", def0.spec.loc)
+        case _ => true
+      }
 
-    val hasParameters = def0.spec.fparams match {
-      case fparam :: Nil if isUnitType(fparam) => false
-      case Nil => throw InternalCompilerException("Unexpected empty formal parameter list near", def0.spec.loc)
-      case _ => true
+      if (hasParameters) {
+        val fparam :: _ = def0.spec.fparams
+        val err = SafetyError.IllegalTestParameters(fparam.loc)
+        List(err)
+      } else {
+        Nil
+      }
     }
 
-    if (isTest && hasParameters) {
-      val fparam :: _ = def0.spec.fparams
-      val err = SafetyError.IllegalTestParameters(fparam.loc)
-      List(err)
-    } else {
-      Nil
-    }
+    else Nil
+
   }
 
   /**
