@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 
 import java.math.BigInteger
 import scala.annotation.tailrec
@@ -85,13 +85,12 @@ object Safety {
     if (def0.spec.ann.isTest) {
       def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
 
-      val hasParameters = def0.spec.fparams match {
-        case fparam :: Nil if isUnitType(fparam) => false
-        case Nil => throw InternalCompilerException("Unexpected empty formal parameter list near", def0.spec.loc)
-        case _ => true
+      val hasUnitParameter = def0.spec.fparams match {
+        case fparam :: Nil => isUnitType(fparam)
+        case _ => false
       }
 
-      if (hasParameters) {
+      if (!hasUnitParameter) {
         val fparam :: _ = def0.spec.fparams
         val err = SafetyError.IllegalTestParameters(fparam.loc)
         List(err)
