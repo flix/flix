@@ -144,8 +144,7 @@ object OperatorPrinter {
          Int8Op.Mul |
          Int16Op.Mul |
          Int32Op.Mul |
-         Int64Op.Mul |
-         BigIntOp.Mul => mul
+         Int64Op.Mul => mul
     case Float32Op.Div |
          Float64Op.Div |
          BigDecimalOp.Div |

@@ -719,11 +719,6 @@ object SemanticOperator {
   object BigIntOp {
 
     /**
-      * Multiplication.
-      */
-    case object Mul extends BigIntOp
-
-    /**
       * Division.
       */
     case object Div extends BigIntOp
