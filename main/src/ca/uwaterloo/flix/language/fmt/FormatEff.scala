@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 object FormatEff {
 
   def formatEff(eff: Type)(implicit flix: Flix): String = eff match {
-    case Type.Cst(TypeConstructor.Empty, _) => "Pure"
-    case Type.Cst(TypeConstructor.All, _) => "Impure"
+    case Type.Cst(TypeConstructor.Pure, _) => "Pure"
+    case Type.Cst(TypeConstructor.EffUniv, _) => "Impure"
     case _ => FormatType.formatType(eff)
   }
 
