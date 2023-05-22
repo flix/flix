@@ -317,14 +317,14 @@ object TypeConstructor {
   /**
     * A type constructor that represents the empty effect set.
     */
-  case object Empty extends TypeConstructor {
+  case object Pure extends TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 
   /**
     * A type constructor that represents the universal effect set.
     */
-  case object All extends TypeConstructor {
+  case object EffUniv extends TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 

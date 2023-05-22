@@ -230,8 +230,8 @@ object MonoTyper {
             case TypeConstructor.And => MonoType.Unit
             case TypeConstructor.Or=> MonoType.Unit
 
-            case TypeConstructor.Empty => MonoType.Unit
-            case TypeConstructor.All => MonoType.Unit
+            case TypeConstructor.Pure => MonoType.Unit
+            case TypeConstructor.EffUniv => MonoType.Unit
             case TypeConstructor.Complement => MonoType.Unit
             case TypeConstructor.Union => MonoType.Unit
             case TypeConstructor.Intersection => MonoType.Unit

@@ -343,10 +343,10 @@ object Regions {
     */
   def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
     // t0 = tpe[tvar -> False]
-    val t0 = Substitution.singleton(tvar.sym, Type.All).apply(tpe)
+    val t0 = Substitution.singleton(tvar.sym, Type.EffUniv).apply(tpe)
 
     // t1 = tpe[tvar -> True]
-    val t1 = Substitution.singleton(tvar.sym, Type.Empty).apply(tpe)
+    val t1 = Substitution.singleton(tvar.sym, Type.Pure).apply(tpe)
 
     // tvar is essential if t0 != t1
     !sameType(t0, t1)
@@ -376,8 +376,8 @@ object Regions {
       * and all other variables are ascribed the value FALSE.
       */
     def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
-      case Type.Empty => true
-      case Type.All => false
+      case Type.Pure => true
+      case Type.EffUniv => false
       case Type.Apply(Type.Complement, x, _) => eval(x, trueVars)
       case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
       case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)

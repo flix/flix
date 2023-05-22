@@ -345,7 +345,7 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val pur = Some(UnkindedType.Cst(TypeConstructor.All, loc))
+    val pur = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
     mkApply(UnkindedType.Arrow(pur, 2, loc), List(a, b), loc)
   }
 
@@ -559,7 +559,7 @@ object UnkindedType {
       val elmType = getFlixType(comp)
       UnkindedType.mkApply(
         UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.All, SourceLocation.Unknown)),
+        List(elmType, UnkindedType.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)),
         SourceLocation.Unknown
       )
     }
