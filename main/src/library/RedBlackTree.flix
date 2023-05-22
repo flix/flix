@@ -87,7 +87,7 @@ instance Filterable[RedBlackTree[k]] with Order[k] {
 instance Witherable[RedBlackTree[k]] with Order[k]
 
 instance Iterable[RedBlackTree[k]] {
-    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ r =
             RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
 }
 
@@ -799,7 +799,7 @@ mod RedBlackTree {
     ///
     /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
     ///
-    pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ r =
         let d = MutDeque.new(r);
         forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
@@ -963,7 +963,7 @@ mod RedBlackTree {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
         let stack1 = leftmost(t, Nil);
         let state = ref stack1 @ rc;
         let next = () -> match (deref state) {

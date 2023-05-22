@@ -32,7 +32,7 @@ object TypeMinimization {
     * Minimizes the given type, reducing it to a more concise equivalent form.
     */
   def minimizeType(t: Type)(implicit flix: Flix): Type = t.kind match {
-    case Kind.Bool => minimizeBoolAlg(t)
+    case Kind.Eff => minimizeBoolAlg(t)
     case _ => t match {
       case tpe: Type.Var => tpe
       case tpe: Type.Cst => tpe
@@ -74,7 +74,7 @@ object TypeMinimization {
 
     // Check that the `tpe` argument is a Boolean formula.
     tpe0.kind match {
-      case Kind.Bool => // OK
+      case Kind.Eff => // OK
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.", tpe0.loc)
     }
 
@@ -101,7 +101,7 @@ object TypeMinimization {
 
     // Convert the type `tpe` to a Boolean formula.
     val input = tpe.kind match {
-      case Kind.Bool => fromBoolType(tpe, m)
+      case Kind.Eff => fromBoolType(tpe, m)
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect/non-Case kind: '${tpe.kind}'.", tpe.loc)
     }
 

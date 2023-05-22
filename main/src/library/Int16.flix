@@ -61,6 +61,7 @@ mod Int16 {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
     ///
     pub def mod(x: Int16, n: Int16): Int16 =
         if (n == 0i16)
@@ -70,6 +71,9 @@ mod Int16 {
 
     ///
     /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `Int16.mod`.
     ///
     pub def rem(x: Int16, n: Int16): Int16 =
         if (n == 0i16)

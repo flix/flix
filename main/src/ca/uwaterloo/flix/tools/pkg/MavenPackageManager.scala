@@ -30,6 +30,7 @@ import java.nio.file.{Files, Path, Paths}
 
 object MavenPackageManager {
 
+  val FolderName = "cache"
   private val scalaVersion = "2.13"
 
   /**
@@ -42,7 +43,7 @@ object MavenPackageManager {
 
     val depStrings = manifests.flatMap(manifest => getMavenDependencyStrings(manifest))
 
-    val libPath = Bootstrap.getLibraryDirectory(path).resolve("cache")
+    val libPath = Bootstrap.getLibraryDirectory(path).resolve(FolderName)
     val cacheString = libPath.toString
     Files.createDirectories(Paths.get(cacheString))
 

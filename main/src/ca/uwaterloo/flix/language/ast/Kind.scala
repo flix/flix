@@ -65,7 +65,12 @@ object Kind {
   case object Star extends Kind
 
   /**
-    * Represents the kind of boolean formulas.
+    * Represents the kind of effect sets.
+    */
+  case object Eff extends Kind
+
+  /**
+    * Represents the kind of Boolean formulas
     */
   case object Bool extends Kind
 

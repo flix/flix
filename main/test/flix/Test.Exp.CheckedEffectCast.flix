@@ -110,11 +110,10 @@
 
     pub eff E
 
-    // TODO EFF-MIGRATION re-enable after effect migration
-//    @test
-//    def testCheckedEffectCast29(): (a -> a \ E) = x -> checked_ecast(x)
-//
-//    @test
-//    def testCheckedEffectCast30(): (a -> a) \ E = checked_ecast(x -> x)
+    @test
+    def testCheckedEffectCast29(): (a -> a \ E) = x -> checked_ecast(x)
+
+    @test
+    def testCheckedEffectCast30(): (a -> a) \ E = checked_ecast(x -> x)
 
 }

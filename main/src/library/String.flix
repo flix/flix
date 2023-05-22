@@ -26,6 +26,31 @@ mod String {
         charAt(s, i)
 
     ///
+    /// Optionally return the character at position `i` in the string `s`.
+    ///
+    pub def nth(i: Int32, s: String): Option[Char] =
+        if (0 <= i and i < length(s))
+            Some(charAt(i, s))
+        else
+            None
+
+    ///
+    /// Returns the code point at position `i` in the string `s`.
+    ///
+    pub def codePointAt(i: Int32, s: String): Int32 =
+        import java.lang.String.codePointAt(Int32): Int32 \ {};
+        codePointAt(s, i)
+
+    ///
+    /// Optionally returns the code point at position `i` in the string `s`.
+    ///
+    pub def nthCodePoint(i: Int32, s: String): Option[Int32] =
+        if (0 <= i and i < length(s))
+            Some(codePointAt(i, s))
+        else
+            None
+
+    ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
@@ -64,7 +89,7 @@ mod String {
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex = String}, s: String): List[String] = region rc {
-        import java.lang.String.split(String): Array[String, rc] \ Write(rc);
+        import java.lang.String.split(String): Array[String, rc] \ rc;
         let _ = rc; // This avoids a redundancy error.
         Array.toList(split(s, regex.regex))
     }
@@ -107,7 +132,7 @@ mod String {
     ///
     /// Returns the given string `s` as an array of characters.
     ///
-    pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
+    pub def toArray(r: Region[r], s: String): Array[Char, r] \ r =
         Array.init(r, i -> charAt(i, s), length(s))
 
     ///
@@ -289,9 +314,9 @@ mod String {
     /// Helper function for `isSubmatch`.
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool = region rc {
-        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ Write(rc);
-        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ Read(rc);
-        import java.util.regex.Matcher.find(Int32): Bool \ Write(rc);
+        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ rc;
+        import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ rc;
+        import java.util.regex.Matcher.find(Int32): Bool \ rc;
         let _ = rc; // This avoids a redundancy error.
         try {
             let p1 = compile(pattern);
@@ -1025,10 +1050,10 @@ mod String {
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
     ///
-    /// If the length of `s` exceeds `w` and `w >= 3" then `s` is truncated and the first
+    /// If the length of `s` exceeds `w` and `w >= 3` then `s` is truncated and the first
     /// three characters are replaced with ellipses.
     ///
-    /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
+    /// If the length of `s` exceeds `w` and `w < 3` then the empty string is returned.
     ///
     pub def abbreviateLeft(w: Int32, s: String): String =
         match length(s) {
@@ -1043,10 +1068,10 @@ mod String {
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
     ///
-    /// If the length of `s` exceeds `w` and `w >= 3" then `s` is truncated and the last
+    /// If the length of `s` exceeds `w` and `w >= 3` then `s` is truncated and the last
     /// three characters are replaced with ellipses.
     ///
-    /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
+    /// If the length of `s` exceeds `w` and `w < 3` then the empty string is returned.
     ///
     pub def abbreviateRight(w: Int32, s: String): String =
         match length(s) {
@@ -1092,7 +1117,7 @@ mod String {
     ///
     /// Helper function for `levenshteinDistance`.
     ///
-    def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { Read(r2), Write(r1) } =
+    def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { r2, r1 } =
         forIndex(0, Array.length(a) - 1, {i ->  Array.put(Array.get(i, b), i, a) })
 
     ///
@@ -1229,6 +1254,50 @@ mod String {
             loop(0, 0)
 
     ///
+    /// For every line in string `s`, strip a leading prefix consisting of
+    /// blanks or control characters followed by `|` from the line, if
+    /// such a prefix exists.
+    ///
+    pub def stripMargin(s: String): String = stripMarginWith({margin = "|"}, s)
+
+    ///
+    /// For every line in string `s`, strip a leading prefix consisting of
+    /// blanks or control characters followed by `margin` from the line, if
+    /// such a prefix exists.
+    ///
+    pub def stripMarginWith(margin: {margin = String}, s: String): String =
+        let l = linesWithNewLine(s);
+        intercalate("", List.map(stripMarginWithSingleLine(margin), l))
+
+    ///
+    /// Helper function for `stripMarginWith`.
+    /// From a single line, strips a leading prefix consisting of blanks or
+    /// control characters followed by `margin`, if such a prefix exists.
+    ///
+    def stripMarginWithSingleLine(margin: {margin = String}, s: String): String =
+        let marginLen = length(margin.margin);
+        let trimmed = dropWhile(c -> c <= ' ', s);
+        if (startsWith(prefix = margin.margin, trimmed))
+            sliceRight(start = marginLen, trimmed)
+        else
+            s
+
+    ///
+    /// Helper function for `stripMarginWith`.
+    ///
+    /// Split the string `s` into an array of lines, breaking on newline,
+    /// while keeping the newline at the end of each line.
+    ///
+    /// Newline is recognized as any Unicode linebreak sequence including
+    /// Windows (carriage return, line feed) or Unix (line feed).
+    ///
+    def linesWithNewLine(s: String): List[String] =
+        if (isEmpty(s))
+            Nil
+        else
+            split({regex = "(?<=\\R)"}, s)
+
+    ///
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
     pub def stripPrefix(substr: {substr = String}, s: String): Option[String] =
@@ -1249,13 +1318,13 @@ mod String {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ r =
         Iterator.range(rc, 0, length(s)) |> Iterator.map(i -> charAt(i, s))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], s: String): Iterator[(Int32, Char), r, r] \ Write(r) =
+    pub def enumerator(rc: Region[r], s: String): Iterator[(Int32, Char), r, r] \ r =
         iterator(rc, s) |> Iterator.zipWithIndex
 
 }

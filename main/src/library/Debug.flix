@@ -31,7 +31,7 @@ mod Debug {
     ///
     /// Returns an automatic string representation of `x`.
     ///
-    @Internal @Unsafe
+    @Internal
     pub def stringify(x: a): String = region rc {
         import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
         let _ = rc;

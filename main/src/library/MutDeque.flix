@@ -61,7 +61,7 @@ mod MutDeque {
     ///
     /// Returns a string representation of the given MutDeque `d`.
     ///
-    pub def toString(d: MutDeque[a, r]): String \ Read(r) with ToString[a] = region rc2 {
+    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutDeque#{", sb);
         forEachWithIndex((i, x) -> {
@@ -77,13 +77,13 @@ mod MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
+    pub def new(r: Region[r]): MutDeque[a, r] \ r =
         MutDeque(r, ref Array.new(r, minCapacity()) @ r, ref 0 @ r, ref 0 @ r)
 
     ///
     /// Returns the number of elements in `d`.
     ///
-    pub def size(d: MutDeque[a, r]): Int32 \ Read(r) =
+    pub def size(d: MutDeque[a, r]): Int32 \ r =
         let MutDeque(_, _, f, b) = d;
         computeSize(capacity(d), deref f, deref b)
 
@@ -99,20 +99,20 @@ mod MutDeque {
     ///
     /// Returns `true` if `d` is empty.
     ///
-    pub def isEmpty(d: MutDeque[a, r]): Bool \ Read(r) =
+    pub def isEmpty(d: MutDeque[a, r]): Bool \ r =
         let MutDeque(_, _, f, b) = d;
         deref f == deref b
 
     ///
     /// Returns the sum of all elements in the deque `d`.
     ///
-    pub def sum(d: MutDeque[Int32, r]): Int32 \ Read(r) =
+    pub def sum(d: MutDeque[Int32, r]): Int32 \ r =
         sumWith(identity, d)
 
     ///
     /// Returns the sum of all elements in the deque `d` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 \ ef, d: MutDeque[a, r]): Int32 \ { ef, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef, d: MutDeque[a, r]): Int32 \ { ef, r } =
         foldLeft((acc, x) -> f(x) + acc, 0, d)
 
     ///
@@ -120,7 +120,7 @@ mod MutDeque {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, r } =
         let MutDeque(_, ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -138,7 +138,7 @@ mod MutDeque {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, d: MutDeque[a, r]): b \ { ef, r } =
         let MutDeque(_, ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -159,7 +159,7 @@ mod MutDeque {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, s: b, d: MutDeque[a, r]): b \ { ef, r } =
         let MutDeque(_, ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -176,13 +176,13 @@ mod MutDeque {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b \ ef, d: MutDeque[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, d: MutDeque[a, r]): b \ { ef, r } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), d)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
     ///
-    pub def popFront(d: MutDeque[a, r]): Option[a] \ { Read(r), Write(r) } =
+    pub def popFront(d: MutDeque[a, r]): Option[a] \ r =
         if (isEmpty(d)) {
             None
         }
@@ -199,7 +199,7 @@ mod MutDeque {
     ///
     /// Returns `Some(x)` where `x` is the element at the back. Returns `None` if `d` is empty.
     ///
-    pub def popBack(d: MutDeque[a, r]): Option[a] \ { Read(r), Write(r) } =
+    pub def popBack(d: MutDeque[a, r]): Option[a] \ r =
         if (isEmpty(d)) {
             None
         }
@@ -216,7 +216,7 @@ mod MutDeque {
     ///
     /// Pushes `x` to the front of `d`.
     ///
-    pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ r =
         let MutDeque(_, a, f, _) = d;
         let a1 = deref a;
         let f1 = (deref f - 1) `Int32.mod` capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
@@ -227,7 +227,7 @@ mod MutDeque {
     ///
     /// Pushes `x` to the back of `d`.
     ///
-    pub def pushBack(x: a, d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def pushBack(x: a, d: MutDeque[a, r]): Unit \ r =
         let MutDeque(_, a, _, b) = d;
         let a1 = deref a;
         let b1 = deref b;
@@ -238,7 +238,7 @@ mod MutDeque {
     ///
     /// Optionally returns the front element. Does *not* remove it.
     ///
-    pub def peekFront(d: MutDeque[a, r]): Option[a] \ Read(r) =
+    pub def peekFront(d: MutDeque[a, r]): Option[a] \ r =
         let MutDeque(_, a, f, b) = d;
         let f1 = deref f;
         let b1 = deref b;
@@ -250,7 +250,7 @@ mod MutDeque {
     ///
     /// Optionally returns the back element. Does *not* remove it.
     ///
-    pub def peekBack(d: MutDeque[a, r]): Option[a] \ Read(r) =
+    pub def peekBack(d: MutDeque[a, r]): Option[a] \ r =
         let MutDeque(_, a, f, b) = d;
         let f1 = deref f;
         let b1 = deref b;
@@ -264,19 +264,19 @@ mod MutDeque {
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
-    def expand!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
+    def expand!(d: MutDeque[a, r]): Unit \ r =
         if (shouldExpand(d)) grow!(d) else ()
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
-    def shouldExpand(d: MutDeque[a, r]): Bool \ { Read(r), Write(r) } =
+    def shouldExpand(d: MutDeque[a, r]): Bool \ r =
         loadFactorOf(size(d), capacity(d)) >= maxLoadFactor()
 
     ///
     /// Doubles the capacity of `d`.
     ///
-    def grow!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
+    def grow!(d: MutDeque[a, r]): Unit \ r =
         let MutDeque(r, a, f, b) = d;
         let c = capacity(d);
         let arr = Array.new(r, Int32.leftShift(c, 1));    // Allocate new array `arr` with double the capacity of `a`.
@@ -288,19 +288,19 @@ mod MutDeque {
     ///
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
-    def compress!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
+    def compress!(d: MutDeque[a, r]): Unit \ r =
         if (shouldCompress(d)) shrink!(d) else ()
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.
     ///
-    def shouldCompress(d: MutDeque[a, r]): Bool \ { Read(r), Write(r) } =
+    def shouldCompress(d: MutDeque[a, r]): Bool \ r =
         loadFactorOf(size(d), capacity(d)) <= minLoadFactor()
 
     ///
     /// Shrinks MutDeque `d` to half its size but never below `minCapacity`.
     ///
-    def shrink!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
+    def shrink!(d: MutDeque[a, r]): Unit \ r =
         let MutDeque(r, a, f, b) = d;
         let mc = minCapacity();
         let c = capacity(d);
@@ -317,7 +317,7 @@ mod MutDeque {
     ///
     /// Copies the elements from `a` to `a1`. Mutates the array `a1`.
     ///
-    def copyElements!(r2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
+    def copyElements!(r2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { r1, r2 } =
         let c = Array.length(a);
         if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
             Array.updateSequence!(0,     Array.slice(r2, start = f, end = b, a), a1)
@@ -335,14 +335,14 @@ mod MutDeque {
     ///
     /// Returns the capacity of `d`.
     ///
-    def capacity(d: MutDeque[a, r]): Int32 \ Read(r) =
+    def capacity(d: MutDeque[a, r]): Int32 \ r =
         let MutDeque(_, a, _, _) = d;
         Array.length(deref a)
 
     ///
     /// Returns `true` if `MutDeque`s `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
-    pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] = region rc3 {
+    pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ { r1, r2 } with Eq[t] = region rc3 {
         let aSize = size(d1);
         let bSize = size(d2);
         if (aSize == bSize) {
@@ -360,13 +360,13 @@ mod MutDeque {
     ///
     /// Returns `d` as a `List`.
     ///
-    pub def toList(d: MutDeque[a, r]): List[a] \ Read(r) =
+    pub def toList(d: MutDeque[a, r]): List[a] \ r =
         foldRight((x, acc) -> x :: acc, Nil, d)
 
     ///
     /// Returns `d` as an array.
     ///
-    pub def toArray(r1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
+    pub def toArray(r1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { r2, r1 } =
         let MutDeque(_, a, f, b) = d;
         let len = MutDeque.capacity(d);
         let i = deref f;
@@ -382,14 +382,14 @@ mod MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, d: MutDeque[a, r]): String \ Read(r) with ToString[a] =
+    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] =
         joinWith(ToString.toString, sep, d)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region rc1 {
+    pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new(rc1);
@@ -402,7 +402,7 @@ mod MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutDeque(_, a, f, b) = d;
         let i = ref (deref f) @ rc;
         let next = () -> {
@@ -419,7 +419,7 @@ mod MutDeque {
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
     ///
-    pub def forEach(f: a -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } =
         let MutDeque(_, a, front, back) = d;
         let c = capacity(d) - 1;
 
@@ -440,7 +440,7 @@ mod MutDeque {
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`
     /// along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } = region rc {
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, r } = region rc {
         let ix = ref 0 @ rc;
         forEach(x -> {let i = deref ix; f(i, x); ix := i+1}, d)
     }
@@ -448,7 +448,7 @@ mod MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region rc3 {
+    pub def shuffle(r1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, NonDet } = region rc3 {
         toArray(rc3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
     }
 

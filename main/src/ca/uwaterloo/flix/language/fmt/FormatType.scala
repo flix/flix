@@ -169,9 +169,9 @@ object FormatType {
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
-      case SimpleType.Region => true
       case SimpleType.Empty => true
       case SimpleType.All => true
+      case SimpleType.Region => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -230,17 +230,14 @@ object FormatType {
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
       case SimpleType.Lazy => "Lazy"
-      case SimpleType.True => mode match {
-        case Mode.Type => "true"
-        case Mode.Purity => "Pure"
+      case SimpleType.False => "false"
+      case SimpleType.True => "true"
+      case SimpleType.Empty => mode match {
+        case Mode.Type => "Pure"
+        case Mode.Purity => "{}"
       }
-      case SimpleType.False => mode match {
-        case Mode.Type => "false"
-        case Mode.Purity => "IO"
-      }
+      case SimpleType.All => "IO"
       case SimpleType.Region => "Region"
-      case SimpleType.Empty => "Empty"
-      case SimpleType.All => "All"
       case SimpleType.Record(fields) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"{ $fieldString }"
@@ -318,6 +315,7 @@ object FormatType {
           case Kind.Wild => "_" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
+          case Kind.Eff => "e" + id
           case Kind.Bool => "b" + id
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id

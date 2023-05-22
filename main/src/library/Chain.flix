@@ -115,7 +115,7 @@ instance Collectable[Chain] {
 }
 
 instance Iterable[Chain] {
-    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rc, c)
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
 mod Chain {
@@ -747,7 +747,7 @@ mod Chain {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
+    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
         let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
@@ -755,7 +755,7 @@ mod Chain {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], c: Chain[a]): MutList[a, r] \ Write(r) = region rc2 {
+    pub def toMutList(r: Region[r], c: Chain[a]): MutList[a, r] \ r = region rc2 {
         Array.toMutList(r, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
@@ -777,7 +777,7 @@ mod Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
+    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
         case None    => Array#{} @ r
         case Some(_) =>
             let arr = Array.new(r, length(c));
@@ -788,7 +788,7 @@ mod Chain {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =
         let cursor = ref viewLeft(c) @ rc;
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
@@ -802,7 +802,7 @@ mod Chain {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ r =
         iterator(rc, c) |> Iterator.zipWithIndex
 
     ///

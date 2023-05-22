@@ -81,7 +81,6 @@ object Statistics {
 
     val subExprs = exp0 match {
       case Expression.Cst(_, _, _) => Counter.empty
-      case Expression.Wild(tpe, loc) => Counter.empty
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty
       case Expression.Sig(sym, tpe, loc) => Counter.empty
@@ -146,7 +145,6 @@ object Statistics {
       case Expression.PutChannel(exp1, exp2, tpe, pur, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.SelectChannel(rules, default, tpe, pur, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))
       case Expression.Spawn(exp1, exp2, tpe, pur, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Par(exp, loc) => visitExp(exp)
       case Expression.ParYield(frags, exp, tpe, pur, loc) => Counter.merge(frags.map(f => visitExp(f.exp))) ++ visitExp(exp)
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
       case Expression.Force(exp, tpe, pur, loc) => visitExp(exp)

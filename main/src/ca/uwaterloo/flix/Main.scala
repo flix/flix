@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util._
 
 import java.io.File
@@ -97,7 +98,6 @@ object Main {
       test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
-      xallowredundancies = Options.Default.xallowredundancies,
       xbddthreshold = cmdOpts.xbddthreshold,
       xboolclassic = cmdOpts.xboolclassic,
       xnoboolcache = cmdOpts.xnoboolcache,
@@ -112,7 +112,7 @@ object Main {
       xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
-      xprintasts = cmdOpts.xprintasts,
+      xprintphase = cmdOpts.xprintphase,
       xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary
@@ -136,103 +136,118 @@ object Main {
 
       cmdOpts.command match {
         case Command.None =>
-          val result = SimpleRunner.run(cwd, cmdOpts, options)
-          System.exit(getCode(result))
+          SimpleRunner.run(cwd, cmdOpts, options) match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case _ =>
+              System.exit(1)
+          }
 
         case Command.Init =>
-          val result = Bootstrap.init(cwd, options)(System.out)
-          System.exit(getCode(result))
+          Bootstrap.init(cwd, options)(System.out) match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
         case Command.Check =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.check(options)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.check(options)
+          } match {
+            case Validation.Success(_) => System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Build =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
-              val result = bootstrap.build(loadClasses = false)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+              bootstrap.build(loadClasses = false)
+          } match {
+            case Validation.Success(_) => System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildJar =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.buildJar(options)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.buildJar(options)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildPkg =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.buildPkg(options)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.buildPkg(options)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Run =>
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              // Compute the arguments to be passed to main.
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap =>
               val args: Array[String] = cmdOpts.args match {
                 case None => Array.empty
                 case Some(a) => a.split(" ")
               }
-              val result = bootstrap.run(options, args)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+              bootstrap.run(options, args)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.benchmark(o)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.benchmark(o)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
-              val result = bootstrap.test(o)
-              System.exit(getCode(result))
-            case Result.Err(e) =>
-              println(e.message(formatter))
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+            bootstrap => bootstrap.test(o)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
-            println("The `repl' command cannot be used with a list of files.")
+            println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-            case Result.Ok(bootstrap) =>
+            case Validation.Success(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
               System.exit(0)
-            case Result.Err(e) =>
-              println(e.message(formatter))
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -248,19 +263,13 @@ object Main {
           System.exit(0)
 
       }
-    } catch {
+    }
+
+    catch {
       case ex: RuntimeException =>
         ex.printStackTrace()
         System.exit(1)
     }
-  }
-
-  /**
-    * Extracts the exit code from the given result.
-    */
-  private def getCode(result: Result[_, Int]): Int = result match {
-    case Result.Ok(_) => 0
-    case Result.Err(code) => code
   }
 
   /**
@@ -298,7 +307,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
-                     xprintasts: Set[String] = Set.empty,
+                     xprintphase: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
                      xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
@@ -471,18 +480,19 @@ object Main {
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
-        text("[experimental] disables compiler optimizations")
+        text("[experimental] disables compiler optimizations.")
 
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
-      // xprint-asts
-      opt[Seq[String]]("Xprint-asts").action((m, c) => c.copy(xprintasts = m.toSet))
+      // Xprint-phase
+      opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
+        text("[experimental] prints the AST(s) after the given phase(s). 'all' prints all ASTs.")
 
       // Xprint-bool-unif
       opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
-        text("[experimental] prints boolean unification queries")
+        text("[experimental] prints boolean unification queries.")
 
       //
       // Boolean unification flags.

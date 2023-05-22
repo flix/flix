@@ -332,6 +332,7 @@ object Documentor {
     case Kind.Wild => ""
     case Kind.WildCaseSet => ""
     case Kind.Star => "Type"
+    case Kind.Eff => "Eff"
     case Kind.Bool => "Bool"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"

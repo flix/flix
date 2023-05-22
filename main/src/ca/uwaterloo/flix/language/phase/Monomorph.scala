@@ -65,7 +65,7 @@ object Monomorph {
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     private def default(tpe0: Type): Type = tpe0.kind match {
-      case Kind.Bool =>
+      case Kind.Eff =>
         // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
         // TODO: In the future we need to decide what should actually happen if such variables occur.
         // TODO: In particular, it seems there are two cases.
@@ -74,7 +74,7 @@ object Monomorph {
         if (flix.options.xstrictmono)
           throw UnexpectedNonConstBool(tpe0, tpe0.loc)
         else
-          Type.True
+          Type.Pure
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
@@ -100,9 +100,9 @@ object Monomorph {
             val y = visit(t2)
             visit(t1) match {
               // Simplify boolean equations.
-              case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
-              case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
-              case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
+              case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
 
               case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
               case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
@@ -319,9 +319,6 @@ object Monomorph {
     * definition and substitution is enqueued.
     */
   private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Wild(tpe, loc) =>
-      Expression.Wild(subst(tpe), loc)
-
     case Expression.Var(sym, tpe, loc) =>
       Expression.Var(env0(sym), subst(tpe), loc)
 
@@ -442,7 +439,7 @@ object Monomorph {
               val subst1 = caseSubst @@ subst.nonStrict
               // visit the body under the extended environment
               val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
-              val pur = Type.mkAnd(exp.pur, subst(body0.pur), loc.asSynthetic)
+              val pur = Type.mkUnion(exp.pur, subst(body0.pur), loc.asSynthetic)
               Some(Expression.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), pur, loc))
           }
       }.next() // We are safe to get next() because the last case will always match
@@ -807,12 +804,12 @@ object Monomorph {
       sym.kind match {
         case Kind.CaseSet(enumSym) =>
           Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
-        case Kind.Bool =>
+        case Kind.Eff =>
           if (flix.options.xstrictmono)
             throw UnexpectedNonConstBool(tpe, loc)
           else {
             // TODO: We should return Type.ErasedBool or something.
-            Type.True
+            Type.Pure
           }
         case _ => tpe
       }

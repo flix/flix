@@ -23,6 +23,8 @@ import java.lang.reflect.Method
 
 object ErasedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
+
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],

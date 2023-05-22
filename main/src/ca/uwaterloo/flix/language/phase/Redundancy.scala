@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -49,11 +49,6 @@ object Redundancy {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
-    // Return early if the redundancy phase is disabled.
-    if (flix.options.xallowredundancies) {
-      return root.toSuccess
-    }
-
     // Computes all used symbols in all top-level defs (in parallel).
     val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (_, decl)) => acc ++ visitDef(decl)(root, flix)
@@ -282,8 +277,6 @@ object Redundancy {
     */
   private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = e0 match {
     case Expression.Cst(_, _, _) => Used.empty
-
-    case Expression.Wild(_, _) => Used.empty
 
     case Expression.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
       // Case 1: Non-wild, non-recursive use of sym.
@@ -786,9 +779,6 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expression.Par(exp, _) =>
-      visitExp(exp, env0, rc)
-
     case Expression.ParYield(frags, exp, _, _, _) =>
       val (used, env1, fvs) = visitParYieldFragments(frags, env0, rc)
       val usedYield = visitExp(exp, env1, rc)
@@ -993,7 +983,7 @@ object Redundancy {
     *
     * {{{
     * Int32                                        =>     throw
-    * Int32 -> String -> Int32 & Pure              =>     Pure
+    * Int32 -> String -> Int32 \ Pure              =>     Pure
     * (Int32, String) -> String -> Bool \ IO   =>     Impure
     * }}}
     *
@@ -1005,28 +995,6 @@ object Redundancy {
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
       case _ => tpe.arrowPurityType
-    }
-  }
-
-  /**
-    * Returns the effect type of `this` curried arrow type.
-    *
-    * For example,
-    *
-    * {{{
-    * Int32                                        =>     throw
-    * Int32 -> String -> Int32 \ Eff               =>     Pure
-    * (Int32, String) -> String -> Bool & \ Eff    =>     Impure
-    * }}}
-    *
-    * NB: Assumes that `this` type is an arrow.
-    */
-  @tailrec
-  private def curriedArrowEffectType(tpe: Type): Type = {
-    val resType = tpe.arrowResultType
-    resType.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => curriedArrowEffectType(resType)
-      case _ => tpe.arrowEffectType
     }
   }
 
