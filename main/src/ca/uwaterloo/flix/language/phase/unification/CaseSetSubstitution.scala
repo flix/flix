@@ -117,7 +117,7 @@ case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
       }
     }
 
-    CaseSetSubstitution(newBoolAlgebraMap.toMap) ++ this
+    CaseSetSubstitution(newBoolAlgebraMap.toMap)
   }
 
   /**
