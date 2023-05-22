@@ -214,6 +214,9 @@ object DocAst {
     def Cast(d: Expression, tpe: Type): Expression =
       DoubleKeyword("unsafe_cast", d, "as", Right(tpe))
 
+    def Without(d: Expression, sym: Symbol.EffectSym): Expression =
+      Binary(d, "without", AsIs(sym.toString))
+
     def Cst(cst: Ast.Constant): Expression =
       printer.ConstantPrinter.print(cst)
 
@@ -231,6 +234,12 @@ object DocAst {
 
     def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
       App(AsIs(sym.toString), ds)
+
+    def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
+      Keyword("do", App(AsIs(sym.toString), ds))
+
+    def Resume(d: Expression): Expression =
+      App(AsIs("resume"), List(d))
 
     def JavaInvokeMethod(m: Method, d: Expression, ds: List[Expression]): Expression =
       App(DoubleDot(d, AsIs(m.getName)), ds)

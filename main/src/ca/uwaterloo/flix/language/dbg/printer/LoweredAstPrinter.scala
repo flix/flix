@@ -118,7 +118,7 @@ class LoweredAstPrinter {
     case Expression.Ascribe(exp, tpe, pur, loc) => DocAst.Expression.Ascription(print(exp), TypePrinter.print(tpe))
     case Expression.InstanceOf(exp, clazz, loc) => DocAst.Expression.InstanceOf(print(exp), clazz)
     case Expression.Cast(exp, declaredType, declaredPur, tpe, pur, loc) => DocAst.Expression.Cast(print(exp), TypePrinter.print(declaredType.get)) // TODO needs eff
-    case Expression.Without(exp, effUse, tpe, pur, loc) => ???
+    case Expression.Without(exp, effUse, tpe, pur, loc) => DocAst.Expression.Without(print(exp), effUse.sym)
     case Expression.TryCatch(exp, rules, tpe, pur, loc) =>
       val expD = print(exp)
       val rulesD = rules.map {
@@ -126,8 +126,8 @@ class LoweredAstPrinter {
       }
       DocAst.Expression.TryCatch(expD, rulesD)
     case Expression.TryWith(exp, effUse, rules, tpe, pur, loc) => ???
-    case Expression.Do(op, exps, pur, loc) => ???
-    case Expression.Resume(exp, tpe, loc) => ???
+    case Expression.Do(op, exps, pur, loc) => DocAst.Expression.Do(op.sym, exps.map(print))
+    case Expression.Resume(exp, tpe, loc) => DocAst.Expression.Resume(print(exp))
     case Expression.InvokeConstructor(constructor, args, tpe, pur, loc) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
     case Expression.InvokeMethod(method, exp, args, tpe, pur, loc) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
     case Expression.InvokeStaticMethod(method, args, tpe, pur, loc) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
@@ -135,7 +135,11 @@ class LoweredAstPrinter {
     case Expression.PutField(field, exp1, exp2, tpe, pur, loc) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
     case Expression.GetStaticField(field, tpe, pur, loc) => DocAst.Expression.JavaGetStaticField(field)
     case Expression.PutStaticField(field, exp, tpe, pur, loc) => DocAst.Expression.JavaPutStaticField(field, print(exp))
-    case Expression.NewObject(name, clazz, tpe, pur, methods, loc) => ???
+    case Expression.NewObject(name, clazz, tpe, pur, methods, loc) =>
+      val methodsD = methods.map {
+        case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, pur, loc) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
+      }
+      DocAst.Expression.NewObject(name, clazz, )
     case Expression.Spawn(exp1, exp2, tpe, pur, loc) => DocAst.Expression.Spawn(print(exp1), print(exp2))
     case Expression.Lazy(exp, tpe, loc) => DocAst.Expression.Lazy(print(exp))
     case Expression.Force(exp, tpe, pur, loc) => DocAst.Expression.Force(print(exp))
