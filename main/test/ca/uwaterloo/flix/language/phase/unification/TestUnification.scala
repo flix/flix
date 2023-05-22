@@ -418,8 +418,8 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("TestNoBoolEffects") {
-    val t1 = Type.Empty
-    val t2 = Type.All
+    val t1 = Type.Pure
+    val t2 = Type.EffUniv
 
     // Sanity check: make sure the types don't normally unify
     assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))

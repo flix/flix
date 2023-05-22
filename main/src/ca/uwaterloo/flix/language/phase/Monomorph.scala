@@ -74,7 +74,7 @@ object Monomorph {
         if (flix.options.xstrictmono)
           throw UnexpectedNonConstBool(tpe0, tpe0.loc)
         else
-          Type.Empty
+          Type.Pure
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
@@ -775,7 +775,7 @@ object Monomorph {
             throw UnexpectedNonConstBool(tpe, loc)
           else {
             // TODO: We should return Type.ErasedBool or something.
-            Type.Empty
+            Type.Pure
           }
         case _ => tpe
       }

@@ -164,8 +164,8 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
   }
 
   override def toType(f: BoolFormula, env: Bimap[BoolFormula.VarOrEff, Int]): Type = f match {
-    case True => Type.Empty
-    case False => Type.All
+    case True => Type.Pure
+    case False => Type.EffUniv
     case And(f1, f2) => Type.mkApply(Type.Union, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
     case Or(f1, f2) => Type.mkApply(Type.Intersection, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
     case Not(f1) => Type.Apply(Type.Complement, toType(f1, env), SourceLocation.Unknown)

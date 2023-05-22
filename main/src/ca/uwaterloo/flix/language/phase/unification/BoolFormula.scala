@@ -132,8 +132,8 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
-    case Type.Empty => True
-    case Type.All => False
+    case Type.Pure => True
+    case Type.EffUniv => False
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromBoolType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
@@ -156,8 +156,8 @@ object BoolFormula {
     * The map `m` must bind each free variable in `f` to a type variable.
     */
   private def toBoolType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
-    case True => Type.Empty
-    case False => Type.All
+    case True => Type.Pure
+    case False => Type.EffUniv
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
