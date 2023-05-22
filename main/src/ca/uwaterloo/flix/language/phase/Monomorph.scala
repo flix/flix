@@ -440,8 +440,8 @@ object Monomorph {
               val subst1 = caseSubst @@ subst.nonStrict
               // visit the body under the extended environment
               val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
-              val pur = Type.mkUnion(exp.pur, subst(body0.pur), loc.asSynthetic)
-              Some(Expression.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), pur, loc))
+              val pur = Type.mkUnion(exp.pur, body0.pur, loc.asSynthetic)
+              Some(Expression.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(pur), loc))
           }
       }.next() // We are safe to get next() because the last case will always match
 
