@@ -184,6 +184,6 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       }
     }
 
-    Substitution(newTypeMap.toMap)
+    Substitution(newTypeMap.toMap) ensuring(s => s == s ++ this) // MATT remove
   }
 }

@@ -117,7 +117,7 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
       }
     }
 
-    BoolSubstitution(newBoolAlgebraMap.toMap)
+    BoolSubstitution(newBoolAlgebraMap.toMap) ensuring(s => s == s ++ this) // MATT remove
   }
 
   /**

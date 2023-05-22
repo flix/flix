@@ -173,6 +173,6 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
       }
     }
 
-    AssocTypeSubstitution(newTypeMap.toMap)
+    AssocTypeSubstitution(newTypeMap.toMap) ensuring(s => s == s ++ this) // MATT remove
   }
 }
