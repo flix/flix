@@ -379,9 +379,10 @@ object Monomorph {
     case Expression.Scope(sym, regionVar, exp, tpe, pur, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      // mark the region variable as Impure inside the region
-      val subst1 = subst + (regionVar.sym -> Type.Impure)
-      Expression.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), subst(pur), loc)
+      // forcedly mark the region variable as Impure inside the region
+      val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
+      val subst2 = subst1 + (regionVar.sym -> Type.Impure)
+      Expression.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(pur), loc)
 
     case Expression.ScopeExit(exp1, exp2, tpe, pur, loc) =>
       val e1 = visitExp(exp1, env0, subst)
