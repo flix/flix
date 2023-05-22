@@ -234,7 +234,7 @@ object Monomorph {
         val body = visitExp(defn.impl.exp, env0, subst)
 
         // Specialize the inferred scheme
-        val base = Type.mkUncurriedArrowWithEffect(fparams.map(fp => subst(fp.tpe)), subst(body.pur), (body.tpe), sym.loc.asSynthetic)
+        val base = Type.mkUncurriedArrowWithEffect(fparams.map(fp => subst(fp.tpe)), subst(body.pur), subst(body.tpe), sym.loc.asSynthetic)
         val tvars = base.typeVars.map(_.sym).toList
         val tconstrs = Nil // type constraints are not used after monomorph
         val econstrs = Nil // equality constraints are not used after monomorph
