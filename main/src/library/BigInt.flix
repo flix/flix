@@ -124,7 +124,9 @@ mod BigInt {
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHR$(x, y)
+    pub def rightShift(x: BigInt, y: Int32): BigInt =
+        import java.math.BigInteger.shiftRight(BigInt): BigInt \ {};
+        x `shiftRight` y
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
