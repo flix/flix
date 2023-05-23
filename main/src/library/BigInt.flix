@@ -150,7 +150,9 @@ mod BigInt {
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: BigInt, y: BigInt): BigInt = $BIGINT_XOR$(x, y)
+    pub def bitwiseXor(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.xor(BigInt): BigInt \ {};
+        x `xor` y
 
     ///
     /// Return a string representation of `x`.
