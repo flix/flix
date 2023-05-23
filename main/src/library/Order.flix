@@ -339,7 +339,7 @@ instance Order[BigInt] {
 
     pub override def less(x: BigInt, y: BigInt): Bool =
         import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) == -1
+        (x `compareTo` y) < 0
 
     pub override def lessEqual(x: BigInt, y: BigInt): Bool =
         import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
@@ -347,7 +347,7 @@ instance Order[BigInt] {
 
     pub override def greater(x: BigInt, y: BigInt): Bool =
         import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
-        (x `compareTo` y) == 1
+        (x `compareTo` y) > 0
 
     pub override def greaterEqual(x: BigInt, y: BigInt): Bool =
         import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
