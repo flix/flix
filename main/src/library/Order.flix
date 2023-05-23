@@ -345,7 +345,9 @@ instance Order[BigInt] {
         import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
         (x `compareTo` y) <= 0
 
-    pub override def greater(x: BigInt, y: BigInt): Bool = $BIGINT_GT$(x, y)
+    pub override def greater(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) == 1
 
     pub override def greaterEqual(x: BigInt, y: BigInt): Bool = $BIGINT_GE$(x, y)
 
