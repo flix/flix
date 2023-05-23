@@ -768,7 +768,6 @@ object Weeder {
           case ("INT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Gt, e1, e2, loc).toSuccess
           case ("INT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Ge, e1, e2, loc).toSuccess
 
-          case ("BIGINT_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Div, e1, e2, loc).toSuccess
           case ("BIGINT_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Rem, e1, e2, loc).toSuccess
           case ("BIGINT_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.And, e1, e2, loc).toSuccess
           case ("BIGINT_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Or, e1, e2, loc).toSuccess

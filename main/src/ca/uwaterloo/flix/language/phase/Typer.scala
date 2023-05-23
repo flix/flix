@@ -838,8 +838,7 @@ object Typer {
             resultPur = Type.mkUnion(pur1, pur2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Div
-             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
+        case SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
             (constrs2, tpe2, pur2) <- visitExp(exp2)

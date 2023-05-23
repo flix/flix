@@ -151,8 +151,7 @@ object OperatorPrinter {
          Int8Op.Div |
          Int16Op.Div |
          Int32Op.Div |
-         Int64Op.Div |
-         BigIntOp.Div => div
+         Int64Op.Div => div
     case Float32Op.Exp |
          Float64Op.Exp |
          Int8Op.Exp |
