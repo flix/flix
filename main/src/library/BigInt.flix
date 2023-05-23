@@ -129,7 +129,9 @@ mod BigInt {
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt = $BIGINT_AND$(x, y)
+    pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.and(BigInt): BigInt \ {};
+        x `and` y
 
     ///
     /// Returns the bitwise NOT of `x`.

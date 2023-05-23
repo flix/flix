@@ -56,8 +56,7 @@ object OperatorPrinter {
     case BoolOp.And |
          Int8Op.And |
          Int16Op.And |
-         Int32Op.And |
-         BigIntOp.And => and
+         Int32Op.And => and
     case BoolOp.Or |
          Int8Op.Or |
          Int16Op.Or |
