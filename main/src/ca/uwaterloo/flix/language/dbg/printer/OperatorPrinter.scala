@@ -61,8 +61,7 @@ object OperatorPrinter {
          Int8Op.Or |
          Int16Op.Or |
          Int32Op.Or |
-         Int64Op.Or |
-         BigIntOp.Or => or
+         Int64Op.Or => or
     case BoolOp.Eq |
          Float32Op.Eq |
          CharOp.Eq |

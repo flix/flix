@@ -334,12 +334,6 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(LSHL)
 
-          case BigIntOp.Or =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
-              "or", AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(exp2.tpe)), JvmType.BigInteger), false)
-
           case BigIntOp.Xor =>
             compileExpr(exp1)
             compileExpr(exp2)

@@ -719,11 +719,6 @@ object SemanticOperator {
   object BigIntOp {
 
     /**
-      * Bitwise Or.
-      */
-    case object Or extends BigIntOp
-
-    /**
       * Bitwise Xor.
       */
     case object Xor extends BigIntOp

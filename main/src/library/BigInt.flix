@@ -143,7 +143,9 @@ mod BigInt {
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: BigInt, y: BigInt): BigInt = $BIGINT_OR$(x, y)
+    pub def bitwiseOr(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.or(BigInt): BigInt \ {};
+        x `or` y
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
