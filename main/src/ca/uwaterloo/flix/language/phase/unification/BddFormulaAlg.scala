@@ -119,7 +119,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     if(!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
-      createTypeFromBDDAux(f, Type.Empty, env)
+      createTypeFromBDDAux(f, Type.Pure, env)
     }
   }
 
@@ -132,7 +132,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if (dd.isLeaf) {
-      return if (dd.isTrue) tpe else Type.All
+      return if (dd.isTrue) tpe else Type.EffUniv
     }
 
     val currentVar = dd.getVariable
@@ -148,9 +148,9 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     val highRes = createTypeFromBDDAux(dd.getHigh, highType, env)
 
     (lowRes, highRes) match {
-      case (Type.All, Type.All) => Type.All
-      case (Type.All, _) => highRes
-      case (_, Type.All) => lowRes
+      case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
+      case (Type.EffUniv, _) => highRes
+      case (_, Type.EffUniv) => lowRes
       case (t1, _) => Type.mkApply(Type.Intersection, List(lowRes, highRes), t1.loc)
     }
   }
@@ -162,9 +162,9 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     //Easy shortcuts if formula is true, false or a variable
     if (f.isLeaf) {
       if (f.isTrue) {
-        return Type.Empty
+        return Type.Pure
       } else {
-        return Type.All
+        return Type.EffUniv
       }
     }
     if (isVar(f)) {

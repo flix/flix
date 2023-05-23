@@ -1187,7 +1187,7 @@ object Kinder {
     // TODO EFF-MIGRATION temporary hack to maintain behavior of IO
     case UnkindedType.Cst(TypeConstructor.Effect(sym), loc) if (sym == IoSym || sym == NonDetSym) =>
       unify(expectedKind, Kind.Eff) match {
-        case Some(_) => Type.Cst(TypeConstructor.All, loc).toSuccess
+        case Some(_) => Type.Cst(TypeConstructor.EffUniv, loc).toSuccess
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc).toFailure
       }
 

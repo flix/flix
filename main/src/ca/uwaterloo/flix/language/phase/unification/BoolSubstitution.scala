@@ -117,7 +117,7 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
       }
     }
 
-    BoolSubstitution(newBoolAlgebraMap.toMap) ++ this
+    BoolSubstitution(newBoolAlgebraMap.toMap)
   }
 
   /**

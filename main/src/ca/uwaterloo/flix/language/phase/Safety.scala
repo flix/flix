@@ -75,7 +75,31 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.impl.exp, renv, root)
+    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root)
+  }
+
+  /**
+    * Checks that if `def0` is a test entry point that it is well-behaved.
+    */
+  private def visitTestEntryPoint(def0: Def): List[CompilationMessage] = {
+    if (def0.spec.ann.isTest) {
+      def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
+
+      val hasUnitParameter = def0.spec.fparams match {
+        case fparam :: Nil => isUnitType(fparam)
+        case _ => false
+      }
+
+      if (!hasUnitParameter) {
+        val err = SafetyError.IllegalTestParameters(def0.sym.loc)
+        List(err)
+      } else {
+        Nil
+      }
+    }
+
+    else Nil
+
   }
 
   /**
@@ -163,7 +187,7 @@ object Safety {
 
       case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp) ++
-          rules.flatMap { case RestrictableChoiceRule(pat, exp) => visit(exp) }
+          rules.flatMap { case RestrictableChoiceRule(_, exp) => visit(exp) }
 
       case Expression.Tag(_, exp, _, _, _) =>
         visit(exp)

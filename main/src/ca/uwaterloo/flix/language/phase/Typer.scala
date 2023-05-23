@@ -1098,16 +1098,16 @@ object Typer {
           * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
           */
         def mkUnderApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
-          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Empty) {
+          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Pure) {
             case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
             case (acc, ((isAbsentVar, _), KindedAst.RelationalChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              Type.mkUnion(acc, Type.mkEquiv(isAbsentVar, Type.All, loc), loc)
+              Type.mkUnion(acc, Type.mkEquiv(isAbsentVar, Type.EffUniv, loc), loc)
             case (acc, ((_, isPresentVar), KindedAst.RelationalChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              Type.mkUnion(acc, Type.mkEquiv(isPresentVar, Type.All, loc), loc)
+              Type.mkUnion(acc, Type.mkEquiv(isPresentVar, Type.EffUniv, loc), loc)
           }
 
         /**
@@ -1118,7 +1118,7 @@ object Typer {
           * If a pattern is `Present` it *may* match if its corresponding `isPresentVar`is `true`.
           */
         def mkOverApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
-          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Empty) {
+          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Pure) {
             case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
@@ -1134,7 +1134,7 @@ object Typer {
           * Constructs a disjunction of the constraints of each choice rule.
           */
         def mkOuterDisj(m: List[List[KindedAst.RelationalChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
-          m.foldLeft(Type.All) {
+          m.foldLeft(Type.EffUniv) {
             case (acc, rule) => Type.mkIntersection(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule), loc)
           }
 
@@ -1188,7 +1188,7 @@ object Typer {
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(formula, Type.Empty, loc)
+          _ <- unifyBoolM(formula, Type.Pure, loc)
           (matchConstrs, matchTyp, matchPur) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyPur) <- visitRuleBodies(rules0)
@@ -1207,7 +1207,7 @@ object Typer {
           if (symUse.sym.name == "Absent") {
             // Case 1.1: Absent Tag.
             val elmVar = Type.freshVar(Kind.Star, loc)
-            val isAbsent = Type.Empty
+            val isAbsent = Type.Pure
             val isPresent = Type.freshVar(Kind.Eff, loc)
             for {
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent, loc), loc)
@@ -1217,7 +1217,7 @@ object Typer {
           else if (symUse.sym.name == "Present") {
             // Case 1.2: Present Tag.
             val isAbsent = Type.freshVar(Kind.Eff, loc)
-            val isPresent = Type.Empty
+            val isPresent = Type.Pure
             for {
               (constrs, tpe, pur) <- visitExp(exp)
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(tpe, isAbsent, isPresent, loc), loc)

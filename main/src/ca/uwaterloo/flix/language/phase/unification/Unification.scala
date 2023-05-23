@@ -415,14 +415,14 @@ object Unification {
   private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
       case t: Type.Var =>
-        if (tvar.sym == t.sym) Type.Empty else tpe
+        if (tvar.sym == t.sym) Type.Pure else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.", tpe.loc)
     }
 
     case Some(tc) => tc match {
-      case TypeConstructor.Empty => Type.Empty
+      case TypeConstructor.Pure => Type.Pure
 
-      case TypeConstructor.All => Type.All
+      case TypeConstructor.EffUniv => Type.EffUniv
 
       case TypeConstructor.Complement =>
         val List(t) = tpe.typeArguments
