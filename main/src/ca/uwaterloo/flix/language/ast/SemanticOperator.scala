@@ -712,60 +712,6 @@ object SemanticOperator {
   }
 
   /**
-    * BigInt Operators.
-    */
-  sealed trait BigIntOp extends SemanticOperator
-
-  object BigIntOp {
-
-    /**
-      * Bitwise Xor.
-      */
-    case object Xor extends BigIntOp
-
-    /**
-      * Bitwise Left Shift.
-      */
-    case object Shl extends BigIntOp
-
-    /**
-      * Bitwise Right Shift.
-      */
-    case object Shr extends BigIntOp
-
-    /**
-      * Equality.
-      */
-    case object Eq extends BigIntOp
-
-    /**
-      * Inequality.
-      */
-    case object Neq extends BigIntOp
-
-    /**
-      * Less than.
-      */
-    case object Lt extends BigIntOp
-
-    /**
-      * Less or equal.
-      */
-    case object Le extends BigIntOp
-
-    /**
-      * Greater than.
-      */
-    case object Gt extends BigIntOp
-
-    /**
-      * Greater or equal.
-      */
-    case object Ge extends BigIntOp
-
-  }
-
-  /**
     * String Operators.
     */
   sealed trait StringOp extends SemanticOperator
