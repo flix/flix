@@ -354,12 +354,12 @@ instance Order[BigInt] {
         (x `compareTo` y) >= 0
 
     pub def compare(x: BigInt, y: BigInt): Comparison =
-        if ($BIGINT_LT$(x, y))
-            Comparison.LessThan
-        else if ($BIGINT_GT$(x, y))
-            Comparison.GreaterThan
-        else
-            Comparison.EqualTo
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        match x `compareTo` y {
+            case -1 => Comparison.LessThan
+            case 0 => Comparison.EqualTo
+            case _ => Comparison.GreaterThan
+        }
 
 }
 
