@@ -43,10 +43,11 @@ mod BigInt {
     /// The result is always non-negative.
     ///
     pub def mod(x: BigInt, n: BigInt): BigInt =
+        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
         else
-            $BIGINT_REM$($BIGINT_REM$(x, n) + n, n)
+            ((x `remainder` n) + n) `remainder` n
 
     ///
     /// Returns the remainder of `x / n`.
@@ -55,10 +56,11 @@ mod BigInt {
     /// See also `BigInt.mod`.
     ///
     pub def rem(x: BigInt, n: BigInt): BigInt =
+        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
         else
-            $BIGINT_REM$(x, n)
+            x `remainder` n
 
     ///
     /// Returns the distance between `x` and `y`.

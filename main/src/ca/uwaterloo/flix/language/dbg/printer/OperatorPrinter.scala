@@ -168,8 +168,7 @@ object OperatorPrinter {
     case Int8Op.Rem |
          Int16Op.Rem |
          Int32Op.Rem |
-         Int64Op.Rem |
-         BigIntOp.Rem => rem
+         Int64Op.Rem => rem
     case Int8Op.Xor |
          Int16Op.Xor |
          Int32Op.Xor |

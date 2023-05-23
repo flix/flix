@@ -719,11 +719,6 @@ object SemanticOperator {
   object BigIntOp {
 
     /**
-      * Remainder.
-      */
-    case object Rem extends BigIntOp
-
-    /**
       * Bitwise And.
       */
     case object And extends BigIntOp
