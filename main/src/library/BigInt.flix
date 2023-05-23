@@ -120,14 +120,14 @@ mod BigInt {
     /// Returns `x` with the bits shifted left by `y` places
     ///
     pub def leftShift(x: BigInt, y: Int32): BigInt =
-        import java.math.BigInteger.shiftLeft(BigInt): BigInt \ {};
+        import java.math.BigInteger.shiftLeft(Int32): BigInt \ {};
         x `shiftLeft` y
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
     pub def rightShift(x: BigInt, y: Int32): BigInt =
-        import java.math.BigInteger.shiftRight(BigInt): BigInt \ {};
+        import java.math.BigInteger.shiftRight(Int32): BigInt \ {};
         x `shiftRight` y
 
     ///
