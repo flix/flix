@@ -119,7 +119,9 @@ mod BigInt {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHL$(x, y)
+    pub def leftShift(x: BigInt, y: Int32): BigInt =
+        import java.math.BigInteger.shiftLeft(BigInt): BigInt \ {};
+        x `shiftLeft` y
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
