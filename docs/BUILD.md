@@ -13,6 +13,9 @@ Flix can be built and run from within the IntelliJ IDEA IDE which is useful for 
     2. Set "Run tests using:" to "IntelliJ IDEA"
 
 ### Running the Flix compiler
+
+Traverse to `main/src/ca/uwaterloo/flix/Main.scala`
+
 Open `Main.scala`, right-click on `def main` and select `Run 'Main'`. This runs the Flix REPL.
 
 To compile and run a Flix file with a `main` function, right-click on the main function in `Main.scala` and choose "Modify Run Configuration".
