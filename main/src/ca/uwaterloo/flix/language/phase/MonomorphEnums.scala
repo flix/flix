@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern, RelationalChoicePattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -107,7 +107,9 @@ object MonomorphEnums {
     case Expression.Region(tpe, loc) =>
       Expression.Region(visitType(tpe), loc)
     case Expression.Scope(sym, regionVar, exp, tpe, pur, loc) =>
-      // TODO: the regionVar??
+      // The region variable has been rendered redundant by Monomorph.
+      // It has replaced the region with pure/impure and the variable could
+      // conceptually be removed.
       Expression.Scope(sym, regionVar, visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.ScopeExit(exp1, exp2, tpe, pur, loc) =>
       Expression.ScopeExit(visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
@@ -259,7 +261,7 @@ object MonomorphEnums {
         case Type.AssocType(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
       }
     }
-    // it is important that eraseAliases happens BEFORE enum specialization
+    // It is important that eraseAliases happens BEFORE enum specialization
     visitInner(eraseAliases(tpe))
   }
 
@@ -274,7 +276,7 @@ object MonomorphEnums {
   }
 
   private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
-    val args = args0.map(eraseAliases).map(collapseFormulas)
+    val args = args0.map(eraseAliases).map(normalizeType)
     // check assumptions
     args.foreach(t => if (t.typeVars.nonEmpty) throw InternalCompilerException(s"Unexpected type var: '$sym'", loc))
     // assemble enum type (e.g. `List[Int32]`)
@@ -319,25 +321,73 @@ object MonomorphEnums {
     }
   }
 
-  private def collapseFormulas(tpe: Type): Type = tpe match {
+  /**
+    * Returns a type where
+    * - The assumptions still hold
+    * - formulas in types have been evaluated (and ordered in the case of sets)
+    * - types involving rows have been sorted alphabetically (respecting duplicate label ordering)
+    *
+    * Assumes that
+    * - tpe is ground (no type variables
+    * - tpe has no aliases
+    * - tpe has no associated types
+    */
+  private def normalizeType(tpe: Type): Type = tpe match {
     case Type.Var(sym, loc) => throw InternalCompilerException(s"Unexpected type var '$sym'", loc)
     case Type.Cst(_, _) => tpe
-    case Type.Apply(tpe1, tpe2, loc) =>
-      val t1 = collapseFormulas(tpe1)
-      val t2 = collapseFormulas(tpe2)
+    case Type.Apply(tpe1, tpe2, applyLoc) =>
+      val t1 = normalizeType(tpe1)
+      val t2 = normalizeType(tpe2)
       t1 match {
+        // Simplify effect set equations.
+        case Type.Cst(TypeConstructor.Complement, _) => t2 match {
+          case Type.Pure => Type.EffUniv
+          case Type.EffUniv => Type.Pure
+          case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
+        }
+        case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) =>
+          (normalizeType(x), t2) match {
+            case (Type.Pure, Type.Pure) => Type.Pure
+            case (Type.Pure, Type.EffUniv) => Type.EffUniv
+            case (Type.EffUniv, Type.Pure) => Type.EffUniv
+            case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
+            case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
+          }
+        case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) =>
+          (normalizeType(x), t2) match {
+            case (Type.Pure, Type.Pure) => Type.Pure
+            case (Type.Pure, Type.EffUniv) => Type.Pure
+            case (Type.EffUniv, Type.Pure) => Type.Pure
+            case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
+            case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
+          }
+
         // Simplify boolean equations.
-        case Type.Cst(TypeConstructor.Not, _) => Type.mkComplement(t2, loc)
-        case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkUnion(x, t2, loc)
-        case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkIntersection(x, t2, loc)
+        case Type.Cst(TypeConstructor.Not, _) => ???
+        case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => ???
+        case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => ???
 
         // Simplify set expressions
-        case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(t2, sym, loc)
-        case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, t2, sym, loc)
-        case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, t2, sym, loc)
+        case Type.Cst(TypeConstructor.CaseComplement(enumSym), _) => t2 match {
+          case Type.Cst(TypeConstructor.CaseSet(syms, _), loc) =>
+            Type.Cst(TypeConstructor.CaseSet(enumSym.universe.diff(syms), enumSym), loc)
+          case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
+        }
+        case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(enumSym), _), x, loc) =>
+          (normalizeType(x), t2) match {
+            case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+              Type.Cst(TypeConstructor.CaseSet(syms1.intersect(syms2), enumSym), loc)
+            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
+          }
+        case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(enumSym), _), x, loc) =>
+          (normalizeType(x), t2) match {
+            case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+              Type.Cst(TypeConstructor.CaseSet(syms1.union(syms2), enumSym), loc)
+            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
+          }
 
         // Else just apply
-        case x => Type.Apply(x, t2, loc)
+        case x => Type.Apply(x, t2, applyLoc)
       }
     case Type.Alias(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected type alias: '${cst.sym}'", loc)
     case Type.AssocType(cst, _, _, loc) => throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
