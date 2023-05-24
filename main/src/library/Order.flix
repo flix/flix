@@ -337,21 +337,29 @@ instance Order[Int64] {
 
 instance Order[BigInt] {
 
-    pub override def less(x: BigInt, y: BigInt): Bool = $BIGINT_LT$(x, y)
+    pub override def less(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) < 0
 
-    pub override def lessEqual(x: BigInt, y: BigInt): Bool = $BIGINT_LE$(x, y)
+    pub override def lessEqual(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) <= 0
 
-    pub override def greater(x: BigInt, y: BigInt): Bool = $BIGINT_GT$(x, y)
+    pub override def greater(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) > 0
 
-    pub override def greaterEqual(x: BigInt, y: BigInt): Bool = $BIGINT_GE$(x, y)
+    pub override def greaterEqual(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) >= 0
 
     pub def compare(x: BigInt, y: BigInt): Comparison =
-        if ($BIGINT_LT$(x, y))
-            Comparison.LessThan
-        else if ($BIGINT_GT$(x, y))
-            Comparison.GreaterThan
-        else
-            Comparison.EqualTo
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        match x `compareTo` y {
+            case -1 => Comparison.LessThan
+            case 0 => Comparison.EqualTo
+            case _ => Comparison.GreaterThan
+        }
 
 }
 

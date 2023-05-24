@@ -102,8 +102,13 @@ instance Eq[Int64] {
 }
 
 instance Eq[BigInt] {
-    pub def eq(x: BigInt, y: BigInt): Bool = $BIGINT_EQ$(x, y)
-    pub override def neq(x: BigInt, y: BigInt): Bool = $BIGINT_NEQ$(x, y)
+    pub def eq(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) == 0
+
+    pub override def neq(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) != 0
 }
 
 instance Eq[String] {

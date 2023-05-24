@@ -768,24 +768,6 @@ object Weeder {
           case ("INT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Gt, e1, e2, loc).toSuccess
           case ("INT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Ge, e1, e2, loc).toSuccess
 
-          case ("BIGINT_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigIntOp.Neg, e1, loc).toSuccess
-          case ("BIGINT_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BigIntOp.Not, e1, loc).toSuccess
-          case ("BIGINT_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Sub, e1, e2, loc).toSuccess
-          case ("BIGINT_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Mul, e1, e2, loc).toSuccess
-          case ("BIGINT_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Div, e1, e2, loc).toSuccess
-          case ("BIGINT_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Rem, e1, e2, loc).toSuccess
-          case ("BIGINT_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.And, e1, e2, loc).toSuccess
-          case ("BIGINT_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Or, e1, e2, loc).toSuccess
-          case ("BIGINT_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Xor, e1, e2, loc).toSuccess
-          case ("BIGINT_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Shl, e1, e2, loc).toSuccess
-          case ("BIGINT_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Shr, e1, e2, loc).toSuccess
-          case ("BIGINT_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Eq, e1, e2, loc).toSuccess
-          case ("BIGINT_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Neq, e1, e2, loc).toSuccess
-          case ("BIGINT_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Lt, e1, e2, loc).toSuccess
-          case ("BIGINT_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Le, e1, e2, loc).toSuccess
-          case ("BIGINT_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Gt, e1, e2, loc).toSuccess
-          case ("BIGINT_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BigIntOp.Ge, e1, e2, loc).toSuccess
-
           case ("STRING_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Eq, e1, e2, loc).toSuccess
           case ("STRING_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Neq, e1, e2, loc).toSuccess
 

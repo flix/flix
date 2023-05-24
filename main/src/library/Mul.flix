@@ -53,5 +53,7 @@ instance Mul[Int64] {
 }
 
 instance Mul[BigInt] {
-    pub def mul(x: BigInt, y: BigInt): BigInt = $BIGINT_MUL$(x, y)
+    pub def mul(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.multiply(BigInt): BigInt \ {};
+        x `multiply` y
 }
