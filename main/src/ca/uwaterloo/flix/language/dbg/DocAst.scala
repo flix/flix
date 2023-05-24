@@ -93,6 +93,8 @@ object DocAst {
 
     case class TryCatch(d: Expression, rules: List[(Symbol.VarSym, Class[_], Expression)]) extends Atom
 
+    case class TryWith(d1: Expression, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expression)]) extends Atom
+
     case class Stm(d1: Expression, d2: Expression) extends LetBinder
 
     case class Let(v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
@@ -104,6 +106,8 @@ object DocAst {
     case class App(f: Expression, args: List[Expression]) extends Atom
 
     case class SquareApp(f: Expression, args: List[Expression]) extends Atom
+
+    case class DoubleSquareApp(f: Expression, args: List[Expression]) extends Atom
 
     case class Assign(d1: Expression, d2: Expression) extends Composite
 
@@ -180,6 +184,12 @@ object DocAst {
 
     def ArrayStore(d1: Expression, index: Expression, d2: Expression): Expression =
       Assign(SquareApp(d1, List(index)), d2)
+
+    def VectorLit(ds: List[Expression]): Expression =
+      DoubleSquareApp(AsIs(""), ds)
+
+    def VectorLoad(d1: Expression, index: Expression): Expression =
+      DoubleSquareApp(d1, List(index))
 
     def Lazy(d: Expression): Expression =
       Keyword("lazy", d)

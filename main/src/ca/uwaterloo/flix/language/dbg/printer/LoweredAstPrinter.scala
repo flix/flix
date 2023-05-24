@@ -51,7 +51,6 @@ class LoweredAstPrinter {
     */
   def print(e: LoweredAst.Expression): DocAst.Expression = e match {
     case Expression.Cst(cst, tpe, loc) => ConstantPrinter.print(cst)
-    case Expression.Wild(tpe, loc) => ??? // TODO will be removed
     case Expression.Var(sym, tpe, loc) => DocAst.Expression.Var(sym)
     case Expression.Def(sym, tpe, loc) => DocAst.Expression.Def(sym)
     case Expression.Sig(sym, tpe, loc) => DocAst.Expression.Sig(sym)
@@ -104,15 +103,15 @@ class LoweredAstPrinter {
     case Expression.RecordSelect(exp, field, tpe, pur, loc) => DocAst.Expression.RecordSelect(field, print(exp))
     case Expression.RecordExtend(field, value, rest, tpe, pur, loc) => DocAst.Expression.RecordExtend(field, print(value), print(rest))
     case Expression.RecordRestrict(field, rest, tpe, pur, loc) => DocAst.Expression.RecordRestrict(field, print(rest))
-    case Expression.ArrayLit(exps, exp, tpe, pur, loc) => DocAst.Expression.ArrayLit(exps.map(print)) // TODO needs region
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, loc) => DocAst.Expression.ArrayNew(print(exp1), print(exp2)) // TODO needs region
+    case Expression.ArrayLit(exps, exp, tpe, pur, loc) => DocAst.Expression.InRegion(DocAst.Expression.ArrayLit(exps.map(print)), print(exp))
+    case Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, loc) => DocAst.Expression.InRegion(DocAst.Expression.ArrayNew(print(exp1), print(exp2)), print(exp3))
     case Expression.ArrayLoad(base, index, tpe, pur, loc) => DocAst.Expression.ArrayLoad(print(base), print(index))
     case Expression.ArrayLength(base, pur, loc) => DocAst.Expression.ArrayLength(print(base))
     case Expression.ArrayStore(base, index, elm, pur, loc) => DocAst.Expression.ArrayStore(print(base), print(index), print(elm))
-    case Expression.VectorLit(exps, tpe, pur, loc) => ???
-    case Expression.VectorLoad(exp1, exp2, tpe, pur, loc) => ???
-    case Expression.VectorLength(exp, loc) => ???
-    case Expression.Ref(exp1, exp2, tpe, pur, loc) => DocAst.Expression.Ref(print(exp1)) // TODO needs region
+    case Expression.VectorLit(exps, tpe, pur, loc) => DocAst.Expression.VectorLit(exps.map(print))
+    case Expression.VectorLoad(exp1, exp2, tpe, pur, loc) => DocAst.Expression.VectorLoad(print(exp1), print(exp2))
+    case Expression.VectorLength(exp, loc) => DocAst.Expression.ArrayLength(print(exp))
+    case Expression.Ref(exp1, exp2, tpe, pur, loc) => DocAst.Expression.InRegion(DocAst.Expression.Ref(print(exp1)), print(exp2))
     case Expression.Deref(exp, tpe, pur, loc) => DocAst.Expression.Deref(print(exp))
     case Expression.Assign(exp1, exp2, tpe, pur, loc) => DocAst.Expression.Assign(print(exp1), print(exp2))
     case Expression.Ascribe(exp, tpe, pur, loc) => DocAst.Expression.Ascription(print(exp), TypePrinter.print(tpe))
@@ -125,7 +124,13 @@ class LoweredAstPrinter {
         case LoweredAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
       }
       DocAst.Expression.TryCatch(expD, rulesD)
-    case Expression.TryWith(exp, effUse, rules, tpe, pur, loc) => ???
+    case Expression.TryWith(exp, effUse, rules, tpe, pur, loc) =>
+      val expD = print(exp)
+      val effD = effUse.sym
+      val rulesD = rules.map {
+        case LoweredAst.HandlerRule(op, fparams, exp) => (op.sym, fparams.map(printFormalParam), print(exp))
+      }
+      DocAst.Expression.TryWith(expD, effD, rulesD)
     case Expression.Do(op, exps, pur, loc) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Expression.Resume(exp, tpe, loc) => DocAst.Expression.Resume(print(exp))
     case Expression.InvokeConstructor(constructor, args, tpe, pur, loc) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
@@ -139,7 +144,7 @@ class LoweredAstPrinter {
       val methodsD = methods.map {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, pur, loc) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
       }
-      DocAst.Expression.NewObject(name, clazz, )
+      DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
     case Expression.Spawn(exp1, exp2, tpe, pur, loc) => DocAst.Expression.Spawn(print(exp1), print(exp2))
     case Expression.Lazy(exp, tpe, loc) => DocAst.Expression.Lazy(print(exp))
     case Expression.Force(exp, tpe, pur, loc) => DocAst.Expression.Force(print(exp))

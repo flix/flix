@@ -160,6 +160,8 @@ object DocAstFormatter {
         aux(f) :: tuple(args.map(aux(_, paren = false)))
       case SquareApp(f, args) =>
         aux(f) :: squareTuple(args.map(aux(_, paren = false)))
+      case DoubleSquareApp(f, args) =>
+        aux(f) :: doubleSquareTuple(args.map(aux(_, paren = false)))
       case Assign(d1, d2) =>
         aux(d1) +: text(":=") +: aux(d2)
       case Ascription(v, tpe) =>
@@ -181,6 +183,18 @@ object DocAstFormatter {
         group(
           text("try") +: curly(bodyf) +:
             text("catch") +: curly(rs)
+        )
+      case TryWith(d, eff, rules) =>
+        val rs = semiSepOpt(rules.map {
+          case (sym, params, rule) =>
+            val rulef = aux(rule, paren = false, inBlock = true)
+            text("def") +: text(sym.toString) :: tuple(params.map(aux(_))) ::
+              text("=") :: breakWith(" ") :: curlyOpen(rulef)
+        })
+        val bodyf = aux(d, paren = false, inBlock = true)
+        group(
+          text("try") +: curly(bodyf) +:
+            text("with") +: text(eff.toString) +: curly(rs)
         )
       case NewObject(_, clazz, _, methods) =>
         group(text("new") +: formatJavaClass(clazz) +: curly(
