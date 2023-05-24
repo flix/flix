@@ -80,7 +80,7 @@ object LoweredAstPrinter {
     case Expression.TypeMatch(exp, rules, tpe, pur, loc) =>
       val expD = print(exp)
       val rulesD = rules.map {
-        case LoweredAst.MatchTypeRule(sym, tpe, body) =>
+        case LoweredAst.TypeMatchRule(sym, tpe, body) =>
           val patD = DocAst.Expression.Var(sym)
           val tpeD = TypePrinter.print(tpe)
           val bodyD = print(body)
