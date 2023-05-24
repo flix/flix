@@ -984,10 +984,10 @@ object Lowering {
   /**
     * Lowers the given match rule `rule0`.
     */
-  private def visitMatchTypeRule(rule0: TypedAst.MatchTypeRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.MatchTypeRule = rule0 match {
-    case TypedAst.MatchTypeRule(sym, tpe, exp) =>
+  private def visitMatchTypeRule(rule0: TypedAst.TypeMatchRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
+    case TypedAst.TypeMatchRule(sym, tpe, exp) =>
       val e = visitExp(exp)
-      LoweredAst.MatchTypeRule(sym, tpe, e)
+      LoweredAst.TypeMatchRule(sym, tpe, e)
   }
 
   /**

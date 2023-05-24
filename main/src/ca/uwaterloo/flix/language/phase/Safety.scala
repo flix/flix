@@ -173,13 +173,13 @@ object Safety {
       case Expression.TypeMatch(exp, rules, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`
         val missingDefault = rules.last match {
-          case MatchTypeRule(_, tpe, _) => tpe match {
+          case TypeMatchRule(_, tpe, _) => tpe match {
             case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
             case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
           }
         }
         visit(exp) ++ missingDefault ++
-          rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
+          rules.flatMap { case TypeMatchRule(_, _, e) => visit(e) }
 
       case Expression.RelationalChoose(exps, rules, _, _, _) =>
         exps.flatMap(visit) ++

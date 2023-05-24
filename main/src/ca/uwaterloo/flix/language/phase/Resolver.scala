@@ -1130,12 +1130,12 @@ object Resolver {
 
         case NamedAst.Expression.TypeMatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
-            case NamedAst.MatchTypeRule(sym, tpe, body) =>
+            case NamedAst.TypeMatchRule(sym, tpe, body) =>
               val tVal = resolveType(tpe, Wildness.AllowWild, env0, taenv, ns0, root)
               val env = env0 ++ mkVarEnv(sym)
               val bVal = visitExp(body, env)
               mapN(tVal, bVal) {
-                case (t, b) => ResolvedAst.MatchTypeRule(sym, t, b)
+                case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b)
               }
           }
 

@@ -110,7 +110,7 @@ object KindedAst {
 
     case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
 
-    case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
+    case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.TypeMatchRule], loc: SourceLocation) extends KindedAst.Expression
 
     case class RelationalChoose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.RelationalChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -324,7 +324,7 @@ object KindedAst {
 
   case class MatchRule(pat: KindedAst.Pattern, guard: Option[KindedAst.Expression], exp: KindedAst.Expression)
 
-  case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: KindedAst.Expression)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: KindedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
 

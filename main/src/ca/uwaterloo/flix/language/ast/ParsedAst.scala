@@ -767,7 +767,7 @@ object ParsedAst {
       * @param rules the rules of the type match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class TypeMatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchTypeRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class TypeMatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.TypeMatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Relational Choose Expression.
@@ -1848,7 +1848,7 @@ object ParsedAst {
     * @param tpe   the type of the rule
     * @param exp   the body expression of the rule.
     */
-  case class MatchTypeRule(ident: Name.Ident, tpe: ParsedAst.Type, exp: ParsedAst.Expression)
+  case class TypeMatchRule(ident: Name.Ident, tpe: ParsedAst.Type, exp: ParsedAst.Expression)
 
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.

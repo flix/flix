@@ -702,10 +702,10 @@ object Namer {
     case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
-        case WeededAst.MatchTypeRule(ident, tpe, body) =>
+        case WeededAst.TypeMatchRule(ident, tpe, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
           mapN(visitType(tpe): Validation[NamedAst.Type, NameError], visitExp(body, ns0)) {
-            case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
+            case (t, b) => NamedAst.TypeMatchRule(sym, t, b)
           }
       }
       mapN(expVal, rulesVal) {

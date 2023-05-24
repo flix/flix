@@ -2053,14 +2053,14 @@ object Typer {
       case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
-          case KindedAst.MatchTypeRule(sym, tpe0, exp) =>
+          case KindedAst.TypeMatchRule(sym, tpe0, exp) =>
             val t = subst0(tpe0)
             val b = visitExp(exp, subst0)
-            TypedAst.MatchTypeRule(sym, t, b)
+            TypedAst.TypeMatchRule(sym, t, b)
         }
         val tpe = rs.head.exp.tpe
         val pur = rs.foldLeft(e1.pur) {
-          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkUnion(b.pur, acc, loc)
+          case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.pur, acc, loc)
         }
         TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, loc)
 
