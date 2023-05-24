@@ -951,8 +951,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def TypeMatch: Rule1[ParsedAst.Expression.TypeMatch] = {
-      def Rule: Rule1[ParsedAst.MatchTypeRule] = rule {
-        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchTypeRule
+      def Rule: Rule1[ParsedAst.TypeMatchRule] = rule {
+        keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.TypeMatchRule
       }
 
       rule {
