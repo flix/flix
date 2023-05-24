@@ -39,7 +39,7 @@ object LoweredAstPrinter {
           mod,
           sym,
           fparams.map(printFormalParam),
-          TypePrinter.print(retTpe),
+          DocAst.Type.Arrow(List(DocAst.Type.AsIs("ignoreme")), TypePrinter.print(retTpe)), // TODO EVIL, EVIL hack due to formatter impl
           print(exp)
         )
     }.toList

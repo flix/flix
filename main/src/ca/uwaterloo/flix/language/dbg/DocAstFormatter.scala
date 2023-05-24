@@ -38,6 +38,7 @@ object DocAstFormatter {
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
     // remember that the def type includes the arguments
+    // TODO EVIL afoot! change to expect result type directly
     val defs = defs0.map {
       case Def(_, _, sym, parameters, resType0, body) =>
         val resType = resType0 match {
@@ -132,7 +133,7 @@ object DocAstFormatter {
           val patF = aux(pat, paren = false)
           val tpeF = formatType(tpe, paren = false)
           val bodyF = aux(body, paren = false, inBlock = true)
-          text("case") +: patF  +: text(":") +: tpeF :: text("=>") :: breakIndent(bodyF)
+          text("case") +: patF  +: text(":") +: tpeF +: text("=>") :: breakIndent(bodyF)
         }
         group(
           text("typematch") +: scrutineeF +: curlyOpen(
