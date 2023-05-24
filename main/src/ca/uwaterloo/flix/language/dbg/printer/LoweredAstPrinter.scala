@@ -150,7 +150,9 @@ class LoweredAstPrinter {
     case Expression.Force(exp, tpe, pur, loc) => DocAst.Expression.Force(print(exp))
   }
 
-  // MATT docs
+  /**
+    * Converts the given pattern into a [[DocAst.Expression]].
+    */
   private def printPattern(pat: LoweredAst.Pattern): DocAst.Expression = pat match {
     case Pattern.Wild(tpe, loc) => DocAst.Expression.Wild
     case Pattern.Var(sym, tpe, loc) => DocAst.Expression.Var(sym)
@@ -159,7 +161,9 @@ class LoweredAstPrinter {
     case Pattern.Tuple(elms, tpe, loc) => DocAst.Expression.Tuple(elms.map(printPattern))
   }
 
-  // MATT docs
+  /**
+    * Converts the given pattern into a [[DocAst.Expression]].
+    */
   private def printRelationalChoicePattern(pat: LoweredAst.RelationalChoicePattern): DocAst.Expression = pat match {
     case RelationalChoicePattern.Wild(loc) => DocAst.Expression.Wild
     case RelationalChoicePattern.Absent(loc) => DocAst.Expression.Absent
