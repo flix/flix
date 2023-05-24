@@ -52,19 +52,16 @@ object OperatorPrinter {
          Int8Op.Not |
          Int16Op.Not |
          Int32Op.Not |
-         Int64Op.Not |
-         BigIntOp.Not => not
+         Int64Op.Not => not
     case BoolOp.And |
          Int8Op.And |
          Int16Op.And |
-         Int32Op.And |
-         BigIntOp.And => and
+         Int32Op.And => and
     case BoolOp.Or |
          Int8Op.Or |
          Int16Op.Or |
          Int32Op.Or |
-         Int64Op.Or |
-         BigIntOp.Or => or
+         Int64Op.Or => or
     case BoolOp.Eq |
          Float32Op.Eq |
          CharOp.Eq |
@@ -74,7 +71,6 @@ object OperatorPrinter {
          Int16Op.Eq |
          Int32Op.Eq |
          Int64Op.Eq |
-         BigIntOp.Eq |
          StringOp.Eq => eq
     case BoolOp.Neq |
          CharOp.Neq |
@@ -85,7 +81,6 @@ object OperatorPrinter {
          Int16Op.Neq |
          Int32Op.Neq |
          Int64Op.Neq |
-         BigIntOp.Neq |
          StringOp.Neq => neq
     case CharOp.Lt |
          Float32Op.Lt |
@@ -94,8 +89,7 @@ object OperatorPrinter {
          Int8Op.Lt |
          Int16Op.Lt |
          Int32Op.Lt |
-         Int64Op.Lt |
-         BigIntOp.Lt => lt
+         Int64Op.Lt => lt
     case CharOp.Le |
          Float32Op.Le |
          Float64Op.Le |
@@ -103,8 +97,7 @@ object OperatorPrinter {
          Int8Op.Le |
          Int16Op.Le |
          Int32Op.Le |
-         Int64Op.Le |
-         BigIntOp.Le => le
+         Int64Op.Le => le
     case CharOp.Gt |
          Float32Op.Gt |
          Float64Op.Gt |
@@ -112,8 +105,7 @@ object OperatorPrinter {
          Int8Op.Gt |
          Int16Op.Gt |
          Int32Op.Gt |
-         Int64Op.Gt |
-         BigIntOp.Gt => gt
+         Int64Op.Gt => gt
     case CharOp.Ge |
          Float32Op.Ge |
          Float64Op.Ge |
@@ -121,8 +113,7 @@ object OperatorPrinter {
          Int8Op.Ge |
          Int16Op.Ge |
          Int32Op.Ge |
-         Int64Op.Ge |
-         BigIntOp.Ge => ge
+         Int64Op.Ge => ge
     case Float32Op.Add |
          Float64Op.Add |
          BigDecimalOp.Add |
@@ -138,24 +129,21 @@ object OperatorPrinter {
          Int8Op.Sub |
          Int16Op.Sub |
          Int32Op.Sub |
-         Int64Op.Sub |
-         BigIntOp.Sub => minus
+         Int64Op.Sub => minus
     case Float32Op.Mul |
          Float64Op.Mul |
          BigDecimalOp.Mul |
          Int8Op.Mul |
          Int16Op.Mul |
          Int32Op.Mul |
-         Int64Op.Mul |
-         BigIntOp.Mul => mul
+         Int64Op.Mul => mul
     case Float32Op.Div |
          Float64Op.Div |
          BigDecimalOp.Div |
          Int8Op.Div |
          Int16Op.Div |
          Int32Op.Div |
-         Int64Op.Div |
-         BigIntOp.Div => div
+         Int64Op.Div => div
     case Float32Op.Exp |
          Float64Op.Exp |
          Int8Op.Exp |
@@ -168,28 +156,23 @@ object OperatorPrinter {
          Int8Op.Neg |
          Int16Op.Neg |
          Int32Op.Neg |
-         Int64Op.Neg |
-         BigIntOp.Neg => neg
+         Int64Op.Neg => neg
     case Int8Op.Rem |
          Int16Op.Rem |
          Int32Op.Rem |
-         Int64Op.Rem |
-         BigIntOp.Rem => rem
+         Int64Op.Rem => rem
     case Int8Op.Xor |
          Int16Op.Xor |
          Int32Op.Xor |
-         Int64Op.Xor |
-         BigIntOp.Xor => xor
+         Int64Op.Xor => xor
     case Int8Op.Shl |
          Int16Op.Shl |
          Int32Op.Shl |
-         Int64Op.Shl |
-         BigIntOp.Shl => shl
+         Int64Op.Shl => shl
     case Int8Op.Shr |
          Int16Op.Shr |
          Int32Op.Shr |
-         Int64Op.Shr |
-         BigIntOp.Shr => shr
+         Int64Op.Shr => shr
   }
 
   /**

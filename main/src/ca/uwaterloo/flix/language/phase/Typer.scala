@@ -743,13 +743,6 @@ object Typer {
             resultPur = pur
           } yield (constrs, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not =>
-          for {
-            (constrs, tpe, pur) <- visitExp(exp)
-            resultTyp <- expectTypeM(expected = Type.BigInt, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
-
         case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
@@ -845,22 +838,10 @@ object Typer {
             resultPur = Type.mkUnion(pur1, pur2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
-             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
-          for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
-            lhs <- expectTypeM(expected = Type.BigInt, actual = tpe1, exp1.loc)
-            rhs <- expectTypeM(expected = Type.BigInt, actual = tpe2, exp2.loc)
-            resultTyp <- unifyTypeM(tvar, Type.BigInt, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
-
         case SemanticOperator.Int8Op.Shl | SemanticOperator.Int8Op.Shr
              | SemanticOperator.Int16Op.Shl | SemanticOperator.Int16Op.Shr
              | SemanticOperator.Int32Op.Shl | SemanticOperator.Int32Op.Shr
-             | SemanticOperator.Int64Op.Shl | SemanticOperator.Int64Op.Shr
-             | SemanticOperator.BigIntOp.Shl | SemanticOperator.BigIntOp.Shr =>
+             | SemanticOperator.Int64Op.Shl | SemanticOperator.Int64Op.Shr =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
             (constrs2, tpe2, pur2) <- visitExp(exp2)
@@ -878,7 +859,6 @@ object Typer {
              | SemanticOperator.Int16Op.Eq | SemanticOperator.Int16Op.Neq
              | SemanticOperator.Int32Op.Eq | SemanticOperator.Int32Op.Neq
              | SemanticOperator.Int64Op.Eq | SemanticOperator.Int64Op.Neq
-             | SemanticOperator.BigIntOp.Eq | SemanticOperator.BigIntOp.Neq
              | SemanticOperator.StringOp.Eq | SemanticOperator.StringOp.Neq =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -895,8 +875,7 @@ object Typer {
              | SemanticOperator.Int8Op.Lt | SemanticOperator.Int8Op.Le | SemanticOperator.Int8Op.Gt | SemanticOperator.Int8Op.Ge
              | SemanticOperator.Int16Op.Lt | SemanticOperator.Int16Op.Le | SemanticOperator.Int16Op.Gt | SemanticOperator.Int16Op.Ge
              | SemanticOperator.Int32Op.Lt | SemanticOperator.Int32Op.Le | SemanticOperator.Int32Op.Gt | SemanticOperator.Int32Op.Ge
-             | SemanticOperator.Int64Op.Lt | SemanticOperator.Int64Op.Le | SemanticOperator.Int64Op.Gt | SemanticOperator.Int64Op.Ge
-             | SemanticOperator.BigIntOp.Lt | SemanticOperator.BigIntOp.Le | SemanticOperator.BigIntOp.Gt | SemanticOperator.BigIntOp.Ge =>
+             | SemanticOperator.Int64Op.Lt | SemanticOperator.Int64Op.Le | SemanticOperator.Int64Op.Gt | SemanticOperator.Int64Op.Ge =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
             (constrs2, tpe2, pur2) <- visitExp(exp2)
