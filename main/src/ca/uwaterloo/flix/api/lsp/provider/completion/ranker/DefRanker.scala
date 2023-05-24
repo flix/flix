@@ -16,23 +16,23 @@
 
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
 
-object DefRanker {
+object DefRanker extends Ranker {
 
   /**
     * Find the best/newest def completion.
     *
     * Checks each def completion if that def has been modified, which is done by a lookup in the delta map.
     *
-    * The def completion with the most recent timeStamp will be returned, as the bestDefCompletion.
+    * The def completion with the most recent timeStamp will be returned, as the best DefCompletion.
     *
     * @param completions  the list of completions.
-    * @param deltaContext the current changes
     * @return             Some(DefCompletion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion], deltaContext: DeltaContext): Option[DefCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[DefCompletion] = {
     getDefCompletions(completions)
       // If the map does not contain any of the keys, it unintentionally returns the first possible def completion.
       // The filter makes sure, that this does not happen.

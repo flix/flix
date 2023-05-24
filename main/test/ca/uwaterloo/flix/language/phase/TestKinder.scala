@@ -48,22 +48,20 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("MismatchedTypeParamKind.Implicit.05") {
-    val input = raw"def f(a: e): Int32 \\ not e = 123"
+  test("MismatchedTypeParamKind.Implicit.05") {
+    val input = raw"def f(a: e): Int32 \ ~e = 123"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("MismatchedTypeParamKind.Implicit.06") {
+  test("MismatchedTypeParamKind.Implicit.06") {
     val input =
       """
         |enum E[a] {
         |  case E1(a)
         |}
         |
-        |def f(g: E[a -> b \ e]): Int32 \ not (a or b) = 123
+        |def f(g: E[a -> b \ e]): Int32 \ ~(a & b) = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -114,27 +112,25 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("MismatchedTypeParamKind.Enum.05") {
+  test("MismatchedTypeParamKind.Enum.05") {
     val input =
       """
         |enum E[e] {
-        |    case A(e -> Int32 \ not e)
+        |    case A(e -> Int32 \ ~e)
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("MismatchedTypeParamKind.Enum.06") {
+  test("MismatchedTypeParamKind.Enum.06") {
     val input =
       """
         |enum D[a] {
         |  case D1(a)
         |}
         |enum E[a, b, e] {
-        |    case A(D[a -> b \ e] -> Int32 \ not (a or b))
+        |    case A(D[a -> b \ e] -> Int32 \ ~(a & b))
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -165,15 +161,13 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("MismatchedTypeParamKind.TypeAlias.05") {
-    val input = raw"type alias T[e] = e -> Int32 \ not e"
+  test("MismatchedTypeParamKind.TypeAlias.05") {
+    val input = raw"type alias T[e] = e -> Int32 \ ~e"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("MismatchedTypeParamKind.TypeAlias.06") {
+  test("MismatchedTypeParamKind.TypeAlias.06") {
     val input =
       """
         |enum Option[a] {
@@ -181,7 +175,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case None
         |}
         |
-        |type alias T[a, b, e] = Option[a -> b \ e] -> Int32 \ not (a or b)
+        |type alias T[a, b, e] = Option[a -> b \ e] -> Int32 \ ~(a & b)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -327,7 +321,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalEffect.03") {
-    val input = raw"def f(): Int32 = 1: \ Int32"
+    val input = raw"def f(): Int32 = 1: _ \ Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -365,9 +359,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("IllegalTypeApplication.03") {
     val input =
       """
-        |rel A(a: Int32)
-        |
-        |type alias S = #{ A }
+        |type alias S = #{ A(Int32) }
         |
         |def f(p: S[Int32]): Int32 = 123
         |""".stripMargin
@@ -381,23 +373,20 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("IllegalTypeApplication.05") {
-    val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ Int32 and true)"
+  test("IllegalTypeApplication.05") {
+    val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ Int32 + true)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("IllegalTypeApplication.06") {
-    val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ true or Int32)"
+  test("IllegalTypeApplication.06") {
+    val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ true & Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("IllegalTypeApplication.07") {
-    val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ not Int32)"
+  test("IllegalTypeApplication.07") {
+    val input = raw"def f(): Int32 = unchecked_cast(1 as Int32 \ ~Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -438,7 +427,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.02") {
     val input =
       """
-        |def f(): Int32 = 1: \ Unit
+        |def f(): Int32 = 1: _ \ Unit
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -847,12 +836,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("KindError.TypeAlias.Type.03") {
-    val input =
-      """
-        |rel A(x: Int32)
-        |
-        |type alias Z[r] = #{ A | r }
-        |""".stripMargin
+    val input = "type alias Z[r] = #{ A(Int32) | r }"
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }

@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pa
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -136,7 +135,6 @@ object PatternExhaustiveness {
     */
   private def visitExp(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = {
     tast match {
-      case Expression.Wild(_, _) => Nil
       case Expression.Var(_, _, _) => Nil
       case Expression.Def(_, _, _) => Nil
       case Expression.Sig(_, _, _) => Nil
@@ -231,7 +229,6 @@ object PatternExhaustiveness {
         (ruleExps ::: chans ::: default.toList).flatMap(visitExp(_, root))
 
       case Expression.Spawn(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
-      case Expression.Par(exp, _) => visitExp(exp, root)
 
       case Expression.ParYield(frags, exp, _, _, loc) =>
         val fragsExps = frags.map(_.exp)

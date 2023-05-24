@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -74,22 +73,52 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None, MultiMap.empty)
-  private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
-  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
+  private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
+  private var cachedWeederAst: WeededAst.Root = WeededAst.empty
+  private var cachedKinderAst: KindedAst.Root = KindedAst.empty
+  private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
+  private var cachedTyperAst: TypedAst.Root = TypedAst.empty
+
+  def getParserAst: ParsedAst.Root = cachedParserAst
+  def getWeederAst: WeededAst.Root = cachedWeederAst
+  def getKinderAst: KindedAst.Root = cachedKinderAst
+  def getResolverAst: ResolvedAst.Root = cachedResolverAst
+  def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
     * A cache of ASTs for debugging.
     */
-  private var cachedLiftedAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
-  private var cachedErasedAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
+  private var cachedDocumentorAst: TypedAst.Root = TypedAst.empty
+  private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonomorphEnumsAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
+  private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
+  private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedMonoTyperAst: MonoTypedAst.Root = MonoTypedAst.empty
+  private var cachedEraserAst: ErasedAst.Root = ErasedAst.empty
 
-  /**
-    * Returns the cached LiftedAST.
-    */
-  def getLiftedAst: LiftedAst.Root = cachedLiftedAst
+  def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
+  def getLoweringAst: LoweredAst.Root = cachedLoweringAst
+  def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
+  def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
+  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
+  def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
+  def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
+  def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
+  def getTailrecAst: LiftedAst.Root = cachedTailrecAst
+  def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
+  def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
+  def getReducerAst: ReducedAst.Root = cachedReducerAst
+  def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
+  def getMonoTyperAst: MonoTypedAst.Root = cachedMonoTyperAst
+  def getEraserAst: ErasedAst.Root = cachedEraserAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -159,6 +188,7 @@ class Flix {
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
+    "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
@@ -467,7 +497,7 @@ class Flix {
 
   /**
     * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to print the explanation.
+    * Decides whether or not to append the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain)
@@ -497,16 +527,16 @@ class Flix {
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterParser <- Parser.run(afterReader, entryPoint, cachedParsedAst, changeSet)
-      afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
+      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
+      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
-      afterResolver <- Resolver.run(afterNamer, cachedResolvedAst, changeSet)
-      afterKinder <- Kinder.run(afterResolver, cachedKindedAst, changeSet)
+      afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
+      afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
-      afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
+      afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       afterStatistics <- Statistics.run(afterEntryPoint)
-      _ <- Instances.run(afterStatistics, cachedTypedAst, changeSet)
+      _ <- Instances.run(afterStatistics, cachedTyperAst, changeSet)
       afterStratifier <- Stratifier.run(afterStatistics)
       _ <- Regions.run(afterStratifier)
       afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
@@ -515,11 +545,11 @@ class Flix {
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
-        this.cachedParsedAst = afterParser
-        this.cachedWeededAst = afterWeeder
-        this.cachedKindedAst = afterKinder
-        this.cachedResolvedAst = afterResolver
-        this.cachedTypedAst = afterTyper
+        this.cachedParserAst = afterParser
+        this.cachedWeederAst = afterWeeder
+        this.cachedKinderAst = afterKinder
+        this.cachedResolverAst = afterResolver
+        this.cachedTyperAst = afterTyper
       }
       afterSafety
     }
@@ -557,22 +587,22 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
-    val afterDocumentor = Documentor.run(typedAst)
-    val afterLowering = Lowering.run(afterDocumentor)
-    val afterEarlyTreeShaker = EarlyTreeShaker.run(afterLowering)
-    val afterMonomorph = Monomorph.run(afterEarlyTreeShaker)
-    val afterMonomorphEnums = MonomorphEnums.run(afterMonomorph)
-    val afterSimplifier = Simplifier.run(afterMonomorphEnums)
-    val afterClosureConv = ClosureConv.run(afterSimplifier)
-    cachedLiftedAst = LambdaLift.run(afterClosureConv)
-    val afterTailrec = Tailrec.run(cachedLiftedAst)
-    val afterOptimizer = Optimizer.run(afterTailrec)
-    val afterLateTreeShaker = LateTreeShaker.run(afterOptimizer)
-    val afterReducer = Reducer.run(afterLateTreeShaker)
-    val afterVarNumbering = VarNumbering.run(afterReducer)
-    val afterMonoTyper = MonoTyper.run(afterVarNumbering)
-    cachedErasedAst = Eraser.run(afterMonoTyper)
-    val afterJvmBackend = JvmBackend.run(cachedErasedAst)
+    cachedDocumentorAst = Documentor.run(typedAst)
+    cachedLoweringAst = Lowering.run(cachedDocumentorAst)
+    cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
+    cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
+    cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)
+    cachedSimplifierAst = Simplifier.run(cachedMonomorphEnumsAst)
+    cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
+    cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
+    cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
+    cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
+    cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
+    cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
+    cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
+    cachedMonoTyperAst = MonoTyper.run(cachedVarNumberingAst)
+    cachedEraserAst = Eraser.run(cachedMonoTyperAst)
+    val afterJvmBackend = JvmBackend.run(cachedEraserAst)
     val result = Finish.run(afterJvmBackend)
 
     // Write formatted asts to disk based on options.

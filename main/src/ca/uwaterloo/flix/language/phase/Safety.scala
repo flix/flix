@@ -52,7 +52,7 @@ object Safety {
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
-        if (tpe.typeArguments.exists(_.kind == Kind.Bool))
+        if (tpe.typeArguments.exists(_.kind == Kind.Eff))
           List(SafetyError.SendableError(tpe, loc))
         else
           Nil
@@ -75,7 +75,31 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.impl.exp, renv, root)
+    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root)
+  }
+
+  /**
+    * Checks that if `def0` is a test entry point that it is well-behaved.
+    */
+  private def visitTestEntryPoint(def0: Def): List[CompilationMessage] = {
+    if (def0.spec.ann.isTest) {
+      def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
+
+      val hasUnitParameter = def0.spec.fparams match {
+        case fparam :: Nil => isUnitType(fparam)
+        case _ => false
+      }
+
+      if (!hasUnitParameter) {
+        val err = SafetyError.IllegalTestParameters(def0.sym.loc)
+        List(err)
+      } else {
+        Nil
+      }
+    }
+
+    else Nil
+
   }
 
   /**
@@ -88,8 +112,6 @@ object Safety {
       */
     def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
       case Expression.Cst(_, _, _) => Nil
-
-      case Expression.Wild(_, _) => Nil
 
       case Expression.Var(_, _, _) => Nil
 
@@ -165,7 +187,7 @@ object Safety {
 
       case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp) ++
-          rules.flatMap { case RestrictableChoiceRule(pat, exp) => visit(exp) }
+          rules.flatMap { case RestrictableChoiceRule(_, exp) => visit(exp) }
 
       case Expression.Tag(_, exp, _, _, _) =>
         visit(exp)
@@ -310,13 +332,6 @@ object Safety {
 
       case Expression.Spawn(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
-
-      case Expression.Par(exp, _) =>
-        // Only tuple expressions are allowed to be parallelized with `par`.
-        exp match {
-          case e: Expression.Tuple => visit(e)
-          case _ => IllegalParExpression(exp, exp.loc) :: Nil
-        }
 
       case Expression.ParYield(frags, exp, _, _, _) =>
         frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ++ visit(exp)

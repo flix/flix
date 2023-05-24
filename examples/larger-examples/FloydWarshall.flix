@@ -1,12 +1,6 @@
 // This is a Flix implementation of a Floyd-Warshall-like algorithm
 // for finding shortest paths between all pairs of nodes in a graph.
 
-// Inputs: Directed distances d between nodes a and b
-rel Edge(a: String, b: String, d: Int32)
-
-// Outputs: Shortest distance d from a to b
-lat ShortestDist(a: String, b: String, d: Dist)
-
 // Elements of the distance lattice
 enum Dist with Eq, Order, ToString {
   case Bot,      // Not reachable

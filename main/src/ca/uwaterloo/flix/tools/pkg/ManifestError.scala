@@ -82,7 +82,7 @@ object ManifestError {
   case class MavenDependencyFormatError(path: Path, depName: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | "A Maven dependency should be formatted like so: 'group:artifact'".
+         | A Maven dependency should be formatted like so: 'group:artifact'.
          | Instead found: ${f.red(depName)}.
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
@@ -91,9 +91,36 @@ object ManifestError {
   case class FlixDependencyFormatError(path: Path, depName: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | "A Flix dependency should be formatted like so: 'repository:username/projectname'".
+         | A Flix dependency should be formatted like so: 'repository:username/projectname'.
          | Instead found: ${f.red(depName)}.
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class JarUrlFormatError(path: Path, depUrl: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | A jar dependency should be formatted like so: 'url:https://website/fileName.jar'.
+         | Instead found: ${f.red(depUrl)}.
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class JarUrlExtensionError(path: Path, depName: String, extension: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | The file to save a jar in should have the extension .jar not .${f.red(extension)}.
+         | Full name given: $depName.
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class JarUrlFileNameError(path: Path, depName: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | The file to save a jar in should be formatted like so: 'fileName.jar'.
+         | Instead found: ${f.red(depName)}.
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }
 
@@ -103,6 +130,24 @@ object ManifestError {
          | All versions should be of type String:
          | $message
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class JarUrlTypeError(path: Path, message: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | All URLs should be of type String:
+         | $message
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class WrongUrlFormat(path: Path, url: String, message: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | Could not construct a URL from ${f.red(url)}:
+         | $message
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }
 
@@ -157,7 +202,7 @@ object ManifestError {
       s"""
          | The toml file has a table named ${f.red(tableName)}, which is not allowed.
          | Allowed table names:
-         |   package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies
+         |   package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies, jar-dependencies
          | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }

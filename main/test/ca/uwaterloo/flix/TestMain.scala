@@ -69,12 +69,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.args.contains("--abc --def"))
   }
 
-  test("--benchmark") {
-    val args = Array("--benchmark", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.benchmark)
-  }
-
   test("--doc") {
     val args = Array("--doc", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -115,12 +109,6 @@ class TestMain extends AnyFunSuite {
     val args = Array("--lsp", "8080", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.lsp.nonEmpty)
-  }
-
-  test("--test") {
-    val args = Array("--test", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.test)
   }
 
   test("--threads") {

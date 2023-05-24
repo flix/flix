@@ -40,21 +40,27 @@ mod BigInt {
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
     ///
     pub def mod(x: BigInt, n: BigInt): BigInt =
+        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
         else
-            $BIGINT_REM$($BIGINT_REM$(x, n) + n, n)
+            ((x `remainder` n) + n) `remainder` n
 
     ///
     /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `BigInt.mod`.
     ///
     pub def rem(x: BigInt, n: BigInt): BigInt =
+        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
         else
-            $BIGINT_REM$(x, n)
+            x `remainder` n
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -113,32 +119,44 @@ mod BigInt {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHL$(x, y)
+    pub def leftShift(x: BigInt, y: Int32): BigInt =
+        import java.math.BigInteger.shiftLeft(Int32): BigInt \ {};
+        x `shiftLeft` y
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHR$(x, y)
+    pub def rightShift(x: BigInt, y: Int32): BigInt =
+        import java.math.BigInteger.shiftRight(Int32): BigInt \ {};
+        x `shiftRight` y
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt = $BIGINT_AND$(x, y)
+    pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.and(BigInt): BigInt \ {};
+        x `and` y
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: BigInt): BigInt = $BIGINT_NOT$(x)
+    pub def bitwiseNot(x: BigInt): BigInt =
+        import java.math.BigInteger.not(): BigInt \ {};
+        not(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: BigInt, y: BigInt): BigInt = $BIGINT_OR$(x, y)
+    pub def bitwiseOr(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.or(BigInt): BigInt \ {};
+        x `or` y
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: BigInt, y: BigInt): BigInt = $BIGINT_XOR$(x, y)
+    pub def bitwiseXor(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.xor(BigInt): BigInt \ {};
+        x `xor` y
 
     ///
     /// Return a string representation of `x`.

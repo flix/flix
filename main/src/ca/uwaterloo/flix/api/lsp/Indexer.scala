@@ -187,9 +187,6 @@ object Indexer {
     case Expression.Cst(_, _, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expression.Wild(_, _) =>
-      Index.occurrenceOf(exp0)
-
     case Expression.Var(sym, _, loc) =>
       val parent = Entity.Exp(exp0)
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent)
@@ -421,9 +418,6 @@ object Indexer {
 
     case Expression.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Par(exp, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.ParYield(frags, exp, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)

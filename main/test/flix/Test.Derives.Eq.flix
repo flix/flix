@@ -24,7 +24,7 @@ mod Test.Derives.Eq {
         case BothCase(a, b)
     }
 
-    pub enum PolyBoolEnum[ef: Bool] with Eq {
+    pub enum PolyBoolEnum[ef: Eff] with Eq {
         case EmptyCase
         case RecursiveCase(PolyBoolEnum[ef])
     }

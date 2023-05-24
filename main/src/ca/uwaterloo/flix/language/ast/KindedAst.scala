@@ -24,6 +24,8 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object KindedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
+
   case class Root(classes: Map[Symbol.ClassSym, KindedAst.Class],
                   instances: Map[Symbol.ClassSym, List[KindedAst.Instance]],
                   defs: Map[Symbol.DefnSym, KindedAst.Def],
@@ -65,8 +67,6 @@ object KindedAst {
   }
 
   object Expression {
-
-    case class Wild(tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends KindedAst.Expression
 
@@ -197,8 +197,6 @@ object KindedAst {
     case class SelectChannel(rules: List[KindedAst.SelectChannelRule], default: Option[KindedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Spawn(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class ParYield(frags: List[KindedAst.ParYieldFragment], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 

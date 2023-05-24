@@ -22,6 +22,8 @@ import java.lang.reflect.Method
 
 object MonoTypedAst {
 
+  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
+
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],
@@ -47,9 +49,9 @@ object MonoTypedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 

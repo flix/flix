@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
@@ -115,11 +115,11 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   override def satisfiable(f: DD): Boolean = !f.isFalse
 
-  override def toType(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  override def toType(f: DD, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if(!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
-      createTypeFromBDDAux(f, Type.True, env)
+      createTypeFromBDDAux(f, Type.Pure, env)
     }
   }
 
@@ -130,46 +130,51 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     * if it is true returns the path, otherwise returns false.
     * ORs all returned paths together.
     */
-  private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if (dd.isLeaf) {
-      return if (dd.isTrue) tpe else Type.False
+      return if (dd.isTrue) tpe else Type.EffUniv
     }
 
     val currentVar = dd.getVariable
     val typeVar = env.getBackward(currentVar) match {
-      case Some(sym) => Type.Var(sym, sym.loc)
-      case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", tpe.loc)
+      case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+      case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", SourceLocation.Unknown)
     }
 
-    val lowType = Type.mkApply(Type.And, List(tpe, Type.Apply(Type.Not, typeVar, typeVar.loc)), typeVar.loc)
+    val lowType = Type.mkApply(Type.Union, List(tpe, Type.Apply(Type.Complement, typeVar, typeVar.loc)), typeVar.loc)
     val lowRes = createTypeFromBDDAux(dd.getLow, lowType, env)
-    val highType = Type.mkApply(Type.And, List(tpe, typeVar), typeVar.loc)
+    val highType = Type.mkApply(Type.Union, List(tpe, typeVar), typeVar.loc)
     val highRes = createTypeFromBDDAux(dd.getHigh, highType, env)
 
     (lowRes, highRes) match {
-      case (Type.False, Type.False) => Type.False
-      case (Type.False, _) => highRes
-      case (_, Type.False) => lowRes
-      case (t1, _) => Type.mkApply(Type.Or, List(lowRes, highRes), t1.loc)
+      case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
+      case (Type.EffUniv, _) => highRes
+      case (_, Type.EffUniv) => lowRes
+      case (t1, _) => Type.mkApply(Type.Intersection, List(lowRes, highRes), t1.loc)
     }
   }
 
   /**
     * Converting a BDD to a Type using the Quine-McCluskey algorithm
     */
-  private def toTypeQMC(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  private def toTypeQMC(f: DD, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     //Easy shortcuts if formula is true, false or a variable
     if (f.isLeaf) {
       if (f.isTrue) {
-        return Type.True
+        return Type.Pure
       } else {
-        return Type.False
+        return Type.EffUniv
       }
     }
     if (isVar(f)) {
       val id = f.getVariable
-      val typeVar = env.getBackward(id).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown))
-      return Type.Var(typeVar, typeVar.loc)
+      val tpe = env.getBackward(id) match {
+        case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+        case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
+      }
+      return tpe
     }
 
     //Otherwise find the cover and convert it to a Type

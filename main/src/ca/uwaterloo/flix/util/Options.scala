@@ -40,7 +40,6 @@ object Options {
     target = JvmTarget.Version18,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
-    xallowredundancies = false,
     xbddthreshold = None,
     xboolclassic = false,
     xnoboolcache = false,
@@ -54,7 +53,7 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
-    xprintasts = Set.empty,
+    xprintphase = Set.empty,
     xprintboolunif = false,
     xnoqmc = false,
     xflexibleregions = false,
@@ -100,7 +99,6 @@ object Options {
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
-  * @param xallowredundancies  disables the redundancy checker.
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
@@ -109,7 +107,7 @@ object Options {
   * @param xstatistics         enables statistics collection.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono         enables strict monomorphization.
-  * @param xprintasts          prints the chosen AST to a given path.
+  * @param xprintphase     prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
   */
 case class Options(lib: LibLevel,
@@ -127,7 +125,6 @@ case class Options(lib: LibLevel,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
-                   xallowredundancies: Boolean,
                    xbddthreshold: Option[Int],
                    xboolclassic: Boolean,
                    xnoboolcache: Boolean,
@@ -142,7 +139,7 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
-                   xprintasts: Set[String],
+                   xprintphase: Set[String],
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
                    xsummary: Boolean

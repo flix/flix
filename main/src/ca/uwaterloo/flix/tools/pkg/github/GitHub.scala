@@ -22,7 +22,7 @@ import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.native.JsonMethods.parse
 
 import java.io.{IOException, InputStream}
-import java.net.URL
+import java.net.{URI, URL}
 
 /**
   * An interface for the GitHub API.
@@ -115,7 +115,7 @@ object GitHub {
     * Returns the URL that returns data related to the project's releases.
     */
   private def releasesUrl(project: Project): URL = {
-    new URL(s"https://api.github.com/repos/${project.owner}/${project.repo}/releases")
+    new URI(s"https://api.github.com/repos/${project.owner}/${project.repo}/releases").toURL
   }
 
   /**
@@ -134,7 +134,7 @@ object GitHub {
   private def parseAsset(asset: JValue): Asset = {
     val url = asset \ "browser_download_url"
     val name = asset \ "name"
-    Asset(name.values.toString, new URL(url.values.toString))
+    Asset(name.values.toString, new URI(url.values.toString).toURL)
   }
 
   /**

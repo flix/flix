@@ -88,7 +88,7 @@ object Unification {
     //
     // Bools
     //
-    case (Kind.Bool, Kind.Bool) =>
+    case (Kind.Eff, Kind.Eff) =>
       // don't try to unify effects if the `no-bool-effects` flag is on
       if (flix.options.xnobooleffects) {
         Ok(Substitution.empty, Nil)
@@ -415,26 +415,26 @@ object Unification {
   private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
       case t: Type.Var =>
-        if (tvar.sym == t.sym) Type.True else tpe
+        if (tvar.sym == t.sym) Type.Pure else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.", tpe.loc)
     }
 
     case Some(tc) => tc match {
-      case TypeConstructor.True => Type.True
+      case TypeConstructor.Pure => Type.Pure
 
-      case TypeConstructor.False => Type.False
+      case TypeConstructor.EffUniv => Type.EffUniv
 
-      case TypeConstructor.Not =>
+      case TypeConstructor.Complement =>
         val List(t) = tpe.typeArguments
-        Type.mkNot(purify(tvar, t), tpe.loc)
+        Type.mkComplement(purify(tvar, t), tpe.loc)
 
-      case TypeConstructor.And =>
+      case TypeConstructor.Union =>
         val List(t1, t2) = tpe.typeArguments
-        Type.mkAnd(purify(tvar, t1), purify(tvar, t2), tpe.loc)
+        Type.mkUnion(purify(tvar, t1), purify(tvar, t2), tpe.loc)
 
-      case TypeConstructor.Or =>
+      case TypeConstructor.Intersection =>
         val List(t1, t2) = tpe.typeArguments
-        Type.mkOr(purify(tvar, t1), purify(tvar, t2), tpe.loc)
+        Type.mkIntersection(purify(tvar, t1), purify(tvar, t2), tpe.loc)
 
       case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.", tpe.loc)
     }

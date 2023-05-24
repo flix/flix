@@ -61,3 +61,5 @@ By adding your name to this document, you agree to release all your contribution
 - [Sam Ezeh](https://github.com/dignissimus)
 - [Holger Dal Mogensen](https://github.com/sockmaster27)
 - [Roland Csaszar](https://github.com/Release-Candidate/)
+- [Ziyao Wei](https://github.com/ZiyaoWei)
+- [Xavier deSouza](https://github.com/xdesou01)

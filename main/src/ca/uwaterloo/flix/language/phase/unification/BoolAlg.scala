@@ -101,14 +101,19 @@ trait BoolAlg[F] {
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
+  def getEnv(fs: List[Type]): Bimap[BoolFormula.VarOrEff, Int] = {
     // Compute the variables in `tpe`.
     val tvars =
       fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
+        .toList.map(BoolFormula.VarOrEff.Var)
+
+    val effs =
+      fs.foldLeft(SortedSet.empty[Symbol.EffectSym])((acc, tpe) => acc ++ tpe.effects)
+        .toList.map(BoolFormula.VarOrEff.Eff)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
+    (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, Int]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
   }
@@ -116,28 +121,38 @@ trait BoolAlg[F] {
   /**
     * Returns a rigidity environment on formulas that is equivalent to the given one on types.
     */
-  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[Symbol.KindedTypeVarSym, Int]): SortedSet[Int] = {
-    renv.s.flatMap(env.getForward)
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[BoolFormula.VarOrEff, Int]): SortedSet[Int] = {
+    val rigidVars = renv.s.flatMap {
+      case tvar => env.getForward(BoolFormula.VarOrEff.Var(tvar))
+    }
+    val effs = env.m1.collect {
+      case (BoolFormula.VarOrEff.Eff(_), i) => i
+    }
+    rigidVars ++ effs
   }
 
   /**
     * Converts the given formula f into a type.
     */
-  def toType(f: F, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type
+  def toType(f: F, env: Bimap[BoolFormula.VarOrEff, Int]): Type
 
   /**
     * Converts the given type t into a formula.
     */
-  def fromType(t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): F = Type.eraseTopAliases(t) match {
-    case Type.Var(sym, _) => env.getForward(sym) match {
+  def fromType(t: Type, env: Bimap[BoolFormula.VarOrEff, Int]): F = Type.eraseTopAliases(t) match {
+    case Type.Var(sym, _) => env.getForward(BoolFormula.VarOrEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => mkVar(x)
     }
-    case Type.True => mkTrue
-    case Type.False => mkFalse
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => mkNot(fromType(tpe1, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Cst(TypeConstructor.Effect(sym), _) => env.getForward(BoolFormula.VarOrEff.Eff(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
+      case Some(x) => mkVar(x)
+    }
+    case Type.Pure => mkTrue
+    case Type.EffUniv => mkFalse
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => mkNot(fromType(tpe1, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 

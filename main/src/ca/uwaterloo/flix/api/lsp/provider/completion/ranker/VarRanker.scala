@@ -16,28 +16,26 @@
 
 package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.VarCompletion
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
 
 /**
   * Ranks the possible var completions.
   */
-object VarRanker {
+object VarRanker extends Ranker{
 
   /**
     * Find the best var completion.
     *
     * @param completions the list of completions.
-    * @param varUses     a map consisting of VarSym and its SourceLocations
-    * @return            Some(Completion) if a better completion is possible, else none.
+    * @return            Some(VarCompletion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion], varUses: MultiMap[Symbol.VarSym, SourceLocation]): Option[VarCompletion] = {
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[VarCompletion] = {
     // Remove all none var completions
     getVarCompletions(completions)
       // Find the var comp that has 0 uses
-      .find(varComp => varUses(varComp.sym).isEmpty)
+      .find(varComp => index.varUses(varComp.sym).isEmpty)
   }
 
   /**
@@ -48,7 +46,7 @@ object VarRanker {
     */
   private def getVarCompletions(completions: Iterable[Completion]): Iterable[VarCompletion] = {
     completions.collect {
-      case VarCompletion(sym, tpe) => VarCompletion(sym, tpe)
+      case comp: VarCompletion => comp
     }
   }
 }

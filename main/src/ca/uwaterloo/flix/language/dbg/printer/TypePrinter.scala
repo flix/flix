@@ -16,11 +16,31 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 
 object TypePrinter {
 
-  def print(tpe: Type): DocAst.Type = DocAst.Type.AsIs("TODO: TypePrinter")
+  /**
+    * Returns the [[DocAst.Type]] representation of `tpe`.
+    */
+  def print(tpe: Type): DocAst.Type = {
+    // Temporarily use existing type formatting
+    // try to unpack one arrow type only for the sake of signatures
+    tpe.baseType match {
+      case Type.Cst(TypeConstructor.Arrow(_), _) =>
+        val args = tpe.arrowArgTypes
+        val res = tpe.arrowResultType
+        DocAst.Type.Arrow(args.map(printHelper), printHelper(res))
+      case _ => printHelper(tpe)
+    }
+  }
+
+  /** Format type as a string */
+  private def printHelper(tpe: Type): DocAst.Type = {
+    val formattedType = FormatType.formatTypeWithOptions(tpe, FormatOptions(ignorePur = true, ignoreEff = true, FormatOptions.VarName.NameBased))
+    DocAst.Type.AsIs(formattedType)
+  }
 
 }

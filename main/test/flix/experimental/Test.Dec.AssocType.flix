@@ -59,7 +59,7 @@
 //        type Eff[MutList[a, r]] = r
 //        type Elem[MutList[a, r]] = a
 //
-//        pub def iterator(rh: Region[r2], x: MutList[a, r]): Iterator[a, r and r2, r2] & r and r2 = MutList.iterator(rh, x)
+//        pub def iterator(rh: Region[r2], x: MutList[a, r]): Iterator[a, r and r2, r2] \ r and r2 = MutList.iterator(rh, x)
 //    }
 //
 //    class C[a] {

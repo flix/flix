@@ -84,8 +84,6 @@ object MonomorphEnums {
   private def visitExp(exp: LoweredAst.Expression)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Expression = exp match {
     case Expression.Cst(cst, tpe, loc) =>
       Expression.Cst(cst, visitType(tpe), loc)
-    case Expression.Wild(tpe, loc) =>
-      Expression.Wild(visitType(tpe), loc)
     case Expression.Var(sym, tpe, loc) =>
       Expression.Var(sym, visitType(tpe), loc)
     case Expression.Def(sym, tpe, loc) =>
@@ -329,9 +327,9 @@ object MonomorphEnums {
       val t2 = collapseFormulas(tpe2)
       t1 match {
         // Simplify boolean equations.
-        case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(t2, loc)
-        case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, t2, loc)
-        case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, t2, loc)
+        case Type.Cst(TypeConstructor.Not, _) => Type.mkComplement(t2, loc)
+        case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkUnion(x, t2, loc)
+        case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkIntersection(x, t2, loc)
 
         // Simplify set expressions
         case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(t2, sym, loc)

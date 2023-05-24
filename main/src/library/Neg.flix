@@ -53,5 +53,7 @@ instance Neg[Int64] {
 }
 
 instance Neg[BigInt] {
-    pub def neg(x: BigInt): BigInt = $BIGINT_NEG$(x)
+    pub def neg(x: BigInt): BigInt =
+        import java.math.BigInteger.negate(): BigInt \ {};
+        negate(x)
 }

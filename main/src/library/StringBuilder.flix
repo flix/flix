@@ -24,14 +24,14 @@ mod StringBuilder {
     ///
     /// Returns a new mutable StringBuilder.
     ///
-    pub def new(_: Region[r]): StringBuilder[r] \ Write(r) =
+    pub def new(_: Region[r]): StringBuilder[r] \ r =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
         StringBuilder(newStringBuilder())
 
     ///
     /// Append `x` to the StringBuilder `sb`.
     ///
-    pub def append!(x: a, sb: StringBuilder[r]): Unit \ Write(r) with ToString[a] =
+    pub def append!(x: a, sb: StringBuilder[r]): Unit \ r with ToString[a] =
         let s = ToString.toString(x);
         s `appendString!` sb;
         ()
@@ -39,54 +39,63 @@ mod StringBuilder {
     ///
     /// Append the String `s` to the StringBuilder `sb`.
     ///
-    pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ Write(r) =
+    pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ r =
         import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder \ r;
         let StringBuilder(msb) = sb;
         discard msb `append` s;
         ()
 
     ///
+    /// Append the code point `cp` to the StringBuilder `sb`.
+    ///
+    pub def appendCodePoint!(cp: Int32, sb: StringBuilder[r]): Unit \ r =
+        import java.lang.StringBuilder.appendCodePoint(Int32): ##java.lang.StringBuilder \ r;
+        let StringBuilder(msb) = sb;
+        discard msb `appendCodePoint` cp;
+        ()
+
+    ///
     /// Append the system line separator to the StringBuilder `sb`.
     ///
-    pub def appendLineSeparator!(sb: StringBuilder[r]): Unit \ Write(r) =
+    pub def appendLineSeparator!(sb: StringBuilder[r]): Unit \ r =
         String.lineSeparator() `appendString!` sb
 
     ///
     /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
-    pub def appendLine!(s: String, sb: StringBuilder[r]): Unit \ Write(r) =
+    pub def appendLine!(s: String, sb: StringBuilder[r]): Unit \ r =
         s `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
-    pub def appendLineWith!(f: a -> String \ ef, x: a, sb: StringBuilder[r]): Unit \ { ef, Write(r) } =
+    pub def appendLineWith!(f: a -> String \ ef, x: a, sb: StringBuilder[r]): Unit \ { ef, r } =
         f(x) `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
     ///
-    pub def appendLines!(a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
+    pub def appendLines!(a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { r1, r2 } =
         Array.forEach(x -> appendLine!(x, sb), a)
 
     ///
     /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
     ///
-    pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, Write(r) } with Foldable[t] =
+    pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, r } with Foldable[t] =
         Foldable.forEach(x -> appendLineWith!(f, x, sb), t)
 
     ///
     /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
-    pub def appendLinesWith!(f: a -> String \ ef, a: Array[a, r1], sb: StringBuilder[r2]): Unit \ { ef, Read(r1), Write(r2) } =
+    pub def appendLinesWith!(f: a -> String \ ef, a: Array[a, r1], sb: StringBuilder[r2]): Unit \ { ef, r1, r2 } =
         Array.forEach(x -> appendLineWith!(f, x, sb), a)
 
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
     ///
-    pub def intercalate!(sep: String, a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { Read(r1), Write(r2) } =
+    pub def intercalate!(sep: String, a: Array[String, r1], sb: StringBuilder[r2]): Unit \ { r1, r2 } =
         let append1! = (i, s) ->
             if (i > 0) {
                 appendString!(sep, sb);
@@ -99,21 +108,21 @@ mod StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2, r1] \ { Read(r2), Write(r1) } =
-        import java.lang.StringBuilder.charAt(Int32): Char \ Read(r2);
+    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 + r2, r1] \ { r1, r2 } =
+        import java.lang.StringBuilder.charAt(Int32): Char \ r2;
         let StringBuilder(msb) = sb;
         Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(msb, i))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 and r2, r1] \ { Read(r2), Write(r1) } =
+    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 + r2, r1] \ { r1, r2 } =
         iterator(r1, sb) |> Iterator.zipWithIndex
 
     ///
     /// Return the length of the StringBuilder `sb`.
     ///
-    pub def length(sb: StringBuilder[r]): Int32 \ Read(r) =
+    pub def length(sb: StringBuilder[r]): Int32 \ r =
         import java.lang.StringBuilder.length(): Int32 \ r;
         let StringBuilder(msb) = sb;
         length(msb)
@@ -121,7 +130,7 @@ mod StringBuilder {
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
-    pub def toString(sb: StringBuilder[r]): String \ Read(r) =
+    pub def toString(sb: StringBuilder[r]): String \ r =
         import java.lang.StringBuilder.toString(): String \ r;
         let StringBuilder(msb) = sb;
         toString(msb)

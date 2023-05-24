@@ -153,6 +153,11 @@ object Symbol {
   }
 
   /**
+    * Returns the module symbol for the given fully qualified name.
+    */
+  def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn)
+
+  /**
     * Returns the class symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkClassSym(ns: NName, ident: Ident): ClassSym = {
@@ -748,6 +753,11 @@ object Symbol {
     * Module symbol.
     */
   final class ModuleSym(val ns: List[String]) extends Symbol {
+    /**
+      * Returns `true` if this is the root module.
+      */
+    def isRoot: Boolean = ns.isEmpty
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
