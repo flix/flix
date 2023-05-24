@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.LoweredAst
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern, RelationalChoicePattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
-class LoweredAstPrinter {
+object LoweredAstPrinter {
 
   /**
     * Returns the [[DocAst.Program]] representation of `root`.
@@ -116,7 +116,10 @@ class LoweredAstPrinter {
     case Expression.Assign(exp1, exp2, tpe, pur, loc) => DocAst.Expression.Assign(print(exp1), print(exp2))
     case Expression.Ascribe(exp, tpe, pur, loc) => DocAst.Expression.Ascription(print(exp), TypePrinter.print(tpe))
     case Expression.InstanceOf(exp, clazz, loc) => DocAst.Expression.InstanceOf(print(exp), clazz)
-    case Expression.Cast(exp, declaredType, declaredPur, tpe, pur, loc) => DocAst.Expression.Cast(print(exp), TypePrinter.print(declaredType.get)) // TODO needs eff
+    case Expression.Cast(exp, declaredType, declaredPur, tpe, pur, loc) => declaredType match {
+      case None => print(exp) // TODO needs eff
+      case Some(t) => DocAst.Expression.Cast(print(exp), TypePrinter.print(t))
+    }
     case Expression.Without(exp, effUse, tpe, pur, loc) => DocAst.Expression.Without(print(exp), effUse.sym)
     case Expression.TryCatch(exp, rules, tpe, pur, loc) =>
       val expD = print(exp)
