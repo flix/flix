@@ -37,7 +37,7 @@ object Scheme {
       val newTconstrs = tconstrs.map(subst.apply)
       val newEconstrs = econstrs.map(subst.apply)
       val newBase = subst(base)
-      generalize(newTconstrs, newEconstrs, newBase)
+      generalize(newTconstrs, newEconstrs, newBase, RigidityEnv.empty)
   }
 
   /**
@@ -83,9 +83,10 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type): Scheme = {
-    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
-    Scheme(quantifiers.toList.map(_.sym), tconstrs, econstrs, tpe0)
+  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv): Scheme = {
+    val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
+    val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
+    Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
   }
 
   /**
