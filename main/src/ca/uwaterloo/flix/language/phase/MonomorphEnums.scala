@@ -608,6 +608,7 @@ object MonomorphEnums {
           }
 
         // Simplify boolean equations.
+        // TODO EFF-MIGRATION
         case Type.Cst(TypeConstructor.Not, _) |
              Type.Apply(Type.Cst(TypeConstructor.And, _), _, _) |
              Type.Apply(Type.Cst(TypeConstructor.Or, _), _, _) =>
