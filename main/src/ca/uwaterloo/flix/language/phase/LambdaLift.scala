@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, Purity, SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -56,9 +56,10 @@ object LambdaLift {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe0, pur, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val e = liftExp(def0.exp, sym, m)
+      val e = liftExp(exp, sym, m)
+      val tpe = Type.mkUncurriedArrowWithEffect(fs.map(_.tpe), pur, tpe0, tpe0.loc.asSynthetic)
 
       LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
   }
