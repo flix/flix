@@ -33,7 +33,12 @@ instance Div[Float64] {
 }
 
 instance Div[BigDecimal] {
-    pub def div(x: BigDecimal, y: BigDecimal): BigDecimal = $BIGDECIMAL_DIV$(x, y)
+    pub def div(x: BigDecimal, y: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.divide(BigDecimal): BigDecimal \ {};
+        if (y == 0ii)
+            0ii
+        else
+            x `divide` y
 }
 
 instance Div[Int8] {
