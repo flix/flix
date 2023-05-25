@@ -211,7 +211,7 @@ object MonomorphEnums {
     case Expression.GetField(field, exp, tpe, pur, loc) =>
       Expression.GetField(field, visitExp(exp), visitType(tpe), visitType(pur), loc)
     case Expression.PutField(field, exp1, exp2, tpe, pur, loc) =>
-      Expression.PutField(field, visitExp(exp1), visitExp(exp1), visitType(tpe), visitType(pur), loc)
+      Expression.PutField(field, visitExp(exp1), visitExp(exp2), visitType(tpe), visitType(pur), loc)
     case Expression.GetStaticField(field, tpe, pur, loc) =>
       Expression.GetStaticField(field, visitType(tpe), visitType(pur), loc)
     case Expression.PutStaticField(field, exp, tpe, pur, loc) =>
