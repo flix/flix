@@ -117,7 +117,7 @@ object WeededAst {
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class TypeMatch(exp: WeededAst.Expression, rules: List[WeededAst.MatchTypeRule], loc: SourceLocation) extends WeededAst.Expression
+    case class TypeMatch(exp: WeededAst.Expression, rules: List[WeededAst.TypeMatchRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class RelationalChoose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.RelationalChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
@@ -420,7 +420,7 @@ object WeededAst {
 
   case class MatchRule(pat: WeededAst.Pattern, exp1: Option[WeededAst.Expression], exp2: WeededAst.Expression)
 
-  case class MatchTypeRule(ident: Name.Ident, tpe: WeededAst.Type, exp: WeededAst.Expression)
+  case class TypeMatchRule(ident: Name.Ident, tpe: WeededAst.Type, exp: WeededAst.Expression)
 
   case class SelectChannelRule(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression)
 

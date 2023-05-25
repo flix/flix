@@ -425,7 +425,7 @@ object Monomorph {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
       rules.iterator.flatMap {
-        case MatchTypeRule(sym, t, body0) =>
+        case TypeMatchRule(sym, t, body0) =>
           // try to unify
           Unification.unifyTypes(expTpe, subst.nonStrict(t), renv) match {
             // Case 1: types don't unify; just continue

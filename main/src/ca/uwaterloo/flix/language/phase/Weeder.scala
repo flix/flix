@@ -1430,11 +1430,11 @@ object Weeder {
     case ParsedAst.Expression.TypeMatch(sp1, exp, rules, sp2) =>
       val loc = mkSL(sp1, sp2)
       val rulesVal = traverse(rules) {
-        case ParsedAst.MatchTypeRule(ident, tpe0, body0) =>
+        case ParsedAst.TypeMatchRule(ident, tpe0, body0) =>
           val tpeVal = visitType(tpe0)
           val bodyVal = visitExp(body0, senv)
           mapN(tpeVal, bodyVal) {
-            case (tpe, body) => WeededAst.MatchTypeRule(ident, tpe, body)
+            case (tpe, body) => WeededAst.TypeMatchRule(ident, tpe, body)
           }
       }
       mapN(visitExp(exp, senv), rulesVal) {
