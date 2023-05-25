@@ -708,13 +708,6 @@ object Typer {
             resultPur = pur
           } yield (constrs, resultTyp, resultPur)
 
-        case SemanticOperator.BigDecimalOp.Neg =>
-          for {
-            (constrs, tpe, pur) <- visitExp(exp)
-            resultTyp <- expectTypeM(expected = Type.BigDecimal, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
-
         case SemanticOperator.Int8Op.Neg | SemanticOperator.Int8Op.Not =>
           for {
             (constrs, tpe, pur) <- visitExp(exp)
@@ -777,16 +770,6 @@ object Typer {
             lhs <- expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Float64, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
-
-        case SemanticOperator.BigDecimalOp.Add | SemanticOperator.BigDecimalOp.Sub | SemanticOperator.BigDecimalOp.Mul | SemanticOperator.BigDecimalOp.Div =>
-          for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
-            lhs <- expectTypeM(expected = Type.BigDecimal, actual = tpe1, exp1.loc)
-            rhs <- expectTypeM(expected = Type.BigDecimal, actual = tpe2, exp2.loc)
-            resultTyp <- unifyTypeM(tvar, Type.BigDecimal, loc)
             resultPur = Type.mkUnion(pur1, pur2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
@@ -854,7 +837,6 @@ object Typer {
              | SemanticOperator.CharOp.Eq | SemanticOperator.CharOp.Neq
              | SemanticOperator.Float32Op.Eq | SemanticOperator.Float32Op.Neq
              | SemanticOperator.Float64Op.Eq | SemanticOperator.Float64Op.Neq
-             | SemanticOperator.BigDecimalOp.Eq | SemanticOperator.BigDecimalOp.Neq
              | SemanticOperator.Int8Op.Eq | SemanticOperator.Int8Op.Neq
              | SemanticOperator.Int16Op.Eq | SemanticOperator.Int16Op.Neq
              | SemanticOperator.Int32Op.Eq | SemanticOperator.Int32Op.Neq
@@ -871,7 +853,6 @@ object Typer {
         case SemanticOperator.CharOp.Lt | SemanticOperator.CharOp.Le | SemanticOperator.CharOp.Gt | SemanticOperator.CharOp.Ge
              | SemanticOperator.Float32Op.Lt | SemanticOperator.Float32Op.Le | SemanticOperator.Float32Op.Gt | SemanticOperator.Float32Op.Ge
              | SemanticOperator.Float64Op.Lt | SemanticOperator.Float64Op.Le | SemanticOperator.Float64Op.Gt | SemanticOperator.Float64Op.Ge
-             | SemanticOperator.BigDecimalOp.Lt | SemanticOperator.BigDecimalOp.Le | SemanticOperator.BigDecimalOp.Gt | SemanticOperator.BigDecimalOp.Ge
              | SemanticOperator.Int8Op.Lt | SemanticOperator.Int8Op.Le | SemanticOperator.Int8Op.Gt | SemanticOperator.Int8Op.Ge
              | SemanticOperator.Int16Op.Lt | SemanticOperator.Int16Op.Le | SemanticOperator.Int16Op.Gt | SemanticOperator.Int16Op.Ge
              | SemanticOperator.Int32Op.Lt | SemanticOperator.Int32Op.Le | SemanticOperator.Int32Op.Gt | SemanticOperator.Int32Op.Ge
