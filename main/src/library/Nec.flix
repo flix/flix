@@ -350,7 +350,7 @@ mod Nec {
         def loop(ix: Int32, k: Nec[Int32] -> Nec[Int32]) = match (e-1) {
             case e1 if ix == e1 => k(singleton(ix))
             case e1 if ix < e1  => loop(ix+1, ks -> k(cons(ix, ks)))
-            case e1 if ix > e1  => unreachable!()
+            case _              => unreachable!()
         };
         if (b < e)
             loop(b, ks -> ks) |> Some
