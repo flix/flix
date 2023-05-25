@@ -692,7 +692,7 @@ object MonomorphEnums {
       val rest2 = insertSchemaPred(pred, predType, rest1, loc)
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred1), pred1Loc), pred1Type, pred1TypeLoc), rest2, rest1Loc)
     case other =>
-      throw InternalCompilerException(s"Unexpected record rest: '$other'", rest.loc)
+      throw InternalCompilerException(s"Unexpected schema rest: '$other'", rest.loc)
   }
 
 }
