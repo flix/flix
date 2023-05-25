@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
-import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern, RelationalChoicePattern}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -222,24 +222,8 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(pur)
       Expression.TypeMatch(e, rs, t, p, loc)
-    case Expression.RelationalChoose(exps, rules, tpe, pur, loc) =>
-      val es = exps.map(visitExp)
-      val rs = rules.map {
-        case LoweredAst.RelationalChoiceRule(pat, exp) =>
-          val newPat = pat.map {
-            case RelationalChoicePattern.Wild(loc) =>
-              RelationalChoicePattern.Wild(loc)
-            case RelationalChoicePattern.Absent(loc) =>
-              RelationalChoicePattern.Absent(loc)
-            case RelationalChoicePattern.Present(sym, tpe, loc) =>
-              val t = visitType(tpe)
-              RelationalChoicePattern.Present(sym, t, loc)
-          }
-          LoweredAst.RelationalChoiceRule(newPat, visitExp(exp))
-      }
-      val t = visitType(tpe)
-      val p = visitType(pur)
-      Expression.RelationalChoose(es, rs, t, p, loc)
+    case Expression.RelationalChoose(_, _, _, _, loc) =>
+      throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
     case Expression.Tag(sym, exp, tpe, pur, loc) =>
       //
       // Specialize the enum
