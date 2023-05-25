@@ -346,7 +346,7 @@ object MonomorphEnums {
           case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
         }
         case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) =>
-          (normalizeType(x), t2) match {
+          (x, t2) match {
             case (Type.Pure, Type.Pure) => Type.Pure
             case (Type.Pure, Type.EffUniv) => Type.EffUniv
             case (Type.EffUniv, Type.Pure) => Type.EffUniv
@@ -354,7 +354,7 @@ object MonomorphEnums {
             case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
           }
         case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) =>
-          (normalizeType(x), t2) match {
+          (x, t2) match {
             case (Type.Pure, Type.Pure) => Type.Pure
             case (Type.Pure, Type.EffUniv) => Type.Pure
             case (Type.EffUniv, Type.Pure) => Type.Pure
@@ -374,13 +374,13 @@ object MonomorphEnums {
           case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
         }
         case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(enumSym), _), x, loc) =>
-          (normalizeType(x), t2) match {
+          (x, t2) match {
             case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
               Type.Cst(TypeConstructor.CaseSet(syms1.intersect(syms2), enumSym), loc)
             case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
           }
         case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(enumSym), _), x, loc) =>
-          (normalizeType(x), t2) match {
+          (x, t2) match {
             case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
               Type.Cst(TypeConstructor.CaseSet(syms1.union(syms2), enumSym), loc)
             case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
