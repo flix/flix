@@ -1,8 +1,8 @@
+/// Code generation has been disabled for relational choice
 mod Test.Exp.Choose {
     use Choice.{Present, Absent}
 
-    @test
-    def testChooseOne01(): Bool =
+    pub def testChooseOne01(): Bool =
         let f = x -> {
             relational_choose x {
                 case Absent => "a"
@@ -10,8 +10,7 @@ mod Test.Exp.Choose {
         };
         f(Absent) == "a"
 
-    @test
-    def testChooseOne02(): Bool =
+    pub def testChooseOne02(): Bool =
         let f = x -> {
             relational_choose x {
                 case Present(r) => r
@@ -19,8 +18,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a")) == "a"
 
-    @test
-    def testChooseOne03(): Bool =
+    pub def testChooseOne03(): Bool =
         let f = x -> {
             relational_choose x {
                 case _ => "a"
@@ -28,8 +26,7 @@ mod Test.Exp.Choose {
         };
         f(Absent) == "a"
 
-    @test
-    def testChooseOne04(): Bool =
+    pub def testChooseOne04(): Bool =
         let f = x -> {
             relational_choose x {
                 case _ => "a"
@@ -37,8 +34,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a")) == "a"
 
-    @test
-    def testChooseOne05(): Bool =
+    pub def testChooseOne05(): Bool =
         let f = x -> {
             relational_choose x {
                 case Absent     => "a"
@@ -48,8 +44,7 @@ mod Test.Exp.Choose {
         };
         f(Absent) == "a"
 
-    @test
-    def testChooseOne06(): Bool =
+    pub def testChooseOne06(): Bool =
         let f = x -> {
             relational_choose x {
                 case Absent     => "a"
@@ -59,8 +54,7 @@ mod Test.Exp.Choose {
         };
         f(Present("b")) == "b"
 
-    @test
-    def testChooseOne07(): Bool =
+    pub def testChooseOne07(): Bool =
         let f = x -> {
             relational_choose x {
                 case Absent     => "a"
@@ -70,8 +64,7 @@ mod Test.Exp.Choose {
         };
         f(Absent) == "a"
 
-    @test
-    def testChooseOne08(): Bool =
+    pub def testChooseOne08(): Bool =
         let f = x -> {
             relational_choose x {
                 case Absent     => "a"
@@ -81,8 +74,7 @@ mod Test.Exp.Choose {
         };
         f(Present("x")) == "b"
 
-    @test
-    def testChooseOne09(): Bool =
+    pub def testChooseOne09(): Bool =
         let f = x -> {
             relational_choose x {
                 case Present(r) => r
@@ -92,8 +84,7 @@ mod Test.Exp.Choose {
         };
         f(Absent) == "b"
 
-    @test
-    def testChooseOne10(): Bool =
+    pub def testChooseOne10(): Bool =
         let f = x -> {
             relational_choose x {
                 case Present(r) => r
@@ -103,8 +94,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a")) == "a"
 
-    @test
-    def testChooseTwo01(): Bool =
+    pub def testChooseTwo01(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent) => "a"
@@ -112,8 +102,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent) == "a"
 
-    @test
-    def testChooseTwo02(): Bool =
+    pub def testChooseTwo02(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Present(r)) => r
@@ -121,8 +110,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("a")) == "a"
 
-    @test
-    def testChooseTwo03(): Bool =
+    pub def testChooseTwo03(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Present(r), Absent) => r
@@ -130,8 +118,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Absent) == "a"
 
-    @test
-    def testChooseTwo04(): Bool =
+    pub def testChooseTwo04(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Present(r1), Present(r2)) => r1 + r2
@@ -139,8 +126,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Present("b")) == "ab"
 
-    @test
-    def testChooseTwo05(): Bool =
+    pub def testChooseTwo05(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Present(r), _) => r
@@ -148,8 +134,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Absent) == "a"
 
-    @test
-    def testChooseTwo06(): Bool =
+    pub def testChooseTwo06(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Present(r), _) => r
@@ -157,8 +142,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Present("b")) == "a"
 
-    @test
-    def testChooseTwo07(): Bool =
+    pub def testChooseTwo07(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Present(r)) => r
@@ -166,8 +150,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("b")) == "b"
 
-    @test
-    def testChooseTwo08(): Bool =
+    pub def testChooseTwo08(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Present(r)) => r
@@ -175,8 +158,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Present("b")) == "b"
 
-    @test
-    def testChooseTwo10(): Bool =
+    pub def testChooseTwo10(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, _) => "a"
@@ -184,8 +166,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent) == "a"
 
-    @test
-    def testChooseTwo11(): Bool =
+    pub def testChooseTwo11(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, _) => "a"
@@ -193,8 +174,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("y")) == "a"
 
-    @test
-    def testChooseTwo12(): Bool =
+    pub def testChooseTwo12(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, _) => "a"
@@ -202,8 +182,7 @@ mod Test.Exp.Choose {
         };
         f(Present("x"), Absent) == "a"
 
-    @test
-    def testChooseTwo13(): Bool =
+    pub def testChooseTwo13(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, _) => "a"
@@ -211,8 +190,7 @@ mod Test.Exp.Choose {
         };
         f(Present("x"), Present("y")) == "a"
 
-    @test
-    def testChooseTwoWithTwoCases01(): Bool =
+    pub def testChooseTwoWithTwoCases01(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => "a"
@@ -221,8 +199,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent) == "a"
 
-    @test
-    def testChooseTwoWithTwoCases02(): Bool =
+    pub def testChooseTwoWithTwoCases02(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => "a"
@@ -231,8 +208,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("b")) == "b"
 
-    @test
-    def testChooseTwoWithTwoCases03(): Bool =
+    pub def testChooseTwoWithTwoCases03(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => "a"
@@ -241,8 +217,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent) == "a"
 
-    @test
-    def testChooseTwoWithTwoCases04(): Bool =
+    pub def testChooseTwoWithTwoCases04(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => "a"
@@ -251,8 +226,7 @@ mod Test.Exp.Choose {
         };
         f(Present("b"), Absent) == "b"
 
-    @test
-    def testChooseTwoWithTwoCases05(): Bool =
+    pub def testChooseTwoWithTwoCases05(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => "a"
@@ -261,8 +235,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent) == "a"
 
-    @test
-    def testChooseTwoWithTwoCases06(): Bool =
+    pub def testChooseTwoWithTwoCases06(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => "a"
@@ -271,8 +244,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Present("b")) == "ab"
 
-    @test
-    def testChooseTwoWithTwoCases07(): Bool =
+    pub def testChooseTwoWithTwoCases07(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Present(r)) => r
@@ -281,8 +253,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("b")) == "b"
 
-    @test
-    def testChooseTwoWithTwoCases08(): Bool =
+    pub def testChooseTwoWithTwoCases08(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Present(r)) => r
@@ -291,8 +262,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Absent) == "a"
 
-    @test
-    def testChooseTwoWithTwoCases09(): Bool =
+    pub def testChooseTwoWithTwoCases09(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Present(r)) => r
@@ -301,8 +271,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("b")) == "b"
 
-    @test
-    def testChooseTwoWithTwoCases10(): Bool =
+    pub def testChooseTwoWithTwoCases10(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Present(r)) => r
@@ -311,8 +280,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Absent) == "a"
 
-    @test
-    def testChooseTwoWithTwoCases11(): Bool =
+    pub def testChooseTwoWithTwoCases11(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Present(r)) => r
@@ -321,8 +289,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Present("b")) == "b"
 
-    @test
-    def testChooseTwoWithThreeCases01(): Bool =
+    pub def testChooseTwoWithThreeCases01(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => "a"
@@ -332,8 +299,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent) == "a"
 
-    @test
-    def testChooseTwoWithThreeCases02(): Bool =
+    pub def testChooseTwoWithThreeCases02(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => "a"
@@ -343,8 +309,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("b")) == "b"
 
-    @test
-    def testChooseTwoWithThreeCases03(): Bool =
+    pub def testChooseTwoWithThreeCases03(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => "a"
@@ -354,8 +319,7 @@ mod Test.Exp.Choose {
         };
         f(Present("b"), Absent) == "b"
 
-    @test
-    def testChooseTwoWithThreeCases04(): Bool =
+    pub def testChooseTwoWithThreeCases04(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Present(r)) => r
@@ -365,8 +329,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent) == "c"
 
-    @test
-    def testChooseTwoWithThreeCases05(): Bool =
+    pub def testChooseTwoWithThreeCases05(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Present(r)) => r
@@ -376,8 +339,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Present("a")) == "a"
 
-    @test
-    def testChooseTwoWithThreeCases06(): Bool =
+    pub def testChooseTwoWithThreeCases06(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Present(r)) => r
@@ -387,8 +349,7 @@ mod Test.Exp.Choose {
         };
         f(Present("a"), Absent) == "a"
 
-    @test
-    def testChooseThreeWithTwoCases01(): Bool =
+    pub def testChooseThreeWithTwoCases01(): Bool =
         let f = (x, y, z) -> {
             relational_choose (x, y, z) {
                 case (Absent, Absent, Absent)         => 1
@@ -397,8 +358,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, Absent, Absent) == 1
 
-    @test
-    def testChooseThreeWithTwoCases02(): Bool =
+    pub def testChooseThreeWithTwoCases02(): Bool =
         let f = (x, y, z) -> {
             relational_choose (x, y, z) {
                 case (Absent, Absent, Absent)         => 1
@@ -407,8 +367,7 @@ mod Test.Exp.Choose {
         };
         f(Present(123), Absent, Present(456)) == 2
 
-    @test
-    def testChooseIf01(): Bool =
+    pub def testChooseIf01(): Bool =
         let f = x -> {
             relational_choose x {
                 case Absent     => 1
@@ -417,8 +376,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123)) == 1
 
-    @test
-    def testChooseIf02(): Bool =
+    pub def testChooseIf02(): Bool =
         let f = x -> {
             relational_choose x {
                 case Present(_) => 1
@@ -427,8 +385,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123)) == 2
 
-    @test
-    def testChooseIf03(): Bool =
+    pub def testChooseIf03(): Bool =
         let f = x -> {
             relational_choose x {
                 case Absent     => 1
@@ -437,8 +394,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123)) == 1
 
-    @test
-    def testChooseIf04(): Bool =
+    pub def testChooseIf04(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => 1
@@ -449,8 +405,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123), Absent) == 1
 
-    @test
-    def testChooseIf05(): Bool =
+    pub def testChooseIf05(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => 1
@@ -461,8 +416,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123), Present(456)) == 3
 
-    @test
-    def testChooseIf06(): Bool =
+    pub def testChooseIf06(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => 1
@@ -473,8 +427,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, if (true) Absent else Present(123)) == 1
 
-    @test
-    def testChooseIf07(): Bool =
+    pub def testChooseIf07(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => 1
@@ -485,8 +438,7 @@ mod Test.Exp.Choose {
         };
         f(Present(123), if (true) Absent else Present(456)) == 2
 
-    @test
-    def testChooseIf08(): Bool =
+    pub def testChooseIf08(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => 1
@@ -497,8 +449,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
 
-    @test
-    def testChooseIf09(): Bool =
+    pub def testChooseIf09(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)           => 1
@@ -507,8 +458,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123), Absent) == 1
 
-    @test
-    def testChooseIf10(): Bool =
+    pub def testChooseIf10(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Present(_))       => 1
@@ -517,8 +467,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123), Present(456)) == 1
 
-    @test
-    def testChooseIf11(): Bool =
+    pub def testChooseIf11(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Absent, Absent)     => 1
@@ -527,8 +476,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, if (true) Absent else Present(123)) == 1
 
-    @test
-    def testChooseIf12(): Bool =
+    pub def testChooseIf12(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (Present(_), Absent)     => 1
@@ -537,8 +485,7 @@ mod Test.Exp.Choose {
         };
         f(Present(123), if (true) Absent else Present(456)) == 1
 
-    @test
-    def testChooseIf13(): Bool =
+    pub def testChooseIf13(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Absent)        => 1
@@ -547,8 +494,7 @@ mod Test.Exp.Choose {
         };
         f(Absent, if (true) Absent else Present(123)) == 1
 
-    @test
-    def testChooseIf14(): Bool =
+    pub def testChooseIf14(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Absent)        => 1
@@ -557,8 +503,7 @@ mod Test.Exp.Choose {
         };
         f(Present(123), if (true) Absent else Present(456)) == 1
 
-    @test
-    def testChooseIf15(): Bool =
+    pub def testChooseIf15(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Absent)        => 1
@@ -567,8 +512,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123), Absent) == 1
 
-    @test
-    def testChooseIf16(): Bool =
+    pub def testChooseIf16(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Absent)        => 1
@@ -577,8 +521,7 @@ mod Test.Exp.Choose {
         };
         f(if (true) Absent else Present(123), Present(123)) == 2
 
-    @test
-    def testChooseIf17(): Bool =
+    pub def testChooseIf17(): Bool =
         let f = (x, y) -> {
             relational_choose (x, y) {
                 case (_, Absent)        => 1
