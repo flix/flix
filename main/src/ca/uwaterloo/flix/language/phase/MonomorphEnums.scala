@@ -127,8 +127,8 @@ object MonomorphEnums {
       Expression.Match(visitExp(exp), newRules, visitType(tpe), visitType(pur), loc)
     case Expression.TypeMatch(exp, rules, tpe, pur, loc) =>
       val newRules = rules.map {
-        case LoweredAst.MatchTypeRule(sym, tpe, exp) =>
-          LoweredAst.MatchTypeRule(sym, visitType(tpe), visitExp(exp))
+        case LoweredAst.TypeMatchRule(sym, tpe, exp) =>
+          LoweredAst.TypeMatchRule(sym, visitType(tpe), visitExp(exp))
       }
       Expression.TypeMatch(visitExp(exp), newRules, visitType(tpe), visitType(pur), loc)
     case Expression.RelationalChoose(exps, rules, tpe, pur, loc) =>
