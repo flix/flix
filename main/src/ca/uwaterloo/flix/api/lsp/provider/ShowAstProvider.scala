@@ -40,9 +40,10 @@ object ShowAstProvider {
       flix.codeGen(r)
 
       val phases = List("Parser", "Weeder", "Kinder", "Resolver", "TypedAst",
-        "Documentor", "Lowering", "EarlyTreeShaker", "Monomorph", "Simplifier",
-        "ClosureConv", "LambdaLift", "Tailrec", "Optimizer", "LateTreeShaker",
-        "Reducer", "VarNumbering", "MonoTyper", "Eraser")
+        "Documentor", "Lowering", "EarlyTreeShaker", "Monomorph",
+        "MonomorphEnums", "Simplifier", "ClosureConv", "LambdaLift", "Tailrec",
+        "Optimizer", "LateTreeShaker", "Reducer", "VarNumbering", "MonoTyper",
+        "Eraser")
 
       phase match {
         case "Parser" => astObject(phase, "Work In Progress")
@@ -54,6 +55,7 @@ object ShowAstProvider {
         case "Lowering" => astObject(phase, "Work In Progress")
         case "EarlyTreeShaker" => astObject(phase, "Work In Progress")
         case "Monomorph" => astObject(phase, "Work In Progress")
+        case "MonomorphEnums" => astObject(phase, "Work In Progress")
         case "Simplifier" => astObject(phase, AstPrinter.formatSimplifiedAst(flix.getSimplifierAst))
         case "ClosureConv" => astObject(phase, AstPrinter.formatSimplifiedAst(flix.getClosureConvAst))
         case "LambdaLift" => astObject(phase, AstPrinter.formatLiftedAst(flix.getLambdaLiftAst))

@@ -45,6 +45,7 @@ object AstPrinter {
       if (asts.contains("Lowering")) () // wip
       if (asts.contains("EarlyTreeShaker")) () // wip
       if (asts.contains("Monomorph")) () // wip
+      if (asts.contains("MonomorphEnums")) () // wip
       if (asts.contains("Simplifier")) writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
       if (asts.contains("ClosureConv")) writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
       if (asts.contains("LambdaLift")) writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
@@ -71,6 +72,7 @@ object AstPrinter {
     // Lowering wip
     // EarlyTreeShaker wip
     // Monomorph wip
+    // MonomorphEnums wip
     writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
     writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
     writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
