@@ -136,6 +136,14 @@ mod String {
         Array.init(r, i -> charAt(i, s), length(s))
 
     ///
+    /// Returns the given string `s` as an array of characters.
+    ///
+    pub def toVector(s: String): Vector[Char] = region rc {
+        let arr = toArray(rc, s);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Compile the regular expression `regex` into a Regex object (internally
     /// a Regex is `java.util.regex.Pattern`).
     ///
