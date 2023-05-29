@@ -1534,6 +1534,29 @@ mod TestChain {
         Array.sameElements(a, Array#{1, 2, 3} @ r)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool =
+        let c: Chain[Int32] = Chain.empty();
+        Chain.toVector(c) == Vector#{}
+
+    @test
+    def toVector02(): Bool =
+        let c = Chain.singleton(1);
+        Chain.toVector(c) == Vector#{1}
+
+    @test
+    def toVector03(): Bool =
+        let c = List.toChain(1 :: 2 :: Nil);
+        Chain.toVector(c) == Vector#{1, 2}
+
+    @test
+    def toVector04(): Bool =
+        let c = List.toChain(1 :: 2 :: 3 :: Nil);
+        Chain.toVector(c) == Vector#{1, 2, 3}
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
