@@ -342,8 +342,8 @@ object Doc {
     */
   def squareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
     case immutable.Nil => text("[]")
-    case immutable.::(d, immutable.Nil) => group(square(d))
-    case _ => group(square(commaSep(xs)))
+    case immutable.::(d, immutable.Nil) => square(d)
+    case _ => square(commaSep(xs))
   }
 
   /**
