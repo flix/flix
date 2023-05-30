@@ -44,7 +44,7 @@ mod Fixpoint {
             case RamStmt.Assign(lhs, rhs) =>
                 MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.new(r), db), db)
             case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
-            case RamStmt.Seq(stmts) => List.forEach(evalStmt(r, db), stmts)
+            case RamStmt.Seq(stmts) => Vector.forEach(evalStmt(r, db), stmts)
             case RamStmt.Until(test, body) =>
                 if (evalBoolExp(r, db, (Array#{} @ r, Array#{} @ r), test)) {
                     ()
@@ -74,7 +74,7 @@ mod Fixpoint {
                 }, MutMap.getWithDefault(ramSym, MutMap.new(r1), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
-                MutMap.queryWith(evalQuery(env, query), t -> l -> {
+                MutMap.queryWith(evalQuery(env, Vector.toList(query)), t -> l -> {
                     Array.put(t, i, tupleEnv);
                     Array.put(l, i, latEnv);
                     evalOp(r1, db, env, body)
@@ -92,15 +92,15 @@ mod Fixpoint {
                 let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = List.toVector(List.map(evalTerm(env), terms));
+                        let tuple = Vector.map(evalTerm(env), terms);
                         MutMap.put!(tuple, Reflect.default(), rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         // assume that length(terms) > 0
-                        let len = List.length(terms);
-                        let keyList = terms |> List.map(evalTerm(env));
-                        let (relKeys, latValList) = List.splitAt(len-1, keyList);
-                        let key = List.toVector(relKeys);
-                        let latVal = match List.head(latValList) {
+                        let len = Vector.length(terms);
+                        let keyList = terms |> Vector.map(evalTerm(env));
+                        let key = Vector.take(len - 1, keyList);
+                        let latVals = Vector.drop(len - 1, keyList);
+                        let latVal = match Vector.head(latVals) {
                             case None => bug!("Found predicate without terms")
                             case Some(k) => k
                         };
@@ -125,21 +125,22 @@ mod Fixpoint {
             }
         }
 
-    def evalBoolExp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], es: List[BoolExp[v]]): Bool \ { r1, r2 } with Order[v] =
-        List.forAll(exp -> match exp {
+    def evalBoolExp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], es: Vector[BoolExp[v]]): Bool \ { r1, r2 } with Order[v] =
+        Vector.forAll(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
                 MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.new(r1), db))
             case BoolExp.NotMemberOf(terms, ramSym) =>
                 let rel = MutMap.getWithDefault(ramSym, MutMap.new(r1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = List.toVector(List.map(evalTerm(env), terms));
+                        let tuple = Vector.map(evalTerm(env), terms);
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
-                        let len = List.length(terms);
-                        let (keyTerms, latTermList) = terms |> List.map(evalTerm(env)) |> List.splitAt(len - 1);
-                        let key = List.toVector(keyTerms);
-                        let latTerm = match List.head(latTermList) {
+                        let len = Vector.length(terms);
+                        let evalTerms = Vector.map(evalTerm(env), terms);
+                        let key = Vector.take(len - 1, evalTerms);
+                        let latTerms = Vector.drop(len - 1, evalTerms);
+                        let latTerm = match Vector.head(latTerms) {
                             case None => bug!("Found predicate without terms")
                             case Some(hd) => hd
                         };
