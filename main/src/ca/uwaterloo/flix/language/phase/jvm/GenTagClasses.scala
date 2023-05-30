@@ -40,7 +40,7 @@ object GenTagClasses {
     }
   }
 
-  /** Generate bytecode for each enum case.
+  /** Generate bytecode for each enum case (also called tag).
     *
     * First we generate bytecode for enum case interface:
     * This interface will generate a single method called `getValue` which does not have a parameter and returns the value
@@ -52,11 +52,11 @@ object GenTagClasses {
     * This class will extend the enum case interface generated for the same enum case with the same field type.
     * This class contains one field: `value`. `value` contains the field of the case.
     * If the field is primitive, then `value` is of the type of that primitive, otherwise, `value` is just an object.
-    * For example, for the case `Ok[Int32]` we generate:
+    * For example, for the case `Some$123` (corresponding to `Some[Int32]`) we generate:
     *
     * public int value;
     *
-    * but for the case `Ok[List[Int32]]` we generate:
+    * but for the case `Some$32` (corresponding to `Some[List[Int32]]`) we generate:
     *
     * public Object value;
     *
@@ -65,7 +65,7 @@ object GenTagClasses {
     * `equals(Object)`.
     * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
     * `getBoxedTagValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
-    * `getBoxedTagValue()` of the class representing `Ok[Int32]` is as follows:
+    * `getBoxedTagValue()` of the class representing `Some$123` (corresponding to `Some[Int32]`) is as follows:
     *
     * public final int getValue() {
     * return this.value;
@@ -200,7 +200,7 @@ object GenTagClasses {
   /**
     * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
     * This methods returns an string containing the tag name.
-    * For example, `Val[Char]` has following `getTag()`method:
+    * For example, `Val$42` (corresponding to `Val[Char]`) has following `getTag()`method:
     *
     * public final String getTag() {
     * return "Var";
