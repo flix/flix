@@ -136,7 +136,7 @@ mod String {
         Array.init(r, i -> charAt(i, s), length(s))
 
     ///
-    /// Returns the given string `s` as an array of characters.
+    /// Returns the given string `s` as a vector of characters.
     ///
     pub def toVector(s: String): Vector[Char] = region rc {
         let arr = toArray(rc, s);
