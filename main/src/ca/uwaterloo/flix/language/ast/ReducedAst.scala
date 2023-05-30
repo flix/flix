@@ -28,7 +28,7 @@ object ReducedAst {
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], stmt: Stmt, tpe: Type, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], stmt: Stmt, tpe: Type, loc: SourceLocation)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpeDeprecated: Type, loc: SourceLocation)
 

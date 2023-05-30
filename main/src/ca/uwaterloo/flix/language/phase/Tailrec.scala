@@ -92,7 +92,7 @@ object Tailrec {
           Expression.ApplyDefTail(sym, args, tpe, purity, loc)
         } else {
           // Case 2: Self recursive call.
-          Expression.ApplySelfTail(sym, defn.fparams, args, tpe, purity, loc)
+          Expression.ApplySelfTail(sym, defn.cparams ++ defn.fparams, args, tpe, purity, loc)
         }
 
       /*

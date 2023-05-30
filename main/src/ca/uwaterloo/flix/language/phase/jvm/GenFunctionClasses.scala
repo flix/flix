@@ -126,7 +126,7 @@ object GenFunctionClasses {
     m.visitLabel(enterLabel)
 
     // Saving parameters on variable stack
-    for ((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
+    for ((FormalParam(sym, tpe), ind) <- (defn.cparams ++ defn.fparams).zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 

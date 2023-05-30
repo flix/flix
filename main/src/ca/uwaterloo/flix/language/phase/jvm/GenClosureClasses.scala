@@ -124,17 +124,11 @@ object GenClosureClasses {
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
     invokeMethod.visitCode()
 
-    // Free variables
-    val closureFormals = defn.formals.take(closureArgTypes.length)
-
-    // Function parameters
-    val params = defn.formals.takeRight(defn.formals.length - closureArgTypes.length)
-
     // Enter label
     val enterLabel = new Label()
 
     // Saving closure args variables on variable stack
-    for ((f, ind) <- closureFormals.zipWithIndex) {
+    for ((f, ind) <- defn.cparams.zipWithIndex) {
       // Erased type of the closure variable
       val erasedType = JvmOps.getErasedJvmType(f.tpe)
 
@@ -148,7 +142,7 @@ object GenClosureClasses {
     }
 
     // Saving parameters on variable stack
-    for ((FormalParam(sym, tpe), ind) <- params.zipWithIndex) {
+    for ((FormalParam(sym, tpe), ind) <- defn.fparams.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
