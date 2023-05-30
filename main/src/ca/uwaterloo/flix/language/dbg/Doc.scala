@@ -353,11 +353,11 @@ object Doc {
     group(enclose("[|", x, "|]"))
 
   /**
-    * Formats `xs` as a square tuple.
+    * Formats `xs` as a double square tuple.
     * {{{
-    *   []
-    *   [x]
-    *   [x, y, z]
+    *   [||]
+    *   [|x|]
+    *   [|x, y, z|]
     * }}}
     */
   def doubleSquareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
