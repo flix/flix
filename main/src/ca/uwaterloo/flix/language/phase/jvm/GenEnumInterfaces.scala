@@ -27,7 +27,7 @@ import org.objectweb.asm.Opcodes._
 object GenEnumInterfaces {
 
   /**
-    * Returns the set of enum interfaces for the given set of types `ts`.
+    * Returns the set of enum interfaces for the given enums.
     */
   def gen(enums: Iterable[ErasedAst.Enum])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     enums.foldLeft(Map.empty[JvmName, JvmClass]) {

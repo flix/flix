@@ -28,7 +28,7 @@ import org.objectweb.asm.Opcodes._
 object GenTagClasses {
 
   /**
-    * Returns the set of tuple interfaces for the given set of types `tags`.
+    * Returns the set of tuple interfaces for the given cases (also called tags).
     */
   def gen(tags: Iterable[ErasedAst.Case])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     tags.foldLeft(Map.empty[JvmName, JvmClass]) {
