@@ -127,7 +127,7 @@ object LoweredAst {
 
     case class Match(exp: LoweredAst.Expression, rules: List[LoweredAst.MatchRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class TypeMatch(exp: LoweredAst.Expression, rules: List[LoweredAst.MatchTypeRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class TypeMatch(exp: LoweredAst.Expression, rules: List[LoweredAst.TypeMatchRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChoiceRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -323,7 +323,7 @@ object LoweredAst {
 
   case class MatchRule(pat: LoweredAst.Pattern, guard: Option[LoweredAst.Expression], exp: LoweredAst.Expression)
 
-  case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: LoweredAst.Expression)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: LoweredAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: LoweredAst.Expression, exp: LoweredAst.Expression)
 

@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.dbg.Doc._
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
 import ca.uwaterloo.flix.language.dbg.DocAst._
+import ca.uwaterloo.flix.language.dbg.printer.TypePrinter
 
 import scala.annotation.tailrec
 
@@ -37,6 +38,7 @@ object DocAstFormatter {
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
     // remember that the def type includes the arguments
+    // TODO EVIL afoot! change to expect result type directly
     val defs = defs0.map {
       case Def(_, _, sym, parameters, resType0, body) =>
         val resType = resType0 match {
@@ -109,10 +111,41 @@ object DocAstFormatter {
           text("branch") +: curlyOpen(branchHead) +:
             text("labels") +: curlyOpen(semiSepOpt(delimitedBranches))
         )
+      case Match(d, branches) =>
+        val scrutineeF = aux(d, paren = false)
+        val branchesF = branches.map { case (pat, guard, body) =>
+          val patF = aux(pat, paren = false)
+          val guardF = guard match {
+            case None => Doc.empty
+            case Some(g) => text("if") +: aux(g, paren = false, inBlock = true) +: Doc.empty
+          }
+          val bodyF = aux(body, paren = false, inBlock = true)
+          text("case") +: patF +: guardF :: text("=>") :: breakIndent(bodyF)
+        }
+        group(
+          text("match") +: scrutineeF +: curlyOpen(
+            sep(breakWith(" "), branchesF)
+          )
+        )
+      case TypeMatch(d, branches) =>
+        val scrutineeF = aux(d, paren = false)
+        val branchesF = branches.map { case (pat, tpe, body) =>
+          val patF = aux(pat, paren = false)
+          val tpeF = formatType(tpe, paren = false)
+          val bodyF = aux(body, paren = false, inBlock = true)
+          text("case") +: patF  +: text(":") +: tpeF +: text("=>") :: breakIndent(bodyF)
+        }
+        group(
+          text("typematch") +: scrutineeF +: curlyOpen(
+            sep(breakWith(" "), branchesF)
+          )
+        )
       case Dot(d1, d2) =>
         aux(d1) :: text(".") :: aux(d2)
       case DoubleDot(d1, d2) =>
         aux(d1) :: text("..") :: aux(d2)
+      case s: Stm =>
+        formatLetBlock(s, inBlock)
       case l: Let =>
         formatLetBlock(l, inBlock)
       case l: LetRec =>
@@ -128,6 +161,8 @@ object DocAstFormatter {
         aux(f) :: tuple(args.map(aux(_, paren = false)))
       case SquareApp(f, args) =>
         aux(f) :: squareTuple(args.map(aux(_, paren = false)))
+      case DoubleSquareApp(f, args) =>
+        aux(f) :: doubleSquareTuple(args.map(aux(_, paren = false)))
       case Assign(d1, d2) =>
         aux(d1) +: text(":=") +: aux(d2)
       case Ascription(v, tpe) =>
@@ -149,6 +184,18 @@ object DocAstFormatter {
         group(
           text("try") +: curly(bodyf) +:
             text("catch") +: curly(rs)
+        )
+      case TryWith(d, eff, rules) =>
+        val rs = semiSepOpt(rules.map {
+          case (sym, params, rule) =>
+            val rulef = aux(rule, paren = false, inBlock = true)
+            text("def") +: text(sym.toString) :: tuple(params.map(aux(_, paren = false))) +:
+              text("=") :: breakWith(" ") :: curlyOpen(rulef)
+        })
+        val bodyf = aux(d, paren = false, inBlock = true)
+        group(
+          text("try") +: curly(bodyf) +:
+            text("with") +: text(eff.toString) +: curly(rs)
         )
       case NewObject(_, clazz, _, methods) =>
         group(text("new") +: formatJavaClass(clazz) +: curly(
@@ -181,6 +228,8 @@ object DocAstFormatter {
     val (binders, body) = collectLetBinders(d)
     val bodyf = aux(body, paren = false)
     val bindersf = binders.map {
+      case Stm(d1, _) =>
+        aux(d1, paren = false)
       case Let(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
         text("let") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
@@ -218,6 +267,8 @@ object DocAstFormatter {
     @tailrec
     def chase(d0: Expression, acc: List[LetBinder]): (List[LetBinder], Expression) = {
       d0 match {
+        case s@Stm(_, d2) =>
+          chase(d2, s :: acc)
         case l@Let(_, _, _, body) =>
           chase(body, l :: acc)
         case l@LetRec(_, _, _, body) =>

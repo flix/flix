@@ -171,8 +171,8 @@ object Statistics {
   /**
     * Counts AST nodes in the given rule.
     */
-  private def visitMatchTypeRule(rule: MatchTypeRule): Counter = rule match {
-    case MatchTypeRule(_, _, exp) => visitExp(exp)
+  private def visitMatchTypeRule(rule: TypeMatchRule): Counter = rule match {
+    case TypeMatchRule(_, _, exp) => visitExp(exp)
   }
 
   /**

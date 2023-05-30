@@ -112,7 +112,7 @@ object Regions {
     case Expression.TypeMatch(exp, rules, tpe, _, loc) =>
       val matchErrors = visitExp(exp)
       val rulesErrors = rules.flatMap {
-        case MatchTypeRule(_, _, body) => visitExp(body)
+        case TypeMatchRule(_, _, body) => visitExp(body)
         }
       matchErrors ++ rulesErrors ++ checkType(tpe, loc)
 

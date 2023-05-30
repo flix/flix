@@ -634,7 +634,7 @@ object Type {
   def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ p.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], p: Type, b: Type, loc: SourceLocation): Type = {
     val arrow = mkApply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), List(p), loc)

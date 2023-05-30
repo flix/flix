@@ -186,7 +186,7 @@ object TypedAstOps {
 
     case Expression.TypeMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchTypeRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
+        case (acc, TypeMatchRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
       }
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
