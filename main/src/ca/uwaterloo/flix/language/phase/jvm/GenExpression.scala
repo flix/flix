@@ -687,7 +687,7 @@ object GenExpression {
         // Evaluating the single argument of the class constructor
         compileExpr(exp)
         // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tag.tpeDeprecated)), JvmType.Void)
+        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tag.tpe)), JvmType.Void)
         // Calling the constructor of the class
         mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
@@ -705,7 +705,7 @@ object GenExpression {
         // Cast the exp to the type of the tag
         mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
         // Descriptor of the method
-        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpeDeprecated))
+        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
         // Invoke `getValue()` method to extract the field of the tag
         mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
         // Cast the object to it's type if it's not a primitive
