@@ -254,11 +254,11 @@ object JvmBackend {
   }
 
   /**
-    * Returns a map from definition symbols to executable functions (backed by JVM backend).
+    * Returns a map from non-closure definition symbols to executable functions (backed by JVM backend).
     */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] =
-    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
-      case (macc, (sym, _)) =>
+    root.defs.filter(_._2.cparams.isEmpty).foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
+      case (macc, (sym, defn)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))
     }
