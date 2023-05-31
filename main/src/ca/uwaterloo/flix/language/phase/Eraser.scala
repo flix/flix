@@ -39,7 +39,7 @@ object Eraser {
 
   private def visitEnum(enum0: MonoTypedAst.Enum): ErasedAst.Enum = {
     val cases = enum0.cases map { case (t, c) => t -> visitCase(c) }
-    ErasedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
+    ErasedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
   }
 
   private def visitDef(def0: MonoTypedAst.Def)(implicit ctx: Context): ErasedAst.Def = {
@@ -130,7 +130,7 @@ object Eraser {
   }
 
   private def visitCase(case0: MonoTypedAst.Case): ErasedAst.Case = {
-    ErasedAst.Case(case0.sym, case0.tpeDeprecated, case0.loc)
+    ErasedAst.Case(case0.sym, case0.tpe, case0.loc)
   }
 
   private def visitFormalParam(p: MonoTypedAst.FormalParam): ErasedAst.FormalParam =
