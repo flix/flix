@@ -215,9 +215,9 @@ object ControlSeparator {
       CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods.map(visitJvmMethod), loc)
   }
 
-  private def visitFormalParam(p: ReducedAst.FormalParam): CallByValueAst.FormalParam = {
-    val ReducedAst.FormalParam(sym, mod, tpe, loc) = p
-    CallByValueAst.FormalParam(sym, mod, tpe, loc)
+  private def visitFormalParam(p: ReducedAst.FormalParam): CallByValueAst.FormalParam = p match {
+    case ReducedAst.FormalParam(sym, mod, tpe, loc) =>
+      CallByValueAst.FormalParam(sym, mod, tpe, loc)
   }
 
   /**
