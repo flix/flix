@@ -3,13 +3,14 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.CallByValueAst.{Expr, Stmt}
 import ca.uwaterloo.flix.language.ast.{CallByValueAst, ReducedAst}
+import ca.uwaterloo.flix.util.collection.MapOps
 
 
 object Undo {
 
   def run(root: CallByValueAst.Root)(implicit flix: Flix): ReducedAst.Root = {
-    val defs = root.defs.view.mapValues(visitDef).toMap
-    val enums = root.enums.view.mapValues(visitEnum).toMap
+    val defs = MapOps.mapValues(root.defs)(visitDef)
+    val enums = MapOps.mapValues(root.enums)(visitEnum)
     ReducedAst.Root(defs, enums, root.entryPoint, root.sources)
   }
 
@@ -51,7 +52,7 @@ object Undo {
       ReducedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
     case Stmt.Branch(stmt, branches0, tpe, purity, loc) =>
       val e = visitStmt(stmt)
-      val branches = branches0.view.mapValues(visitStmt).toMap
+      val branches = MapOps.mapValues(branches0)(visitStmt)
       ReducedAst.Expr.Branch(e, branches, tpe, purity, loc)
     case Stmt.JumpTo(sym, tpe, purity, loc) =>
       ReducedAst.Expr.JumpTo(sym, tpe, purity, loc)
@@ -99,7 +100,7 @@ object Undo {
 
   private def visitEnum(e: CallByValueAst.Enum): ReducedAst.Enum = {
     val CallByValueAst.Enum(ann, mod, sym, cases0, tpeDeprecated, loc) = e
-    val cases = cases0.view.mapValues(visitEnumCase).toMap
+    val cases = MapOps.mapValues(cases0)(visitEnumCase)
     ReducedAst.Enum(ann, mod, sym, cases, tpeDeprecated, loc)
   }
 

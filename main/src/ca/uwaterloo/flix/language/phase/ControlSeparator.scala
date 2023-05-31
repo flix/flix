@@ -2,15 +2,16 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
-import ca.uwaterloo.flix.language.ast.{Ast, CallByValueAst, ReducedAst, Purity, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, CallByValueAst, Purity, ReducedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.MapOps
 
 object ControlSeparator {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): CallByValueAst.Root = flix.phase("ControlSeparator") {
     val ReducedAst.Root(defs0, enums0, entryPoint, sources) = root
-    val defs = defs0.view.mapValues(visitDef).toMap
-    val enums = enums0.view.mapValues(visitEnum).toMap
+    val defs = MapOps.mapValues(defs0)(visitDef)
+    val enums = MapOps.mapValues(enums0)(visitEnum)
     CallByValueAst.Root(defs, enums, entryPoint, sources)
   }
 
@@ -25,7 +26,7 @@ object ControlSeparator {
 
   def visitEnum(e: ReducedAst.Enum): CallByValueAst.Enum = {
     val ReducedAst.Enum(ann, mod, sym, cases0, tpeDeprecated, loc) = e
-    val cases = cases0.view.mapValues(visitEnumCase).toMap
+    val cases = MapOps.mapValues(cases0)(visitEnumCase)
     CallByValueAst.Enum(ann, mod, sym, cases, tpeDeprecated, loc)
   }
 
@@ -75,7 +76,7 @@ object ControlSeparator {
         CallByValueAst.Stmt.IfThenElse(e1, e2, e3, tpe, purity, loc)
       })
     case Expr.Branch(exp, branches0, tpe, purity, loc) =>
-      val branches = branches0.view.mapValues(visitExpAsStmt).toMap
+      val branches = MapOps.mapValues(branches0)(visitExpAsStmt)
       CallByValueAst.Stmt.Branch(visitExpAsStmt(exp), branches, tpe, purity, loc)
     case Expr.JumpTo(sym, tpe, purity, loc) =>
       CallByValueAst.Stmt.JumpTo(sym, tpe, purity, loc)
@@ -194,7 +195,7 @@ object ControlSeparator {
       val ite = CallByValueAst.Stmt.IfThenElse(e1, e2, e3, tpe, purity, loc)
       ctx.bind(ite)
     case ReducedAst.Expr.Branch(exp, branches0, tpe, purity, loc) =>
-      val branches = branches0.view.mapValues(visitExpAsStmt).toMap
+      val branches = MapOps.mapValues(branches0)(visitExpAsStmt)
       ctx.bind(CallByValueAst.Stmt.Branch(visitExpAsStmt(exp), branches, tpe, purity, loc))
     case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
       ctx.bind(CallByValueAst.Stmt.JumpTo(sym, tpe, purity, loc))
