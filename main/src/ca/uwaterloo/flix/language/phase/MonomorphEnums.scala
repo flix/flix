@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.MapOps
 
 import scala.collection.mutable
 
@@ -93,7 +94,7 @@ object MonomorphEnums {
 
     implicit val ctx: Context = new Context()
 
-    val defs = root.defs.view.mapValues(visitDef).toMap
+    val defs = MapOps.mapValues(root.defs)(visitDef)
     val enums = ctx.specializedEnums.toMap
     root.copy(defs = defs, enums = enums)
   }
