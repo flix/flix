@@ -83,14 +83,14 @@ object OccurrenceAnalyzer {
       case (k, v) =>
         k -> visitCase(v)
     }
-    OccurrenceAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
+    OccurrenceAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
   }
 
   /**
    * Translates the given case `case0` to the OccurrenceAst.
    */
   private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
-    OccurrenceAst.Case(case0.sym, case0.tpeDeprecated, case0.loc)
+    OccurrenceAst.Case(case0.sym, case0.tpe, case0.loc)
   }
 
   /**

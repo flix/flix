@@ -489,7 +489,7 @@ object JvmOps {
     * Returns true if the value of the given `tag` is the unit value.
     */
   def isUnitTag(tag: ErasedAst.Case): Boolean = {
-    tag.tpeDeprecated == MonoType.Unit
+    tag.tpe == MonoType.Unit
   }
 
   /**
@@ -613,9 +613,9 @@ object JvmOps {
     val enumTypes = root.enums.foldLeft(Set.empty[MonoType]) {
       case (sacc, (_, e)) =>
         // the enum type itself
-        val eType = e.tpeDeprecated
+        val eType = e.tpe
         // the types inside the cases
-        val caseTypes = e.cases.values.flatMap(c => nestedTypesOf(c.tpeDeprecated)(root, flix))
+        val caseTypes = e.cases.values.flatMap(c => nestedTypesOf(c.tpe)(root, flix))
         sacc + eType ++ caseTypes
     }
 
