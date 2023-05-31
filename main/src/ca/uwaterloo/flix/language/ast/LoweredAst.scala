@@ -50,7 +50,7 @@ object LoweredAst {
 
   case class Impl(exp: LoweredAst.Expression, inferredScheme: Scheme)
 
-  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[LoweredAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, LoweredAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[LoweredAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, LoweredAst.Case], tpe: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[LoweredAst.TypeParam], tpe: Type, loc: SourceLocation)
 

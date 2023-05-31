@@ -99,7 +99,7 @@ object GenTagClasses {
     val classType = JvmOps.getTagClassType(tag.sym)
 
     // The erased JvmType of the value of `tag`.
-    val valueType = JvmOps.getErasedJvmType(tag.tpeDeprecated)
+    val valueType = JvmOps.getErasedJvmType(tag.tpe)
 
     // Create a new class writer.
     val visitor = AsmOps.mkClassWriter()
@@ -219,13 +219,13 @@ object GenTagClasses {
 
   def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: ErasedAst.Case)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    tag.tpeDeprecated match {
+    tag.tpe match {
       case MonoType.Unit => // "$Tag"
         method.visitLdcInsn(tag.sym.name)
         method.visitInsn(ARETURN)
 
       case _ => // "$Tag($value)" or "$Tag$value" if value already prints "(...)"
-        val printParanthesis = tag.tpeDeprecated match {
+        val printParanthesis = tag.tpe match {
           case MonoType.Tuple(_) => false
           case MonoType.Unit => false
           case _ => true
