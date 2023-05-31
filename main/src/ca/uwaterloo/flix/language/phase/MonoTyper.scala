@@ -200,11 +200,11 @@ object MonoTyper {
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
+            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
             case TypeConstructor.RestrictableEnum(sym, _) =>
               val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
-              MonoType.Enum(enumSym, args)
+              MonoType.Enum(enumSym)
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 

@@ -43,7 +43,7 @@ object MonoTypePrinter {
     case MonoType.Lazy(tpe) => Type.Lazy(print(tpe))
     case MonoType.Ref(tpe) => Type.Ref(print(tpe))
     case MonoType.Tuple(elms) => Type.Tuple(elms.map(print))
-    case MonoType.Enum(sym, args) => Type.Enum(sym, args.map(print))
+    case MonoType.Enum(sym) => Type.Enum(sym, Nil)
     case MonoType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(field, value, rest) => Type.RecordExtend(field, print(value), print(rest))
