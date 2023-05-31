@@ -106,8 +106,8 @@ object Verifier {
               case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
               case Some(caze) =>
                 val List(t) = ts
-                check(expected = caze.tpeDeprecated)(t, loc)
-                check(expected = e.tpeDeprecated)(tpe, loc)
+                check(expected = caze.tpe)(t, loc)
+                check(expected = e.tpe)(tpe, loc)
                 tpe
             }
           }
@@ -118,8 +118,8 @@ object Verifier {
               case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
               case Some(caze) =>
                 val List(t) = ts
-                check(expected = e.tpeDeprecated)(t, loc)
-                check(expected = caze.tpeDeprecated)(tpe, loc)
+                check(expected = e.tpe)(t, loc)
+                check(expected = caze.tpe)(tpe, loc)
                 tpe
             }
           }

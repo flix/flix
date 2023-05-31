@@ -664,10 +664,8 @@ object GenExpression {
 
         // Adding source line number for debugging
         addSourceLine(mv, loc)
-        // We get the `TagInfo` for the tag
-        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
         // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
+        val classType = JvmOps.getTagClassType(sym)
 
         // First we compile the `exp`
         compileExpr(exp)
@@ -679,17 +677,17 @@ object GenExpression {
         val List(exp) = exps
         // Adding source line number for debugging
         addSourceLine(mv, loc)
-        // Get the tag info.
-        val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
         // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
+        val classType = JvmOps.getTagClassType(sym)
+        // Find the tag
+        val tag = root.enums(sym.enumSym).cases(sym)
         // Creating a new instance of the class
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
         mv.visitInsn(DUP)
         // Evaluating the single argument of the class constructor
         compileExpr(exp)
         // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tag.tpe)), JvmType.Void)
         // Calling the constructor of the class
         mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
@@ -698,17 +696,16 @@ object GenExpression {
 
         // Adding source line number for debugging
         addSourceLine(mv, loc)
-
-        // We get the `TagInfo` for the tag
-        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
         // We get the JvmType of the class for the tag
-        val classType = JvmOps.getTagClassType(tagInfo)
+        val classType = JvmOps.getTagClassType(sym)
+        // Find the tag
+        val tag = root.enums(sym.enumSym).cases(sym)
         // Evaluate the exp
         compileExpr(exp)
         // Cast the exp to the type of the tag
         mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
         // Descriptor of the method
-        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
+        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
         // Invoke `getValue()` method to extract the field of the tag
         mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
         // Cast the object to it's type if it's not a primitive

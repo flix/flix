@@ -34,7 +34,7 @@ object LiftedAst {
   // x -> x + a
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[LiftedAst.FormalParam], fparams: List[LiftedAst.FormalParam], exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, LiftedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, LiftedAst.Case], tpe: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type
@@ -190,7 +190,7 @@ object LiftedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[LiftedAst.FormalParam], clo: LiftedAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
 

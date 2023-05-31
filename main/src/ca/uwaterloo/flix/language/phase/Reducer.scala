@@ -42,11 +42,11 @@ object Reducer {
   }
 
   private def visitEnum(d: LiftedAst.Enum): ReducedAst.Enum = d match {
-    case LiftedAst.Enum(ann, mod, sym, cases0, tpeDeprecated, loc) =>
+    case LiftedAst.Enum(ann, mod, sym, cases0, tpe, loc) =>
       val cases = cases0.map {
         case (sym, caze) => sym -> visitCase(caze)
       }
-      ReducedAst.Enum(ann, mod, sym, cases, tpeDeprecated, loc)
+      ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
   private def visitExpr(exp0: LiftedAst.Expression): ReducedAst.Expr = exp0 match {
@@ -307,7 +307,7 @@ object Reducer {
   }
 
   private def visitCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
-    case LiftedAst.Case(sym, tpeDeprecated, loc) => ReducedAst.Case(sym, tpeDeprecated, loc)
+    case LiftedAst.Case(sym, tpe, loc) => ReducedAst.Case(sym, tpe, loc)
   }
 
   private def visitFormalParam(fparam: LiftedAst.FormalParam): ReducedAst.FormalParam = fparam match {

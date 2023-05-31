@@ -30,7 +30,7 @@ object OccurrenceAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[OccurrenceAst.FormalParam], fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: Type, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, OccurrenceAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, OccurrenceAst.Case], tpe: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type
@@ -186,7 +186,7 @@ object OccurrenceAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
 

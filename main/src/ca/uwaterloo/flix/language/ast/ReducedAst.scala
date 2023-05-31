@@ -30,7 +30,7 @@ object ReducedAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], stmt: Stmt, tpe: Type, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: Type
@@ -92,7 +92,7 @@ object ReducedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: Type, purity: Purity, loc: SourceLocation)
 
