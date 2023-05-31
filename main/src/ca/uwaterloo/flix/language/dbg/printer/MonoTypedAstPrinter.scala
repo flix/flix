@@ -32,8 +32,8 @@ object MonoTypedAstPrinter {
     val enums = root.enums.values.map {
       case MonoTypedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case MonoTypedAst.Case(sym, tpeDeprecated, _) =>
-            DocAst.Case(sym, MonoTypePrinter.print(tpeDeprecated))
+          case MonoTypedAst.Case(sym, tpe, _) =>
+            DocAst.Case(sym, MonoTypePrinter.print(tpe))
         }.toList
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
