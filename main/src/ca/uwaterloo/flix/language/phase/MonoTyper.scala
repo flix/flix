@@ -200,11 +200,11 @@ object MonoTyper {
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
+            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
             case TypeConstructor.RestrictableEnum(sym, _) =>
               val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
-              MonoType.Enum(enumSym, args)
+              MonoType.Enum(enumSym)
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
@@ -230,8 +230,8 @@ object MonoTyper {
             case TypeConstructor.And => MonoType.Unit
             case TypeConstructor.Or=> MonoType.Unit
 
-            case TypeConstructor.Empty => MonoType.Unit
-            case TypeConstructor.All => MonoType.Unit
+            case TypeConstructor.Pure => MonoType.Unit
+            case TypeConstructor.EffUniv => MonoType.Unit
             case TypeConstructor.Complement => MonoType.Unit
             case TypeConstructor.Union => MonoType.Unit
             case TypeConstructor.Intersection => MonoType.Unit

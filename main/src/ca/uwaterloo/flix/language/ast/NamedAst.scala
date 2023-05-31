@@ -87,8 +87,6 @@ object NamedAst {
 
   object Expression {
 
-    case class Wild(loc: SourceLocation) extends NamedAst.Expression
-
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Open(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
@@ -129,7 +127,7 @@ object NamedAst {
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
+    case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.TypeMatchRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class RelationalChoose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.RelationalChoiceRule], loc: SourceLocation) extends NamedAst.Expression
 
@@ -426,7 +424,7 @@ object NamedAst {
 
   case class MatchRule(pat: NamedAst.Pattern, guard: Option[NamedAst.Expression], exp: NamedAst.Expression)
 
-  case class MatchTypeRule(sym: Symbol.VarSym, tpe: NamedAst.Type, exp: NamedAst.Expression)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: NamedAst.Type, exp: NamedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 

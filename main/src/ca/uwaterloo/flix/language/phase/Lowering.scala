@@ -345,10 +345,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Cst(cst, t, loc)
 
-    case TypedAst.Expression.Wild(tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expression.Wild(t, loc)
-
     case TypedAst.Expression.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expression.Var(sym, t, loc)
@@ -988,10 +984,10 @@ object Lowering {
   /**
     * Lowers the given match rule `rule0`.
     */
-  private def visitMatchTypeRule(rule0: TypedAst.MatchTypeRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.MatchTypeRule = rule0 match {
-    case TypedAst.MatchTypeRule(sym, tpe, exp) =>
+  private def visitMatchTypeRule(rule0: TypedAst.TypeMatchRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
+    case TypedAst.TypeMatchRule(sym, tpe, exp) =>
       val e = visitExp(exp)
-      LoweredAst.MatchTypeRule(sym, tpe, e)
+      LoweredAst.TypeMatchRule(sym, tpe, e)
   }
 
   /**
@@ -1688,7 +1684,7 @@ object Lowering {
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
         val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        LoweredAst.Expression.Stm(e3, acc, e1.tpe, Type.mkUnion(e3.pur, acc.pur, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        LoweredAst.Expression.Stm(e3, acc, acc.tpe, Type.mkUnion(e3.pur, acc.pur, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
@@ -1907,8 +1903,6 @@ object Lowering {
     */
   private def substExp(exp0: LoweredAst.Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Expression = exp0 match {
     case LoweredAst.Expression.Cst(_, _, _) => exp0
-
-    case LoweredAst.Expression.Wild(_, _) => exp0
 
     case LoweredAst.Expression.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)

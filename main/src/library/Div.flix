@@ -70,10 +70,11 @@ instance Div[Int64] {
 
 instance Div[BigInt] {
     pub def div(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.divide(BigInt): BigInt \ {};
         if (y == 0ii)
             0ii
         else
-            $BIGINT_DIV$(x, y)
+            x `divide` y
 }
 
 instance Div[String] {

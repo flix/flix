@@ -81,7 +81,6 @@ object Statistics {
 
     val subExprs = exp0 match {
       case Expression.Cst(_, _, _) => Counter.empty
-      case Expression.Wild(tpe, loc) => Counter.empty
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty
       case Expression.Sig(sym, tpe, loc) => Counter.empty
@@ -172,8 +171,8 @@ object Statistics {
   /**
     * Counts AST nodes in the given rule.
     */
-  private def visitMatchTypeRule(rule: MatchTypeRule): Counter = rule match {
-    case MatchTypeRule(_, _, exp) => visitExp(exp)
+  private def visitMatchTypeRule(rule: TypeMatchRule): Counter = rule match {
+    case TypeMatchRule(_, _, exp) => visitExp(exp)
   }
 
   /**

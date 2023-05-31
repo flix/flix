@@ -283,8 +283,6 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Iterator[SemanticToken] = exp0 match {
-    case Expression.Wild(_, _) => Iterator.empty
-
     case Expression.Var(sym, tpe, loc) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, loc)
@@ -361,7 +359,7 @@ object SemanticTokensProvider {
     case Expression.TypeMatch(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (acc, MatchTypeRule(sym, tpe, exp)) =>
+        case (acc, TypeMatchRule(sym, tpe, exp)) =>
           val o = getSemanticTokenType(sym, tpe)
           val t = SemanticToken(o, Nil, sym.loc)
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
@@ -650,8 +648,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Array => true
     case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true
-    case TypeConstructor.Empty => true
-    case TypeConstructor.All => true
+    case TypeConstructor.Pure => true
+    case TypeConstructor.EffUniv => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true

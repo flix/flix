@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -56,9 +56,10 @@ object LambdaLift {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe0, pur, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val e = liftExp(def0.exp, sym, m)
+      val e = liftExp(exp, sym, m)
+      val tpe = Type.mkUncurriedArrowWithEffect(fs.map(_.tpe), pur, tpe0, tpe0.loc.asSynthetic)
 
       LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
   }
@@ -67,11 +68,11 @@ object LambdaLift {
     * Translates the given simplified enum declaration `enum0` into a lifted enum declaration.
     */
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
-    case SimplifiedAst.Enum(ann, mod, sym, cases, tpeDeprecated, loc) =>
+    case SimplifiedAst.Enum(ann, mod, sym, cases, tpe, loc) =>
       val cs = cases.map {
-        case (tag, SimplifiedAst.Case(caseSym, tpeDeprecated, loc)) => tag -> LiftedAst.Case(caseSym, tpeDeprecated, loc)
+        case (tag, SimplifiedAst.Case(caseSym, caseTpe, loc)) => tag -> LiftedAst.Case(caseSym, caseTpe, loc)
       }
-      LiftedAst.Enum(ann, mod, sym, cs, tpeDeprecated, loc)
+      LiftedAst.Enum(ann, mod, sym, cs, tpe, loc)
   }
 
   /**

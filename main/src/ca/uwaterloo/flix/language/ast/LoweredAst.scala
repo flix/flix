@@ -50,7 +50,7 @@ object LoweredAst {
 
   case class Impl(exp: LoweredAst.Expression, inferredScheme: Scheme)
 
-  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[LoweredAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, LoweredAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[LoweredAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, LoweredAst.Case], tpe: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[LoweredAst.TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -75,10 +75,6 @@ object LoweredAst {
   object Expression {
 
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def pur: Type = Type.Pure
-    }
-
-    case class Wild(tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = Type.Pure
     }
 
@@ -131,7 +127,7 @@ object LoweredAst {
 
     case class Match(exp: LoweredAst.Expression, rules: List[LoweredAst.MatchRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class TypeMatch(exp: LoweredAst.Expression, rules: List[LoweredAst.MatchTypeRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class TypeMatch(exp: LoweredAst.Expression, rules: List[LoweredAst.TypeMatchRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChoiceRule], tpe: Type, pur: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -327,7 +323,7 @@ object LoweredAst {
 
   case class MatchRule(pat: LoweredAst.Pattern, guard: Option[LoweredAst.Expression], exp: LoweredAst.Expression)
 
-  case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: LoweredAst.Expression)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: LoweredAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: LoweredAst.Expression, exp: LoweredAst.Expression)
 

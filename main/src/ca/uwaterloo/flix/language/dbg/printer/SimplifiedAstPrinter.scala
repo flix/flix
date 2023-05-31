@@ -34,13 +34,13 @@ object SimplifiedAstPrinter {
         DocAst.Enum(ann, mod, sym, cases)
     }.toList
     val defs = root.defs.values.map {
-      case SimplifiedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
+      case SimplifiedAst.Def(ann, mod, sym, formals, exp, tpe, _, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           formals.map(printFormalParam),
-          TypePrinter.print(tpe),
+          DocAst.Type.Arrow(Nil, TypePrinter.print(tpe)),
           print(exp)
         )
     }.toList

@@ -437,8 +437,8 @@ object SimpleType {
               Lattice(tpes, lat)
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
-        case TypeConstructor.Empty => Empty
-        case TypeConstructor.All => All
+        case TypeConstructor.Pure => Empty
+        case TypeConstructor.EffUniv => All
 
         case TypeConstructor.True => True
         case TypeConstructor.False => False

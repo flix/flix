@@ -1,8 +1,8 @@
+/// Code generation has been disabled for relational choice
 mod Test.Exp.ChooseStar {
     use Choice.{Absent, Present}
 
-    @test
-    def testChooseStarOne01(): Bool =
+    pub def testChooseStarOne01(): Bool =
         let f = x -> {
             relational_choose* x {
                 case Absent     => Absent
@@ -14,8 +14,7 @@ mod Test.Exp.ChooseStar {
         };
         f(Absent) |> isAbsent
 
-    @test
-    def testChooseStarOne02(): Bool =
+    pub def testChooseStarOne02(): Bool =
         let f = x -> {
             relational_choose* x {
                 case Absent     => Absent
@@ -27,8 +26,7 @@ mod Test.Exp.ChooseStar {
         };
         f(Present(123)) |> isPresent
 
-    @test
-    def testChooseStarOne03(): Bool =
+    pub def testChooseStarOne03(): Bool =
         let f = x -> {
             relational_choose* x {
                 case Absent     => Present(123)
@@ -40,8 +38,7 @@ mod Test.Exp.ChooseStar {
         };
         f(Present(123)) |> isAbsent
 
-    @test
-    def testChooseStarOne04(): Bool =
+    pub def testChooseStarOne04(): Bool =
         let f = x -> {
             relational_choose* x {
                 case Absent     => Present(123)
@@ -53,8 +50,7 @@ mod Test.Exp.ChooseStar {
         };
         f(Absent) |> isPresent
 
-    @test
-    def testChooseStarOTwo01(): Bool =
+    pub def testChooseStarOTwo01(): Bool =
         let f = (x, y) -> {
             relational_choose* (x, y) {
                 case (Absent, Absent)         => Absent
@@ -66,8 +62,7 @@ mod Test.Exp.ChooseStar {
         };
         f(Absent, Absent) |> isAbsent
 
-    @test
-    def testChooseStarOTwo02(): Bool =
+    pub def testChooseStarOTwo02(): Bool =
         let f = (x, y) -> {
             relational_choose* (x, y) {
                 case (Absent, Absent)         => Absent
@@ -79,8 +74,7 @@ mod Test.Exp.ChooseStar {
         };
         f(Present(123), Present(456)) |> isPresent
 
-    @test
-    def testChooseStarOTwo03(): Bool =
+    pub def testChooseStarOTwo03(): Bool =
         let f = (x, y) -> {
             relational_choose* (x, y) {
                 case (Absent, Absent)         => Absent
@@ -94,8 +88,7 @@ mod Test.Exp.ChooseStar {
         };
         f(Absent, Present(123)) |> isPresent
 
-    @test
-    def testChooseStarOTwo04(): Bool =
+    pub def testChooseStarOTwo04(): Bool =
         let f = (x, y) -> {
             relational_choose* (x, y) {
                 case (Absent, Absent)         => Absent
@@ -109,7 +102,6 @@ mod Test.Exp.ChooseStar {
         };
         f(Present(123), Present(456)) |> isPresent
 
-    @test
     pub def testChooseStarLub01(): Bool =
         let f = x -> {
             relational_choose* x {
@@ -122,7 +114,6 @@ mod Test.Exp.ChooseStar {
         };
         f(if (true) Absent else Present(42)) |> isPresent
 
-    @test
     pub def testChooseStarLub02(): Bool =
         let f = x -> {
             relational_choose* x {
@@ -135,8 +126,7 @@ mod Test.Exp.ChooseStar {
         };
         f(if (true) Absent else Present(42)) |> isAbsent
 
-    @test
-    def testMap01(): Bool =
+    pub def testMap01(): Bool =
         let map = (f, x) -> {
             relational_choose* x {
                 case Absent     => Absent
@@ -148,8 +138,7 @@ mod Test.Exp.ChooseStar {
         };
         map(x -> x * 2, Present(123)) |> isPresent
 
-    @test
-    def testMap02(): Bool =
+    pub def testMap02(): Bool =
         let map2 = (f, x, y) -> {
             relational_choose* (x, y) {
                 case (Absent, Absent)           => Absent
@@ -163,8 +152,7 @@ mod Test.Exp.ChooseStar {
         };
         map2((x, y) -> x * y, Present(123), Present(456)) |> isPresent
 
-    @test
-    def testFlatMap01(): Bool =
+    pub def testFlatMap01(): Bool =
         let flatMap = (f, x) -> {
             relational_choose* x {
                 case Absent     => Absent
@@ -176,8 +164,7 @@ mod Test.Exp.ChooseStar {
         };
         flatMap(x -> Present(x * 2), Absent) |> isAbsent
 
-    @test
-    def testFlatMap02(): Bool =
+    pub def testFlatMap02(): Bool =
         let flatMap = (f, x) -> {
             relational_choose* x {
                 case Absent     => Absent
@@ -189,8 +176,7 @@ mod Test.Exp.ChooseStar {
         };
         flatMap(x -> Present(x * 2), Present(123)) |> isPresent
 
-    @test
-    def testFlatMap03(): Bool =
+    pub def testFlatMap03(): Bool =
         let flatMap = (f, x) -> {
             relational_choose* x {
                 case Absent     => Absent
@@ -202,8 +188,7 @@ mod Test.Exp.ChooseStar {
         };
         flatMap(_x -> Absent, Absent) |> isAbsent
 
-    @test
-    def testFlatMap04(): Bool =
+    pub def testFlatMap04(): Bool =
         let flatMap = (f, x) -> {
             relational_choose* x {
                 case Absent     => Absent

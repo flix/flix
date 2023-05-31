@@ -78,8 +78,6 @@ object CodeHinter {
     * Computes code quality hints for the given expression `exp0`.
     */
   private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
-    case Expression.Wild(_, _) => Nil
-
     case Expression.Var(_, _, _) => Nil
 
     case Expression.Def(sym, _, loc) =>
@@ -148,7 +146,7 @@ object CodeHinter {
 
     case Expression.TypeMatch(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
-        case MatchTypeRule(_, _, exp) => visitExp(exp)
+        case TypeMatchRule(_, _, exp) => visitExp(exp)
       }
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>

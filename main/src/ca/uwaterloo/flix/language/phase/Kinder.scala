@@ -410,8 +410,6 @@ object Kinder {
     */
   private def visitExp(exp00: ResolvedAst.Expression, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv0: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Expression, KindError] = exp00 match {
 
-    case ResolvedAst.Expression.Wild(loc) => KindedAst.Expression.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-
     case ResolvedAst.Expression.Var(sym, loc) => KindedAst.Expression.Var(sym, loc).toSuccess
 
     case ResolvedAst.Expression.Def(sym, loc) => KindedAst.Expression.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
@@ -977,12 +975,12 @@ object Kinder {
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
-  private def visitMatchTypeRule(rule0: ResolvedAst.MatchTypeRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchTypeRule, KindError] = rule0 match {
-    case ResolvedAst.MatchTypeRule(sym, tpe0, exp0) =>
+  private def visitMatchTypeRule(rule0: ResolvedAst.TypeMatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.TypeMatchRule, KindError] = rule0 match {
+    case ResolvedAst.TypeMatchRule(sym, tpe0, exp0) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(tpeVal, expVal) {
-        case (tpe, exp) => KindedAst.MatchTypeRule(sym, tpe, exp)
+        case (tpe, exp) => KindedAst.TypeMatchRule(sym, tpe, exp)
       }
   }
 
@@ -1189,7 +1187,7 @@ object Kinder {
     // TODO EFF-MIGRATION temporary hack to maintain behavior of IO
     case UnkindedType.Cst(TypeConstructor.Effect(sym), loc) if (sym == IoSym || sym == NonDetSym) =>
       unify(expectedKind, Kind.Eff) match {
-        case Some(_) => Type.Cst(TypeConstructor.All, loc).toSuccess
+        case Some(_) => Type.Cst(TypeConstructor.EffUniv, loc).toSuccess
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc).toFailure
       }
 

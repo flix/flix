@@ -580,9 +580,6 @@ object Namer {
   // TODO NS-REFACTOR can remove ns0 too?
   private def visitExp(exp0: WeededAst.Expression, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
 
-    case WeededAst.Expression.Wild(loc) =>
-      NamedAst.Expression.Wild(loc).toSuccess
-
     case WeededAst.Expression.Ambiguous(name, loc) =>
       NamedAst.Expression.Ambiguous(name, loc).toSuccess
 
@@ -705,10 +702,10 @@ object Namer {
     case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
-        case WeededAst.MatchTypeRule(ident, tpe, body) =>
+        case WeededAst.TypeMatchRule(ident, tpe, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
           mapN(visitType(tpe): Validation[NamedAst.Type, NameError], visitExp(body, ns0)) {
-            case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
+            case (t, b) => NamedAst.TypeMatchRule(sym, t, b)
           }
       }
       mapN(expVal, rulesVal) {

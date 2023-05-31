@@ -29,7 +29,6 @@ object TypedAstOps {
     */
   def sigSymsOf(exp0: Expression): Set[Symbol.SigSym] = exp0 match {
     case Expression.Cst(_, _, _) => Set.empty
-    case Expression.Wild(_, _) => Set.empty
     case Expression.Var(_, _, _) => Set.empty
     case Expression.Def(_, _, _) => Set.empty
     case Expression.Sig(sym, _, _) => Set(sym)
@@ -124,8 +123,6 @@ object TypedAstOps {
   def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
     case Expression.Cst(_, _, _) => Map.empty
 
-    case Expression.Wild(_, _) => Map.empty
-
     case Expression.Var(sym, tpe, _) => Map(sym -> tpe)
 
     case Expression.Def(_, _, _) => Map.empty
@@ -189,7 +186,7 @@ object TypedAstOps {
 
     case Expression.TypeMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchTypeRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
+        case (acc, TypeMatchRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
       }
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>

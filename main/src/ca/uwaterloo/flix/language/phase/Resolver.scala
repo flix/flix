@@ -944,9 +944,6 @@ object Resolver {
         */
       def visitExp(e0: NamedAst.Expression, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
 
-        case NamedAst.Expression.Wild(loc) =>
-          ResolvedAst.Expression.Wild(loc).toSuccess
-
         case NamedAst.Expression.Ambiguous(name, loc) =>
           mapN(lookupTerm(name, env0, ns0, root)) {
             case ResolvedTerm.Def(defn) => visitDef(defn, loc)
@@ -1133,12 +1130,12 @@ object Resolver {
 
         case NamedAst.Expression.TypeMatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
-            case NamedAst.MatchTypeRule(sym, tpe, body) =>
+            case NamedAst.TypeMatchRule(sym, tpe, body) =>
               val tVal = resolveType(tpe, Wildness.AllowWild, env0, taenv, ns0, root)
               val env = env0 ++ mkVarEnv(sym)
               val bVal = visitExp(body, env)
               mapN(tVal, bVal) {
-                case (t, b) => ResolvedAst.MatchTypeRule(sym, t, b)
+                case (t, b) => ResolvedAst.TypeMatchRule(sym, t, b)
               }
           }
 
@@ -2320,9 +2317,9 @@ object Resolver {
           case (tpe1, tpe2) => UnkindedType.Apply(tpe1, tpe2, loc)
         }
 
-      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
+      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.Pure, loc).toSuccess
 
-      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.All, loc).toSuccess
+      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.EffUniv, loc).toSuccess
 
       case NamedAst.Type.Not(tpe, loc) =>
         mapN(visit(tpe)) {
@@ -2354,7 +2351,7 @@ object Resolver {
           case (t1, t2) => mkIntersection(t1, t2, loc)
         }
 
-      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
+      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Pure, loc).toSuccess
 
       case NamedAst.Type.CaseSet(cases0, loc) =>
         val casesVal = traverse(cases0)(lookupRestrictableTag(_, env, ns0, root))
@@ -3297,7 +3294,7 @@ object Resolver {
 
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.All => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.EffUniv => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Complement => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -3309,7 +3306,7 @@ object Resolver {
         case TypeConstructor.Relation => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Empty => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Pure => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseSet(_, _) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure

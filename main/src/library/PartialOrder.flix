@@ -55,7 +55,9 @@ instance PartialOrder[Int64] {
 }
 
 instance PartialOrder[BigInt] {
-    pub def lessEqual(x: BigInt, y: BigInt): Bool = $BIGINT_LE$(x, y)
+    pub def lessEqual(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) <= 0
 }
 
 instance PartialOrder[(a1, a2)] with PartialOrder[a1], PartialOrder[a2] {

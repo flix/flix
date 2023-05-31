@@ -33,7 +33,7 @@ object MonoTypedAst {
     var method: Method = _
   }
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: MonoType, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType
@@ -49,9 +49,9 @@ object MonoTypedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: Expr, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
@@ -87,7 +87,7 @@ object MonoTypedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, loc: SourceLocation)
 

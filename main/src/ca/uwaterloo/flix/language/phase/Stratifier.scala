@@ -98,8 +98,6 @@ object Stratifier {
   private def visitExp(exp0: Expression)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Cst(_, _, _) => exp0.toSuccess
 
-    case Expression.Wild(_, _) => exp0.toSuccess
-
     case Expression.Var(_, _, _) => exp0.toSuccess
 
     case Expression.Def(_, _, _) => exp0.toSuccess
@@ -195,8 +193,8 @@ object Stratifier {
     case Expression.TypeMatch(exp, rules, tpe, pur, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
-        case MatchTypeRule(sym, t, body) => mapN(visitExp(body)) {
-          case b => MatchTypeRule(sym, t, b)
+        case TypeMatchRule(sym, t, body) => mapN(visitExp(body)) {
+          case b => TypeMatchRule(sym, t, b)
         }
       }
       mapN(matchVal, rulesVal) {
@@ -554,8 +552,6 @@ object Stratifier {
   private def labelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
     case Expression.Cst(_, _, _) => LabelledGraph.empty
 
-    case Expression.Wild(_, _) => LabelledGraph.empty
-
     case Expression.Var(_, _, _) => LabelledGraph.empty
 
     case Expression.Def(_, _, _) => LabelledGraph.empty
@@ -621,7 +617,7 @@ object Stratifier {
     case Expression.TypeMatch(exp, rules, _, _, _) =>
       val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
-        case (acc, MatchTypeRule(_, _, b)) => acc + labelledGraphOfExp(b)
+        case (acc, TypeMatchRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>

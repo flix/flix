@@ -212,7 +212,7 @@ mod TestDebug {
     @test
     def testNullStringify04(): Bool = {
         let s = stringify(Poly.This(unchecked_cast(null as String)));
-        s == "This"
+        s == "This(null)"
     }
 
     @test

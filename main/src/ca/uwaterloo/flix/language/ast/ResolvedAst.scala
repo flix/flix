@@ -82,8 +82,6 @@ object ResolvedAst {
 
   object Expression {
 
-    case class Wild(loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, loc: SourceLocation) extends ResolvedAst.Expression
@@ -128,7 +126,7 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class TypeMatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchTypeRule], loc: SourceLocation) extends ResolvedAst.Expression
+    case class TypeMatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.TypeMatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class RelationalChoose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.RelationalChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -356,7 +354,7 @@ object ResolvedAst {
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 
-  case class MatchTypeRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: ResolvedAst.Expression)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: ResolvedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 

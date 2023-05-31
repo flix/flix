@@ -538,9 +538,6 @@ object Typer {
       */
     def visitExp(e0: KindedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
-      case KindedAst.Expression.Wild(tvar, _) =>
-        liftM(List.empty, tvar, Type.Pure)
-
       case KindedAst.Expression.Var(sym, loc) =>
         liftM(List.empty, sym.tvar, Type.Pure)
 
@@ -746,13 +743,6 @@ object Typer {
             resultPur = pur
           } yield (constrs, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not =>
-          for {
-            (constrs, tpe, pur) <- visitExp(exp)
-            resultTyp <- expectTypeM(expected = Type.BigInt, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
-
         case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
@@ -848,22 +838,10 @@ object Typer {
             resultPur = Type.mkUnion(pur1, pur2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur)
 
-        case SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
-             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
-          for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
-            lhs <- expectTypeM(expected = Type.BigInt, actual = tpe1, exp1.loc)
-            rhs <- expectTypeM(expected = Type.BigInt, actual = tpe2, exp2.loc)
-            resultTyp <- unifyTypeM(tvar, Type.BigInt, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
-
         case SemanticOperator.Int8Op.Shl | SemanticOperator.Int8Op.Shr
              | SemanticOperator.Int16Op.Shl | SemanticOperator.Int16Op.Shr
              | SemanticOperator.Int32Op.Shl | SemanticOperator.Int32Op.Shr
-             | SemanticOperator.Int64Op.Shl | SemanticOperator.Int64Op.Shr
-             | SemanticOperator.BigIntOp.Shl | SemanticOperator.BigIntOp.Shr =>
+             | SemanticOperator.Int64Op.Shl | SemanticOperator.Int64Op.Shr =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
             (constrs2, tpe2, pur2) <- visitExp(exp2)
@@ -881,7 +859,6 @@ object Typer {
              | SemanticOperator.Int16Op.Eq | SemanticOperator.Int16Op.Neq
              | SemanticOperator.Int32Op.Eq | SemanticOperator.Int32Op.Neq
              | SemanticOperator.Int64Op.Eq | SemanticOperator.Int64Op.Neq
-             | SemanticOperator.BigIntOp.Eq | SemanticOperator.BigIntOp.Neq
              | SemanticOperator.StringOp.Eq | SemanticOperator.StringOp.Neq =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
@@ -898,8 +875,7 @@ object Typer {
              | SemanticOperator.Int8Op.Lt | SemanticOperator.Int8Op.Le | SemanticOperator.Int8Op.Gt | SemanticOperator.Int8Op.Ge
              | SemanticOperator.Int16Op.Lt | SemanticOperator.Int16Op.Le | SemanticOperator.Int16Op.Gt | SemanticOperator.Int16Op.Ge
              | SemanticOperator.Int32Op.Lt | SemanticOperator.Int32Op.Le | SemanticOperator.Int32Op.Gt | SemanticOperator.Int32Op.Ge
-             | SemanticOperator.Int64Op.Lt | SemanticOperator.Int64Op.Le | SemanticOperator.Int64Op.Gt | SemanticOperator.Int64Op.Ge
-             | SemanticOperator.BigIntOp.Lt | SemanticOperator.BigIntOp.Le | SemanticOperator.BigIntOp.Gt | SemanticOperator.BigIntOp.Ge =>
+             | SemanticOperator.Int64Op.Lt | SemanticOperator.Int64Op.Le | SemanticOperator.Int64Op.Gt | SemanticOperator.Int64Op.Ge =>
           for {
             (constrs1, tpe1, pur1) <- visitExp(exp1)
             (constrs2, tpe2, pur2) <- visitExp(exp2)
@@ -1108,16 +1084,16 @@ object Typer {
           * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
           */
         def mkUnderApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
-          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Empty) {
+          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Pure) {
             case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
             case (acc, ((isAbsentVar, _), KindedAst.RelationalChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              Type.mkUnion(acc, Type.mkEquiv(isAbsentVar, Type.All, loc), loc)
+              Type.mkUnion(acc, Type.mkEquiv(isAbsentVar, Type.EffUniv, loc), loc)
             case (acc, ((_, isPresentVar), KindedAst.RelationalChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              Type.mkUnion(acc, Type.mkEquiv(isPresentVar, Type.All, loc), loc)
+              Type.mkUnion(acc, Type.mkEquiv(isPresentVar, Type.EffUniv, loc), loc)
           }
 
         /**
@@ -1128,7 +1104,7 @@ object Typer {
           * If a pattern is `Present` it *may* match if its corresponding `isPresentVar`is `true`.
           */
         def mkOverApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
-          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Empty) {
+          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Pure) {
             case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
@@ -1144,7 +1120,7 @@ object Typer {
           * Constructs a disjunction of the constraints of each choice rule.
           */
         def mkOuterDisj(m: List[List[KindedAst.RelationalChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
-          m.foldLeft(Type.All) {
+          m.foldLeft(Type.EffUniv) {
             case (acc, rule) => Type.mkIntersection(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule), loc)
           }
 
@@ -1198,7 +1174,7 @@ object Typer {
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(formula, Type.Empty, loc)
+          _ <- unifyBoolM(formula, Type.Pure, loc)
           (matchConstrs, matchTyp, matchPur) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyPur) <- visitRuleBodies(rules0)
@@ -1217,7 +1193,7 @@ object Typer {
           if (symUse.sym.name == "Absent") {
             // Case 1.1: Absent Tag.
             val elmVar = Type.freshVar(Kind.Star, loc)
-            val isAbsent = Type.Empty
+            val isAbsent = Type.Pure
             val isPresent = Type.freshVar(Kind.Eff, loc)
             for {
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent, loc), loc)
@@ -1227,7 +1203,7 @@ object Typer {
           else if (symUse.sym.name == "Present") {
             // Case 1.2: Present Tag.
             val isAbsent = Type.freshVar(Kind.Eff, loc)
-            val isPresent = Type.Empty
+            val isPresent = Type.Pure
             for {
               (constrs, tpe, pur) <- visitExp(exp)
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(tpe, isAbsent, isPresent, loc), loc)
@@ -1959,9 +1935,6 @@ object Typer {
       */
     def visitExp(exp0: KindedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
 
-      case KindedAst.Expression.Wild(tvar, loc) =>
-        TypedAst.Expression.Wild(subst0(tvar), loc)
-
       case KindedAst.Expression.Var(sym, loc) =>
         TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
 
@@ -2080,14 +2053,14 @@ object Typer {
       case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
-          case KindedAst.MatchTypeRule(sym, tpe0, exp) =>
+          case KindedAst.TypeMatchRule(sym, tpe0, exp) =>
             val t = subst0(tpe0)
             val b = visitExp(exp, subst0)
-            TypedAst.MatchTypeRule(sym, t, b)
+            TypedAst.TypeMatchRule(sym, t, b)
         }
         val tpe = rs.head.exp.tpe
         val pur = rs.foldLeft(e1.pur) {
-          case (acc, TypedAst.MatchTypeRule(_, _, b)) => Type.mkUnion(b.pur, acc, loc)
+          case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.pur, acc, loc)
         }
         TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, loc)
 
