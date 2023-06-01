@@ -1372,7 +1372,7 @@ object Kinder {
     * Performs kinding on the given purity, assuming it to be Pure if it is absent.
     */
   private def visitPurityDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe match {
-    case None => Type.mkTrue(SourceLocation.Unknown).toSuccess
+    case None => Type.mkPure(SourceLocation.Unknown).toSuccess
     case Some(t) => visitType(t, Kind.Eff, kenv, taenv, root)
   }
 
