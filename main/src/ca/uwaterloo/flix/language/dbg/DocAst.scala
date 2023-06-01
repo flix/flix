@@ -26,7 +26,7 @@ object DocAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expression.Ascription], resType: Type, body: Expression)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, fparams: List[TypeParam], cases: List[Case])
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
   case class Case(sym: Symbol.CaseSym, tpe: Type)
 
