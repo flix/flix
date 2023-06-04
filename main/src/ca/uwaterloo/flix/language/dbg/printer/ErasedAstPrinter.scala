@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.util.collection.MapOps
 
 object ErasedAstPrinter {
 
@@ -31,9 +32,10 @@ object ErasedAstPrinter {
     val enums = root.enums.values.map {
       case ErasedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case ErasedAst.Case(sym, _, _) => DocAst.Case(sym)
+          case ErasedAst.Case(sym, tpe, _) =>
+            DocAst.Case(sym, MonoTypePrinter.print(tpe))
         }.toList
-        DocAst.Enum(ann, mod, sym, cases)
+        DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
       case ErasedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
@@ -66,7 +68,7 @@ object ErasedAstPrinter {
     case ApplySelfTail(sym, _, exps, _, _) => DocAst.Expression.ApplySelfTail(sym, exps.map(print))
     case ApplyAtomic(op, exps, tpe, _) => OperatorPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
+    case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
