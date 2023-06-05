@@ -98,11 +98,11 @@ object LambdaLift {
         val ann = Ast.Annotations.Empty
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
-        // Construct the formal parameters.
-        val fs = fparams.map(visitFormalParam)
-
         // Construct the closure parameters
         val cs = cparams.map(visitFormalParam)
+
+        // Construct the formal parameters.
+        val fs = fparams.map(visitFormalParam)
 
         // Construct a new definition.
         val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, tpe, loc)
