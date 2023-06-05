@@ -33,7 +33,9 @@ instance Sub[Float64] {
 }
 
 instance Sub[BigDecimal] {
-    pub def sub(x: BigDecimal, y: BigDecimal): BigDecimal = $BIGDECIMAL_SUB$(x, y)
+    pub def sub(x: BigDecimal, y: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.subtract(BigDecimal): BigDecimal \ {};
+        x `subtract` y
 }
 
 instance Sub[Int8] {

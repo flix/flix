@@ -342,8 +342,28 @@ object Doc {
     */
   def squareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
     case immutable.Nil => text("[]")
-    case immutable.::(d, immutable.Nil) => group(square(d))
-    case _ => group(square(commaSep(xs)))
+    case immutable.::(d, immutable.Nil) => square(d)
+    case _ => square(commaSep(xs))
+  }
+
+  /**
+    * Enclose `x` with `[|..|]` with grouped newlines inside.
+    */
+  def doubleSquare(x: Doc)(implicit i: Indent): Doc =
+    group(enclose("[|", x, "|]"))
+
+  /**
+    * Formats `xs` as a double square tuple.
+    * {{{
+    *   [||]
+    *   [|x|]
+    *   [|x, y, z|]
+    * }}}
+    */
+  def doubleSquareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
+    case immutable.Nil => text("[||]")
+    case immutable.::(d, immutable.Nil) => doubleSquare(d)
+    case _ => doubleSquare(commaSep(xs))
   }
 
   /**
@@ -356,8 +376,8 @@ object Doc {
     */
   def tuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
     case immutable.Nil => text("()")
-    case immutable.::(d, immutable.Nil) => group(parens(d))
-    case _ => group(parens(commaSep(xs)))
+    case immutable.::(d, immutable.Nil) => parens(d)
+    case _ => parens(commaSep(xs))
   }
 
   /**

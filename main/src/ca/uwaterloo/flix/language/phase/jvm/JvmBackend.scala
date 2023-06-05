@@ -54,11 +54,6 @@ object JvmBackend {
       //
       val types = JvmOps.typesOf(root)
 
-      //
-      // Compute the set of instantiated tags in the program.
-      //
-      val tags = JvmOps.tagsOf(types)
-
       val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
       val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
       val erasedFunctionTypes: Iterable[BackendObjType.Arrow] = JvmOps.getArrowsOf(types)
@@ -109,12 +104,12 @@ object JvmBackend {
       //
       // Generate enum interfaces for each enum type in the program.
       //
-      val enumInterfaces = GenEnumInterfaces.gen(types)
+      val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
 
       //
       // Generate tag classes for each enum instantiation in the program.
       //
-      val tagClasses = GenTagClasses.gen(tags)
+      val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
 
       //
       // Generate tuple classes for each tuple type in the program.
