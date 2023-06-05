@@ -325,11 +325,11 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case E(Int32)
         |}
         |
-        |instance C[E[true]] {
-        |    pub def foo(x: E[true]): Int32 = 1
+        |instance C[E[Pure]] {
+        |    pub def foo(x: E[Pure]): Int32 = 1
         |}
         |
-        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[true]
+        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[Pure]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
@@ -998,7 +998,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case Absent => 1
         |    }
         |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1016,7 +1016,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case Present(_) => 1
         |    }
         |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1518,8 +1518,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
     """
       |enum E[a: Type, ef: Eff](Unit)
-      |def f(g: E[Int32, true]): Bool = ???
-      |def mkE(): E[Int32, true] \ ef = ???
+      |def f(g: E[Int32, Pure]): Bool = ???
+      |def mkE(): E[Int32, Pure] \ ef = ???
       |
       |def g(): Bool = f(mkE)
       |""".stripMargin
