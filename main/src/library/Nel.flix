@@ -103,6 +103,7 @@ instance Reducible[Nel] {
     override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
     override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r = Nel.toArray(rc, l)
+    override pub def toVector(l: Nel[a]): Vector[a] = Nel.toVector(l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
@@ -549,6 +550,15 @@ mod Nel {
         l |> toList |> List.toArray(r)
 
     ///
+    /// Returns `l` as a vector.
+    ///
+    pub def toVector(l: Nel[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, length(l));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
@@ -561,6 +571,13 @@ mod Nel {
     ///
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
         case Nel(x, xs) => f(x); List.forEach(f, xs)
+    }
+
+    ///
+    /// Applies `f` to every element of `l` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
+        case Nel(x, xs) => List.forEachWithIndex(f, x :: xs)
     }
 
     ///

@@ -77,8 +77,13 @@ instance Eq[Float64] {
 }
 
 instance Eq[BigDecimal] {
-    pub def eq(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_EQ$(x, y)
-    pub override def neq(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_NEQ$(x, y)
+    pub def eq(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) == 0
+
+    pub override def neq(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) != 0
 }
 
 instance Eq[Int8] {

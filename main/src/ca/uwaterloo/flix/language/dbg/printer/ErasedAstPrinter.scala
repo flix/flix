@@ -32,9 +32,10 @@ object ErasedAstPrinter {
     val enums = root.enums.values.map {
       case ErasedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case ErasedAst.Case(sym, _, _) => DocAst.Case(sym)
+          case ErasedAst.Case(sym, tpe, _) =>
+            DocAst.Case(sym, MonoTypePrinter.print(tpe))
         }.toList
-        DocAst.Enum(ann, mod, sym, cases)
+        DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
       case ErasedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, _) =>
