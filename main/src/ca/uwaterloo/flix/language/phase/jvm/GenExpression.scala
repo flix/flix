@@ -170,10 +170,6 @@ object GenExpression {
 
           case Float64Op.Neg => mv.visitInsn(DNEG)
 
-          case BigDecimalOp.Neg =>
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
-              AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
-
           case Int8Op.Neg =>
             mv.visitInsn(INEG)
             mv.visitInsn(I2B) // Sign extend so sign bit is also changed
@@ -358,54 +354,6 @@ object GenExpression {
 
           case Float64Op.Gt => visitComparison2(exp1, exp2, DCMPL, IFLE)
 
-          case BigDecimalOp.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPGE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPGT, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPLT, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPLE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
           case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt | CharOp.Lt =>
             visitComparison1(exp1, exp2, IF_ICMPGE)
 
@@ -491,30 +439,6 @@ object GenExpression {
             compileExpr(exp1)
             compileExpr(exp2)
             mv.visitInsn(DDIV)
-
-          case BigDecimalOp.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "add",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
-
-          case BigDecimalOp.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "subtract",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
-
-          case BigDecimalOp.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "multiply",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
-
-          case BigDecimalOp.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "divide",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
 
           case Int8Op.Add =>
             compileExpr(exp1)
@@ -664,10 +588,8 @@ object GenExpression {
 
         // Adding source line number for debugging
         addSourceLine(mv, loc)
-        // We get the `TagInfo` for the tag
-        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
         // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
+        val classType = JvmOps.getTagClassType(sym)
 
         // First we compile the `exp`
         compileExpr(exp)
@@ -679,17 +601,17 @@ object GenExpression {
         val List(exp) = exps
         // Adding source line number for debugging
         addSourceLine(mv, loc)
-        // Get the tag info.
-        val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
         // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
+        val classType = JvmOps.getTagClassType(sym)
+        // Find the tag
+        val tag = root.enums(sym.enumSym).cases(sym)
         // Creating a new instance of the class
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
         mv.visitInsn(DUP)
         // Evaluating the single argument of the class constructor
         compileExpr(exp)
         // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tag.tpe)), JvmType.Void)
         // Calling the constructor of the class
         mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
@@ -698,17 +620,16 @@ object GenExpression {
 
         // Adding source line number for debugging
         addSourceLine(mv, loc)
-
-        // We get the `TagInfo` for the tag
-        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
         // We get the JvmType of the class for the tag
-        val classType = JvmOps.getTagClassType(tagInfo)
+        val classType = JvmOps.getTagClassType(sym)
+        // Find the tag
+        val tag = root.enums(sym.enumSym).cases(sym)
         // Evaluate the exp
         compileExpr(exp)
         // Cast the exp to the type of the tag
         mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
         // Descriptor of the method
-        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
+        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
         // Invoke `getValue()` method to extract the field of the tag
         mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
         // Cast the object to it's type if it's not a primitive

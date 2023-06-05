@@ -83,9 +83,9 @@ object RestrictableChooseInference {
           case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym.enumSym
         }
 
-        val enum = root.restrictableEnums(enumSym)
-        val universe = enum.cases.keys.toSet
-        val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
+        val `enum` = root.restrictableEnums(enumSym)
+        val universe = `enum`.cases.keys.toSet
+        val (enumType, indexVar, _) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
         val domSet = dom(rules0)
         val domM = toType(domSet, enumSym, loc.asSynthetic)
 
@@ -117,12 +117,12 @@ object RestrictableChooseInference {
           case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym.enumSym
         }
 
-        val enum = root.restrictableEnums(enumSym)
+        val `enum` = root.restrictableEnums(enumSym)
 
         // The expected enum types and the index variables.
-        val (enumTypeIn, indexInVar, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-        val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-        val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, enum, loc.asSynthetic)).unzip3
+        val (enumTypeIn, indexInVar, _) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
+        val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
+        val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)).unzip3
         val patternTagTypes = rules0.map(_.pat match {
           case RestrictableChoicePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
         })
@@ -255,10 +255,10 @@ object RestrictableChooseInference {
     */
   def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
     case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
-      val enum = root.restrictableEnums(sym)
+      val `enum` = root.restrictableEnums(sym)
 
-      val (enumType, indexVar, targs) = instantiatedEnumType(sym, enum, loc.asSynthetic)
-      val kargs = enum.index.sym.kind :: enum.tparams.map(_.sym.kind)
+      val (enumType, indexVar, targs) = instantiatedEnumType(sym, `enum`, loc.asSynthetic)
+      val kargs = `enum`.index.sym.kind :: `enum`.tparams.map(_.sym.kind)
       val kind = Kind.mkArrow(kargs)
 
       for {
@@ -269,7 +269,7 @@ object RestrictableChooseInference {
         _ <- expectTypeM(expected = enumType, actual = tpe, loc)
 
         // the new index is s ∪ φ for some free φ
-        openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(enum.sym), loc.asSynthetic), sym, loc)
+        openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(`enum`.sym), loc.asSynthetic), sym, loc)
 
         // the result type is EnumType[s ∪ φ][α1 ... αn]
         resultType = Type.mkApply(
