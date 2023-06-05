@@ -170,10 +170,6 @@ object GenExpression {
 
           case Float64Op.Neg => mv.visitInsn(DNEG)
 
-          case BigDecimalOp.Neg =>
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
-              AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
-
           case Int8Op.Neg =>
             mv.visitInsn(INEG)
             mv.visitInsn(I2B) // Sign extend so sign bit is also changed
@@ -358,54 +354,6 @@ object GenExpression {
 
           case Float64Op.Gt => visitComparison2(exp1, exp2, DCMPL, IFLE)
 
-          case BigDecimalOp.Lt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPGE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Le =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPGT, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Ge =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPLT, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case BigDecimalOp.Gt =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "compareTo",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.PrimInt), false)
-            mv.visitInsn(ICONST_0)
-            mv.visitJumpInsn(IF_ICMPLE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
           case Int8Op.Lt | Int16Op.Lt | Int32Op.Lt | CharOp.Lt =>
             visitComparison1(exp1, exp2, IF_ICMPGE)
 
@@ -491,30 +439,6 @@ object GenExpression {
             compileExpr(exp1)
             compileExpr(exp2)
             mv.visitInsn(DDIV)
-
-          case BigDecimalOp.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "add",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
-
-          case BigDecimalOp.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "subtract",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
-
-          case BigDecimalOp.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "multiply",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
-
-          case BigDecimalOp.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "divide",
-              AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
 
           case Int8Op.Add =>
             compileExpr(exp1)

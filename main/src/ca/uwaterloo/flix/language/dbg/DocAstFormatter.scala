@@ -16,10 +16,10 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.dbg.Doc._
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
 import ca.uwaterloo.flix.language.dbg.DocAst._
-import ca.uwaterloo.flix.language.dbg.printer.TypePrinter
 
 import scala.annotation.tailrec
 
@@ -29,12 +29,20 @@ object DocAstFormatter {
     import scala.math.Ordering.Implicits.seqOrdering
     val Program(enums0, defs0) = p
     val enums = enums0.map {
-      case Enum(_, _, sym, cases) =>
-        val delimitedCases = semiSepOpt(cases.map {
-          case Case(sym) =>
-            text("case") +: text(sym.toString) :: text("(?)")
-        })
-        val d = text("enum") +: text(sym.toString) +: curly(delimitedCases)
+      case Enum(_, _, sym, tparams, cases) =>
+        val tparamsf = if (tparams.isEmpty) empty else text("[") :: sep(text(", "), tparams.map {
+          case DocAst.TypeParam(sym) => text(sym.text match {
+            case VarText.Absent => "?"
+            case VarText.SourceText(s) => s
+          })
+        }) :: text("]")
+        val casesf = curly(sep(breakWith(" "), cases.map {
+          case Case(sym, tpe@Type.Tuple(_)) =>
+            text("case") +: text(sym.name) :: formatType(tpe, paren = false)
+          case Case(sym, tpe) =>
+            text("case") +: text(sym.name) :: parens(formatType(tpe, paren = false))
+        }))
+        val d = text("enum") +: text(sym.toString) :: tparamsf +: casesf
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
     // remember that the def type includes the arguments
@@ -133,7 +141,7 @@ object DocAstFormatter {
           val patF = aux(pat, paren = false)
           val tpeF = formatType(tpe, paren = false)
           val bodyF = aux(body, paren = false, inBlock = true)
-          text("case") +: patF  +: text(":") +: tpeF +: text("=>") :: breakIndent(bodyF)
+          text("case") +: patF +: text(":") +: tpeF +: text("=>") :: breakIndent(bodyF)
         }
         group(
           text("typematch") +: scrutineeF +: curlyOpen(
