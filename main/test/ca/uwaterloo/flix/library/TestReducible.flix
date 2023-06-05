@@ -823,6 +823,22 @@ mod TestReducible {
         Array.sameElements(Reducible.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ r)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool =
+        Reducible.toVector(Nel.Nel(1, Nil)) == Vector#{1}
+
+    @test
+    def toVector02(): Bool =
+        Reducible.toVector(Nel.Nel(1, 2 :: 3 :: Nil)) == Vector#{1, 2, 3}
+
+    @test
+    def toVector03(): Bool =
+        Reducible.toVector(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Vector#{1, 1, 2, 3}
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //

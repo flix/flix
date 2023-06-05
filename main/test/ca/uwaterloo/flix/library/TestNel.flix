@@ -691,6 +691,59 @@ mod TestNel {
     @test
     def toList03(): Bool = Nel.toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool = region r {
+        let a = Nel.toArray(r, Nel.singleton(1));
+        Array.sameElements(a, Array#{1} @ r)
+    }
+
+    @test
+    def toArray02(): Bool = region r {
+        let a = Nel.toArray(r, Nel(1, List#{2}));
+        Array.sameElements(a, Array#{1, 2} @ r)
+    }
+
+    @test
+    def toArray03(): Bool = region r {
+        let a = Nel.toArray(r, Nel(1, List#{2, 3}));
+        Array.sameElements(a, Array#{1, 2, 3} @ r)
+    }
+
+    @test
+    def toArray04(): Bool = region r {
+        let a = Nel.toArray(r, Nel(3, List#{2, 3}));
+        Array.sameElements(a, Array#{3, 2, 3} @ r)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool =
+        let l = Nel(1, List#{});
+        Nel.toVector(l) == Vector#{1}
+
+    @test
+    def toVector02(): Bool =
+        let l = Nel(1, List#{2});
+        Nel.toVector(l) == Vector#{1, 2}
+
+    @test
+    def toVector03(): Bool =
+        let l = Nel(1, List#{2, 3});
+        Nel.toVector(l) == Vector#{1, 2, 3}
+
+    @test
+    def toVector04(): Bool =
+        let l = Nel(3, List#{2, 3});
+        Nel.toVector(l) == Vector#{3, 2, 3}
+
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -749,6 +802,24 @@ mod TestNel {
         let ri = ref 21 @ r;
         Nel.forEach(x -> ri := x, Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nel.forEachWithIndex((i, _) -> ri := i, Nel.singleton(1));
+        0 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nel.forEachWithIndex((i, _) -> ri := i, Nel(1, List#{2, 3}));
+        2 == deref ri
     }
 
     /////////////////////////////////////////////////////////////////////////////

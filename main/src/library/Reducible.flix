@@ -252,6 +252,15 @@ pub class Reducible[t: Type -> Type] {
         MutList.toArray(rc, v)
 
     ///
+    /// Returns `t` as a vector.
+    ///
+    pub def toVector(t: t[a]): Vector[a] = region rc {
+        let l = MutList.new(rc);
+        Reducible.foldLeft((_, a) -> MutList.push!(a, l), (), t);
+        MutList.toVector(l)
+    }
+
+    ///
     /// Returns `t` as a list.
     ///
     pub def toList(t: t[a]): List[a] =

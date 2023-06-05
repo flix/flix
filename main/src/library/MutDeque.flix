@@ -379,6 +379,15 @@ mod MutDeque {
             Array.append(r1, Array.copyOfRange(r1, i, len, deref a), Array.copyOfRange(r1, 0, j, deref a))
 
     ///
+    /// Returns `d` as a vector.
+    ///
+    pub def toVector(d: MutDeque[a, r]): Vector[a] \ r = region rc {
+        let arr = Array.new(rc, size(d));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), d);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
