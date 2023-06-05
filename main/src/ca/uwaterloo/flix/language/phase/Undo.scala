@@ -15,11 +15,12 @@ object Undo {
   }
 
   private def visitDef(d: CallByValueAst.Def): ReducedAst.Def = {
-    val CallByValueAst.Def(ann, mod, sym, fparams0, exp, tpe, loc) = d
+    val CallByValueAst.Def(ann, mod, sym, cparams0, fparams0, exp, tpe, loc) = d
+    val cparams = cparams0.map(visitFormalParam)
     val fparams = fparams0.map(visitFormalParam)
     val body = visitStmt(exp)
     val e = ReducedAst.Stmt.Ret(body, body.tpe, body.loc)
-    ReducedAst.Def(ann, mod, sym, fparams, e, tpe, loc)
+    ReducedAst.Def(ann, mod, sym, cparams, fparams, e, tpe, loc)
   }
 
   private def visitExp(expr: CallByValueAst.Expr): ReducedAst.Expr = expr match {

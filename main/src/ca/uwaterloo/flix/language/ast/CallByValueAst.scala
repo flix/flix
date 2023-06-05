@@ -19,16 +19,16 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 object CallByValueAst {
+
+  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, CallByValueAst.Def],
                   enums: Map[Symbol.EnumSym, CallByValueAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[CallByValueAst.FormalParam], stmt: CallByValueAst.Stmt, tpe: Type, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[CallByValueAst.FormalParam], fparams: List[CallByValueAst.FormalParam], stmt: CallByValueAst.Stmt, tpe: Type, loc: SourceLocation)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, CallByValueAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 

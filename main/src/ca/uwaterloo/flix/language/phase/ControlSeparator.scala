@@ -3,7 +3,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, CallByValueAst, Purity, ReducedAst, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object ControlSeparator {
@@ -16,12 +15,13 @@ object ControlSeparator {
   }
 
   def visitDef(defn: ReducedAst.Def)(implicit flix: Flix): CallByValueAst.Def = {
-    val ReducedAst.Def(ann, mod, sym, fparams0, ReducedAst.Stmt.Ret(exp, _, _), tpe, loc) = defn
+    val ReducedAst.Def(ann, mod, sym, cparams0, fparams0, ReducedAst.Stmt.Ret(exp, _, _), tpe, loc) = defn
+    val cparams = cparams0.map(visitFormalParam)
     val fparams = fparams0.map(visitFormalParam)
     // important! reify bindings
     implicit val ctx: Context = new Context()
     val stmt = insertBindings(_ => visitExpAsStmt(exp))
-    CallByValueAst.Def(ann, mod, sym, fparams, stmt, tpe, loc)
+    CallByValueAst.Def(ann, mod, sym, cparams, fparams, stmt, tpe, loc)
   }
 
   def visitEnum(e: ReducedAst.Enum): CallByValueAst.Enum = {
@@ -47,7 +47,7 @@ object ControlSeparator {
         ret(CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc))
       })
     case Expr.ApplyAtomic(op, exps0, tpe, purity, loc) =>
-      insertBindings{ _ =>
+      insertBindings { _ =>
         val exps = exps0.map(visitExpAsExpr)
         ret(CallByValueAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc))
       }
@@ -96,10 +96,10 @@ object ControlSeparator {
       val rules = rules0.map(visitCatchRule)
       ret(CallByValueAst.Expr.TryCatch(e, rules, tpe, purity, loc))
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
-    insertBindings { _ =>
-      val methods = methods0.map(visitJvmMethod)
-      ret(CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc))
-    }
+      insertBindings { _ =>
+        val methods = methods0.map(visitJvmMethod)
+        ret(CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc))
+      }
   }
 
   private def visitCatchRule(rule: ReducedAst.CatchRule)(implicit ctx: Context, flix: Flix): CallByValueAst.CatchRule = rule match {

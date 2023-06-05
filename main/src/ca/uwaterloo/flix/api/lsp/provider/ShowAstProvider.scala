@@ -42,8 +42,8 @@ object ShowAstProvider {
       val phases = List("Parser", "Weeder", "Kinder", "Resolver", "TypedAst",
         "Documentor", "Lowering", "EarlyTreeShaker", "Monomorph",
         "MonomorphEnums", "Simplifier", "ClosureConv", "LambdaLift", "Tailrec",
-        "Optimizer", "LateTreeShaker", "Reducer", "VarNumbering", "MonoTyper",
-        "Eraser")
+        "Optimizer", "LateTreeShaker", "Reducer", "ControlSeparator", "Undo",
+        "VarNumbering", "MonoTyper", "Eraser")
 
       phase match {
         case "Parser" => astObject(phase, "Work In Progress")
@@ -63,6 +63,8 @@ object ShowAstProvider {
         case "Optimizer" => astObject(phase, AstPrinter.formatLiftedAst(flix.getOptimizerAst))
         case "LateTreeShaker" => astObject(phase, AstPrinter.formatLiftedAst(flix.getLateTreeShakerAst))
         case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
+        case "ControlSeparator" => astObject(phase, AstPrinter.formatCallByValueAst(flix.getControlSeparatorAst))
+        case "Undo" => astObject(phase, AstPrinter.formatReducedAst(flix.getUndoAst))
         case "VarNumbering" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarNumberingAst))
         case "MonoTyper" => astObject(phase, AstPrinter.formatMonoTypedAst(flix.getMonoTyperAst))
         case "Eraser" => astObject(phase, AstPrinter.formatErasedAst(flix.getEraserAst))

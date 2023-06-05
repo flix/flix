@@ -100,6 +100,8 @@ class Flix {
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedControlSeparatorAst: CallByValueAst.Root = CallByValueAst.empty
+  private var cachedUndoAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
   private var cachedMonoTyperAst: MonoTypedAst.Root = MonoTypedAst.empty
   private var cachedEraserAst: ErasedAst.Root = ErasedAst.empty
@@ -116,6 +118,8 @@ class Flix {
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
   def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
   def getReducerAst: ReducedAst.Root = cachedReducerAst
+  def getControlSeparatorAst: CallByValueAst.Root = cachedControlSeparatorAst
+  def getUndoAst: ReducedAst.Root = cachedUndoAst
   def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
   def getMonoTyperAst: MonoTypedAst.Root = cachedMonoTyperAst
   def getEraserAst: ErasedAst.Root = cachedEraserAst
@@ -599,9 +603,9 @@ class Flix {
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
     cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
-    val afterControlSeparator = ControlSeparator.run(cachedReducerAst)
-    val afterUndo = Undo.run(afterControlSeparator)
-    cachedVarNumberingAst = VarNumbering.run(afterUndo)
+    cachedControlSeparatorAst = ControlSeparator.run(cachedReducerAst)
+    cachedUndoAst = Undo.run(cachedControlSeparatorAst)
+    cachedVarNumberingAst = VarNumbering.run(cachedUndoAst)
     cachedMonoTyperAst = MonoTyper.run(cachedVarNumberingAst)
     cachedEraserAst = Eraser.run(cachedMonoTyperAst)
     val afterJvmBackend = JvmBackend.run(cachedEraserAst)
