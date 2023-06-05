@@ -364,6 +364,27 @@ object Type {
     */
   val False: Type = Type.Cst(TypeConstructor.False, SourceLocation.Unknown)
 
+  /**
+    * Represents the Not type constructor.
+    *
+    * NB: This type has kind: * -> *.
+    */
+  val Not: Type = Type.Cst(TypeConstructor.Not, SourceLocation.Unknown)
+
+  /**
+    * Represents the And type constructor.
+    *
+    * NB: This type has kind: * -> (* -> *).
+    */
+  val And: Type = Type.Cst(TypeConstructor.And, SourceLocation.Unknown)
+
+  /**
+    * Represents the Or type constructor.
+    *
+    * NB: This type has kind: * -> (* -> *).
+    */
+  val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
+
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
   /////////////////////////////////////////////////////////////////////////////
@@ -656,7 +677,7 @@ object Type {
     */
   def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
     val sym = Symbol.mkEnumSym("Choice")
-    val kind = Kind.Star ->: Kind.Eff ->: Kind.Eff ->: Kind.Star
+    val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
     val tc = TypeConstructor.Enum(sym, kind)
     Apply(Apply(Apply(Cst(tc, loc), tpe0, loc), isAbsent, loc), isPresent, loc)
   }
@@ -776,6 +797,15 @@ object Type {
   }
 
   /**
+    * Returns the type `Not(tpe0)`.
+    */
+  def mkNot(tpe0: Type, loc: SourceLocation): Type = tpe0 match {
+    case Type.True => Type.False
+    case Type.False => Type.True
+    case _ => Type.Apply(Type.Cst(TypeConstructor.Not, loc), tpe0, loc)
+  }
+
+  /**
     * Returns the type `Union(tpe1, tpe2)`.
     *
     * Must not be used before kinding.
@@ -837,6 +867,54 @@ object Type {
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.EffUniv
     case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
+  }
+
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
+    case (Type.Cst(TypeConstructor.False, _), _) => Type.False
+    case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
+    case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
+  }
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True, _), _) => Type.True
+    case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
+    case (Type.Cst(TypeConstructor.False, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
+    case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
+  }
+
+  /**
+    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkOr(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.False
+    case x :: xs => mkOr(x, mkOr(xs, loc), loc)
+  }
+
+  /**
+    * Returns the type `And(tpe1, And(tpe2, ...))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkAnd(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.True
+    case x :: xs => mkAnd(x, mkAnd(xs, loc), loc)
   }
 
   /**
@@ -903,7 +981,7 @@ object Type {
     *
     * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
     */
-  def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkIntersection(mkUnion(x, y, loc), mkUnion(Type.mkComplement(x, loc), Type.mkComplement(y, loc), loc), loc)
+  def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
 
   /**
     * Replace type aliases with the types they represent.

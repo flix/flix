@@ -1503,6 +1503,14 @@ object ParsedAst {
     case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * The Pure type constructor.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * The Impure type constructor.
       *
       * @param sp1 the position of the first character in the type.

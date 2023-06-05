@@ -667,7 +667,7 @@ mod Iterator {
     /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but
     /// then `intercalate` fails.
     ///
-    def ofList(rc: Region[r], xs: List[a]): Iterator[a, true, r] \ r =
+    def ofList(rc: Region[r], xs: List[a]): Iterator[a, Pure, r] \ r =
         let ls = ref xs @ rc;
         let next = () -> {
             match (deref ls) {

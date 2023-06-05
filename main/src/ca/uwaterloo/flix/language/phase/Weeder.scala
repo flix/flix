@@ -2741,9 +2741,15 @@ object Weeder {
         case (t1, t2) => WeededAst.Type.Intersection(t1, WeededAst.Type.Complement(t2, loc), loc)
       }
 
+    case ParsedAst.Type.Pure(sp1, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      // TODO EFF-MIGRATION rename to Pure
+      WeededAst.Type.Empty(loc).toSuccess
+
     case ParsedAst.Type.Impure(sp1, sp2) =>
-      WeededAst.Type.Complement(WeededAst.Type)
+      val loc = mkSL(sp1, sp2)
       // TODO EFF-MIGRATION create dedicated Impure type
+      WeededAst.Type.Complement(WeededAst.Type.Empty(loc), loc).toSuccess
 
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
       val checkVal = traverseX(tpes0)(checkEffectSetMember)
@@ -2754,7 +2760,7 @@ object Weeder {
           val purOpt = tpes.reduceLeftOption({
             case (acc, tpe) => WeededAst.Type.Union(acc, tpe, loc)
           }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
-          purOpt.getOrElse(WeededAst.Type.True(loc))
+          purOpt.getOrElse(WeededAst.Type.Empty(loc))
       }
 
     case ParsedAst.Type.CaseSet(sp1, cases, sp2) =>
@@ -3380,6 +3386,8 @@ object Weeder {
     case ParsedAst.Type.Difference(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Union(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Pure(sp1, _) => sp1
+    case ParsedAst.Type.Impure(sp1, _) => sp1
     case ParsedAst.Type.EffectSet(sp1, _, _) => sp1
     case ParsedAst.Type.CaseComplement(sp1, _, _) => sp1
     case ParsedAst.Type.CaseDifference(tpe1, _, _) => leftMostSourcePosition(tpe1)

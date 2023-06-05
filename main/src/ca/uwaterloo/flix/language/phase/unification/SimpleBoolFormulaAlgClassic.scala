@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 package ca.uwaterloo.flix.language.phase.unification
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -213,5 +213,18 @@ class SimpleBoolFormulaAlgClassic extends BoolFormulaAlg {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
+  }
+
+  override def toType(f: BoolFormula, env: Bimap[BoolFormula.VarOrEff, Int]): Type = f match {
+    case BoolFormula.True => Type.True
+    case BoolFormula.False => Type.False
+    case BoolFormula.And(f1, f2) => Type.mkApply(Type.And, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
+    case BoolFormula.Or(f1, f2) => Type.mkApply(Type.Or, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
+    case BoolFormula.Not(f1) => Type.Apply(Type.Not, toType(f1, env), SourceLocation.Unknown)
+    case BoolFormula.Var(id) => env.getBackward(id) match {
+      case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
+      case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
+    }
   }
 }
