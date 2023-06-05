@@ -329,7 +329,7 @@ object Type {
   val EffUniv: Type = Type.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)
 
   /**
-    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+    * Represents the universal effect set.
     */
   val Impure: Type = EffUniv
 
@@ -353,6 +353,16 @@ object Type {
     * NB: This type has kind: * -> (* -> *).
     */
   val Intersection: Type = Type.Cst(TypeConstructor.Intersection, SourceLocation.Unknown)
+
+  /**
+    * Represents the True Boolean algebra value.
+    */
+  val True: Type = Type.Cst(TypeConstructor.True, SourceLocation.Unknown)
+
+  /**
+    * Represents the False Boolean algebra value.
+    */
+  val False: Type = Type.Cst(TypeConstructor.False, SourceLocation.Unknown)
 
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //

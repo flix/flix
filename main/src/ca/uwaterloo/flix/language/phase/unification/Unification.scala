@@ -96,6 +96,8 @@ object Unification {
         BoolUnification.unify(tpe1, tpe2, renv)
       }
 
+    case (Kind.Bool, Kind.Bool) => SimpleBoolUnification.unify(tpe1, tpe2, renv)
+
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       val cases = sym1.universe
       CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1).map((_, Nil)) // TODO ASSOC-TYPES support in sets

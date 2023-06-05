@@ -2741,6 +2741,10 @@ object Weeder {
         case (t1, t2) => WeededAst.Type.Intersection(t1, WeededAst.Type.Complement(t2, loc), loc)
       }
 
+    case ParsedAst.Type.Impure(sp1, sp2) =>
+      WeededAst.Type.Complement(WeededAst.Type)
+      // TODO EFF-MIGRATION create dedicated Impure type
+
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
       val checkVal = traverseX(tpes0)(checkEffectSetMember)
       val tpesVal = traverse(tpes0)(visitType)
