@@ -237,21 +237,29 @@ instance Order[Float64] {
 
 instance Order[BigDecimal] {
 
-    pub override def less(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_LT$(x, y)
+    pub override def less(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) < 0
 
-    pub override def lessEqual(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_LE$(x, y)
+    pub override def lessEqual(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) <= 0
 
-    pub override def greater(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_GT$(x, y)
+    pub override def greater(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) > 0
 
-    pub override def greaterEqual(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_GE$(x, y)
+    pub override def greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) >= 0
 
     pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-        if ($BIGDECIMAL_LT$(x, y))
-            Comparison.LessThan
-        else if ($BIGDECIMAL_GT$(x, y))
-            Comparison.GreaterThan
-        else
-            Comparison.EqualTo
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        match x `compareTo` y {
+            case z if z < 0 => Comparison.LessThan
+            case 0 => Comparison.EqualTo
+            case z if z > 0 => Comparison.GreaterThan
+        }
 
 }
 
@@ -356,9 +364,9 @@ instance Order[BigInt] {
     pub def compare(x: BigInt, y: BigInt): Comparison =
         import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
         match x `compareTo` y {
-            case -1 => Comparison.LessThan
+            case z if z < 0 => Comparison.LessThan
             case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case z if z > 0 => Comparison.GreaterThan
         }
 
 }

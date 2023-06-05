@@ -197,16 +197,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns the effect type of `this` arrow type.
-    *
-    * NB: Assumes that `this` type is an arrow.
-    */
-  def arrowEffectType: Type = typeConstructor match {
-    case Some(TypeConstructor.Arrow(n)) => typeArguments(1)
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
-  }
-
-  /**
     * Returns the size of `this` type.
     */
   def size: Int = this match {
@@ -540,14 +530,14 @@ object Type {
   def mkRegex(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Regex, loc)
 
   /**
-    * Returns the True type with the given source location `loc`.
+    * Returns the Pure type with the given source location `loc`.
     */
-  def mkTrue(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Pure, loc)
+  def mkPure(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Pure, loc)
 
   /**
-    * Returns the False type with the given source location `loc`.
+    * Returns the EffUniv type with the given source location `loc`.
     */
-  def mkFalse(loc: SourceLocation): Type = Type.Cst(TypeConstructor.EffUniv, loc)
+  def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.EffUniv, loc)
 
   /**
     * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
@@ -770,8 +760,8 @@ object Type {
     * Returns the type `Complement(tpe0)`.
     */
   def mkComplement(tpe0: Type, loc: SourceLocation): Type = tpe0 match {
-    case Type.Pure => Type.mkFalse(loc)
-    case Type.EffUniv => Type.mkTrue(loc)
+    case Type.Pure => Type.mkEffUniv(loc)
+    case Type.EffUniv => Type.mkPure(loc)
     case _ => Type.Apply(Type.Cst(TypeConstructor.Complement, loc), tpe0, loc)
   }
 

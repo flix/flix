@@ -1372,7 +1372,7 @@ object Kinder {
     * Performs kinding on the given purity, assuming it to be Pure if it is absent.
     */
   private def visitPurityDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe match {
-    case None => Type.mkTrue(SourceLocation.Unknown).toSuccess
+    case None => Type.mkPure(SourceLocation.Unknown).toSuccess
     case Some(t) => visitType(t, Kind.Eff, kenv, taenv, root)
   }
 
@@ -1417,13 +1417,13 @@ object Kinder {
   /**
     * Performs kinding on the given index parameter of the given enum sym under the given kind environment.
     */
-  private def visitIndex(index: ResolvedAst.TypeParam, enum: Symbol.RestrictableEnumSym, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = {
+  private def visitIndex(index: ResolvedAst.TypeParam, `enum`: Symbol.RestrictableEnumSym, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = {
     val (name, sym0, loc) = index match {
       case ResolvedAst.TypeParam.Kinded(kName, kSym, _, kLoc) => (kName, kSym, kLoc)
       case ResolvedAst.TypeParam.Unkinded(uName, uSym, uLoc) => (uName, uSym, uLoc)
     }
 
-    val symVal = visitTypeVarSym(sym0, Kind.CaseSet(enum), kenv, loc)
+    val symVal = visitTypeVarSym(sym0, Kind.CaseSet(`enum`), kenv, loc)
     mapN(symVal) {
       case sym => KindedAst.TypeParam(name, sym, loc)
     }

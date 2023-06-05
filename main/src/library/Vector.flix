@@ -1327,7 +1327,7 @@ mod Vector {
     }
 
     ///
-    /// Build an array of length `len` by applying `f` to the successive indices.
+    /// Build an vector of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef = region rc {
         let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;

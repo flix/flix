@@ -117,6 +117,7 @@ instance Reducible[Nec] {
     override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
     override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(r, l)
+    override pub def toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
@@ -787,6 +788,15 @@ mod Nec {
         let arr = Array.repeat(r, length(c), x);
         forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
         arr
+
+    ///
+    /// Returns the Nec `c` as a vector.
+    ///
+    pub def toVector(c: Nec[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, length(c));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
+        Array.toVector(arr)
+    }
 
     ///
     /// Returns an iterator over `c`.
