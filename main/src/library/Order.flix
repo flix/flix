@@ -364,9 +364,9 @@ instance Order[BigInt] {
     pub def compare(x: BigInt, y: BigInt): Comparison =
         import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
         match x `compareTo` y {
-            case -1 => Comparison.LessThan
+            case z if z < 0 => Comparison.LessThan
             case 0 => Comparison.EqualTo
-            case _ => Comparison.GreaterThan
+            case z if z > 0 => Comparison.GreaterThan
         }
 
 }
