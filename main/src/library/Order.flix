@@ -258,7 +258,7 @@ instance Order[BigDecimal] {
         match x `compareTo` y {
             case z if z < 0 => Comparison.LessThan
             case 0 => Comparison.EqualTo
-            case z if z > 0 => Comparison.GreaterThan
+            case _ => Comparison.GreaterThan
         }
 
 }
