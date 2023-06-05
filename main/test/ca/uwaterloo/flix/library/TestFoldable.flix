@@ -190,6 +190,23 @@ mod TestFoldable {
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
         runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (5 :: 4 :: 3 :: 2 :: 1 :: Nil, 15)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def length01(): Bool =
+        Foldable.length(Nil: List[String]) == 0
+
+    @test
+    def length02(): Bool =
+        Foldable.length("a" :: "b" :: Nil) == 2
+
+    @test
+    def length03(): Bool =
+        Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil) == 4
+
     /////////////////////////////////////////////////////////////////////////////
     // forEachM                                                                //
     /////////////////////////////////////////////////////////////////////////////
