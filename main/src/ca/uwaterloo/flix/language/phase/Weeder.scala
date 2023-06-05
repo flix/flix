@@ -2826,6 +2826,8 @@ object Weeder {
     case _: ParsedAst.Type.Ambiguous => ().toSuccess
     case _: ParsedAst.Type.True => ().toSuccess
     case _: ParsedAst.Type.False => ().toSuccess
+    case _: ParsedAst.Type.Pure => ().toSuccess
+    case _: ParsedAst.Type.Impure => ().toSuccess
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
