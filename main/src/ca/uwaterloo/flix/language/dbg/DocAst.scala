@@ -99,9 +99,7 @@ object DocAst {
 
     case class Stm(d1: Expression, d2: Expression) extends LetBinder
 
-    case class Let(v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
-
-    case class LetRec(v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
+    case class LetBind(kw: String, v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
 
     case class Scope(v: Expression, d: Expression) extends Atom
 
@@ -123,6 +121,15 @@ object DocAst {
 
     val Unknown: Expression =
       Meta("unknown exp")
+
+    def Let(v: Expression, tpe: Option[Type], bind: Expression, body: Expression): Expression =
+      LetBind("let", v, tpe, bind, body)
+
+    def LetRec(v: Expression, tpe: Option[Type], bind: Expression, body: Expression): Expression =
+      LetBind("letrec", v, tpe, bind, body)
+
+    def LetVal(v: Expression, tpe: Option[Type], bind: Expression, body: Expression): Expression =
+      LetBind("letval", v, tpe, bind, body)
 
     def Var(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString)

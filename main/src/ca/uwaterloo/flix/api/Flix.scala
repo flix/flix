@@ -80,9 +80,13 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   def getParserAst: ParsedAst.Root = cachedParserAst
+
   def getWeederAst: WeededAst.Root = cachedWeederAst
+
   def getKinderAst: KindedAst.Root = cachedKinderAst
+
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
+
   def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
@@ -107,21 +111,37 @@ class Flix {
   private var cachedEraserAst: ErasedAst.Root = ErasedAst.empty
 
   def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
+
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
+
   def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
+
   def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
+
   def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
+
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
+
   def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
+
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
+
   def getTailrecAst: LiftedAst.Root = cachedTailrecAst
+
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
+
   def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
+
   def getReducerAst: ReducedAst.Root = cachedReducerAst
+
   def getControlSeparatorAst: CallByValueAst.Root = cachedControlSeparatorAst
+
   def getUndoAst: ReducedAst.Root = cachedUndoAst
+
   def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
+
   def getMonoTyperAst: MonoTypedAst.Root = cachedMonoTyperAst
+
   def getEraserAst: ErasedAst.Root = cachedEraserAst
 
   /**
@@ -624,6 +644,9 @@ class Flix {
     result
   } catch {
     case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: java.lang.VerifyError =>
       CrashHandler.handleCrash(ex)(this)
       throw ex
   }

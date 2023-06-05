@@ -59,7 +59,7 @@ object CallByValueAstPrinter {
     case Stmt.IfThenElse(exp, stmt1, stmt2, _, _, _) => DocAst.Expression.IfThenElse(print(exp), print(stmt1), print(stmt2))
     case Stmt.Branch(stmt, branches, _, _, _) => DocAst.Expression.Branch(print(stmt), MapOps.mapValues(branches)(print))
     case Stmt.JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
-    case Stmt.LetVal(sym, stmt1, stmt2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(stmt1.tpe)), print(stmt1), print(stmt2))
+    case Stmt.LetVal(sym, stmt1, stmt2, _, _, _) => DocAst.Expression.LetVal(printVarSym(sym), Some(TypePrinter.print(stmt1.tpe)), print(stmt1), print(stmt2))
     case Stmt.LetRec(varSym, _, _, exp, stmt, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp.tpe)), print(exp), print(stmt))
     case Stmt.Scope(sym, stmt, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(stmt))
     case Stmt.ApplyClo(exp, exps, CallType.NonTailCall, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))

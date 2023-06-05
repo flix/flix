@@ -127,5 +127,4 @@ object SimplifiedAstPrinter {
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
     DocAst.Expression.Var(sym)
 
-
 }

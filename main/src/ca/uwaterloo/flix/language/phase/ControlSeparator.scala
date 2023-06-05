@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
-import ca.uwaterloo.flix.language.ast.{Ast, CallByValueAst, Purity, ReducedAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, CallByValueAst, ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object ControlSeparator {
@@ -116,7 +116,7 @@ object ControlSeparator {
   sealed trait Binding
 
   object Binding {
-    case class Val(sym: Symbol.VarSym, binding: CallByValueAst.Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Binding
+    case class Val(sym: Symbol.VarSym, binding: CallByValueAst.Stmt) extends Binding
   }
 
   /**
@@ -131,7 +131,7 @@ object ControlSeparator {
     def bind(stmt: CallByValueAst.Stmt)(implicit flix: Flix): CallByValueAst.Expr.Var = {
       val loc = SourceLocation.Unknown
       val sym = Symbol.freshVarSym("cbv", Ast.BoundBy.Let, loc)
-      l = Binding.Val(sym, stmt, stmt.tpe, stmt.purity, stmt.loc.asSynthetic) :: l
+      l = Binding.Val(sym, stmt) :: l
       CallByValueAst.Expr.Var(sym, stmt.tpe, stmt.loc)
     }
 
@@ -147,8 +147,8 @@ object ControlSeparator {
 
     def reifyBindings(stmt: CallByValueAst.Stmt, bindings: Stack[Binding]): CallByValueAst.Stmt = {
       bindings.foldLeft(stmt) {
-        case (acc, Binding.Val(sym, binding, tpe, purity, loc)) =>
-          CallByValueAst.Stmt.LetVal(sym, binding, acc, tpe, purity, loc)
+        case (acc, Binding.Val(sym, binding)) =>
+          CallByValueAst.Stmt.LetVal(sym, binding, acc, stmt.tpe, stmt.purity, binding.loc.asSynthetic)
       }
     }
 

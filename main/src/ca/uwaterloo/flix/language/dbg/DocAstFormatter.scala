@@ -154,9 +154,7 @@ object DocAstFormatter {
         aux(d1) :: text("..") :: aux(d2)
       case s: Stm =>
         formatLetBlock(s, inBlock)
-      case l: Let =>
-        formatLetBlock(l, inBlock)
-      case l: LetRec =>
+      case l: LetBind =>
         formatLetBlock(l, inBlock)
       case Scope(v, d) =>
         val bodyf = aux(d, paren = false, inBlock = true)
@@ -238,12 +236,9 @@ object DocAstFormatter {
     val bindersf = binders.map {
       case Stm(d1, _) =>
         aux(d1, paren = false)
-      case Let(v, tpe, bind, _) =>
+      case LetBind(kw, v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
-        text("let") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
-      case LetRec(v, tpe, bind, _) =>
-        val bindf = aux(bind, paren = false)
-        text("letrec") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
+        text("kw") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
     }
     val delimitedBinders = semiSep(bindersf :+ bodyf)
     if (inBlock) group(delimitedBinders)
@@ -277,9 +272,7 @@ object DocAstFormatter {
       d0 match {
         case s@Stm(_, d2) =>
           chase(d2, s :: acc)
-        case l@Let(_, _, _, body) =>
-          chase(body, l :: acc)
-        case l@LetRec(_, _, _, body) =>
+        case l@LetBind(_, _, _, _, body) =>
           chase(body, l :: acc)
         case other => (acc.reverse, other)
       }
