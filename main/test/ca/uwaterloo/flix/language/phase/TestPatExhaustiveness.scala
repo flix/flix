@@ -353,4 +353,21 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
+
+  test("Pattern.Guard.01") {
+    val input =
+      """
+        |enum E {
+        |    case E1
+        |    case E2
+        |}
+        |
+        |def f(): Int32 = match E.E1 {
+        |    case E.E1 if true => 123
+        |    case E.E2 => 456
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
 }

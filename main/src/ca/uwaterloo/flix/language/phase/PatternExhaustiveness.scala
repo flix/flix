@@ -294,7 +294,10 @@ object PatternExhaustiveness {
     * @return
     */
   private def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): List[NonExhaustiveMatchError] = {
-    findNonMatchingPat(rules.map(r => List(r.pat)), 1, root) match {
+    // Filter down to the unguarded rules.
+    // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
+    val unguardedRules = rules.filter(r => r.guard.isEmpty)
+    findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, root) match {
       case Exhaustive => Nil
       case NonExhaustive(ctors) => List(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
