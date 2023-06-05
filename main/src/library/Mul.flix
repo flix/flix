@@ -33,7 +33,9 @@ instance Mul[Float64] {
 }
 
 instance Mul[BigDecimal] {
-    pub def mul(x: BigDecimal, y: BigDecimal): BigDecimal = $BIGDECIMAL_MUL$(x, y)
+    pub def mul(x: BigDecimal, y: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.multiply(BigDecimal): BigDecimal \ {};
+        x `multiply` y
 }
 
 instance Mul[Int8] {
