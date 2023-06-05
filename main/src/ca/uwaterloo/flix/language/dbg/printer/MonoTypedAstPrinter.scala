@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.MonoTypedAst.Expr._
 import ca.uwaterloo.flix.language.ast.MonoTypedAst.Stmt
 import ca.uwaterloo.flix.language.ast.{MonoTypedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.util.collection.MapOps
 
 object MonoTypedAstPrinter {
 
@@ -31,9 +32,10 @@ object MonoTypedAstPrinter {
     val enums = root.enums.values.map {
       case MonoTypedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case MonoTypedAst.Case(sym, _, _) => DocAst.Case(sym)
+          case MonoTypedAst.Case(sym, tpe, _) =>
+            DocAst.Case(sym, MonoTypePrinter.print(tpe))
         }.toList
-        DocAst.Enum(ann, mod, sym, cases)
+        DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
       case MonoTypedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
@@ -62,7 +64,7 @@ object MonoTypedAstPrinter {
     case ApplyDef(sym, exps, NonTailCall, _, _) => DocAst.Expression.ApplyDef(sym, exps.map(print))
     case ApplySelfTail(sym, _, actuals, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
+    case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))

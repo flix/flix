@@ -75,7 +75,7 @@ object Verifier {
     }
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
-      case None => throw InternalCompilerException(s"Unknown variable sym: '$sym", loc)
+      case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", loc)
       case Some(tpe2) =>
         checkEq(tpe1, tpe2, loc)
     }
@@ -99,8 +99,31 @@ object Verifier {
           case _ => tpe // TODO: VERIFIER: Add rest
 
         }
+        case AtomicOp.Tag(sym) =>
+          root.enums.get(sym.enumSym) match {
+            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
+            case Some(e) => e.cases.get(sym) match {
+              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
+              case Some(caze) =>
+                val List(t) = ts
+                check(expected = caze.tpe)(t, loc)
+                check(expected = e.tpe)(tpe, loc)
+                tpe
+            }
+          }
+        case AtomicOp.Untag(sym) =>
+          root.enums.get(sym.enumSym) match {
+            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
+            case Some(e) => e.cases.get(sym) match {
+              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
+              case Some(caze) =>
+                val List(t) = ts
+                check(expected = e.tpe)(t, loc)
+                check(expected = caze.tpe)(tpe, loc)
+                tpe
+            }
+          }
         case _ => tpe // TODO: VERIFIER: Add rest
-
       }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, loc) =>

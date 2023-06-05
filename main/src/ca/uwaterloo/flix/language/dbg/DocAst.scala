@@ -26,9 +26,11 @@ object DocAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expression.Ascription], resType: Type, body: Expression)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: List[Case])
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
-  case class Case(sym: Symbol.CaseSym)
+  case class Case(sym: Symbol.CaseSym, tpe: Type)
+
+  case class TypeParam(sym: Symbol.KindedTypeVarSym)
 
   case class Program(enums: List[Enum], defs: List[Def])
 
@@ -81,6 +83,10 @@ object DocAst {
 
     case class Branch(d: Expression, branches: Map[Symbol.LabelSym, Expression]) extends Atom
 
+    case class Match(d: Expression, branches: List[(Expression, Option[Expression], Expression)]) extends Atom
+
+    case class TypeMatch(d: Expression, branches: List[(Expression, Type, Expression)]) extends Atom
+
     /** e.g. `r.x` */
     case class Dot(d1: Expression, d2: Expression) extends Atom
 
@@ -88,6 +94,10 @@ object DocAst {
     case class DoubleDot(d1: Expression, d2: Expression) extends Atom
 
     case class TryCatch(d: Expression, rules: List[(Symbol.VarSym, Class[_], Expression)]) extends Atom
+
+    case class TryWith(d1: Expression, eff: Symbol.EffectSym, rules: List[(Symbol.OpSym, List[Ascription], Expression)]) extends Atom
+
+    case class Stm(d1: Expression, d2: Expression) extends LetBinder
 
     case class Let(v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
 
@@ -98,6 +108,8 @@ object DocAst {
     case class App(f: Expression, args: List[Expression]) extends Atom
 
     case class SquareApp(f: Expression, args: List[Expression]) extends Atom
+
+    case class DoubleSquareApp(f: Expression, args: List[Expression]) extends Atom
 
     case class Assign(d1: Expression, d2: Expression) extends Composite
 
@@ -115,9 +127,15 @@ object DocAst {
     def Var(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString)
 
+    val Wild: Expression =
+      AsIs("_")
+
     /** e.g. `x_2` */
     def VarWithOffset(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString + "_" + sym.getStackOffset.toString)
+
+    def Hole(sym: Symbol.HoleSym): Expression =
+      AsIs("?" + sym.toString)
 
     def HoleError(sym: Symbol.HoleSym): Expression =
       AsIs(sym.toString)
@@ -145,7 +163,13 @@ object DocAst {
     def Deref(d: Expression): Expression =
       Keyword("deref", d)
 
+    def Discard(d: Expression): Expression =
+      Keyword("discard", d)
+
     def Def(sym: Symbol.DefnSym): Expression =
+      AsIs(sym.toString)
+
+    def Sig(sym: Symbol.SigSym): Expression =
       AsIs(sym.toString)
 
     def ArrayNew(d1: Expression, d2: Expression): Expression =
@@ -162,6 +186,12 @@ object DocAst {
 
     def ArrayStore(d1: Expression, index: Expression, d2: Expression): Expression =
       Assign(SquareApp(d1, List(index)), d2)
+
+    def VectorLit(ds: List[Expression]): Expression =
+      DoubleSquareApp(AsIs(""), ds)
+
+    def VectorLoad(d1: Expression, index: Expression): Expression =
+      DoubleSquareApp(d1, List(index))
 
     def Lazy(d: Expression): Expression =
       Keyword("lazy", d)
@@ -196,6 +226,9 @@ object DocAst {
     def Cast(d: Expression, tpe: Type): Expression =
       DoubleKeyword("unsafe_cast", d, "as", Right(tpe))
 
+    def Without(d: Expression, sym: Symbol.EffectSym): Expression =
+      Binary(d, "without", AsIs(sym.toString))
+
     def Cst(cst: Ast.Constant): Expression =
       printer.ConstantPrinter.print(cst)
 
@@ -213,6 +246,12 @@ object DocAst {
 
     def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
       App(AsIs(sym.toString), ds)
+
+    def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
+      Keyword("do", App(AsIs(sym.toString), ds))
+
+    def Resume(d: Expression): Expression =
+      App(AsIs("resume"), List(d))
 
     def JavaInvokeMethod(m: Method, d: Expression, ds: List[Expression]): Expression =
       App(DoubleDot(d, AsIs(m.getName)), ds)
@@ -246,6 +285,12 @@ object DocAst {
 
     def Regex(p: java.util.regex.Pattern): Expression =
       App(AsIs("Regex"), List(AsIs(s""""${p.toString}"""")))
+
+    val Absent: Expression =
+      AsIs("Absent")
+
+    def Present(d: Expression): Expression =
+      App(AsIs("Present"), List(d))
 
   }
 
