@@ -66,7 +66,6 @@ object OperatorPrinter {
          Float32Op.Eq |
          CharOp.Eq |
          Float64Op.Eq |
-         BigDecimalOp.Eq |
          Int8Op.Eq |
          Int16Op.Eq |
          Int32Op.Eq |
@@ -76,7 +75,6 @@ object OperatorPrinter {
          CharOp.Neq |
          Float32Op.Neq |
          Float64Op.Neq |
-         BigDecimalOp.Neq |
          Int8Op.Neq |
          Int16Op.Neq |
          Int32Op.Neq |
@@ -85,7 +83,6 @@ object OperatorPrinter {
     case CharOp.Lt |
          Float32Op.Lt |
          Float64Op.Lt |
-         BigDecimalOp.Lt |
          Int8Op.Lt |
          Int16Op.Lt |
          Int32Op.Lt |
@@ -93,7 +90,6 @@ object OperatorPrinter {
     case CharOp.Le |
          Float32Op.Le |
          Float64Op.Le |
-         BigDecimalOp.Le |
          Int8Op.Le |
          Int16Op.Le |
          Int32Op.Le |
@@ -101,7 +97,6 @@ object OperatorPrinter {
     case CharOp.Gt |
          Float32Op.Gt |
          Float64Op.Gt |
-         BigDecimalOp.Gt |
          Int8Op.Gt |
          Int16Op.Gt |
          Int32Op.Gt |
@@ -109,14 +104,12 @@ object OperatorPrinter {
     case CharOp.Ge |
          Float32Op.Ge |
          Float64Op.Ge |
-         BigDecimalOp.Ge |
          Int8Op.Ge |
          Int16Op.Ge |
          Int32Op.Ge |
          Int64Op.Ge => ge
     case Float32Op.Add |
          Float64Op.Add |
-         BigDecimalOp.Add |
          Int8Op.Add |
          Int16Op.Add |
          Int32Op.Add |
@@ -125,21 +118,18 @@ object OperatorPrinter {
          StringOp.Concat => plus
     case Float32Op.Sub |
          Float64Op.Sub |
-         BigDecimalOp.Sub |
          Int8Op.Sub |
          Int16Op.Sub |
          Int32Op.Sub |
          Int64Op.Sub => minus
     case Float32Op.Mul |
          Float64Op.Mul |
-         BigDecimalOp.Mul |
          Int8Op.Mul |
          Int16Op.Mul |
          Int32Op.Mul |
          Int64Op.Mul => mul
     case Float32Op.Div |
          Float64Op.Div |
-         BigDecimalOp.Div |
          Int8Op.Div |
          Int16Op.Div |
          Int32Op.Div |
@@ -152,7 +142,6 @@ object OperatorPrinter {
          Int64Op.Exp => exp
     case Float32Op.Neg |
          Float64Op.Neg |
-         BigDecimalOp.Neg |
          Int8Op.Neg |
          Int16Op.Neg |
          Int32Op.Neg |

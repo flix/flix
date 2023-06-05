@@ -33,7 +33,9 @@ instance Neg[Float64] {
 }
 
 instance Neg[BigDecimal] {
-    pub def neg(x: BigDecimal): BigDecimal = $BIGDECIMAL_NEG$(x)
+    pub def neg(x: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.negate(): BigDecimal \ {};
+        negate(x)
 }
 
 instance Neg[Int8] {
