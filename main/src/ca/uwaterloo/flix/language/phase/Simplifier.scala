@@ -341,7 +341,6 @@ object Simplifier {
         case Some(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
         case Some(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
         case Some(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
-        case Some(TypeConstructor.BigDecimal) => SemanticOperator.BigDecimalOp.Eq
         case Some(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
         case Some(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
         case Some(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
@@ -724,7 +723,7 @@ object Simplifier {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
       case SimplifiedAst.Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
-      case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+      case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
     }

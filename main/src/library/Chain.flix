@@ -786,6 +786,15 @@ mod Chain {
         }
 
     ///
+    /// Returns the chain `c` as a vector.
+    ///
+    pub def toVector(c: Chain[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, length(c));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns an iterator over `c`.
     ///
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r =

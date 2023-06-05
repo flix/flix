@@ -1199,6 +1199,29 @@ mod TestNec {
         Array.sameElements(a, Array#{3, 2, 3} @ r)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool =
+        let c = singleton(1);
+        Nec.toVector(c) == Vector#{1}
+
+    @test
+    def toVector02(): Bool =
+        let c = necOf2(1, 2);
+        Nec.toVector(c) == Vector#{1, 2}
+
+    @test
+    def toVector03(): Bool =
+        let c = necOf3(1, 2, 3);
+        Nec.toVector(c) == Vector#{1, 2, 3}
+
+    @test
+    def toVector04(): Bool =
+        let c = necOf3(3, 2, 3);
+        Nec.toVector(c) == Vector#{3, 2, 3}
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                              //

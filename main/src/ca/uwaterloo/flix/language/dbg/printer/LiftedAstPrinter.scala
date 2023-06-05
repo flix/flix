@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.util.collection.MapOps
 
 object LiftedAstPrinter {
 
@@ -30,17 +31,18 @@ object LiftedAstPrinter {
     val enums = root.enums.values.map {
       case LiftedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case LiftedAst.Case(sym, _, _) => DocAst.Case(sym)
+          case LiftedAst.Case(sym, tpe, _) =>
+            DocAst.Case(sym, TypePrinter.print(tpe))
         }.toList
-        DocAst.Enum(ann, mod, sym, cases)
+        DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
-      case LiftedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
+      case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
-          formals.map(printFormalParam),
+          (cparams ++ fparams).map(printFormalParam),
           TypePrinter.print(tpe),
           print(exp)
         )
@@ -63,7 +65,7 @@ object LiftedAstPrinter {
     case Unary(sop, exp, _, _, _) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
     case Binary(sop, exp1, exp2, _, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
+    case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))

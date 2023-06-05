@@ -918,6 +918,49 @@ mod TestMutDeque {
         Array.sameElements(a, Array#{4, 3, 1, 2} @ r)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region r {
+        let d = MutDeque.new(r): MutDeque[Int32, _];
+
+        let v = MutDeque.toVector(d);
+        v == Vector#{}
+    }
+
+    @test
+    def toVector02(): Bool = region r {
+        let d = MutDeque.new(r);
+        MutDeque.pushBack(1, d);
+
+        let v = MutDeque.toVector(d);
+        v == Vector#{1}
+    }
+
+    @test
+    def toVector03(): Bool = region r {
+        let d = MutDeque.new(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+
+        let v = MutDeque.toVector(d);
+        v == Vector#{1, 2}
+    }
+
+    @test
+    def toVector04(): Bool = region r {
+        let d = MutDeque.new(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushFront(3, d);
+        MutDeque.pushFront(4, d);
+
+        let v = MutDeque.toVector(d);
+        v == Vector#{4, 3, 1, 2}
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //

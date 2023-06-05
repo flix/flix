@@ -32,7 +32,7 @@ object Verifier {
   }
 
   private def visitDef(decl: Def)(implicit root: Root): Unit = {
-    val env = decl.formals.foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
+    val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
     try {

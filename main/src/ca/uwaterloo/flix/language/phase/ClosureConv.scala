@@ -272,7 +272,7 @@ object ClosureConv {
 
     case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.LambdaClosure(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
+    case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
@@ -288,14 +288,13 @@ object ClosureConv {
     val fvs = filterBoundParams(freeVars(exp), fparams).toList
 
     // Step 2: Convert the free variables into a new parameter list and substitution.
-    val (extraParams, subst) = getFormalParamsAndSubst(fvs, loc)
-    val newParams = extraParams ++ fparams
+    val (cloParams, subst) = getFormalParamsAndSubst(fvs, loc)
 
     // Step 3: Replace every old symbol by its new symbol in the body of the lambda.
     val newBody = visitExp(applySubst(exp, subst))
 
     // Step 4: Put everything back together.
-    Expression.LambdaClosure(newParams, fvs, newBody, tpe, loc)
+    Expression.LambdaClosure(cloParams, fparams, fvs, newBody, tpe, loc)
   }
 
   /**
@@ -434,7 +433,7 @@ object ClosureConv {
 
     case Expression.MatchError(_, _) => SortedSet.empty
 
-    case Expression.LambdaClosure(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
+    case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
@@ -489,9 +488,9 @@ object ClosureConv {
 
       case Expression.Closure(_, _, _) => e
 
-      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
+      case Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp).asInstanceOf[Expression.Lambda]
-        Expression.LambdaClosure(fparams, freeVars, e, tpe, loc)
+        Expression.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
 
       case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)

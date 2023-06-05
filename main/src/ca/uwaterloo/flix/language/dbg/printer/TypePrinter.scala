@@ -27,12 +27,19 @@ object TypePrinter {
     */
   def print(tpe: Type): DocAst.Type = {
     // Temporarily use existing type formatting
-    // try to unpack one arrow type only for the sake of signatures
+    // try to unpack one arrow type for the sake of signatures
+    // try to unpack one tuple type for the sake of enums
+    // try to unpack one unit type for the sake of enums
     tpe.baseType match {
       case Type.Cst(TypeConstructor.Arrow(_), _) =>
         val args = tpe.arrowArgTypes
         val res = tpe.arrowResultType
         DocAst.Type.Arrow(args.map(printHelper), printHelper(res))
+      case Type.Cst(TypeConstructor.Tuple(_), _) =>
+        val args = tpe.typeArguments
+        DocAst.Type.Tuple(args.map(printHelper))
+      case Type.Cst(TypeConstructor.Unit, _) =>
+        DocAst.Type.Unit
       case _ => printHelper(tpe)
     }
   }

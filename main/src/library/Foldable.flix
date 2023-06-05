@@ -199,6 +199,15 @@ pub class Foldable[t : Type -> Type] {
     }
 
     ///
+    /// Returns `t` as a vector.
+    ///
+    pub def toVector(t: t[a]): Vector[a] = region rc {
+        let l = MutList.new(rc);
+        Foldable.forEach(a -> MutList.push!(a, l), t);
+        MutList.toVector(l)
+    }
+
+    ///
     /// Returns `t` as a `MutDeque`.
     ///
     pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ r =
