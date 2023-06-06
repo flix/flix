@@ -861,7 +861,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = {
       def SomeTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {
-        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, pur: Option[ParsedAst.Type]) => Some((tpe, pur)))
+        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, eff: Option[ParsedAst.Type]) => Some((tpe, eff)))
       }
 
       def NoTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {

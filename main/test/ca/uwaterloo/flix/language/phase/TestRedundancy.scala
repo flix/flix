@@ -1361,7 +1361,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantPurityCast](result)
+    expectError[RedundancyError.RedundantEffectCast](result)
   }
 
   test("RedundantPurityCast.02") {
@@ -1373,7 +1373,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantPurityCast](result)
+    expectError[RedundancyError.RedundantEffectCast](result)
   }
 
   test("RedundantEffectCast.01") {

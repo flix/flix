@@ -40,7 +40,7 @@ object HoleCompletion {
       case TypedAst.Def(sym, spec, _) =>
         val lastArrow = Type.mkArrowWithEffect(
           spec.fparams.last.tpe,
-          spec.pur,
+          spec.eff,
           spec.retTpe,
           SourceLocation.Unknown
         )

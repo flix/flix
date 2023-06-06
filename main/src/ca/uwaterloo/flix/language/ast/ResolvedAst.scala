@@ -74,7 +74,7 @@ object ResolvedAst {
     case class Op(sym: Symbol.OpSym, spec: ResolvedAst.Spec) extends Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, pur: Option[UnkindedType], tconstrs: List[ResolvedAst.TypeConstraint], econstrs: List[ResolvedAst.EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, eff: Option[UnkindedType], tconstrs: List[ResolvedAst.TypeConstraint], econstrs: List[ResolvedAst.EqualityConstraint], loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -342,7 +342,7 @@ object ResolvedAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tpe: UnkindedType, pur: Option[UnkindedType], loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tpe: UnkindedType, eff: Option[UnkindedType], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 

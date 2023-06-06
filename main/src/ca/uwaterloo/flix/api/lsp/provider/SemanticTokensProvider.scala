@@ -206,12 +206,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, pur, tconstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, _) =>
       val st1 = visitTypeParams(tparams)
       val st2 = visitFormalParams(fparams)
       val st3 = tconstrs.iterator.flatMap(visitTypeConstraint)
       val st4 = visitType(retTpe)
-      val st5 = visitType(pur)
+      val st5 = visitType(eff)
       st1 ++ st2 ++ st3 ++ st4 ++ st5
   }
 
@@ -365,10 +365,10 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expression.RelationalChoose(exps, rules, tpe, pur, loc) =>
+    case Expression.RelationalChoose(exps, rules, tpe, eff, loc) =>
       Iterator.empty // TODO: Choose expression.
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, loc) =>
+    case Expression.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       Iterator.empty // TODO RESTR-VARS
 
     case Expression.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _) =>
@@ -785,8 +785,8 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given JvmMethod `method`
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
-    case TypedAst.JvmMethod(_, fparams, exp, tpe, pur, _) =>
-      visitFormalParams(fparams) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(pur)
+    case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, _) =>
+      visitFormalParams(fparams) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
   }
 
   /**
