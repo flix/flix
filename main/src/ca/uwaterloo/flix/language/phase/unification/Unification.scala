@@ -96,6 +96,8 @@ object Unification {
         BoolUnification.unify(tpe1, tpe2, renv)
       }
 
+    case (Kind.Bool, Kind.Bool) => SimpleBoolUnification.unify(tpe1, tpe2, renv)
+
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       val cases = sym1.universe
       CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1).map((_, Nil)) // TODO ASSOC-TYPES support in sets
@@ -349,11 +351,36 @@ object Unification {
   /**
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
+    // TODO EFF-MIGRATION rename to unifyEffM
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)
       BoolUnification.unify(bf1, bf2, renv) match {
+        case Result.Ok((s1, econstrs1)) =>
+          val subst = s1 @@ s
+          val e = econstrs1 ++ econstrs
+          Ok((subst, e, renv, subst(tpe1))) // TODO ASSOC-TYPES need to apply subst?
+
+        case Result.Err(e) => e match {
+          case UnificationError.MismatchedBools(baseType1, baseType2) =>
+            Err(TypeError.MismatchedBools(baseType1, baseType2, tpe1, tpe2, renv, loc))
+
+          case _ => throw InternalCompilerException(s"Unexpected error: '$e'.", loc)
+        }
+      }
+    }
+    )
+  }
+
+  /**
+    * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
+    */
+  def unifySimpleBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv) => {
+      val bf1 = s(tpe1)
+      val bf2 = s(tpe2)
+      SimpleBoolUnification.unify(bf1, bf2, renv) match {
         case Result.Ok((s1, econstrs1)) =>
           val subst = s1 @@ s
           val e = econstrs1 ++ econstrs
