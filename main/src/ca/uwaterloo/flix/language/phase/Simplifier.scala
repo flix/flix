@@ -156,8 +156,8 @@ object Simplifier {
 
       case LoweredAst.Expression.ArrayLength(base, _, loc) =>
         val b = visitExp(base)
-        val effity = b.effity
-        SimplifiedAst.Expression.ArrayLength(b, Type.Int32, effity, loc)
+        val purity = b.purity
+        SimplifiedAst.Expression.ArrayLength(b, Type.Int32, purity, loc)
 
       case LoweredAst.Expression.VectorLit(exps, tpe, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
@@ -173,7 +173,7 @@ object Simplifier {
       case LoweredAst.Expression.VectorLength(exp, loc) =>
         // Note: We simplify Vectors to Arrays.
         val e = visitExp(exp)
-        val eff = e.effity
+        val eff = e.purity
         SimplifiedAst.Expression.ArrayLength(e, Type.Int32, eff, loc)
 
       case LoweredAst.Expression.Ref(exp, _, tpe, eff, loc) =>
