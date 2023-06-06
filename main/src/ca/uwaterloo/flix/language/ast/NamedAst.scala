@@ -66,7 +66,7 @@ object NamedAst {
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, pur: Option[NamedAst.Type], tconstrs: List[NamedAst.TypeConstraint], econstrs: List[NamedAst.EqualityConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, eff: Option[NamedAst.Type], tconstrs: List[NamedAst.TypeConstraint], econstrs: List[NamedAst.EqualityConstraint], loc: SourceLocation)
 
 
   sealed trait UseOrImport {
@@ -337,7 +337,7 @@ object NamedAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
-    case class Arrow(tparams: List[NamedAst.Type], pur: Option[NamedAst.Type], tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(tparams: List[NamedAst.Type], eff: Option[NamedAst.Type], tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
@@ -357,7 +357,7 @@ object NamedAst {
 
     case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Empty(loc: SourceLocation) extends NamedAst.Type
+    case class Pure(loc: SourceLocation) extends NamedAst.Type
 
     case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends NamedAst.Type
 
@@ -412,7 +412,7 @@ object NamedAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, tpe: NamedAst.Type, pur: Option[NamedAst.Type], loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, tpe: NamedAst.Type, eff: Option[NamedAst.Type], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
 

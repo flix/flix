@@ -38,7 +38,7 @@ sealed trait UnkindedType {
     case t: UnkindedType.UnappliedAssocType => t
     case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
-    case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
+    case UnkindedType.Arrow(eff, arity, loc) => UnkindedType.Arrow(eff.map(_.map(f)), arity, loc)
     case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(tpe.map(f), loc)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
@@ -83,7 +83,7 @@ sealed trait UnkindedType {
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
-    case UnkindedType.Arrow(pur, _, _) => pur.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
+    case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
     case UnkindedType.CaseComplement(tpe, _) => tpe.definiteTypeVars
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
@@ -190,13 +190,13 @@ object UnkindedType {
   /**
     * A function type.
     */
-  case class Arrow(pur: Option[UnkindedType], arity: Int, loc: SourceLocation) extends UnkindedType {
+  case class Arrow(eff: Option[UnkindedType], arity: Int, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case Arrow(pur2, arity2, _) => pur2 == pur && arity == arity2
+      case Arrow(eff2, arity2, _) => eff2 == eff && arity == arity2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(pur, arity)
+    override def hashCode(): Int = Objects.hash(eff, arity)
   }
 
   /**
@@ -345,8 +345,8 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val pur = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
-    mkApply(UnkindedType.Arrow(pur, 2, loc), List(a, b), loc)
+    val eff = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
+    mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
   /**
@@ -497,7 +497,7 @@ object UnkindedType {
     case tpe: RestrictableEnum => tpe
     case tpe: UnkindedType.CaseSet => tpe
     case Apply(tpe1, tpe2, loc) => Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
-    case Arrow(purAndEff, arity, loc) => Arrow(purAndEff.map(eraseAliases), arity, loc)
+    case Arrow(eff, arity, loc) => Arrow(eff.map(eraseAliases), arity, loc)
     case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(eraseAliases(tpe), loc)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)

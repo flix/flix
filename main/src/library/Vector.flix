@@ -1103,6 +1103,17 @@ mod Vector {
             case Some(i) => slice(start = i + 1, end = length(v), v)
         }
 
+    ///
+    /// Split the vector `v` at the position `n` returning the left and right parts.
+    /// Position `n` is included in the right part.
+    ///
+    /// Example: `splitAt(2, Vector#{1, 2, 3, 4})` returns `(Vector#{1, 2}, Vector#{3, 4})`
+    ///
+    /// Returns `(v, Vector#{})` if `n > length(xs)`.
+    /// Returns `(Vector#{}, v)` if `n < 0`.
+    ///
+    pub def splitAt(n: Int32, v: Vector[a]): (Vector[a], Vector[a]) =
+        (Vector.take(n, v), Vector.drop(n, v))
 
     ///
     /// Partitions `v` into subvectors such that for any two elements `x` and `y` in a subvector, `f(x, y)` is true.
@@ -1327,7 +1338,7 @@ mod Vector {
     }
 
     ///
-    /// Build an array of length `len` by applying `f` to the successive indices.
+    /// Build an vector of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef = region rc {
         let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;

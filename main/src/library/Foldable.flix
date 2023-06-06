@@ -40,6 +40,12 @@ pub class Foldable[t : Type -> Type] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, t: t[a]): b \ ef
 
     ///
+    /// Returns the length of `t`, i.e. the number of times it can be folded over.
+    ///
+    pub def length(t: t[a]): Int32 =
+        Foldable.foldLeft((acc, _) -> acc + 1, 0, t)
+
+    ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool \ ef, t: t[a]): Int32 \ ef =
@@ -196,6 +202,15 @@ pub class Foldable[t : Type -> Type] {
         let l = MutList.new(rc2);
         Foldable.forEach(a -> MutList.push!(a, l), t);
         MutList.toArray(r, l)
+    }
+
+    ///
+    /// Returns `t` as a vector.
+    ///
+    pub def toVector(t: t[a]): Vector[a] = region rc {
+        let l = MutList.new(rc);
+        Foldable.forEach(a -> MutList.push!(a, l), t);
+        MutList.toVector(l)
     }
 
     ///

@@ -246,7 +246,7 @@ object Documentor {
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
       ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
-      ("eff" -> FormatType.formatType(defn0.spec.pur)) ~ // TODO change JSON name to `pur`
+      ("eff" -> FormatType.formatType(defn0.spec.eff)) ~ // TODO change JSON name to `eff`
       ("tcs" -> defn0.spec.declaredScheme.tconstrs.map(visitTypeConstraint)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
@@ -405,7 +405,7 @@ object Documentor {
         ("tparams" -> spec.tparams.map(visitTypeParam)) ~
         ("fparams" -> spec.fparams.map(visitFormalParam)) ~
         ("tpe" -> visitType(spec.retTpe)) ~
-        ("eff" -> visitType(spec.pur)) ~ // TODO change JSON to `pur`
+        ("eff" -> visitType(spec.eff)) ~ // TODO change JSON to `eff`
         ("tcs" -> spec.declaredScheme.tconstrs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(spec.loc))
   }

@@ -157,12 +157,12 @@ object Summary {
   /**
     * Returns `true` if the given `spec` is pure.
     */
-  private def isPure(spec: Spec): Boolean = spec.pur == Type.Pure
+  private def isPure(spec: Spec): Boolean = spec.eff == Type.Pure
 
   /**
     * Returns `true` if the given `spec` is impure.
     */
-  private def isImpure(spec: Spec): Boolean = spec.pur == Type.Impure
+  private def isImpure(spec: Spec): Boolean = spec.eff == Type.Impure
 
   /**
     * Returns `true` if the given `spec` is effect polymorphic (neither pure or impure).

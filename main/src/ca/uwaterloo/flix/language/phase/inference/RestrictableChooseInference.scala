@@ -83,15 +83,15 @@ object RestrictableChooseInference {
           case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym.enumSym
         }
 
-        val enum = root.restrictableEnums(enumSym)
-        val universe = enum.cases.keys.toSet
-        val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
+        val `enum` = root.restrictableEnums(enumSym)
+        val universe = `enum`.cases.keys.toSet
+        val (enumType, indexVar, _) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
         val domSet = dom(rules0)
         val domM = toType(domSet, enumSym, loc.asSynthetic)
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, pur) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -102,13 +102,13 @@ object RestrictableChooseInference {
           _ <- if (domSet != universe) unifySubset(indexVar, domM, enumSym, root, loc.asSynthetic) else InferMonad.point(())
 
           // Γ, x_i: τ_i ⊢ e_i: τ_out
-          (constrss, tpes, purs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
+          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
           resultTconstrs = constrs ::: constrss.flatten
 
           // τ_out
           resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
-          resultPur = Type.mkUnion(pur :: purs, loc)
-        } yield (resultTconstrs, resultTpe, resultPur)
+          resultEff = Type.mkUnion(eff :: effs, loc)
+        } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expression.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
 
@@ -117,12 +117,12 @@ object RestrictableChooseInference {
           case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym.enumSym
         }
 
-        val enum = root.restrictableEnums(enumSym)
+        val `enum` = root.restrictableEnums(enumSym)
 
         // The expected enum types and the index variables.
-        val (enumTypeIn, indexInVar, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-        val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-        val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, enum, loc.asSynthetic)).unzip3
+        val (enumTypeIn, indexInVar, _) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
+        val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
+        val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)).unzip3
         val patternTagTypes = rules0.map(_.pat match {
           case RestrictableChoicePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
         })
@@ -136,7 +136,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, pur) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -147,7 +147,7 @@ object RestrictableChooseInference {
           _ <- unifySubset(indexInVar, domM, enumSym, root, loc.asSynthetic)
 
           // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
-          (constrss, tpes, purs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
+          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
           _ <- traverseM(tpes.zip(bodyTypes)) { case (t1, t2) => unifyTypeM(t1, t2, loc) }
 
           // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
@@ -170,8 +170,8 @@ object RestrictableChooseInference {
 
           // τ_out
           resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
-          resultPur = Type.mkUnion(pur :: purs, loc)
-        } yield (resultTconstrs, resultTpe, resultPur)
+          resultEff = Type.mkUnion(eff :: effs, loc)
+        } yield (resultTconstrs, resultTpe, resultEff)
 
     }
   }
@@ -233,14 +233,14 @@ object RestrictableChooseInference {
       //
       for {
         // Γ ⊢ e: τ
-        (constrs, tpe, pur) <- Typer.inferExp(exp, root)
+        (constrs, tpe, eff) <- Typer.inferExp(exp, root)
         _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
         _ <- traverseM(targs.zip(targsOut)) { case (targ, targOut) => unifyTypeM(targ, targOut, loc) }
         _ <- indexUnification
         _ <- unifyTypeM(enumTypeOut, tvar, loc)
         resultTyp = tvar
-        resultPur = pur
-      } yield (constrs, resultTyp, resultPur)
+        resultEff = eff
+      } yield (constrs, resultTyp, resultEff)
   }
 
   /**
@@ -255,21 +255,21 @@ object RestrictableChooseInference {
     */
   def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
     case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
-      val enum = root.restrictableEnums(sym)
+      val `enum` = root.restrictableEnums(sym)
 
-      val (enumType, indexVar, targs) = instantiatedEnumType(sym, enum, loc.asSynthetic)
-      val kargs = enum.index.sym.kind :: enum.tparams.map(_.sym.kind)
+      val (enumType, indexVar, targs) = instantiatedEnumType(sym, `enum`, loc.asSynthetic)
+      val kargs = `enum`.index.sym.kind :: `enum`.tparams.map(_.sym.kind)
       val kind = Kind.mkArrow(kargs)
 
       for {
         // infer the inner expression type τ
-        (constrs, tpe, pur) <- Typer.inferExp(exp, root)
+        (constrs, tpe, eff) <- Typer.inferExp(exp, root)
 
         // make sure the expression has type EnumType[s][α1 ... αn]
         _ <- expectTypeM(expected = enumType, actual = tpe, loc)
 
         // the new index is s ∪ φ for some free φ
-        openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(enum.sym), loc.asSynthetic), sym, loc)
+        openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(`enum`.sym), loc.asSynthetic), sym, loc)
 
         // the result type is EnumType[s ∪ φ][α1 ... αn]
         resultType = Type.mkApply(
@@ -281,7 +281,7 @@ object RestrictableChooseInference {
         // unify the tvar
         _ <- unifyTypeM(tvar, resultType, loc)
 
-      } yield (constrs, resultType, pur)
+      } yield (constrs, resultType, eff)
 
   }
 

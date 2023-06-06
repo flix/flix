@@ -301,9 +301,9 @@ object FormatType {
         s"$argString -> $retString"
       case SimpleType.PolyArrow(arg, eff, ret) =>
         val argString = delimitFunctionArg(arg)
-        val purString = visit(eff, Mode.Purity)
+        val effString = visit(eff, Mode.Purity)
         val retString = delimit(ret, Mode.Type)
-        s"$argString -> $retString \\ $purString"
+        s"$argString -> $retString \\ $effString"
       case SimpleType.TagConstructor(name) => name
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>

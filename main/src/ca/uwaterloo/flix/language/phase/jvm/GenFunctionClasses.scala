@@ -38,6 +38,8 @@ object GenFunctionClasses {
     // Generate a function class for each def and collect the results in a map.
     //
     ParOps.parAgg(defs, Map.empty[JvmName, JvmClass])({
+      case (macc, (sym, defn)) if defn.cparams.nonEmpty =>
+        macc // do nothing, these defns should be Closure classes
       case (macc, (sym, defn)) =>
         flix.subtask(sym.toString, sample = true)
 
@@ -126,7 +128,7 @@ object GenFunctionClasses {
     m.visitLabel(enterLabel)
 
     // Saving parameters on variable stack
-    for ((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
+    for ((FormalParam(sym, tpe), ind) <- (defn.cparams ++ defn.fparams).zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
