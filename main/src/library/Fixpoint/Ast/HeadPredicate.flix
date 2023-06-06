@@ -44,8 +44,7 @@ mod Fixpoint.Ast {
             match head {
                 case HeadPredicate.HeadAtom(predSym, Denotation.Relational, terms) => "${predSym}(${terms |> Vector.join(", ")})"
                 case HeadPredicate.HeadAtom(predSym, Denotation.Latticenal(_), terms) =>
-                    let n = Vector.length(terms)-1;
-                    let (keyTerms, latticeTerms) = (Vector.take(n, terms), Vector.drop(n, terms));
+                    let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms)-1, terms);
                     match Vector.head(latticeTerms) {
                         case None    => "${predSym}(${keyTerms |> Vector.join(", ")})"
                         case Some(l) => "${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
