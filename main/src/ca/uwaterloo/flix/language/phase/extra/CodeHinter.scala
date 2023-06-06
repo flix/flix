@@ -99,7 +99,7 @@ object CodeHinter {
     case Expression.Cst(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
-      checkPurity(exp.pur, exp.loc) ++ visitExp(exp)
+      checkPurity(exp.eff, exp.loc) ++ visitExp(exp)
 
     case Expression.Apply(exp, exps, _, pur, loc) =>
       val hints0 = (exp, exps) match {

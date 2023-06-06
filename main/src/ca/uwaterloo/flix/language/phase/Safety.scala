@@ -248,7 +248,7 @@ object Safety {
       case Expression.InstanceOf(exp, _, _) =>
         visit(exp)
 
-      case Expression.CheckedCast(cast, exp, tpe, pur, loc) =>
+      case Expression.CheckedCast(cast, exp, tpe, eff, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             val from = Type.eraseAliases(exp.tpe)
@@ -257,8 +257,8 @@ object Safety {
             visit(exp) ++ errors
 
           case CheckedCastType.EffectCast =>
-            val from = Type.eraseAliases(exp.pur)
-            val to = Type.eraseAliases(pur)
+            val from = Type.eraseAliases(exp.eff)
+            val to = Type.eraseAliases(eff)
             val errors = verifyCheckedEffectCast(from, to, renv, loc)
             visit(exp) ++ errors
         }

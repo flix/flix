@@ -83,7 +83,7 @@ sealed trait UnkindedType {
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
-    case UnkindedType.Arrow(pur, _, _) => pur.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
+    case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
     case UnkindedType.CaseComplement(tpe, _) => tpe.definiteTypeVars
     case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
@@ -190,13 +190,13 @@ object UnkindedType {
   /**
     * A function type.
     */
-  case class Arrow(pur: Option[UnkindedType], arity: Int, loc: SourceLocation) extends UnkindedType {
+  case class Arrow(eff: Option[UnkindedType], arity: Int, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case Arrow(pur2, arity2, _) => pur2 == pur && arity == arity2
+      case Arrow(eff2, arity2, _) => eff2 == eff && arity == arity2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(pur, arity)
+    override def hashCode(): Int = Objects.hash(eff, arity)
   }
 
   /**
@@ -345,8 +345,8 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val pur = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
-    mkApply(UnkindedType.Arrow(pur, 2, loc), List(a, b), loc)
+    val eff = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
+    mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
   /**

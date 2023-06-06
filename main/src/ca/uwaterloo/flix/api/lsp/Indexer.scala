@@ -70,12 +70,12 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, pur, tconstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, _) =>
       val idx1 = traverse(tparams)(visitTypeParam)
       val idx2 = traverse(fparams)(visitFormalParam)
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
       val idx4 = visitType(retTpe)
-      val idx5 = visitType(pur)
+      val idx5 = visitType(eff)
       idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
@@ -329,8 +329,8 @@ object Indexer {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Ascribe(exp, tpe, pur, _) =>
-      visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ Index.occurrenceOf(exp0)
+    case Expression.Ascribe(exp, tpe, eff, _) =>
+      visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.InstanceOf(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -395,8 +395,8 @@ object Indexer {
 
     case Expression.NewObject(_, _, _, _, methods, _) =>
       Index.occurrenceOf(exp0) ++ traverse(methods) {
-        case JvmMethod(_, fparams, exp, tpe, pur, _) =>
-          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(pur)
+        case JvmMethod(_, fparams, exp, tpe, eff, _) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
       }
 
     case Expression.NewChannel(exp1, exp2, _, _, _) =>

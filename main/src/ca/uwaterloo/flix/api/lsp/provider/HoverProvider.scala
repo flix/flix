@@ -50,7 +50,7 @@ object HoverProvider {
 
     case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
 
-    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc, current).getOrElse(mkNotFound(uri, pos))
 
     case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current).getOrElse(mkNotFound(uri, pos))
 
@@ -94,16 +94,16 @@ object HoverProvider {
     }
   }
 
-  private def hoverTypeAndEff(tpe: Type, pur: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
+  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
     root.map {
       case r =>
-        val minPur = minimizeType(pur)
+        val minEff = minimizeType(eff)
         val minTpe = minimizeType(tpe)
         val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)(r)
         val markup =
           s"""${mkCurrentMsg(current)}
              |```flix
-             |${formatTypAndEff(minTpe, minPur)}$lowerAndUpperBounds
+             |${formatTypAndEff(minTpe, minEff)}$lowerAndUpperBounds
              |```
              |""".stripMargin
         val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -181,7 +181,7 @@ object HoverProvider {
       pur0 match {
         case Type.Cst(TypeConstructor.Pure, _) => ""
         case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
-        case pur => raw" \ " + FormatType.formatType(pur)
+        case eff => raw" \ " + FormatType.formatType(eff)
       }
     }
 

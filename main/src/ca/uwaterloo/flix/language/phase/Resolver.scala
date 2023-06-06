@@ -529,9 +529,9 @@ object Resolver {
               val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
               mapN(tpeVal, purVal, tconstrsVal, econstrsVal) {
-                case (tpe, pur, tconstrs, econstrs) =>
+                case (tpe, eff, tconstrs, econstrs) =>
                   // add the inherited type constraint to the the list
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstr.toList ::: tconstrs, econstrs, loc)
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstr.toList ::: tconstrs, econstrs, loc)
               }
           }
       }
@@ -644,7 +644,7 @@ object Resolver {
         case Enum(sym, loc) => ().toSuccess
         case RestrictableEnum(sym, loc) => ().toSuccess
         case Apply(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
-        case Arrow(pur, arity, loc) => traverseX(pur.toList)(checkAssocTypes)
+        case Arrow(eff, arity, loc) => traverseX(eff.toList)(checkAssocTypes)
         case CaseSet(cases, loc) => ().toSuccess
         case CaseComplement(tpe, loc) => checkAssocTypes(tpe)
         case CaseUnion(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
@@ -684,7 +684,7 @@ object Resolver {
     * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
@@ -1662,14 +1662,14 @@ object Resolver {
         * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
         */
       def visitJvmMethod(method: NamedAst.JvmMethod, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
-        case NamedAst.JvmMethod(ident, fparams, exp, tpe, pur, loc) =>
+        case NamedAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
           val fparamsVal = resolveFormalParams(fparams, env0, taenv, ns0, root)
           flatMapN(fparamsVal) {
             case fparams =>
               val env = env0 ++ mkFormalParamEnv(fparams)
               val expVal = visitExp(exp, env)
               val tpeVal = resolveType(tpe, Wildness.ForbidWild, env, taenv, ns0, root)
-              val purVal = traverseOpt(pur)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+              val purVal = traverseOpt(eff)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
               mapN(expVal, tpeVal, purVal) {
                 case (e, t, p) => ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
               }
@@ -2308,7 +2308,7 @@ object Resolver {
         val tresultVal = visit(tresult0)
         val purVal = traverseOpt(pur0)(visit)
         mapN(tparamsVal, tresultVal, purVal) {
-          case (tparams, tresult, pur) => mkUncurriedArrowWithEffect(tparams, pur, tresult, loc)
+          case (tparams, tresult, eff) => mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
         }
 
       case NamedAst.Type.Apply(base0, targ0, loc) =>
@@ -2469,8 +2469,8 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
-      case UnkindedType.Arrow(pur, arity, loc) =>
-        val purVal = traverseOpt(pur)(finishResolveType(_, taenv))
+      case UnkindedType.Arrow(eff, arity, loc) =>
+        val purVal = traverseOpt(eff)(finishResolveType(_, taenv))
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(purVal, targsVal) {
           case (p, ts) => UnkindedType.mkApply(UnkindedType.Arrow(p, arity, loc), ts, tpe0.loc)
@@ -3513,7 +3513,7 @@ object Resolver {
     * Creates an environment from the given spec.
     */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc) =>
       mkTypeParamEnv(tparams.tparams) ++ mkFormalParamEnv(fparams)
   }
 

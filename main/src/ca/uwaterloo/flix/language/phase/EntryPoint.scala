@@ -196,7 +196,7 @@ object EntryPoint {
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
-      pur = Type.Impure,
+      eff = Type.Impure,
       tconstrs = Nil,
       loc = SourceLocation.Unknown
     )

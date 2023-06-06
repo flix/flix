@@ -367,16 +367,16 @@ object Kinder {
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      val purAndEffVal = visitPurityDefaultPure(pur0, kenv, taenv, root)
+      val purAndEffVal = visitEffectDefaultPure(pur0, kenv, taenv, root)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, taenv, root))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
 
       mapN(tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
-        case (tparams, fparams, tpe, pur, tconstrs, econstrs) =>
+        case (tparams, fparams, tpe, eff, tconstrs, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, tpe, tpe.loc)
+          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, tconstrs, loc)
+          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, loc)
       }
   }
 
@@ -1248,13 +1248,13 @@ object Kinder {
           }
       }
 
-    case UnkindedType.Arrow(pur0, arity, loc) =>
+    case UnkindedType.Arrow(eff0, arity, loc) =>
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
         case Some(_) =>
-          val purVal = visitPurityDefaultPure(pur0, kenv, taenv, root)
-          mapN(purVal) {
-            case pur => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(pur), loc)
+          val effVal = visitEffectDefaultPure(eff0, kenv, taenv, root)
+          mapN(effVal) {
+            case eff => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
           }
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
@@ -1369,9 +1369,9 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given purity, assuming it to be Pure if it is absent.
+    * Performs kinding on the given effect, assuming it to be Pure if it is absent.
     */
-  private def visitPurityDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe match {
+  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe match {
     case None => Type.mkPure(SourceLocation.Unknown).toSuccess
     case Some(t) => visitType(t, Kind.Eff, kenv, taenv, root)
   }
@@ -1470,10 +1470,10 @@ object Kinder {
     case ResolvedAst.JvmMethod(_, fparams, exp, tpe0, pur0, loc) =>
       val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, taenv, root))
       val expVal = visitExp(exp, kenv, taenv, henv, root)
-      val purVal = visitPurityDefaultPure(pur0, kenv, taenv, root)
+      val effVal = visitEffectDefaultPure(pur0, kenv, taenv, root)
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, taenv, root)
-      mapN(fparamsVal, expVal, tpeVal, purVal) {
-        case (f, e, tpe, pur) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, loc)
+      mapN(fparamsVal, expVal, tpeVal, effVal) {
+        case (f, e, tpe, eff) => KindedAst.JvmMethod(method.ident, f, e, tpe, eff, loc)
       }
   }
 
@@ -1568,8 +1568,8 @@ object Kinder {
       val kind = getClassKind(clazz)
       inferType(arg, kind, kenv0, taenv, root)
 
-    case UnkindedType.Arrow(pur, _, _) =>
-      val purKenvsVal = traverse(pur)(inferType(_, Kind.Eff, kenv0, taenv, root))
+    case UnkindedType.Arrow(eff, _, _) =>
+      val purKenvsVal = traverse(eff)(inferType(_, Kind.Eff, kenv0, taenv, root))
       val argKenvVal = fold(tpe.typeArguments, KindEnv.empty) {
         case (acc, targ) => flatMapN(inferType(targ, Kind.Star, kenv0, taenv, root)) {
           kenv => acc ++ kenv

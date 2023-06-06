@@ -262,8 +262,8 @@ object Typer {
           // We use the declared type, purity, and effect as stand-ins.
           //
           val tpe = spec0.tpe
-          val pur = spec0.pur
-          val exp = TypedAst.Expression.Error(err, tpe, pur)
+          val eff = spec0.eff
+          val exp = TypedAst.Expression.Error(err, tpe, eff)
           val spec = visitSpec(spec0, root, Substitution.empty)
           val impl = TypedAst.Impl(exp, spec.declaredScheme)
           TypedAst.Def(sym, spec, impl)
@@ -296,10 +296,10 @@ object Typer {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): TypedAst.Spec = spec match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, pur, tconstrs, loc) =>
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, tconstrs, loc) =>
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
-      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, tconstrs, loc)
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, loc)
   }
 
   /**
@@ -330,14 +330,14 @@ object Typer {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(_, _, _, _, fparams0, sc, tpe, pur, _, _) =>
+    case KindedAst.Spec(_, _, _, _, fparams0, sc, tpe, eff, _, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.
       ///
       val result = for {
-        (inferredConstrs, inferredTyp, inferredPur) <- inferExpectedExp(exp0, tpe, pur, root)
-      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredPur, inferredTyp, loc))
+        (inferredConstrs, inferredTyp, inferredEff) <- inferExpectedExp(exp0, tpe, eff, root)
+      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp, loc))
 
 
       // Add the assumed constraints to the declared scheme
@@ -563,13 +563,13 @@ object Typer {
 
       case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, loc) =>
         for {
-          (tconstrs, tpe, pur) <- visitExp(exp)
+          (tconstrs, tpe, eff) <- visitExp(exp)
           // result type is whatever is needed for the hole
           resultTpe = tvar
-          // purity type is AT LEAST the inner expression's purity/effect
-          atLeastPur = Type.mkUnion(pur, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
-          resultPur <- unifyTypeM(atLeastPur, pvar, loc)
-        } yield (tconstrs, resultTpe, resultPur)
+          // effect type is AT LEAST the inner expression's effect
+          atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
+          resultEff <- unifyTypeM(atLeastEff, pvar, loc)
+        } yield (tconstrs, resultTpe, resultEff)
 
       case e: KindedAst.Expression.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
 
@@ -674,67 +674,67 @@ object Typer {
             // Default Case: Apply.
             //
             val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-            val lambdaBodyPur = Type.freshVar(Kind.Eff, loc)
+            val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
             for {
-              (constrs1, tpe, pur) <- visitExp(exp)
-              (constrs2, tpes, purs) <- traverseM(exps)(visitExp).map(_.unzip3)
-              _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyType, loc), loc)
+              (constrs1, tpe, eff) <- visitExp(exp)
+              (constrs2, tpes, effs) <- traverseM(exps)(visitExp).map(_.unzip3)
+              _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
               resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
-              resultPur <- unifyEffM(pvar, Type.mkUnion(lambdaBodyPur :: pur :: purs, loc), loc)
+              resultEff <- unifyEffM(pvar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
               _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
-              _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
-            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur)
+              _ <- unbindVar(lambdaBodyEff) // NB: Safe to unbind since the variable is not used elsewhere.
+            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
         }
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
         case SemanticOperator.BoolOp.Not =>
           for {
-            (constrs, tpe, pur) <- visitExp(exp)
+            (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Bool, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Float32Op.Neg =>
           for {
-            (constrs, tpe, pur) <- visitExp(exp)
+            (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Float32, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Float64Op.Neg =>
           for {
-            (constrs, tpe, pur) <- visitExp(exp)
+            (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Float64, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
+            resultPur = eff
           } yield (constrs, resultTyp, resultPur)
 
         case SemanticOperator.Int8Op.Neg | SemanticOperator.Int8Op.Not =>
           for {
-            (constrs, tpe, pur) <- visitExp(exp)
+            (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Int8, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not =>
           for {
-            (constrs, tpe, pur) <- visitExp(exp)
+            (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Int16, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not =>
           for {
-            (constrs, tpe, pur) <- visitExp(exp)
+            (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Int32, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not =>
           for {
-            (constrs, tpe, pur) <- visitExp(exp)
+            (constrs, tpe, eff) <- visitExp(exp)
             resultTyp <- expectTypeM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
-            resultPur = pur
-          } yield (constrs, resultTyp, resultPur)
+            resultEff = eff
+          } yield (constrs, resultTyp, resultEff)
 
         case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
@@ -743,95 +743,95 @@ object Typer {
 
         case SemanticOperator.BoolOp.And | SemanticOperator.BoolOp.Or =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Bool, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
              | SemanticOperator.Float32Op.Exp =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Float32, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Float32, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Float32, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Float64Op.Add | SemanticOperator.Float64Op.Sub | SemanticOperator.Float64Op.Mul | SemanticOperator.Float64Op.Div
              | SemanticOperator.Float64Op.Exp =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Float64, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int8Op.Add | SemanticOperator.Int8Op.Sub | SemanticOperator.Int8Op.Mul | SemanticOperator.Int8Op.Div
              | SemanticOperator.Int8Op.Rem | SemanticOperator.Int8Op.Exp
              | SemanticOperator.Int8Op.And | SemanticOperator.Int8Op.Or | SemanticOperator.Int8Op.Xor =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int8, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int8, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Int8, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Mul | SemanticOperator.Int16Op.Div
              | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Exp
              | SemanticOperator.Int16Op.And | SemanticOperator.Int16Op.Or | SemanticOperator.Int16Op.Xor =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int16, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int16, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Int16, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int32Op.Add | SemanticOperator.Int32Op.Sub | SemanticOperator.Int32Op.Mul | SemanticOperator.Int32Op.Div
              | SemanticOperator.Int32Op.Rem | SemanticOperator.Int32Op.Exp
              | SemanticOperator.Int32Op.And | SemanticOperator.Int32Op.Or | SemanticOperator.Int32Op.Xor =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int32, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Int32, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int64Op.Add | SemanticOperator.Int64Op.Sub | SemanticOperator.Int64Op.Mul | SemanticOperator.Int64Op.Div
              | SemanticOperator.Int64Op.Rem | SemanticOperator.Int64Op.Exp
              | SemanticOperator.Int64Op.And | SemanticOperator.Int64Op.Or | SemanticOperator.Int64Op.Xor =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int64, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int64, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Int64, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int8Op.Shl | SemanticOperator.Int8Op.Shr
              | SemanticOperator.Int16Op.Shl | SemanticOperator.Int16Op.Shr
              | SemanticOperator.Int32Op.Shl | SemanticOperator.Int32Op.Shr
              | SemanticOperator.Int64Op.Shl | SemanticOperator.Int64Op.Shr =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- unifyTypeM(tvar, tpe1, loc)
             rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, lhs, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, lhs, resultEff)
 
         case SemanticOperator.BoolOp.Eq | SemanticOperator.BoolOp.Neq
              | SemanticOperator.CharOp.Eq | SemanticOperator.CharOp.Neq
@@ -843,12 +843,12 @@ object Typer {
              | SemanticOperator.Int64Op.Eq | SemanticOperator.Int64Op.Neq
              | SemanticOperator.StringOp.Eq | SemanticOperator.StringOp.Neq =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypeM(tpe1, tpe2, loc)
             resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.CharOp.Lt | SemanticOperator.CharOp.Le | SemanticOperator.CharOp.Gt | SemanticOperator.CharOp.Ge
              | SemanticOperator.Float32Op.Lt | SemanticOperator.Float32Op.Le | SemanticOperator.Float32Op.Gt | SemanticOperator.Float32Op.Ge
@@ -858,49 +858,49 @@ object Typer {
              | SemanticOperator.Int32Op.Lt | SemanticOperator.Int32Op.Le | SemanticOperator.Int32Op.Gt | SemanticOperator.Int32Op.Ge
              | SemanticOperator.Int64Op.Lt | SemanticOperator.Int64Op.Le | SemanticOperator.Int64Op.Gt | SemanticOperator.Int64Op.Ge =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypeM(tpe1, tpe2, loc)
             resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.StringOp.Concat =>
           for {
-            (constrs1, tpe1, pur1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2) <- visitExp(exp2)
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Str, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.Str, loc)
-            resultPur = Type.mkUnion(pur1, pur2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
         for {
-          (constrs1, tpe1, pur1) <- visitExp(exp1)
-          (constrs2, tpe2, pur2) <- visitExp(exp2)
-          (constrs3, tpe3, pur3) <- visitExp(exp3)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          (constrs3, tpe3, eff3) <- visitExp(exp3)
           condType <- expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
           resultTyp <- unifyTypeM(tpe2, tpe3, loc)
-          resultPur = Type.mkUnion(pur1, pur2, pur3, loc)
+          resultPur = Type.mkUnion(eff1, eff2, eff3, loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur)
 
       case KindedAst.Expression.Stm(exp1, exp2, loc) =>
         for {
-          (constrs1, tpe1, pur1) <- visitExp(exp1)
-          (constrs2, tpe2, pur2) <- visitExp(exp2)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
-          resultPur = Type.mkUnion(pur1, pur2, loc)
-        } yield (constrs1 ++ constrs2, resultTyp, resultPur)
+          resultEff = Type.mkUnion(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Discard(exp, loc) =>
         for {
-          (constrs, _, pur) <- visitExp(exp)
+          (constrs, _, eff) <- visitExp(exp)
           resultTyp = Type.Unit
-        } yield (constrs, resultTyp, pur)
+        } yield (constrs, resultTyp, eff)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         // Note: The call to unify on sym.tvar occurs immediately after we have inferred the type of exp1.
@@ -1538,7 +1538,7 @@ object Typer {
             (tconstrss, _, purs) <- seqM(argM).map(_.unzip3)
             resultTconstrs = tconstrss.flatten
             resultTpe = operation.spec.tpe
-            resultPur = Type.mkUnion(effTpe :: operation.spec.pur :: purs, loc)
+            resultPur = Type.mkUnion(effTpe :: operation.spec.eff :: purs, loc)
           } yield (resultTconstrs, resultTpe, resultPur)
         }
 
@@ -1953,18 +1953,18 @@ object Typer {
       case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val p = visitFormalParam(fparam)
         val e = visitExp(exp, subst0)
-        val t = Type.mkArrowWithEffect(p.tpe, e.pur, e.tpe, loc)
+        val t = Type.mkArrowWithEffect(p.tpe, e.eff, e.tpe, loc)
         TypedAst.Expression.Lambda(p, e, t, loc)
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.Unary(sop, e, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val pur = Type.mkUnion(e1.pur, e2.pur, loc)
+        val pur = Type.mkUnion(e1.eff, e2.eff, loc)
         TypedAst.Expression.Binary(sop, e1, e2, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -1972,32 +1972,32 @@ object Typer {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = e2.tpe
-        val pur = Type.mkUnion(e1.pur, e2.pur, e3.pur, loc)
+        val pur = Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
         TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, pur, loc)
 
       case KindedAst.Expression.Stm(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
-        val pur = Type.mkUnion(e1.pur, e2.pur, loc)
+        val pur = Type.mkUnion(e1.eff, e2.eff, loc)
         TypedAst.Expression.Stm(e1, e2, tpe, pur, loc)
 
       case KindedAst.Expression.Discard(exp, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Discard(e, e.pur, loc)
+        TypedAst.Expression.Discard(e, e.eff, loc)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
-        val pur = Type.mkUnion(e1.pur, e2.pur, loc)
+        val pur = Type.mkUnion(e1.eff, e2.eff, loc)
         TypedAst.Expression.Let(sym, mod, e1, e2, tpe, pur, loc)
 
       case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
-        val pur = Type.mkUnion(e1.pur, e2.pur, loc)
+        val pur = Type.mkUnion(e1.eff, e2.eff, loc)
         TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, pur, loc)
 
       case KindedAst.Expression.Region(tpe, loc) =>
@@ -2026,8 +2026,8 @@ object Typer {
             TypedAst.MatchRule(p, g, b)
         }
         val tpe = rs.head.exp.tpe
-        val pur = rs.foldLeft(e1.pur) {
-          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(g.map(_.pur).toList ::: List(b.pur, acc), loc)
+        val pur = rs.foldLeft(e1.eff) {
+          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, pur, loc)
 
@@ -2040,8 +2040,8 @@ object Typer {
             TypedAst.TypeMatchRule(sym, t, b)
         }
         val tpe = rs.head.exp.tpe
-        val pur = rs.foldLeft(e1.pur) {
-          case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.pur, acc, loc)
+        val pur = rs.foldLeft(e1.eff) {
+          case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.eff, acc, loc)
         }
         TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, loc)
 
@@ -2057,7 +2057,7 @@ object Typer {
             TypedAst.RelationalChoiceRule(pat, visitExp(exp, subst0))
         }
         val tpe = subst0(tvar)
-        val pur = Type.mkAnd(rs.map(_.exp.pur), loc)
+        val pur = Type.mkAnd(rs.map(_.exp.eff), loc)
         TypedAst.Expression.RelationalChoose(es, rs, tpe, pur, loc)
 
       case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
@@ -2075,23 +2075,23 @@ object Typer {
             val body = visitExp(body0, subst0)
             TypedAst.RestrictableChoiceRule(pat, body)
         }
-        val pur = Type.mkUnion(rs.map(_.exp.pur), loc)
+        val pur = Type.mkUnion(rs.map(_.exp.eff), loc)
         TypedAst.Expression.RestrictableChoose(star, e, rs, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.Tag(sym, e, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.RestrictableTag(sym, exp, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.RestrictableTag(sym, e, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))
         val tpe = Type.mkTuple(es.map(_.tpe), loc)
-        val pur = Type.mkUnion(es.map(_.pur), loc)
+        val pur = Type.mkUnion(es.map(_.eff), loc)
         TypedAst.Expression.Tuple(es, tpe, pur, loc)
 
       case KindedAst.Expression.RecordEmpty(loc) =>
@@ -2099,18 +2099,18 @@ object Typer {
 
       case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.RecordSelect(e, field, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.RecordExtend(field, value, rest, tvar, loc) =>
         val v = visitExp(value, subst0)
         val r = visitExp(rest, subst0)
-        val pur = Type.mkUnion(v.pur, r.pur, loc)
+        val pur = Type.mkUnion(v.eff, r.eff, loc)
         TypedAst.Expression.RecordExtend(field, v, r, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.RecordRestrict(field, rest, tvar, loc) =>
         val r = visitExp(rest, subst0)
-        val pur = r.pur
+        val pur = r.eff
         TypedAst.Expression.RecordRestrict(field, r, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.ArrayLit(exps, exp, tvar, pvar, loc) =>
@@ -2144,7 +2144,7 @@ object Typer {
 
       case KindedAst.Expression.ArrayLength(exp, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.ArrayLength(e, pur, loc)
 
       case KindedAst.Expression.VectorLit(exps, tvar, pvar, loc) =>
@@ -2162,7 +2162,7 @@ object Typer {
 
       case KindedAst.Expression.VectorLength(exp, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.VectorLength(e, loc)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
@@ -2187,7 +2187,7 @@ object Typer {
 
       case KindedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.InstanceOf(exp, clazz, loc) =>
@@ -2199,10 +2199,10 @@ object Typer {
           case CheckedCastType.TypeCast =>
             val e = visitExp(exp, subst0)
             val tpe = subst0(tvar)
-            TypedAst.Expression.CheckedCast(cast, e, tpe, e.pur, loc)
+            TypedAst.Expression.CheckedCast(cast, e, tpe, e.eff, loc)
           case CheckedCastType.EffectCast =>
             val e = visitExp(exp, subst0)
-            val pur = Type.mkUnion(e.pur, subst0(pvar), loc)
+            val pur = Type.mkUnion(e.eff, subst0(pvar), loc)
             TypedAst.Expression.CheckedCast(cast, e, e.tpe, pur, loc)
         }
 
@@ -2215,7 +2215,7 @@ object Typer {
         val dt = declaredType.map(tpe => subst0(tpe))
         val dp = declaredPur.map(pur => subst0(pur))
         val tpe = subst0(tvar)
-        val pur = declaredPur.getOrElse(e.pur)
+        val pur = declaredPur.getOrElse(e.eff)
         TypedAst.Expression.UncheckedCast(e, dt, dp, tpe, pur, loc)
 
       case KindedAst.Expression.UncheckedMaskingCast(exp, loc) =>
@@ -2228,7 +2228,7 @@ object Typer {
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.Without(e, effUse, tpe, pur, loc)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -2239,7 +2239,7 @@ object Typer {
             TypedAst.CatchRule(sym, clazz, b)
         }
         val tpe = rs.head.exp.tpe
-        val pur = Type.mkUnion(e.pur :: rs.map(_.exp.pur), loc)
+        val pur = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, pur, loc)
 
       case KindedAst.Expression.TryWith(exp, effUse, rules, tvar, loc) =>
@@ -2251,13 +2251,13 @@ object Typer {
             TypedAst.HandlerRule(op, fps, he)
         }
         val tpe = subst0(tvar)
-        val pur = Type.mkUnion(e.pur :: rs.map(_.exp.pur), loc)
+        val pur = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryWith(e, effUse, rs, tpe, pur, loc)
 
       case KindedAst.Expression.Do(op, exps, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val eff = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.loc.asSynthetic)
-        val pur = Type.mkUnion(eff :: es.map(_.pur), loc)
+        val pur = Type.mkUnion(eff :: es.map(_.eff), loc)
         TypedAst.Expression.Do(op, es, pur, loc)
 
       case KindedAst.Expression.Resume(exp, _, retTvar, loc) =>
@@ -2359,8 +2359,8 @@ object Typer {
             TypedAst.ParYieldFragment(p, e1, l0)
         }
         val tpe = e.tpe
-        val pur = fs.foldLeft(e.pur) {
-          case (acc, TypedAst.ParYieldFragment(_, e1, _)) => Type.mkUnion(acc, e1.pur, loc)
+        val pur = fs.foldLeft(e.eff) {
+          case (acc, TypedAst.ParYieldFragment(_, e1, _)) => Type.mkUnion(acc, e1.eff, loc)
         }
         TypedAst.Expression.ParYield(fs, e, tpe, pur, loc)
 
@@ -2372,7 +2372,7 @@ object Typer {
       case KindedAst.Expression.Force(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = subst0(tvar)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.Force(e, tpe, pur, loc)
 
       case KindedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
@@ -2383,30 +2383,30 @@ object Typer {
         val ps = pparams.map(visitPredicateParam)
         val e = visitExp(exp, subst0)
         val tpe = subst0(tvar)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.FixpointLambda(ps, e, Stratification.empty, tpe, pur, loc)
 
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
-        val pur = Type.mkUnion(e1.pur, e2.pur, loc)
+        val pur = Type.mkUnion(e1.eff, e2.eff, loc)
         TypedAst.Expression.FixpointMerge(e1, e2, Stratification.empty, tpe, pur, loc)
 
       case KindedAst.Expression.FixpointSolve(exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.FixpointSolve(e, Stratification.empty, tpe, pur, loc)
 
       case KindedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.FixpointFilter(pred, e, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.FixpointInject(exp, pred, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val pur = e.pur
+        val pur = e.eff
         TypedAst.Expression.FixpointInject(e, pred, subst0(tvar), pur, loc)
 
       case KindedAst.Expression.FixpointProject(pred, exp1, exp2, tvar, loc) =>
@@ -2414,7 +2414,7 @@ object Typer {
         val e2 = visitExp(exp2, subst0)
         val stf = Stratification.empty
         val tpe = subst0(tvar)
-        val pur = Type.mkUnion(e1.pur, e2.pur, loc)
+        val pur = Type.mkUnion(e1.eff, e2.eff, loc)
 
         // Note: This transformation should happen in the Weeder but it is here because
         // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
