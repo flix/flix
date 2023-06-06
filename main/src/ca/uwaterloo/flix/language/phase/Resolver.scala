@@ -704,6 +704,7 @@ object Resolver {
           case "SchemaRow" => Kind.SchemaRow.toSuccess
           case "Predicate" => Kind.Predicate.toSuccess
           case "Region" => Kind.Eff.toSuccess
+          case "Bool" => Kind.Bool.toSuccess
           case _ =>
             lookupRestrictableEnum(qname, env, ns0, root) match {
               case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
@@ -2317,9 +2318,9 @@ object Resolver {
           case (tpe1, tpe2) => UnkindedType.Apply(tpe1, tpe2, loc)
         }
 
-      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.Pure, loc).toSuccess
+      case NamedAst.Type.True(loc) => UnkindedType.Cst(TypeConstructor.True, loc).toSuccess
 
-      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.EffUniv, loc).toSuccess
+      case NamedAst.Type.False(loc) => UnkindedType.Cst(TypeConstructor.False, loc).toSuccess
 
       case NamedAst.Type.Not(tpe, loc) =>
         mapN(visit(tpe)) {
@@ -2351,7 +2352,7 @@ object Resolver {
           case (t1, t2) => mkIntersection(t1, t2, loc)
         }
 
-      case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Pure, loc).toSuccess
+      case NamedAst.Type.Pure(loc) => UnkindedType.Cst(TypeConstructor.Pure, loc).toSuccess
 
       case NamedAst.Type.CaseSet(cases0, loc) =>
         val casesVal = traverse(cases0)(lookupRestrictableTag(_, env, ns0, root))

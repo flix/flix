@@ -666,7 +666,7 @@ object Typer {
               // The below line should not be needed, but it seems it is.
               _ <- expectTypeM(tvar2, Type.mkUncurriedArrowWithEffect(tpes, declaredPur, declaredResultType, loc), loc)
               resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
-              resultPur <- unifyBoolM(pvar, Type.mkUnion(declaredPur :: purs, loc), loc)
+              resultPur <- unifyEffM(pvar, Type.mkUnion(declaredPur :: purs, loc), loc)
             } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur)
 
           case None =>
@@ -680,7 +680,7 @@ object Typer {
               (constrs2, tpes, purs) <- traverseM(exps)(visitExp).map(_.unzip3)
               _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyType, loc), loc)
               resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
-              resultPur <- unifyBoolM(pvar, Type.mkUnion(lambdaBodyPur :: pur :: purs, loc), loc)
+              resultPur <- unifyEffM(pvar, Type.mkUnion(lambdaBodyPur :: pur :: purs, loc), loc)
               _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
               _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
             } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur)
@@ -1031,11 +1031,11 @@ object Typer {
             case KindedAst.RelationalChoiceRule(r, exp0) =>
               val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
               val innerType = Type.freshVar(Kind.Star, exp0.loc)
-              val isAbsentVar = Type.freshVar(Kind.Eff, exp0.loc)
-              val isPresentVar = Type.freshVar(Kind.Eff, exp0.loc)
+              val isAbsentVar = Type.freshVar(Kind.Bool, exp0.loc)
+              val isPresentVar = Type.freshVar(Kind.Bool, exp0.loc)
               for {
                 choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar, loc), loc)
-              } yield (Type.mkUnion(cond, isAbsentVar, loc), Type.mkUnion(cond, isPresentVar, loc), innerType)
+              } yield (Type.mkAnd(cond, isAbsentVar, loc), Type.mkAnd(cond, isPresentVar, loc), innerType)
           }
 
           ///
@@ -1050,8 +1050,8 @@ object Typer {
           ///
           for {
             (isAbsentConds, isPresentConds, innerTypes) <- traverseM(rs.zip(ts))(p => visitRuleBody(p._1, p._2)).map(_.unzip3)
-            isAbsentCond = Type.mkIntersection(isAbsentConds, loc)
-            isPresentCond = Type.mkIntersection(isPresentConds, loc)
+            isAbsentCond = Type.mkOr(isAbsentConds, loc)
+            isPresentCond = Type.mkOr(isPresentConds, loc)
             innerType <- unifyTypeM(innerTypes, loc)
             resultType = Type.mkChoice(innerType, isAbsentCond, isPresentCond, loc)
           } yield resultType
@@ -1065,16 +1065,16 @@ object Typer {
           * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
           */
         def mkUnderApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
-          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Pure) {
+          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
             case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
             case (acc, ((isAbsentVar, _), KindedAst.RelationalChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              Type.mkUnion(acc, Type.mkEquiv(isAbsentVar, Type.EffUniv, loc), loc)
+              Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False, loc), loc)
             case (acc, ((_, isPresentVar), KindedAst.RelationalChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              Type.mkUnion(acc, Type.mkEquiv(isPresentVar, Type.EffUniv, loc), loc)
+              Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False, loc), loc)
           }
 
         /**
@@ -1085,24 +1085,24 @@ object Typer {
           * If a pattern is `Present` it *may* match if its corresponding `isPresentVar`is `true`.
           */
         def mkOverApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
-          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.Pure) {
+          isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
             case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
             case (acc, ((isAbsentVar, _), KindedAst.RelationalChoicePattern.Absent(_))) =>
               // Case 2: An `Absent` pattern may match if the `isAbsentVar` is `true`.
-              Type.mkUnion(acc, isAbsentVar, loc)
+              Type.mkAnd(acc, isAbsentVar, loc)
             case (acc, ((_, isPresentVar), KindedAst.RelationalChoicePattern.Present(_, _, _))) =>
               // Case 3: A `Present` pattern may match if the `isPresentVar` is `true`.
-              Type.mkUnion(acc, isPresentVar, loc)
+              Type.mkAnd(acc, isPresentVar, loc)
           }
 
         /**
           * Constructs a disjunction of the constraints of each choice rule.
           */
         def mkOuterDisj(m: List[List[KindedAst.RelationalChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
-          m.foldLeft(Type.EffUniv) {
-            case (acc, rule) => Type.mkIntersection(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule), loc)
+          m.foldLeft(Type.False) {
+            case (acc, rule) => Type.mkOr(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule), loc)
           }
 
         /**
@@ -1129,12 +1129,12 @@ object Typer {
         //
         // Introduce an isAbsent variable for each match expression in `exps`.
         //
-        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Eff, exp0.loc))
+        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
 
         //
         // Introduce an isPresent variable for each math expression in `exps`.
         //
-        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Eff, exp0.loc))
+        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
 
         //
         // Extract the choice pattern match matrix.
@@ -1155,7 +1155,7 @@ object Typer {
         // Put everything together.
         //
         for {
-          _ <- unifyBoolM(formula, Type.Pure, loc)
+          _ <- unifyBoolM(formula, Type.True, loc)
           (matchConstrs, matchTyp, matchPur) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyPur) <- visitRuleBodies(rules0)
@@ -1174,8 +1174,8 @@ object Typer {
           if (symUse.sym.name == "Absent") {
             // Case 1.1: Absent Tag.
             val elmVar = Type.freshVar(Kind.Star, loc)
-            val isAbsent = Type.Pure
-            val isPresent = Type.freshVar(Kind.Eff, loc)
+            val isAbsent = Type.True
+            val isPresent = Type.freshVar(Kind.Bool, loc)
             for {
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent, loc), loc)
               resultPur = Type.Pure
@@ -1183,8 +1183,8 @@ object Typer {
           }
           else if (symUse.sym.name == "Present") {
             // Case 1.2: Present Tag.
-            val isAbsent = Type.freshVar(Kind.Eff, loc)
-            val isPresent = Type.Pure
+            val isAbsent = Type.freshVar(Kind.Bool, loc)
+            val isPresent = Type.True
             for {
               (constrs, tpe, pur) <- visitExp(exp)
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(tpe, isAbsent, isPresent, loc), loc)
@@ -2057,7 +2057,7 @@ object Typer {
             TypedAst.RelationalChoiceRule(pat, visitExp(exp, subst0))
         }
         val tpe = subst0(tvar)
-        val pur = Type.mkUnion(rs.map(_.exp.pur), loc)
+        val pur = Type.mkAnd(rs.map(_.exp.pur), loc)
         TypedAst.Expression.RelationalChoose(es, rs, tpe, pur, loc)
 
       case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
@@ -2588,7 +2588,7 @@ object Typer {
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
       for {
         (termConstrs, termTypes, termPurs) <- traverseM(terms)(inferExp(_, root)).map(_.unzip3)
-        pureTermPurs <- unifyBoolM(Type.Pure, Type.mkUnion(termPurs, loc), loc)
+        pureTermPurs <- unifyEffM(Type.Pure, Type.mkUnion(termPurs, loc), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
@@ -2623,13 +2623,13 @@ object Typer {
         for {
           (constrs, tpe, pur) <- inferExp(exp, root)
           expTyp <- unifyTypeM(expectedType, tpe, loc)
-          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expPur <- unifyEffM(Type.Pure, pur, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
 
       case KindedAst.Predicate.Body.Guard(exp, loc) =>
         for {
           (constrs, tpe, pur) <- inferExp(exp, root)
-          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expPur <- unifyEffM(Type.Pure, pur, loc)
           expTyp <- unifyTypeM(Type.Bool, tpe, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
     }
