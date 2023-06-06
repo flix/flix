@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 Magnus Madsen
+ *  Copyright 2023 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,33 +19,33 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
-import org.sosy_lab.pjbdd.api.DD
 
+/**
+ * An implementation of Boolean Unification is for the `Bool` kind.
+ */
 object BoolUnification {
 
   /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-    */
+   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+   */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
       return Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
     }
 
     implicit val alg: BoolAlg[BoolFormula] = new SimpleBoolFormulaAlgClassic
-    implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
-    val substRes = lookupOrSolve(tpe1, tpe2, renv0)
 
-    substRes.map(subst => (subst, Nil))
+    val result = lookupOrSolve(tpe1, tpe2, renv0)
+    result.map(subst => (subst, Nil))
   }
 
 
   /**
-    * Lookup the unifier of `tpe1` and `tpe2` or solve them.
-    */
+   * Lookup the unifier of `tpe1` and `tpe2` or solve them.
+   */
   private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
-                              (implicit flix: Flix, alg: BoolAlg[F], cache: UnificationCache[F]): Result[Substitution, UnificationError] = {
+                              (implicit flix: Flix, alg: BoolAlg[F]): Result[Substitution, UnificationError] = {
     //
     // Translate the types into formulas.
     //
@@ -56,33 +56,17 @@ object BoolUnification {
     val renv = alg.liftRigidityEnv(renv0, env)
 
     //
-    // Lookup the query to see if it is already in unification cache.
-    //
-    if (!flix.options.xnoboolcache) {
-      cache.lookup(f1, f2, renv) match {
-        case None => // cache miss: must compute the unification.
-        case Some(subst) =>
-          // cache hit: return the found substitution.
-          return subst.toTypeSubstitution(env).toOk
-      }
-    }
-
-    //
     // Run the expensive Boolean unification algorithm.
     //
     booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-      case Some(subst) =>
-        if (!flix.options.xnoboolcache) {
-          cache.put(f1, f2, renv, subst)
-        }
-        subst.toTypeSubstitution(env).toOk
+      case Some(subst) => subst.toTypeSubstitution(env).toOk
     }
   }
 
   /**
-    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
-    */
+   * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
+   */
   private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
                                    (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.
@@ -99,46 +83,22 @@ object BoolUnification {
 
     // Eliminate all variables.
     try {
-      val subst = successiveVariableElimination(query, freeVars)
-
-      //    if (!subst.isEmpty) {
-      //      val s = subst.toString
-      //      val len = s.length
-      //      if (len > 50) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //        println()
-      //      }
-      //    }
-
-      Some(subst)
+      Some(successiveVariableElimination(query, freeVars))
     } catch {
-      case ex: BoolUnificationException => None
+      case _: BoolUnificationException => None
     }
   }
 
   /**
-    * A heuristic used to determine the order in which to eliminate variable.
-    *
-    * Semantically the order of variables is immaterial. Changing the order may
-    * yield different unifiers, but they are all equivalent. However, changing
-    * the can lead to significant speed-ups / slow-downs.
-    *
-    * We make the following observation:
-    *
-    * We want to have synthetic variables (i.e. fresh variables introduced during
-    * type inference) expressed in terms of real variables (i.e. variables that
-    * actually occur in the source code). We can ensure this by eliminating the
-    * synthetic variables first.
-    */
-  private def computeVariableOrder(l: List[Int]): List[Int] = {
-    l.reverse // TODO have to reverse the order for regions to work
-  }
+   * Determine the variable order.
+   */
+  private def computeVariableOrder(l: List[Int]): List[Int] = l
 
   /**
-    * Performs success variable elimination on the given boolean expression `f`.
-    *
-    * `flexvs` is the list of remaining flexible variables in the expression.
-    */
+   * Performs success variable elimination on the given boolean expression `f`.
+   *
+   * `flexvs` is the list of remaining flexible variables in the expression.
+   */
   private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
