@@ -221,8 +221,7 @@ object CompletionUtils {
    * (Aaa.Bbb.Ccc, Dd) => false
    * (/, Cc)           => true
    */
-
-  def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
+  private def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
     if (sym.isRoot) {
       true
     } else {
