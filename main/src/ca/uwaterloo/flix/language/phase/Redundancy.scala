@@ -637,7 +637,7 @@ object Redundancy {
     case Expression.InstanceOf(exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.CheckedCast(cast, exp, tpe, pur, loc) =>
+    case Expression.CheckedCast(cast, exp, tpe, eff, loc) =>
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
@@ -645,21 +645,21 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.pur == pur)
+          if (exp.eff == eff)
             visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
           else
             visitExp(exp, env0, rc)
       }
 
-    case Expression.UncheckedCast(exp, _, declaredPur, _, _, loc) =>
-      declaredPur match {
+    case Expression.UncheckedCast(exp, _, declaredEff, _, _, loc) =>
+      declaredEff match {
         // Don't capture redundant purity casts if there's also a set effect
-        case Some(pur) =>
-          (pur, exp.pur) match {
+        case Some(eff) =>
+          (eff, exp.eff) match {
             case (Type.Pure, Type.Pure) =>
-              visitExp(exp, env0, rc) + RedundantPurityCast(loc)
-            case (Type.Var(pur1, _), Type.Var(pur2, _))
-              if pur1 == pur2 =>
+              visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+            case (Type.Var(eff1, _), Type.Var(eff2, _))
+              if eff1 == eff2 =>
               visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
@@ -967,7 +967,7 @@ object Redundancy {
     * Returns true if the expression is pure and of impure function type.
     */
   private def isUnderAppliedFunction(exp: Expression): Boolean = {
-    val isPure = exp.pur == Type.Pure
+    val isPure = exp.eff == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) =>
         curriedArrowPurityType(exp.tpe) != Type.Pure
@@ -994,7 +994,7 @@ object Redundancy {
     val resType = tpe.arrowResultType
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
-      case _ => tpe.arrowPurityType
+      case _ => tpe.arrowEffectType
     }
   }
 
@@ -1002,7 +1002,7 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isPure(exp: Expression): Boolean =
-    exp.pur == Type.Pure
+    exp.eff == Type.Pure
 
   /**
     * Returns true if the expression is pure.

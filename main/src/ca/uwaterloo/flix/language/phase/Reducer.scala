@@ -33,11 +33,12 @@ object Reducer {
   }
 
   private def visitDef(d: LiftedAst.Def): ReducedAst.Def = d match {
-    case LiftedAst.Def(ann, mod, sym, fparams, exp, tpe, loc) =>
+    case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, loc) =>
+      val cs = cparams.map(visitFormalParam)
       val fs = fparams.map(visitFormalParam)
       val e = visitExpr(exp)
       val s = ReducedAst.Stmt.Ret(e, tpe, loc)
-      ReducedAst.Def(ann, mod, sym, fs, s, tpe, loc)
+      ReducedAst.Def(ann, mod, sym, cs, fs, s, tpe, loc)
   }
 
   private def visitEnum(d: LiftedAst.Enum): ReducedAst.Enum = d match {
