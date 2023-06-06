@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 import org.sosy_lab.pjbdd.api.DD
 
+// TODO EFF-MIGRATION rename to EffUnification
 object BoolUnification {
 
   /**

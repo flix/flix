@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.util.collection.Bimap
 /**
   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
   */
+// TODO EFF-MIGRATION copy-pasted from BoolFormulaAlgClassic -- generalize the trait and deduplicate
 class SimpleBoolFormulaAlgClassic extends BoolFormulaAlg {
 
   override def mkNot(f: BoolFormula): BoolFormula = f match {
