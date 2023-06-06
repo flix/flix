@@ -38,12 +38,12 @@ object MonoTypedAstPrinter {
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
-      case MonoTypedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
+      case MonoTypedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
-          formals.map(printFormalParam),
+          (cparams ++ fparams).map(printFormalParam),
           MonoTypePrinter.print(tpe),
           print(exp)
         )

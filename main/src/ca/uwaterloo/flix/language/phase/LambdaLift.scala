@@ -56,12 +56,12 @@ object LambdaLift {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe0, pur, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe0, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = liftExp(exp, sym, m)
-      val tpe = Type.mkUncurriedArrowWithEffect(fs.map(_.tpe), pur, tpe0, tpe0.loc.asSynthetic)
+      val tpe = Type.mkUncurriedArrowWithEffect(fs.map(_.tpe), eff, tpe0, tpe0.loc.asSynthetic)
 
-      LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
   }
 
   /**
@@ -87,7 +87,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
@@ -98,11 +98,14 @@ object LambdaLift {
         val ann = Ast.Annotations.Empty
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
+        // Construct the closure parameters
+        val cs = cparams.map(visitFormalParam)
+
         // Construct the formal parameters.
         val fs = fparams.map(visitFormalParam)
 
         // Construct a new definition.
-        val defn = LiftedAst.Def(ann, mod, freshSymbol, fs, liftedExp, tpe, loc)
+        val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, tpe, loc)
 
         // Add the new definition to the map of lifted definitions.
         m += (freshSymbol -> defn)

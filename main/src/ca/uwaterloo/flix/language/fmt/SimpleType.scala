@@ -227,7 +227,7 @@ object SimpleType {
   /**
     * A function with a purity.
     */
-  case class PolyArrow(arg: SimpleType, pur: SimpleType, ret: SimpleType) extends SimpleType
+  case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
   ///////
   // Tags
@@ -328,16 +328,16 @@ object SimpleType {
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
             // Case 2: Pure function.
-            case pur :: tpes if pur == Empty || fmt.ignorePur =>
+            case eff :: tpes if eff == Empty || fmt.ignorePur =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
             // Case 3: Impure function.
-            case pur :: tpes =>
+            case eff :: tpes =>
               // NB: safe to take last 2 because arity is always at least 2
               val allTpes = tpes.padTo(arity, Hole)
               val List(lastArg, ret) = allTpes.takeRight(2)
-              val lastArrow: SimpleType = PolyArrow(lastArg, pur, ret)
+              val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
               allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
           }
 

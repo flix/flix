@@ -72,12 +72,12 @@ object InstanceCompleter extends Completer {
     def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
       val fparams = fmtFormalParams(clazz, sig.spec, hole)
       val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
-      val pur = sig.spec.pur match {
+      val eff = sig.spec.eff match {
         case Type.Cst(TypeConstructor.Pure, _) => ""
         case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
         case e => raw" \ " + FormatType.formatType(e)
       }
-      s"    pub def ${sig.sym.name}($fparams): $retTpe$pur = ???"
+      s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
     root.classes.map {
