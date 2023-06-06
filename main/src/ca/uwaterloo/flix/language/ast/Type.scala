@@ -882,19 +882,19 @@ object Type {
   }
 
   /**
-    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
-    */
-  def mkOr(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.False
-    case x :: xs => mkOr(x, mkOr(xs, loc), loc)
-  }
-
-  /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
     */
   def mkAnd(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.True
     case x :: xs => mkAnd(x, mkAnd(xs, loc), loc)
+  }
+
+  /**
+    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+    */
+  def mkOr(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.False
+    case x :: xs => mkOr(x, mkOr(xs, loc), loc)
   }
 
   /**
