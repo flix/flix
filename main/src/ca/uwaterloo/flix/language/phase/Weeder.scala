@@ -2743,13 +2743,12 @@ object Weeder {
 
     case ParsedAst.Type.Pure(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      // TODO EFF-MIGRATION rename to Pure
-      WeededAst.Type.Empty(loc).toSuccess
+      WeededAst.Type.Pure(loc).toSuccess
 
     case ParsedAst.Type.Impure(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
       // TODO EFF-MIGRATION create dedicated Impure type
-      WeededAst.Type.Complement(WeededAst.Type.Empty(loc), loc).toSuccess
+      WeededAst.Type.Complement(WeededAst.Type.Pure(loc), loc).toSuccess
 
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
       val checkVal = traverseX(tpes0)(checkEffectSetMember)
@@ -2760,7 +2759,7 @@ object Weeder {
           val purOpt = tpes.reduceLeftOption({
             case (acc, tpe) => WeededAst.Type.Union(acc, tpe, loc)
           }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
-          purOpt.getOrElse(WeededAst.Type.Empty(loc))
+          purOpt.getOrElse(WeededAst.Type.Pure(loc))
       }
 
     case ParsedAst.Type.CaseSet(sp1, cases, sp2) =>

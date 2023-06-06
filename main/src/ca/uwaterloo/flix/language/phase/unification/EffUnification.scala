@@ -21,22 +21,112 @@ import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 import org.sosy_lab.pjbdd.api.DD
 
-// TODO EFF-MIGRATION rename to BoolUnification
-object SimpleBoolUnification {
+object EffUnification {
+
+  /**
+    * The number of variables required before we switch to using BDDs for SVE.
+    */
+  private val DefaultThreshold: Int = 5
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
+    //
+    // NOTE: ALWAYS UNSOUND. USE ONLY FOR EXPERIMENTS.
+    //
+    if (flix.options.xnoboolunif) {
+      return (Substitution.empty, Nil).toOk
+    }
+
+    //
+    // Optimize common unification queries.
+    //
+    if (flix.options.xprintboolunif) {
+      val loc = if (tpe1.loc != SourceLocation.Unknown) tpe1.loc else tpe2.loc
+
+      // Alpha rename variables.
+      val alpha = ((tpe1.typeVars ++ tpe2.typeVars).toList.zipWithIndex).foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
+        case (macc, (tvar, idx)) =>
+          val sym = new Symbol.KindedTypeVarSym(idx, Ast.VarText.Absent, tvar.kind, tvar.sym.isRegion, tvar.loc)
+          val newTvar = Type.Var(sym, tvar.loc)
+          macc + (tvar.sym -> newTvar)
+      }
+      val subst = Substitution(alpha)
+      println(s"$loc: ${subst(tpe1)} =?= ${subst(tpe2)}")
+    }
+
+    if (!flix.options.xnoboolspecialcases) {
+
+      // Case 1: Unification of identical formulas.
+      if (tpe1 eq tpe2) {
+        return Ok((Substitution.empty, Nil))
+      }
+
+      // Case 2: Common unification instances.
+      // Note: Order determined by code coverage.
+      (tpe1, tpe2) match {
+        case (Type.Var(x, _), Type.Var(y, _)) =>
+          if (renv0.isFlexible(x)) {
+            return Ok((Substitution.singleton(x, tpe2), Nil)) // 9000 hits
+          }
+          if (renv0.isFlexible(y)) {
+            return Ok((Substitution.singleton(y, tpe1), Nil)) // 1000 hits
+          }
+          if (x == y) {
+            return Ok((Substitution.empty, Nil)) // 1000 hits
+          }
+
+        case (Type.Cst(TypeConstructor.Pure, _), Type.Cst(TypeConstructor.Pure, _)) =>
+          return Ok((Substitution.empty, Nil)) // 6000 hits
+
+        case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
+          case TypeConstructor.Pure =>
+            return Ok((Substitution.singleton(x, Type.Pure), Nil)) // 9000 hits
+          case TypeConstructor.EffUniv =>
+            return Ok((Substitution.singleton(x, Type.EffUniv), Nil)) // 1000 hits
+          case _ => // nop
+        }
+
+        case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
+          case TypeConstructor.Pure =>
+            return Ok((Substitution.singleton(y, Type.Pure), Nil)) // 7000 hits
+          case TypeConstructor.EffUniv =>
+            return Ok((Substitution.singleton(y, Type.EffUniv), Nil)) //  500 hits
+          case _ => // nop
+        }
+
+        case (Type.Cst(TypeConstructor.EffUniv, _), Type.Cst(TypeConstructor.EffUniv, _)) =>
+          return Ok((Substitution.empty, Nil)) //  100 hits
+
+        case _ => // nop
+      }
+
+    }
+
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
       return Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
     }
 
-    implicit val alg: BoolAlg[BoolFormula] = new SimpleBoolFormulaAlgClassic
-    implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
-    val substRes = lookupOrSolve(tpe1, tpe2, renv0)
+    // Choose the SVE implementation based on the number of variables.
+    val numberOfVars = (tpe1.typeVars ++ tpe2.typeVars).size
+    val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
+
+    val substRes = if (flix.options.xboolclassic) {
+      implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlgClassic
+      implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    } else if (numberOfVars < threshold) {
+      implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
+      implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    } else {
+      implicit val alg: BoolAlg[DD] = new BddFormulaAlg
+      implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
+      lookupOrSolve(tpe1, tpe2, renv0)
+    }
 
     substRes.map(subst => (subst, Nil))
   }
