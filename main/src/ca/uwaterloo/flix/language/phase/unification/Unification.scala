@@ -93,8 +93,10 @@ object Unification {
       if (flix.options.xnobooleffects) {
         Ok(Substitution.empty, Nil)
       } else {
-        BoolUnification.unify(tpe1, tpe2, renv)
+        EffUnification.unify(tpe1, tpe2, renv)
       }
+
+    case (Kind.Bool, Kind.Bool) => BoolUnification.unify(tpe1, tpe2, renv)
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       val cases = sym1.universe
@@ -347,6 +349,30 @@ object Unification {
   }
 
   /**
+    * Unifies the two given effect formulas `tpe1` and `tpe2`.
+    */
+  def unifyEffM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv) => {
+      val bf1 = s(tpe1)
+      val bf2 = s(tpe2)
+      EffUnification.unify(bf1, bf2, renv) match {
+        case Result.Ok((s1, econstrs1)) =>
+          val subst = s1 @@ s
+          val e = econstrs1 ++ econstrs
+          Ok((subst, e, renv, subst(tpe1))) // TODO ASSOC-TYPES need to apply subst?
+
+        case Result.Err(e) => e match {
+          case UnificationError.MismatchedBools(baseType1, baseType2) =>
+            Err(TypeError.MismatchedBools(baseType1, baseType2, tpe1, tpe2, renv, loc))
+
+          case _ => throw InternalCompilerException(s"Unexpected error: '$e'.", loc)
+        }
+      }
+    }
+    )
+  }
+
+  /**
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
@@ -371,19 +397,19 @@ object Unification {
   }
 
   /**
-    * Unifies the three given Boolean formulas `tpe1`, `tpe2`, and `tpe3`.
+    * Unifies the three given effect formulas `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyBoolM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] =
-    unifyBoolM(List(tpe1, tpe2, tpe3), loc)
+  def unifyEffM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] =
+    unifyEffM(List(tpe1, tpe2, tpe3), loc)
 
   /**
-    * Unifies all the Boolean formulas in the given non-empty list `fs`.
+    * Unifies all the effect formulas in the given non-empty list `fs`.
     */
-  def unifyBoolM(fs: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyEffM(fs: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
-        case tpe => visit(unifyBoolM(tpe, y, loc), ys)
+        case tpe => visit(unifyEffM(tpe, y, loc), ys)
       }
     }
 
@@ -410,7 +436,7 @@ object Unification {
     }
 
   /**
-    * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
+    * Returns the given effect formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `Pure`.
     */
   private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
@@ -436,7 +462,7 @@ object Unification {
         val List(t1, t2) = tpe.typeArguments
         Type.mkIntersection(purify(tvar, t1), purify(tvar, t2), tpe.loc)
 
-      case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.", tpe.loc)
+      case _ => throw InternalCompilerException(s"Unexpected non-effect type constructor: '$tc'.", tpe.loc)
     }
   }
 
