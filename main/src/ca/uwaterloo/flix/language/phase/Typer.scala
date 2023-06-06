@@ -2256,8 +2256,8 @@ object Typer {
 
       case KindedAst.Expression.Do(op, exps, loc) =>
         val es = exps.map(visitExp(_, subst0))
-        val eff = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.loc.asSynthetic)
-        val eff = Type.mkUnion(eff :: es.map(_.eff), loc)
+        val eff1 = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.loc.asSynthetic)
+        val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
         TypedAst.Expression.Do(op, es, eff, loc)
 
       case KindedAst.Expression.Resume(exp, _, retTvar, loc) =>
