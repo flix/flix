@@ -57,8 +57,8 @@ object GenNamespaceClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceClassType.name.toInternalName, null,
       BackendObjType.JavaObject.jvmName.toInternalName, null)
 
-    // Adding an IFO field and a shim method for each function in `ns`
-    for ((_, defn) <- ns.defs) {
+    // Adding an IFO field and a shim method for each function in `ns` with no captured args
+    for ((_, defn) <- ns.defs if defn.cparams.isEmpty) {
       // Compile the shim method.
       compileShimMethod(visitor, defn)
     }

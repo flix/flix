@@ -32,7 +32,7 @@ object ErasedAst {
                   closures: Set[ClosureInfo],
                   anonClasses: Set[AnonClassInfo])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
   }
 
