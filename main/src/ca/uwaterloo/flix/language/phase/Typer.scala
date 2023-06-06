@@ -666,7 +666,7 @@ object Typer {
               // The below line should not be needed, but it seems it is.
               _ <- expectTypeM(tvar2, Type.mkUncurriedArrowWithEffect(tpes, declaredPur, declaredResultType, loc), loc)
               resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
-              resultPur <- unifyBoolM(pvar, Type.mkUnion(declaredPur :: purs, loc), loc)
+              resultPur <- unifyEffM(pvar, Type.mkUnion(declaredPur :: purs, loc), loc)
             } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur)
 
           case None =>
@@ -680,7 +680,7 @@ object Typer {
               (constrs2, tpes, purs) <- traverseM(exps)(visitExp).map(_.unzip3)
               _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyType, loc), loc)
               resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
-              resultPur <- unifyBoolM(pvar, Type.mkUnion(lambdaBodyPur :: pur :: purs, loc), loc)
+              resultPur <- unifyEffM(pvar, Type.mkUnion(lambdaBodyPur :: pur :: purs, loc), loc)
               _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
               _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
             } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur)
@@ -1155,7 +1155,7 @@ object Typer {
         // Put everything together.
         //
         for {
-          _ <- unifySimpleBoolM(formula, Type.True, loc)
+          _ <- unifyBoolM(formula, Type.True, loc)
           (matchConstrs, matchTyp, matchPur) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyPur) <- visitRuleBodies(rules0)
@@ -2588,7 +2588,7 @@ object Typer {
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
       for {
         (termConstrs, termTypes, termPurs) <- traverseM(terms)(inferExp(_, root)).map(_.unzip3)
-        pureTermPurs <- unifyBoolM(Type.Pure, Type.mkUnion(termPurs, loc), loc)
+        pureTermPurs <- unifyEffM(Type.Pure, Type.mkUnion(termPurs, loc), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
@@ -2623,13 +2623,13 @@ object Typer {
         for {
           (constrs, tpe, pur) <- inferExp(exp, root)
           expTyp <- unifyTypeM(expectedType, tpe, loc)
-          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expPur <- unifyEffM(Type.Pure, pur, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
 
       case KindedAst.Predicate.Body.Guard(exp, loc) =>
         for {
           (constrs, tpe, pur) <- inferExp(exp, root)
-          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expPur <- unifyEffM(Type.Pure, pur, loc)
           expTyp <- unifyTypeM(Type.Bool, tpe, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
     }
