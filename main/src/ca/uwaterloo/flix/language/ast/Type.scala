@@ -807,8 +807,6 @@ object Type {
 
   /**
     * Returns the type `Union(tpe1, tpe2)`.
-    *
-    * Must not be used before kinding.
     */
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
@@ -821,24 +819,18 @@ object Type {
 
   /**
     * Returns the type `And(tpe1, And(tpe2, tpe3))`.
-    *
-    * Must not be used before kinding.
     */
   def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type =
     mkUnion(tpe1, mkUnion(tpe2, tpe3, loc), loc)
 
   /**
     * Returns the type `And(tpe1, And(tpe2, And(tpe3, tpe4)))`.
-    *
-    * Must not be used before kinding.
     */
   def mkUnion(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): Type =
     mkUnion(tpe1, mkUnion(tpe2, mkUnion(tpe3, tpe4, loc), loc), loc)
 
   /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
-    *
-    * Must not be used before kinding.
     */
   def mkUnion(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.Pure
@@ -847,8 +839,6 @@ object Type {
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
-    *
-    * Must not be used before kinding.
     */
   def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
@@ -861,8 +851,6 @@ object Type {
 
   /**
     * Returns the type `Or(tpe1, Or(tpe2, ...))`.
-    *
-    * Must not be used before kinding.
     */
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.EffUniv
@@ -871,8 +859,6 @@ object Type {
 
   /**
     * Returns the type `And(tpe1, tpe2)`.
-    *
-    * Must not be used before kinding.
     */
   def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.True, _), _) => tpe2
@@ -885,8 +871,6 @@ object Type {
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
-    *
-    * Must not be used before kinding.
     */
   def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.True, _), _) => Type.True
@@ -899,8 +883,6 @@ object Type {
 
   /**
     * Returns the type `Or(tpe1, Or(tpe2, ...))`.
-    *
-    * Must not be used before kinding.
     */
   def mkOr(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.False
@@ -909,8 +891,6 @@ object Type {
 
   /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
-    *
-    * Must not be used before kinding.
     */
   def mkAnd(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.True
@@ -919,8 +899,6 @@ object Type {
 
   /**
     * Returns the complement of the given type.
-    *
-    * Must not be used before kinding.
     */
   def mkCaseComplement(tpe: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = tpe match {
     case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe2, _) => tpe2
@@ -930,8 +908,6 @@ object Type {
 
   /**
     * Returns the type `tpe1 + tpe2`
-    *
-    * Must not be used before kinding.
     */
   def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
@@ -944,8 +920,6 @@ object Type {
 
   /**
     * Returns the type `tpe1 & tpe2`
-    *
-    * Must not be used before kinding.
     */
   def mkCaseIntersection(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
@@ -958,8 +932,6 @@ object Type {
 
   /**
     * Returns the difference of the given types.
-    *
-    * Must not be used before kinding.
     */
   def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
     mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
