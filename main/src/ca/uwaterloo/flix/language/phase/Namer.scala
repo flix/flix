@@ -476,17 +476,17 @@ object Namer {
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, pur0, tconstrs0, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, pur0)
+    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
-      val purVal = traverseOpt(pur0)(visitType)
+      val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, purVal, tconstrsVal) {
+      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal) {
         case (fparams, tpe, eff, tconstrs) =>
           val econstrs = Nil // TODO ASSOC-TYPES allow eq-constrs here
 
@@ -507,20 +507,20 @@ object Namer {
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, pur0, tconstrs0, econstrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, pur0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
-      val purVal = traverseOpt(pur0)(visitType)
+      val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, purVal, tconstrsVal, econstrsVal) {
+      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
         case (fparams, tpe, eff, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
@@ -1214,11 +1214,11 @@ object Namer {
       case WeededAst.Type.Native(fqn, loc) =>
         NamedAst.Type.Native(fqn, loc).toSuccess
 
-      case WeededAst.Type.Arrow(tparams0, pur0, tresult0, loc) =>
+      case WeededAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
         val tparamsVal = traverse(tparams0)(visit)
-        val purVal = traverseOpt(pur0)(visitType)
+        val effVal = traverseOpt(eff0)(visitType)
         val tresultVal = visit(tresult0)
-        mapN(tparamsVal, purVal, tresultVal) {
+        mapN(tparamsVal, effVal, tresultVal) {
           case (tparams, eff, tresult) => NamedAst.Type.Arrow(tparams, eff, tresult, loc)
         }
 
@@ -1433,12 +1433,12 @@ object Namer {
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
   private def visitJvmMethod(method: WeededAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
-    case WeededAst.JvmMethod(ident, fparams0, exp0, tpe0, pur0, loc) =>
+    case WeededAst.JvmMethod(ident, fparams0, exp0, tpe0, eff0, loc) =>
       flatMapN(traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]) {
         case fparams =>
           val exp = visitExp(exp0, ns0)
           val tpe = visitType(tpe0)
-          val eff = traverseOpt(pur0)(visitType)
+          val eff = traverseOpt(eff0)(visitType)
           mapN(exp, tpe, eff) {
             case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
           }
@@ -1532,9 +1532,9 @@ object Namer {
 
     val tpeTvars = freeTypeVars(tpe)
 
-    val purTvars = eff.toList.flatMap(freeTypeVars)
+    val effTvars = eff.toList.flatMap(freeTypeVars)
 
-    val tparams = (fparamTvars ::: tpeTvars ::: purTvars).distinct.map {
+    val tparams = (fparamTvars ::: tpeTvars ::: effTvars).distinct.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
     }
 

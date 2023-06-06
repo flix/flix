@@ -343,10 +343,10 @@ object MonomorphEnums {
     case Expression.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)
       Expression.InstanceOf(e, clazz, loc)
-    case Expression.Cast(exp, declaredType, declaredPur, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
-      val dp = declaredPur.map(visitType)
+      val dp = declaredEff.map(visitType)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.Cast(e, dt, dp, t, p, loc)

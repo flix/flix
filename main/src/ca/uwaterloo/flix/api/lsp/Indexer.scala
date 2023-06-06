@@ -338,9 +338,9 @@ object Indexer {
     case Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.UncheckedCast(exp, declaredType, declaredPur, _, _, _) =>
+    case Expression.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
       val dt = declaredType.map(visitType).getOrElse(Index.empty)
-      val dp = declaredPur.map(visitType).getOrElse(Index.empty)
+      val dp = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ Index.occurrenceOf(exp0)
 
     case Expression.UncheckedMaskingCast(exp, _, _, _) =>

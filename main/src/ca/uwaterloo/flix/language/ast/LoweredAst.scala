@@ -183,7 +183,7 @@ object LoweredAst {
       def tpe: Type = Type.Bool
     }
 
-    case class Cast(exp: LoweredAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class Cast(exp: LoweredAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Without(exp: LoweredAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 

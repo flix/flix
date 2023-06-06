@@ -514,7 +514,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, pur0, tconstrs0, econstrs0, loc) =>
+    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -524,11 +524,11 @@ object Resolver {
             case fparams =>
               val env = env1 ++ mkFormalParamEnv(fparams)
               val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
-              val purVal = traverseOpt(pur0)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
+              val effVal = traverseOpt(eff0)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
               val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
               val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
-              mapN(tpeVal, purVal, tconstrsVal, econstrsVal) {
+              mapN(tpeVal, effVal, tconstrsVal, econstrsVal) {
                 case (tpe, eff, tconstrs, econstrs) =>
                   // add the inherited type constraint to the the list
                   ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstr.toList ::: tconstrs, econstrs, loc)
@@ -1669,8 +1669,8 @@ object Resolver {
               val env = env0 ++ mkFormalParamEnv(fparams)
               val expVal = visitExp(exp, env)
               val tpeVal = resolveType(tpe, Wildness.ForbidWild, env, taenv, ns0, root)
-              val purVal = traverseOpt(eff)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
-              mapN(expVal, tpeVal, purVal) {
+              val effVal = traverseOpt(eff)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+              mapN(expVal, tpeVal, effVal) {
                 case (e, t, p) => ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
               }
           }
@@ -2303,11 +2303,11 @@ object Resolver {
           case clazz => flixifyType(clazz, loc)
         }
 
-      case NamedAst.Type.Arrow(tparams0, pur0, tresult0, loc) =>
+      case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
         val tparamsVal = traverse(tparams0)(visit)
         val tresultVal = visit(tresult0)
-        val purVal = traverseOpt(pur0)(visit)
-        mapN(tparamsVal, tresultVal, purVal) {
+        val effVal = traverseOpt(eff0)(visit)
+        mapN(tparamsVal, tresultVal, effVal) {
           case (tparams, tresult, eff) => mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
         }
 
@@ -2470,9 +2470,9 @@ object Resolver {
         }
 
       case UnkindedType.Arrow(eff, arity, loc) =>
-        val purVal = traverseOpt(eff)(finishResolveType(_, taenv))
+        val effVal = traverseOpt(eff)(finishResolveType(_, taenv))
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
-        mapN(purVal, targsVal) {
+        mapN(effVal, targsVal) {
           case (p, ts) => UnkindedType.mkApply(UnkindedType.Arrow(p, arity, loc), ts, tpe0.loc)
         }
 

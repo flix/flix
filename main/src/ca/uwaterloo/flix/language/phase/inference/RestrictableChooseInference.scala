@@ -91,7 +91,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, pur) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -102,13 +102,13 @@ object RestrictableChooseInference {
           _ <- if (domSet != universe) unifySubset(indexVar, domM, enumSym, root, loc.asSynthetic) else InferMonad.point(())
 
           // Γ, x_i: τ_i ⊢ e_i: τ_out
-          (constrss, tpes, purs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
+          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
           resultTconstrs = constrs ::: constrss.flatten
 
           // τ_out
           resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
-          resultPur = Type.mkUnion(pur :: purs, loc)
-        } yield (resultTconstrs, resultTpe, resultPur)
+          resultEff = Type.mkUnion(eff :: effs, loc)
+        } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expression.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
 
@@ -136,7 +136,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, pur) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -147,7 +147,7 @@ object RestrictableChooseInference {
           _ <- unifySubset(indexInVar, domM, enumSym, root, loc.asSynthetic)
 
           // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
-          (constrss, tpes, purs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
+          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
           _ <- traverseM(tpes.zip(bodyTypes)) { case (t1, t2) => unifyTypeM(t1, t2, loc) }
 
           // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
@@ -170,8 +170,8 @@ object RestrictableChooseInference {
 
           // τ_out
           resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
-          resultPur = Type.mkUnion(pur :: purs, loc)
-        } yield (resultTconstrs, resultTpe, resultPur)
+          resultEff = Type.mkUnion(eff :: effs, loc)
+        } yield (resultTconstrs, resultTpe, resultEff)
 
     }
   }
@@ -233,14 +233,14 @@ object RestrictableChooseInference {
       //
       for {
         // Γ ⊢ e: τ
-        (constrs, tpe, pur) <- Typer.inferExp(exp, root)
+        (constrs, tpe, eff) <- Typer.inferExp(exp, root)
         _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
         _ <- traverseM(targs.zip(targsOut)) { case (targ, targOut) => unifyTypeM(targ, targOut, loc) }
         _ <- indexUnification
         _ <- unifyTypeM(enumTypeOut, tvar, loc)
         resultTyp = tvar
-        resultPur = pur
-      } yield (constrs, resultTyp, resultPur)
+        resultEff = eff
+      } yield (constrs, resultTyp, resultEff)
   }
 
   /**
@@ -263,7 +263,7 @@ object RestrictableChooseInference {
 
       for {
         // infer the inner expression type τ
-        (constrs, tpe, pur) <- Typer.inferExp(exp, root)
+        (constrs, tpe, eff) <- Typer.inferExp(exp, root)
 
         // make sure the expression has type EnumType[s][α1 ... αn]
         _ <- expectTypeM(expected = enumType, actual = tpe, loc)
@@ -281,7 +281,7 @@ object RestrictableChooseInference {
         // unify the tvar
         _ <- unifyTypeM(tvar, resultType, loc)
 
-      } yield (constrs, resultType, pur)
+      } yield (constrs, resultType, eff)
 
   }
 

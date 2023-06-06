@@ -170,7 +170,7 @@ object HoverProvider {
     }
   }
 
-  private def formatTypAndEff(tpe0: Type, pur0: Type)(implicit flix: Flix): String = {
+  private def formatTypAndEff(tpe0: Type, eff0: Type)(implicit flix: Flix): String = {
     // TODO deduplicate with CompletionProvider
     val t = FormatType.formatType(tpe0)
 
@@ -178,7 +178,7 @@ object HoverProvider {
     val p = if (flix.options.xnobooleffects) {
       ""
     } else {
-      pur0 match {
+      eff0 match {
         case Type.Cst(TypeConstructor.Pure, _) => ""
         case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
         case eff => raw" \ " + FormatType.formatType(eff)

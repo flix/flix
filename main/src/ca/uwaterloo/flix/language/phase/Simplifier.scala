@@ -46,7 +46,7 @@ object Simplifier {
         val exp = visitExp(impl.exp)
         val funType = impl.inferredScheme.base
         val retType = funType.arrowResultType
-        val eff = funType.arrowPurityType
+        val eff = funType.arrowEffectType
         SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, exp, retType, eff, sym.loc)
     }
 

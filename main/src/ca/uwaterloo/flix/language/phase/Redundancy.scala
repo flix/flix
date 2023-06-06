@@ -651,15 +651,15 @@ object Redundancy {
             visitExp(exp, env0, rc)
       }
 
-    case Expression.UncheckedCast(exp, _, declaredPur, _, _, loc) =>
-      declaredPur match {
+    case Expression.UncheckedCast(exp, _, declaredEff, _, _, loc) =>
+      declaredEff match {
         // Don't capture redundant purity casts if there's also a set effect
         case Some(eff) =>
           (eff, exp.eff) match {
             case (Type.Pure, Type.Pure) =>
-              visitExp(exp, env0, rc) + RedundantPurityCast(loc)
-            case (Type.Var(pur1, _), Type.Var(pur2, _))
-              if pur1 == pur2 =>
+              visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+            case (Type.Var(eff1, _), Type.Var(eff2, _))
+              if eff1 == eff2 =>
               visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
@@ -994,7 +994,7 @@ object Redundancy {
     val resType = tpe.arrowResultType
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
-      case _ => tpe.arrowPurityType
+      case _ => tpe.arrowEffectType
     }
   }
 

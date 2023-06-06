@@ -575,11 +575,11 @@ object Lowering {
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, tpe, eff, loc) =>
+    case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
-      LoweredAst.Expression.Cast(e, dt, declaredPur, t, eff, loc)
+      LoweredAst.Expression.Cast(e, dt, declaredEff, t, eff, loc)
 
     case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
@@ -1407,17 +1407,17 @@ object Lowering {
   /**
     * Make a new channel expression
     */
-  private def mkNewChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, loc: SourceLocation): LoweredAst.Expression = {
+  private def mkNewChannel(exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
     val newChannel = LoweredAst.Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, loc)
+    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, eff, loc)
   }
 
   /**
     * Make a new channel tuple (sender, receiver) expression
     */
-  private def mkNewChannelTuple(exp: LoweredAst.Expression, tpe: Type, pur: Type, loc: SourceLocation): LoweredAst.Expression = {
+  private def mkNewChannelTuple(exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
     val newChannel = LoweredAst.Expression.Def(Defs.ChannelNewTuple, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, loc)
+    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, eff, loc)
   }
 
   /**
@@ -2069,9 +2069,9 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.InstanceOf(e, clazz, loc)
 
-    case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, tpe, eff, loc) =>
+    case LoweredAst.Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      LoweredAst.Expression.Cast(e, declaredType, declaredPur, tpe, eff, loc)
+      LoweredAst.Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case LoweredAst.Expression.Without(exp, sym, tpe, eff, loc) =>
       val e = substExp(exp, subst)
