@@ -1367,7 +1367,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantPurityCast.02") {
     val input =
       raw"""
-           |pub def f(): Array[Int32, false] \ IO =
+           |pub def f(): Array[Int32, Static] \ IO =
            |  let x = Array#{1, 2, 3} @ Static;
            |  unchecked_cast(x as _ \ Pure)
            |

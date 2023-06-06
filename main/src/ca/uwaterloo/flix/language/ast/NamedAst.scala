@@ -357,7 +357,7 @@ object NamedAst {
 
     case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Empty(loc: SourceLocation) extends NamedAst.Type
+    case class Pure(loc: SourceLocation) extends NamedAst.Type
 
     case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends NamedAst.Type
 

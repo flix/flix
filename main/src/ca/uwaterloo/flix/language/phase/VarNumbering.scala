@@ -135,7 +135,7 @@ object VarNumbering {
 
     // Compute the stack offset for each formal parameter.
     var offset = 0
-    for (FormalParam(sym, _, tpe, _) <- defn.fparams) {
+    for (FormalParam(sym, _, tpe, _) <- (defn.cparams ++ defn.fparams)) {
       offset += visitSymbolAssignment(sym, tpe, offset)
     }
 

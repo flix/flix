@@ -58,7 +58,7 @@ object SimplifiedAstPrinter {
     case Def(sym, _, _) => DocAst.Expression.Def(sym)
     case Lambda(fparams, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
     case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
-    case LambdaClosure(fparams, _, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
+    case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
     case Closure(sym, _, _) => DocAst.Expression.Def(sym)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))

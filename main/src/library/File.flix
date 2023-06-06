@@ -406,7 +406,7 @@ mod File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], false, r] \ { r, IO } =
+    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], IO, r] \ { r, IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -446,7 +446,7 @@ mod File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], false, r] \ { r, IO } =
+    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], IO, r] \ { r, IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -557,7 +557,7 @@ mod File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], false, r] \ IO =
+    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], IO, r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;

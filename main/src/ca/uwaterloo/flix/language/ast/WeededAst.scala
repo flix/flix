@@ -348,7 +348,7 @@ object WeededAst {
 
     case class Intersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Empty(loc: SourceLocation) extends WeededAst.Type
+    case class Pure(loc: SourceLocation) extends WeededAst.Type
 
     case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends WeededAst.Type
 

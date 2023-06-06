@@ -1560,11 +1560,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.True
+      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.Pure
     }
 
     def Impure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
+      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.Impure
     }
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {
