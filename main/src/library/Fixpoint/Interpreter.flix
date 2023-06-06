@@ -98,9 +98,8 @@ mod Fixpoint {
                         // assume that length(terms) > 0
                         let len = Vector.length(terms);
                         let keyList = terms |> Vector.map(evalTerm(env));
-                        let key = Vector.take(len - 1, keyList);
-                        let latVals = Vector.drop(len - 1, keyList);
-                        let latVal = match Vector.head(latVals) {
+                        let (key, latValList) = Vector.splitAt(len - 1, keyList);
+                        let latVal = match Vector.head(latValList) {
                             case None => bug!("Found predicate without terms")
                             case Some(k) => k
                         };
