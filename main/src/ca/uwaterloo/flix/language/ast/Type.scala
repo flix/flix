@@ -336,21 +336,21 @@ object Type {
   /**
     * Represents the Complement type constructor.
     *
-    * NB: This type has kind: * -> *.
+    * NB: This type has kind: Eff -> Eff.
     */
   val Complement: Type = Type.Cst(TypeConstructor.Complement, SourceLocation.Unknown)
 
   /**
     * Represents the Union type constructor.
     *
-    * NB: This type has kind: * -> (* -> *).
+    * NB: This type has kind: Eff -> (Eff -> Eff).
     */
   val Union: Type = Type.Cst(TypeConstructor.Union, SourceLocation.Unknown)
 
   /**
     * Represents the Intersection type constructor.
     *
-    * NB: This type has kind: * -> (* -> *).
+    * NB: This type has kind: Eff -> (Eff -> Eff).
     */
   val Intersection: Type = Type.Cst(TypeConstructor.Intersection, SourceLocation.Unknown)
 
@@ -367,21 +367,21 @@ object Type {
   /**
     * Represents the Not type constructor.
     *
-    * NB: This type has kind: * -> *.
+    * NB: This type has kind: Bool -> Bool.
     */
   val Not: Type = Type.Cst(TypeConstructor.Not, SourceLocation.Unknown)
 
   /**
     * Represents the And type constructor.
     *
-    * NB: This type has kind: * -> (* -> *).
+    * NB: This type has kind: Bool -> (Bool -> Bool).
     */
   val And: Type = Type.Cst(TypeConstructor.And, SourceLocation.Unknown)
 
   /**
     * Represents the Or type constructor.
     *
-    * NB: This type has kind: * -> (* -> *).
+    * NB: This type has kind: Bool -> (Bool -> Bool).
     */
   val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
 
