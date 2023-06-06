@@ -45,7 +45,6 @@ pub class Foldable[t : Type -> Type] {
     pub def length(t: t[a]): Int32 =
         Foldable.foldLeft((acc, _) -> acc + 1, 0, t)
 
-
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
