@@ -2881,6 +2881,30 @@ mod TestVector {
         v == Vector#{7}
 
     /////////////////////////////////////////////////////////////////////////////
+    // splitAt                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def splitAt01(): Bool =
+        let v = Vector#{}: Vector[Int32];
+        Vector.splitAt(0, v) == (Vector#{}, Vector#{})
+
+    @test
+    def splitAt02(): Bool =
+        let v = Vector#{1, 5, 19, 3};
+        Vector.splitAt(3, v) == (Vector#{1, 5, 19}, Vector#{3})
+
+    @test
+    def splitAt03(): Bool =
+        let v = Vector#{1, 5, 19, 3};
+        Vector.splitAt(-3, v) == (Vector#{}, v)
+
+    @test
+    def splitAt04(): Bool =
+        let v = Vector#{1, 5, 19, 3};
+        Vector.splitAt(5, v) == (v, Vector#{})
+
+    /////////////////////////////////////////////////////////////////////////////
     // groupBy                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
