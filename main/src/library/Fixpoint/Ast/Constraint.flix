@@ -24,14 +24,14 @@ mod Fixpoint.Ast {
 
     @Internal
     pub enum Constraint[v] {
-        case Constraint(HeadPredicate[v], List[BodyPredicate[v]])
+        case Constraint(HeadPredicate[v], Vector[BodyPredicate[v]])
     }
 
     instance PredSymsOf[Constraint[v]] {
         pub def predSymsOf(x: Constraint[v]): Set[PredSym] = match x {
             case Constraint.Constraint(head, body) =>
                 let headSyms = predSymsOf(head);
-                let bodySyms = List.map(predSymsOf, body);
+                let bodySyms = Vector.map(predSymsOf, body);
                 headSyms ++ Monoid.fold(bodySyms)
         }
     }
@@ -40,7 +40,7 @@ mod Fixpoint.Ast {
         pub def substitute(x: Constraint[v], s: Map[PredSym, PredSym]): Constraint[v] = match x {
             case Constraint.Constraint(head, body) =>
                 let newHead = substitute(head, s);
-                let newBody = List.map(p -> substitute(p, s), body);
+                let newBody = Vector.map(p -> substitute(p, s), body);
                 Constraint.Constraint(newHead, newBody)
         }
     }
@@ -49,10 +49,10 @@ mod Fixpoint.Ast {
         pub def toString(c: Constraint[v]): String =
             match c {
                 case Constraint.Constraint(head, body) =>
-                    if (List.length(body) == 0)
+                    if (Vector.length(body) == 0)
                         "${head}."
                     else
-                        "${head} :- ${body |> List.join(", ")}."
+                        "${head} :- ${body |> Vector.join(", ")}."
             }
     }
 }
