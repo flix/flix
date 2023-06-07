@@ -858,6 +858,11 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 - tpe2`.
+    */
+  def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
+
+  /**
     * Returns the type `And(tpe1, tpe2)`.
     */
   def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {

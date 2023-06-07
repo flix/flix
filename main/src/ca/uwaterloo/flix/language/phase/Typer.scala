@@ -1512,7 +1512,7 @@ object Typer {
           (tconstrss, _, effs) <- traverseM(rules)(visitHandlerRule).map(_.unzip3)
           resultTconstrs = (tconstrs :: tconstrss).flatten
           resultTpe <- unifyTypeM(tvar, tpe, loc)
-          resultEff = Type.mkUnion(eff :: effs, loc)
+          resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
         } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expression.Do(op, args, loc) =>
