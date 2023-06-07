@@ -26,8 +26,8 @@ object UseModuleCompleter extends Completer {
   def getCompletions(ctx: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
-      case regex(ns) =>
-        val nestedModules = CompletionUtils.getNestedModules(ns)
+      case regex(word) =>
+        val nestedModules = CompletionUtils.getNestedModules(word)
         nestedModules.map(mod => ModCompletion(mod))
       case _ => Nil
     }

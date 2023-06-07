@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.Symbol.ModuleSym
 import java.lang.reflect.{Constructor, Executable, Method}
 
 object CompletionUtils {
@@ -204,11 +203,11 @@ object CompletionUtils {
     ModuleSymFragment.parseModuleSym(word) match {
       case ModuleSymFragment.Complete(modSym) =>
         root.modules.getOrElse(modSym, Nil).collect {
-          case sym: ModuleSym => sym
+          case sym: Symbol.ModuleSym => sym
         }
       case ModuleSymFragment.Partial(modSym, suffix) =>
         root.modules.getOrElse(modSym, Nil).collect {
-          case sym: ModuleSym if matches(sym, suffix) => sym
+          case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
         }
       case _ => Nil
     }
