@@ -19,7 +19,7 @@ mod Fixpoint.Ram {
     @Internal
     pub enum BoolExp[v] {
         case Empty(RamSym[v])
-        case NotMemberOf(List[RamTerm[v]], RamSym[v])
+        case NotMemberOf(Vector[RamTerm[v]], RamSym[v])
         case Eq(RamTerm[v], RamTerm[v])
         case Leq(v -> v -> Bool, RamTerm[v], RamTerm[v])
         case Guard0(Unit -> Bool)
@@ -34,7 +34,7 @@ mod Fixpoint.Ram {
         pub def toString(exp: BoolExp[v]): String =
             match exp {
                 case BoolExp.Empty(ramSym) => "${ramSym} == ∅"
-                case BoolExp.NotMemberOf(terms, ramSym) => "(${terms |> List.join(", ")}) ∉ ${ramSym}"
+                case BoolExp.NotMemberOf(terms, ramSym) => "(${terms |> Vector.join(", ")}) ∉ ${ramSym}"
                 case BoolExp.Eq(lhs, rhs) => "${lhs} == ${rhs}"
                 case BoolExp.Leq(_, lhs, rhs) => "${lhs} ≤ ${rhs}"
                 case BoolExp.Guard0(_) => "<clo>()"

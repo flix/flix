@@ -46,7 +46,7 @@ mod Fixpoint {
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
             Map.forEach((_, s) -> compileStratum(stmts, s));
-            RamStmt.Seq(MutList.toList(stmts))
+            RamStmt.Seq(MutList.toVector(stmts))
         }
         case _ => bug!("Datalog normalization bug")
     }
@@ -103,8 +103,9 @@ mod Fixpoint {
             Map.mapWithKey(predSym -> match (arity, den) -> {
                 BoolExp.Empty(RamSym.Delta(predSym, arity, den))
             }, idb) |>
-            Map.valuesOf;
-        let untilBody = RamStmt.Seq(MutList.toList(loopBody));
+            Map.valuesOf |>
+            List.toVector;
+        let untilBody = RamStmt.Seq(MutList.toVector(loopBody));
         let fixpoint = RamStmt.Until(loopTest, untilBody);
         MutList.push!(fixpoint, stmts)
     }
@@ -127,8 +128,8 @@ mod Fixpoint {
         case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
-            let ramTerms = Vector.toList(Vector.map(compileHeadTerm(env), headTerms));
-            let arity = List.length(ramTerms);
+            let ramTerms = Vector.map(compileHeadTerm(env), headTerms);
+            let arity = Vector.length(ramTerms);
             let projection = RelOp.Project(ramTerms, RamSym.Full(headSym, arity, headDen));
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(join, projection);
@@ -184,10 +185,9 @@ mod Fixpoint {
             let env = unifyVars(augBody);
             let ramTerms = Vector.map(compileHeadTerm(env), headTerms);
             let arity = Vector.length(ramTerms);
-            let ramTermsList = Vector.toList(ramTerms);
-            let projection = RelOp.Project(ramTermsList, RamSym.New(headSym, arity, headDen));
+            let projection = RelOp.Project(ramTerms, RamSym.New(headSym, arity, headDen));
             let join = compileBody(env, augBody);
-            let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTermsList, RamSym.Full(headSym, arity, headDen)) :: join, projection);
+            let loopBody = RelOp.If(Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen))}, join), projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
                     Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
@@ -322,8 +322,8 @@ mod Fixpoint {
     /// (2) comes from the negative atom `not A(x)`.
     /// (3) is a function call that computes the expression `x > 0`.
     ///
-    def compileBody(env: Map[VarSym, RamTerm[v]], body: Vector[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
-        Vector.toList(Vector.flatMap(match (atom, rowVar) ->
+    def compileBody(env: Map[VarSym, RamTerm[v]], body: Vector[(BodyPredicate[v], RowVar)]): Vector[BoolExp[v]] =
+        Vector.flatMap(match (atom, rowVar) ->
             let compileBodyTerm = j -> term -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
                 case BodyTerm.Var(var)  => unwrap(Map.get(var, env))
@@ -343,7 +343,7 @@ mod Fixpoint {
                 case BodyAtom(bodySym, denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = Vector.mapWithIndex(compileBodyTerm, terms);
                     let arity = Vector.length(ramTerms);
-                    Vector#{BoolExp.NotMemberOf(Vector.toList(ramTerms), RamSym.Full(bodySym, arity, denotation))}
+                    Vector#{BoolExp.NotMemberOf(ramTerms, RamSym.Full(bodySym, arity, denotation))}
                 case Functional(_, _, _) => Vector.empty()
                 case Guard0(f) =>
                     Vector#{BoolExp.Guard0(f)}
@@ -372,7 +372,7 @@ mod Fixpoint {
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
                     Vector#{BoolExp.Guard5(f, t1, t2, t3, t4, t5)}
-            }, body))
+            }, body)
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a
