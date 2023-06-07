@@ -19,6 +19,16 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 
+/**
+  * We have two kinds of code terms: expressions and statements.
+  *
+  * Expressions must not have control effects, i.e. expressions do not have unhandled `do`'s.
+  *
+  * Statements may have control effects.
+  *
+  * In relation to the current (for this AST) effect system, expressions can be both pure and impure
+  * and statements can also be both.
+  */
 object CallByValueAst {
 
   val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
@@ -55,6 +65,8 @@ object CallByValueAst {
     }
 
     /**
+      * This is not algebraic effect try, but java exception try.
+      *
       * Conceptually, we want `exp` and `rules` to be control-pure. It is very
       * hard to do this with the structural transformation. So while these can
       * be statements, we expect these statements to be control-pure. This means
@@ -66,7 +78,7 @@ object CallByValueAst {
       *
       * `try { letval cbv0 = (x -> x + 1); letval cbv1 = (4+5); cbv0(cbv1) } catch { case e: Exception => ... }`
       *
-      * and likewise in the handler body
+      * and likewise in the catch case body
       */
     case class TryCatch(exp: Stmt, rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -76,9 +88,14 @@ object CallByValueAst {
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
 
-    // Introduce run for force/lazy
+    // `stmt` must be control pure. There must not be algebraic effects "across" run.
+    // `run` could be omited but is used to limit the time spent in the cps monad.
+//    case class Run(stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    // TODO: Enforce spawn e, e must be control pure. Put spawn here. (Wrap into run?)
+
+    // TODO: force/lazy (using run)
+
+    // TODO: Enforce spawn e, e must be control pure. Put spawn here. Wrap into run
 
   }
 
@@ -111,6 +128,8 @@ object CallByValueAst {
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[CallByValueAst.FormalParam], actuals: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+
+    // TODO: add DO and Try-With
 
   }
 

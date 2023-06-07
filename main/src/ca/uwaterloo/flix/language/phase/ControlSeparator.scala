@@ -5,6 +5,25 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, CallByValueAst, ReducedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MapOps
 
+/**
+  * This phase separates code that can have control effects from code that cannot by limiting them
+  * to the righthand side of [[CallByValueAst.Stmt.LetVal]]. This means that while evaluating `a+b`
+  * we know that `a` and `b` cannot have unhandled `do`s.
+  *
+  * This is achieved by let-binding `a` and `b` if they have escaping `do`'s.
+  *
+  * {{{
+  *   (do RandomInt(12)) + (do RandomInt(42))
+  * }}}
+  * becomes
+  * {{{
+  *   letval x = do RandomInt(12);
+  *   letval y = do RandomInt(42);
+  *   ret (x + y)
+  * }}}
+  * This whole thing is a Statement (it does contain unhandled `do`s) but the addition itself is an
+  * expression. The letval block ends with a statement so `ret` is used to lift the expression.
+  */
 object ControlSeparator {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): CallByValueAst.Root = flix.phase("ControlSeparator") {
@@ -169,7 +188,7 @@ object ControlSeparator {
     case ReducedAst.Expr.Var(sym, tpe, loc) =>
       CallByValueAst.Expr.Var(sym, tpe, loc)
     case ReducedAst.Expr.Closure(sym, closureArgs0, tpe, loc) =>
-      // TODO FIX: this might break evaluation order
+      // TODO FIX: this might break evaluation order (also problem in atomic ops)
       val closureArgs = closureArgs0.map(visitExpAsExpr)
       CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc)
     case ReducedAst.Expr.ApplyAtomic(op, exps0, tpe, purity, loc) =>
