@@ -47,11 +47,11 @@ object TypeNormalization {
       val t1 = normalizeType(tpe1)
       val t2 = normalizeType(tpe2)
       t1 match {
-        // Simplify effect set equations.
+        // Simplify effect set formulas.
         case Type.Cst(TypeConstructor.Complement, _) => t2 match {
           case Type.Pure => Type.EffUniv
           case Type.EffUniv => Type.Pure
-          case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
+          case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
         }
         case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) =>
           (x, t2) match {
@@ -59,7 +59,7 @@ object TypeNormalization {
             case (Type.Pure, Type.EffUniv) => Type.EffUniv
             case (Type.EffUniv, Type.Pure) => Type.EffUniv
             case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
-            case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
+            case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
           }
         case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) =>
           (x, t2) match {
@@ -67,33 +67,49 @@ object TypeNormalization {
             case (Type.Pure, Type.EffUniv) => Type.Pure
             case (Type.EffUniv, Type.Pure) => Type.Pure
             case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
-            case _ => throw InternalCompilerException(s"Unexpected non-simple effect $tpe", applyLoc)
+            case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
           }
 
-        // Simplify boolean equations.
-        // TODO EFF-MIGRATION
-        case Type.Cst(TypeConstructor.Not, _) |
-             Type.Apply(Type.Cst(TypeConstructor.And, _), _, _) |
-             Type.Apply(Type.Cst(TypeConstructor.Or, _), _, _) =>
-          throw InternalCompilerException(s"Unexpected Not/And/Or in formula $tpe", applyLoc)
+        // Simplify boolean formulas.
+        case Type.Cst(TypeConstructor.Not, _) => t2 match {
+          case Type.True => Type.False
+          case Type.False => Type.True
+          case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", applyLoc)
+        }
+        case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) =>
+          (x, t2) match {
+            case (Type.True, Type.True) => Type.True
+            case (Type.True, Type.False) => Type.False
+            case (Type.False, Type.True) => Type.False
+            case (Type.False, Type.False) => Type.False
+            case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", applyLoc)
+          }
+        case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) =>
+          (x, t2) match {
+            case (Type.True, Type.True) => Type.True
+            case (Type.True, Type.False) => Type.True
+            case (Type.False, Type.True) => Type.True
+            case (Type.False, Type.False) => Type.False
+            case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", applyLoc)
+          }
 
-        // Simplify set expressions
+        // Simplify case set formulas
         case Type.Cst(TypeConstructor.CaseComplement(enumSym), _) => t2 match {
           case Type.Cst(TypeConstructor.CaseSet(syms, _), loc) =>
             Type.Cst(TypeConstructor.CaseSet(enumSym.universe.diff(syms), enumSym), loc)
-          case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
+          case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula: $tpe", applyLoc)
         }
         case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(enumSym), _), x, loc) =>
           (x, t2) match {
             case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
               Type.Cst(TypeConstructor.CaseSet(syms1.intersect(syms2), enumSym), loc)
-            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
+            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula: $tpe", applyLoc)
           }
         case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(enumSym), _), x, loc) =>
           (x, t2) match {
             case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
               Type.Cst(TypeConstructor.CaseSet(syms1.union(syms2), enumSym), loc)
-            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula $tpe", applyLoc)
+            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula: $tpe", applyLoc)
           }
 
         // Sort record row fields
