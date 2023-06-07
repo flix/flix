@@ -46,7 +46,7 @@ object KindedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: KindedAst.Spec, exp: KindedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, tpe: Type, pur: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, tpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, KindedAst.Case], tpe: Type, loc: SourceLocation)
 
@@ -76,7 +76,7 @@ object KindedAst {
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class HoleWithExp(exp: KindedAst.Expression, tpe: Type.Var, pur: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class HoleWithExp(exp: KindedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -84,7 +84,7 @@ object KindedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.Var, pur: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
@@ -158,7 +158,7 @@ object KindedAst {
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class UncheckedCast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class UncheckedCast(exp: KindedAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class UncheckedMaskingCast(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
@@ -218,7 +218,7 @@ object KindedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Error(m: CompilationMessage, tpe: Type.Var, pur: Type.Var) extends KindedAst.Expression {
+    case class Error(m: CompilationMessage, tpe: Type.Var, eff: Type.Var) extends KindedAst.Expression {
       override def loc: SourceLocation = m.loc
     }
 
@@ -312,7 +312,7 @@ object KindedAst {
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tpe: Type, pur: Type, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: KindedAst.Expression)
 

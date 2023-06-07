@@ -23,7 +23,7 @@ mod Fixpoint.Ast {
 
     @Internal
     pub enum BodyPredicate[v] {
-        case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, List[BodyTerm[v]])
+        case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, Vector[BodyTerm[v]])
         case Functional(Vector[VarSym], Vector[v] -> Vector[Vector[v]], Vector[VarSym])
         case Guard0(Unit -> Bool)
         case Guard1(v -> Bool, VarSym)
@@ -61,12 +61,13 @@ mod Fixpoint.Ast {
             };
             match body {
                 case BodyPredicate.BodyAtom(predSym, Denotation.Relational, p, f, terms) =>
-                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> List.join(", ")})"
+                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
                 case BodyPredicate.BodyAtom(predSym, Denotation.Latticenal(_), p, f, terms) =>
-                    let (keyTerms, latticeTerms) = List.splitAt(List.length(terms)-1, terms);
-                    match List.head(latticeTerms) {
+                    let n = Vector.length(terms)-1;
+                    let (keyTerms, latticeTerms) = (Vector.take(n, terms), Vector.drop(n, terms));
+                    match Vector.head(latticeTerms) {
                         case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
-                        case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> List.join(", ")}; ${l})"
+                        case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
                     }
                 case BodyPredicate.Functional(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
                 case BodyPredicate.Guard0(_) => "<clo>()"

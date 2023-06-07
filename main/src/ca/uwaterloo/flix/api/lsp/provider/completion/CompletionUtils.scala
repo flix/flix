@@ -61,7 +61,7 @@ object CompletionUtils {
   }
 
   def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, _, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
       else
@@ -72,17 +72,17 @@ object CompletionUtils {
       val retTpe = FormatType.formatType(retTpe0)
 
       // don't show purity if bool effects are turned off
-      val pur = if (flix.options.xnobooleffects) {
+      val eff = if (flix.options.xnobooleffects) {
         ""
       } else {
-        pur0 match {
+        eff0 match {
           case Type.Cst(TypeConstructor.Pure, _) => ""
           case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
           case p => raw" \ " + FormatType.formatType(p)
         }
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe$pur"
+      s"$name(${args.mkString(", ")}): $retTpe$eff"
   }
 
   /**
