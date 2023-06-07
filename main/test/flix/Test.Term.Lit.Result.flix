@@ -8,7 +8,7 @@ mod Test.Term.Lit.Result {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Ok(123), r)
+        Vector.memberOf(Ok(123), r)
 
     @test
     def testLitResult02(): Bool =
@@ -18,7 +18,7 @@ mod Test.Term.Lit.Result {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Ok("Hello World"), r)
+        Vector.memberOf(Ok("Hello World"), r)
 
     @test
     def testLitResult03(): Bool =
@@ -30,6 +30,6 @@ mod Test.Term.Lit.Result {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Ok(123), r)
+        Vector.memberOf(Ok(123), r)
 
 }

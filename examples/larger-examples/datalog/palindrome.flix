@@ -43,10 +43,10 @@ def longestPalindromeSequence(s: String): Option[(Int32, Int32)] = {
     let solution = solve p <+> indices;
     forM (
         // Find the option of the maximum palindrome length
-        maxLength <- query solution select l from LongestPalindrome(_, _; l) |> List.maximum;
+        maxLength <- query solution select l from LongestPalindrome(_, _; l) |> Vector.maximum;
 
         // Select the first interval with a maximum length
-        res <- query solution select (b, e) from LongestPalindrome(b,e;maxLength) |> List.head
+        res <- query solution select (b, e) from LongestPalindrome(b,e;maxLength) |> Vector.head
     ) yield res
 
 }
