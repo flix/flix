@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
-
+import ca.uwaterloo.flix.language.ast.Symbol
 import java.lang.reflect.{Constructor, Executable, Method}
 
 object CompletionUtils {
@@ -196,6 +196,35 @@ object CompletionUtils {
         case "void" => "Unit"
         case other => s"##$other"
       }
+    }
+  }
+
+  def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
+    ModuleSymFragment.parseModuleSym(word) match {
+      case ModuleSymFragment.Complete(modSym) =>
+        root.modules.getOrElse(modSym, Nil).collect {
+          case sym: Symbol.ModuleSym => sym
+        }
+      case ModuleSymFragment.Partial(modSym, suffix) =>
+        root.modules.getOrElse(modSym, Nil).collect {
+          case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
+        }
+      case _ => Nil
+    }
+  }
+
+  /**
+   * Returns `true` if the given module `sym` matches the given `suffix`.
+   *
+   * (Aaa.Bbb.Ccc, Cc) => true
+   * (Aaa.Bbb.Ccc, Dd) => false
+   * (/, Cc)           => true
+   */
+  private def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
+    if (sym.isRoot) {
+      true
+    } else {
+      sym.ns.last.startsWith(suffix) // We know that ns cannot be empty because it is not the root.
     }
   }
 
