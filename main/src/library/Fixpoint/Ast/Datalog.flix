@@ -25,7 +25,7 @@ mod Fixpoint.Ast {
 
     @Internal
     pub enum Datalog[v] {
-        case Datalog(List[Constraint[v]], List[Constraint[v]])
+        case Datalog(Vector[Constraint[v]], Vector[Constraint[v]])
         case Model(Map[RamSym[v], Map[Vector[v], v]])
         case Join(Datalog[v], Datalog[v])
     }
@@ -33,8 +33,8 @@ mod Fixpoint.Ast {
     instance PredSymsOf[Datalog[v]] {
         pub def predSymsOf(x: Datalog[v]): Set[PredSym] = match x {
             case Datalog.Datalog(facts, rules) =>
-                let factSyms = facts |> List.map(predSymsOf) |> Monoid.fold;
-                let ruleSyms = rules |> List.map(predSymsOf) |> Monoid.fold;
+                let factSyms = facts |> Vector.map(predSymsOf) |> Monoid.fold;
+                let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
             case Datalog.Model(m)              => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
             case Datalog.Join(v1, v2)          => predSymsOf(v1) ++ predSymsOf(v2)
@@ -44,8 +44,8 @@ mod Fixpoint.Ast {
     instance SubstitutePredSym[Datalog[v]] {
         pub def substitute(x: Datalog[v], s: Map[PredSym, PredSym]): Datalog[v] = match x {
             case Datalog.Datalog(facts, rules) =>
-                let newFacts = List.map(c -> substitute(c, s), facts);
-                let newRules = List.map(c -> substitute(c, s), rules);
+                let newFacts = Vector.map(c -> substitute(c, s), facts);
+                let newRules = Vector.map(c -> substitute(c, s), rules);
                 Datalog.Datalog(newFacts, newRules)
             case Datalog.Model(m) =>
                 def f(macc, sym, v) = {
@@ -71,11 +71,11 @@ mod Fixpoint.Ast {
                 let sb = StringBuilder.new(r);
                 Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Denotation.Relational => Map.forEach((tuple, _) -> {
-                        let tupleString = Vector.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
+                        let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}).", sb)
                     }, rel)
                     case Denotation.Latticenal(_) => Map.forEach((tuple, lat) -> {
-                        let tupleString = Vector.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
+                        let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}; %{lat}).", sb)
                     }, rel)
                 }, db);

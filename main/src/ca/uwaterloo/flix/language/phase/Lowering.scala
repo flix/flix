@@ -1007,8 +1007,8 @@ object Lowering {
     val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
     val ruleExps = cs.filter(c => c.body.nonEmpty).map(visitConstraint)
 
-    val factListExp = mkList(factExps, Types.Constraint, loc)
-    val ruleListExp = mkList(ruleExps, Types.Constraint, loc)
+    val factListExp = mkVector(factExps, Types.Constraint, loc)
+    val ruleListExp = mkVector(ruleExps, Types.Constraint, loc)
 
     val innerExp = mkTuple(List(factListExp, ruleListExp), loc)
     mkTag(Enums.Datalog, "Datalog", innerExp, Types.Datalog, loc)
@@ -1020,7 +1020,7 @@ object Lowering {
   private def visitConstraint(c0: TypedAst.Constraint)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = c0 match {
     case TypedAst.Constraint(cparams, head, body, loc) =>
       val headExp = visitHeadPred(cparams, head)
-      val bodyExp = mkList(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
+      val bodyExp = mkVector(body.map(visitBodyPred(cparams, _)), Types.BodyPredicate, loc)
       val innerExp = mkTuple(headExp :: bodyExp :: Nil, loc)
       mkTag(Enums.Constraint, "Constraint", innerExp, Types.Constraint, loc)
   }
@@ -1032,7 +1032,7 @@ object Lowering {
     case TypedAst.Predicate.Head.Atom(pred, den, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
-      val termsExp = mkList(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
+      val termsExp = mkVector(terms.map(visitHeadTerm(cparams0, _)), Types.HeadTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: termsExp :: Nil, loc)
       mkTag(Enums.HeadPredicate, "HeadAtom", innerExp, Types.HeadPredicate, loc)
   }
@@ -1046,7 +1046,7 @@ object Lowering {
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
-      val termsExp = mkList(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
+      val termsExp = mkVector(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 

@@ -71,7 +71,7 @@ mod Fixpoint {
     @Internal
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] with Order[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
-            Datalog(List.append(edb1, edb2), List.append(idb1, idb2))
+            Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
             use Fixpoint.Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
@@ -94,8 +94,8 @@ mod Fixpoint {
     @Internal
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
         case Datalog(facts, _) =>
-            let pFacts = List.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
-            Datalog(pFacts, Nil)
+            let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
+            Datalog(pFacts, Vector.empty())
         case Model(db) =>
             Map.query(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
@@ -704,11 +704,11 @@ mod Fixpoint {
     def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): Vector[t] \ ef = match d {
         case Datalog(_, cs) => region r {
             let pFacts = MutList.new(r);
-            List.forEach(c -> match c {
-                case Constraint(HeadAtom(headPred, _, terms), Nil) =>
-                    if (headPred == p)
-                        let vs = List.map(headTermValue, terms);
-                        MutList.push!(f(vs), pFacts)
+            Vector.forEach(c -> match c {
+                case Constraint(HeadAtom(headPred, _, terms), body) =>
+                    if (headPred == p and Vector.isEmpty(body))
+                        let vs = Vector.map(headTermValue, terms);
+                        MutList.push!(f(Vector.toList(vs)), pFacts)
                     else ()
                 case _ => ()
             }, cs);
