@@ -40,6 +40,9 @@ object Benchmarker {
       */
     val benchmarksByNamespace = compilationResult.getBenchmarks.groupBy(_._1.namespace)
 
+    if (!options.json) {
+      println("====================== Flix Benchmark ======================")
+    }
     /*
      * Iterate through each namespace and evaluate each benchmark.
      */
@@ -56,9 +59,6 @@ object Benchmarker {
       /*
        * Actual Rounds.
        */
-      if (!options.json) {
-        println("====================== Flix Benchmark ======================")
-      }
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
         val totalTime = run(defn, ActualRounds)
         val averageTime = totalTime / ActualRounds
@@ -68,20 +68,21 @@ object Benchmarker {
         results += ((sym, averageTime))
         sleepAndGC()
       }
-      if (!options.json) {
-        println()
-        println(f"Finished ${benchmarks.size} benchmarks with $ActualRounds iterations each.")
-      }
+    }
 
-      // Print JSON
-      if (options.json) {
-        val json = ("threads" -> options.threads) ~
-          ("benchmarks" -> results.toList.map {
-            case (sym, time) => ("name" -> sym.toString) ~ ("time" -> time)
-          })
-        val s = JsonMethods.pretty(JsonMethods.render(json))
-        println(s)
-      }
+    if (!options.json) {
+      println()
+      println(f"Finished ${benchmarksByNamespace.size} benchmarks with $ActualRounds iterations each.")
+    }
+
+    // Print JSON
+    if (options.json) {
+      val json = ("threads" -> options.threads) ~
+        ("benchmarks" -> results.toList.map {
+          case (sym, time) => ("name" -> sym.toString) ~ ("time" -> time)
+        })
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+      println(s)
     }
   }
 
