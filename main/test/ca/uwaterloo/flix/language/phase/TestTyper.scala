@@ -1470,15 +1470,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnexpectedArgument](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.UnexpectedArgument.02") {
+  test("Test.UnexpectedArgument.02") {
     val input =
       """
         |eff E {
         |    pub def op(): Unit
         |}
         |
-        |def noE(f: Unit -> Unit \ {ef - E}): Unit = ???
+        |def noE(f: Unit -> Unit \ ef - E): Unit = ???
         |
         |def foo(): Unit = noE(_ -> do E.op())
         |""".stripMargin
