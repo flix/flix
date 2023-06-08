@@ -31,7 +31,7 @@ mod Graph {
         let res = query edges, nodes(), reachability()
                   select (src, dst)
                   from Reachable(src, dst);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -43,7 +43,7 @@ mod Graph {
         let res = query edges, reachabilityFromSrc(src)
                   select dst
                   from Reachable(dst);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -60,7 +60,7 @@ mod Graph {
         let res = query edges, nodes(), reachabilityFromSrc(src), unreachablility
                   select dst
                   from UnReachable(dst);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -91,7 +91,7 @@ mod Graph {
         let res = query edges, nodes(), reachability(), connected, components
                   select x
                   from Components(x);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -106,7 +106,7 @@ mod Graph {
         let res = query edges, rev
                   select (x, y)
                   from RevEdge(x, y);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -123,7 +123,7 @@ mod Graph {
         let res = query nodes(), edges, inverse
                   select (x, y)
                   from InvEdge(x, y);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -142,7 +142,7 @@ mod Graph {
                   select ()
                   from Reachable(x, y)
                   where x == y;
-        List.length(res) > 0
+        Vector.length(res) > 0
     }
 
     ///
@@ -188,14 +188,15 @@ mod Graph {
         let cycle = query sol
                     select ()
                     from NegCycle();
-        match cycle {
-            case Nil => // No negative cycle.
-                let res = query sol
-                          select (p, d)
-                          from Mapping(p, d);
-                Some(List.toMap(res))
-            case _ => // Negative cycle.
-                None
+        if (Vector.isEmpty(cycle)) {
+            // No negative cycle.
+            let res = query sol
+                      select (p, d)
+                      from Mapping(p, d);
+            Some(Vector.toMap(res))
+        } else {
+            // Negative cycle.
+            None
         }
     }
 
@@ -222,7 +223,7 @@ mod Graph {
         let res = query edges, dists, mapping
                   select (p, d)
                   from Mapping(p, d);
-        res |> List.toMap
+        res |> Vector.toMap
     }
 
     ///
@@ -241,7 +242,7 @@ mod Graph {
         let res = query edges, dists, mapping
                   select (x, d)
                   from Mapping(x, d);
-        res |> List.toMap
+        res |> Vector.toMap
     }
 
     ///
@@ -286,7 +287,7 @@ mod Graph {
         let res = query edges, nodes
                   select x
                   from Node(x);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -304,7 +305,7 @@ mod Graph {
         let res = query edges, nodes
                   select x
                   from Node(x);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -336,8 +337,8 @@ mod Graph {
         let ml = MutList.new(rc);
         // Extract nodes in fixed order.
         res |>
-            List.sortBy(match (x, i) -> (i, x)) |>
-            List.forEach(match (x, _) -> MutList.push!(x, ml));
+            Vector.sortBy(match (x, i) -> (i, x)) |>
+            Vector.forEach(match (x, _) -> MutList.push!(x, ml));
         MutList.toList(ml)
     }
 
@@ -360,7 +361,7 @@ mod Graph {
         let res = query edges, in, nodes()
                   select (n, d)
                   from Degree(n, d);
-        List.toMap(res)
+        Vector.toMap(res)
     }
 
     ///
@@ -392,8 +393,8 @@ mod Graph {
             case None => None
         };
         res |>
-            List.filterMap(unwrapOption) |>
-            List.toMap
+            Vector.filterMap(unwrapOption) |>
+            Vector.toMap
     }
 
     ///
@@ -424,7 +425,7 @@ mod Graph {
         let res = query edges, nodes(), reachability(), cuts
                   select (x, cut, y)
                   from CutPoint(x, cut, y);
-        List.toSet(res)
+        Vector.toSet(res)
     }
 
     ///
@@ -445,7 +446,7 @@ mod Graph {
         let res = query edges, in, nodes()
                   select (n, d)
                   from InDegree(n, d);
-        List.toMap(res)
+        Vector.toMap(res)
     }
 
     ///
@@ -466,7 +467,7 @@ mod Graph {
         let res = query edges, out, nodes()
                   select (n, d)
                   from OutDegree(n, d);
-        List.toMap(res)
+        Vector.toMap(res)
     }
 
     ///

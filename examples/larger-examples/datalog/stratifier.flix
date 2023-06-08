@@ -1,6 +1,6 @@
 mod Stratifier {
     use Int32.max
-    use List.{toMap, map, flatMap, partition}
+    use List.{map, flatMap, partition}
 
     enum Program(List[Constraint])
     enum Constraint((HeadAtom, List[BodyAtom]))
@@ -47,7 +47,7 @@ mod Stratifier {
                 // allow one level of strata above the bound for a stratification check later
         };
         let solution = solve facts, rules;
-        let m = query solution select (pd, s) from Stratum(pd; s) |> toMap;
+        let m = query solution select (pd, s) from Stratum(pd; s) |> Vector.toMap;
         let notStratified = Map.exists((_, stratum) -> stratum >= numberOfPredicates, m);
         if (notStratified)
             None

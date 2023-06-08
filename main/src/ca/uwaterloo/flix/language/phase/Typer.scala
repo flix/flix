@@ -1862,7 +1862,7 @@ object Typer {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(tpe1, expectedSchemaType, loc)
           _ <- unifyTypeM(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, mkList(freshTupleVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkVector(freshTupleVar, loc), loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -1903,9 +1903,6 @@ object Typer {
       //      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, eff)
   }
-
-  private def mkList(t: Type, loc: SourceLocation): Type =
-    Type.mkEnum(Symbol.mkEnumSym("List"), List(t), loc)
 
   /**
     * Applies the given substitution `subst0` to the given expression `exp0`.

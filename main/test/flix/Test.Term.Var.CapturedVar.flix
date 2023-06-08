@@ -9,7 +9,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Bool                                                                    ///
@@ -20,7 +20,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testBoolCapturedVar02(): Bool =
@@ -28,7 +28,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Char                                                                    ///
@@ -39,7 +39,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testCharCapturedVar02(): Bool =
@@ -47,7 +47,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
             let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testCharCapturedVar03(): Bool =
@@ -55,7 +55,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Float32                                                                 ///
@@ -66,7 +66,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testFloat32CapturedVar02(): Bool =
@@ -74,7 +74,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testFloat32CapturedVar03(): Bool =
@@ -82,7 +82,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Float64                                                                 ///
@@ -93,7 +93,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testFloat64CapturedVar02(): Bool =
@@ -101,7 +101,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testFloat64CapturedVar03(): Bool =
@@ -109,7 +109,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Int8                                                                    ///
@@ -120,7 +120,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt8CapturedVar02(): Bool =
@@ -128,7 +128,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt8CapturedVar03(): Bool =
@@ -136,7 +136,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Int16                                                                   ///
@@ -147,7 +147,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt16CapturedVar02(): Bool =
@@ -155,7 +155,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt16CapturedVar03(): Bool =
@@ -163,7 +163,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Int32                                                                   ///
@@ -174,7 +174,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt32CapturedVar02(): Bool =
@@ -182,7 +182,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt32CapturedVar03(): Bool =
@@ -190,7 +190,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Int64                                                                   ///
@@ -201,7 +201,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt64CapturedVar02(): Bool =
@@ -209,7 +209,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testInt64CapturedVar03(): Bool =
@@ -217,7 +217,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// BigInt                                                                  ///
@@ -228,7 +228,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testBigIntCapturedVar02(): Bool =
@@ -236,7 +236,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testBigIntCapturedVar03(): Bool =
@@ -244,7 +244,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Str                                                                     ///
@@ -255,7 +255,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testStrCapturedVar02(): Bool =
@@ -263,7 +263,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testStrCapturedVar03(): Bool =
@@ -271,7 +271,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Option                                                                  ///
@@ -282,7 +282,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testOptionCapturedVar02(): Bool =
@@ -290,7 +290,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Result                                                                  ///
@@ -301,7 +301,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testResultCapturedVar02(): Bool =
@@ -309,7 +309,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Tuple                                                                   ///
@@ -320,7 +320,7 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
     @test
     def testTupleCapturedVar02(): Bool =
@@ -328,6 +328,6 @@ mod Test.Term.Lit.Var.CapturedVar {
         let x = #{ R(c). };
         let y = #{ R(c) :- R(c). };
         let r = query x, y select 42 from R(c);
-        not List.isEmpty(r)
+        not Vector.isEmpty(r)
 
 }
