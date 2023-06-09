@@ -95,8 +95,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.External.01") {
+  test("FormatType.Arrow.External.01") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
@@ -106,21 +105,19 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.External.02") {
+  test("FormatType.Arrow.External.02") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
-    val expected = raw"t0! -> t1! \ b2!"
+    val expected = raw"t0! -> t1! \ e2!"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.External.03") {
+  test("FormatType.Arrow.External.03") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType, loc)
@@ -131,8 +128,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.External.04") {
+  test("FormatType.Arrow.External.04") {
     val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
 
     val expected = raw"Int8 -> (Int16 -> Int32 \ IO)"
@@ -141,19 +137,17 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.External.05") {
+  test("FormatType.Arrow.External.05") {
     val eff = Type.mkUnion(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Eff, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = false, loc), loc), loc)
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
-    val expected = raw"BigInt -> Bool \ b1 + b2"
+    val expected = raw"BigInt -> Bool \ e1 + e2"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.External.06") {
+  test("FormatType.Arrow.External.06") {
     val arg = Type.mkTuple(List(Type.Bool, Type.Bool), loc)
     val tpe = Type.mkPureArrow(arg, Type.Str, loc)
 
@@ -270,8 +264,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.Internal.01") {
+  test("FormatType.Arrow.Internal.01") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
@@ -281,14 +274,13 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("FormatType.Arrow.Internal.02") {
+  test("FormatType.Arrow.Internal.02") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
     val effectType = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Eff, isRegion = true, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
-    val expected = raw"t0! -> t1! \ b2!"
+    val expected = raw"t0! -> t1! \ e2!"
     val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
 
     assert(actual == expected)

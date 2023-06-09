@@ -456,7 +456,7 @@ object SimpleType {
           }
 
         case TypeConstructor.Union =>
-          // collapse into a chain of ands
+          // collapse into a chain of pluses
           t.typeArguments.map(visit).map(splitPluses) match {
             // Case 1: No args. ? + ?
             case Nil => Plus(Hole :: Hole :: Nil)
@@ -469,7 +469,7 @@ object SimpleType {
           }
 
         case TypeConstructor.Intersection =>
-          // collapse into a chain of ors
+          // collapse into a chain of intersections
           t.typeArguments.map(visit).map(splitIntersections) match {
             // Case 1: No args. ? & ?
             case Nil => Intersection(Hole :: Hole :: Nil)
