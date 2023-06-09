@@ -443,9 +443,32 @@ object SimpleType {
         case TypeConstructor.True => True
         case TypeConstructor.False => False
 
-        // TODO EFF-MIGRATION better formatting
-        case TypeConstructor.And => SimpleType.And(t.typeArguments.map(visit))
-        case TypeConstructor.Or => SimpleType.Or(t.typeArguments.map(visit))
+        case TypeConstructor.And =>
+          // collapse into a chain of ands
+          t.typeArguments.map(visit).map(splitAnds) match {
+            // Case 1: No args. ? and ?
+            case Nil => And(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 and tpe2 and ?
+            case args :: Nil => And(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
+            case args1 :: args2 :: Nil => And(args1 ++ args2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
+        case TypeConstructor.Or =>
+          // collapse into a chain of ors
+          t.typeArguments.map(visit).map(splitOrs) match {
+            // Case 1: No args. ? or ?
+            case Nil => Or(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 or tpe2 or ?
+            case args :: Nil => Or(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
+            case args1 :: args2 :: Nil => Or(args1 ++ args2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.Not => SimpleType.Not(visit(t.typeArguments.head))
 
         case TypeConstructor.Complement =>
@@ -460,9 +483,9 @@ object SimpleType {
           t.typeArguments.map(visit).map(splitPluses) match {
             // Case 1: No args. ? + ?
             case Nil => Plus(Hole :: Hole :: Nil)
-            // Case 2: One arg. Take the left and put a hole at the end: tpe1 and tpe2 and ?
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
             case args :: Nil => Plus(args :+ Hole)
-            // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
+            // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
             case args1 :: args2 :: Nil => Plus(args1 ++ args2)
             // Case 4: Too many args. Error.
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
