@@ -296,6 +296,30 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.Bool.Internal.01") {
+    val a = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
+    val b = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
+    val c = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
+    val tpe = Type.mkAnd(List(a, b, c), loc)
+
+    val expected = "b1 and b2 and b3"
+    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Bool.Internal.02") {
+    val a = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
+    val b = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
+    val c = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
+    val tpe = Type.mkOr(List(a, b, c), loc)
+
+    val expected = "b1 or b2 or b3"
+    val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
+
+    assert(actual == expected)
+  }
+
   test("FormatType.Schema.Internal.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
@@ -433,6 +457,30 @@ class TestFormatType extends AnyFunSuite with TestUtils {
 
     val expected = "m[a]"
     val actual = FormatType.formatTypeWithOptions(ma, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Bool.External.01") {
+    val a = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
+    val b = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
+    val c = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
+    val tpe = Type.mkAnd(List(a, b, c), loc)
+
+    val expected = "a and b and c"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Bool.External.02") {
+    val a = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
+    val b = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
+    val c = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
+    val tpe = Type.mkOr(List(a, b, c), loc)
+
+    val expected = "a or b or c"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
   }
