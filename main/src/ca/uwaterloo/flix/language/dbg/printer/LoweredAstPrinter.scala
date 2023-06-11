@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.LoweredAst
-import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern, RelationalChoicePattern}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern, RelationalChoosePattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object LoweredAstPrinter {
@@ -91,8 +91,8 @@ object LoweredAstPrinter {
     case Expression.RelationalChoose(exps, rules, tpe, eff, loc) =>
       val expD = DocAst.Expression.Tuple(exps.map(print))
       val rulesD = rules.map {
-        case LoweredAst.RelationalChoiceRule(pat, body) =>
-          val patD = DocAst.Expression.Tuple(pat.map(printRelationalChoicePattern))
+        case LoweredAst.RelationalChooseRule(pat, body) =>
+          val patD = DocAst.Expression.Tuple(pat.map(printRelationalChoosePattern))
           val guardD = None
           val bodyD = print(body)
           (patD, guardD, bodyD)
@@ -168,10 +168,10 @@ object LoweredAstPrinter {
   /**
     * Converts the given pattern into a [[DocAst.Expression]].
     */
-  private def printRelationalChoicePattern(pat: LoweredAst.RelationalChoicePattern): DocAst.Expression = pat match {
-    case RelationalChoicePattern.Wild(loc) => DocAst.Expression.Wild
-    case RelationalChoicePattern.Absent(loc) => DocAst.Expression.Absent
-    case RelationalChoicePattern.Present(sym, tpe, loc) => DocAst.Expression.Present(DocAst.Expression.Var(sym))
+  private def printRelationalChoosePattern(pat: LoweredAst.RelationalChoosePattern): DocAst.Expression = pat match {
+    case RelationalChoosePattern.Wild(loc) => DocAst.Expression.Wild
+    case RelationalChoosePattern.Absent(loc) => DocAst.Expression.Absent
+    case RelationalChoosePattern.Present(sym, tpe, loc) => DocAst.Expression.Present(DocAst.Expression.Var(sym))
   }
 
   /**

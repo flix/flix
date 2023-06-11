@@ -151,12 +151,12 @@ object CodeHinter {
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ rules.flatMap {
-        case RelationalChoiceRule(_, exp) => visitExp(exp)
+        case RelationalChooseRule(_, exp) => visitExp(exp)
       }
 
     case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
-        case RestrictableChoiceRule(_, body) => visitExp(body)
+        case RestrictableChooseRule(_, body) => visitExp(body)
       }
 
     case Expression.Tag(_, exp, _, _, _) =>

@@ -1434,7 +1434,7 @@ object Weeder {
       // Check for mismatched arity of `exps` and `rules`.
       //
       val expectedArity = exps.length
-      for (ParsedAst.RelationalChoiceRule(sp1, pat, _, sp2) <- rules) {
+      for (ParsedAst.RelationalChooseRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
           val err = WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2))
@@ -1444,14 +1444,14 @@ object Weeder {
 
       val expsVal = traverse(exps)(visitExp(_, senv))
       val rulesVal = traverse(rules) {
-        case ParsedAst.RelationalChoiceRule(_, pat, exp, _) =>
+        case ParsedAst.RelationalChooseRule(_, pat, exp, _) =>
           val p = pat.map {
-            case ParsedAst.RelationalChoicePattern.Wild(sp1, sp2) => WeededAst.RelationalChoicePattern.Wild(mkSL(sp1, sp2))
-            case ParsedAst.RelationalChoicePattern.Absent(sp1, sp2) => WeededAst.RelationalChoicePattern.Absent(mkSL(sp1, sp2))
-            case ParsedAst.RelationalChoicePattern.Present(sp1, ident, sp2) => WeededAst.RelationalChoicePattern.Present(ident, mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoosePattern.Wild(sp1, sp2) => WeededAst.RelationalChoosePattern.Wild(mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoosePattern.Absent(sp1, sp2) => WeededAst.RelationalChoosePattern.Absent(mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoosePattern.Present(sp1, ident, sp2) => WeededAst.RelationalChoosePattern.Present(ident, mkSL(sp1, sp2))
           }
           mapN(visitExp(exp, senv)) {
-            case e => WeededAst.RelationalChoiceRule(p.toList, e)
+            case e => WeededAst.RelationalChooseRule(p.toList, e)
           }
       }
       mapN(expsVal, rulesVal) {
@@ -1463,7 +1463,7 @@ object Weeder {
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, guard, body) =>
           flatMapN(visitPattern(pat), traverseOpt(guard)(visitExp(_, senv)), visitExp(body, senv)) {
-            case (p, g, b) => createRestrictableChoiceRule(star, p, g, b)
+            case (p, g, b) => createRestrictableChooseRule(star, p, g, b)
           }
       }
       mapN(expVal, rulesVal) {
@@ -2049,10 +2049,10 @@ object Weeder {
     *
     * - The patterns are only tags with possible terms of variables and wildcards
     */
-  private def createRestrictableChoiceRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expression], b0: WeededAst.Expression): Validation[WeededAst.RestrictableChoiceRule, WeederError] = {
+  private def createRestrictableChooseRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expression], b0: WeededAst.Expression): Validation[WeededAst.RestrictableChooseRule, WeederError] = {
     // Check that guard is not present
     val gVal = g0 match {
-      case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
+      case Some(g) => WeederError.RestrictableChooseGuard(star, g.loc).toFailure
       case None => ().toSuccess
     }
     // Check that patterns are only tags of variables (or wildcards as variables, or unit)
@@ -2061,23 +2061,23 @@ object Weeder {
         val innerVal = pat match {
           case Pattern.Tuple(elms, _) =>
             traverse(elms) {
-              case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
-              case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
-              case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
+              case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc).toSuccess
+              case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc).toSuccess
+              case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc).toSuccess
               case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
             }
-          case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
-          case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
-          case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
+          case Pattern.Wild(loc) => List(WeededAst.RestrictableChoosePattern.Wild(loc)).toSuccess
+          case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoosePattern.Var(ident, loc)).toSuccess
+          case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoosePattern.Wild(loc)).toSuccess
           case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
         }
         mapN(innerVal) {
-          case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
+          case inner => WeededAst.RestrictableChoosePattern.Tag(qname, inner, loc)
         }
       case other => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
     }
     mapN(gVal, pVal) {
-      case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
+      case (_, p) => WeededAst.RestrictableChooseRule(p, b0)
     }
   }
 

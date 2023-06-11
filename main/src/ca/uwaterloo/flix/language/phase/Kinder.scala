@@ -554,14 +554,14 @@ object Kinder {
 
     case ResolvedAst.Expression.RelationalChoose(star, exps0, rules0, loc) =>
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      val rulesVal = traverse(rules0)(visitRelationalChoiceRule(_, kenv0, taenv, henv0, root))
+      val rulesVal = traverse(rules0)(visitRelationalChooseRule(_, kenv0, taenv, henv0, root))
       mapN(expsVal, rulesVal) {
         case (exps, rules) => KindedAst.Expression.RelationalChoose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.RestrictableChoose(star, exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val rulesVal = traverse(rules0)(visitRestrictableChoiceRule(_, kenv0, taenv, henv0, root))
+      val rulesVal = traverse(rules0)(visitRestrictableChooseRule(_, kenv0, taenv, henv0, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expression.RestrictableChoose(star, exp, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
@@ -987,24 +987,24 @@ object Kinder {
   /**
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
-  private def visitRelationalChoiceRule(rule0: ResolvedAst.RelationalChoiceRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RelationalChoiceRule, KindError] = rule0 match {
-    case ResolvedAst.RelationalChoiceRule(pat0, exp0) =>
-      val patVal = traverse(pat0)(visitRelationalChoicePattern)
+  private def visitRelationalChooseRule(rule0: ResolvedAst.RelationalChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RelationalChooseRule, KindError] = rule0 match {
+    case ResolvedAst.RelationalChooseRule(pat0, exp0) =>
+      val patVal = traverse(pat0)(visitRelationalChoosePattern)
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RelationalChoiceRule(pat, exp)
+        case (pat, exp) => KindedAst.RelationalChooseRule(pat, exp)
       }
   }
 
   /**
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
-  private def visitRestrictableChoiceRule(rule0: ResolvedAst.RestrictableChoiceRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChoiceRule, KindError] = rule0 match {
-    case ResolvedAst.RestrictableChoiceRule(pat0, exp0) =>
-      val patVal = visitRestrictableChoicePattern(pat0)
+  private def visitRestrictableChooseRule(rule0: ResolvedAst.RestrictableChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChooseRule, KindError] = rule0 match {
+    case ResolvedAst.RestrictableChooseRule(pat0, exp0) =>
+      val patVal = visitRestrictableChoosePattern(pat0)
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RestrictableChoiceRule(pat, exp)
+        case (pat, exp) => KindedAst.RestrictableChooseRule(pat, exp)
       }
   }
 
@@ -1070,29 +1070,29 @@ object Kinder {
   /**
     * Performs kinding on the given relational choice pattern under the given kind environment.
     */
-  private def visitRelationalChoicePattern(pat0: ResolvedAst.RelationalChoicePattern)(implicit flix: Flix): Validation[KindedAst.RelationalChoicePattern, KindError] = pat0 match {
-    case ResolvedAst.RelationalChoicePattern.Wild(loc) => KindedAst.RelationalChoicePattern.Wild(loc).toSuccess
-    case ResolvedAst.RelationalChoicePattern.Absent(loc) => KindedAst.RelationalChoicePattern.Absent(loc).toSuccess
-    case ResolvedAst.RelationalChoicePattern.Present(sym, loc) => KindedAst.RelationalChoicePattern.Present(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+  private def visitRelationalChoosePattern(pat0: ResolvedAst.RelationalChoosePattern)(implicit flix: Flix): Validation[KindedAst.RelationalChoosePattern, KindError] = pat0 match {
+    case ResolvedAst.RelationalChoosePattern.Wild(loc) => KindedAst.RelationalChoosePattern.Wild(loc).toSuccess
+    case ResolvedAst.RelationalChoosePattern.Absent(loc) => KindedAst.RelationalChoosePattern.Absent(loc).toSuccess
+    case ResolvedAst.RelationalChoosePattern.Present(sym, loc) => KindedAst.RelationalChoosePattern.Present(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
-  private def visitRestrictableChoicePattern(pat00: ResolvedAst.RestrictableChoicePattern)(implicit flix: Flix): Validation[KindedAst.RestrictableChoicePattern, KindError] = pat00 match {
-    case ResolvedAst.RestrictableChoicePattern.Tag(sym, pat0, loc) =>
-      val patVal = traverse(pat0)(visitRestrictableChoicePatternVarOrWild)
+  private def visitRestrictableChoosePattern(pat00: ResolvedAst.RestrictableChoosePattern)(implicit flix: Flix): Validation[KindedAst.RestrictableChoosePattern, KindError] = pat00 match {
+    case ResolvedAst.RestrictableChoosePattern.Tag(sym, pat0, loc) =>
+      val patVal = traverse(pat0)(visitRestrictableChoosePatternVarOrWild)
       mapN(patVal) {
-        case pat => KindedAst.RestrictableChoicePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case pat => KindedAst.RestrictableChoosePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
   }
 
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
-  private def visitRestrictableChoicePatternVarOrWild(pat0: ResolvedAst.RestrictableChoicePattern.VarOrWild)(implicit flix: Flix): Validation[KindedAst.RestrictableChoicePattern.VarOrWild, KindError] = pat0 match {
-    case ResolvedAst.RestrictableChoicePattern.Wild(loc) => KindedAst.RestrictableChoicePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-    case ResolvedAst.RestrictableChoicePattern.Var(sym, loc) => KindedAst.RestrictableChoicePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+  private def visitRestrictableChoosePatternVarOrWild(pat0: ResolvedAst.RestrictableChoosePattern.VarOrWild)(implicit flix: Flix): Validation[KindedAst.RestrictableChoosePattern.VarOrWild, KindError] = pat0 match {
+    case ResolvedAst.RestrictableChoosePattern.Wild(loc) => KindedAst.RestrictableChoosePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.RestrictableChoosePattern.Var(sym, loc) => KindedAst.RestrictableChoosePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
   /**

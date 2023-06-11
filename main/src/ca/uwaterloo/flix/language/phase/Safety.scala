@@ -183,11 +183,11 @@ object Safety {
 
       case Expression.RelationalChoose(exps, rules, _, _, _) =>
         exps.flatMap(visit) ++
-          rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
+          rules.flatMap { case RelationalChooseRule(_, exp) => visit(exp) }
 
       case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp) ++
-          rules.flatMap { case RestrictableChoiceRule(_, exp) => visit(exp) }
+          rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp) }
 
       case Expression.Tag(_, exp, _, _, _) =>
         visit(exp)

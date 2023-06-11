@@ -969,19 +969,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def ChoicePattern: Rule1[ParsedAst.RelationalChoicePattern] = rule {
-        (SP ~ "_" ~ SP ~> ParsedAst.RelationalChoicePattern.Wild) |
-          (SP ~ keyword("Absent") ~ SP ~> ParsedAst.RelationalChoicePattern.Absent) |
-          (SP ~ keyword("Present") ~ optWS ~ "(" ~ Names.Variable ~ ")" ~ SP ~> ParsedAst.RelationalChoicePattern.Present)
+      def ChoicePattern: Rule1[ParsedAst.RelationalChoosePattern] = rule {
+        (SP ~ "_" ~ SP ~> ParsedAst.RelationalChoosePattern.Wild) |
+          (SP ~ keyword("Absent") ~ SP ~> ParsedAst.RelationalChoosePattern.Absent) |
+          (SP ~ keyword("Present") ~ optWS ~ "(" ~ Names.Variable ~ ")" ~ SP ~> ParsedAst.RelationalChoosePattern.Present)
       }
 
-      def CaseOne: Rule1[ParsedAst.RelationalChoiceRule] = namedRule("ChooseCase") {
+      def CaseOne: Rule1[ParsedAst.RelationalChooseRule] = namedRule("ChooseCase") {
         SP ~ keyword("case") ~ WS ~ ChoicePattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~>
-          ((sp1: SourcePosition, x: ParsedAst.RelationalChoicePattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.RelationalChoiceRule(sp1, Seq(x), e, sp2))
+          ((sp1: SourcePosition, x: ParsedAst.RelationalChoosePattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.RelationalChooseRule(sp1, Seq(x), e, sp2))
       }
 
-      def CaseMany: Rule1[ParsedAst.RelationalChoiceRule] = namedRule("ChooseCase") {
-        SP ~ keyword("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(ChoicePattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.RelationalChoiceRule
+      def CaseMany: Rule1[ParsedAst.RelationalChooseRule] = namedRule("ChooseCase") {
+        SP ~ keyword("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(ChoicePattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.RelationalChooseRule
       }
 
       def ChooseKind: Rule1[Boolean] = rule {

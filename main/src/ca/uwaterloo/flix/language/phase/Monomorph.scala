@@ -448,20 +448,20 @@ object Monomorph {
     case Expression.RelationalChoose(exps, rules, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val rs = rules.map {
-        case RelationalChoiceRule(pat, exp) =>
+        case RelationalChooseRule(pat, exp) =>
           val patAndEnv = pat.map {
-            case RelationalChoicePattern.Wild(loc) => (RelationalChoicePattern.Wild(loc), Map.empty)
-            case RelationalChoicePattern.Absent(loc) => (RelationalChoicePattern.Absent(loc), Map.empty)
-            case RelationalChoicePattern.Present(sym, tpe1, loc) =>
+            case RelationalChoosePattern.Wild(loc) => (RelationalChoosePattern.Wild(loc), Map.empty)
+            case RelationalChoosePattern.Absent(loc) => (RelationalChoosePattern.Absent(loc), Map.empty)
+            case RelationalChoosePattern.Present(sym, tpe1, loc) =>
               val freshVar = Symbol.freshVarSym(sym)
-              (RelationalChoicePattern.Present(freshVar, subst(tpe1), loc), Map(sym -> freshVar))
+              (RelationalChoosePattern.Present(freshVar, subst(tpe1), loc), Map(sym -> freshVar))
           }
           val p = patAndEnv.map(_._1)
           val env1 = patAndEnv.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
             case (acc, m) => acc ++ m
           }
           val e = visitExp(exp, env0 ++ env1, subst)
-          RelationalChoiceRule(p, e)
+          RelationalChooseRule(p, e)
       }
       Expression.RelationalChoose(es, rs, subst(tpe), subst(eff), loc)
 

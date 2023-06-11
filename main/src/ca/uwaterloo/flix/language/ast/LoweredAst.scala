@@ -129,7 +129,7 @@ object LoweredAst {
 
     case class TypeMatch(exp: LoweredAst.Expression, rules: List[LoweredAst.TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChoiceRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Tag(sym: Ast.CaseSymUse, exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -245,17 +245,17 @@ object LoweredAst {
 
   }
 
-  sealed trait RelationalChoicePattern {
+  sealed trait RelationalChoosePattern {
     def loc: SourceLocation
   }
 
-  object RelationalChoicePattern {
+  object RelationalChoosePattern {
 
-    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoicePattern
+    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoosePattern
 
   }
 
@@ -319,7 +319,7 @@ object LoweredAst {
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[LoweredAst.FormalParam], exp: LoweredAst.Expression)
 
-  case class RelationalChoiceRule(pat: List[LoweredAst.RelationalChoicePattern], exp: LoweredAst.Expression)
+  case class RelationalChooseRule(pat: List[LoweredAst.RelationalChoosePattern], exp: LoweredAst.Expression)
 
   case class MatchRule(pat: LoweredAst.Pattern, guard: Option[LoweredAst.Expression], exp: LoweredAst.Expression)
 
