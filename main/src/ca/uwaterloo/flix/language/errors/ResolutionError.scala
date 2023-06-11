@@ -36,37 +36,6 @@ sealed trait ResolutionError extends CompilationMessage {
 object ResolutionError {
 
   /**
-    * Ambiguous Tag Error.
-    *
-    * @param tag  the tag.
-    * @param ns   the current namespace.
-    * @param locs the source location of the matched tags.
-    * @param loc  the location where the error occurred.
-    */
-  case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Ambiguous tag."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Ambiguous tag '${red(tag)}'.
-         |
-         |${code(loc, "ambiguous tag name.")}
-         |
-         |The tag is defined in multiple enums:
-         |
-         |${appendLocations(locs, "tag is defined in this enum.", formatter)}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Prefix the tag with the enum name."
-    })
-
-  }
-
-  /**
     * Illegal Type Error.
     *
     * @param tpe the illegal type.
