@@ -2134,6 +2134,8 @@ object Resolver {
       case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
       // Case 1: Exactly one match. Success.
       case caze :: _ => caze.toSuccess
+      // Case 2: Multiple matches. Error
+      case cazes => throw InternalCompilerException(s"unexpected duplicate tag: ${qname}", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2153,9 +2155,7 @@ object Resolver {
       // Case 1: Exactly one match. Success.
       case caze :: Nil => caze.toSuccess
       // Case 2: Multiple matches. Error
-      case cazes =>
-        val locs = cazes.map(_.sym.loc).sorted
-        ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+      case cazes => throw InternalCompilerException(s"unexpected duplicate tag: ${qname}", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
