@@ -178,7 +178,6 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, caze)
 
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
-      // TODO RESTR-VARS add to case table?
       tryAddToTable(table0, sym.namespace, sym.name, caze)
 
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
