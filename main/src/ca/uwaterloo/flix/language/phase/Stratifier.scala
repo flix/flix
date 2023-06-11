@@ -204,7 +204,7 @@ object Stratifier {
     case Expression.RelationalChoose(exps, rules, tpe, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case RelationalChoiceRule(pat, exp) => mapN(visitExp(exp))(RelationalChoiceRule(pat, _))
+        case RelationalChooseRule(pat, exp) => mapN(visitExp(exp))(RelationalChooseRule(pat, _))
       }
       mapN(expsVal, rulesVal) {
         case (es, rs) => Expression.RelationalChoose(es, rs, tpe, eff, loc)
@@ -213,7 +213,7 @@ object Stratifier {
     case Expression.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
-        case RestrictableChoiceRule(pat, body) => mapN(visitExp(body))(RestrictableChoiceRule(pat, _))
+        case RestrictableChooseRule(pat, body) => mapN(visitExp(body))(RestrictableChooseRule(pat, _))
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => Expression.RestrictableChoose(star, e, rs, tpe, eff, loc)
@@ -625,14 +625,14 @@ object Stratifier {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RelationalChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
+        case (acc, RelationalChooseRule(_, exp)) => acc + labelledGraphOfExp(exp)
       }
       dg1 + dg2
 
     case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
       val dg1 = labelledGraphOfExp(exp)
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RestrictableChoiceRule(_, body)) => acc + labelledGraphOfExp(body)
+        case (acc, RestrictableChooseRule(_, body)) => acc + labelledGraphOfExp(body)
       }
       dg1 + dg2
 

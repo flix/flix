@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
-import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoicePattern}
+import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -1150,19 +1150,19 @@ object Resolver {
         case NamedAst.Expression.RelationalChoose(star, exps, rules, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0))
           val rulesVal = traverse(rules) {
-            case NamedAst.RelationalChoiceRule(pat0, exp0) =>
+            case NamedAst.RelationalChooseRule(pat0, exp0) =>
               val p = pat0.map {
-                case NamedAst.RelationalChoicePattern.Wild(loc) => ResolvedAst.RelationalChoicePattern.Wild(loc)
-                case NamedAst.RelationalChoicePattern.Absent(loc) => ResolvedAst.RelationalChoicePattern.Absent(loc)
-                case NamedAst.RelationalChoicePattern.Present(sym, loc) => ResolvedAst.RelationalChoicePattern.Present(sym, loc)
+                case NamedAst.RelationalChoosePattern.Wild(loc) => ResolvedAst.RelationalChoosePattern.Wild(loc)
+                case NamedAst.RelationalChoosePattern.Absent(loc) => ResolvedAst.RelationalChoosePattern.Absent(loc)
+                case NamedAst.RelationalChoosePattern.Present(sym, loc) => ResolvedAst.RelationalChoosePattern.Present(sym, loc)
               }
               val env = pat0.foldLeft(env0) {
-                case (acc, NamedAst.RelationalChoicePattern.Wild(_)) => acc
-                case (acc, NamedAst.RelationalChoicePattern.Absent(_)) => acc
-                case (acc, NamedAst.RelationalChoicePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
+                case (acc, NamedAst.RelationalChoosePattern.Wild(_)) => acc
+                case (acc, NamedAst.RelationalChoosePattern.Absent(_)) => acc
+                case (acc, NamedAst.RelationalChoosePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
               }
               mapN(visitExp(exp0, env)) {
-                case e => ResolvedAst.RelationalChoiceRule(p, e)
+                case e => ResolvedAst.RelationalChooseRule(p, e)
               }
           }
           mapN(expsVal, rulesVal) {
@@ -1172,30 +1172,30 @@ object Resolver {
         case NamedAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
           val expVal = visitExp(exp, env0)
           val rulesVal = traverse(rules) {
-            case NamedAst.RestrictableChoiceRule(pat0, exp0) =>
+            case NamedAst.RestrictableChooseRule(pat0, exp0) =>
               val pVal = pat0 match {
-                case NamedAst.RestrictableChoicePattern.Tag(qname, pat, loc) =>
+                case NamedAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
                   val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
                   val pats = pat.map {
-                    case NamedAst.RestrictableChoicePattern.Wild(loc) => ResolvedAst.RestrictableChoicePattern.Wild(loc)
-                    case NamedAst.RestrictableChoicePattern.Var(sym, loc) => ResolvedAst.RestrictableChoicePattern.Var(sym, loc)
+                    case NamedAst.RestrictableChoosePattern.Wild(loc) => ResolvedAst.RestrictableChoosePattern.Wild(loc)
+                    case NamedAst.RestrictableChoosePattern.Var(sym, loc) => ResolvedAst.RestrictableChoosePattern.Var(sym, loc)
                   }
                   mapN(tagVal) {
-                    case tag => ResolvedAst.RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
+                    case tag => ResolvedAst.RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
                   }
               }
               val env = pat0 match {
-                case RestrictableChoicePattern.Tag(qname, pat, loc) =>
+                case RestrictableChoosePattern.Tag(qname, pat, loc) =>
                   pat.foldLeft(env0) {
-                    case (acc, NamedAst.RestrictableChoicePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
-                    case (acc, NamedAst.RestrictableChoicePattern.Wild(loc)) => acc
+                    case (acc, NamedAst.RestrictableChoosePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
+                    case (acc, NamedAst.RestrictableChoosePattern.Wild(loc)) => acc
                   }
               }
 
               val eVal = visitExp(exp0, env)
               flatMapN(pVal, eVal) {
                 case (p, e) =>
-                  ResolvedAst.RestrictableChoiceRule(p, e).toSuccess
+                  ResolvedAst.RestrictableChooseRule(p, e).toSuccess
               }
           }
           mapN(expVal, rulesVal) {

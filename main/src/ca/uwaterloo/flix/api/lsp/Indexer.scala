@@ -264,12 +264,12 @@ object Indexer {
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ traverse(rules) {
-        case RelationalChoiceRule(_, exp) => visitExp(exp)
+        case RelationalChooseRule(_, exp) => visitExp(exp)
       } ++ Index.occurrenceOf(exp0)
 
     case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ traverse(rules) {
-        case RestrictableChoiceRule(_, body) => visitExp(body)
+        case RestrictableChooseRule(_, body) => visitExp(body)
       } ++ Index.occurrenceOf(exp0)
 
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _) =>

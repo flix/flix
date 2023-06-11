@@ -146,9 +146,9 @@ object TypedAst {
 
     case class TypeMatch(exp: TypedAst.Expression, rules: List[TypedAst.TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RelationalChoose(exps: List[TypedAst.Expression], rules: List[TypedAst.RelationalChoiceRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class RelationalChoose(exps: List[TypedAst.Expression], rules: List[TypedAst.RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RestrictableChoose(star: Boolean, exp: TypedAst.Expression, rules: List[TypedAst.RestrictableChoiceRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class RestrictableChoose(star: Boolean, exp: TypedAst.Expression, rules: List[TypedAst.RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Tag(sym: Ast.CaseSymUse, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -300,23 +300,23 @@ object TypedAst {
 
   }
 
-  sealed trait RelationalChoicePattern {
+  sealed trait RelationalChoosePattern {
     def loc: SourceLocation
   }
 
-  object RelationalChoicePattern {
+  object RelationalChoosePattern {
 
-    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoicePattern
+    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoosePattern
 
   }
 
-  sealed trait RestrictableChoicePattern
+  sealed trait RestrictableChoosePattern
 
-  object RestrictableChoicePattern {
+  object RestrictableChoosePattern {
 
     sealed trait VarOrWild
 
@@ -324,7 +324,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoicePattern
+    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
 
   }
 
@@ -376,9 +376,9 @@ object TypedAst {
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression)
 
-  case class RelationalChoiceRule(pat: List[TypedAst.RelationalChoicePattern], exp: TypedAst.Expression)
+  case class RelationalChooseRule(pat: List[TypedAst.RelationalChoosePattern], exp: TypedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: TypedAst.RestrictableChoicePattern, exp: TypedAst.Expression)
+  case class RestrictableChooseRule(pat: TypedAst.RestrictableChoosePattern, exp: TypedAst.Expression)
 
   case class MatchRule(pat: TypedAst.Pattern, guard: Option[TypedAst.Expression], exp: TypedAst.Expression)
 

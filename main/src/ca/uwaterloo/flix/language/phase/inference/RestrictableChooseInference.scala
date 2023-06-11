@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.inference
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoicePattern
+import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.language.phase.Typer.inferExp
@@ -46,9 +46,9 @@ object RestrictableChooseInference {
     *
     * then it returns { Expr.Var, Expr.Xor, Expr.Cst, Expr.And }.
     */
-  private def dom(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
+  private def dom(rules: List[KindedAst.RestrictableChooseRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.map {
-      case KindedAst.RestrictableChoiceRule(KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _), _) => sym.sym
+      case KindedAst.RestrictableChooseRule(KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _), _) => sym.sym
     }.toSet
   }
 
@@ -80,7 +80,7 @@ object RestrictableChooseInference {
 
         // Get the enum symbols for the matched type
         val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
-          case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym.enumSym
+          case KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _) => sym.sym.enumSym
         }
 
         val `enum` = root.restrictableEnums(enumSym)
@@ -92,7 +92,7 @@ object RestrictableChooseInference {
         for {
           // Γ ⊢ e: τ_in
           (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
-          patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
+          patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
           // τ_in = (... + l_i(τ_i) + ...)[φ_in]
@@ -114,7 +114,7 @@ object RestrictableChooseInference {
 
         // Get the enum symbols for the matched type
         val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
-          case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym.enumSym
+          case KindedAst.RestrictableChoosePattern.Tag(sym, _, _, _) => sym.sym.enumSym
         }
 
         val `enum` = root.restrictableEnums(enumSym)
@@ -124,7 +124,7 @@ object RestrictableChooseInference {
         val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)
         val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, `enum`, loc.asSynthetic)).unzip3
         val patternTagTypes = rules0.map(_.pat match {
-          case RestrictableChoicePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
+          case RestrictableChoosePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
         })
 
         val domSet = dom(rules0)
@@ -137,7 +137,7 @@ object RestrictableChooseInference {
         for {
           // Γ ⊢ e: τ_in
           (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
-          patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
+          patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
           // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
@@ -316,13 +316,13 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferRestrictableChoicePattern(pat0: KindedAst.RestrictableChoicePattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
 
     /**
       * Local pattern visitor.
       */
-    def visit(p: KindedAst.RestrictableChoicePattern): InferMonad[Type] = p match {
-      case KindedAst.RestrictableChoicePattern.Tag(symUse, pat, tvar, loc) =>
+    def visit(p: KindedAst.RestrictableChoosePattern): InferMonad[Type] = p match {
+      case KindedAst.RestrictableChoosePattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = root.restrictableEnums(symUse.sym.enumSym)
 
@@ -349,16 +349,16 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferVarOrWild(pat: KindedAst.RestrictableChoicePattern.VarOrWild, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = pat match {
-    case KindedAst.RestrictableChoicePattern.Wild(tvar, _) => liftM(tvar)
-    case KindedAst.RestrictableChoicePattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
+  private def inferVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = pat match {
+    case KindedAst.RestrictableChoosePattern.Wild(tvar, _) => liftM(tvar)
+    case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
   }
 
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferRestrictableChoicePatterns(pats0: List[KindedAst.RestrictableChoicePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
-    traverseM(pats0)(inferRestrictableChoicePattern(_, root))
+  private def inferRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+    traverseM(pats0)(inferRestrictableChoosePattern(_, root))
   }
 
 }
