@@ -126,10 +126,4 @@ object UnificationError {
     */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
 
-  /**
-    * A unification error to indicate that some hack was not applicable
-    */
-  // TODO RESTR-VARS
-  case class HackError(message: String) extends UnificationError
-
 }

@@ -212,9 +212,6 @@ object Unification {
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
 
-        case Result.Err(UnificationError.HackError(message)) =>
-          Err(TypeError.HackError(message, loc))
-
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)
 
