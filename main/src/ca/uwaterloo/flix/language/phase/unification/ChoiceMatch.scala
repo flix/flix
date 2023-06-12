@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.KindedAst.RelationalChoicePattern
+import ca.uwaterloo.flix.language.ast.KindedAst.RelationalChoosePattern
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -34,11 +34,11 @@ object ChoiceMatch {
     *
     * A <= A    P <= P    x <= W for any x (where W is a wildcard).
     */
-  private def leq(pat1: RelationalChoicePattern, pat2: RelationalChoicePattern): Boolean = (pat1, pat2) match {
-    case (RelationalChoicePattern.Wild(_), RelationalChoicePattern.Wild(_)) => true
-    case (RelationalChoicePattern.Absent(_), RelationalChoicePattern.Absent(_)) => true
-    case (RelationalChoicePattern.Present(_, _, _), RelationalChoicePattern.Present(_, _, _)) => true
-    case (_, RelationalChoicePattern.Wild(_)) => true
+  private def leq(pat1: RelationalChoosePattern, pat2: RelationalChoosePattern): Boolean = (pat1, pat2) match {
+    case (RelationalChoosePattern.Wild(_), RelationalChoosePattern.Wild(_)) => true
+    case (RelationalChoosePattern.Absent(_), RelationalChoosePattern.Absent(_)) => true
+    case (RelationalChoosePattern.Present(_, _, _), RelationalChoosePattern.Present(_, _, _)) => true
+    case (_, RelationalChoosePattern.Wild(_)) => true
     case _ => false
   }
 
@@ -51,7 +51,7 @@ object ChoiceMatch {
     * Note: The rows must have the same length.
     */
   @tailrec
-  private def leq(r1: List[RelationalChoicePattern], r2: List[RelationalChoicePattern]): Boolean = (r1, r2) match {
+  private def leq(r1: List[RelationalChoosePattern], r2: List[RelationalChoosePattern]): Boolean = (r1, r2) match {
     case (Nil, Nil) => true
     case (x :: xs, y :: ys) => leq(x, y) && leq(xs, ys)
     case (xs, ys) => throw InternalCompilerException(s"Mismatched rows: '$xs' and '$ys'.", SourceLocation.Unknown)
@@ -60,16 +60,16 @@ object ChoiceMatch {
   /**
     * Returns true if the row `r` is subsumed by a row in the choice pattern match matrix `m`.
     */
-  private def subsumed(r: List[RelationalChoicePattern], m: List[List[RelationalChoicePattern]]): Boolean = m.exists(r2 => leq(r, r2))
+  private def subsumed(r: List[RelationalChoosePattern], m: List[List[RelationalChoosePattern]]): Boolean = m.exists(r2 => leq(r, r2))
 
   /**
     * Computes an anti-chain on the given choice pattern match matrix `m`.
     *
     * Every element (i.e. row) in the anti-chain is incomparable to every other element.
     */
-  private def antiChain(m: List[List[RelationalChoicePattern]]): List[List[RelationalChoicePattern]] = {
+  private def antiChain(m: List[List[RelationalChoosePattern]]): List[List[RelationalChoosePattern]] = {
     @tailrec
-    def visit(acc: List[List[RelationalChoicePattern]], rest: List[List[RelationalChoicePattern]]): List[List[RelationalChoicePattern]] = rest match {
+    def visit(acc: List[List[RelationalChoosePattern]], rest: List[List[RelationalChoosePattern]]): List[List[RelationalChoosePattern]] = rest match {
       case Nil => acc.reverse
       case r :: rs =>
         if (subsumed(r, acc) || subsumed(r, rs))
@@ -89,10 +89,10 @@ object ChoiceMatch {
     * The length of rows `r1` and `r2` must be the same.
     * The length of the (optionally) returned row is the same as `r1` and `r2`.
     */
-  private def generalize(r1: List[RelationalChoicePattern], r2: List[RelationalChoicePattern]): Option[List[RelationalChoicePattern]] = {
+  private def generalize(r1: List[RelationalChoosePattern], r2: List[RelationalChoosePattern]): Option[List[RelationalChoosePattern]] = {
 
     @tailrec
-    def before(acc: List[RelationalChoicePattern], row1: List[RelationalChoicePattern], row2: List[RelationalChoicePattern]): Option[List[RelationalChoicePattern]] =
+    def before(acc: List[RelationalChoosePattern], row1: List[RelationalChoosePattern], row2: List[RelationalChoosePattern]): Option[List[RelationalChoosePattern]] =
       (row1, row2) match {
         case (Nil, Nil) => None
         case (x :: xs, y :: ys) if leq(x, y) => before(x :: acc, xs, ys) // We choose x because its the cap.
@@ -100,12 +100,12 @@ object ChoiceMatch {
         case (x :: xs, y :: ys) =>
           // We know that x and y are incomparable, consequent they are either A and P (or vise versa).
           // Thus we can combine them with a wildcard.
-          after(RelationalChoicePattern.Wild(x.loc) :: acc, xs, ys)
+          after(RelationalChoosePattern.Wild(x.loc) :: acc, xs, ys)
         case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.", SourceLocation.Unknown)
       }
 
     @tailrec
-    def after(acc: List[RelationalChoicePattern], row1: List[RelationalChoicePattern], row2: List[RelationalChoicePattern]): Option[List[RelationalChoicePattern]] =
+    def after(acc: List[RelationalChoosePattern], row1: List[RelationalChoosePattern], row2: List[RelationalChoosePattern]): Option[List[RelationalChoosePattern]] =
       (row1, row2) match {
         case (Nil, Nil) => Some(acc.reverse)
         case (x :: xs, y :: ys) if leq(x, y) => after(x :: acc, xs, ys) // We choose x because its the cap.
@@ -123,7 +123,7 @@ object ChoiceMatch {
   /**
     * Performs generalization on the given choice pattern matrix `m`.
     */
-  private def generalizeAll(m: List[List[RelationalChoicePattern]]): List[List[RelationalChoicePattern]] = {
+  private def generalizeAll(m: List[List[RelationalChoosePattern]]): List[List[RelationalChoosePattern]] = {
     filterMap(allDiagonalPairs(m))(p => generalize(p._1, p._2))
   }
 
@@ -131,7 +131,7 @@ object ChoiceMatch {
     * Saturates the given choice pattern matrix `m`.
     */
   @tailrec
-  def saturate(m: List[List[RelationalChoicePattern]]): List[List[RelationalChoicePattern]] = {
+  def saturate(m: List[List[RelationalChoosePattern]]): List[List[RelationalChoosePattern]] = {
     // Computes the fixpoint on generalizeAll.
     val m1 = antiChain(m ::: generalizeAll(m))
     if (eq(m, m1)) m else saturate(m1)
@@ -140,16 +140,16 @@ object ChoiceMatch {
   /**
     * Returns `true` if the two given pattern match matrices `m1` and `m2` are equal.
     */
-  private def eq(m1: List[List[RelationalChoicePattern]], m2: List[List[RelationalChoicePattern]]): Boolean = {
-    def eqPat(p1: RelationalChoicePattern, p2: RelationalChoicePattern): Boolean = (p1, p2) match {
-      case (RelationalChoicePattern.Wild(_), RelationalChoicePattern.Wild(_)) => true
-      case (RelationalChoicePattern.Absent(_), RelationalChoicePattern.Absent(_)) => true
-      case (RelationalChoicePattern.Present(_, _, _), RelationalChoicePattern.Present(_, _, _)) => true
+  private def eq(m1: List[List[RelationalChoosePattern]], m2: List[List[RelationalChoosePattern]]): Boolean = {
+    def eqPat(p1: RelationalChoosePattern, p2: RelationalChoosePattern): Boolean = (p1, p2) match {
+      case (RelationalChoosePattern.Wild(_), RelationalChoosePattern.Wild(_)) => true
+      case (RelationalChoosePattern.Absent(_), RelationalChoosePattern.Absent(_)) => true
+      case (RelationalChoosePattern.Present(_, _, _), RelationalChoosePattern.Present(_, _, _)) => true
       case _ => false
     }
 
     @tailrec
-    def eqRow(r1: List[RelationalChoicePattern], r2: List[RelationalChoicePattern]): Boolean = (r1, r2) match {
+    def eqRow(r1: List[RelationalChoosePattern], r2: List[RelationalChoosePattern]): Boolean = (r1, r2) match {
       case (Nil, Nil) => true
       case (x :: xs, y :: ys) => eqPat(x, y) && eqRow(xs, ys)
       case _ => false
@@ -185,11 +185,11 @@ object ChoiceMatch {
   /**
     * Converts the given choice pattern match matrix `m` into a readable form.
     */
-  def toPrettyString(m: List[List[RelationalChoicePattern]]): String = {
-    def toPrettyString(p: RelationalChoicePattern): String = p match {
-      case RelationalChoicePattern.Wild(_) => "W"
-      case RelationalChoicePattern.Absent(_) => "A"
-      case RelationalChoicePattern.Present(_, _, _) => "P"
+  def toPrettyString(m: List[List[RelationalChoosePattern]]): String = {
+    def toPrettyString(p: RelationalChoosePattern): String = p match {
+      case RelationalChoosePattern.Wild(_) => "W"
+      case RelationalChoosePattern.Absent(_) => "A"
+      case RelationalChoosePattern.Present(_, _, _) => "P"
     }
 
     m.map(l => l.map(toPrettyString).mkString(" ")).mkString("\n")

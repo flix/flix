@@ -532,17 +532,17 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a purity cast is redundant.
+    * An error raised to indicate that an effect cast is redundant.
     *
     * @param loc the source location of the cast.
     */
-  case class RedundantPurityCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant purity cast. The expression is already pure."
+  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect cast. The expression is already pure."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Redundant purity cast. The expression is already pure.
+         |>> Redundant effect cast. The expression is already pure.
          |
          |${code(loc, "redundant cast.")}
          |

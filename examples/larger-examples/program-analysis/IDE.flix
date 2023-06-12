@@ -48,7 +48,7 @@ mod IDE {
     ///
     /// Solves the given IDE instances.
     ///
-    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)]
+    pub def run(ide: IDE[p, n, d, f, l]): Vector[(n, d, l)]
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
              LowerBound[l], JoinLattice[l], MeetLattice[l],
              Order[n], Order[d], Order[p], Order[f],  Order[l] =

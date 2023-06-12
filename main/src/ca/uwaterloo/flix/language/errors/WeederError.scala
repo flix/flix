@@ -427,7 +427,7 @@ object WeederError {
     * @param star whether the choose is of the star kind.
     * @param loc  the location where the error occurs.
     */
-  case class RestrictableChoiceGuard(star: Boolean, loc: SourceLocation) extends WeederError {
+  case class RestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError {
     private val operationName: String = if (star) "choose*" else "choose"
 
     def summary: String = s"cases of $operationName do not allow guards."

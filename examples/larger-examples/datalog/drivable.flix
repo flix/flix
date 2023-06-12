@@ -4,4 +4,4 @@ pub def drivable(roads: List[(city, city)], source: city, destination: city): Bo
         Path(x, y) :- Road(x, y).
         Path(x, z) :- Path(x, y), Road(y, z).
     };
-    not List.isEmpty(query r, lp select () from Path(source, destination))
+    not Vector.isEmpty(query r, lp select () from Path(source, destination))

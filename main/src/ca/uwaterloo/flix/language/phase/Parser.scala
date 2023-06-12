@@ -861,7 +861,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = {
       def SomeTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {
-        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, pur: Option[ParsedAst.Type]) => Some((tpe, pur)))
+        ":" ~ optWS ~ TypeAndEffect ~ optWS ~> ((tpe: ParsedAst.Type, eff: Option[ParsedAst.Type]) => Some((tpe, eff)))
       }
 
       def NoTypeAndEffect: Rule1[Option[(ParsedAst.Type, Option[ParsedAst.Type])]] = rule {
@@ -969,19 +969,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def ChoicePattern: Rule1[ParsedAst.RelationalChoicePattern] = rule {
-        (SP ~ "_" ~ SP ~> ParsedAst.RelationalChoicePattern.Wild) |
-          (SP ~ keyword("Absent") ~ SP ~> ParsedAst.RelationalChoicePattern.Absent) |
-          (SP ~ keyword("Present") ~ optWS ~ "(" ~ Names.Variable ~ ")" ~ SP ~> ParsedAst.RelationalChoicePattern.Present)
+      def ChoicePattern: Rule1[ParsedAst.RelationalChoosePattern] = rule {
+        (SP ~ "_" ~ SP ~> ParsedAst.RelationalChoosePattern.Wild) |
+          (SP ~ keyword("Absent") ~ SP ~> ParsedAst.RelationalChoosePattern.Absent) |
+          (SP ~ keyword("Present") ~ optWS ~ "(" ~ Names.Variable ~ ")" ~ SP ~> ParsedAst.RelationalChoosePattern.Present)
       }
 
-      def CaseOne: Rule1[ParsedAst.RelationalChoiceRule] = namedRule("ChooseCase") {
+      def CaseOne: Rule1[ParsedAst.RelationalChooseRule] = namedRule("ChooseCase") {
         SP ~ keyword("case") ~ WS ~ ChoicePattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~>
-          ((sp1: SourcePosition, x: ParsedAst.RelationalChoicePattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.RelationalChoiceRule(sp1, Seq(x), e, sp2))
+          ((sp1: SourcePosition, x: ParsedAst.RelationalChoosePattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.RelationalChooseRule(sp1, Seq(x), e, sp2))
       }
 
-      def CaseMany: Rule1[ParsedAst.RelationalChoiceRule] = namedRule("ChooseCase") {
-        SP ~ keyword("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(ChoicePattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.RelationalChoiceRule
+      def CaseMany: Rule1[ParsedAst.RelationalChooseRule] = namedRule("ChooseCase") {
+        SP ~ keyword("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(ChoicePattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.RelationalChooseRule
       }
 
       def ChooseKind: Rule1[Boolean] = rule {
@@ -1483,7 +1483,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Type] = rule {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | CaseComplement | Complement |
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
         Native | True | False | Pure | Impure | Var | Ambiguous
     }
 
@@ -1560,11 +1560,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Pure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.True
+      SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.Pure
     }
 
     def Impure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
+      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.Impure
+    }
+
+    def Not: Rule1[ParsedAst.Type] = rule {
+      SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
     }
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {
@@ -1574,7 +1578,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Complement: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ "~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
+      SP ~ "~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.Complement
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
-
+import ca.uwaterloo.flix.language.ast.Symbol
 import java.lang.reflect.{Constructor, Executable, Method}
 
 object CompletionUtils {
@@ -61,7 +61,7 @@ object CompletionUtils {
   }
 
   def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, _, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
       else
@@ -72,17 +72,17 @@ object CompletionUtils {
       val retTpe = FormatType.formatType(retTpe0)
 
       // don't show purity if bool effects are turned off
-      val pur = if (flix.options.xnobooleffects) {
+      val eff = if (flix.options.xnobooleffects) {
         ""
       } else {
-        pur0 match {
+        eff0 match {
           case Type.Cst(TypeConstructor.Pure, _) => ""
           case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
           case p => raw" \ " + FormatType.formatType(p)
         }
       }
 
-      s"$name(${args.mkString(", ")}): $retTpe$pur"
+      s"$name(${args.mkString(", ")}): $retTpe$eff"
   }
 
   /**
@@ -196,6 +196,35 @@ object CompletionUtils {
         case "void" => "Unit"
         case other => s"##$other"
       }
+    }
+  }
+
+  def getNestedModules(word: String)(implicit root: TypedAst.Root): List[Symbol.ModuleSym] = {
+    ModuleSymFragment.parseModuleSym(word) match {
+      case ModuleSymFragment.Complete(modSym) =>
+        root.modules.getOrElse(modSym, Nil).collect {
+          case sym: Symbol.ModuleSym => sym
+        }
+      case ModuleSymFragment.Partial(modSym, suffix) =>
+        root.modules.getOrElse(modSym, Nil).collect {
+          case sym: Symbol.ModuleSym if matches(sym, suffix) => sym
+        }
+      case _ => Nil
+    }
+  }
+
+  /**
+   * Returns `true` if the given module `sym` matches the given `suffix`.
+   *
+   * (Aaa.Bbb.Ccc, Cc) => true
+   * (Aaa.Bbb.Ccc, Dd) => false
+   * (/, Cc)           => true
+   */
+  private def matches(sym: Symbol.ModuleSym, suffix: String): Boolean = {
+    if (sym.isRoot) {
+      true
+    } else {
+      sym.ns.last.startsWith(suffix) // We know that ns cannot be empty because it is not the root.
     }
   }
 

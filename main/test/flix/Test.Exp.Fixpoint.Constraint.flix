@@ -82,10 +82,10 @@ mod Test.Exp.Fixpoint.Constraint {
     def testPredicateWithTypeVariableTerms01(): Bool = {
         let p = #{ A(12). };
         let query1 = query p select () from B();
-        let test1 = query1 == Nil;
+        let test1 = query1 == Vector#{};
         let _test2 = solve p project C;
         let query2 = query (solve p project D) select () from D();
-        let test3 = query2 == Nil;
+        let test3 = query2 == Vector#{};
         test1 and test3
     }
 

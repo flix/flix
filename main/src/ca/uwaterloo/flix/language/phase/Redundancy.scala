@@ -507,7 +507,7 @@ object Redundancy {
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       val usedMatch = visitExps(exps, env0, rc)
       val usedRules = rules.map {
-        case RelationalChoiceRule(pat, exp) =>
+        case RelationalChooseRule(pat, exp) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -534,7 +534,7 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules map {
-        case RestrictableChoiceRule(pat, body) =>
+        case RestrictableChooseRule(pat, body) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -637,7 +637,7 @@ object Redundancy {
     case Expression.InstanceOf(exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.CheckedCast(cast, exp, tpe, pur, loc) =>
+    case Expression.CheckedCast(cast, exp, tpe, eff, loc) =>
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
@@ -645,21 +645,21 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.pur == pur)
+          if (exp.eff == eff)
             visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
           else
             visitExp(exp, env0, rc)
       }
 
-    case Expression.UncheckedCast(exp, _, declaredPur, _, _, loc) =>
-      declaredPur match {
+    case Expression.UncheckedCast(exp, _, declaredEff, _, _, loc) =>
+      declaredEff match {
         // Don't capture redundant purity casts if there's also a set effect
-        case Some(pur) =>
-          (pur, exp.pur) match {
+        case Some(eff) =>
+          (eff, exp.eff) match {
             case (Type.Pure, Type.Pure) =>
-              visitExp(exp, env0, rc) + RedundantPurityCast(loc)
-            case (Type.Var(pur1, _), Type.Var(pur2, _))
-              if pur1 == pur2 =>
+              visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+            case (Type.Var(eff1, _), Type.Var(eff2, _))
+              if eff1 == eff2 =>
               visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
@@ -894,8 +894,8 @@ object Redundancy {
   /**
     * Returns the symbols used in the given pattern `pat`.
     */
-  private def visitRestrictablePat(pat0: RestrictableChoicePattern): Used = pat0 match {
-    case RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _, _) =>
+  private def visitRestrictablePat(pat0: RestrictableChoosePattern): Used = pat0 match {
+    case RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _, _) =>
       // Ignore the pattern since there is only variables, no nesting.
       Used.of(sym.enumSym, sym)
   }
@@ -967,7 +967,7 @@ object Redundancy {
     * Returns true if the expression is pure and of impure function type.
     */
   private def isUnderAppliedFunction(exp: Expression): Boolean = {
-    val isPure = exp.pur == Type.Pure
+    val isPure = exp.eff == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) =>
         curriedArrowPurityType(exp.tpe) != Type.Pure
@@ -994,7 +994,7 @@ object Redundancy {
     val resType = tpe.arrowResultType
     resType.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
-      case _ => tpe.arrowPurityType
+      case _ => tpe.arrowEffectType
     }
   }
 
@@ -1002,7 +1002,7 @@ object Redundancy {
     * Returns true if the expression is pure.
     */
   private def isPure(exp: Expression): Boolean =
-    exp.pur == Type.Pure
+    exp.eff == Type.Pure
 
   /**
     * Returns true if the expression is pure.
@@ -1050,23 +1050,23 @@ object Redundancy {
   /**
     * Returns the free variables in the list of choice patterns `ps`.
     */
-  private def freeVars(ps: List[RelationalChoicePattern]): Set[Symbol.VarSym] = ps.collect {
-    case RelationalChoicePattern.Present(sym, _, _) => sym
+  private def freeVars(ps: List[RelationalChoosePattern]): Set[Symbol.VarSym] = ps.collect {
+    case RelationalChoosePattern.Present(sym, _, _) => sym
   }.toSet
 
   /**
     * Returns the free variables in the restrictable pattern `p`.
     */
-  private def freeVars(p: RestrictableChoicePattern): Set[Symbol.VarSym] = p match {
-    case RestrictableChoicePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+  private def freeVars(p: RestrictableChoosePattern): Set[Symbol.VarSym] = p match {
+    case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
   }
 
   /**
     * Returns the free variables in the VarOrWild.
     */
-  private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
-    case RestrictableChoicePattern.Wild(_, _) => None
-    case RestrictableChoicePattern.Var(sym, _, _) => Some(sym)
+  private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
+    case RestrictableChoosePattern.Wild(_, _) => None
+    case RestrictableChoosePattern.Var(sym, _, _) => Some(sym)
   }
 
   /**

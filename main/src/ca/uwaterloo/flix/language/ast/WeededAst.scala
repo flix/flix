@@ -39,11 +39,11 @@ object WeededAst {
 
     case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], assocs: List[WeededAst.Declaration.AssocTypeDef], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: Option[WeededAst.Expression], tpe: WeededAst.Type, pur: Option[WeededAst.Type], tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
+    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: Option[WeededAst.Expression], tpe: WeededAst.Type, eff: Option[WeededAst.Type], tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
 
-    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, pur: Option[WeededAst.Type], tconstrs: List[WeededAst.TypeConstraint], constrs: List[WeededAst.EqualityConstraint], loc: SourceLocation) extends WeededAst.Declaration
+    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: Option[WeededAst.Type], tconstrs: List[WeededAst.TypeConstraint], constrs: List[WeededAst.EqualityConstraint], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, pur: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
+    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: List[WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -119,9 +119,9 @@ object WeededAst {
 
     case class TypeMatch(exp: WeededAst.Expression, rules: List[WeededAst.TypeMatchRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class RelationalChoose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.RelationalChoiceRule], loc: SourceLocation) extends WeededAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.RelationalChooseRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class RestrictableChoose(star: Boolean, exp: WeededAst.Expression, rules: List[WeededAst.RestrictableChoiceRule], loc: SourceLocation) extends WeededAst.Expression
+    case class RestrictableChoose(star: Boolean, exp: WeededAst.Expression, rules: List[WeededAst.RestrictableChooseRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -245,23 +245,23 @@ object WeededAst {
 
   }
 
-  sealed trait RelationalChoicePattern
+  sealed trait RelationalChoosePattern
 
-  object RelationalChoicePattern {
+  object RelationalChoosePattern {
 
-    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Present(ident: Name.Ident, loc: SourceLocation) extends RelationalChoicePattern
+    case class Present(ident: Name.Ident, loc: SourceLocation) extends RelationalChoosePattern
 
   }
 
-  sealed trait RestrictableChoicePattern {
+  sealed trait RestrictableChoosePattern {
     def loc: SourceLocation
   }
 
-  object RestrictableChoicePattern {
+  object RestrictableChoosePattern {
 
     sealed trait VarOrWild
 
@@ -269,7 +269,7 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoicePattern
+    case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoosePattern
 
   }
 
@@ -328,7 +328,7 @@ object WeededAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
-    case class Arrow(tparams: List[WeededAst.Type], pur: Option[WeededAst.Type], tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Arrow(tparams: List[WeededAst.Type], eff: Option[WeededAst.Type], tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Apply(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
@@ -348,7 +348,7 @@ object WeededAst {
 
     case class Intersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Empty(loc: SourceLocation) extends WeededAst.Type
+    case class Pure(loc: SourceLocation) extends WeededAst.Type
 
     case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends WeededAst.Type
 
@@ -402,15 +402,15 @@ object WeededAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, pur: Option[WeededAst.Type], loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: Option[WeededAst.Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 
   case class HandlerRule(op: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression)
 
-  case class RelationalChoiceRule(pat: List[WeededAst.RelationalChoicePattern], exp: WeededAst.Expression)
+  case class RelationalChooseRule(pat: List[WeededAst.RelationalChoosePattern], exp: WeededAst.Expression)
 
-  case class RestrictableChoiceRule(pat: WeededAst.RestrictableChoicePattern, exp: WeededAst.Expression)
+  case class RestrictableChooseRule(pat: WeededAst.RestrictableChoosePattern, exp: WeededAst.Expression)
 
   case class TypeConstraint(clazz: Name.QName, tpe: WeededAst.Type, loc: SourceLocation)
 

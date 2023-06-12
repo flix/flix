@@ -206,12 +206,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, pur, tconstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, _) =>
       val st1 = visitTypeParams(tparams)
       val st2 = visitFormalParams(fparams)
       val st3 = tconstrs.iterator.flatMap(visitTypeConstraint)
       val st4 = visitType(retTpe)
-      val st5 = visitType(pur)
+      val st5 = visitType(eff)
       st1 ++ st2 ++ st3 ++ st4 ++ st5
   }
 
@@ -302,7 +302,9 @@ object SemanticTokensProvider {
 
     case Expression.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
-    case Expression.OpenAs(_, exp, _, _) => visitExp(exp) // TODO RESTR-VARS sym
+    case Expression.OpenAs(Ast.RestrictableEnumSymUse(_, loc), exp, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Enum, Nil, loc)
+      Iterator(t) ++ visitExp(exp)
 
     case Expression.Use(_, _, exp, _) => visitExp(exp) // TODO NS-REFACTOR add token for sym
 
@@ -365,11 +367,19 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expression.RelationalChoose(exps, rules, tpe, pur, loc) =>
-      Iterator.empty // TODO: Choose expression.
+    case Expression.RelationalChoose(exps, rules, _, _, _) =>
+      val c = visitExps(exps)
+      rules.foldLeft(c) {
+        case (acc, RelationalChooseRule(pats, exp)) =>
+          acc ++ pats.iterator.flatMap(visitRelationalChoosePat) ++ visitExp(exp)
+      }
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, loc) =>
-      Iterator.empty // TODO RESTR-VARS
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
+      val c = visitExp(exp)
+      rules.foldLeft(c) {
+        case (acc, RestrictableChooseRule(pat, exp)) =>
+          acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
+      }
 
     case Expression.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
@@ -592,6 +602,35 @@ object SemanticTokensProvider {
   }
 
   /**
+    * Returns all semantic tokens in the given pattern `pat0`.
+    */
+  private def visitRelationalChoosePat(pat0: RelationalChoosePattern): Iterator[SemanticToken] = pat0 match {
+    case RelationalChoosePattern.Wild(loc) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      Iterator(t)
+    case RelationalChoosePattern.Absent(loc) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t)
+    case RelationalChoosePattern.Present(sym, _, loc) =>
+      val t1 = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+      val t2 = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t1, t2)
+  }
+
+  /**
+    * Returns all semantic tokens in the given pattern `pat0`.
+    */
+  private def visitRestrictableChoosePat(pat0: RestrictableChoosePattern): Iterator[SemanticToken] = pat0 match {
+    case RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(_, tagLoc), pat1, tpe, loc) =>
+      val t1 = SemanticToken(SemanticTokenType.EnumMember, Nil, tagLoc)
+      val ts = pat1.iterator.map {
+        case RestrictableChoosePattern.Wild(_, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
+        case RestrictableChoosePattern.Var(_, _, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      }
+      Iterator(t1) ++ ts
+  }
+
+  /**
     * Returns all semantic tokens in the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
@@ -785,8 +824,8 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given JvmMethod `method`
     */
   private def visitJvmMethod(method: TypedAst.JvmMethod): Iterator[SemanticToken] = method match {
-    case TypedAst.JvmMethod(_, fparams, exp, tpe, pur, _) =>
-      visitFormalParams(fparams) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(pur)
+    case TypedAst.JvmMethod(_, fparams, exp, tpe, eff, _) =>
+      visitFormalParams(fparams) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
   }
 
   /**

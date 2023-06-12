@@ -78,7 +78,7 @@ mod Test.Term.Apply {
             R(f()).
         };
         let m = query p select x from R(x);
-        List.memberOf(0, m)
+        Vector.memberOf(0, m)
 
     @test
     def testTermApply12(): Bool =
@@ -87,7 +87,7 @@ mod Test.Term.Apply {
             R(f()).
         };
         let m = query p select x from R(x);
-        List.memberOf(1, m)
+        Vector.memberOf(1, m)
 
     @test
     def testTermApply13(): Bool =
@@ -96,7 +96,7 @@ mod Test.Term.Apply {
             R(f()).
         };
         let m = query p select x from R(x);
-        List.memberOf(2, m)
+        Vector.memberOf(2, m)
 
     @test
     def testTermApply14(): Bool =
@@ -106,7 +106,7 @@ mod Test.Term.Apply {
             R(f(x)) :- A(x).
         };
         let m = query p select x from R(x);
-        List.memberOf(4, m)
+        Vector.memberOf(4, m)
 
     @test
     def testTermApply15(): Bool =
@@ -116,7 +116,7 @@ mod Test.Term.Apply {
             R(f(x)) :- A(x).
         };
         let m = query p select x from R(x);
-        List.memberOf(0, m)
+        Vector.memberOf(0, m)
 
     @test
     def testTermApply16(): Bool =
@@ -126,42 +126,42 @@ mod Test.Term.Apply {
             R(f(x, y)) :- A(x), A(y).
         };
         let m = query p select x from R(x);
-        List.memberOf(6, m)
+        Vector.memberOf(6, m)
 
     @test
     def testTermApply17(): Bool =
         let m = query ho1(inc) select x from R(x);
-        List.memberOf(4, m)
+        Vector.memberOf(4, m)
 
     @test
     def testTermApply18(): Bool =
         let m = query ho1(dec) select x from R(x);
-        List.memberOf(0, m)
+        Vector.memberOf(0, m)
 
     @test
     def testTermApply19(): Bool =
         let m = query ho2(add) select x from R(x);
-        List.memberOf(6, m)
+        Vector.memberOf(6, m)
 
     @test
     def testTermApply20(): Bool =
         let m = query ho3(inc) select x from P(x);
-        List.memberOf(4, m)
+        Vector.memberOf(4, m)
 
     @test
     def testTermApply21(): Bool =
         let m = query ho3(dec) select x from P(x);
-        List.memberOf(0, m)
+        Vector.memberOf(0, m)
 
     @test
     def testTermApply22(): Bool =
         let m = query ho3(_ -> true) select x from P(x);
-        List.memberOf(true, m)
+        Vector.memberOf(true, m)
 
     @test
     def testTermApply23(): Bool =
         let m = query ho3(_ -> "hello") select x from P(x);
-        List.memberOf("hello", m)
+        Vector.memberOf("hello", m)
 
     pub def zer(): Int32 = 0
     pub def one(): Int32 = 1
