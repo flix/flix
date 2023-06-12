@@ -78,7 +78,7 @@ object KindedAst {
 
     case class HoleWithExp(exp: KindedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class OpenAs(symUse: Ast.RestrictableEnumSymUse, exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Use(sym: Symbol, alias: Name.Ident, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
