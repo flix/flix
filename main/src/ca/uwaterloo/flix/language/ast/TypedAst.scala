@@ -102,7 +102,7 @@ object TypedAst {
 
     case class HoleWithExp(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class OpenAs(symUse: Ast.RestrictableEnumSymUse, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = exp.eff
     }
 

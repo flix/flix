@@ -92,8 +92,7 @@ object ResolvedAst {
 
     case class HoleWithExp(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    // TODO RESTR-VARS should be Ast.RestrictableEnumSymUse for LSP
-    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class OpenAs(symUse: Ast.RestrictableEnumSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Use(sym: Symbol, alias: Name.Ident, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

@@ -967,7 +967,7 @@ object Resolver {
           val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
           val eVal = visitExp(exp, env0)
           mapN(enumVal, eVal) {
-            case (enum, e) => ResolvedAst.Expression.OpenAs(enum.sym, e, loc)
+            case (enum, e) => ResolvedAst.Expression.OpenAs(Ast.RestrictableEnumSymUse(enum.sym, name.loc), e, loc)
           }.recoverOne {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }

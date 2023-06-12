@@ -254,7 +254,7 @@ object RestrictableChooseInference {
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
   def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
-    case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
+    case KindedAst.Expression.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
       val `enum` = root.restrictableEnums(sym)
 
       val (enumType, indexVar, targs) = instantiatedEnumType(sym, `enum`, loc.asSynthetic)

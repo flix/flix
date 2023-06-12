@@ -302,7 +302,9 @@ object SemanticTokensProvider {
 
     case Expression.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
-    case Expression.OpenAs(_, exp, _, _) => visitExp(exp) // TODO RESTR-VARS sym
+    case Expression.OpenAs(Ast.RestrictableEnumSymUse(_, loc), exp, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Enum, Nil, loc)
+      Iterator(t) ++ visitExp(exp)
 
     case Expression.Use(_, _, exp, _) => visitExp(exp) // TODO NS-REFACTOR add token for sym
 
@@ -365,11 +367,19 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expression.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      Iterator.empty // TODO: Choose expression.
+    case Expression.RelationalChoose(exps, rules, _, _, _) =>
+      val c = visitExps(exps)
+      rules.foldLeft(c) {
+        case (acc, RelationalChooseRule(pats, exp)) =>
+          acc ++ pats.iterator.flatMap(visitRelationalChoosePat) ++ visitExp(exp)
+      }
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
-      Iterator.empty // TODO RESTR-VARS
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
+      val c = visitExp(exp)
+      rules.foldLeft(c) {
+        case (acc, RestrictableChooseRule(pat, exp)) =>
+          acc ++ visitRestrictableChoosePat(pat) ++ visitExp(exp)
+      }
 
     case Expression.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
@@ -589,6 +599,35 @@ object SemanticTokensProvider {
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
+  }
+
+  /**
+    * Returns all semantic tokens in the given pattern `pat0`.
+    */
+  private def visitRelationalChoosePat(pat0: RelationalChoosePattern): Iterator[SemanticToken] = pat0 match {
+    case RelationalChoosePattern.Wild(loc) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      Iterator(t)
+    case RelationalChoosePattern.Absent(loc) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t)
+    case RelationalChoosePattern.Present(sym, _, loc) =>
+      val t1 = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+      val t2 = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t1, t2)
+  }
+
+  /**
+    * Returns all semantic tokens in the given pattern `pat0`.
+    */
+  private def visitRestrictableChoosePat(pat0: RestrictableChoosePattern): Iterator[SemanticToken] = pat0 match {
+    case RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(_, tagLoc), pat1, tpe, loc) =>
+      val t1 = SemanticToken(SemanticTokenType.EnumMember, Nil, tagLoc)
+      val ts = pat1.iterator.map {
+        case RestrictableChoosePattern.Wild(_, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
+        case RestrictableChoosePattern.Var(_, _, loc) => SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      }
+      Iterator(t1) ++ ts
   }
 
   /**
