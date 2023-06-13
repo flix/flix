@@ -214,8 +214,8 @@ object Regions {
       }
       rulesErrors ++ visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Do(_, exps, _, _) =>
-      exps.flatMap(visitExp)
+    case Expression.Do(_, exps, tpe, _, _) =>
+      exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
     case Expression.Resume(exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)

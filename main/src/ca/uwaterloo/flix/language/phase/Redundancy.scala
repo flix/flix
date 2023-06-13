@@ -695,7 +695,7 @@ object Redundancy {
       }
       usedExp ++ Used.of(effUse.sym) ++ usedRules
 
-    case Expression.Do(opUse, exps, _, _) =>
+    case Expression.Do(opUse, exps, _, _, _) =>
       Used.of(opUse.sym.eff) ++ visitExps(exps, env0, rc)
 
     case Expression.Resume(exp, _, _) =>

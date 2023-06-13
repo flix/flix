@@ -365,7 +365,7 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expression.Do(op, exps, _, _) =>
+    case Expression.Do(op, exps, _, _, _) =>
       val parent = Entity.Exp(exp0)
       traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(op.sym, op.loc, parent)
 
