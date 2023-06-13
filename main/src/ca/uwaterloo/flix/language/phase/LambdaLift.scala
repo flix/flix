@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -99,7 +100,9 @@ object LambdaLift {
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
         // Construct the closure parameters
-        val cs = cparams.map(visitFormalParam)
+        val cs = if (cparams.isEmpty)
+          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc))
+        else cparams.map(visitFormalParam)
 
         // Construct the formal parameters.
         val fs = fparams.map(visitFormalParam)
@@ -111,7 +114,9 @@ object LambdaLift {
         m += (freshSymbol -> defn)
 
         // Construct the closure args.
-        val closureArgs = freeVars.map {
+        val closureArgs =  if (freeVars.isEmpty)
+          List(LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.mkUnit(loc), loc))
+        else freeVars.map {
           case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
         }
 

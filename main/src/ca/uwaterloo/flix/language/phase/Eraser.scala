@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, MonoTypedAst}
-import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
+import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
 
 import scala.collection.mutable
 
@@ -29,12 +29,12 @@ object Eraser {
     //
     // A mutable set to hold all type information about all closures in the AST.
     //
-    implicit val ctx: Context = Context(mutable.Set.empty, mutable.Set.empty)
+    implicit val ctx: Context = Context(mutable.Set.empty)
 
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, ctx.closures.toSet, ctx.anonClasses.toSet)
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, ctx.anonClasses.toSet)
   }
 
   private def visitEnum(enum0: MonoTypedAst.Enum): ErasedAst.Enum = {
@@ -57,11 +57,6 @@ object Eraser {
       ErasedAst.Expr.Var(sym, tpe, loc)
 
     case MonoTypedAst.Expr.ApplyAtomic(op, exps, tpe, loc) =>
-      op match {
-        case AtomicOp.Closure(sym) =>
-          ctx.closures += ClosureInfo(sym, exps.map(_.tpe), tpe)
-        case _ => // nop
-      }
       val es = exps.map(visitExpr)
       ErasedAst.Expr.ApplyAtomic(op, es, tpe, loc)
 
@@ -137,6 +132,6 @@ object Eraser {
   private def visitFormalParam(p: MonoTypedAst.FormalParam): ErasedAst.FormalParam =
     ErasedAst.FormalParam(p.sym, p.tpe)
 
-  private case class Context(closures: mutable.Set[ClosureInfo], anonClasses: mutable.Set[AnonClassInfo])
+  private case class Context(anonClasses: mutable.Set[AnonClassInfo])
 
 }
