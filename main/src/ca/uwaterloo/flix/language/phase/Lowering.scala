@@ -585,9 +585,7 @@ object Lowering {
       visitExp(exp)
 
     case TypedAst.Expression.Without(exp, sym, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      LoweredAst.Expression.Without(e, sym, t, eff, loc)
+      visitExp(exp)
 
     case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -2072,10 +2070,6 @@ object Lowering {
     case LoweredAst.Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
-
-    case LoweredAst.Expression.Without(exp, sym, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Without(e, sym, tpe, eff, loc)
 
     case LoweredAst.Expression.TryCatch(_, _, _, _, _) => ??? // TODO
 

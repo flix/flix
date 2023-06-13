@@ -286,9 +286,6 @@ object EarlyTreeShaker {
 
     case Expression.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
-
-    case Expression.Without(exp, _, _, _, _) =>
-      visitExp(exp)
   }
 
   /**

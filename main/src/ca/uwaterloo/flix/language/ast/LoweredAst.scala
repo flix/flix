@@ -185,8 +185,6 @@ object LoweredAst {
 
     case class Cast(exp: LoweredAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Without(exp: LoweredAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class TryCatch(exp: LoweredAst.Expression, rules: List[LoweredAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class TryWith(exp: LoweredAst.Expression, effUse: Ast.EffectSymUse, rules: List[LoweredAst.HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
