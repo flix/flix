@@ -216,9 +216,7 @@ object TypedAst {
 
     case class TryWith(exp: TypedAst.Expression, effUse: Ast.EffectSymUse, rules: List[TypedAst.HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Do(op: Ast.OpSymUse, exps: List[TypedAst.Expression], eff: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Unit
-    }
+    case class Do(op: Ast.OpSymUse, exps: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Resume(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = Type.Pure

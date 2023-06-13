@@ -599,9 +599,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.TryWith(e, sym, rs, t, eff, loc)
 
-    case TypedAst.Expression.Do(sym, exps, eff, loc) =>
+    case TypedAst.Expression.Do(sym, exps, tpe, eff, loc) =>
       val es = visitExps(exps)
-      LoweredAst.Expression.Do(sym, es, eff, loc)
+      LoweredAst.Expression.Do(sym, es, tpe, eff, loc)
 
     case TypedAst.Expression.Resume(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -2083,9 +2083,9 @@ object Lowering {
       }
       LoweredAst.Expression.TryWith(e, sym, rs, tpe, eff, loc)
 
-    case LoweredAst.Expression.Do(sym, exps, eff, loc) =>
+    case LoweredAst.Expression.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
-      LoweredAst.Expression.Do(sym, es, eff, loc)
+      LoweredAst.Expression.Do(sym, es, tpe, eff, loc)
 
     case LoweredAst.Expression.Resume(exp, tpe, loc) =>
       val e = substExp(exp, subst)

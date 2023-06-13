@@ -209,6 +209,18 @@ object Simplifier {
         }
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, simplifyEffect(eff), loc)
 
+      case LoweredAst.Expression.TryWith(_, _, _, _, _, loc) =>
+        // TODO AE temporarily reducing to unit
+        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+      case LoweredAst.Expression.Do(_, _, _, _, loc) =>
+        // TODO AE temporarily reducing to unit
+        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+      case LoweredAst.Expression.Resume(_, _, loc) =>
+        // TODO AE temporarily reducing to unit
+        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
       case LoweredAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
         SimplifiedAst.Expression.InvokeConstructor(constructor, as, tpe, simplifyEffect(eff), loc)
@@ -264,15 +276,6 @@ object Simplifier {
         SimplifiedAst.Expression.Force(e, tpe, loc)
 
       case LoweredAst.Expression.Sig(_, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
-      case LoweredAst.Expression.TryWith(_, _, _, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
-      case LoweredAst.Expression.Do(_, _, _, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
-      case LoweredAst.Expression.Resume(_, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
       case LoweredAst.Expression.TypeMatch(_, _, _, _, loc) =>

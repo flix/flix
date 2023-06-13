@@ -189,9 +189,7 @@ object LoweredAst {
 
     case class TryWith(exp: LoweredAst.Expression, effUse: Ast.EffectSymUse, rules: List[LoweredAst.HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Do(op: Ast.OpSymUse, exps: List[LoweredAst.Expression], eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Unit
-    }
+    case class Do(op: Ast.OpSymUse, exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Resume(exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def eff: Type = Type.Pure

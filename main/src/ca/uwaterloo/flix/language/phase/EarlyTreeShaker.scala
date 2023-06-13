@@ -278,7 +278,7 @@ object EarlyTreeShaker {
     case Expression.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Do(_, exps, _, _) =>
+    case Expression.Do(_, exps, _, _, _) =>
       visitExps(exps)
 
     case Expression.Resume(exp, _, _) =>

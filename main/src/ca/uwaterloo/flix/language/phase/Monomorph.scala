@@ -567,17 +567,24 @@ object Monomorph {
       }
       Expression.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case Expression.TryWith(exp, _, _, _, _, _) =>
-      // Erase the handlers
-      visitExp(exp, env0, subst)
+    case Expression.TryWith(exp, effect, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, env0, subst)
+      val rs = rules map {
+        case HandlerRule(op, fparams0, body0) =>
+          val (fparams, fparamEnv) = specializeFormalParams(fparams0, subst)
+          val env1 = env0 ++ fparamEnv
+          val body = visitExp(body0, env1, subst)
+          HandlerRule(op, fparams, body)
+      }
+      Expression.TryWith(e, effect, rs, subst(tpe), subst(eff), loc)
 
-    case Expression.Do(_, _, _, loc) =>
-      // Erase down to unit
-      Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+    case Expression.Do(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      Expression.Do(op, es, subst(tpe), subst(eff), loc)
 
-    case Expression.Resume(_, _, loc) =>
-      // Erase down to unit
-      Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+    case Expression.Resume(exp, tpe, loc) =>
+      val e = visitExp(exp, env0, subst)
+      Expression.Resume(e, subst(tpe), loc)
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       val as = args.map(visitExp(_, env0, subst))
