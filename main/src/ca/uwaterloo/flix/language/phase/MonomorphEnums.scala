@@ -350,11 +350,6 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.Cast(e, dt, dp, t, p, loc)
-    case Expression.Without(exp, effUse, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Without(e, effUse, t, p, loc)
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {

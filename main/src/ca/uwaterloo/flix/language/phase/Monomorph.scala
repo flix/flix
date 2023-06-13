@@ -555,10 +555,6 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.Cast(e, None, None, subst(tpe), subst(eff), loc)
 
-    case Expression.Without(exp, _, _, _, _) =>
-      // Erase the Without
-      visitExp(exp, env0, subst)
-
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val rs = rules map {

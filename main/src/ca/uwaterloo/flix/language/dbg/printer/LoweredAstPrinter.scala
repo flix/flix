@@ -121,7 +121,6 @@ object LoweredAstPrinter {
       case None => print(exp) // TODO needs eff
       case Some(t) => DocAst.Expression.Cast(print(exp), TypePrinter.print(t))
     }
-    case Expression.Without(exp, effUse, tpe, eff, loc) => DocAst.Expression.Without(print(exp), effUse.sym)
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val expD = print(exp)
       val rulesD = rules.map {
