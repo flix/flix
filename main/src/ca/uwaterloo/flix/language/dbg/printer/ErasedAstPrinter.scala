@@ -38,7 +38,7 @@ object ErasedAstPrinter {
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
-      case ErasedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, _) =>
+      case ErasedAst.Def(ann, mod, _, sym, cparams, fparams, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,

@@ -62,7 +62,7 @@ object LambdaLift {
       val e = liftExp(exp, sym, m)
       val tpe = Type.mkUncurriedArrowWithEffect(fs.map(_.tpe), eff, tpe0, tpe0.loc.asSynthetic)
 
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
+      LiftedAst.Def(ann, mod, isClo = false, sym, Nil, fs, e, tpe, loc)
   }
 
   /**
@@ -100,23 +100,19 @@ object LambdaLift {
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
         // Construct the closure parameters
-        val cs = if (cparams.isEmpty)
-          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc))
-        else cparams.map(visitFormalParam)
+        val cs = cparams.map(visitFormalParam)
 
         // Construct the formal parameters.
         val fs = fparams.map(visitFormalParam)
 
         // Construct a new definition.
-        val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, tpe, loc)
+        val defn = LiftedAst.Def(ann, mod, isClo = true, freshSymbol, cs, fs, liftedExp, tpe, loc)
 
         // Add the new definition to the map of lifted definitions.
         m += (freshSymbol -> defn)
 
         // Construct the closure args.
-        val closureArgs =  if (freeVars.isEmpty)
-          List(LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.mkUnit(loc), loc))
-        else freeVars.map {
+        val closureArgs = freeVars.map {
           case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
         }
 

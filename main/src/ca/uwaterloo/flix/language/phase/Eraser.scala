@@ -46,7 +46,7 @@ object Eraser {
     val cs = def0.cparams.map(visitFormalParam)
     val fs = def0.fparams.map(visitFormalParam)
     val stmt = visitStmt(def0.stmt)
-    ErasedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, stmt, def0.tpe, def0.loc)
+    ErasedAst.Def(def0.ann, def0.mod, def0.isClo, def0.sym, cs, fs, stmt, def0.tpe, def0.loc)
   }
 
   private def visitExpr(exp0: MonoTypedAst.Expr)(implicit ctx: Context): ErasedAst.Expr = exp0 match {

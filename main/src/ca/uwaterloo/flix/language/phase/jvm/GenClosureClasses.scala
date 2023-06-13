@@ -37,7 +37,7 @@ object GenClosureClasses {
     // Generate a closure class for each closure and collect the results in a map.
     //
     ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
-      case (macc, closure) if closure.cparams.nonEmpty =>
+      case (macc, closure) if closure.isClo =>
         val jvmType = JvmOps.getClosureClassType(closure.sym)
         val jvmName = jvmType.name
         val bytecode = genByteCode(closure)

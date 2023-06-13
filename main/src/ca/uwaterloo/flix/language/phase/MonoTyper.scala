@@ -40,7 +40,7 @@ object MonoTyper {
     val fs = def0.fparams.map(visitFormalParam)
     val s = visitStmt(def0.stmt)
     val tpe = visitType(def0.tpe)
-    MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, s, tpe, def0.loc)
+    MonoTypedAst.Def(def0.ann, def0.mod, def0.isClo, def0.sym, cs, fs, s, tpe, def0.loc)
   }
 
   private def visitEnum(enum0: ReducedAst.Enum)(implicit flix: Flix): MonoTypedAst.Enum = enum0 match {

@@ -41,7 +41,7 @@ object Loader {
       //
       // Decorate each defn in the ast with its method object unless its a closure.
       //
-      for ((sym, defn) <- root.defs if defn.cparams.isEmpty) {
+      for ((sym, defn) <- root.defs if !defn.isClo) {
         // Retrieve the namespace info of sym.
         val nsInfo = JvmOps.getNamespace(sym)
 

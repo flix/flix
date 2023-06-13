@@ -38,7 +38,7 @@ object GenFunctionClasses {
     // Generate a function class for each def and collect the results in a map.
     //
     ParOps.parAgg(defs, Map.empty[JvmName, JvmClass])({
-      case (macc, (sym, defn)) if defn.cparams.nonEmpty =>
+      case (macc, (sym, defn)) if defn.isClo =>
         macc // do nothing, these defns should be Closure classes
       case (macc, (sym, defn)) =>
         flix.subtask(sym.toString, sample = true)

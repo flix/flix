@@ -37,7 +37,7 @@ object LiftedAstPrinter {
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
-      case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, _) =>
+      case LiftedAst.Def(ann, mod, _, sym, cparams, fparams, exp, tpe, _) =>
         DocAst.Def(
           ann,
           mod,

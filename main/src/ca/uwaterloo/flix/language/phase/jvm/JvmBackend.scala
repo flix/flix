@@ -253,7 +253,7 @@ object JvmBackend {
     */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
-      case (macc, (_, defn)) if defn.cparams.nonEmpty =>
+      case (macc, (_, defn)) if defn.isClo =>
         macc
       case (macc, (sym, _)) =>
         val args: Array[AnyRef] = Array(null)
