@@ -351,9 +351,9 @@ object Stratifier {
         case (e, rs) => Expression.TryWith(e, sym, rs, tpe, eff, loc)
       }
 
-    case Expression.Do(sym, exps, eff, loc) =>
+    case Expression.Do(sym, exps, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp)) {
-        case es => Expression.Do(sym, es, eff, loc)
+        case es => Expression.Do(sym, es, tpe, eff, loc)
       }
 
     case Expression.Resume(exp, tpe, loc) =>
@@ -724,7 +724,7 @@ object Stratifier {
         case (acc, HandlerRule(_, _, e)) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.Do(_, exps, _, _) =>
+    case Expression.Do(_, exps, _, _, _) =>
       exps.foldLeft(LabelledGraph.empty) {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }

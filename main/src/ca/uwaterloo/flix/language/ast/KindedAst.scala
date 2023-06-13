@@ -168,7 +168,7 @@ object KindedAst {
 
     case class TryWith(exp: KindedAst.Expression, eff: Ast.EffectSymUse, rules: List[KindedAst.HandlerRule], tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Do(op: Ast.OpSymUse, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class Do(op: Ast.OpSymUse, args: List[KindedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Resume(exp: KindedAst.Expression, argTvar: Type.Var, retTvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
