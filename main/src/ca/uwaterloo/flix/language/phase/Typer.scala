@@ -1515,7 +1515,7 @@ object Typer {
           resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
         } yield (resultTconstrs, resultTpe, resultEff)
 
-      case KindedAst.Expression.Do(op, args, loc) =>
+      case KindedAst.Expression.Do(op, args, tvar, loc) =>
         val effect = root.effects(op.sym.eff)
         val operation = effect.ops.find(_.sym == op.sym)
           .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}", loc))
@@ -1537,7 +1537,7 @@ object Typer {
           for {
             (tconstrss, _, effs) <- seqM(argM).map(_.unzip3)
             resultTconstrs = tconstrss.flatten
-            resultTpe = operation.spec.tpe
+            resultTpe <- unifyTypeM(operation.spec.tpe, tvar, loc)
             resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
           } yield (resultTconstrs, resultTpe, resultEff)
         }
@@ -2251,11 +2251,12 @@ object Typer {
         val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryWith(e, effUse, rs, tpe, eff, loc)
 
-      case KindedAst.Expression.Do(op, exps, loc) =>
+      case KindedAst.Expression.Do(op, exps, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
+        val tpe = subst0(tvar)
         val eff1 = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.loc.asSynthetic)
         val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
-        TypedAst.Expression.Do(op, es, eff, loc)
+        TypedAst.Expression.Do(op, es, tpe, eff, loc)
 
       case KindedAst.Expression.Resume(exp, _, retTvar, loc) =>
         val e = visitExp(exp, subst0)

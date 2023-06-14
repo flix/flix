@@ -477,7 +477,7 @@ object SemanticTokensProvider {
       }
       st1 ++ st2
 
-    case Expression.Do(op, exps, _, _) =>
+    case Expression.Do(op, exps, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 

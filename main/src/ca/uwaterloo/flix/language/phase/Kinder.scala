@@ -778,8 +778,9 @@ object Kinder {
 
     case ResolvedAst.Expression.Do(op, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
+      val tvar = Type.freshVar(Kind.Star, loc)
       mapN(argsVal) {
-        case args => KindedAst.Expression.Do(op, args, loc)
+        case args => KindedAst.Expression.Do(op, args, tvar, loc)
       }
 
     case ResolvedAst.Expression.Resume(exp0, loc) =>

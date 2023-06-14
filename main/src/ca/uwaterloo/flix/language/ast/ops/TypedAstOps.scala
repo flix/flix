@@ -78,7 +78,7 @@ object TypedAstOps {
     case Expression.Without(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.TryWith(exp, _, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expression.Do(_, exps, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expression.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expression.Resume(exp, _, _) => sigSymsOf(exp)
     case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expression.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
@@ -292,7 +292,7 @@ object TypedAstOps {
         case (acc, HandlerRule(_, fparams, exp)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
       }
 
-    case Expression.Do(_, exps, _, _) =>
+    case Expression.Do(_, exps, _, _, _) =>
       exps.flatMap(freeVars).toMap
 
     case Expression.Resume(exp, _, _) =>

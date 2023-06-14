@@ -371,10 +371,11 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.TryWith(e, effUse, rs, t, p, loc)
-    case Expression.Do(op, exps, eff, loc) =>
+    case Expression.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
+      val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Do(op, es, p, loc)
+      Expression.Do(op, es, t, p, loc)
     case Expression.Resume(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
