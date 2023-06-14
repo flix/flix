@@ -22,7 +22,7 @@ object FormatEff {
 
   def formatEff(eff: Type)(implicit flix: Flix): String = eff match {
     case Type.Cst(TypeConstructor.Pure, _) => "Pure"
-    case Type.Cst(TypeConstructor.EffUniv, _) => "Impure"
+    case Type.Cst(TypeConstructor.EffUniv, _) => "IO"
     case _ => FormatType.formatType(eff)
   }
 

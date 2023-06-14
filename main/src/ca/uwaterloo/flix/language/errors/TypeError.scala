@@ -139,7 +139,7 @@ object TypeError {
     * @param inferred the inferred effect.
     * @param loc      the location where the error occurred.
     */
-  case class EffectfulDeclaredAsPure(inferred: Type, loc: SourceLocation) extends TypeError {
+  case class EffectfulDeclaredAsPure(inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = "Effectful function declared as pure."
 
     def message(formatter: Formatter): String = {
@@ -148,6 +148,8 @@ object TypeError {
          |>> ${red("Effectful")} function declared as ${green("pure")}.
          |
          |${code(loc, "effectful function.")}
+         |
+         |The function has the effect: ${FormatEff.formatEff(inferred)}
          |
          |""".stripMargin
     }
