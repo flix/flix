@@ -1179,24 +1179,43 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
-  test("Test.EffectPolymorphicDeclaredAsPure.01") {
+  test("Test.EffectfulDeclaredAsPure.01") {
     val input =
       """
         |def f(g: Int32 -> Int32 \ ef): Int32 = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+    expectError[TypeError.EffectfulDeclaredAsPure](result)
   }
 
-  test("Test.EffectPolymorphicDeclaredAsPure.02") {
+  test("Test.EffectfulDeclaredAsPure.02") {
     val input =
       """
         |def f(g: Int32 -> Int32 \ ef): Int32 \ {} = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+    expectError[TypeError.EffectfulDeclaredAsPure](result)
+  }
+
+  test("Test.EffectfulDeclaredAsPure.03") {
+    val input =
+      """
+        |eff Print {
+        |    pub def print(): Unit
+        |}
+        |
+        |eff Throw {
+        |    pub def throw(): Unit
+        |}
+        |
+        |def f(): Unit =
+        |    do Print.print();
+        |    do Throw.throw()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulDeclaredAsPure](result)
   }
 
   test("Test.EffectGeneralizationError.01") {
