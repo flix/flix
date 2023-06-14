@@ -134,26 +134,28 @@ object TypeError {
   }
 
   /**
-    * Effect polymorphic function declared as pure.
+    * Effectful function declared as pure.
     *
     * @param inferred the inferred effect.
     * @param loc      the location where the error occurred.
     */
-  case class EffectPolymorphicDeclaredAsPure(inferred: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = "Effect polymorphic function declared as pure."
+  case class EffectfulDeclaredAsPure(inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = "Effectful function declared as pure."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> ${red("Effect polymorphic")} function declared as ${green("pure")}.
+         |>> ${red("Effectful")} function declared as ${green("pure")}.
          |
-         |${code(loc, "effect polymorphic function.")}
+         |${code(loc, "effectful function.")}
+         |
+         |The function has the effect: ${FormatEff.formatEff(inferred)}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """A function whose body is effect polymorphic must be declared as so.
+      """A function must declare all the effects used in its body.
         |
         |For example:
         |
