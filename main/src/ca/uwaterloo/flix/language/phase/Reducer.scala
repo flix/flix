@@ -33,12 +33,13 @@ object Reducer {
   }
 
   private def visitDef(d: LiftedAst.Def): ReducedAst.Def = d match {
-    case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, loc) =>
+    case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe0, purity, loc) =>
       val cs = cparams.map(visitFormalParam)
       val fs = fparams.map(visitFormalParam)
       val e = visitExpr(exp)
-      val s = ReducedAst.Stmt.Ret(e, tpe, loc)
-      ReducedAst.Def(ann, mod, sym, cs, fs, s, tpe, loc)
+      val tpe = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), purity, tpe0, tpe0.loc)
+      val stmt = ReducedAst.Stmt.Ret(e, e.tpe, e.loc)
+      ReducedAst.Def(ann, mod, sym, cs, fs, stmt, tpe, loc)
   }
 
   private def visitEnum(d: LiftedAst.Enum): ReducedAst.Enum = d match {
