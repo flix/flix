@@ -8,7 +8,7 @@ mod Test.Term.Lit.List {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Nil, r)
+        Vector.memberOf(Nil, r)
 
     @test
     def testLitList02(): Bool =
@@ -18,7 +18,7 @@ mod Test.Term.Lit.List {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Nil, r)
+        Vector.memberOf(Nil, r)
 
     @test
     def testLitList03(): Bool =
@@ -28,7 +28,7 @@ mod Test.Term.Lit.List {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(1 :: 2 :: Nil, r)
+        Vector.memberOf(1 :: 2 :: Nil, r)
 
     @test
     def testLitList04(): Bool =
@@ -38,6 +38,6 @@ mod Test.Term.Lit.List {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf("hello" :: "world" :: Nil, r)
+        Vector.memberOf("hello" :: "world" :: Nil, r)
 
 }

@@ -1361,19 +1361,19 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantPurityCast](result)
+    expectError[RedundancyError.RedundantEffectCast](result)
   }
 
   test("RedundantPurityCast.02") {
     val input =
       raw"""
-           |pub def f(): Array[Int32, false] \ IO =
+           |pub def f(): Array[Int32, Static] \ IO =
            |  let x = Array#{1, 2, 3} @ Static;
            |  unchecked_cast(x as _ \ Pure)
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantPurityCast](result)
+    expectError[RedundancyError.RedundantEffectCast](result)
   }
 
   test("RedundantEffectCast.01") {

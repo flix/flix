@@ -325,11 +325,11 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case E(Int32)
         |}
         |
-        |instance C[E[true]] {
-        |    pub def foo(x: E[true]): Int32 = 1
+        |instance C[E[Pure]] {
+        |    pub def foo(x: E[Pure]): Int32 = 1
         |}
         |
-        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[true]
+        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[Pure]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
@@ -998,7 +998,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case Absent => 1
         |    }
         |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1016,7 +1016,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case Present(_) => 1
         |    }
         |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
+        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
         |    case Absent
         |    case Present(a)
         |}
@@ -1179,24 +1179,43 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.ImpureDeclaredAsPure](result)
   }
 
-  test("Test.EffectPolymorphicDeclaredAsPure.01") {
+  test("Test.EffectfulDeclaredAsPure.01") {
     val input =
       """
         |def f(g: Int32 -> Int32 \ ef): Int32 = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+    expectError[TypeError.EffectfulDeclaredAsPure](result)
   }
 
-  test("Test.EffectPolymorphicDeclaredAsPure.02") {
+  test("Test.EffectfulDeclaredAsPure.02") {
     val input =
       """
         |def f(g: Int32 -> Int32 \ ef): Int32 \ {} = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+    expectError[TypeError.EffectfulDeclaredAsPure](result)
+  }
+
+  test("Test.EffectfulDeclaredAsPure.03") {
+    val input =
+      """
+        |eff Print {
+        |    pub def print(): Unit
+        |}
+        |
+        |eff Throw {
+        |    pub def throw(): Unit
+        |}
+        |
+        |def f(): Unit =
+        |    do Print.print();
+        |    do Throw.throw()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectfulDeclaredAsPure](result)
   }
 
   test("Test.EffectGeneralizationError.01") {
@@ -1470,15 +1489,14 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnexpectedArgument](result)
   }
 
-  // TODO EFF-MIGRATION temporarily disabled
-  ignore("Test.UnexpectedArgument.02") {
+  test("Test.UnexpectedArgument.02") {
     val input =
       """
         |eff E {
         |    pub def op(): Unit
         |}
         |
-        |def noE(f: Unit -> Unit \ {ef - E}): Unit = ???
+        |def noE(f: Unit -> Unit \ ef - E): Unit = ???
         |
         |def foo(): Unit = noE(_ -> do E.op())
         |""".stripMargin
@@ -1518,8 +1536,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
     """
       |enum E[a: Type, ef: Eff](Unit)
-      |def f(g: E[Int32, true]): Bool = ???
-      |def mkE(): E[Int32, true] \ ef = ???
+      |def f(g: E[Int32, Pure]): Bool = ???
+      |def mkE(): E[Int32, Pure] \ ef = ???
       |
       |def g(): Bool = f(mkE)
       |""".stripMargin

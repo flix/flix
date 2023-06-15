@@ -73,15 +73,6 @@ object Doc {
 
   def indentationLevel(i: Int): Indent = Indentation(i)
 
-  def deconstruct(d: Doc)(implicit indent: Indent): Doc = d match {
-    case Nil => Nil
-    case Cons(d1, d2) => Cons(deconstruct(d1), deconstruct(d2))
-    case Text(s) => Text(s)
-    case Nest(i, d) => Nest(i, deconstruct(d))
-    case Break(s) => Break(s)
-    case Group(d) => Group(deconstruct(d))
-  }
-
   /**
     * Concatenates two docs.
     */
@@ -214,7 +205,7 @@ object Doc {
     * @param i the width of each indentation level
     */
   def pretty(w: Int, d: Doc)(implicit i: Indent): String =
-    sdocToString(format(w, 0, List((0, MBreak, deconstruct(d))), x => x))
+    sdocToString(format(w, 0, List((0, MBreak, d)), x => x))
 
   // aux
 

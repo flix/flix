@@ -21,7 +21,7 @@ mod Test.Exp.Fixpoint {
             L(y; Set#{x}) :- Edge(y, x), Win(x).
             Win(x) :- A(x, n), L(x; s), if Set.size(s) >= n.
         };
-        let result = query db, pr select x from Win(x) |> List.toSet;
+        let result = query db, pr select x from Win(x) |> Vector.toSet;
         result == Set#{"x", "y", "w"}
 
     def _testOpenSchema01(p1: #{}): #{ | r} = p1

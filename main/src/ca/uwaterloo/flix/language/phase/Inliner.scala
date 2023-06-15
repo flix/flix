@@ -70,10 +70,13 @@ object Inliner {
    */
   private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: Root): LiftedAst.Def = {
     val convertedExp = visitExp(def0.exp, Map.empty)(root, flix)
+    val cparams = def0.cparams.map {
+      case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+    }
     val fparams = def0.fparams.map {
       case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
-    LiftedAst.Def(def0.ann, def0.mod, def0.sym, fparams, convertedExp, def0.tpe, def0.loc)
+    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, def0.purity, def0.loc)
   }
 
   /**
@@ -126,7 +129,7 @@ object Inliner {
           if (canInlineDef(def1)) {
             val e1 = rewriteTailCalls(def1.exp)
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(e1, def1.fparams.map(_.sym), closureArgs ++ as, Map.empty)
+            bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ as, Map.empty)
           } else {
             LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
           }
@@ -143,7 +146,7 @@ object Inliner {
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
         val e1 = rewriteTailCalls(def1.exp)
-        bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
+        bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
       }
@@ -159,7 +162,7 @@ object Inliner {
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
-            bindFormals(def1.exp, def1.fparams.map(_.sym), closureArgs ++ as, Map.empty)
+            bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ as, Map.empty)
           } else {
             LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
           }
@@ -175,7 +178,7 @@ object Inliner {
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
+        bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
       }

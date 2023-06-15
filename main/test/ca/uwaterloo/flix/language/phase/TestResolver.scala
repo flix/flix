@@ -23,42 +23,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestResolver extends AnyFunSuite with TestUtils {
 
-  // TODO NS-REFACTOR impossible after refactor
-  ignore("AmbiguousTag.01") {
-    val input =
-      s"""
-         |enum A {
-         |  case Foo
-         |}
-         |
-         |enum B {
-         |  case Foo
-         |}
-         |
-         |def f(): A = Foo
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.AmbiguousTag](result)
-  }
-
-  // TODO NS-REFACTOR impossible after refactor
-  ignore("AmbiguousTag.02") {
-    val input =
-      s"""
-         |enum A {
-         |  case Foo(Int32)
-         |}
-         |
-         |enum B {
-         |  case Foo(Int32)
-         |}
-         |
-         |def f(): A = Foo(42)
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.AmbiguousTag](result)
-  }
-
   test("InaccessibleDef.01") {
     val input =
       s"""

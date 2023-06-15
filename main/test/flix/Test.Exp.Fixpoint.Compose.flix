@@ -89,7 +89,7 @@ mod Test.Exp.Fixpoint.Compose {
     @test
     def testFixpointCompose13(): Bool = {
         let ans = query coolioQuack(#{Coolio("quack!").}) select s from Duck(s);
-        ans == List#{"quack!"}
+        ans == Vector#{"quack!"}
     }
 
     def coolioQuack(p: #{Coolio(String)}): #{Coolio(String), Duck(String) | r} = {
@@ -99,7 +99,7 @@ mod Test.Exp.Fixpoint.Compose {
     @test
     def testFixpointCompose14(): Bool = {
         let ans = query duckOutOfNothing(#{}) select s from Duck(s);
-        ans == List#{"quack!"}
+        ans == Vector#{"quack!"}
     }
 
     def duckOutOfNothing(p: #{}): #{Duck(String) | r} = {
@@ -109,7 +109,7 @@ mod Test.Exp.Fixpoint.Compose {
     @test
     def testFixpointCompose15(): Bool = {
         let ans = query duckVille(#{Rip(1). Rap(2). Rup(3).}) select s from Duck(s);
-        ans == List#{"quack!"}
+        ans == Vector#{"quack!"}
     }
 
     def duckVille(p: #{Rip(Int32), Rap(Int32), Rup(Int32)}): #{Rip(Int32), Rap(Int32), Rup(Int32), Duck(String) | r} = {
@@ -119,7 +119,7 @@ mod Test.Exp.Fixpoint.Compose {
     @test
     def testFixpointCompose16(): Bool = {
         let ans = query noComparison(#{Apples(()).}, #{Oranges(()).}) select s from Apples(s);
-        ans == List#{()}
+        ans == Vector#{()}
     }
 
     def noComparison(p1: #{Apples(Unit)}, p2: #{Oranges(Unit)}): #{Apples(Unit), Oranges(Unit) | r} = {

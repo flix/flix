@@ -71,7 +71,7 @@ mod Fixpoint {
     @Internal
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] with Order[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
-            Datalog(List.append(edb1, edb2), List.append(idb1, idb2))
+            Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
             use Fixpoint.Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
@@ -94,8 +94,8 @@ mod Fixpoint {
     @Internal
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
         case Datalog(facts, _) =>
-            let pFacts = List.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
-            Datalog(pFacts, Nil)
+            let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
+            Datalog(pFacts, Vector.empty())
         case Model(db) =>
             Map.query(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
@@ -514,7 +514,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Order[v] =
+    pub def facts0(p: PredSym, d: Datalog[Boxed]): Vector[v] with Order[v] =
         // Unsafe cast is required. If a predicate is nullary then its values must be Unit.
         factsOf(_ -> unchecked_cast(() as v), p, d)
 
@@ -522,7 +522,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts1(p: PredSym, d: Datalog[Boxed]): List[v] with Order[v] =
+    pub def facts1(p: PredSym, d: Datalog[Boxed]): Vector[v] with Order[v] =
         let f = terms -> match terms {
             case hd :: _ =>
                 unbox(hd)
@@ -534,7 +534,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts2(p: PredSym, d: Datalog[Boxed]): List[(t1, t2)] with Order[t1], Order[t2] =
+    pub def facts2(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2)] with Order[t1], Order[t2] =
         let f = terms -> match terms {
             case v0 :: v1 :: _ =>
                 (unbox(v0), unbox(v1))
@@ -546,7 +546,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts3(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3)] with Order[t1], Order[t2], Order[t3] =
+    pub def facts3(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3)] with Order[t1], Order[t2], Order[t3] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2))
@@ -558,7 +558,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts4(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4)] with Order[t1], Order[t2], Order[t3], Order[t4] =
+    pub def facts4(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4)] with Order[t1], Order[t2], Order[t3], Order[t4] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3))
@@ -570,7 +570,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts5(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
+    pub def facts5(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4))
@@ -582,7 +582,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts6(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6] =
+    pub def facts6(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5))
@@ -594,7 +594,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts7(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7] =
+    pub def facts7(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6))
@@ -606,7 +606,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts8(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8] =
+    pub def facts8(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7))
@@ -618,7 +618,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts9(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9] =
+    pub def facts9(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8))
@@ -630,7 +630,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts10(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10] =
+    pub def facts10(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9))
@@ -642,7 +642,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts11(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11] =
+    pub def facts11(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10))
@@ -654,7 +654,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts12(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12] =
+    pub def facts12(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11))
@@ -666,7 +666,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts13(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13] =
+    pub def facts13(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12))
@@ -678,7 +678,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts14(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14] =
+    pub def facts14(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13))
@@ -690,7 +690,7 @@ mod Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts15(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15] =
+    pub def facts15(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: v14 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13), unbox(v14))
@@ -701,18 +701,18 @@ mod Fixpoint {
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): List[t] \ ef = match d {
+    def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): Vector[t] \ ef = match d {
         case Datalog(_, cs) => region r {
             let pFacts = MutList.new(r);
-            List.forEach(c -> match c {
-                case Constraint(HeadAtom(headPred, _, terms), Nil) =>
-                    if (headPred == p)
-                        let vs = List.map(headTermValue, terms);
-                        MutList.push!(f(vs), pFacts)
+            Vector.forEach(c -> match c {
+                case Constraint(HeadAtom(headPred, _, terms), body) =>
+                    if (headPred == p and Vector.isEmpty(body))
+                        let vs = Vector.map(headTermValue, terms);
+                        MutList.push!(f(Vector.toList(vs)), pFacts)
                     else ()
                 case _ => ()
             }, cs);
-            pFacts |> MutList.toList
+            pFacts |> MutList.toVector
         }
         case Model(db) => region r {
             use Fixpoint.Ram.toDenotation;
@@ -739,9 +739,9 @@ mod Fixpoint {
                         MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
-            pFacts |> MutList.toList
+            pFacts |> MutList.toVector
         }
-        case Join(d1, d2) => List.append(factsOf(f, p, d1), factsOf(f, p, d2))
+        case Join(d1, d2) => Vector.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 
     ///

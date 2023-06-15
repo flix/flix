@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
@@ -32,16 +32,18 @@ object GenClosureClasses {
   /**
     * Returns the set of closures classes for the given set of definitions `defs`.
     */
-  def gen(closures: Set[ClosureInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a closure class for each closure and collect the results in a map.
     //
-    ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
-      case (macc, closure) =>
+    ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
+      case (macc, closure) if closure.cparams.nonEmpty =>
         val jvmType = JvmOps.getClosureClassType(closure.sym)
         val jvmName = jvmType.name
         val bytecode = genByteCode(closure)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
+      case (macc, _) =>
+        macc
     }, _ ++ _)
   }
 
@@ -69,25 +71,27 @@ object GenClosureClasses {
     * }
     * }}}
     */
-  private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
     // Args of the function
-    val MonoType.Arrow(_, tresult) = closure.tpe
+    val MonoType.Arrow(_, tresult) = defn.tpe
 
     // `JvmType` of the interface for `closure.tpe`
-    val functionInterface = JvmOps.getClosureAbstractClassType(closure.tpe)
+    val functionInterface = JvmOps.getClosureAbstractClassType(defn.tpe)
 
     // `JvmType` of the class for `defn`
-    val classType = JvmOps.getClosureClassType(closure.sym)
+    val classType = JvmOps.getClosureClassType(defn.sym)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
       functionInterface.name.toInternalName, null)
 
+    val closureArgTypes = defn.cparams.map(_.tpe)
+
     // Generate a field for each captured variable.
-    for ((argType, index) <- closure.closureArgTypes.zipWithIndex) {
+    for ((argType, index) <- closureArgTypes.zipWithIndex) {
       // `JvmType` of `arg`
       val erasedArgType = JvmOps.getErasedJvmType(argType)
 
@@ -95,13 +99,11 @@ object GenClosureClasses {
       AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false, isVolatile = false)
     }
 
-    val defn = root.defs(closure.sym)
-
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, closure.closureArgTypes, tresult)
+    compileInvokeMethod(visitor, classType, defn, closureArgTypes, tresult)
 
     // getUniqueThreadClosure method of the class
-    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closure.closureArgTypes)
+    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closureArgTypes)
 
     // Constructor of the class
     compileConstructor(visitor, functionInterface)
@@ -124,17 +126,11 @@ object GenClosureClasses {
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
     invokeMethod.visitCode()
 
-    // Free variables
-    val closureFormals = defn.formals.take(closureArgTypes.length)
-
-    // Function parameters
-    val params = defn.formals.takeRight(defn.formals.length - closureArgTypes.length)
-
     // Enter label
     val enterLabel = new Label()
 
     // Saving closure args variables on variable stack
-    for ((f, ind) <- closureFormals.zipWithIndex) {
+    for ((f, ind) <- defn.cparams.zipWithIndex) {
       // Erased type of the closure variable
       val erasedType = JvmOps.getErasedJvmType(f.tpe)
 
@@ -148,7 +144,7 @@ object GenClosureClasses {
     }
 
     // Saving parameters on variable stack
-    for ((FormalParam(sym, tpe), ind) <- params.zipWithIndex) {
+    for ((FormalParam(sym, tpe), ind) <- defn.fparams.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 

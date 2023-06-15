@@ -70,12 +70,12 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, pur, tconstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, _) =>
       val idx1 = traverse(tparams)(visitTypeParam)
       val idx2 = traverse(fparams)(visitFormalParam)
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
       val idx4 = visitType(retTpe)
-      val idx5 = visitType(pur)
+      val idx5 = visitType(eff)
       idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
@@ -264,12 +264,12 @@ object Indexer {
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ traverse(rules) {
-        case RelationalChoiceRule(_, exp) => visitExp(exp)
+        case RelationalChooseRule(_, exp) => visitExp(exp)
       } ++ Index.occurrenceOf(exp0)
 
     case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ traverse(rules) {
-        case RestrictableChoiceRule(_, body) => visitExp(body)
+        case RestrictableChooseRule(_, body) => visitExp(body)
       } ++ Index.occurrenceOf(exp0)
 
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _) =>
@@ -329,8 +329,8 @@ object Indexer {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Ascribe(exp, tpe, pur, _) =>
-      visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ Index.occurrenceOf(exp0)
+    case Expression.Ascribe(exp, tpe, eff, _) =>
+      visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.InstanceOf(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -338,9 +338,9 @@ object Indexer {
     case Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.UncheckedCast(exp, declaredType, declaredPur, _, _, _) =>
+    case Expression.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
       val dt = declaredType.map(visitType).getOrElse(Index.empty)
-      val dp = declaredPur.map(visitType).getOrElse(Index.empty)
+      val dp = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ Index.occurrenceOf(exp0)
 
     case Expression.UncheckedMaskingCast(exp, _, _, _) =>
@@ -365,7 +365,7 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expression.Do(op, exps, _, _) =>
+    case Expression.Do(op, exps, _, _, _) =>
       val parent = Entity.Exp(exp0)
       traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(op.sym, op.loc, parent)
 
@@ -395,8 +395,8 @@ object Indexer {
 
     case Expression.NewObject(_, _, _, _, methods, _) =>
       Index.occurrenceOf(exp0) ++ traverse(methods) {
-        case JvmMethod(_, fparams, exp, tpe, pur, _) =>
-          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(pur)
+        case JvmMethod(_, fparams, exp, tpe, eff, _) =>
+          Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(eff)
       }
 
     case Expression.NewChannel(exp1, exp2, _, _, _) =>

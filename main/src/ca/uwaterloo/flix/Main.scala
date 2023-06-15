@@ -144,7 +144,7 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd, options)(System.out) match {
+          Bootstrap.init(cwd, options)(System.err) match {
             case Validation.Success(_) =>
               System.exit(0)
             case failure =>
@@ -153,7 +153,7 @@ object Main {
           }
 
         case Command.Check =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.check(options)
           } match {
             case Validation.Success(_) => System.exit(0)
@@ -163,7 +163,7 @@ object Main {
           }
 
         case Command.Build =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
               bootstrap.build(loadClasses = false)
@@ -175,7 +175,7 @@ object Main {
           }
 
         case Command.BuildJar =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.buildJar(options)
           } match {
             case Validation.Success(_) =>
@@ -186,7 +186,7 @@ object Main {
           }
 
         case Command.BuildPkg =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.buildPkg(options)
           } match {
             case Validation.Success(_) =>
@@ -197,7 +197,7 @@ object Main {
           }
 
         case Command.Run =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               val args: Array[String] = cmdOpts.args match {
                 case None => Array.empty
@@ -214,7 +214,7 @@ object Main {
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.benchmark(o)
           } match {
             case Validation.Success(_) =>
@@ -226,7 +226,7 @@ object Main {
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.out)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.test(o)
           } match {
             case Validation.Success(_) =>
@@ -241,7 +241,7 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.err) match {
             case Validation.Success(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()

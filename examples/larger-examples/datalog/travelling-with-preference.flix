@@ -8,4 +8,4 @@ pub def travelWithLimitedBusses(trainConnections: List[(city, city)], busConnect
         Path(x, busses + 1, z) :- Path(x, busses, y), Bus(y, z).
     };
     let possibleBusTrips = query tc, bc, lp select busses from Path(source, busses, destination) where busses <= maxBusTrips;
-    List.length(possibleBusTrips) > 0
+    Vector.length(possibleBusTrips) > 0

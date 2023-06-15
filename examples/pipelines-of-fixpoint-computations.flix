@@ -20,7 +20,7 @@ def main(): Unit \ IO =
     let m2 = solve (m1 <+> r2);
 
     // Check that there is a path from 1 to 3.
-    let exists = (query m2 select true from ColorlessPath(1, 3) |> List.length) != 0;
+    let exists = (query m2 select true from ColorlessPath(1, 3) |> Vector.length) != 0;
 
     // Print a result.
     println(if (exists) "Path exists!" else "Path does not exist!")

@@ -29,7 +29,7 @@ def main(): Unit \ IO =
     };
 
     // Computes a map from parts to delivery dates.
-    let m = query p select (c, d) from ReadyDate(c; d) |> List.toMap;
+    let m = query p select (c, d) from ReadyDate(c; d) |> Vector.toMap;
 
     // Looks up the delivery date for the car and prints it.
     Map.getWithDefault("Car", 0, m) |> println

@@ -99,15 +99,15 @@ object CodeHinter {
     case Expression.Cst(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
-      checkPurity(exp.pur, exp.loc) ++ visitExp(exp)
+      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, pur, loc) =>
+    case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
-          checkPurity(sym, lambda.tpe, loc)
+          checkEffect(sym, lambda.tpe, loc)
         case _ => Nil
       }
-      val hints1 = checkPurity(pur, loc)
+      val hints1 = checkEffect(eff, loc)
       hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
 
     case Expression.Unary(_, exp, _, _, _) =>
@@ -116,8 +116,8 @@ object CodeHinter {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, pur, loc) =>
-      checkPurity(pur, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expression.Let(_, _, exp1, exp2, _, eff, loc) =>
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -133,8 +133,8 @@ object CodeHinter {
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, pur,  loc) =>
-      checkPurity(pur, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expression.Stm(exp1, exp2, _, eff,  loc) =>
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Discard(exp, _, _) =>
       visitExp(exp)
@@ -151,12 +151,12 @@ object CodeHinter {
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ rules.flatMap {
-        case RelationalChoiceRule(_, exp) => visitExp(exp)
+        case RelationalChooseRule(_, exp) => visitExp(exp)
       }
 
     case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
-        case RestrictableChoiceRule(_, body) => visitExp(body)
+        case RestrictableChooseRule(_, body) => visitExp(body)
       }
 
     case Expression.Tag(_, exp, _, _, _) =>
@@ -221,7 +221,7 @@ object CodeHinter {
     case Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.UncheckedCast(exp, _, _, tpe, pur, loc) =>
+    case Expression.UncheckedCast(exp, _, _, tpe, eff, loc) =>
       visitExp(exp)
 
     case Expression.UncheckedMaskingCast(exp, _, _, _) =>
@@ -240,7 +240,7 @@ object CodeHinter {
         case HandlerRule(_, _, e) => visitExp(e)
       }
 
-    case Expression.Do(_, exps, _, _) =>
+    case Expression.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
     case Expression.Resume(exp, _, _) =>
@@ -357,7 +357,7 @@ object CodeHinter {
   /**
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
-  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+  private def checkEffect(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     if (lazyWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.LazyEvaluation(sym, loc) :: Nil
@@ -396,7 +396,7 @@ object CodeHinter {
     *
     * NB: Not currently checked for every expression.
     */
-  private def checkPurity(tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[CodeHint] = {
+  private def checkEffect(tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[CodeHint] = {
     if (numberOfVarOccurs(tpe) < 5) {
       // Case 1: Formula is small. Good.
       Nil
@@ -469,7 +469,7 @@ object CodeHinter {
     * Returns `true` if the given function type `tpe` is pure.
     */
   private def isPureFunction(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => tpe.arrowPurityType == Type.Pure
+    case Some(TypeConstructor.Arrow(_)) => tpe.arrowEffectType == Type.Pure
     case _ => false
   }
 

@@ -363,20 +363,20 @@ object Kinder {
     * Adds `quantifiers` to the generated scheme's quantifier list.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, pur0, tconstrs0, econstrs0, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      val purAndEffVal = visitPurityDefaultPure(pur0, kenv, taenv, root)
+      val effVal = visitEffectDefaultPure(eff0, kenv, taenv, root)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, taenv, root))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
 
-      mapN(tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
-        case (tparams, fparams, tpe, pur, tconstrs, econstrs) =>
+      mapN(tparamsVal, fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
+        case (tparams, fparams, tpe, eff, tconstrs, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
-          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, tpe, tpe.loc)
+          val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, tconstrs, loc)
+          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, loc)
       }
   }
 
@@ -554,14 +554,14 @@ object Kinder {
 
     case ResolvedAst.Expression.RelationalChoose(star, exps0, rules0, loc) =>
       val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      val rulesVal = traverse(rules0)(visitRelationalChoiceRule(_, kenv0, taenv, henv0, root))
+      val rulesVal = traverse(rules0)(visitRelationalChooseRule(_, kenv0, taenv, henv0, root))
       mapN(expsVal, rulesVal) {
         case (exps, rules) => KindedAst.Expression.RelationalChoose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.RestrictableChoose(star, exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      val rulesVal = traverse(rules0)(visitRestrictableChoiceRule(_, kenv0, taenv, henv0, root))
+      val rulesVal = traverse(rules0)(visitRestrictableChooseRule(_, kenv0, taenv, henv0, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expression.RestrictableChoose(star, exp, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
@@ -698,10 +698,10 @@ object Kinder {
     case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val expectedTypeVal = traverseOpt(expectedType0)(visitType(_, Kind.Star, kenv0, taenv, root))
-      val expectedPurVal = traverseOpt(expectedEff0)(visitType(_, Kind.Eff, kenv0, taenv, root))
-      mapN(expVal, expectedTypeVal, expectedPurVal) {
-        case (exp, expectedType, expectedPur) =>
-          KindedAst.Expression.Ascribe(exp, expectedType, expectedPur, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val expectedEffVal = traverseOpt(expectedEff0)(visitType(_, Kind.Eff, kenv0, taenv, root))
+      mapN(expVal, expectedTypeVal, expectedEffVal) {
+        case (exp, expectedType, expectedEff) =>
+          KindedAst.Expression.Ascribe(exp, expectedType, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -726,10 +726,10 @@ object Kinder {
     case ResolvedAst.Expression.UncheckedCast(exp0, declaredType0, declaredEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val declaredTypeVal = traverseOpt(declaredType0)(visitType(_, Kind.Star, kenv0, taenv, root))
-      val declaredPurVal = traverseOpt(declaredEff0)(visitType(_, Kind.Eff, kenv0, taenv, root))
-      mapN(expVal, declaredTypeVal, declaredPurVal) {
-        case (exp, declaredType, declaredPur) =>
-          KindedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val declaredeffVal = traverseOpt(declaredEff0)(visitType(_, Kind.Eff, kenv0, taenv, root))
+      mapN(expVal, declaredTypeVal, declaredeffVal) {
+        case (exp, declaredType, declaredEff) =>
+          KindedAst.Expression.UncheckedCast(exp, declaredType, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -778,8 +778,9 @@ object Kinder {
 
     case ResolvedAst.Expression.Do(op, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
+      val tvar = Type.freshVar(Kind.Star, loc)
       mapN(argsVal) {
-        case args => KindedAst.Expression.Do(op, args, loc)
+        case args => KindedAst.Expression.Do(op, args, tvar, loc)
       }
 
     case ResolvedAst.Expression.Resume(exp0, loc) =>
@@ -987,24 +988,24 @@ object Kinder {
   /**
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
-  private def visitRelationalChoiceRule(rule0: ResolvedAst.RelationalChoiceRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RelationalChoiceRule, KindError] = rule0 match {
-    case ResolvedAst.RelationalChoiceRule(pat0, exp0) =>
-      val patVal = traverse(pat0)(visitRelationalChoicePattern)
+  private def visitRelationalChooseRule(rule0: ResolvedAst.RelationalChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RelationalChooseRule, KindError] = rule0 match {
+    case ResolvedAst.RelationalChooseRule(pat0, exp0) =>
+      val patVal = traverse(pat0)(visitRelationalChoosePattern)
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RelationalChoiceRule(pat, exp)
+        case (pat, exp) => KindedAst.RelationalChooseRule(pat, exp)
       }
   }
 
   /**
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
-  private def visitRestrictableChoiceRule(rule0: ResolvedAst.RestrictableChoiceRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChoiceRule, KindError] = rule0 match {
-    case ResolvedAst.RestrictableChoiceRule(pat0, exp0) =>
-      val patVal = visitRestrictableChoicePattern(pat0)
+  private def visitRestrictableChooseRule(rule0: ResolvedAst.RestrictableChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChooseRule, KindError] = rule0 match {
+    case ResolvedAst.RestrictableChooseRule(pat0, exp0) =>
+      val patVal = visitRestrictableChoosePattern(pat0)
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RestrictableChoiceRule(pat, exp)
+        case (pat, exp) => KindedAst.RestrictableChooseRule(pat, exp)
       }
   }
 
@@ -1070,29 +1071,29 @@ object Kinder {
   /**
     * Performs kinding on the given relational choice pattern under the given kind environment.
     */
-  private def visitRelationalChoicePattern(pat0: ResolvedAst.RelationalChoicePattern)(implicit flix: Flix): Validation[KindedAst.RelationalChoicePattern, KindError] = pat0 match {
-    case ResolvedAst.RelationalChoicePattern.Wild(loc) => KindedAst.RelationalChoicePattern.Wild(loc).toSuccess
-    case ResolvedAst.RelationalChoicePattern.Absent(loc) => KindedAst.RelationalChoicePattern.Absent(loc).toSuccess
-    case ResolvedAst.RelationalChoicePattern.Present(sym, loc) => KindedAst.RelationalChoicePattern.Present(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+  private def visitRelationalChoosePattern(pat0: ResolvedAst.RelationalChoosePattern)(implicit flix: Flix): Validation[KindedAst.RelationalChoosePattern, KindError] = pat0 match {
+    case ResolvedAst.RelationalChoosePattern.Wild(loc) => KindedAst.RelationalChoosePattern.Wild(loc).toSuccess
+    case ResolvedAst.RelationalChoosePattern.Absent(loc) => KindedAst.RelationalChoosePattern.Absent(loc).toSuccess
+    case ResolvedAst.RelationalChoosePattern.Present(sym, loc) => KindedAst.RelationalChoosePattern.Present(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
-  private def visitRestrictableChoicePattern(pat00: ResolvedAst.RestrictableChoicePattern)(implicit flix: Flix): Validation[KindedAst.RestrictableChoicePattern, KindError] = pat00 match {
-    case ResolvedAst.RestrictableChoicePattern.Tag(sym, pat0, loc) =>
-      val patVal = traverse(pat0)(visitRestrictableChoicePatternVarOrWild)
+  private def visitRestrictableChoosePattern(pat00: ResolvedAst.RestrictableChoosePattern)(implicit flix: Flix): Validation[KindedAst.RestrictableChoosePattern, KindError] = pat00 match {
+    case ResolvedAst.RestrictableChoosePattern.Tag(sym, pat0, loc) =>
+      val patVal = traverse(pat0)(visitRestrictableChoosePatternVarOrWild)
       mapN(patVal) {
-        case pat => KindedAst.RestrictableChoicePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case pat => KindedAst.RestrictableChoosePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
   }
 
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
-  private def visitRestrictableChoicePatternVarOrWild(pat0: ResolvedAst.RestrictableChoicePattern.VarOrWild)(implicit flix: Flix): Validation[KindedAst.RestrictableChoicePattern.VarOrWild, KindError] = pat0 match {
-    case ResolvedAst.RestrictableChoicePattern.Wild(loc) => KindedAst.RestrictableChoicePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-    case ResolvedAst.RestrictableChoicePattern.Var(sym, loc) => KindedAst.RestrictableChoicePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+  private def visitRestrictableChoosePatternVarOrWild(pat0: ResolvedAst.RestrictableChoosePattern.VarOrWild)(implicit flix: Flix): Validation[KindedAst.RestrictableChoosePattern.VarOrWild, KindError] = pat0 match {
+    case ResolvedAst.RestrictableChoosePattern.Wild(loc) => KindedAst.RestrictableChoosePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.RestrictableChoosePattern.Var(sym, loc) => KindedAst.RestrictableChoosePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
   /**
@@ -1248,13 +1249,13 @@ object Kinder {
           }
       }
 
-    case UnkindedType.Arrow(pur0, arity, loc) =>
+    case UnkindedType.Arrow(eff0, arity, loc) =>
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
         case Some(_) =>
-          val purVal = visitPurityDefaultPure(pur0, kenv, taenv, root)
-          mapN(purVal) {
-            case pur => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(pur), loc)
+          val effVal = visitEffectDefaultPure(eff0, kenv, taenv, root)
+          mapN(effVal) {
+            case eff => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
           }
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
@@ -1369,9 +1370,9 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given purity, assuming it to be Pure if it is absent.
+    * Performs kinding on the given effect, assuming it to be Pure if it is absent.
     */
-  private def visitPurityDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe match {
+  private def visitEffectDefaultPure(tpe: Option[UnkindedType], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe match {
     case None => Type.mkPure(SourceLocation.Unknown).toSuccess
     case Some(t) => visitType(t, Kind.Eff, kenv, taenv, root)
   }
@@ -1467,13 +1468,13 @@ object Kinder {
     * Performs kinding on the given JVM method.
     */
   private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix) = method match {
-    case ResolvedAst.JvmMethod(_, fparams, exp, tpe0, pur0, loc) =>
+    case ResolvedAst.JvmMethod(_, fparams, exp, tpe0, eff0, loc) =>
       val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, taenv, root))
       val expVal = visitExp(exp, kenv, taenv, henv, root)
-      val purVal = visitPurityDefaultPure(pur0, kenv, taenv, root)
+      val effVal = visitEffectDefaultPure(eff0, kenv, taenv, root)
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, taenv, root)
-      mapN(fparamsVal, expVal, tpeVal, purVal) {
-        case (f, e, tpe, pur) => KindedAst.JvmMethod(method.ident, f, e, tpe, pur, loc)
+      mapN(fparamsVal, expVal, tpeVal, effVal) {
+        case (f, e, tpe, eff) => KindedAst.JvmMethod(method.ident, f, e, tpe, eff, loc)
       }
   }
 
@@ -1483,10 +1484,10 @@ object Kinder {
     * as in the case of a class type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, pur0, tconstrs, _, _) => // TODO ASSOC-TYPES use econstrs for inference?
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, eff0, tconstrs, _, _) => // TODO ASSOC-TYPES use econstrs for inference?
       val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
       val tpeKenvVal = inferType(tpe, Kind.Star, kenv, taenv, root)
-      val effKenvsVal = traverse(pur0)(inferType(_, Kind.Eff, kenv, taenv, root))
+      val effKenvsVal = traverse(eff0)(inferType(_, Kind.Eff, kenv, taenv, root))
       val tconstrsKenvsVal = traverse(tconstrs)(inferTypeConstraint(_, kenv, taenv, root))
 
       flatMapN(fparamKenvsVal, tpeKenvVal, effKenvsVal, tconstrsKenvsVal) {
@@ -1568,15 +1569,15 @@ object Kinder {
       val kind = getClassKind(clazz)
       inferType(arg, kind, kenv0, taenv, root)
 
-    case UnkindedType.Arrow(pur, _, _) =>
-      val purKenvsVal = traverse(pur)(inferType(_, Kind.Eff, kenv0, taenv, root))
+    case UnkindedType.Arrow(eff, _, _) =>
+      val effKenvsVal = traverse(eff)(inferType(_, Kind.Eff, kenv0, taenv, root))
       val argKenvVal = fold(tpe.typeArguments, KindEnv.empty) {
         case (acc, targ) => flatMapN(inferType(targ, Kind.Star, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
       }
-      flatMapN(purKenvsVal, argKenvVal) {
-        case (purKenvs, argKenv) => KindEnv.merge(purKenvs :+ argKenv)
+      flatMapN(effKenvsVal, argKenvVal) {
+        case (effKenvs, argKenv) => KindEnv.merge(effKenvs :+ argKenv)
       }
 
     case UnkindedType.Enum(sym, _) =>

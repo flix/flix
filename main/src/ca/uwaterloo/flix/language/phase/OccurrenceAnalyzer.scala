@@ -113,6 +113,7 @@ object OccurrenceAnalyzer {
    * Visits a definition in the program and performs occurrence analysis
    */
   private def visitDef(defn: LiftedAst.Def): (OccurrenceAst.Def, OccurInfo) = {
+    val cparams = defn.cparams.map(visitFormalParam)
     val fparams = defn.fparams.map(visitFormalParam)
     val (e, oi) = visitExp(defn.sym, defn.exp)
     /// Def consists of a single direct call to a def
@@ -137,7 +138,7 @@ object OccurrenceAnalyzer {
       }
     }
     val defContext = DefContext(isDirectCall, oi.defs.getOrElse(defn.sym, Dead), oi.size, isSelfRecursive)
-    (OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defContext, defn.tpe, defn.loc), oi)
+    (OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, cparams, fparams, e, defContext, defn.tpe, defn.purity, defn.loc), oi)
   }
 
   /**

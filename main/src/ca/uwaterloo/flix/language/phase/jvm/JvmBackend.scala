@@ -40,11 +40,6 @@ object JvmBackend {
     val allClasses = flix.subphase("CodeGen") {
 
       //
-      // Compute the set of closures in the program.
-      //
-      val closures = root.closures
-
-      //
       // Compute the set of namespaces in the program.
       //
       val namespaces = JvmOps.namespacesOf(root)
@@ -99,7 +94,7 @@ object JvmBackend {
       //
       // Generate closure classes for each closure in the program.
       //
-      val closureClasses = GenClosureClasses.gen(closures)
+      val closureClasses = GenClosureClasses.gen(root.defs)
 
       //
       // Generate enum interfaces for each enum type in the program.
@@ -254,10 +249,12 @@ object JvmBackend {
   }
 
   /**
-    * Returns a map from definition symbols to executable functions (backed by JVM backend).
+    * Returns a map from non-closure definition symbols to executable functions (backed by JVM backend).
     */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
+      case (macc, (_, defn)) if defn.cparams.nonEmpty =>
+        macc
       case (macc, (sym, _)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))

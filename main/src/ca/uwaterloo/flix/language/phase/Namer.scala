@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
-import ca.uwaterloo.flix.language.ast.WeededAst.RestrictableChoicePattern
+import ca.uwaterloo.flix.language.ast.WeededAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -178,7 +178,6 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, caze)
 
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
-      // TODO RESTR-VARS add to case table?
       tryAddToTable(table0, sym.namespace, sym.name, caze)
 
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
@@ -476,18 +475,18 @@ object Namer {
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, pur0, tconstrs0, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, pur0)
+    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
-      val purVal = traverseOpt(pur0)(visitType)
+      val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, purVal, tconstrsVal) {
-        case (fparams, tpe, pur, tconstrs) =>
+      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal) {
+        case (fparams, tpe, eff, tconstrs) =>
           val econstrs = Nil // TODO ASSOC-TYPES allow eq-constrs here
 
           // Then visit the parts depending on the parameters
@@ -497,7 +496,7 @@ object Namer {
             case exp =>
 
               val sym = Symbol.mkSigSym(classSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstrs, econstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
               NamedAst.Declaration.Sig(sym, spec, exp)
           }
       }
@@ -507,21 +506,21 @@ object Namer {
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, pur0, tconstrs0, econstrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, pur0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
-      val purVal = traverseOpt(pur0)(visitType)
+      val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, purVal, tconstrsVal, econstrsVal) {
-        case (fparams, tpe, pur, tconstrs, econstrs) =>
+      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
+        case (fparams, tpe, eff, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = visitExp(exp, ns0)
@@ -530,7 +529,7 @@ object Namer {
             case e =>
 
               val sym = Symbol.mkDefnSym(ns0, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstrs, econstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
           }
       }
@@ -565,11 +564,11 @@ object Namer {
       mapN(fparamsVal, tpeVal, tconstrsVal) {
         case (fparams, tpe, tconstrs) =>
           val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
-          val pur = None // operations are pure
+          val eff = None // operations are pure
           val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
           val sym = Symbol.mkOpSym(effSym, ident)
-          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, pur, tconstrs, econstrs, loc)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
           NamedAst.Declaration.Op(sym, spec)
       }
   }
@@ -717,16 +716,16 @@ object Namer {
     case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, ns0))
       val rulesVal = traverse(rules) {
-        case WeededAst.RelationalChoiceRule(pat0, exp0) =>
+        case WeededAst.RelationalChooseRule(pat0, exp0) =>
           val p = pat0.map {
-            case WeededAst.RelationalChoicePattern.Wild(loc) => NamedAst.RelationalChoicePattern.Wild(loc)
-            case WeededAst.RelationalChoicePattern.Absent(loc) => NamedAst.RelationalChoicePattern.Absent(loc)
-            case WeededAst.RelationalChoicePattern.Present(ident, loc) =>
+            case WeededAst.RelationalChoosePattern.Wild(loc) => NamedAst.RelationalChoosePattern.Wild(loc)
+            case WeededAst.RelationalChoosePattern.Absent(loc) => NamedAst.RelationalChoosePattern.Absent(loc)
+            case WeededAst.RelationalChoosePattern.Present(ident, loc) =>
               val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-              NamedAst.RelationalChoicePattern.Present(sym, loc)
+              NamedAst.RelationalChoosePattern.Present(sym, loc)
           }
           mapN(visitExp(exp0, ns0)) {
-            case e => NamedAst.RelationalChoiceRule(p, e)
+            case e => NamedAst.RelationalChooseRule(p, e)
           }
       }
       mapN(expsVal, rulesVal) {
@@ -736,11 +735,11 @@ object Namer {
     case WeededAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
-        case WeededAst.RestrictableChoiceRule(pat0, exp0) =>
+        case WeededAst.RestrictableChooseRule(pat0, exp0) =>
           val p = visitRestrictablePattern(pat0)
           val eVal = visitExp(exp0, ns0)
           mapN(eVal) {
-            case e => NamedAst.RestrictableChoiceRule(p, e)
+            case e => NamedAst.RestrictableChooseRule(p, e)
           }
       }
       mapN(expVal, rulesVal) {
@@ -1107,18 +1106,18 @@ object Namer {
   /**
     * Names the given pattern `pat0`
     */
-  private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoicePattern)(implicit flix: Flix): NamedAst.RestrictableChoicePattern = {
-    def visitVarPlace(vp: WeededAst.RestrictableChoicePattern.VarOrWild): NamedAst.RestrictableChoicePattern.VarOrWild = vp match {
-      case RestrictableChoicePattern.Wild(loc) => NamedAst.RestrictableChoicePattern.Wild(loc)
-      case RestrictableChoicePattern.Var(ident, loc) =>
+  private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoosePattern)(implicit flix: Flix): NamedAst.RestrictableChoosePattern = {
+    def visitVarPlace(vp: WeededAst.RestrictableChoosePattern.VarOrWild): NamedAst.RestrictableChoosePattern.VarOrWild = vp match {
+      case RestrictableChoosePattern.Wild(loc) => NamedAst.RestrictableChoosePattern.Wild(loc)
+      case RestrictableChoosePattern.Var(ident, loc) =>
         // make a fresh variable symbol for the local variable.
         val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-        NamedAst.RestrictableChoicePattern.Var(sym, loc)
+        NamedAst.RestrictableChoosePattern.Var(sym, loc)
     }
 
     pat0 match {
-      case WeededAst.RestrictableChoicePattern.Tag(qname, pat, loc) =>
-        NamedAst.RestrictableChoicePattern.Tag(qname, pat.map(visitVarPlace), loc)
+      case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
+        NamedAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarPlace), loc)
     }
   }
 
@@ -1214,12 +1213,12 @@ object Namer {
       case WeededAst.Type.Native(fqn, loc) =>
         NamedAst.Type.Native(fqn, loc).toSuccess
 
-      case WeededAst.Type.Arrow(tparams0, pur0, tresult0, loc) =>
+      case WeededAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
         val tparamsVal = traverse(tparams0)(visit)
-        val purVal = traverseOpt(pur0)(visitType)
+        val effVal = traverseOpt(eff0)(visitType)
         val tresultVal = visit(tresult0)
-        mapN(tparamsVal, purVal, tresultVal) {
-          case (tparams, pur, tresult) => NamedAst.Type.Arrow(tparams, pur, tresult, loc)
+        mapN(tparamsVal, effVal, tresultVal) {
+          case (tparams, eff, tresult) => NamedAst.Type.Arrow(tparams, eff, tresult, loc)
         }
 
       case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
@@ -1263,7 +1262,7 @@ object Namer {
           case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
         }
 
-      case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
+      case WeededAst.Type.Pure(loc) => NamedAst.Type.Pure(loc).toSuccess
 
       case WeededAst.Type.CaseSet(cases, loc) => NamedAst.Type.CaseSet(cases, loc).toSuccess
 
@@ -1368,7 +1367,7 @@ object Namer {
     case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case WeededAst.Type.Schema(row, loc) => freeTypeVars(row)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, pur, tresult, loc) => tparams.flatMap(freeTypeVars) ::: pur.toList.flatMap(freeTypeVars) ::: freeTypeVars(tresult)
+    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeTypeVars) ::: eff.toList.flatMap(freeTypeVars) ::: freeTypeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
     case WeededAst.Type.False(loc) => Nil
@@ -1378,7 +1377,7 @@ object Namer {
     case WeededAst.Type.Complement(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Union(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
-    case WeededAst.Type.Empty(_) => Nil
+    case WeededAst.Type.Pure(_) => Nil
     case WeededAst.Type.CaseSet(_, _) => Nil
     case WeededAst.Type.CaseComplement(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.CaseUnion(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
@@ -1433,13 +1432,13 @@ object Namer {
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
   private def visitJvmMethod(method: WeededAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
-    case WeededAst.JvmMethod(ident, fparams0, exp0, tpe0, pur0, loc) =>
+    case WeededAst.JvmMethod(ident, fparams0, exp0, tpe0, eff0, loc) =>
       flatMapN(traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]) {
         case fparams =>
           val exp = visitExp(exp0, ns0)
           val tpe = visitType(tpe0)
-          val pur = traverseOpt(pur0)(visitType)
-          mapN(exp, tpe, pur) {
+          val eff = traverseOpt(eff0)(visitType)
+          mapN(exp, tpe, eff) {
             case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
           }
       }: Validation[NamedAst.JvmMethod, NameError]
@@ -1478,9 +1477,9 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, pur: Option[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: Option[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
-      case WeededAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, pur)
+      case WeededAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, eff)
       case WeededAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
       case WeededAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams)
 
@@ -1523,7 +1522,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, pur: Option[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: Option[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case WeededAst.FormalParam(_, _, Some(tpe), _) => freeTypeVars(tpe)
@@ -1532,9 +1531,9 @@ object Namer {
 
     val tpeTvars = freeTypeVars(tpe)
 
-    val purTvars = pur.toList.flatMap(freeTypeVars)
+    val effTvars = eff.toList.flatMap(freeTypeVars)
 
-    val tparams = (fparamTvars ::: tpeTvars ::: purTvars).distinct.map {
+    val tparams = (fparamTvars ::: tpeTvars ::: effTvars).distinct.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
     }
 
