@@ -207,6 +207,99 @@ mod TestFoldable {
         Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil) == 4
 
     /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool =
+        let f = x -> x == "a";
+        Foldable.count(f, Nil) == 0
+
+    @test
+    def count02(): Bool =
+        let xs = "a" :: "b" :: "a" :: "c" :: "a" :: Nil;
+        let f = x -> x == "a";
+        Foldable.count(f, xs) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Foldable.sum(None) == 0
+
+    @test
+    def sum02(): Bool =
+        let num = Some(8);
+        Foldable.sum(num) == 8
+
+    @test
+    def sum03(): Bool =
+        let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
+        Foldable.sum(xs) == 15
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        let f = x -> x + 1;
+        Foldable.sumWith(f, Nil) == 0
+
+    @test
+    def sumWith02(): Bool =
+        let f = x -> x + 1;
+        Foldable.sumWith(f, 1 :: 2 :: 3 :: 4 :: Nil) == 14
+
+    @test
+    def sumWith03(): Bool =
+        let f = x -> match x {
+            case None    => 0
+            case Some(v) => 2 * v
+        };
+        Foldable.sumWith(f, Some(Some(5))) == 10
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool =
+        let f = x -> x == 3;
+        Foldable.exists(f, Nil) == false
+
+    @test
+    def exists02(): Bool =
+        let f = x -> x == "d";
+        Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == true
+
+    @test
+    def exists03(): Bool =
+        let f = x -> x == "f";
+        Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == false
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forAll01(): Bool =
+        let f = x -> x == 3;
+        Foldable.forAll(f, Nil) == true
+
+    @test
+    def forAll02(): Bool =
+        let f = x -> x == "a";
+        Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "a" :: Nil) == true
+
+    @test
+    def forAll03(): Bool =
+        let f = x -> x == "a";
+        Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "b" :: Nil) == false
+
+    /////////////////////////////////////////////////////////////////////////////
     // forEachM                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
