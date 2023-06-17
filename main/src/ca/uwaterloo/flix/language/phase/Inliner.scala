@@ -115,7 +115,10 @@ object Inliner {
       }
 
     case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
-      case AtomicOp.Closure(sym) => ???
+      case AtomicOp.Closure(sym) =>
+        val newClosureArgs = exps.map(visitExp(_, subst0))
+        LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
+
       case AtomicOp.Unary(sop) => ???
       case AtomicOp.Binary(sop) => ???
       case AtomicOp.Region => ???
@@ -168,10 +171,6 @@ object Inliner {
       case AtomicOp.HoleError(sym) => ???
       case AtomicOp.MatchError => ???
     }
-
-    case OccurrenceAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
-      val newClosureArgs = closureArgs.map(visitExp(_, subst0))
-      LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -592,7 +591,10 @@ object Inliner {
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(env0.getOrElse(sym, sym), tpe, loc)
 
     case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
-      case AtomicOp.Closure(sym) => ???
+      case AtomicOp.Closure(sym) =>
+        val newClosureArgs = exps.map(substituteExp(_, env0))
+        LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
+
       case AtomicOp.Unary(sop) => ???
       case AtomicOp.Binary(sop) => ???
       case AtomicOp.Region => ???
@@ -645,10 +647,6 @@ object Inliner {
       case AtomicOp.HoleError(sym) => ???
       case AtomicOp.MatchError => ???
     }
-
-    case OccurrenceAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
-      val newClosureArgs = closureArgs.map(substituteExp(_, env0))
-      LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

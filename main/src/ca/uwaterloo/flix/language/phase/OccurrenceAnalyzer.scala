@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -120,8 +120,7 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expression.ApplyDefTail(_, _, _, _, _) => true
       case OccurrenceAst.Expression.ApplyCloTail(clo, _, _, _, _) =>
         clo match {
-          case OccurrenceAst.Expression.
-          Closure(_, _, _, _) => true
+          case OccurrenceAst.Expression.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
           case _ => false
         }
       case _ => false
@@ -157,7 +156,8 @@ object OccurrenceAnalyzer {
 
     case Expression.Closure(sym, closureArgs, tpe, loc) =>
       val (newClosureArgs, o) = visitExps(sym0, closureArgs)
-      (OccurrenceAst.Expression.Closure(sym, newClosureArgs, tpe, loc), o)
+      val op = AtomicOp.Closure(sym)
+      (OccurrenceAst.Expression.ApplyAtomic(op, newClosureArgs, tpe, Purity.Pure, loc), o)
 
     case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
