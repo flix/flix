@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, OccurrenceAst, Purity, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, OccurrenceAst, Purity, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -271,10 +271,12 @@ object OccurrenceAnalyzer {
 
     case Expression.Is(sym, exp, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
-      if (sym.name == "Choice")
-        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-      else
-        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.increaseSizeByOne())
+      val op = AtomicOp.Is(sym)
+      val o1 = sym.name match {
+        case "Choice" => o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne()
+        case _ => o.increaseSizeByOne()
+      }
+      (OccurrenceAst.Expression.ApplyAtomic(op, List(e), Type.Bool, purity, loc), o1)
 
     case Expression.Tag(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)

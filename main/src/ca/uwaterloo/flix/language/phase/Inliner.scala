@@ -139,7 +139,15 @@ object Inliner {
         val e2 = visitExp(exp2, subst0)
         LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
-      case AtomicOp.Is(sym) => ???
+      case AtomicOp.Is(sym) =>
+        val List(exp) = exps
+        val e = visitExp(exp, subst0)
+        val enum0 = root.enums(sym.enumSym)
+        if (enum0.cases.size == 1 && e.purity == Pure)
+          LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+        else
+          LiftedAst.Expression.Is(sym, e, purity, loc)
+
       case AtomicOp.Tag(sym) => ???
       case AtomicOp.Untag(sym) => ???
       case AtomicOp.Index(idx) => ???
@@ -318,14 +326,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      val enum0 = root.enums(sym.enumSym)
-      if (enum0.cases.size == 1 && e.purity == Pure)
-        LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
-      else
-        LiftedAst.Expression.Is(sym, e, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -614,7 +614,11 @@ object Inliner {
         val e2 = substituteExp(exp2, env0)
         LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
-      case AtomicOp.Is(sym) => ???
+      case AtomicOp.Is(sym) =>
+        val List(exp) = exps
+        val e = substituteExp(exp, env0)
+        LiftedAst.Expression.Is(sym, e, purity, loc)
+
       case AtomicOp.Tag(sym) => ???
       case AtomicOp.Untag(sym) => ???
       case AtomicOp.Index(idx) => ???
@@ -718,10 +722,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Is(sym, e, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
