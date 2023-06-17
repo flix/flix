@@ -130,7 +130,9 @@ object Inliner {
         val e2 = visitExp(exp2, subst0)
         binaryFold(sop, e1, e2, tpe, purity, loc)
 
-      case AtomicOp.Region => ???
+      case AtomicOp.Region =>
+        LiftedAst.Expression.Region(tpe, loc)
+
       case AtomicOp.ScopeExit => ???
       case AtomicOp.Is(sym) => ???
       case AtomicOp.Tag(sym) => ???
@@ -307,9 +309,6 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Region(tpe, loc) =>
-      LiftedAst.Expression.Region(tpe, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -608,7 +607,9 @@ object Inliner {
         case _ => ???
       }
 
-      case AtomicOp.Region => ???
+      case AtomicOp.Region =>
+        LiftedAst.Expression.Region(tpe, loc)
+
       case AtomicOp.ScopeExit => ???
       case AtomicOp.Is(sym) => ???
       case AtomicOp.Tag(sym) => ???
@@ -710,9 +711,6 @@ object Inliner {
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expression.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Region(tpe, loc) =>
-      LiftedAst.Expression.Region(tpe, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

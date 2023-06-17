@@ -255,7 +255,8 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expression.Region(tpe, loc) =>
-      (OccurrenceAst.Expression.Region(tpe, loc), OccurInfo.One)
+      val op = AtomicOp.Region
+      (OccurrenceAst.Expression.ApplyAtomic(op, List(), tpe, Purity.Pure, loc), OccurInfo.One)
 
     case Expression.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
