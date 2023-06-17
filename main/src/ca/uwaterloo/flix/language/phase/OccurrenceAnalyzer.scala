@@ -265,8 +265,9 @@ object OccurrenceAnalyzer {
     case Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
+      val op = AtomicOp.ScopeExit
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ScopeExit(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expression.Is(sym, exp, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)

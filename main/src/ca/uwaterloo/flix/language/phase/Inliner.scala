@@ -133,7 +133,12 @@ object Inliner {
       case AtomicOp.Region =>
         LiftedAst.Expression.Region(tpe, loc)
 
-      case AtomicOp.ScopeExit => ???
+      case AtomicOp.ScopeExit =>
+        val List(exp1, exp2) = exps
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
+
       case AtomicOp.Is(sym) => ???
       case AtomicOp.Tag(sym) => ???
       case AtomicOp.Untag(sym) => ???
@@ -313,11 +318,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -595,22 +595,25 @@ object Inliner {
         LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
       case AtomicOp.Unary(sop) =>
-        val e = substituteExp(exps.head, env0)
+        val List(exp) = exps
+        val e = substituteExp(exp, env0)
         unaryFold(sop, e, tpe, purity, loc)
 
-      case AtomicOp.Binary(sop) => exps match {
-        case exp1 :: exp2 :: _ =>
-          val e1 = substituteExp(exp1, env0)
-          val e2 = substituteExp(exp2, env0)
-          binaryFold(sop, e1, e2, tpe, purity, loc)
-
-        case _ => ???
-      }
+      case AtomicOp.Binary(sop) =>
+        val List(exp1, exp2) = exps
+        val e1 = substituteExp(exp1, env0)
+        val e2 = substituteExp(exp2, env0)
+        binaryFold(sop, e1, e2, tpe, purity, loc)
 
       case AtomicOp.Region =>
         LiftedAst.Expression.Region(tpe, loc)
 
-      case AtomicOp.ScopeExit => ???
+      case AtomicOp.ScopeExit =>
+        val List(exp1, exp2) = exps
+        val e1 = substituteExp(exp1, env0)
+        val e2 = substituteExp(exp2, env0)
+        LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
+
       case AtomicOp.Is(sym) => ???
       case AtomicOp.Tag(sym) => ???
       case AtomicOp.Untag(sym) => ???
@@ -715,11 +718,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
-      val e1 = substituteExp(exp1, env0)
-      val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = substituteExp(exp, env0)
