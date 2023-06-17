@@ -120,17 +120,15 @@ object Inliner {
         LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
       case AtomicOp.Unary(sop) =>
-        val e = visitExp(exps.head, subst0)
+        val List(exp) = exps
+        val e = visitExp(exp, subst0)
         unaryFold(sop, e, tpe, purity, loc)
 
-      case AtomicOp.Binary(sop) => exps match {
-        case exp1 :: exp2 :: _ =>
-          val e1 = visitExp(exp1, subst0)
-          val e2 = visitExp(exp2, subst0)
-          binaryFold(sop, e1, e2, tpe, purity, loc)
-
-        case _ => ???
-      }
+      case AtomicOp.Binary(sop) =>
+        val List(exp1, exp2) = exps
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        binaryFold(sop, e1, e2, tpe, purity, loc)
 
       case AtomicOp.Region => ???
       case AtomicOp.ScopeExit => ???
