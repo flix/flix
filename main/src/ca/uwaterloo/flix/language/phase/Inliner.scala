@@ -119,7 +119,10 @@ object Inliner {
         val newClosureArgs = exps.map(visitExp(_, subst0))
         LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
-      case AtomicOp.Unary(sop) => ???
+      case AtomicOp.Unary(sop) =>
+        val e = visitExp(exps.head, subst0)
+        unaryFold(sop, e, tpe, purity, loc)
+
       case AtomicOp.Binary(sop) => ???
       case AtomicOp.Region => ???
       case AtomicOp.ScopeExit => ???
@@ -242,10 +245,6 @@ object Inliner {
       val as = actuals.map(visitExp(_, subst0))
       val fs = formals.map(visitFormalParam)
       LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      unaryFold(sop, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -595,7 +594,10 @@ object Inliner {
         val newClosureArgs = exps.map(substituteExp(_, env0))
         LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
 
-      case AtomicOp.Unary(sop) => ???
+      case AtomicOp.Unary(sop) =>
+        val e = substituteExp(exps.head, env0)
+        unaryFold(sop, e, tpe, purity, loc)
+
       case AtomicOp.Binary(sop) => ???
       case AtomicOp.Region => ???
       case AtomicOp.ScopeExit => ???
@@ -670,10 +672,6 @@ object Inliner {
       val as = actuals.map(substituteExp(_, env0))
       val fs = formals.map(visitFormalParam)
       LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      unaryFold(sop, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)

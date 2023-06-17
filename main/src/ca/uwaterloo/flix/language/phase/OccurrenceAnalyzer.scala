@@ -206,7 +206,8 @@ object OccurrenceAnalyzer {
 
     case Expression.Unary(sop, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Unary(sop, e, tpe, purity, loc), o.increaseSizeByOne())
+      val op = AtomicOp.Unary(sop)
+      (OccurrenceAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
