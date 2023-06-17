@@ -123,7 +123,15 @@ object Inliner {
         val e = visitExp(exps.head, subst0)
         unaryFold(sop, e, tpe, purity, loc)
 
-      case AtomicOp.Binary(sop) => ???
+      case AtomicOp.Binary(sop) => exps match {
+        case exp1 :: exp2 :: _ =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          binaryFold(sop, e1, e2, tpe, purity, loc)
+
+        case _ => ???
+      }
+
       case AtomicOp.Region => ???
       case AtomicOp.ScopeExit => ???
       case AtomicOp.Is(sym) => ???
@@ -245,11 +253,6 @@ object Inliner {
       val as = actuals.map(visitExp(_, subst0))
       val fs = formals.map(visitFormalParam)
       LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      binaryFold(sop, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -598,7 +601,15 @@ object Inliner {
         val e = substituteExp(exps.head, env0)
         unaryFold(sop, e, tpe, purity, loc)
 
-      case AtomicOp.Binary(sop) => ???
+      case AtomicOp.Binary(sop) => exps match {
+        case exp1 :: exp2 :: _ =>
+          val e1 = substituteExp(exp1, env0)
+          val e2 = substituteExp(exp2, env0)
+          binaryFold(sop, e1, e2, tpe, purity, loc)
+
+        case _ => ???
+      }
+
       case AtomicOp.Region => ???
       case AtomicOp.ScopeExit => ???
       case AtomicOp.Is(sym) => ???
@@ -672,11 +683,6 @@ object Inliner {
       val as = actuals.map(substituteExp(_, env0))
       val fs = formals.map(visitFormalParam)
       LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-      val e1 = substituteExp(exp1, env0)
-      val e2 = substituteExp(exp2, env0)
-      binaryFold(sop, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
