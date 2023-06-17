@@ -50,6 +50,8 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
+    case class ApplyAtomic(op: AtomicOp, exps: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+
     case class Closure(sym: Symbol.DefnSym, closureArgs: List[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Pure
     }
