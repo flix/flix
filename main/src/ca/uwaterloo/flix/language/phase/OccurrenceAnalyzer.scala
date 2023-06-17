@@ -27,40 +27,39 @@ import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
- * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
- * Marks a variable or function as Dead if it is not used, Once if it is used exactly once and Many otherwise
- */
+  * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
+  * Marks a variable or function as Dead if it is not used, Once if it is used exactly once and Many otherwise
+  */
 object OccurrenceAnalyzer {
 
   object OccurInfo {
 
     /**
-     * Occurrence information for an empty sequence of expressions
-     */
+      * Occurrence information for an empty sequence of expressions
+      */
     val Empty: OccurInfo = OccurInfo(Map.empty, Map.empty, 0)
 
     /**
-     * The initial occurrence information for an expression of size 1, i.e. an expression without subexpressions.
-     */
+      * The initial occurrence information for an expression of size 1, i.e. an expression without subexpressions.
+      */
     val One: OccurInfo = OccurInfo(Map.empty, Map.empty, 1)
   }
 
   /**
-   * The occurrence of `defs` and `vars` inside the body of a `def`
-   * `size` represents the number of expressions in the body of a `def`
-   */
+    * The occurrence of `defs` and `vars` inside the body of a `def`
+    * `size` represents the number of expressions in the body of a `def`
+    */
   case class OccurInfo(defs: Map[DefnSym, Occur], vars: Map[VarSym, Occur], size: Int) {
     /**
-     * Increments number of expressions by one
-     */
+      * Increments number of expressions by one
+      */
     def increaseSizeByOne(): OccurInfo = this.copy(size = this.size + 1)
   }
 
 
-
   /**
-   * Performs occurrence analysis on the given AST `root`.
-   */
+    * Performs occurrence analysis on the given AST `root`.
+    */
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
 
     // Visit every definition in the program in parallel and transform to type 'OccurrenceAst.Def'
@@ -76,8 +75,8 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Translates the given enum `enum0` to the OccurrenceAst.
-   */
+    * Translates the given enum `enum0` to the OccurrenceAst.
+    */
   private def visitEnum(enum0: LiftedAst.Enum): OccurrenceAst.Enum = {
     val cases = enum0.cases.map {
       case (k, v) =>
@@ -87,16 +86,16 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Translates the given case `case0` to the OccurrenceAst.
-   */
+    * Translates the given case `case0` to the OccurrenceAst.
+    */
   private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
     OccurrenceAst.Case(case0.sym, case0.tpe, case0.loc)
   }
 
   /**
-   * Visits every definition in the program in parallel and perform occurrence analysis.
-   * Set the occurrence of each `def` based on the occurrence found in `defOccur`
-   */
+    * Visits every definition in the program in parallel and perform occurrence analysis.
+    * Set the occurrence of each `def` based on the occurrence found in `defOccur`
+    */
   private def visitDefs(defs0: Map[DefnSym, LiftedAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst.Def] = {
     val (ds, os) = ParOps.parMap(defs0.values)((d: LiftedAst.Def) => visitDef(d)).unzip
 
@@ -110,8 +109,8 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Visits a definition in the program and performs occurrence analysis
-   */
+    * Visits a definition in the program and performs occurrence analysis
+    */
   private def visitDef(defn: LiftedAst.Def): (OccurrenceAst.Def, OccurInfo) = {
     val cparams = defn.cparams.map(visitFormalParam)
     val fparams = defn.fparams.map(visitFormalParam)
@@ -121,7 +120,8 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expression.ApplyDefTail(_, _, _, _, _) => true
       case OccurrenceAst.Expression.ApplyCloTail(clo, _, _, _, _) =>
         clo match {
-          case OccurrenceAst.Expression.Closure(_, _, _, _) => true
+          case OccurrenceAst.Expression.
+          Closure(_, _, _, _) => true
           case _ => false
         }
       case _ => false
@@ -142,14 +142,14 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Translates the given formal param `p` to the OccurrenceAst.
-   */
+    * Translates the given formal param `p` to the OccurrenceAst.
+    */
   private def visitFormalParam(p: LiftedAst.FormalParam): OccurrenceAst.FormalParam =
     OccurrenceAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
 
   /**
-   * Performs occurrence analysis on the given expression `exp0`
-   */
+    * Performs occurrence analysis on the given expression `exp0`
+    */
   private def visitExp(sym0: Symbol.DefnSym, exp0: LiftedAst.Expression): (OccurrenceAst.Expression, OccurInfo) = exp0 match {
     case Expression.Cst(cst, tpe, loc) => (OccurrenceAst.Expression.Constant(cst, tpe, loc), OccurInfo.One)
 
@@ -430,8 +430,8 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
-   */
+    * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
+    */
   private def visitExps(sym0: Symbol.DefnSym, exps: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], OccurInfo) = {
     val (es, o1) = exps.map(visitExp(sym0, _)).unzip
     val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
@@ -439,22 +439,22 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineBranch`.
-   */
+    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineBranch`.
+    */
   private def combineAllBranch(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineBranch)
   }
 
   /**
-   * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineSeq`.
-   */
+    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the function `combineSeq`.
+    */
   private def combineAllSeq(o1: OccurInfo, o2: OccurInfo): OccurInfo = {
     combineAll(o1, o2, combineSeq)
   }
 
   /**
-   * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the argument `combine`.
-   */
+    * Combines the 2 objects `o1` and `o2` of the type OccurInfo into a single OccurInfo object using the argument `combine`.
+    */
   private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
     val varMap = combineMaps(o1.vars, o2.vars, combine)
     val defMap = combineMaps(o1.defs, o2.defs, combine)
@@ -463,8 +463,8 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Combines the 2 maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type using the argument `combine`.
-   */
+    * Combines the 2 maps `m1` and `m2` of the type (A -> Occur) into a single map of the same type using the argument `combine`.
+    */
   private def combineMaps[A](m1: Map[A, Occur], m2: Map[A, Occur], combine: (Occur, Occur) => Occur): Map[A, Occur] = {
     val (smallest, largest) = if (m1.size < m2.size) (m1, m2) else (m2, m1)
     smallest.foldLeft[Map[A, Occur]](largest) {
@@ -475,8 +475,8 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
-   */
+    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
+    */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
@@ -486,9 +486,9 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence based on ManyBranches logic.
-   * ManyBranches can be IfThenElse, Branches, and SelectChannel
-   */
+    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence based on ManyBranches logic.
+    * ManyBranches can be IfThenElse, Branches, and SelectChannel
+    */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
     case (DontInline, _) => DontInline
     case (_, DontInline) => DontInline
