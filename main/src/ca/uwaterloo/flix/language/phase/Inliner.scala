@@ -153,7 +153,15 @@ object Inliner {
         val e = visitExp(exp, subst0)
         LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
 
-      case AtomicOp.Untag(sym) => ???
+      case AtomicOp.Untag(sym) =>
+        val List(exp) = exps
+        val e = visitExp(exp, subst0)
+        // Inline expressions of the form Untag(Tag(e)) => e
+        e match {
+          case LiftedAst.Expression.Tag(_, innerExp, _, _, _) => innerExp
+          case _ => LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
+        }
+
       case AtomicOp.Index(idx) => ???
       case AtomicOp.Tuple => ???
       case AtomicOp.RecordEmpty => ???
@@ -330,14 +338,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      // Inline expressions of the form Untag(Tag(e)) => e
-      e match {
-        case LiftedAst.Expression.Tag(_, innerExp, _, _, _) => innerExp
-        case _ => LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
-      }
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = visitExp(base, subst0)
@@ -624,7 +624,11 @@ object Inliner {
         val e = substituteExp(exp, env0)
         LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
 
-      case AtomicOp.Untag(sym) => ???
+      case AtomicOp.Untag(sym) =>
+        val List(exp) = exps
+        val e = substituteExp(exp, env0)
+        LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
+
       case AtomicOp.Index(idx) => ???
       case AtomicOp.Tuple => ???
       case AtomicOp.RecordEmpty => ???
@@ -726,10 +730,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = substituteExp(base, env0)
