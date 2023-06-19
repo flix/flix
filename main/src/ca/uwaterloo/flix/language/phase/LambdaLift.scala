@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -123,10 +123,62 @@ object LambdaLift {
         // Construct the closure expression.
         LiftedAst.Expression.Closure(freshSymbol, closureArgs, tpe, loc)
 
-      case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) => ???
+      case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
+        case AtomicOp.Closure(sym) =>
+          LiftedAst.Expression.Closure(sym, List.empty, tpe, loc)
 
-      case SimplifiedAst.Expression.Closure(sym, tpe, loc) =>
-        LiftedAst.Expression.Closure(sym, List.empty, tpe, loc)
+        case AtomicOp.Unary(sop) => ???
+        case AtomicOp.Binary(sop) => ???
+        case AtomicOp.Region => ???
+        case AtomicOp.ScopeExit => ???
+        case AtomicOp.Is(sym) => ???
+        case AtomicOp.Tag(sym) => ???
+        case AtomicOp.Untag(sym) => ???
+        case AtomicOp.Index(idx) => ???
+        case AtomicOp.Tuple => ???
+        case AtomicOp.RecordEmpty => ???
+        case AtomicOp.RecordSelect(field) => ???
+        case AtomicOp.RecordExtend(field) => ???
+        case AtomicOp.RecordRestrict(field) => ???
+        case AtomicOp.ArrayLit => ???
+        case AtomicOp.ArrayNew => ???
+        case AtomicOp.ArrayLoad => ???
+        case AtomicOp.ArrayStore => ???
+        case AtomicOp.ArrayLength => ???
+        case AtomicOp.Ref => ???
+        case AtomicOp.Deref => ???
+        case AtomicOp.Assign => ???
+        case AtomicOp.InstanceOf(clazz) => ???
+        case AtomicOp.Cast => ???
+        case AtomicOp.InvokeConstructor(constructor) => ???
+        case AtomicOp.InvokeMethod(method) => ???
+        case AtomicOp.InvokeStaticMethod(method) => ???
+        case AtomicOp.GetField(field) => ???
+        case AtomicOp.PutField(field) => ???
+        case AtomicOp.GetStaticField(field) => ???
+        case AtomicOp.PutStaticField(field) => ???
+        case AtomicOp.Spawn => ???
+        case AtomicOp.Lazy => ???
+        case AtomicOp.Force => ???
+        case AtomicOp.BoxBool => ???
+        case AtomicOp.BoxInt8 => ???
+        case AtomicOp.BoxInt16 => ???
+        case AtomicOp.BoxInt32 => ???
+        case AtomicOp.BoxInt64 => ???
+        case AtomicOp.BoxChar => ???
+        case AtomicOp.BoxFloat32 => ???
+        case AtomicOp.BoxFloat64 => ???
+        case AtomicOp.UnboxBool => ???
+        case AtomicOp.UnboxInt8 => ???
+        case AtomicOp.UnboxInt16 => ???
+        case AtomicOp.UnboxInt32 => ???
+        case AtomicOp.UnboxInt64 => ???
+        case AtomicOp.UnboxChar => ???
+        case AtomicOp.UnboxFloat32 => ???
+        case AtomicOp.UnboxFloat64 => ???
+        case AtomicOp.HoleError(sym) => ???
+        case AtomicOp.MatchError => ???
+      }
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)

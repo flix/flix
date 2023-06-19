@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -59,7 +59,60 @@ object SimplifiedAstPrinter {
     case Lambda(fparams, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
     case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
-    case Closure(sym, _, _) => DocAst.Expression.Def(sym)
+    case ApplyAtomic(op, exps, tpe, purity, loc) => op match {
+      case AtomicOp.Closure(sym) => DocAst.Expression.Def(sym)
+      case AtomicOp.Unary(sop) => ???
+      case AtomicOp.Binary(sop) => ???
+      case AtomicOp.Region => ???
+      case AtomicOp.ScopeExit => ???
+      case AtomicOp.Is(sym) => ???
+      case AtomicOp.Tag(sym) => ???
+      case AtomicOp.Untag(sym) => ???
+      case AtomicOp.Index(idx) => ???
+      case AtomicOp.Tuple => ???
+      case AtomicOp.RecordEmpty => ???
+      case AtomicOp.RecordSelect(field) => ???
+      case AtomicOp.RecordExtend(field) => ???
+      case AtomicOp.RecordRestrict(field) => ???
+      case AtomicOp.ArrayLit => ???
+      case AtomicOp.ArrayNew => ???
+      case AtomicOp.ArrayLoad => ???
+      case AtomicOp.ArrayStore => ???
+      case AtomicOp.ArrayLength => ???
+      case AtomicOp.Ref => ???
+      case AtomicOp.Deref => ???
+      case AtomicOp.Assign => ???
+      case AtomicOp.InstanceOf(clazz) => ???
+      case AtomicOp.Cast => ???
+      case AtomicOp.InvokeConstructor(constructor) => ???
+      case AtomicOp.InvokeMethod(method) => ???
+      case AtomicOp.InvokeStaticMethod(method) => ???
+      case AtomicOp.GetField(field) => ???
+      case AtomicOp.PutField(field) => ???
+      case AtomicOp.GetStaticField(field) => ???
+      case AtomicOp.PutStaticField(field) => ???
+      case AtomicOp.Spawn => ???
+      case AtomicOp.Lazy => ???
+      case AtomicOp.Force => ???
+      case AtomicOp.BoxBool => ???
+      case AtomicOp.BoxInt8 => ???
+      case AtomicOp.BoxInt16 => ???
+      case AtomicOp.BoxInt32 => ???
+      case AtomicOp.BoxInt64 => ???
+      case AtomicOp.BoxChar => ???
+      case AtomicOp.BoxFloat32 => ???
+      case AtomicOp.BoxFloat64 => ???
+      case AtomicOp.UnboxBool => ???
+      case AtomicOp.UnboxInt8 => ???
+      case AtomicOp.UnboxInt16 => ???
+      case AtomicOp.UnboxInt32 => ???
+      case AtomicOp.UnboxInt64 => ???
+      case AtomicOp.UnboxChar => ???
+      case AtomicOp.UnboxFloat32 => ???
+      case AtomicOp.UnboxFloat64 => ???
+      case AtomicOp.HoleError(sym) => ???
+      case AtomicOp.MatchError => ???
+    }
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case Unary(sop, exp, _, _, _) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
