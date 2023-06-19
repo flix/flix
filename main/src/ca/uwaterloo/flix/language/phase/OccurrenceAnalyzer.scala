@@ -280,7 +280,8 @@ object OccurrenceAnalyzer {
 
     case Expression.Tag(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Tag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
+      val op = AtomicOp.Tag(sym)
+      (OccurrenceAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.Untag(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
