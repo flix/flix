@@ -74,6 +74,8 @@ object ClosureConv {
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => ???
+
     case Expression.Apply(exp, exps, tpe, purity, loc) => exp match {
       case Expression.Def(sym, _, _) =>
         //
@@ -325,6 +327,8 @@ object ClosureConv {
 
     case Expression.Def(_, _, _) => SortedSet.empty
 
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => ???
+
     case Expression.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
@@ -485,6 +489,8 @@ object ClosureConv {
         val fs = fparams.map(fparam => visitFormalParam(fparam, subst))
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
+
+      case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => ???
 
       case Expression.Closure(_, _, _) => e
 
