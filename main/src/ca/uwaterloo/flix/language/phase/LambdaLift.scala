@@ -127,7 +127,11 @@ object LambdaLift {
         case AtomicOp.Closure(sym) =>
           LiftedAst.Expression.Closure(sym, List.empty, tpe, loc)
 
-        case AtomicOp.Unary(sop) => ???
+        case AtomicOp.Unary(sop) =>
+          val List(exp) = exps
+          val e = visitExp(exp)
+          LiftedAst.Expression.Unary(sop, e, tpe, purity, loc)
+
         case AtomicOp.Binary(sop) => ???
         case AtomicOp.Region => ???
         case AtomicOp.ScopeExit => ???
@@ -188,10 +192,6 @@ object LambdaLift {
       case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
         val as = args map visitExp
         LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.Unary(sop, e, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

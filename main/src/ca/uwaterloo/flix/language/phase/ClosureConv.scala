@@ -75,7 +75,65 @@ object ClosureConv {
       //
       mkLambdaClosure(fparams, exp, tpe, loc)
 
-    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => ???
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
+      case AtomicOp.Closure(sym) => ???
+      case AtomicOp.Unary(sop) =>
+        val List(exp) = exps
+        val e = visitExp(exp)
+        val op = AtomicOp.Unary(sop)
+        Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
+
+      case AtomicOp.Binary(sop) => ???
+      case AtomicOp.Region => ???
+      case AtomicOp.ScopeExit => ???
+      case AtomicOp.Is(sym) => ???
+      case AtomicOp.Tag(sym) => ???
+      case AtomicOp.Untag(sym) => ???
+      case AtomicOp.Index(idx) => ???
+      case AtomicOp.Tuple => ???
+      case AtomicOp.RecordEmpty => ???
+      case AtomicOp.RecordSelect(field) => ???
+      case AtomicOp.RecordExtend(field) => ???
+      case AtomicOp.RecordRestrict(field) => ???
+      case AtomicOp.ArrayLit => ???
+      case AtomicOp.ArrayNew => ???
+      case AtomicOp.ArrayLoad => ???
+      case AtomicOp.ArrayStore => ???
+      case AtomicOp.ArrayLength => ???
+      case AtomicOp.Ref => ???
+      case AtomicOp.Deref => ???
+      case AtomicOp.Assign => ???
+      case AtomicOp.InstanceOf(clazz) => ???
+      case AtomicOp.Cast => ???
+      case AtomicOp.InvokeConstructor(constructor) => ???
+      case AtomicOp.InvokeMethod(method) => ???
+      case AtomicOp.InvokeStaticMethod(method) => ???
+      case AtomicOp.GetField(field) => ???
+      case AtomicOp.PutField(field) => ???
+      case AtomicOp.GetStaticField(field) => ???
+      case AtomicOp.PutStaticField(field) => ???
+      case AtomicOp.Spawn => ???
+      case AtomicOp.Lazy => ???
+      case AtomicOp.Force => ???
+      case AtomicOp.BoxBool => ???
+      case AtomicOp.BoxInt8 => ???
+      case AtomicOp.BoxInt16 => ???
+      case AtomicOp.BoxInt32 => ???
+      case AtomicOp.BoxInt64 => ???
+      case AtomicOp.BoxChar => ???
+      case AtomicOp.BoxFloat32 => ???
+      case AtomicOp.BoxFloat64 => ???
+      case AtomicOp.UnboxBool => ???
+      case AtomicOp.UnboxInt8 => ???
+      case AtomicOp.UnboxInt16 => ???
+      case AtomicOp.UnboxInt32 => ???
+      case AtomicOp.UnboxInt64 => ???
+      case AtomicOp.UnboxChar => ???
+      case AtomicOp.UnboxFloat32 => ???
+      case AtomicOp.UnboxFloat64 => ???
+      case AtomicOp.HoleError(sym) => ???
+      case AtomicOp.MatchError => ???
+    }
 
     case Expression.Apply(exp, exps, tpe, purity, loc) => exp match {
       case Expression.Def(sym, _, _) =>
@@ -92,10 +150,6 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expression.ApplyClo(e, es, tpe, purity, loc)
     }
-
-    case Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      Expression.Unary(sop, e, tpe, purity, loc)
 
     case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -326,15 +380,13 @@ object ClosureConv {
 
     case Expression.Def(_, _, _) => SortedSet.empty
 
-    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => ???
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => freeVarsExps(exps)
 
     case Expression.Lambda(args, body, _, _) =>
       filterBoundParams(freeVars(body), args)
 
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
-
-    case Expression.Unary(_, exp, _, _, _) => freeVars(exp)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
@@ -490,7 +542,12 @@ object ClosureConv {
       case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
         case AtomicOp.Closure(_) => e
 
-        case AtomicOp.Unary(sop) => ???
+        case AtomicOp.Unary(sop) =>
+          val List(exp) = exps
+          val e = visitExp(exp)
+          val op = AtomicOp.Unary(sop)
+          Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
+
         case AtomicOp.Binary(sop) => ???
         case AtomicOp.Region => ???
         case AtomicOp.ScopeExit => ???
@@ -560,10 +617,6 @@ object ClosureConv {
         val e = visitExp(exp)
         val as = args map visitExp
         Expression.Apply(e, as, tpe, purity, loc)
-
-      case Expression.Unary(sop, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.Unary(sop, e, tpe, purity, loc)
 
       case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

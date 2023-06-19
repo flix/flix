@@ -61,7 +61,9 @@ object SimplifiedAstPrinter {
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
     case ApplyAtomic(op, exps, tpe, purity, loc) => op match {
       case AtomicOp.Closure(sym) => DocAst.Expression.Def(sym)
-      case AtomicOp.Unary(sop) => ???
+      case AtomicOp.Unary(sop) =>
+        val List(exp) = exps
+        DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
       case AtomicOp.Binary(sop) => ???
       case AtomicOp.Region => ???
       case AtomicOp.ScopeExit => ???
@@ -115,7 +117,6 @@ object SimplifiedAstPrinter {
     }
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
-    case Unary(sop, exp, _, _, _) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
     case Binary(sop, exp1, exp2, _, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
