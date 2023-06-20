@@ -16,6 +16,9 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.errors.Severity
+import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.{Ok, Err}
+import org.json4s.{JInt, JValue}
 
 /**
   * Represents a `DiagnosticSeverity` in LSP.
@@ -38,6 +41,22 @@ object DiagnosticSeverity {
     case Severity.Error => Error
     case Severity.Info => Information
     case Severity.Hint => Hint
+  }
+
+  def parse(json: JValue): Result[DiagnosticSeverity, String] = {
+    def err(v: JValue) =
+      Err(s"Diagnostic severity not recognized as a valid integer: '$v'.")
+
+    json match {
+      case JInt(i) => i.toInt match {
+        case 1 => Ok(Error)
+        case 2 => Ok(Warning)
+        case 3 => Ok(Information)
+        case 4 => Ok(Hint)
+        case _ => err(json)
+      }
+      case _ => err(json)
+    }
   }
 
   /**

@@ -15,9 +15,13 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import org.json4s.{JInt, JValue}
+
 /**
-  * Represents a `DiagnosticTag` in LSP.
-  */
+ * Represents a `DiagnosticTag` in LSP.
+ */
 sealed trait DiagnosticTag {
   def toInt: Int = this match {
     case DiagnosticTag.Unnecessary => 1
@@ -26,19 +30,32 @@ sealed trait DiagnosticTag {
 }
 
 object DiagnosticTag {
+  def parse(json: JValue): Result[DiagnosticTag, String] = {
+    def err(v: JValue) =
+      Err(s"Diagnostic tag not recognized as a valid integer: '$v'.")
+
+    json match {
+      case JInt(i) => i.toInt match {
+        case 1 => Ok(Unnecessary)
+        case 2 => Ok(Deprecated)
+        case _ => err(json)
+      }
+      case _ => err(json)
+    }
+  }
 
   /**
-    * Unused or unnecessary code.
-    *
-    * Clients are allowed to render diagnostics with this tag faded out instead of having an error squiggle.
-    */
+   * Unused or unnecessary code.
+   *
+   * Clients are allowed to render diagnostics with this tag faded out instead of having an error squiggle.
+   */
   case object Unnecessary extends DiagnosticTag
 
   /**
-    * Deprecated or obsolete code.
-    *
-    * Clients are allowed to rendered diagnostics with this tag strike through.
-    */
+   * Deprecated or obsolete code.
+   *
+   * Clients are allowed to rendered diagnostics with this tag strike through.
+   */
   case object Deprecated extends DiagnosticTag
 
 }

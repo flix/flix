@@ -23,130 +23,20 @@ import org.json4s.JsonAST.{JString, JValue}
 import java.util.Base64
 
 /**
-  * A common super-type for language server requests.
-  */
+ * A common super-type for language server requests.
+ */
 sealed trait Request {
   /**
-    * A unique number that identifies this specific request.
-    */
+   * A unique number that identifies this specific request.
+   */
   def requestId: String
 }
 
 object Request {
 
   /**
-    * A request to add (or update) the given uri with the given source code.
-    */
-  case class AddUri(requestId: String, uri: String, src: String) extends Request
-
-  /**
-    * A request to remove the given uri.
-    */
-  case class RemUri(requestId: String, uri: String) extends Request
-
-  /**
-    * A request to add (or update) the package at the given uri with the given binary data.
-    */
-  case class AddPkg(requestId: String, uri: String, data: Array[Byte]) extends Request
-
-  /**
-    * A request to remove the package at the given uri.
-    */
-  case class RemPkg(requestId: String, uri: String) extends Request
-
-  /**
-    * A request to add (or update) the JAR at the given uri.
-    */
-  case class AddJar(requestId: String, uri: String) extends Request
-
-  /**
-    * A request to remove the package at the given uri.
-    */
-  case class RemJar(requestId: String, uri: String) extends Request
-
-  /**
-    * A request for the compiler version.
-    */
-  case class Version(requestId: String) extends Request
-
-  /**
-    * A request to shutdown the language server.
-    */
-  case class Shutdown(requestId: String) extends Request
-
-  /**
-    * A request to compile and check all source files.
-    */
-  case class Check(requestId: String) extends Request
-
-  /**
-    * A code lens request.
-    */
-  case class Codelens(requestId: String, uri: String) extends Request
-
-  /**
-    * A complete request.
-    */
-  case class Complete(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to go to a declaration.
-    */
-  case class Goto(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to find implementations.
-    */
-  case class Implementation(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to get highlight information.
-    */
-  case class Highlight(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to get hover information.
-    */
-  case class Hover(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to rename a definition, local variable, or other named entity.
-    */
-  case class Rename(requestId: String, newName: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to find all uses of an entity.
-    */
-  case class Uses(requestId: String, uri: String, pos: Position) extends Request
-
-  /**
-    * A request to get document symbols information.
-    */
-  case class DocumentSymbols(requestId: String, uri: String) extends Request
-
-  /**
-   * A request to get semantic tokens for a file.
+   * Tries to parse the given `json` value as a [[AddUri]] request.
    */
-  case class SemanticTokens(requestId: String, uri: String) extends Request
-
-  /**
-    * A request to get workspace symbols information.
-    */
-  case class WorkspaceSymbols(requestId: String, query: String) extends Request
-
-  /**
-    * A request to get the inlay hints for the given [[range]] in a file denoted by [[uri]]
-    */
-  case class InlayHint(requestId: String, uri: String, range: Range) extends Request
-
-  /**
-    * A request to show the AST following a specific phase.
-    */
-  case class ShowAst(requestId: String, phase: String) extends Request
-
-  /**
-    * Tries to parse the given `json` value as a [[AddUri]] request.
-    */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
     val srcRes: Result[String, String] = json \\ "src" match {
       case JString(s) => Ok(s)
@@ -160,8 +50,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[RemUri]] request.
-    */
+   * Tries to parse the given `json` value as a [[RemUri]] request.
+   */
   def parseRemUri(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -170,8 +60,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[AddPkg]] request.
-    */
+   * Tries to parse the given `json` value as a [[AddPkg]] request.
+   */
   def parseAddPkg(json: json4s.JValue): Result[Request, String] = {
     val base64Res: Result[String, String] = json \\ "base64" match {
       case JString(s) => Ok(s)
@@ -194,8 +84,28 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[RemPkg]] request.
-    */
+   * Attempts to parse the `id` from the given JSON value `v`.
+   */
+  private def parseId(v: JValue): Result[String, String] = {
+    v \\ "id" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected id: '$s'.")
+    }
+  }
+
+  /**
+   * Attempts to parse the `uri` from the given JSON value `v`.
+   */
+  private def parseUri(v: JValue): Result[String, String] = {
+    v \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+  }
+
+  /**
+   * Tries to parse the given `json` value as a [[RemPkg]] request.
+   */
   def parseRemPkg(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -203,10 +113,9 @@ object Request {
     } yield Request.RemPkg(id, uri)
   }
 
-
   /**
-    * Tries to parse the given `json` value as a [[AddJar]] request.
-    */
+   * Tries to parse the given `json` value as a [[AddJar]] request.
+   */
   def parseAddJar(json: json4s.JValue): Result[Request, String] = {
     try {
       for {
@@ -221,8 +130,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[RemJar]] request.
-    */
+   * Tries to parse the given `json` value as a [[RemJar]] request.
+   */
   def parseRemJar(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -231,8 +140,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Version]] request.
-    */
+   * Tries to parse the given `json` value as a [[Version]] request.
+   */
   def parseVersion(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -240,8 +149,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Shutdown]] request.
-    */
+   * Tries to parse the given `json` value as a [[Shutdown]] request.
+   */
   def parseShutdown(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -249,8 +158,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Check]] request.
-    */
+   * Tries to parse the given `json` value as a [[Check]] request.
+   */
   def parseCheck(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -258,8 +167,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Codelens]] request.
-    */
+   * Tries to parse the given `json` value as a [[Codelens]] request.
+   */
   def parseCodelens(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -268,8 +177,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Complete]] request.
-    */
+   * Tries to parse the given `json` value as a [[Complete]] request.
+   */
   def parseComplete(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -279,8 +188,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Goto]] request.
-    */
+   * Tries to parse the given `json` value as a [[Goto]] request.
+   */
   def parseGoto(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -290,8 +199,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Implementation]] request.
-    */
+   * Tries to parse the given `json` value as a [[Implementation]] request.
+   */
   def parseImplementation(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -301,8 +210,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Highlight]] request.
-    */
+   * Tries to parse the given `json` value as a [[Highlight]] request.
+   */
   def parseHighlight(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -312,8 +221,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Hover]] request.
-    */
+   * Tries to parse the given `json` value as a [[Hover]] request.
+   */
   def parseHover(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -323,8 +232,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Rename]] request.
-    */
+   * Tries to parse the given `json` value as a [[Rename]] request.
+   */
   def parseRename(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -335,8 +244,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[Uses]] request.
-    */
+   * Tries to parse the given `json` value as a [[Uses]] request.
+   */
   def parseUses(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -346,8 +255,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[DocumentSymbols]] request.
-    */
+   * Tries to parse the given `json` value as a [[DocumentSymbols]] request.
+   */
   def parseDocumentSymbols(v: JValue): Result[Request, String] = {
     for {
       id <- parseId(v)
@@ -356,13 +265,23 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[WorkspaceSymbols]] request.
-    */
+   * Tries to parse the given `json` value as a [[WorkspaceSymbols]] request.
+   */
   def parseWorkspaceSymbols(v: JValue): Result[Request, String] = {
     for {
       id <- parseId(v)
       query <- parseString("query", v)
     } yield Request.WorkspaceSymbols(id, query)
+  }
+
+  /**
+   * Attempts to parse the given `key` as a String from the given JSON value `v`.
+   */
+  private def parseString(k: String, v: JValue): Result[String, String] = {
+    v \\ k match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected $k: '$s'.")
+    }
   }
 
   /**
@@ -376,8 +295,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[InlayHint]] request.
-    */
+   * Tries to parse the given `json` value as a [[InlayHint]] request.
+   */
   def parseInlayHint(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -387,8 +306,8 @@ object Request {
   }
 
   /**
-    * Tries to parse the given `json` value as a [[ShowAst]] request.
-    */
+   * Tries to parse the given `json` value as a [[ShowAst]] request.
+   */
   def parseShowAst(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
@@ -397,43 +316,140 @@ object Request {
   }
 
   /**
-    * Attempts to parse the `id` from the given JSON value `v`.
-    */
-  private def parseId(v: JValue): Result[String, String] = {
-    v \\ "id" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected id: '$s'.")
-    }
+   * Tries to parse the given `json` value as a [[CodeAction]] request.
+   */
+  def parseCodeAction(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      range <- Range.parse(json \ "range")
+      context <- CodeActionContext.parse(json \ "context")
+    } yield Request.CodeAction(id, uri, range, context)
   }
 
   /**
-    * Attempts to parse the `uri` from the given JSON value `v`.
-    */
-  private def parseUri(v: JValue): Result[String, String] = {
-    v \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-  }
-
-  /**
-    * Attempts to parse the given `key` as a String from the given JSON value `v`.
-    */
-  private def parseString(k: String, v: JValue): Result[String, String] = {
-    v \\ k match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected $k: '$s'.")
-    }
-  }
-
-  /**
-    * Attempts to parse the `projectRootUri` from the given JSON value `v`.
-    */
+   * Attempts to parse the `projectRootUri` from the given JSON value `v`.
+   */
   private def parseProjectRootUri(v: JValue): Result[String, String] = {
     v \\ "projectRootUri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected projectRootUri: '$s'.")
     }
   }
+
+  /**
+   * A request to add (or update) the given uri with the given source code.
+   */
+  case class AddUri(requestId: String, uri: String, src: String) extends Request
+
+  /**
+   * A request to remove the given uri.
+   */
+  case class RemUri(requestId: String, uri: String) extends Request
+
+  /**
+   * A request to add (or update) the package at the given uri with the given binary data.
+   */
+  case class AddPkg(requestId: String, uri: String, data: Array[Byte]) extends Request
+
+  /**
+   * A request to remove the package at the given uri.
+   */
+  case class RemPkg(requestId: String, uri: String) extends Request
+
+  /**
+   * A request to add (or update) the JAR at the given uri.
+   */
+  case class AddJar(requestId: String, uri: String) extends Request
+
+  /**
+   * A request to remove the package at the given uri.
+   */
+  case class RemJar(requestId: String, uri: String) extends Request
+
+  /**
+   * A request for the compiler version.
+   */
+  case class Version(requestId: String) extends Request
+
+  /**
+   * A request to shutdown the language server.
+   */
+  case class Shutdown(requestId: String) extends Request
+
+  /**
+   * A request to compile and check all source files.
+   */
+  case class Check(requestId: String) extends Request
+
+  /**
+   * A code lens request.
+   */
+  case class Codelens(requestId: String, uri: String) extends Request
+
+  /**
+   * A complete request.
+   */
+  case class Complete(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+   * A request to go to a declaration.
+   */
+  case class Goto(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+   * A request to find implementations.
+   */
+  case class Implementation(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+   * A request to get highlight information.
+   */
+  case class Highlight(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+   * A request to get hover information.
+   */
+  case class Hover(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+   * A request to rename a definition, local variable, or other named entity.
+   */
+  case class Rename(requestId: String, newName: String, uri: String, pos: Position) extends Request
+
+  /**
+   * A request to find all uses of an entity.
+   */
+  case class Uses(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+   * A request to get document symbols information.
+   */
+  case class DocumentSymbols(requestId: String, uri: String) extends Request
+
+  /**
+   * A request to get semantic tokens for a file.
+   */
+  case class SemanticTokens(requestId: String, uri: String) extends Request
+
+  /**
+   * A request to get workspace symbols information.
+   */
+  case class WorkspaceSymbols(requestId: String, query: String) extends Request
+
+  /**
+   * A request to get the inlay hints for the given [[range]] in a file denoted by [[uri]]
+   */
+  case class InlayHint(requestId: String, uri: String, range: Range) extends Request
+
+  /**
+   * A request to show the AST following a specific phase.
+   */
+  case class ShowAst(requestId: String, phase: String) extends Request
+
+  /**
+   * A request to view available code actions.
+   */
+  case class CodeAction(requestId: String, uri: String, range: Range, context: CodeActionContext) extends Request
 
 }
