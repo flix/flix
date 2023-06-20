@@ -39,7 +39,8 @@ object MonoTyper {
     val cs = def0.cparams.map(visitFormalParam)
     val fs = def0.fparams.map(visitFormalParam)
     val s = visitStmt(def0.stmt)
-    val tpe = visitType(def0.tpe)
+    val tpe0 = visitType(def0.tpe)
+    val tpe = MonoType.Arrow(fs.map(_.tpe), tpe0)
     MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, s, tpe, def0.loc)
   }
 
@@ -227,9 +228,9 @@ object MonoTyper {
 
             case TypeConstructor.True => MonoType.Unit
             case TypeConstructor.False => MonoType.Unit
-            case TypeConstructor.Not=> MonoType.Unit
+            case TypeConstructor.Not => MonoType.Unit
             case TypeConstructor.And => MonoType.Unit
-            case TypeConstructor.Or=> MonoType.Unit
+            case TypeConstructor.Or => MonoType.Unit
 
             case TypeConstructor.Pure => MonoType.Unit
             case TypeConstructor.EffUniv => MonoType.Unit
