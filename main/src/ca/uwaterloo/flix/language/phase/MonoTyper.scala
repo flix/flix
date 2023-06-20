@@ -156,7 +156,6 @@ object MonoTyper {
 
     base match {
       case None => tpe match {
-        case Type.Var(sym, _) => MonoType.Var(sym.id)
         case _ => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
       }
 

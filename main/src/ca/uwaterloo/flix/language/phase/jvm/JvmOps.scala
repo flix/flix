@@ -46,9 +46,6 @@ object JvmOps {
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
   def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = tpe match {
-    // Polymorphic
-    case MonoType.Var(_) => JvmType.Unit
-
     // Primitives
     case MonoType.Unit => JvmType.Unit
     case MonoType.Bool => JvmType.PrimBool
@@ -661,7 +658,6 @@ object JvmOps {
       case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
       case MonoType.Native(_) => Set(tpe)
-      case MonoType.Var(_) => Set.empty
     }
   }
 
