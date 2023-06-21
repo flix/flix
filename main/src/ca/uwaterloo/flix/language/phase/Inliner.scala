@@ -135,7 +135,7 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, closureArgs, _, _) =>
+        case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial
@@ -169,7 +169,7 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, closureArgs, _, _) =>
+        case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial

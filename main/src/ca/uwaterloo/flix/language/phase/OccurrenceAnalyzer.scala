@@ -154,17 +154,16 @@ object OccurrenceAnalyzer {
 
     case Expression.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
-    case Expression.Closure(sym, closureArgs, tpe, loc) =>
-      val (newClosureArgs, o) = visitExps(sym0, closureArgs)
-      val op = AtomicOp.Closure(sym)
-      (OccurrenceAst.Expression.ApplyAtomic(op, newClosureArgs, tpe, Purity.Pure, loc), o)
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      val (es, o) = visitExps(sym0, exps)
+      (OccurrenceAst.Expression.ApplyAtomic(op, es, tpe, purity, loc), o)
 
     case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
       val (as, o2) = visitExps(sym0, args)
       val o3 = combineAllSeq(o1, o2)
       exp match {
-        case Expression.Closure(sym, _, _, _) =>
+        case Expression.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
           (OccurrenceAst.Expression.ApplyClo(e, as, tpe, purity, loc), o5.increaseSizeByOne())
@@ -182,7 +181,7 @@ object OccurrenceAnalyzer {
       val (as, o2) = visitExps(sym0, args)
       val o3 = combineAllSeq(o1, o2)
       exp match {
-        case Expression.Closure(sym, _, _, _) =>
+        case Expression.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
           (OccurrenceAst.Expression.ApplyCloTail(e, as, tpe, purity, loc), o5.increaseSizeByOne())

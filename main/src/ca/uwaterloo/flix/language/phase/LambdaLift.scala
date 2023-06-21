@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, Purity, SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -114,17 +114,17 @@ object LambdaLift {
         m += (freshSymbol -> defn)
 
         // Construct the closure args.
-        val closureArgs =  if (freeVars.isEmpty)
+        val closureArgs = if (freeVars.isEmpty)
           List(LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.mkUnit(loc), loc))
         else freeVars.map {
           case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
         }
 
         // Construct the closure expression.
-        LiftedAst.Expression.Closure(freshSymbol, closureArgs, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, tpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expression.Closure(sym, tpe, loc) =>
-        LiftedAst.Expression.Closure(sym, List.empty, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -169,7 +169,7 @@ object LambdaLift {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         e1 match {
-          case LiftedAst.Expression.Closure(defSym, closureArgs, _, _) =>
+          case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(defSym), closureArgs, _, _, _) =>
             val index = closureArgs.indexWhere {
               case LiftedAst.Expression.Var(sym, _, _) => varSym == sym
               case _ => false
