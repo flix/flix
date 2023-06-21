@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, ReducedAst, LiftedAst, Purity, Type}
 
 object Reducer {
 
@@ -55,12 +54,9 @@ object Reducer {
 
     case LiftedAst.Expression.Var(sym, tpe, loc) => ReducedAst.Expr.Var(sym, tpe, loc)
 
-    case LiftedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+    case LiftedAst.Expression.Closure(sym, exps, tpe, loc) =>
       val es = exps.map(visitExpr)
-      op match {
-        case AtomicOp.Closure(sym) => ReducedAst.Expr.Closure(sym, es, tpe, loc)
-        case _ => throw InternalCompilerException(s"Unexpected Expression near $loc", loc)
-      }
+      ReducedAst.Expr.Closure(sym, es, tpe, loc)
 
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExpr(exp)

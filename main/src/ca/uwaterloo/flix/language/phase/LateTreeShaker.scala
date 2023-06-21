@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -86,11 +87,6 @@ object LateTreeShaker {
     case Some(defn) => visitExp(defn.exp)
   }
 
-  private def visitAtomicOp(op: AtomicOp): Set[Symbol.DefnSym] = op match {
-    case AtomicOp.Closure(sym) => Set(sym)
-    case _ => Set.empty
-  }
-
   /**
     * Returns the function symbols reachable from the given expression `e0`.
     */
@@ -101,8 +97,8 @@ object LateTreeShaker {
     case Expression.Var(_, _, _) =>
       Set.empty
 
-    case Expression.ApplyAtomic(op, exps, _, _, _) =>
-      visitAtomicOp(op) ++ visitExps(exps)
+    case Expression.Closure(sym, closureArgs, _, _) =>
+      Set(sym) ++ visitExps(closureArgs)
 
     case Expression.ApplyClo(exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
