@@ -589,91 +589,21 @@ object Inliner {
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(env0.getOrElse(sym, sym), tpe, loc)
 
-    case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
-      case AtomicOp.Closure(sym) =>
-        val newClosureArgs = exps.map(substituteExp(_, env0))
-        LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
+    case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
 
-      case AtomicOp.Unary(sop) =>
-        val List(exp) = exps
-        val e = substituteExp(exp, env0)
-        unaryFold(sop, e, tpe, purity, loc)
+      op match {
+        case AtomicOp.Unary(sop) =>
+          val List(e) = es
+          unaryFold(sop, e, tpe, purity, loc)
 
-      case AtomicOp.Binary(sop) =>
-        val List(exp1, exp2) = exps
-        val e1 = substituteExp(exp1, env0)
-        val e2 = substituteExp(exp2, env0)
-        binaryFold(sop, e1, e2, tpe, purity, loc)
+        case AtomicOp.Binary(sop) =>
+          val List(e1, e2) = es
+          binaryFold(sop, e1, e2, tpe, purity, loc)
 
-      case AtomicOp.Region =>
-        LiftedAst.Expression.Region(tpe, loc)
+        case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
-      case AtomicOp.ScopeExit =>
-        val List(exp1, exp2) = exps
-        val e1 = substituteExp(exp1, env0)
-        val e2 = substituteExp(exp2, env0)
-        LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
-
-      case AtomicOp.Is(sym) =>
-        val List(exp) = exps
-        val e = substituteExp(exp, env0)
-        LiftedAst.Expression.Is(sym, e, purity, loc)
-
-      case AtomicOp.Tag(sym) =>
-        val List(exp) = exps
-        val e = substituteExp(exp, env0)
-        LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
-
-      case AtomicOp.Untag(sym) =>
-        val List(exp) = exps
-        val e = substituteExp(exp, env0)
-        LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
-
-      case AtomicOp.Index(idx) => ???
-      case AtomicOp.Tuple => ???
-      case AtomicOp.RecordEmpty => ???
-      case AtomicOp.RecordSelect(field) => ???
-      case AtomicOp.RecordExtend(field) => ???
-      case AtomicOp.RecordRestrict(field) => ???
-      case AtomicOp.ArrayLit => ???
-      case AtomicOp.ArrayNew => ???
-      case AtomicOp.ArrayLoad => ???
-      case AtomicOp.ArrayStore => ???
-      case AtomicOp.ArrayLength => ???
-      case AtomicOp.Ref => ???
-      case AtomicOp.Deref => ???
-      case AtomicOp.Assign => ???
-      case AtomicOp.InstanceOf(clazz) => ???
-      case AtomicOp.Cast => ???
-      case AtomicOp.InvokeConstructor(constructor) => ???
-      case AtomicOp.InvokeMethod(method) => ???
-      case AtomicOp.InvokeStaticMethod(method) => ???
-      case AtomicOp.GetField(field) => ???
-      case AtomicOp.PutField(field) => ???
-      case AtomicOp.GetStaticField(field) => ???
-      case AtomicOp.PutStaticField(field) => ???
-      case AtomicOp.Spawn => ???
-      case AtomicOp.Lazy => ???
-      case AtomicOp.Force => ???
-      case AtomicOp.BoxBool => ???
-      case AtomicOp.BoxInt8 => ???
-      case AtomicOp.BoxInt16 => ???
-      case AtomicOp.BoxInt32 => ???
-      case AtomicOp.BoxInt64 => ???
-      case AtomicOp.BoxChar => ???
-      case AtomicOp.BoxFloat32 => ???
-      case AtomicOp.BoxFloat64 => ???
-      case AtomicOp.UnboxBool => ???
-      case AtomicOp.UnboxInt8 => ???
-      case AtomicOp.UnboxInt16 => ???
-      case AtomicOp.UnboxInt32 => ???
-      case AtomicOp.UnboxInt64 => ???
-      case AtomicOp.UnboxChar => ???
-      case AtomicOp.UnboxFloat32 => ???
-      case AtomicOp.UnboxFloat64 => ???
-      case AtomicOp.HoleError(sym) => ???
-      case AtomicOp.MatchError => ???
-    }
+      }
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -881,7 +811,7 @@ object Inliner {
   private def unaryFold(sop: SemanticOperator, e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e) match {
       case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expression.Cst(Ast.Constant.Bool(!b), tpe, loc)
-      case _ => LiftedAst.Expression.Unary(sop, e, tpe, purity, loc)
+      case _ => LiftedAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, purity, loc)
     }
   }
 
@@ -905,7 +835,7 @@ object Inliner {
       case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) => e1
       case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
-      case _ => LiftedAst.Expression.Binary(sop, e1, e2, tpe, purity, loc)
+      case _ => LiftedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, purity, loc)
     }
   }
 
