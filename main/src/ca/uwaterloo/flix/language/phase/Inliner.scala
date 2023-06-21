@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -113,15 +113,15 @@ object Inliner {
           }
       }
 
-    case OccurrenceAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
-      val newClosureArgs = closureArgs.map(visitExp(_, subst0))
-      LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
+    case OccurrenceAst.Expression.Closure(sym, exps, tpe, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), es, tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, closureArgs, _, _) =>
+        case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial
@@ -155,7 +155,7 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, closureArgs, _, _) =>
+        case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial
@@ -537,7 +537,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
       val newClosureArgs = closureArgs.map(substituteExp(_, env0))
-      LiftedAst.Expression.Closure(sym, newClosureArgs, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), newClosureArgs, tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

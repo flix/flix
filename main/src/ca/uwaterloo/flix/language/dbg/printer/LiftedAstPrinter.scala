@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -56,7 +56,7 @@ object LiftedAstPrinter {
   def print(e: LiftedAst.Expression): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case Closure(sym, closureArgs, _, _) => DocAst.Expression.ClosureLifted(sym, closureArgs.map(print))
+    case ApplyAtomic(op, exps, _, _, _) => printAtomic(op, exps)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case ApplyCloTail(exp, args, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
@@ -126,5 +126,11 @@ object LiftedAstPrinter {
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
     DocAst.Expression.Var(sym)
 
+  /**
+    * Returns the [[DocAst.Expression]] representation of `op` and `exps`.
+    */
+  private def printAtomic(op: AtomicOp, exps: List[Expression]): DocAst.Expression = op match {
+    case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, exps.map(print))
+  }
 
 }
