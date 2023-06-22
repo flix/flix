@@ -23,8 +23,8 @@ import org.json4s.JsonDSL._
 import org.json4s._
 
 /**
- * Companion object for [[Diagnostic]].
- */
+  * Companion object for [[Diagnostic]].
+  */
 object Diagnostic {
   def from(compilationMessage: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
     val range = Range.from(compilationMessage.loc)
@@ -104,16 +104,16 @@ object Diagnostic {
 }
 
 /**
- * Represents a `Diagnostic` in LSP.
- *
- * @param range       The range at which the message applies.
- * @param severity    The diagnostic's severity. Can be omitted. If omitted it is up to the client to interpret diagnostics as error, warning, info or hint.
- * @param code        The diagnostic's code, which might appear in the user interface.
- * @param source      A human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
- * @param message     The diagnostic's message.
- * @param fullMessage The full error message (non-standard).
- * @param tags        Additional metadata about the diagnostic.
- */
+  * Represents a `Diagnostic` in LSP.
+  *
+  * @param range       The range at which the message applies.
+  * @param severity    The diagnostic's severity. Can be omitted. If omitted it is up to the client to interpret diagnostics as error, warning, info or hint.
+  * @param code        The diagnostic's code, which might appear in the user interface.
+  * @param source      A human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
+  * @param message     The diagnostic's message.
+  * @param fullMessage The full error message (non-standard).
+  * @param tags        Additional metadata about the diagnostic.
+  */
 case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: Option[String], source: Option[String], message: String, fullMessage: String, tags: List[DiagnosticTag]) {
   def toJSON: JValue =
     ("range" -> range.toJSON) ~

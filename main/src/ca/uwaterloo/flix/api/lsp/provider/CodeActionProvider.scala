@@ -5,8 +5,8 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, Range}
 object CodeActionProvider {
 
   /**
-   * Return all available code actions
-   */
+    * Return all available code actions
+    */
   def getCodeActions(uri: String, range: Range, context: CodeActionContext): List[CodeAction] = {
     // All received document positions are 1-based, but all returned positions should be 0-based
 
