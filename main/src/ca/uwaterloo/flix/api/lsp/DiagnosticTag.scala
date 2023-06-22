@@ -15,10 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.json4s.{JInt, JValue}
-
 /**
   * Represents a `DiagnosticTag` in LSP.
   */
@@ -30,14 +26,6 @@ sealed trait DiagnosticTag {
 }
 
 object DiagnosticTag {
-  def parse(json: JValue): Result[DiagnosticTag, String] = json match {
-    case JInt(i) => i.toInt match {
-      case 1 => Ok(Unnecessary)
-      case 2 => Ok(Deprecated)
-      case v => Err(s"Unexpected diagnostic tag integer value: $v.")
-    }
-    case v => Err(s"Unexpected non-integer diagnostic tag: '$v'.")
-  }
 
   /**
     * Unused or unnecessary code.

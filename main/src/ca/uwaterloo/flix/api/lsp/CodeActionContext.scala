@@ -21,10 +21,6 @@ import org.json4s.JsonAST._
 
 object CodeActionContext {
   def parse(json: JValue): Result[CodeActionContext, String] = {
-    val diagnosticsResult = json \ "diagnostics" match {
-      case JArray(l) => Result.traverse(l)(Diagnostic.parse)
-      case v => Err(s"Unexpected non-array diagnostics: '$v'.")
-    }
 
     val onlyResult: Result[List[CodeActionKind], String] = json \ "only" match {
       case JNothing => Ok(List())
@@ -34,18 +30,14 @@ object CodeActionContext {
 
     val triggerKindResult: Result[Option[CodeActionTriggerKind], String] = json \ "triggerKind" match {
       case JNothing => Ok(None)
-      case x => CodeActionTriggerKind.parse(x) match {
-        case Ok(v) => Ok(Some(v))
-        case Err(s) => Err(s)
-      }
+      case v => CodeActionTriggerKind.parse(v).map(Some(_))
     }
 
     for {
-      diagnostics <- diagnosticsResult
       only <- onlyResult
       triggerKind <- triggerKindResult
-    } yield CodeActionContext(diagnostics, only, triggerKind)
+    } yield CodeActionContext(only, triggerKind)
   }
 }
 
-case class CodeActionContext(diagnostics: List[Diagnostic], only: List[CodeActionKind], triggerKind: Option[CodeActionTriggerKind])
+case class CodeActionContext(only: List[CodeActionKind], triggerKind: Option[CodeActionTriggerKind])

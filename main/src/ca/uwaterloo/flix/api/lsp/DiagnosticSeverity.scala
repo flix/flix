@@ -16,9 +16,6 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.errors.Severity
-import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Ok, Err}
-import org.json4s.{JInt, JValue}
 
 /**
   * Represents a `DiagnosticSeverity` in LSP.
@@ -41,17 +38,6 @@ object DiagnosticSeverity {
     case Severity.Error => Error
     case Severity.Info => Information
     case Severity.Hint => Hint
-  }
-
-  def parse(json: JValue): Result[DiagnosticSeverity, String] = json match {
-    case JInt(i) => i.toInt match {
-      case 1 => Ok(Error)
-      case 2 => Ok(Warning)
-      case 3 => Ok(Information)
-      case 4 => Ok(Hint)
-      case v => Err(s"Unexpected diagnostic severity integer value: $v.")
-    }
-    case v => Err(s"Unexpected non-integer diagnostic severity: '$v'.")
   }
 
   /**

@@ -17,8 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.CodeHint
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Formatter, Result}
+import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -48,58 +47,6 @@ object Diagnostic {
     val severity = Some(DiagnosticSeverity.from(codeHint.severity))
     val summary = codeHint.summary
     Diagnostic(range, severity, None, None, summary, summary, Nil)
-  }
-
-  def parse(json: JValue): Result[Diagnostic, String] = {
-    val rangeResult = Range.parse(json \ "range")
-
-    val severityResult: Result[Option[DiagnosticSeverity], String] = json \ "severity" match {
-      case JNothing => Ok(None)
-      case x => DiagnosticSeverity.parse(x) match {
-        case Ok(v) => Ok(Some(v))
-        case Err(s) => Err(s)
-      }
-    }
-
-    val codeResult: Result[Option[String], String] = json \ "code" match {
-      case JNothing => Ok(None)
-      case JString(s) => Ok(Some(s))
-      case JInt(i) => Ok(Some(i.toString))
-      case v => Err(s"Unexpected non-(integeger|string) code: '$v'.")
-    }
-
-    val sourceResult: Result[Option[String], String] = json \ "source" match {
-      case JNothing => Ok(None)
-      case JString(s) => Ok(Some(s))
-      case v => Err(s"Unexpected non-string source: '$v'.")
-    }
-
-    val messageResult: Result[String, String] = json \ "message" match {
-      case JString(s) => Ok(s)
-      case v => Err(s"Unexpected non-string message: '$v'.")
-    }
-
-    val fullMessageResult: Result[String, String] = json \ "fullMessage" match {
-      case JNothing => Ok("")
-      case JString(s) => Ok(s)
-      case v => Err(s"Unexpected non-string message: '$v'.")
-    }
-
-    val tagsResult: Result[List[DiagnosticTag], String] = json \ "tags" match {
-      case JNothing => Ok(List())
-      case JArray(l) => Result.traverse(l)(DiagnosticTag.parse)
-      case v => Err(s"Unexpected non-array tags: '$v'.")
-    }
-
-    for {
-      range <- rangeResult
-      severity <- severityResult
-      code <- codeResult
-      source <- sourceResult
-      message <- messageResult
-      fullMessage <- fullMessageResult
-      tags <- tagsResult
-    } yield Diagnostic(range, severity, code, source, message, fullMessage, tags)
   }
 }
 
