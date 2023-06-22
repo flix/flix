@@ -276,36 +276,6 @@ object ResolutionError {
   }
 
   /**
-    * Opaque Enum Error.
-    *
-    * @param sym the enum symbol.
-    * @param ns  the namespace from which the enum is opaque.
-    * @param loc the location where the error occurred.
-    */
-  case class OpaqueEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Opaque."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Enum '${red(sym.toString)}' is opaque from the namespace '${cyan(ns.toString)}'.
-         |
-         |${code(loc, "opaque enum.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"""Opaque enums cannot be constructed or destructed outside their declaring namespace.
-         |
-         |${underline("Tip:")} Use helper functions from the enum's namespace.
-         |""".stripMargin
-    })
-
-  }
-
-  /**
     * Inaccessible Type Alias Error.
     *
     * @param sym the type alias symbol.

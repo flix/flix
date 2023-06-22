@@ -39,7 +39,6 @@ object KeywordOtherCompleter extends Completer {
       "instance",
       "law",
       "mod",
-      "opaque",
       "override",
       "pub",
       "Record",

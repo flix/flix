@@ -89,44 +89,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  // TODO NS-REFACTOR re-enable this check
-  ignore("OpaqueEnum.01") {
-    val input =
-      s"""
-         |mod A {
-         |  pub opaque enum Color {
-         |    case Blu,
-         |    case Red
-         |  }
-         |}
-         |
-         |mod B {
-         |  def g(): A.Color = A.Color.Red
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.OpaqueEnum](result)
-  }
-
-  // TODO NS-REFACTOR re-enable this check
-  ignore("OpaqueEnum.02") {
-    val input =
-      s"""
-         |mod A {
-         |  def f(): A.B.C.Color = A.B.C.Color.Blu
-         |
-         |  mod B.C {
-         |    pub opaque enum Color {
-         |      case Blu,
-         |      case Red
-         |    }
-         |  }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.OpaqueEnum](result)
-  }
-
   test("InaccessibleType.01") {
     val input =
       s"""
