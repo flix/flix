@@ -43,20 +43,15 @@ object DiagnosticSeverity {
     case Severity.Hint => Hint
   }
 
-  def parse(json: JValue): Result[DiagnosticSeverity, String] = {
-    def err(v: JValue) =
-      Err(s"Diagnostic severity not recognized as a valid integer: '$v'.")
-
-    json match {
-      case JInt(i) => i.toInt match {
-        case 1 => Ok(Error)
-        case 2 => Ok(Warning)
-        case 3 => Ok(Information)
-        case 4 => Ok(Hint)
-        case _ => err(json)
-      }
-      case _ => err(json)
+  def parse(json: JValue): Result[DiagnosticSeverity, String] = json match {
+    case JInt(i) => i.toInt match {
+      case 1 => Ok(Error)
+      case 2 => Ok(Warning)
+      case 3 => Ok(Information)
+      case 4 => Ok(Hint)
+      case v => Err(s"Unexpected diagnostic severity integer value: $v.")
     }
+    case v => Err(s"Unexpected non-integer diagnostic severity: '$v'.")
   }
 
   /**

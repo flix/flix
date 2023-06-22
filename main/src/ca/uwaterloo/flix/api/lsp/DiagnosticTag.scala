@@ -30,18 +30,13 @@ sealed trait DiagnosticTag {
 }
 
 object DiagnosticTag {
-  def parse(json: JValue): Result[DiagnosticTag, String] = {
-    def err(v: JValue) =
-      Err(s"Diagnostic tag not recognized as a valid integer: '$v'.")
-
-    json match {
-      case JInt(i) => i.toInt match {
-        case 1 => Ok(Unnecessary)
-        case 2 => Ok(Deprecated)
-        case _ => err(json)
-      }
-      case _ => err(json)
+  def parse(json: JValue): Result[DiagnosticTag, String] = json match {
+    case JInt(i) => i.toInt match {
+      case 1 => Ok(Unnecessary)
+      case 2 => Ok(Deprecated)
+      case v => Err(s"Unexpected diagnostic tag integer value: $v.")
     }
+    case v => Err(s"Unexpected non-integer diagnostic tag: '$v'.")
   }
 
   /**

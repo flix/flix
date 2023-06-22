@@ -35,16 +35,19 @@ sealed trait CodeActionKind {
 
 object CodeActionKind {
   def parse(json: JValue): Result[CodeActionKind, String] = json match {
-    case JString("") => Ok(CodeActionKind.Empty)
-    case JString("quickfix") => Ok(CodeActionKind.QuickFix)
-    case JString("refactor") => Ok(CodeActionKind.Refactor)
-    case JString("refactor.extract") => Ok(CodeActionKind.RefactorExtract)
-    case JString("refactor.inline") => Ok(CodeActionKind.RefactorInline)
-    case JString("refactor.rewrite") => Ok(CodeActionKind.RefactorRewrite)
-    case JString("source") => Ok(CodeActionKind.Source)
-    case JString("source.organizeImports") => Ok(CodeActionKind.SourceOrganizeImports)
-    case JString("source.fixAll") => Ok(CodeActionKind.SourceFixAll)
-    case v => Err(s"Code action kind not recognized as a valid string: '$v'.")
+    case JString(s) => s match {
+      case "" => Ok(Empty)
+      case "quickfix" => Ok(QuickFix)
+      case "refactor" => Ok(Refactor)
+      case "refactor.extract" => Ok(RefactorExtract)
+      case "refactor.inline" => Ok(RefactorInline)
+      case "refactor.rewrite" => Ok(RefactorRewrite)
+      case "source" => Ok(Source)
+      case "source.organizeImports" => Ok(SourceOrganizeImports)
+      case "source.fixAll" => Ok(SourceFixAll)
+      case v => Err(s"Unexpected code action kind string value: '$v'.")
+    }
+    case v => Err(s"Unexpected non-string code action kind: '$v'.")
   }
 
   case object Empty extends CodeActionKind
