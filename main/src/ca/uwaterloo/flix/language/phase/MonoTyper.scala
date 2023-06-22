@@ -39,7 +39,8 @@ object MonoTyper {
     val cs = def0.cparams.map(visitFormalParam)
     val fs = def0.fparams.map(visitFormalParam)
     val s = visitStmt(def0.stmt)
-    val tpe = visitType(def0.tpe)
+    val tpe0 = visitType(def0.tpe)
+    val tpe = MonoType.Arrow(fs.map(_.tpe), tpe0)
     MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, s, tpe, def0.loc)
   }
 
@@ -69,7 +70,7 @@ object MonoTyper {
       val t = visitType(tpe)
       MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
 
-    case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+    case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
       val es = exps.map(visitExpr)
       val t = visitType(tpe)
       MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
@@ -150,117 +151,110 @@ object MonoTyper {
       MonoTypedAst.Stmt.Ret(e, t, loc)
   }
 
-  def visitType(tpe0: Type): MonoType = {
+  private def visitType(tpe: Type): MonoType = {
+    val base = tpe.typeConstructor
+    val args = tpe.typeArguments.map(visitType)
 
-    def visit(t0: Type): MonoType = {
-
-      val base = t0.typeConstructor
-      val args = t0.typeArguments.map(visit)
-
-      base match {
-        case None => t0 match {
-          case Type.Var(sym, _) => MonoType.Var(sym.id)
-          case _ => throw InternalCompilerException(s"Unexpected type: $t0", t0.loc)
-        }
-
-        case Some(tc) =>
-          tc match {
-            case TypeConstructor.Unit => MonoType.Unit
-
-            case TypeConstructor.Null => MonoType.Unit
-
-            case TypeConstructor.Bool => MonoType.Bool
-
-            case TypeConstructor.Char => MonoType.Char
-
-            case TypeConstructor.Float32 => MonoType.Float32
-
-            case TypeConstructor.Float64 => MonoType.Float64
-
-            case TypeConstructor.BigDecimal => MonoType.BigDecimal
-
-            case TypeConstructor.Int8 => MonoType.Int8
-
-            case TypeConstructor.Int16 => MonoType.Int16
-
-            case TypeConstructor.Int32 => MonoType.Int32
-
-            case TypeConstructor.Int64 => MonoType.Int64
-
-            case TypeConstructor.BigInt => MonoType.BigInt
-
-            case TypeConstructor.Str => MonoType.Str
-
-            case TypeConstructor.Regex => MonoType.Regex
-
-            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
-
-            case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe0.loc)
-
-            case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe0.loc)
-
-            case TypeConstructor.Lazy => MonoType.Lazy(args.head)
-
-            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
-
-            case TypeConstructor.RestrictableEnum(sym, _) =>
-              val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
-              MonoType.Enum(enumSym)
-
-            case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
-
-            case TypeConstructor.Array => MonoType.Array(args.head)
-
-            case TypeConstructor.Vector => MonoType.Array(args.head)
-
-            case TypeConstructor.Ref => MonoType.Ref(args.head)
-
-            case TypeConstructor.RegionToStar => MonoType.Region
-
-            case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
-
-            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
-
-            case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
-
-            case TypeConstructor.Record => args.head
-
-            case TypeConstructor.True => MonoType.Unit
-            case TypeConstructor.False => MonoType.Unit
-            case TypeConstructor.Not=> MonoType.Unit
-            case TypeConstructor.And => MonoType.Unit
-            case TypeConstructor.Or=> MonoType.Unit
-
-            case TypeConstructor.Pure => MonoType.Unit
-            case TypeConstructor.EffUniv => MonoType.Unit
-            case TypeConstructor.Complement => MonoType.Unit
-            case TypeConstructor.Union => MonoType.Unit
-            case TypeConstructor.Intersection => MonoType.Unit
-            case TypeConstructor.Effect(_) => MonoType.Unit
-            case TypeConstructor.CaseSet(sym, enumSym) => MonoType.Unit
-            case TypeConstructor.CaseComplement(sym) => MonoType.Unit
-            case TypeConstructor.CaseIntersection(sym) => MonoType.Unit
-            case TypeConstructor.CaseUnion(sym) => MonoType.Unit
-
-            case TypeConstructor.Relation =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
-
-            case TypeConstructor.Lattice =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
-
-            case TypeConstructor.SchemaRowEmpty =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
-
-            case TypeConstructor.SchemaRowExtend(pred) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
-
-            case TypeConstructor.Schema =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
-          }
+    base match {
+      case None => tpe match {
+        case _ => throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
       }
-    }
 
-    visit(Type.eraseAliases(tpe0))
+      case Some(tc) =>
+        tc match {
+          case TypeConstructor.Unit => MonoType.Unit
+
+          case TypeConstructor.Null => MonoType.Unit
+
+          case TypeConstructor.Bool => MonoType.Bool
+
+          case TypeConstructor.Char => MonoType.Char
+
+          case TypeConstructor.Float32 => MonoType.Float32
+
+          case TypeConstructor.Float64 => MonoType.Float64
+
+          case TypeConstructor.BigDecimal => MonoType.BigDecimal
+
+          case TypeConstructor.Int8 => MonoType.Int8
+
+          case TypeConstructor.Int16 => MonoType.Int16
+
+          case TypeConstructor.Int32 => MonoType.Int32
+
+          case TypeConstructor.Int64 => MonoType.Int64
+
+          case TypeConstructor.BigInt => MonoType.BigInt
+
+          case TypeConstructor.Str => MonoType.Str
+
+          case TypeConstructor.Regex => MonoType.Regex
+
+          case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
+
+          case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
+
+          case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe.loc)
+
+          case TypeConstructor.Lazy => MonoType.Lazy(args.head)
+
+          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
+
+          case TypeConstructor.RestrictableEnum(sym, _) =>
+            val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
+            MonoType.Enum(enumSym)
+
+          case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
+
+          case TypeConstructor.Array => MonoType.Array(args.head)
+
+          case TypeConstructor.Vector => MonoType.Array(args.head)
+
+          case TypeConstructor.Ref => MonoType.Ref(args.head)
+
+          case TypeConstructor.RegionToStar => MonoType.Region
+
+          case TypeConstructor.Tuple(_) => MonoType.Tuple(args)
+
+          case TypeConstructor.Arrow(_) => MonoType.Arrow(args.drop(1).init, args.last) // Erase the purity
+
+          case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+
+          case TypeConstructor.Record => args.head
+
+          case TypeConstructor.True => MonoType.Unit
+          case TypeConstructor.False => MonoType.Unit
+          case TypeConstructor.Not => MonoType.Unit
+          case TypeConstructor.And => MonoType.Unit
+          case TypeConstructor.Or => MonoType.Unit
+
+          case TypeConstructor.Pure => MonoType.Unit
+          case TypeConstructor.EffUniv => MonoType.Unit
+          case TypeConstructor.Complement => MonoType.Unit
+          case TypeConstructor.Union => MonoType.Unit
+          case TypeConstructor.Intersection => MonoType.Unit
+          case TypeConstructor.Effect(_) => MonoType.Unit
+          case TypeConstructor.CaseSet(_, _) => MonoType.Unit
+          case TypeConstructor.CaseComplement(_) => MonoType.Unit
+          case TypeConstructor.CaseIntersection(_) => MonoType.Unit
+          case TypeConstructor.CaseUnion(_) => MonoType.Unit
+
+          case TypeConstructor.Relation =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Lattice =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.SchemaRowEmpty =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.SchemaRowExtend(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Schema =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+        }
+    }
   }
 
   private def visitFormalParam(p0: ReducedAst.FormalParam): MonoTypedAst.FormalParam = {
@@ -269,7 +263,7 @@ object MonoTyper {
   }
 
   private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit flix: Flix): MonoTypedAst.JvmMethod = method match {
-    case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+    case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, _, loc) =>
       val f = fparams.map(visitFormalParam)
       val c = visitExpr(clo)
       val t = visitType(retTpe)
