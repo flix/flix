@@ -209,17 +209,23 @@ object Simplifier {
         }
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.TryWith(_, _, _, _, _, loc) =>
-        // TODO AE temporarily reducing to unit
-        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+      case LoweredAst.Expression.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val rs = rules map {
+          case LoweredAst.HandlerRule(sym, fparams, body) =>
+            val fps = fparams.map(visitFormalParam)
+            val b = visitExp(body)
+            SimplifiedAst.HandlerRule(sym, fps, b)
+        }
+        SimplifiedAst.Expression.TryWith(e, effUse, rs, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Do(_, _, _, _, loc) =>
-        // TODO AE temporarily reducing to unit
-        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+      case LoweredAst.Expression.Do(op, exps, tpe, eff, loc) =>
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.Do(op, es, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Resume(_, _, loc) =>
-        // TODO AE temporarily reducing to unit
-        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+      case LoweredAst.Expression.Resume(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Resume(e, tpe, loc)
 
       case LoweredAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
@@ -673,6 +679,23 @@ object Simplifier {
             SimplifiedAst.CatchRule(sym, clazz, b)
         }
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
+
+      case SimplifiedAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+        val e = visitExp(exp)
+        val rs = rules map {
+          case SimplifiedAst.HandlerRule(sym, fparams, body) =>
+            val b = visitExp(body)
+            SimplifiedAst.HandlerRule(sym, fparams, b)
+        }
+        SimplifiedAst.Expression.TryWith(e, effUse, rs, tpe, purity, loc)
+
+      case SimplifiedAst.Expression.Do(op, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.Do(op, es, tpe, purity, loc)
+
+      case SimplifiedAst.Expression.Resume(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Resume(e, tpe, loc)
 
       case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
         val as = args.map(visitExp)

@@ -95,6 +95,12 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.CatchRule(sym, clazz, exp) =>
         (sym, clazz, print(exp))
     })
+    case TryWith(exp, effUse, rules, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map {
+      case SimplifiedAst.HandlerRule(op, fparams, exp) =>
+        (op.sym, fparams.map(printFormalParam), print(exp))
+    })
+    case Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
+    case Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
     case InvokeConstructor(constructor, args, _, _, _) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
     case InvokeMethod(method, exp, args, _, _, _) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
     case InvokeStaticMethod(method, args, _, _, _) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
