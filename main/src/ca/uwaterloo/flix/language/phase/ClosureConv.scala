@@ -215,6 +215,23 @@ object ClosureConv {
       }
       Expression.TryCatch(e, rs, tpe, purity, loc)
 
+    case Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val rs = rules map {
+        case HandlerRule(opUse, fparams, body) =>
+          val b = visitExp(body)
+          HandlerRule(opUse, fparams, b)
+      }
+      Expression.TryWith(e, effUse, rs, tpe, purity, loc)
+
+    case Expression.Do(op, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      Expression.Do(op, es, tpe, purity, loc)
+
+    case Expression.Resume(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Resume(e, tpe, loc)
+
     case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val as = args map visitExp
       Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
@@ -402,6 +419,15 @@ object ClosureConv {
       case (acc, CatchRule(sym, _, exp)) =>
         acc ++ filterBoundVar(freeVars(exp), sym)
     }
+
+    case Expression.TryWith(exp, _, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
+      case (acc, HandlerRule(_, fparams, exp)) =>
+        acc ++ filterBoundParams(freeVars(exp), fparams)
+    }
+
+    case Expression.Do(_, exps, _, _, _) => freeVarsExps(exps)
+
+    case Expression.Resume(exp, _, _) => freeVars(exp)
 
     case Expression.InvokeConstructor(_, args, _, _, _) => freeVarsExps(args)
 
@@ -646,6 +672,25 @@ object ClosureConv {
             CatchRule(sym, clazz, b)
         }
         Expression.TryCatch(e, rs, tpe, purity, loc)
+
+      case Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+        // TODO AE do we need to do something here?
+        val e = visitExp(exp)
+        val rs = rules map {
+          case HandlerRule(sym, fparams, body) =>
+            val fs = fparams.map(visitFormalParam(_, subst))
+            val b = visitExp(body)
+            HandlerRule(sym, fs, b)
+        }
+        Expression.TryWith(e, effUse, rs, tpe, purity, loc)
+
+      case Expression.Do(op, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        Expression.Do(op, es, tpe, purity, loc)
+
+      case Expression.Resume(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Resume(exp, tpe, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
         val as = args.map(visitExp)
