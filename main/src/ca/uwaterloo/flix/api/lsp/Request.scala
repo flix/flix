@@ -125,8 +125,8 @@ object Request {
   case class DocumentSymbols(requestId: String, uri: String) extends Request
 
   /**
-    * A request to get semantic tokens for a file.
-    */
+   * A request to get semantic tokens for a file.
+   */
   case class SemanticTokens(requestId: String, uri: String) extends Request
 
   /**
@@ -175,8 +175,8 @@ object Request {
   }
 
   /**
-   * Tries to parse the given `json` value as a [[AddPkg]] request.
-   */
+    * Tries to parse the given `json` value as a [[AddPkg]] request.
+    */
   def parseAddPkg(json: json4s.JValue): Result[Request, String] = {
     val base64Res: Result[String, String] = json \\ "base64" match {
       case JString(s) => Ok(s)
