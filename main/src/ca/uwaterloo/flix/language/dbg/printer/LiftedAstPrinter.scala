@@ -131,6 +131,7 @@ object LiftedAstPrinter {
     */
   private def printAtomic(op: AtomicOp, exps: List[Expression]): DocAst.Expression = op match {
     case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, exps.map(print))
+    case _ => ???
   }
 
 }
