@@ -3567,18 +3567,6 @@ object Resolver {
     case object Inaccessible extends ClassAccessibility
   }
 
-
-  /**
-    * Enum describing the extent to which an enum is accessible.
-    */
-  private sealed trait EnumAccessibility
-
-  private object EnumAccessibility {
-    case object Accessible extends EnumAccessibility
-
-    case object Inaccessible extends EnumAccessibility
-  }
-
   /**
     * Union of variables, definitions, and signatures.
     */
