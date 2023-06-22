@@ -2884,37 +2884,6 @@ object Resolver {
   }
 
   /**
-    * Determines if the enum is accessible from the namespace.
-    *
-    * Accessibility depends on the modifiers on the enum
-    * and the accessing namespace's relation to the enum namespace:
-    *
-    * |            | same | child | other |
-    * |------------|------|-------|-------|
-    * | (none)     | A    | A     | I     |
-    * | pub        | A    | A     | A     |
-    *
-    * (A: Accessible, I: Inaccessible)
-    */
-  private def getEnumAccessibility(enum0: NamedAst.Declaration.Enum, ns0: Name.NName): EnumAccessibility = {
-
-    val enumNs = enum0.sym.namespace
-    val accessingNs = ns0.idents.map(_.name)
-
-    val fromChild = accessingNs.startsWith(enumNs)
-    (enum0.mod.isPublic, fromChild) match {
-      // Case 1: Access from child namespace. Accessible.
-      case (_, true) => EnumAccessibility.Accessible
-
-      // Case 2: Private. Inaccessible.
-      case (false, false) => EnumAccessibility.Inaccessible
-
-      // Case 3: Public. Accessible.
-      case (true, false) => EnumAccessibility.Accessible
-    }
-  }
-
-  /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
