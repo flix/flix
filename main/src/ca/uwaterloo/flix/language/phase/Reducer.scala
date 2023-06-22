@@ -54,11 +54,11 @@ object Reducer {
 
     case LiftedAst.Expression.Var(sym, tpe, loc) => ReducedAst.Expr.Var(sym, tpe, loc)
 
-    case LiftedAst.Expression.ApplyAtomic(op, exps, tpe, _, loc) =>
+    case LiftedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
       op match {
         case AtomicOp.Closure(sym) => ReducedAst.Expr.Closure(sym, es, tpe, loc)
-        case _ => ???
+        case _ => ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
@@ -83,11 +83,6 @@ object Reducer {
       val fs = formals.map(visitFormalParam)
       val as = exps.map(visitExpr)
       ReducedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
-
-    case LiftedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val op = AtomicOp.Unary(sop)
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, purity, loc)
 
     case LiftedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val op = AtomicOp.Binary(sop)

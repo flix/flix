@@ -158,6 +158,7 @@ object OccurrenceAnalyzer {
       val (es, o) = visitExps(sym0, exps)
       op match {
         case AtomicOp.Closure(sym) => (OccurrenceAst.Expression.Closure(sym, es, tpe, loc), o)
+        case AtomicOp.Unary(sop) => (OccurrenceAst.Expression.Unary(sop, es.head, tpe, purity, loc), o.increaseSizeByOne())
         case _ => ???
       }
 
@@ -205,10 +206,6 @@ object OccurrenceAnalyzer {
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplySelfTail(sym, f, as, tpe, purity, loc), o3.increaseSizeByOne())
-
-    case Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Unary(sop, e, tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)

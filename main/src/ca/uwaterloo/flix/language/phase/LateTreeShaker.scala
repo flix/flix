@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2017 Magnus <Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,9 +113,6 @@ object LateTreeShaker {
 
     case Expression.ApplySelfTail(sym, _, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
-
-    case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)

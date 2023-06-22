@@ -114,7 +114,7 @@ object LambdaLift {
         m += (freshSymbol -> defn)
 
         // Construct the closure args.
-        val closureArgs =  if (freeVars.isEmpty)
+        val closureArgs = if (freeVars.isEmpty)
           List(LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.mkUnit(loc), loc))
         else freeVars.map {
           case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
@@ -137,7 +137,8 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Unary(sop, e, tpe, purity, loc)
+        val op = AtomicOp.Unary(sop)
+        LiftedAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
