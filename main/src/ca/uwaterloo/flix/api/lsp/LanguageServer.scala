@@ -70,14 +70,17 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * The custom date format to use for logging.
     */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
-  /**
-    * A map from source URIs to source code.
-    */
-  val sources: mutable.Map[String, String] = mutable.Map.empty
+
   /**
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private val flix: Flix = new Flix().setFormatter(NoFormatter).setOptions(o)
+
+  /**
+    * A map from source URIs to source code.
+    */
+  val sources: mutable.Map[String, String] = mutable.Map.empty
+
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
@@ -149,6 +152,13 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
+    * Invoked when an error occurs.
+    */
+  override def onError(ws: WebSocket, e: Exception): Unit = {
+    // Nop - Keep LanguageServer alive.
+  }
+
+  /**
     * Parse the request.
     */
   private def parseRequest(s: String)(implicit ws: WebSocket): Result[Request, String] = try {
@@ -186,6 +196,24 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     }
   } catch {
     case ex: ParseException => Err(s"Malformed request. Unable to parse JSON: '${ex.getMessage}'.")
+  }
+
+  /**
+    * Add the given source code to the compiler
+    */
+  private def addSourceCode(uri: String, src: String) = {
+    current = false
+    flix.addSourceCode(uri, src)
+    sources += (uri -> src)
+  }
+
+  /**
+    * Remove the source code associated with the given uri from the compiler
+    */
+  private def remSourceCode(uri: String) = {
+    current = false
+    flix.remSourceCode(uri)
+    sources -= uri
   }
 
   /**
@@ -295,24 +323,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
-    * Add the given source code to the compiler
-    */
-  private def addSourceCode(uri: String, src: String) = {
-    current = false
-    flix.addSourceCode(uri, src)
-    sources += (uri -> src)
-  }
-
-  /**
-    * Remove the source code associated with the given uri from the compiler
-    */
-  private def remSourceCode(uri: String) = {
-    current = false
-    flix.remSourceCode(uri)
-    sources -= uri
-  }
-
-  /**
     * Processes a validate request.
     */
   private def processCheck(requestId: String): JValue = {
@@ -395,6 +405,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   }
 
   /**
+    * Returns `true` if the given source location `loc` matches the given `uri`.
+    */
+  private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
+
+  /**
     * Logs the given message `msg` along with information about the connection `ws`.
     */
   private def log(msg: String)(implicit ws: WebSocket): Unit = {
@@ -403,17 +418,5 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
     Console.err.println(s"[$datePart] [$clientPart]: $msg")
   }
-
-  /**
-    * Invoked when an error occurs.
-    */
-  override def onError(ws: WebSocket, e: Exception): Unit = {
-    // Nop - Keep LanguageServer alive.
-  }
-
-  /**
-    * Returns `true` if the given source location `loc` matches the given `uri`.
-    */
-  private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
 
 }
