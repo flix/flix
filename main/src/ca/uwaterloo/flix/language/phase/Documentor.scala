@@ -360,7 +360,6 @@ object Documentor {
   private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
     case Modifier.Lawful => "lawful"
     case Modifier.Override => "override"
-    case Modifier.Opaque => "opaque"
     case Modifier.Public => "public"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"

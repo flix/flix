@@ -2892,11 +2892,9 @@ object Resolver {
     * |            | same | child | other |
     * |------------|------|-------|-------|
     * | (none)     | A    | A     | I     |
-    * | opaque     | A    | A     | I     |
     * | pub        | A    | A     | A     |
-    * | pub opaque | A    | A     | O     |
     *
-    * (A: Accessible, O: Opaque, I: Inaccessible)
+    * (A: Accessible, I: Inaccessible)
     */
   private def getEnumAccessibility(enum0: NamedAst.Declaration.Enum, ns0: Name.NName): EnumAccessibility = {
 
@@ -2904,18 +2902,15 @@ object Resolver {
     val accessingNs = ns0.idents.map(_.name)
 
     val fromChild = accessingNs.startsWith(enumNs)
-    (enum0.mod.isPublic, enum0.mod.isOpaque, fromChild) match {
+    (enum0.mod.isPublic, fromChild) match {
       // Case 1: Access from child namespace. Accessible.
-      case (_, _, true) => EnumAccessibility.Accessible
+      case (_, true) => EnumAccessibility.Accessible
 
       // Case 2: Private. Inaccessible.
-      case (false, _, false) => EnumAccessibility.Inaccessible
+      case (false, false) => EnumAccessibility.Inaccessible
 
-      // Case 3: Public but opaque. Opaque.
-      case (true, true, false) => EnumAccessibility.Opaque
-
-      // Case 4: Public and non-opaque. Accessible.
-      case (true, false, false) => EnumAccessibility.Accessible
+      // Case 3: Public. Accessible.
+      case (true, false) => EnumAccessibility.Accessible
     }
   }
 
@@ -3611,8 +3606,6 @@ object Resolver {
 
   private object EnumAccessibility {
     case object Accessible extends EnumAccessibility
-
-    case object Opaque extends EnumAccessibility
 
     case object Inaccessible extends EnumAccessibility
   }
