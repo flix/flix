@@ -48,4 +48,4 @@ object CodeActionContext {
   }
 }
 
-case class CodeActionContext(diagnostics: List[Diagnostic], only: List[CodeActionKind], triggerKind: Option[CodeActionTriggerKind]) {}
+case class CodeActionContext(diagnostics: List[Diagnostic], only: List[CodeActionKind], triggerKind: Option[CodeActionTriggerKind])
