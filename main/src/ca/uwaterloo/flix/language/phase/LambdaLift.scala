@@ -286,6 +286,18 @@ object LambdaLift {
         }
         LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
+      case SimplifiedAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+        // TODO AE erasing for now
+        LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+      case SimplifiedAst.Expression.Do(op, exps, tpe, purity, loc) =>
+        // TODO AE erasing for now
+        LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+      case SimplifiedAst.Expression.Resume(exp, tpe, loc) =>
+        // TODO AE erasing for now
+        LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
       case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
         val as = args.map(visitExp)
         LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)

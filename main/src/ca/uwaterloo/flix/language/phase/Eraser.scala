@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, MonoTypedAst}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, MonoType, MonoTypedAst}
 import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
 
 import scala.collection.mutable
@@ -46,7 +46,8 @@ object Eraser {
     val cs = def0.cparams.map(visitFormalParam)
     val fs = def0.fparams.map(visitFormalParam)
     val stmt = visitStmt(def0.stmt)
-    ErasedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, stmt, def0.tpe, def0.loc)
+    val tpe = MonoType.Arrow(fs.map(_.tpe), def0.tpe)
+    ErasedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, stmt, tpe, def0.loc)
   }
 
   private def visitExpr(exp0: MonoTypedAst.Expr)(implicit ctx: Context): ErasedAst.Expr = exp0 match {

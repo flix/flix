@@ -39,8 +39,7 @@ object MonoTyper {
     val cs = def0.cparams.map(visitFormalParam)
     val fs = def0.fparams.map(visitFormalParam)
     val s = visitStmt(def0.stmt)
-    val tpe0 = visitType(def0.tpe)
-    val tpe = MonoType.Arrow(fs.map(_.tpe), tpe0)
+    val tpe = visitType(def0.tpe)
     MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, s, tpe, def0.loc)
   }
 
