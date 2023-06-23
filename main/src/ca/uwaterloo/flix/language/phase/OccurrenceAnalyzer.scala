@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -363,6 +363,18 @@ object OccurrenceAnalyzer {
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
       (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
+
+    case Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      // TODO AE erasing to unit for now
+      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
+
+    case Expression.Do(op, exps, tpe, purity, loc) =>
+      // TODO AE erasing to unit for now
+      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
+
+    case Expression.Resume(exp, tpe, loc) =>
+      // TODO AE erasing to unit for now
+      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
 
     case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val (as, o) = visitExps(sym0, args)

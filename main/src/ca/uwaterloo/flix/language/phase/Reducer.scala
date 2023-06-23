@@ -242,6 +242,18 @@ object Reducer {
       }
       ReducedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
+    case LiftedAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      // TODO AE erasing to unit for now
+      ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+    case LiftedAst.Expression.Do(op, exps, tpe, purity, loc) =>
+      // TODO AE erasing to unit for now
+      ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+    case LiftedAst.Expression.Resume(exp, tpe, loc) =>
+      // TODO AE erasing to unit for now
+      ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
     case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
       val op = AtomicOp.InvokeConstructor(constructor)
       val es = exps.map(visitExpr)
