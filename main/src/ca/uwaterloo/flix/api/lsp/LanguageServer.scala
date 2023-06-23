@@ -190,6 +190,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
       case JString("lsp/showAst") => Request.parseShowAst(json)
+      case JString("lsp/codeAction") => Request.parseCodeAction(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -315,6 +316,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+
+    case Request.CodeAction(id, uri, range, context) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context).map(_.toJSON))
 
   }
 
