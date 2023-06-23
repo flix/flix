@@ -287,16 +287,22 @@ object LambdaLift {
         LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
       case SimplifiedAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-        // TODO AE erasing for now
-        LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+        val e = visitExp(exp)
+        val rs = rules map {
+          case SimplifiedAst.HandlerRule(sym, fparams, body) =>
+            val fps = fparams.map(visitFormalParam)
+            val b = visitExp(body)
+            LiftedAst.HandlerRule(sym, fps, b)
+        }
+        LiftedAst.Expression.TryWith(e, effUse, rs, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Do(op, exps, tpe, purity, loc) =>
-        // TODO AE erasing for now
-        LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+        val es = exps.map(visitExp)
+        LiftedAst.Expression.Do(op, es, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Resume(exp, tpe, loc) =>
-        // TODO AE erasing for now
-        LiftedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+        val e = visitExp(exp)
+        LiftedAst.Expression.Resume(e, tpe, loc)
 
       case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
         val as = args.map(visitExp)
