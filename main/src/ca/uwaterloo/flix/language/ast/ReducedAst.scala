@@ -50,10 +50,6 @@ object ReducedAst {
       def purity: Purity = Pure
     }
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[Expr], tpe: Type, loc: SourceLocation) extends Expr {
-      def purity: Purity = Pure
-    }
-
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr

@@ -63,12 +63,6 @@ object MonoTyper {
       val t = visitType(tpe)
       MonoTypedAst.Expr.Var(sym, t, loc)
 
-    case ReducedAst.Expr.Closure(sym, exps, tpe, loc) =>
-      val op = AtomicOp.Closure(sym)
-      val es = exps.map(visitExpr)
-      val t = visitType(tpe)
-      MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
-
     case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
       val es = exps.map(visitExpr)
       val t = visitType(tpe)

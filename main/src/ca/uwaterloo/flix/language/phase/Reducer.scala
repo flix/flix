@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, ReducedAst, LiftedAst, Purity, Type}
+import ca.uwaterloo.flix.language.ast._
 
 object Reducer {
 
@@ -56,7 +56,8 @@ object Reducer {
 
     case LiftedAst.Expression.Closure(sym, exps, tpe, loc) =>
       val es = exps.map(visitExpr)
-      ReducedAst.Expr.Closure(sym, es, tpe, loc)
+      val op = AtomicOp.Closure(sym)
+      ReducedAst.Expr.ApplyAtomic(op, es, tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExpr(exp)
