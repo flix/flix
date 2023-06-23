@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
@@ -38,29 +38,24 @@ object GenFunctionClasses {
     // Generate a function class for each def and collect the results in a map.
     //
     ParOps.parAgg(defs, Map.empty[JvmName, JvmClass])({
-      case (macc, (sym, defn)) if defn.cparams.nonEmpty =>
+      case (macc, (_, defn)) if defn.cparams.nonEmpty =>
         macc // do nothing, these defns should be Closure classes
       case (macc, (sym, defn)) =>
         flix.subtask(sym.toString, sample = true)
-
-        // `JvmType` of the interface for `def.tpe`
-        val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
 
         // `JvmType` of the class for `defn`
         val classType = JvmOps.getFunctionDefinitionClassType(sym)
 
         // Name of the class
         val className = classType.name
-        macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
+        macc + (className -> JvmClass(className, genByteCode(classType, defn)))
     }, _ ++ _)
   }
 
   /**
     * Returns the bytecode for the class for the given `defn`
     */
-  private def genByteCode(classType: JvmType.Reference,
-                          functionInterface: JvmType.Reference,
-                          defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     // example for def checkLength(Int, String): Bool = ...
     // public final class Def$checkLength extends Fn2$Int$Obj$Bool {
     //   public Def$checkLength() { ... }
@@ -70,8 +65,8 @@ object GenFunctionClasses {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
-    // Args of the function
-    val MonoType.Arrow(_, tresult) = defn.tpe
+    // `JvmType` of the interface for `def.tpe`
+    val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
@@ -81,7 +76,7 @@ object GenFunctionClasses {
     compileConstructor(functionInterface, visitor)
 
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, tresult)
+    compileInvokeMethod(visitor, classType, defn)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -107,14 +102,12 @@ object GenFunctionClasses {
     */
   private def compileInvokeMethod(visitor: ClassWriter,
                                   classType: JvmType.Reference,
-                                  defn: Def,
-                                  resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+                                  defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Continuation class
-    val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
+    val continuationType = JvmOps.getContinuationInterfaceType(defn.arrowType)
 
     // previous JvmOps function are already partial pattern matches
-    val MonoType.Arrow(_, closureResultType) = defn.tpe
-    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
+    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
 
     // Method header
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethod.name,
@@ -128,7 +121,8 @@ object GenFunctionClasses {
     m.visitLabel(enterLabel)
 
     // Saving parameters on variable stack
-    for ((FormalParam(sym, tpe), ind) <- (defn.cparams ++ defn.fparams).zipWithIndex) {
+    // note that cparams is assumed to be empty
+    for ((FormalParam(sym, tpe), ind) <- defn.fparams.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
@@ -149,7 +143,7 @@ object GenFunctionClasses {
     m.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    val resultJvmType = JvmOps.getErasedJvmType(resultType)
+    val resultJvmType = JvmOps.getErasedJvmType(defn.tpe)
     if (AsmOps.getStackSize(resultJvmType) == 1) {
       m.visitInsn(SWAP)
     } else {
