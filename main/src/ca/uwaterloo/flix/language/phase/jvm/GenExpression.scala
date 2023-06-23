@@ -1326,10 +1326,8 @@ object GenExpression {
 
     case Expr.ApplyDef(sym, exps, ct, tpe, loc) => ct match {
       case CallType.TailCall =>
-        // Type of the function
-        val fnType = root.defs(sym).tpe
         // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1371,13 +1369,13 @@ object GenExpression {
 
     case Expr.ApplySelfTail(sym, formals, exps, tpe, loc) =>
       // The function abstract class name
-      val functionType = JvmOps.getFunctionInterfaceType(root.defs(sym).tpe)
+      val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
       for ((arg, i) <- exps.zipWithIndex) {
         mv.visitVarInsn(ALOAD, 0)
         // Evaluate the argument and push the result on the stack.
         compileExpr(arg)
-        mv.visitFieldInsn(PUTFIELD, functionType.name.toInternalName,
+        mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
       // Jump to the entry point of the method.

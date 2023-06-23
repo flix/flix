@@ -19,9 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, ErasedAst, Kind, MonoType, Name, RigidityEnv, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.MonoTyper
-import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.language.ast.{ErasedAst, MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
@@ -530,16 +528,18 @@ object JvmOps {
       * Returns the set of types which occur in the given definition `defn0`.
       */
     def visitDefn(defn: Def): Set[MonoType] = {
-      // Compute the types in the formal parameters.
-      val formalParamTypes = (defn.cparams ++ defn.fparams).foldLeft(Set.empty[MonoType]) {
+      // Compute the types in the captured formal parameters.
+      val cParamTypes = defn.cparams.foldLeft(Set.empty[MonoType]) {
         case (sacc, FormalParam(_, tpe)) => sacc + tpe
       }
 
       // Compute the types in the expression.
       val expressionTypes = visitStmt(defn.stmt)
 
+      // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
+
       // Return the types in the defn.
-      formalParamTypes ++ expressionTypes + defn.tpe
+      cParamTypes ++ expressionTypes + defn.arrowType
     }
 
     def visitExps(exps: Iterable[Expr]): Set[MonoType] = {
