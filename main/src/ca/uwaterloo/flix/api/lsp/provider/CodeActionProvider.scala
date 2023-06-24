@@ -15,31 +15,60 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, Range}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
 
 object CodeActionProvider {
 
-  /**
-    * Return all available code actions
-    */
-  def getCodeActions(uri: String, range: Range, context: CodeActionContext): List[CodeAction] = {
-    // All received document positions are 1-based, but all returned positions should be 0-based
+  def getCodeActions(uri: String, range: Range, context: CodeActionContext)(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] = {
+    println(s"uri = $uri, $range = $range, ctx = $context")
 
-    // Example - Inserting 'Hello Code Actions!' at the beginning of the current document:
-    //
-    //    List(CodeAction(
-    //      title = "Hello Code Actions!",
-    //      kind = CodeActionKind.QuickFix,
-    //      edit = Some(WorkspaceEdit(
-    //        Map(uri -> List(TextEdit(
-    //          Range(Position(0, 0), Position(0, 0)),
-    //          "Hello Code Actions!"
-    //        )))
-    //      )),
-    //      command = None
-    //    ))
-    //
 
-    List()
+    index.query(uri, range.start) match {
+      case None => Nil // No code actions.
+
+      case Some(entity) => entity match {
+        case Entity.Enum(e) =>
+          val sym = e.sym
+          List(mkDeriveEq(sym, uri), mkDeriveOrder(sym, uri), mkDeriveToString(sym, uri))
+        case _ =>
+          Nil // No code actions.
+      }
+    }
   }
+
+  /**
+    * A code action to derive the `Eq` type class.
+    */
+  private def mkDeriveEq(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Eq", uri)
+
+  /**
+    * A code action to derive the `Order` type class.
+    */
+  private def mkDeriveOrder(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Order", uri)
+
+  /**
+    * A code action to derive the `ToString` type class.
+    */
+  private def mkDeriveToString(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "ToString", uri)
+
+  // TODO: Add Hash, Sendable type classes.
+
+  /**
+    * A code action to derive the given type class `clazz` for the given enum symbol `sym`.
+    */
+  private def mkDerive(sym: Symbol.EnumSym, clazz: String, uri: String): CodeAction = CodeAction(
+    title = s"Derive $clazz for $sym",
+    kind = CodeActionKind.Refactor,
+    edit = Some(WorkspaceEdit(
+      Map(uri -> List(TextEdit(
+        Range(Position.fromEnd(sym.loc), Position.fromEnd(sym.loc)),
+        s" with $clazz"
+      )))
+    )),
+    command = None
+  )
+
 }

@@ -318,7 +318,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.CodeAction(id, uri, range, context) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context)(index, root, flix).map(_.toJSON))
 
   }
 
