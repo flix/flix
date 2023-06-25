@@ -38,7 +38,7 @@ object CodeActionProvider {
       mkUnusedVarCodeAction(sym, uri)
 
     case ResolutionError.UndefinedType(qn, ns, loc) if onSameLine(range, loc) =>
-      addMissingEnum(qn.ident.name, uri)
+      mkIntroduceNewEnum(qn.ident.name, uri)
   }
 
   /**
@@ -81,7 +81,7 @@ object CodeActionProvider {
   )
 
   /**
-    * Returns a code action that proposes to create a new type.
+    * Returns a code action that proposes to create a new enum.
     *
     * For example, if we have:
     *
@@ -94,37 +94,41 @@ object CodeActionProvider {
     *   enum Abc { }
     * }}}
     */
-  private def addMissingEnum(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Add enum $name",
+  private def mkIntroduceNewEnum(name: String, uri: String): CodeAction = CodeAction(
+    title = s"Introduce new enum $name",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(Position(0, 0), Position(0, 0)), // TODO: Better position.
-        s"enum $name { }"
+        Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the new enum.
+        s"""
+           |enum $name {
+           |
+           |}
+           |""".stripMargin
       )))
     )),
     command = None
   )
 
   /**
-    * A code action to derive the `Eq` type class.
+    * Returns a code action to derive the `Eq` type class.
     */
   private def mkDeriveEq(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Eq", uri)
 
   /**
-    * A code action to derive the `Order` type class.
+    * Returns a code action to derive the `Order` type class.
     */
   private def mkDeriveOrder(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Order", uri)
 
   /**
-    * A code action to derive the `ToString` type class.
+    * Returns a code action to derive the `ToString` type class.
     */
   private def mkDeriveToString(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "ToString", uri)
 
-  // TODO: Add Hash, Sendable type classes.
+  // TODO: Add derivation for the Hash and Sendable type classes.
 
   /**
-    * A code action to derive the given type class `clazz` for the given enum symbol `sym`.
+    * Returns a code action to derive the given type class `clazz` for the given enum symbol `sym`.
     */
   private def mkDerive(sym: Symbol.EnumSym, clazz: String, uri: String): CodeAction = CodeAction(
     title = s"Derive $clazz",
@@ -138,7 +142,10 @@ object CodeActionProvider {
     command = None
   )
 
-  // TODO: A more accurate implementation would be useful.
+  /**
+    * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
+    */
+  // TODO: We should introduce a mechanism that checks if the given range *overlaps* with the given loc.
   private def onSameLine(range: Range, loc: SourceLocation): Boolean = range.start.line == loc.beginLine
 
 }
