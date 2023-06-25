@@ -25,19 +25,26 @@ import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, Type
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] = {
+    getActionsFromErrors(uri, range, currentErrors) ++
+      getActionsFromIndex(uri, range, currentErrors)
 
-    // TODO: Maybe merge these cases?
+  }
 
-    //
-    // Case 1: There are errors. Lets try to match and see if we can find an error we can offer a quick fix for.
-    //
-    if (currentErrors.nonEmpty) {
-      return quickfixError(uri, range, currentErrors)
-    }
+  /**
+    * Returns code actions based on the current errors.
+    */
+  private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] = currentErrors.collect {
+    case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedVarCodeAction(sym, uri)
 
-    //
-    // Case 2: No errors. We do a lookup on the beginning of the range:
-    //
+    case ResolutionError.UndefinedType(qn, ns, loc) if onSameLine(range, loc) =>
+      mkIntroduceNewEnum(qn.ident.name, uri)
+  }
+
+  /**
+    * Returns code actions based on the current index and the given range.
+    */
+  private def getActionsFromIndex(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] =
     index.query(uri, range.start) match {
       case None => Nil // No code actions.
 
@@ -49,21 +56,19 @@ object CodeActionProvider {
           Nil // No code actions.
       }
     }
-  }
 
-  // TODO: DOC
-  private def quickfixError(uri: String, range: Range, currentErrors: List[CompilationMessage]): List[CodeAction] = currentErrors.collect {
-    case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
-      renameUnusedVar(sym, uri)
-
-    case ResolutionError.UndefinedType(qn, ns, loc) =>
-      // TODO: Actually check if loc and range overlap.
-      addMissingEnum(qn.ident.name, uri)
-
-
-  }
-
-  private def renameUnusedVar(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
+  /**
+    * Returns a code action that proposes to prefix an unused variable by an underscore.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   let abc = 123
+    * }}}
+    *
+    * where `abc` is unused this code action proposes to replace it by `_abc`.
+    */
+  private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
     title = s"Prefix unused variable with underscore",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
@@ -75,38 +80,57 @@ object CodeActionProvider {
     command = None
   )
 
-  // TODO: DOC
-  private def addMissingEnum(name: String, uri: String): CodeAction = CodeAction(
-    title = s"Add enum $name",
+  /**
+    * Returns a code action that proposes to create a new enum.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   def foo(): Abc = ???
+    * }}}
+    *
+    * where the `Abc` type is not defined this code action proposes to add:
+    * {{{
+    *   enum Abc { }
+    * }}}
+    */
+  private def mkIntroduceNewEnum(name: String, uri: String): CodeAction = CodeAction(
+    title = s"Introduce new enum $name",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(Position(0, 0), Position(0, 0)), // TODO: Better position.
-        s"enum $name { }"
+        Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the new enum.
+        s"""
+           |enum $name {
+           |
+           |}
+           |""".stripMargin
       )))
     )),
     command = None
   )
 
+  // TODO: We should only offer to derive type classes which have not already been derived.
+
   /**
-    * A code action to derive the `Eq` type class.
+    * Returns a code action to derive the `Eq` type class.
     */
   private def mkDeriveEq(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Eq", uri)
 
   /**
-    * A code action to derive the `Order` type class.
+    * Returns a code action to derive the `Order` type class.
     */
   private def mkDeriveOrder(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Order", uri)
 
   /**
-    * A code action to derive the `ToString` type class.
+    * Returns a code action to derive the `ToString` type class.
     */
   private def mkDeriveToString(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "ToString", uri)
 
-  // TODO: Add Hash, Sendable type classes.
+  // TODO: Add derivation for the Hash and Sendable type classes.
 
   /**
-    * A code action to derive the given type class `clazz` for the given enum symbol `sym`.
+    * Returns a code action to derive the given type class `clazz` for the given enum symbol `sym`.
     */
   private def mkDerive(sym: Symbol.EnumSym, clazz: String, uri: String): CodeAction = CodeAction(
     title = s"Derive $clazz",
@@ -120,7 +144,10 @@ object CodeActionProvider {
     command = None
   )
 
-  // TODO: A more accurate implementation would be useful.
+  /**
+    * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
+    */
+  // TODO: We should introduce a mechanism that checks if the given range *overlaps* with the given loc.
   private def onSameLine(range: Range, loc: SourceLocation): Boolean = range.start.line == loc.beginLine
 
 }
