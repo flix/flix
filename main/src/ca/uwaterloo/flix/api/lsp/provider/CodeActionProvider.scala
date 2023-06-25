@@ -18,33 +18,40 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
 
 object CodeActionProvider {
 
-  def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] = {
+  def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = {
     getActionsFromErrors(uri, range, currentErrors) ++
       getActionsFromIndex(uri, range, currentErrors)
-
   }
 
   /**
     * Returns code actions based on the current errors.
     */
-  private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] = currentErrors.collect {
+  private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = currentErrors.flatMap {
+    case ResolutionError.UndefinedName(qn, ns, _, _, loc) if onSameLine(range, loc) =>
+      if (qn.namespace.isRoot)
+        mkUseDef(qn.ident, uri)
+      else
+        Nil
+
     case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
-      mkUnusedVarCodeAction(sym, uri)
+      mkUnusedVarCodeAction(sym, uri) :: Nil
 
     case ResolutionError.UndefinedType(qn, ns, loc) if onSameLine(range, loc) =>
-      mkIntroduceNewEnum(qn.ident.name, uri)
+      mkIntroduceNewEnum(qn.ident.name, uri) :: Nil
+
+    case _ => Nil
   }
 
   /**
     * Returns code actions based on the current index and the given range.
     */
-  private def getActionsFromIndex(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] =
+  private def getActionsFromIndex(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] =
     index.query(uri, range.start) match {
       case None => Nil // No code actions.
 
@@ -56,6 +63,38 @@ object CodeActionProvider {
           Nil // No code actions.
       }
     }
+
+  /**
+    * Returns a code action that proposes to `use` a def.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   map(x -> x + 1, Nil)
+    * }}}
+    *
+    * then we propose to insert:
+    *
+    * {{{
+    *   use List.map;
+    * }}}
+    */
+  private def mkUseDef(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+    root.defs.collect {
+      case (sym, _) if sym.name == ident.name =>
+        CodeAction(
+          title = s"use $sym",
+          kind = CodeActionKind.QuickFix,
+          edit = Some(WorkspaceEdit(
+            Map(uri -> List(TextEdit(
+              Range(Position(0, 0), Position(0, 0)), // TODO: We should figure out where to best place the use.
+              s"use $sym;\n"
+            )))
+          )),
+          command = None
+        )
+    }.toList.sortBy(_.title)
+  }
 
   /**
     * Returns a code action that proposes to prefix an unused variable by an underscore.
