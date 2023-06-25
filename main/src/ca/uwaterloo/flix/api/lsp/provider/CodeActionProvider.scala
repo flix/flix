@@ -25,19 +25,26 @@ import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, Type
 object CodeActionProvider {
 
   def getCodeActions(uri: String, range: Range, context: CodeActionContext, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] = {
+    getActionsFromErrors(uri, range, currentErrors) ++
+      getActionsFromIndex(uri, range, currentErrors)
 
-    // TODO: Maybe merge these cases?
+  }
 
-    //
-    // Case 1: There are errors. Lets try to match and see if we can find an error we can offer a quick fix for.
-    //
-    if (currentErrors.nonEmpty) {
-      return quickfixError(uri, range, currentErrors)
-    }
+  /**
+    * Returns code actions based on the current errors.
+    */
+  private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] = currentErrors.collect {
+    case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedVarCodeAction(sym, uri)
 
-    //
-    // Case 2: No errors. We do a lookup on the beginning of the range:
-    //
+    case ResolutionError.UndefinedType(qn, ns, loc) if onSameLine(range, loc) =>
+      addMissingEnum(qn.ident.name, uri)
+  }
+
+  /**
+    * Returns code actions based on the current index and the given range.
+    */
+  private def getActionsFromIndex(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Option[Root], flix: Flix): List[CodeAction] =
     index.query(uri, range.start) match {
       case None => Nil // No code actions.
 
@@ -49,21 +56,8 @@ object CodeActionProvider {
           Nil // No code actions.
       }
     }
-  }
 
-  // TODO: DOC
-  private def quickfixError(uri: String, range: Range, currentErrors: List[CompilationMessage]): List[CodeAction] = currentErrors.collect {
-    case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
-      renameUnusedVar(sym, uri)
-
-    case ResolutionError.UndefinedType(qn, ns, loc) =>
-      // TODO: Actually check if loc and range overlap.
-      addMissingEnum(qn.ident.name, uri)
-
-
-  }
-
-  private def renameUnusedVar(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
+  private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
     title = s"Prefix unused variable with underscore",
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
