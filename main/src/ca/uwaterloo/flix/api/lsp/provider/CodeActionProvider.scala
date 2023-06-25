@@ -57,6 +57,15 @@ object CodeActionProvider {
       }
     }
 
+  /**
+    * Returns a code action that proposes to prefix an unused variable by an underscore.
+    *
+    * For example, if we have:
+    * {{{
+    *   let abc = 123
+    * }}}
+    * where `abc` is unused this code action proposes to replace it by `_abc`.
+    */
   private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
     title = s"Prefix unused variable with underscore",
     kind = CodeActionKind.QuickFix,
