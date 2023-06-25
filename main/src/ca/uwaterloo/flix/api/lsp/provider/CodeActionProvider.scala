@@ -110,6 +110,8 @@ object CodeActionProvider {
     command = None
   )
 
+  // TODO: We should only offer to derive type classes which have not already been derived.
+
   /**
     * Returns a code action to derive the `Eq` type class.
     */
