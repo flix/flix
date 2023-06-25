@@ -61,9 +61,11 @@ object CodeActionProvider {
     * Returns a code action that proposes to prefix an unused variable by an underscore.
     *
     * For example, if we have:
+    *
     * {{{
     *   let abc = 123
     * }}}
+    *
     * where `abc` is unused this code action proposes to replace it by `_abc`.
     */
   private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
@@ -78,7 +80,20 @@ object CodeActionProvider {
     command = None
   )
 
-  // TODO: DOC
+  /**
+    * Returns a code action that proposes to create a new type.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   def foo(): Abc = ???
+    * }}}
+    *
+    * where the `Abc` type is not defined this code action proposes to add:
+    * {{{
+    *   enum Abc { }
+    * }}}
+    */
   private def addMissingEnum(name: String, uri: String): CodeAction = CodeAction(
     title = s"Add enum $name",
     kind = CodeActionKind.QuickFix,
