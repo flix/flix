@@ -48,6 +48,7 @@ object Mutator {
       case Constant.Int8(lit) => ???
       case Constant.Int16(lit) => ???
       case Constant.Int32(lit) =>
+        // Two very simple and boring mutations:
         val l = lit match {
           case 0 => 1
           case 1 => 0
