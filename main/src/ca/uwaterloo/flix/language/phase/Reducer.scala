@@ -56,10 +56,7 @@ object Reducer {
 
     case LiftedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      op match {
-        case AtomicOp.Closure(sym) => ReducedAst.Expr.Closure(sym, es, tpe, loc)
-        case _ => ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-      }
+      ReducedAst.Expr.ApplyAtomic(op, es, tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExpr(exp)
@@ -238,6 +235,18 @@ object Reducer {
           ReducedAst.CatchRule(sym, clazz, b)
       }
       ReducedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+
+    case LiftedAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      // TODO AE erasing to unit for now
+      ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+    case LiftedAst.Expression.Do(op, exps, tpe, purity, loc) =>
+      // TODO AE erasing to unit for now
+      ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
+
+    case LiftedAst.Expression.Resume(exp, tpe, loc) =>
+      // TODO AE erasing to unit for now
+      ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
     case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
       val op = AtomicOp.InvokeConstructor(constructor)
