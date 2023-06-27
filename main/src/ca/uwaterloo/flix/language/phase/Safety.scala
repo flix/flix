@@ -75,7 +75,8 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root)
+    val tailRec = def0.spec.ann.isTailRec
+    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root, tailRec)
   }
 
   /**
@@ -105,12 +106,12 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expression, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(e0: Expression, renv: RigidityEnv, root: Root,  tailRec: Boolean)(implicit flix: Flix): List[CompilationMessage] = {
 
     /**
       * Local visitor.
       */
-    def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
+    def visit(exp0: Expression, tailRec: Boolean): List[CompilationMessage] = exp0 match {
       case Expression.Cst(_, _, _) => Nil
 
       case Expression.Var(_, _, _) => Nil
@@ -122,53 +123,55 @@ object Safety {
       case Expression.Hole(_, _, _) => Nil
 
       case Expression.HoleWithExp(exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.OpenAs(_, exp, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Use(_, _, exp, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Lambda(_, exp, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
-      case Expression.Apply(exp, exps, _, _, _) =>
-        visit(exp) ++ exps.flatMap(visit)
+      case Expression.Apply(exp, exps, _, _, loc) => {
+        if (!tailRec) SafetyError.NonTailRecError(loc)
+        else visit(exp, false) ++ exps.flatMap(visit(_, false))
+      }
 
       case Expression.Unary(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Binary(_, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.Let(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.Region(_, _) =>
         Nil
 
       case Expression.Scope(_, _, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.ScopeExit(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-        visit(exp1) ++ visit(exp2) ++ visit(exp3)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false) ++ visit(exp3, tailRec = false)
 
       case Expression.Stm(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.Discard(exp, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Match(exp, rules, _, _, _) =>
-        visit(exp) ++
-          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit) ++ visit(e) }
+        visit(exp, tailRec = false) ++
+          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit(_, false)) ++ visit(e) }
 
       case Expression.TypeMatch(exp, rules, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`
@@ -178,75 +181,75 @@ object Safety {
             case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
           }
         }
-        visit(exp) ++ missingDefault ++
+        visit(exp, tailRec = false) ++ missingDefault ++
           rules.flatMap { case TypeMatchRule(_, _, e) => visit(e) }
 
       case Expression.RelationalChoose(exps, rules, _, _, _) =>
-        exps.flatMap(visit) ++
-          rules.flatMap { case RelationalChooseRule(_, exp) => visit(exp) }
+        exps.flatMap(visit(_, false)) ++
+          rules.flatMap { case RelationalChooseRule(_, exp) => visit(exp, tailRec = false) }
 
       case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
-        visit(exp) ++
-          rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp) }
+        visit(exp, tailRec = false) ++
+          rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp, tailRec = false) }
 
       case Expression.Tag(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.RestrictableTag(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Tuple(elms, _, _, _) =>
-        elms.flatMap(visit)
+        elms.flatMap(visit(_, false))
 
       case Expression.RecordEmpty(_, _) => Nil
 
       case Expression.RecordSelect(exp, _, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.RecordExtend(_, value, rest, _, _, _) =>
-        visit(value) ++ visit(rest)
+        visit(value, tailRec = false) ++ visit(rest, tailRec = false)
 
       case Expression.RecordRestrict(_, rest, _, _, _) =>
-        visit(rest)
+        visit(rest, tailRec = false)
 
       case Expression.ArrayLit(elms, exp, _, _, _) =>
-        elms.flatMap(visit) ++ visit(exp)
+        elms.flatMap(visit(_, false)) ++ visit(exp, tailRec = false)
 
       case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
-        visit(exp1) ++ visit(exp2) ++ visit(exp3)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false) ++ visit(exp3, tailRec = false)
 
       case Expression.ArrayLoad(base, index, _, _, _) =>
-        visit(base) ++ visit(index)
+        visit(base, tailRec = false) ++ visit(index, tailRec = false)
 
       case Expression.ArrayLength(base, _, _) =>
-        visit(base)
+        visit(base, tailRec = false)
 
       case Expression.ArrayStore(base, index, elm, _, _) =>
-        visit(base) ++ visit(index) ++ visit(elm)
+        visit(base, tailRec = false) ++ visit(index, tailRec = false) ++ visit(elm)
 
       case Expression.VectorLit(elms, _, _, _) =>
-        elms.flatMap(visit)
+        elms.flatMap(visit(_, false))
 
       case Expression.VectorLoad(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.VectorLength(exp, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Ref(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.Deref(exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Assign(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.Ascribe(exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.InstanceOf(exp, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.CheckedCast(cast, exp, tpe, eff, loc) =>
         cast match {
@@ -254,121 +257,121 @@ object Safety {
             val from = Type.eraseAliases(exp.tpe)
             val to = Type.eraseAliases(tpe)
             val errors = verifyCheckedTypeCast(from, to, loc)
-            visit(exp) ++ errors
+            visit(exp, tailRec = false) ++ errors
 
           case CheckedCastType.EffectCast =>
             val from = Type.eraseAliases(exp.eff)
             val to = Type.eraseAliases(eff)
             val errors = verifyCheckedEffectCast(from, to, renv, loc)
-            visit(exp) ++ errors
+            visit(exp, tailRec = false) ++ errors
         }
 
       case e@Expression.UncheckedCast(exp, _, _, _, _, _) =>
         val errors = verifyUncheckedCast(e)
-        visit(exp) ++ errors
+        visit(exp, tailRec = false) ++ errors
 
       case Expression.UncheckedMaskingCast(exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Without(exp, _, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.TryCatch(exp, rules, _, _, _) =>
-        visit(exp) ++
+        visit(exp, tailRec = false) ++
           rules.flatMap { case CatchRule(_, _, e) => visit(e) }
 
       case Expression.TryWith(exp, _, rules, _, _, _) =>
-        visit(exp) ++
+        visit(exp, tailRec = false) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
       case Expression.Do(_, exps, _, _, _) =>
-        exps.flatMap(visit)
+        exps.flatMap(visit(_, false))
 
       case Expression.Resume(exp, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.InvokeConstructor(_, args, _, _, _) =>
-        args.flatMap(visit)
+        args.flatMap(visit(_, false))
 
       case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-        visit(exp) ++ args.flatMap(visit)
+        visit(exp, tailRec = false) ++ args.flatMap(visit(_, false))
 
       case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-        args.flatMap(visit)
+        args.flatMap(visit(_, false))
 
       case Expression.GetField(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.PutField(_, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.GetStaticField(_, _, _, _) =>
         Nil
 
       case Expression.PutStaticField(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.NewObject(_, clazz, tpe, _, methods, loc) =>
         val erasedType = Type.eraseAliases(tpe)
         checkObjectImplementation(clazz, erasedType, methods, loc) ++
           methods.flatMap {
-            case JvmMethod(_, _, exp, _, _, _) => visit(exp)
+            case JvmMethod(_, _, exp, _, _, _) => visit(exp, tailRec = false)
           }
 
       case Expression.NewChannel(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.GetChannel(exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.PutChannel(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.SelectChannel(rules, default, _, _, _) =>
         rules.flatMap { case SelectChannelRule(_, chan, body) => visit(chan) ++
-          visit(body)
+          visit(body, tailRec = false)
         } ++
-          default.map(visit).getOrElse(Nil)
+          default.map(visit(_, false)).getOrElse(Nil)
 
       case Expression.Spawn(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.ParYield(frags, exp, _, _, _) =>
-        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ++ visit(exp)
+        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ++ visit(exp, tailRec = false)
 
       case Expression.Lazy(exp, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Force(exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.FixpointConstraintSet(cs, _, _, _) =>
         cs.flatMap(checkConstraint(_, renv, root))
 
       case Expression.FixpointLambda(_, exp, _, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, tailRec = false) ++ visit(exp2, tailRec = false)
 
       case Expression.FixpointSolve(exp, _, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.FixpointFilter(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.FixpointInject(exp, _, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.FixpointProject(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, tailRec = false)
 
       case Expression.Error(_, _, _) =>
         Nil
 
     }
 
-    visit(e0)
+    visit(e0, tailRec)
 
   }
 

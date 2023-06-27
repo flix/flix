@@ -15,6 +15,27 @@ sealed trait SafetyError extends CompilationMessage {
 }
 
 object SafetyError {
+  /**
+   * An error raised to indicate an unexpected use of `@tailrec` annotation.
+   *
+   * @param loc the position of the erroneous call.
+   */
+  case class NonTailRecError(loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Unexpected use of @tailrec."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non Tail Recursive Call Error
+         |
+         |${code(loc, "not in tail call position")}
+         |
+         |Hint : Remove `@tailrec` annotation or refactor the call to be tail recursive.
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
 
   /**
     * An error raised to indicate an unexpected pattern bound in a body atom.
