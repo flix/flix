@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression
@@ -47,7 +47,7 @@ object OperatorPrinter {
   /**
     * Returns the string representation of `so`.
     */
-  def print(so: SemanticOperator): String = so match {
+  def print(so: SemanticOp): String = so match {
     case BoolOp.Not |
          Int8Op.Not |
          Int16Op.Not |
