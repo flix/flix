@@ -116,7 +116,7 @@ object OccurrenceAst {
       def purity: Purity = Impure
     }
 
-    case class ArrayLoad(base: OccurrenceAst.Expression, index: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class ArrayLoad(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 

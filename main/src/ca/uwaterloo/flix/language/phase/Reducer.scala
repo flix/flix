@@ -111,12 +111,6 @@ object Reducer {
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.ArrayLoad
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc) // TODO: Use effect from earlier phase.
-
     case LiftedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
       val op = AtomicOp.ArrayStore
       val e1 = visitExpr(exp1)
