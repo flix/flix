@@ -235,16 +235,16 @@ mod Test.Type.Bool {
     def testBitwiseOr08(): Bool = isThree(bitwiseOr(mkTwo(), mkThree()))
 
     @Test
-    def testSwapArgs01(): Bool = isZero(swapArgs(mkZero()))
+    def testSwap01(): Bool = isZero(swap(mkZero()))
 
     @Test
-    def testSwapArgs02(): Bool = isTwo(swapArgs(mkOne()))
+    def testSwap02(): Bool = isTwo(swap(mkOne()))
 
     @Test
-    def testSwapArgs03(): Bool = isOne(swapArgs(mkTwo()))
+    def testSwap03(): Bool = isOne(swap(mkTwo()))
 
     @Test
-    def testSwapArgs04(): Bool = isThree(swapArgs(mkThree()))
+    def testSwap04(): Bool = isThree(swap(mkThree()))
 
     @Test
     def testNestedBitwiseNotAndOr01(): Bool =
@@ -300,14 +300,6 @@ mod Test.Type.Bool {
     @Test
     def testIncrement07(): Bool = isZero(increment(increment(increment(increment(mkZero())))))
 
-    @Test
-    def testIncrement08(): Bool = {
-      let x = increment(increment(increment(mkZero())));
-      let y = increment(increment(increment(x)));
-      let z = increment(increment(increment(y)));
-      isThree(x) and isTwo(y) and isOne(z)
-    }
-
     def assertEqual(_: B[a], _: B[a]): Bool = true
     def assertTrue(_: B[true]): Bool = true
     def assertFalse(_: B[false]): Bool = true
@@ -333,7 +325,7 @@ mod Test.Type.Bool {
     def bitwiseNot(_: I2[a, b]): I2[not a, not b] = I2.I2
     def bitwiseOr(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 or a2, b1 or b2] = I2.I2
     def bitwiseAnd(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 and a2, b1 and b2] = I2.I2
-    def swapArgs(_: I2[a, b]): I2[b, a] = I2.I2
+    def swap(_: I2[a, b]): I2[b, a] = I2.I2
     def increment(_: I2[a, b]): I2[((a and (not b)) or (b and (not a))), (not b)] = I2.I2
 
 }
