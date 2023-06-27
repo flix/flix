@@ -200,6 +200,10 @@ object OccurrenceAnalyzer {
           val List(e) = es
           (OccurrenceAst.Expression.RecordSelect(e, field, tpe, purity, loc), o.increaseSizeByOne())
 
+        case AtomicOp.RecordExtend(field) =>
+          val List(e1, e2) = es
+          (OccurrenceAst.Expression.RecordExtend(field, e1, e2, tpe, purity, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -289,12 +293,6 @@ object OccurrenceAnalyzer {
     case Expression.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-
-    case Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
-      val (v, o1) = visitExp(sym0, value)
-      val (r, o2) = visitExp(sym0, rest)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.RecordExtend(field, v, r, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
       val (r, o) = visitExp(sym0, rest)
