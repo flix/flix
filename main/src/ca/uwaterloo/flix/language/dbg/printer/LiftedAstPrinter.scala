@@ -69,7 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case ArrayNew(elm, len, _, _) => DocAst.Expression.ArrayNew(print(elm), print(len))
     case ArrayLoad(base, index, _, _) => DocAst.Expression.ArrayLoad(print(base), print(index))
     case ArrayStore(base, index, elm, _, _) => DocAst.Expression.ArrayStore(print(base), print(index), print(elm))
     case ArrayLength(base, _, _, _) => DocAst.Expression.ArrayLength(print(base))
@@ -125,7 +124,7 @@ object LiftedAstPrinter {
   private def printAtomic(op: AtomicOp, exps: List[Expression]): DocAst.Expression = {
     val es = exps.map(print)
 
-    op match {
+    op match { // Will be removed
       case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, es)
 
       case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OperatorPrinter.print(sop), es.head)
@@ -157,6 +156,10 @@ object LiftedAstPrinter {
       case AtomicOp.RecordRestrict(field) => DocAst.Expression.RecordRestrict(field, es.head)
 
       case AtomicOp.ArrayLit => DocAst.Expression.ArrayLit(es)
+
+      case AtomicOp.ArrayNew =>
+        val List(e1, e2) = es
+        DocAst.Expression.ArrayNew(e1, e2)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }

@@ -132,9 +132,6 @@ object LateTreeShaker {
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArrayNew(elm, len, _, _) =>
-      visitExp(elm) ++ visitExp(len)
-
     case Expression.ArrayLoad(base, index, _, _) =>
       visitExp(base) ++ visitExp(index)
 

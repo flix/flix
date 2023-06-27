@@ -314,10 +314,10 @@ object Inliner {
       val es = exps.map(visitExp(_, subst0))
       LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      val e = visitExp(elm, subst0)
-      val l = visitExp(len, subst0)
-      LiftedAst.Expression.ArrayNew(e, l, tpe, loc)
+    case OccurrenceAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.ArrayLoad(base, index, tpe, loc) =>
       val b = visitExp(base, subst0)
@@ -654,10 +654,10 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      val e = substituteExp(elm, env0)
-      val l = substituteExp(len, env0)
-      LiftedAst.Expression.ArrayNew(e, l, tpe, loc)
+    case OccurrenceAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.ArrayLoad(base, index, tpe, loc) =>
       val b = substituteExp(base, env0)
