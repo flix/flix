@@ -272,67 +272,68 @@ object Inliner {
       if (enum0.cases.size == 1 && e.purity == Pure)
         LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       else
-        LiftedAst.Expression.Is(sym, e, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(e), Type.Bool, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       // Inline expressions of the form Untag(Tag(e)) => e
       e match {
-        case LiftedAst.Expression.Tag(_, innerExp, _, _, _) => innerExp
-        case _ => LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
+        case LiftedAst.Expression.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
+        case _ => LiftedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(e), tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
-      val b = visitExp(base, subst0)
-      LiftedAst.Expression.Index(b, offset, tpe, purity, loc)
+      val e = visitExp(base, subst0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Index(offset), List(e), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Tuple(elms, tpe, purity, loc) =>
-      val es = elms.map(visitExp(_, subst0))
-      LiftedAst.Expression.Tuple(es, tpe, purity, loc)
+    case OccurrenceAst.Expression.Tuple(exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.RecordEmpty(tpe, loc) => LiftedAst.Expression.RecordEmpty(tpe, loc)
+    case OccurrenceAst.Expression.RecordEmpty(tpe, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
       val v = visitExp(value, subst0)
       val r = visitExp(rest, subst0)
-      LiftedAst.Expression.RecordExtend(field, v, r, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordExtend(field), List(v, r), tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
       val r = visitExp(rest, subst0)
-      LiftedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(r), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ArrayLit(elms, tpe, loc) =>
-      val es = elms.map(visitExp(_, subst0))
-      LiftedAst.Expression.ArrayLit(es, tpe, loc)
+    case OccurrenceAst.Expression.ArrayLit(exps, tpe, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      val e = visitExp(elm, subst0)
-      val l = visitExp(len, subst0)
-      LiftedAst.Expression.ArrayNew(e, l, tpe, loc)
+    case OccurrenceAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2), tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-      val b = visitExp(base, subst0)
-      val i = visitExp(index, subst0)
-      LiftedAst.Expression.ArrayLoad(b, i, tpe, loc)
+    case OccurrenceAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-      val b = visitExp(base, subst0)
-      val i = visitExp(index, subst0)
-      val e = visitExp(elm, subst0)
-      LiftedAst.Expression.ArrayStore(b, i, e, tpe, loc)
+    case OccurrenceAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      val e3 = visitExp(exp3, subst0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayLength(base, tpe, _, loc) =>
-      val b = visitExp(base, subst0)
-      val purity = b.purity
-      LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
+    case OccurrenceAst.Expression.ArrayLength(exp, tpe, _, loc) =>
+      val e = visitExp(exp, subst0)
+      val purity = e.purity
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -615,62 +616,63 @@ object Inliner {
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Is(sym, e, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(e), Type.Bool, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
-      val b = substituteExp(base, env0)
-      LiftedAst.Expression.Index(b, offset, tpe, purity, loc)
+      val e = substituteExp(base, env0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Index(offset), List(e), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Tuple(elms, tpe, purity, loc) =>
-      val es = elms.map(substituteExp(_, env0))
-      LiftedAst.Expression.Tuple(es, tpe, purity, loc)
+    case OccurrenceAst.Expression.Tuple(exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.RecordEmpty(tpe, loc) => LiftedAst.Expression.RecordEmpty(tpe, loc)
+    case OccurrenceAst.Expression.RecordEmpty(tpe, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
       val v = substituteExp(value, env0)
       val r = substituteExp(rest, env0)
-      LiftedAst.Expression.RecordExtend(field, v, r, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordExtend(field), List(v, r), tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
       val r = substituteExp(rest, env0)
-      LiftedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(r), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ArrayLit(elms, tpe, loc) =>
-      val es = elms.map(substituteExp(_, env0))
-      LiftedAst.Expression.ArrayLit(es, tpe, loc)
+    case OccurrenceAst.Expression.ArrayLit(exps, tpe, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      val e = substituteExp(elm, env0)
-      val l = substituteExp(len, env0)
-      LiftedAst.Expression.ArrayNew(e, l, tpe, loc)
+    case OccurrenceAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2), tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-      val b = substituteExp(base, env0)
-      val i = substituteExp(index, env0)
-      LiftedAst.Expression.ArrayLoad(b, i, tpe, loc)
+    case OccurrenceAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-      val b = substituteExp(base, env0)
-      val i = substituteExp(index, env0)
-      val e = substituteExp(elm, env0)
-      LiftedAst.Expression.ArrayStore(b, i, e, tpe, loc)
+    case OccurrenceAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      val e3 = substituteExp(exp3, env0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), tpe, Purity.Impure, loc)
 
-    case OccurrenceAst.Expression.ArrayLength(base, tpe, purity, loc) =>
-      val b = substituteExp(base, env0)
-      LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
+    case OccurrenceAst.Expression.ArrayLength(exp, tpe, purity, loc) =>
+      val e = substituteExp(exp, env0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
