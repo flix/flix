@@ -300,6 +300,66 @@ mod Test.Type.Bool {
     @Test
     def testIncrement07(): Bool = isZero(increment(increment(increment(increment(mkZero())))))
 
+    @Test
+    def testAdd01(): Bool = isZero(add(mkZero(), mkZero()))
+
+    @Test
+    def testAdd02(): Bool = isOne(add(mkZero(), mkOne()))
+
+    @Test
+    def testAdd03(): Bool = isOne(add(mkOne(), mkZero()))
+
+    @Test
+    def testAdd04(): Bool = isZero(add(mkTwo(), mkTwo()))
+
+    @Test
+    def testAdd05(): Bool = isThree(add(mkTwo(), mkOne()))
+
+    @Test
+    def testAdd06(): Bool = isThree(add(mkOne(), mkTwo()))
+
+    @Test
+    def testAdd07(): Bool = isOne(add(mkThree(), mkTwo()))
+
+    @Test
+    def testAdd08(): Bool = isOne(add(mkTwo(), mkThree()))
+
+    @Test
+    def testAdd09(): Bool = isZero(add(mkThree(), mkOne()))
+
+    @Test
+    def testAdd10(): Bool = isZero(add(mkOne(), mkThree()))
+
+    @Test
+    def testAdd11(): Bool = isThree(add(mkThree(), mkZero()))
+
+    @Test
+    def testAdd12(): Bool = isThree(add(mkZero(), mkThree()))
+
+    @Test
+    def testAdd13(): Bool = isOne(add(mkThree(), add(mkThree(), mkThree())))
+
+    @Test
+    def testAdd14(): Bool = isOne(add(add(mkThree(), mkThree()), mkThree()))
+
+    @Test
+    def testAdd15(): Bool = isTwo(add(mkTwo(), add(mkTwo(), mkTwo())))
+
+    @Test
+    def testAdd16(): Bool = isTwo(add(add(mkTwo(), mkTwo()), mkTwo()))
+
+    @Test
+    def testAdd17(): Bool = isTwo(add(add(mkZero(), mkOne()), add(mkTwo(), mkThree())))
+
+    @Test
+    def testAdd18(): Bool = isThree(add(add(mkTwo(), mkOne()), add(mkOne(), mkThree())))
+
+    @Test
+    def testAdd19(): Bool = isOne(add(mkZero(), add(mkZero(), mkOne())))
+
+    @Test
+    def testAdd20(): Bool = isThree(add(mkThree(), add(add(mkThree(), mkThree()), add(mkThree(), mkThree()))))
+
     def assertEqual(_: B[a], _: B[a]): Bool = true
     def assertTrue(_: B[true]): Bool = true
     def assertFalse(_: B[false]): Bool = true
@@ -327,5 +387,6 @@ mod Test.Type.Bool {
     def bitwiseAnd(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 and a2, b1 and b2] = I2.I2
     def swap(_: I2[a, b]): I2[b, a] = I2.I2
     def increment(_: I2[a, b]): I2[((a and (not b)) or (b and (not a))), (not b)] = I2.I2
+    def add(_: I2[a1, b1], _: I2[a2, b2]): I2[((((a1 and (not a2)) or (a2 and (not a1))) and (not (b1 and b2))) or (((a1 and a2) or ((not a1) and (not a2))) and (b1 and b2))), ((b1 and (not b2)) or (b2 and (not b1)))] = I2.I2
 
 }
