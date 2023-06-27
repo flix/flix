@@ -337,7 +337,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Ref(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Deref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -676,7 +676,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Ref(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Deref(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
