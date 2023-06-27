@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object LiftedAstPrinter {
@@ -68,7 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case ScopeExit(exp1, exp2, _, _, _) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
     case Is(sym, exp, _, _) => DocAst.Expression.Is(sym, print(exp))
     case Tag(sym, exp, _, _, _) => DocAst.Expression.Tag(sym, List(print(exp)))
     case Untag(sym, exp, _, _, _) => DocAst.Expression.Untag(sym, print(exp))
@@ -141,7 +141,10 @@ object LiftedAstPrinter {
         val List(e1, e2) = es
         DocAst.Expression.Binary(e1, OperatorPrinter.print(sop), e2)
       case AtomicOp.Region => DocAst.Expression.Region
-      case _ => ???
+      case AtomicOp.ScopeExit =>
+        val List(e1, e2) = es
+        DocAst.Expression.ScopeExit(e1, e2)
+      case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }
   }
 
