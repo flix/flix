@@ -1,7 +1,7 @@
 mod Test.Type.Bool {
 
     enum B[_: Bool] with Eq {
-        case A
+        case B
     }
 
     @Test
@@ -280,25 +280,25 @@ mod Test.Type.Bool {
     }
 
     @Test
-    def testIncrement01(): Bool = isOne(increment(mkZero()))
+    def testInc01(): Bool = isOne(inc(mkZero()))
 
     @Test
-    def testIncrement02(): Bool = isTwo(increment(mkOne()))
+    def testInc02(): Bool = isTwo(inc(mkOne()))
 
     @Test
-    def testIncrement03(): Bool = isThree(increment(mkTwo()))
+    def testInc03(): Bool = isThree(inc(mkTwo()))
 
     @Test
-    def testIncrement04(): Bool = isZero(increment(mkThree()))
+    def testInc04(): Bool = isZero(inc(mkThree()))
 
     @Test
-    def testIncrement05(): Bool = isTwo(increment(increment(mkZero())))
+    def testInc05(): Bool = isTwo(inc(inc(mkZero())))
 
     @Test
-    def testIncrement06(): Bool = isOne(increment(increment(increment(mkTwo()))))
+    def testInc06(): Bool = isOne(inc(inc(inc(mkTwo()))))
 
     @Test
-    def testIncrement07(): Bool = isZero(increment(increment(increment(increment(mkZero())))))
+    def testInc07(): Bool = isZero(inc(inc(inc(inc(mkZero())))))
 
     @Test
     def testAdd01(): Bool = isZero(add(mkZero(), mkZero()))
@@ -365,12 +365,12 @@ mod Test.Type.Bool {
     def assertFalse(_: B[false]): Bool = true
     def assertXor(_: B[a], _: B[not a]): Bool = true
 
-    def mkTrue(): B[true] = B.A
-    def mkFalse(): B[false] = B.A
-    def mkNot(_: B[b]): B[not b] = B.A
-    def mkOr(_: B[a], _: B[b]): B[b or a] = B.A
-    def mkAnd(_: B[a], _: B[b]): B[b and a] = B.A
-    def mkXor(_: B[a], _: B[b]): B[(b and (not a)) or (a and (not b))] = B.A
+    def mkTrue(): B[true] = B.B
+    def mkFalse(): B[false] = B.B
+    def mkNot(_: B[b]): B[not b] = B.B
+    def mkOr(_: B[a], _: B[b]): B[b or a] = B.B
+    def mkAnd(_: B[a], _: B[b]): B[b and a] = B.B
+    def mkXor(_: B[a], _: B[b]): B[(b and (not a)) or (a and (not b))] = B.B
 
     def mkZero(): I2[false, false] = I2.I2
     def mkOne(): I2[false, true] = I2.I2
@@ -386,7 +386,9 @@ mod Test.Type.Bool {
     def bitwiseOr(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 or a2, b1 or b2] = I2.I2
     def bitwiseAnd(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 and a2, b1 and b2] = I2.I2
     def swap(_: I2[a, b]): I2[b, a] = I2.I2
-    def increment(_: I2[a, b]): I2[((a and (not b)) or (b and (not a))), (not b)] = I2.I2
-    def add(_: I2[a1, b1], _: I2[a2, b2]): I2[((((a1 and (not a2)) or (a2 and (not a1))) and (not (b1 and b2))) or (((a1 and a2) or ((not a1) and (not a2))) and (b1 and b2))), ((b1 and (not b2)) or (b2 and (not b1)))] = I2.I2
+    def inc(_: I2[a, b]): I2[((a and (not b)) or (b and (not a))), (not b)] = I2.I2
+    def add(_: I2[a1, b1], _: I2[a2, b2]):
+      I2[((((a1 and (not a2)) or (a2 and (not a1))) and (not (b1 and b2))) or (((a1 and a2) or ((not a1) and (not a2))) and (b1 and b2))),
+      ((b1 and (not b2)) or (b2 and (not b1)))] = I2.I2
 
 }
