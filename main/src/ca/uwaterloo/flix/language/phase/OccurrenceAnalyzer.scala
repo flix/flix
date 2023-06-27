@@ -192,6 +192,8 @@ object OccurrenceAnalyzer {
           val List(e) = es
           (OccurrenceAst.Expression.Index(e, idx, tpe, purity, loc), o.increaseSizeByOne())
 
+        case AtomicOp.Tuple => (OccurrenceAst.Expression.Tuple(es, tpe, purity, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -281,10 +283,6 @@ object OccurrenceAnalyzer {
     case Expression.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-
-    case Expression.Tuple(elms, tpe, purity, loc) =>
-      val (es, o) = visitExps(sym0, elms)
-      (OccurrenceAst.Expression.Tuple(es, tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.RecordEmpty(tpe, loc) => (OccurrenceAst.Expression.RecordEmpty(tpe, loc), OccurInfo.One)
 

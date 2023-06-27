@@ -111,11 +111,6 @@ object Reducer {
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Tuple(exps, tpe, purity, loc) =>
-      val op = AtomicOp.Tuple
-      val es = exps.map(visitExpr)
-      ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-
     case LiftedAst.Expression.RecordEmpty(tpe, loc) =>
       val op = AtomicOp.RecordEmpty
       ReducedAst.Expr.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
