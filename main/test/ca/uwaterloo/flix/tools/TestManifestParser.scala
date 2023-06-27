@@ -121,9 +121,9 @@ class TestManifestParser extends AnyFunSuite {
     assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None), DependencyKind.Production),
                                  Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None), DependencyKind.Production),
                                  Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), Some(4), None), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), None, Some("M1")), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4", DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1", DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", "1.2", DependencyKind.Development),
                                  Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
@@ -1243,7 +1243,7 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Err.mvn-dependencies.format.01") {
+  test("Ok.mvn-dependencies.format.01") {
     val toml = {
       """
         |[package]
@@ -1260,13 +1260,14 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MavenVersionHasWrongLength(null, "470").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "470", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
 
-  test("Err.mvn-dependencies.format.02") {
+  test("Ok.mvn-dependencies.format.02") {
     val toml = {
       """
         |[package]
@@ -1283,8 +1284,9 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MavenVersionHasWrongLength(null, "47").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "47", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
@@ -1325,7 +1327,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org:eclipse:jetty:jetty-server" = "4.7.0-M1"
+        |"org:eclipse:jetty:jetty-server" = "4.7.0.M1"
         |
         |""".stripMargin
     }
@@ -1335,7 +1337,7 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Err.mvn-dependencies.numbers.01") {
+  test("Ok.mvn-dependencies.numbers.01") {
     val toml = {
       """
         |[package]
@@ -1352,13 +1354,14 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.7.0", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
 
-  test("Err.mvn-dependencies.numbers.02") {
+  test("Ok.mvn-dependencies.numbers.02") {
     val toml = {
       """
         |[package]
@@ -1375,13 +1378,14 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "4.b.0", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
 
-  test("Err.mvn-dependencies.numbers.03") {
+  test("Ok.mvn-dependencies.numbers.03") {
     val toml = {
       """
         |[package]
@@ -1398,8 +1402,9 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "4.7.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
@@ -1449,7 +1454,7 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Err.dev-mvn-dependencies.format.01") {
+  test("Ok.dev-mvn-dependencies.format.01") {
     val toml = {
       """
         |[package]
@@ -1465,13 +1470,13 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MavenVersionHasWrongLength(null, "12").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "12", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
 
-  test("Err.dev-mvn-dependencies.format.02") {
+  test("Ok.dev-mvn-dependencies.format.02") {
     val toml = {
       """
         |[package]
@@ -1487,8 +1492,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.MavenVersionHasWrongLength(null, "1.2.3.4.5.6").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.2.3.4.5.6", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
@@ -1537,7 +1542,7 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  test("Err.dev-mvn-dependencies.numbers.01") {
+  test("Ok.dev-mvn-dependencies.numbers.01") {
     val toml = {
       """
         |[package]
@@ -1553,13 +1558,13 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.2.3", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "a.2.3", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
 
-  test("Err.dev-mvn-dependencies.numbers.02") {
+  test("Ok.dev-mvn-dependencies.numbers.02") {
     val toml = {
       """
         |[package]
@@ -1575,13 +1580,13 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.b.3", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.b.3", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
 
-  test("Err.dev-mvn-dependencies.numbers.03") {
+  test("Ok.dev-mvn-dependencies.numbers.03") {
     val toml = {
       """
         |[package]
@@ -1597,8 +1602,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.2.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
+    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.2.c", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
   }
