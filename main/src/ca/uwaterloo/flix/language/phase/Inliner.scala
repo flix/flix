@@ -299,7 +299,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
       val v = visitExp(value, subst0)
@@ -639,7 +639,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
       val v = substituteExp(value, env0)

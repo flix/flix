@@ -221,7 +221,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
         val v = visitExp(value)
