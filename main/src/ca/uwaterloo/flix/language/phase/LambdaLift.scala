@@ -202,7 +202,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Tag(sym, e, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
