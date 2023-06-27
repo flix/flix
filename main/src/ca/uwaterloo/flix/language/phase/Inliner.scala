@@ -255,7 +255,7 @@ object Inliner {
       LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Region(tpe, loc) =>
-      LiftedAst.Expression.Region(tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -602,7 +602,7 @@ object Inliner {
       LiftedAst.Expression.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Region(tpe, loc) =>
-      LiftedAst.Expression.Region(tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

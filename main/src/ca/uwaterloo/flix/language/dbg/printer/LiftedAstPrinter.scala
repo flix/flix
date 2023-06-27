@@ -67,7 +67,6 @@ object LiftedAstPrinter {
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Region(_, _) => DocAst.Expression.Region
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case ScopeExit(exp1, exp2, _, _, _) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
     case Is(sym, exp, _, _) => DocAst.Expression.Is(sym, print(exp))
@@ -141,6 +140,7 @@ object LiftedAstPrinter {
       case AtomicOp.Binary(sop) =>
         val List(e1, e2) = es
         DocAst.Expression.Binary(e1, OperatorPrinter.print(sop), e2)
+      case AtomicOp.Region => DocAst.Expression.Region
       case _ => ???
     }
   }

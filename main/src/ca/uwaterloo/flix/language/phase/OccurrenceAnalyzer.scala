@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
@@ -156,13 +156,14 @@ object OccurrenceAnalyzer {
 
     case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val (es, o) = visitExps(sym0, exps)
-      op match {
+      op match { // Will be removed later
         case AtomicOp.Closure(sym) => (OccurrenceAst.Expression.Closure(sym, es, tpe, loc), o)
         case AtomicOp.Unary(sop) => (OccurrenceAst.Expression.Unary(sop, es.head, tpe, purity, loc), o.increaseSizeByOne())
         case AtomicOp.Binary(sop) =>
-          val List(e1, e2) = es // Will be removed later
+          val List(e1, e2) = es
           (OccurrenceAst.Expression.Binary(sop, e1, e2, tpe, purity, loc), o.increaseSizeByOne())
-        case _ => ???
+        case AtomicOp.Region => (OccurrenceAst.Expression.Region(tpe, loc), OccurInfo.One)
+        case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
     case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
@@ -247,9 +248,6 @@ object OccurrenceAnalyzer {
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
-
-    case Expression.Region(tpe, loc) =>
-      (OccurrenceAst.Expression.Region(tpe, loc), OccurInfo.One)
 
     case Expression.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)

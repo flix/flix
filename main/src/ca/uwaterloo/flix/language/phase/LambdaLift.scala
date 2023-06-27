@@ -185,7 +185,7 @@ object LambdaLift {
         }
 
       case SimplifiedAst.Expression.Region(tpe, loc) =>
-        LiftedAst.Expression.Region(tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, tpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         val e = visitExp(exp)

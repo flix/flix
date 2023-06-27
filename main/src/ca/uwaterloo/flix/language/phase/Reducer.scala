@@ -107,10 +107,6 @@ object Reducer {
       val e2 = visitExpr(exp2)
       ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-    case LiftedAst.Expression.Region(tpe, loc) =>
-      val op = AtomicOp.Region
-      ReducedAst.Expr.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
-
     case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
