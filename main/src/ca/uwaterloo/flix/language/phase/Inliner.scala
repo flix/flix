@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -774,9 +774,9 @@ object Inliner {
     * Performs boolean folding on a given unary expression with the logic:
     * Folds not-true => false and not-false => true.
     */
-  private def unaryFold(sop: SemanticOperator, e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+  private def unaryFold(sop: SemanticOp, e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e) match {
-      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expression.Cst(Ast.Constant.Bool(!b), tpe, loc)
+      case (SemanticOp.BoolOp.Not, LiftedAst.Expression.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expression.Cst(Ast.Constant.Bool(!b), tpe, loc)
       case _ => LiftedAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, purity, loc)
     }
   }
@@ -791,16 +791,16 @@ object Inliner {
     * fold into false, if either the left or right expression is false.
     * if either the left or right expression is true, fold into the other expression.
     */
-  private def binaryFold(sop: SemanticOperator, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+  private def binaryFold(sop: SemanticOp, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
     (sop, e1, e2) match {
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => e2
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) => e1
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => e2
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) => e1
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+      case (SemanticOp.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => e2
+      case (SemanticOp.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) => e1
+      case (SemanticOp.BoolOp.And, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case (SemanticOp.BoolOp.And, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case (SemanticOp.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _), _) => e2
+      case (SemanticOp.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) => e1
+      case (SemanticOp.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+      case (SemanticOp.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       case _ => LiftedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, purity, loc)
     }
   }
@@ -821,7 +821,7 @@ object Inliner {
         case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
           (outerElse, innerElse) match {
             case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
-              val op = AtomicOp.Binary(SemanticOperator.BoolOp.And)
+              val op = AtomicOp.Binary(SemanticOp.BoolOp.And)
               val es = List(outerCond, innerCond)
               val tpe = outerCond.tpe
               val pur = combine(outerCond.purity, innerCond.purity)

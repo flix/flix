@@ -16,14 +16,14 @@
 
 package ca.uwaterloo.flix.language.ast
 
-sealed trait SemanticOperator
+sealed trait SemanticOp
 
-object SemanticOperator {
+object SemanticOp {
 
   /**
     * Boolean Operators.
     */
-  sealed trait BoolOp extends SemanticOperator
+  sealed trait BoolOp extends SemanticOp
 
   object BoolOp {
 
@@ -57,7 +57,7 @@ object SemanticOperator {
   /**
     * Char Operators.
     */
-  sealed trait CharOp extends SemanticOperator
+  sealed trait CharOp extends SemanticOp
 
   object CharOp {
 
@@ -96,7 +96,7 @@ object SemanticOperator {
   /**
     * Float32 Operators.
     */
-  sealed trait Float32Op extends SemanticOperator
+  sealed trait Float32Op extends SemanticOp
 
   object Float32Op {
 
@@ -165,7 +165,7 @@ object SemanticOperator {
   /**
     * Float64 Operators.
     */
-  sealed trait Float64Op extends SemanticOperator
+  sealed trait Float64Op extends SemanticOp
 
   object Float64Op {
 
@@ -234,7 +234,7 @@ object SemanticOperator {
   /**
     * Int8 Operators.
     */
-  sealed trait Int8Op extends SemanticOperator
+  sealed trait Int8Op extends SemanticOp
 
   object Int8Op {
 
@@ -338,7 +338,7 @@ object SemanticOperator {
   /**
     * Int16 Operators.
     */
-  sealed trait Int16Op extends SemanticOperator
+  sealed trait Int16Op extends SemanticOp
 
   object Int16Op {
 
@@ -442,7 +442,7 @@ object SemanticOperator {
   /**
     * Int32 Operators.
     */
-  sealed trait Int32Op extends SemanticOperator
+  sealed trait Int32Op extends SemanticOp
 
   object Int32Op {
 
@@ -546,7 +546,7 @@ object SemanticOperator {
   /**
     * Int64 Operators.
     */
-  sealed trait Int64Op extends SemanticOperator
+  sealed trait Int64Op extends SemanticOp
 
   object Int64Op {
 
@@ -650,7 +650,7 @@ object SemanticOperator {
   /**
     * String Operators.
     */
-  sealed trait StringOp extends SemanticOperator
+  sealed trait StringOp extends SemanticOp
 
   object StringOp {
 
