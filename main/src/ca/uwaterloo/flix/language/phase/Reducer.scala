@@ -54,10 +54,9 @@ object Reducer {
 
     case LiftedAst.Expression.Var(sym, tpe, loc) => ReducedAst.Expr.Var(sym, tpe, loc)
 
-    case LiftedAst.Expression.Closure(sym, exps, tpe, loc) =>
+    case LiftedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      val op = AtomicOp.Closure(sym)
-      ReducedAst.Expr.ApplyAtomic(op, es, tpe, Purity.Pure, loc)
+      ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExpr(exp)
@@ -81,17 +80,6 @@ object Reducer {
       val fs = formals.map(visitFormalParam)
       val as = exps.map(visitExpr)
       ReducedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
-
-    case LiftedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val op = AtomicOp.Unary(sop)
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, purity, loc)
-
-    case LiftedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-      val op = AtomicOp.Binary(sop)
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
@@ -119,19 +107,9 @@ object Reducer {
       val e2 = visitExpr(exp2)
       ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-    case LiftedAst.Expression.Region(tpe, loc) =>
-      val op = AtomicOp.Region
-      ReducedAst.Expr.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
-
     case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
-
-    case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
-      val op = AtomicOp.ScopeExit
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.Is(sym, exp, purity, loc) =>
       val op = AtomicOp.Is(sym)
