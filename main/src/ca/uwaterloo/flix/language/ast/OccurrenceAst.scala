@@ -96,7 +96,7 @@ object OccurrenceAst {
 
     case class Index(base: OccurrenceAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Tuple(elms: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Tuple(exps: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Pure
@@ -108,23 +108,23 @@ object OccurrenceAst {
 
     case class RecordRestrict(field: Name.Field, rest: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ArrayLit(elms: List[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class ArrayLit(exps: List[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class ArrayNew(elm: OccurrenceAst.Expression, len: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class ArrayNew(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class ArrayLoad(base: OccurrenceAst.Expression, index: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class ArrayLoad(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class ArrayStore(base: OccurrenceAst.Expression, index: OccurrenceAst.Expression, elm: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class ArrayStore(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class ArrayLength(base: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ArrayLength(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class Ref(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure

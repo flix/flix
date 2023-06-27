@@ -132,48 +132,6 @@ object LateTreeShaker {
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Is(_, exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Untag(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Index(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Tuple(elms, _, _, _) =>
-      visitExps(elms)
-
-    case Expression.RecordEmpty(_, _) =>
-      Set.empty
-
-    case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RecordExtend(_, value, rest, _, _, _) =>
-      visitExp(value) ++ visitExp(rest)
-
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
-      visitExp(rest)
-
-    case Expression.ArrayLit(elms, _, _) =>
-      visitExps(elms)
-
-    case Expression.ArrayNew(elm, len, _, _) =>
-      visitExp(elm) ++ visitExp(len)
-
-    case Expression.ArrayLoad(base, index, _, _) =>
-      visitExp(base) ++ visitExp(index)
-
-    case Expression.ArrayStore(base, index, elm, _, _) =>
-      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-
-    case Expression.ArrayLength(base, _, _, _) =>
-      visitExp(base)
-
     case Expression.Ref(exp, _, _) =>
       visitExp(exp)
 
