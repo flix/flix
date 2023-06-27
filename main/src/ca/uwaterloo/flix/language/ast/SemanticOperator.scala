@@ -660,11 +660,6 @@ object SemanticOperator {
     case object Concat extends StringOp
 
     /**
-      * Equality.
-      */
-    case object Eq extends StringOp
-
-    /**
       * Inequality.
       */
     case object Neq extends StringOp

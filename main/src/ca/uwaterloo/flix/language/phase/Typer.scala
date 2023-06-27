@@ -841,7 +841,7 @@ object Typer {
              | SemanticOperator.Int16Op.Eq | SemanticOperator.Int16Op.Neq
              | SemanticOperator.Int32Op.Eq | SemanticOperator.Int32Op.Neq
              | SemanticOperator.Int64Op.Eq | SemanticOperator.Int64Op.Neq
-             | SemanticOperator.StringOp.Eq | SemanticOperator.StringOp.Neq =>
+             | SemanticOperator.StringOp.Neq =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)

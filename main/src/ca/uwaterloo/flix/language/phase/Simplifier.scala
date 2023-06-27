@@ -353,7 +353,6 @@ object Simplifier {
         case Some(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
         case Some(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
         case Some(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
-        case Some(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)
