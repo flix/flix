@@ -172,6 +172,60 @@ object OccurrenceAnalyzer {
           val List(e1, e2) = es
           (OccurrenceAst.Expression.ScopeExit(e1, e2, tpe, purity, loc), o.increaseSizeByOne())
 
+        case AtomicOp.Is(sym) if sym.name == "Choice" =>
+          val List(e) = es
+          (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
+
+        case AtomicOp.Is(sym) =>
+          val List(e) = es
+          (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.Tag(sym) =>
+          val List(e) = es
+          (OccurrenceAst.Expression.Tag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.Untag(sym) =>
+          val List(e) = es
+          (OccurrenceAst.Expression.Untag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.Index(idx) =>
+          val List(e) = es
+          (OccurrenceAst.Expression.Index(e, idx, tpe, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.Tuple => (OccurrenceAst.Expression.Tuple(es, tpe, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.RecordEmpty => (OccurrenceAst.Expression.RecordEmpty(tpe, loc), OccurInfo.One)
+
+        case AtomicOp.RecordSelect(field) =>
+          val List(e) = es
+          (OccurrenceAst.Expression.RecordSelect(e, field, tpe, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.RecordExtend(field) =>
+          val List(e1, e2) = es
+          (OccurrenceAst.Expression.RecordExtend(field, e1, e2, tpe, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.RecordRestrict(field) =>
+          val List(e) = es
+          (OccurrenceAst.Expression.RecordRestrict(field, e, tpe, purity, loc), o.increaseSizeByOne())
+
+        case AtomicOp.ArrayLit => (OccurrenceAst.Expression.ArrayLit(es, tpe, loc), o.increaseSizeByOne())
+
+        case AtomicOp.ArrayNew =>
+          val List(e1, e2) = es
+          (OccurrenceAst.Expression.ArrayNew(e1, e2, tpe, loc), o.increaseSizeByOne())
+
+        case AtomicOp.ArrayLoad =>
+          val List(e1, e2) = es
+          (OccurrenceAst.Expression.ArrayLoad(e1, e2, tpe, loc), o.increaseSizeByOne())
+
+        case AtomicOp.ArrayStore =>
+          val List(e1, e2, e3) = es
+          (OccurrenceAst.Expression.ArrayStore(e1, e2, e3, tpe, loc), o.increaseSizeByOne())
+
+        case AtomicOp.ArrayLength =>
+          val List(e) = es
+          (OccurrenceAst.Expression.ArrayLength(e, tpe, purity, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -261,73 +315,6 @@ object OccurrenceAnalyzer {
     case Expression.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-
-    case Expression.Is(sym, exp, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      if (sym.name == "Choice")
-        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-      else
-        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.increaseSizeByOne())
-
-    case Expression.Tag(sym, exp, tpe, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Tag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expression.Untag(sym, exp, tpe, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Untag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expression.Index(base, offset, tpe, purity, loc) =>
-      val (b, o) = visitExp(sym0, base)
-      (OccurrenceAst.Expression.Index(b, offset, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expression.Tuple(elms, tpe, purity, loc) =>
-      val (es, o) = visitExps(sym0, elms)
-      (OccurrenceAst.Expression.Tuple(es, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expression.RecordEmpty(tpe, loc) => (OccurrenceAst.Expression.RecordEmpty(tpe, loc), OccurInfo.One)
-
-    case Expression.RecordSelect(exp, field, tpe, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.RecordSelect(e, field, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
-      val (v, o1) = visitExp(sym0, value)
-      val (r, o2) = visitExp(sym0, rest)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.RecordExtend(field, v, r, tpe, purity, loc), o3.increaseSizeByOne())
-
-    case Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
-      val (r, o) = visitExp(sym0, rest)
-      (OccurrenceAst.Expression.RecordRestrict(field, r, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expression.ArrayLit(elms, tpe, loc) =>
-      val (es, o) = visitExps(sym0, elms)
-      (OccurrenceAst.Expression.ArrayLit(es, tpe, loc), o.increaseSizeByOne())
-
-    case Expression.ArrayNew(elm, len, tpe, loc) =>
-      val (e, o1) = visitExp(sym0, elm)
-      val (l, o2) = visitExp(sym0, len)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ArrayNew(e, l, tpe, loc), o3.increaseSizeByOne())
-
-    case Expression.ArrayLoad(base, index, tpe, loc) =>
-      val (b, o1) = visitExp(sym0, base)
-      val (i, o2) = visitExp(sym0, index)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ArrayLoad(b, i, tpe, loc), o3.increaseSizeByOne())
-
-    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
-      val (b, o1) = visitExp(sym0, base)
-      val (i, o2) = visitExp(sym0, index)
-      val (e, o3) = visitExp(sym0, elm)
-      val o4 = combineAllSeq(o1, combineAllSeq(o2, o3))
-      (OccurrenceAst.Expression.ArrayStore(b, i, e, tpe, loc), o4.increaseSizeByOne())
-
-    case Expression.ArrayLength(base, tpe, _, loc) =>
-      val (b, o) = visitExp(sym0, base)
-      val purity = b.purity
-      (OccurrenceAst.Expression.ArrayLength(b, tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.Ref(exp, tpe, loc) =>
       val (e, o) = visitExp(sym0, exp)
