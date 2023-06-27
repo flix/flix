@@ -77,8 +77,7 @@ object OperatorPrinter {
          Int8Op.Neq |
          Int16Op.Neq |
          Int32Op.Neq |
-         Int64Op.Neq |
-         StringOp.Neq => neq
+         Int64Op.Neq => neq
     case CharOp.Lt |
          Float32Op.Lt |
          Float64Op.Lt |
