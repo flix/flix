@@ -76,10 +76,6 @@ object LiftedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Is(sym: Symbol.CaseSym, exp: LiftedAst.Expression, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression {
-      def tpe: Type = Type.Bool
-    }
-
     case class Tag(sym: Symbol.CaseSym, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class Untag(sym: Symbol.CaseSym, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression

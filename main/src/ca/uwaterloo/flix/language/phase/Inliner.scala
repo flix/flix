@@ -272,7 +272,7 @@ object Inliner {
       if (enum0.cases.size == 1 && e.purity == Pure)
         LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       else
-        LiftedAst.Expression.Is(sym, e, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(e), Type.Bool, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -615,7 +615,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Is(sym, e, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(e), Type.Bool, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

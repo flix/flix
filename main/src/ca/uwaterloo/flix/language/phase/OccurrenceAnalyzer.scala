@@ -172,6 +172,14 @@ object OccurrenceAnalyzer {
           val List(e1, e2) = es
           (OccurrenceAst.Expression.ScopeExit(e1, e2, tpe, purity, loc), o.increaseSizeByOne())
 
+        case AtomicOp.Is(sym) if sym.name == "Choice" =>
+          val List(e) = es
+          (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
+
+        case AtomicOp.Is(sym) =>
+          val List(e) = es
+          (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -261,13 +269,6 @@ object OccurrenceAnalyzer {
     case Expression.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-
-    case Expression.Is(sym, exp, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      if (sym.name == "Choice")
-        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-      else
-        (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.increaseSizeByOne())
 
     case Expression.Tag(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)

@@ -69,7 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Is(sym, exp, _, _) => DocAst.Expression.Is(sym, print(exp))
     case Tag(sym, exp, _, _, _) => DocAst.Expression.Tag(sym, List(print(exp)))
     case Untag(sym, exp, _, _, _) => DocAst.Expression.Untag(sym, print(exp))
     case Index(base, offset, _, _, _) => DocAst.Expression.Index(offset, print(base))
@@ -134,16 +133,24 @@ object LiftedAstPrinter {
     */
   private def printAtomic(op: AtomicOp, exps: List[Expression]): DocAst.Expression = {
     val es = exps.map(print)
+
     op match {
       case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, es)
+
       case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OperatorPrinter.print(sop), es.head)
+
       case AtomicOp.Binary(sop) =>
         val List(e1, e2) = es
         DocAst.Expression.Binary(e1, OperatorPrinter.print(sop), e2)
+
       case AtomicOp.Region => DocAst.Expression.Region
+
       case AtomicOp.ScopeExit =>
         val List(e1, e2) = es
         DocAst.Expression.ScopeExit(e1, e2)
+
+      case AtomicOp.Is(sym) => DocAst.Expression.Is(sym, es.head)
+
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }
   }
