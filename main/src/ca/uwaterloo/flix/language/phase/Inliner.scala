@@ -283,7 +283,7 @@ object Inliner {
       // Inline expressions of the form Untag(Tag(e)) => e
       e match {
         case LiftedAst.Expression.ApplyAtomic(AtomicOp.Tag(_), innerExps, _, _, _) => innerExps.head
-        case _ => LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
+        case _ => LiftedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(e), tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
@@ -623,7 +623,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Untag(sym, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = substituteExp(base, env0)
