@@ -132,9 +132,6 @@ object LateTreeShaker {
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
-      visitExp(rest)
-
     case Expression.ArrayLit(elms, _, _) =>
       visitExps(elms)
 

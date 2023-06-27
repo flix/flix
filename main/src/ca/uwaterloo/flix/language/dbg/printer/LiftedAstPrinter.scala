@@ -69,7 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case RecordRestrict(field, rest, _, _, _) => DocAst.Expression.RecordRestrict(field, print(rest))
     case ArrayLit(elms, _, _) => DocAst.Expression.ArrayLit(elms.map(print))
     case ArrayNew(elm, len, _, _) => DocAst.Expression.ArrayNew(print(elm), print(len))
     case ArrayLoad(base, index, _, _) => DocAst.Expression.ArrayLoad(print(base), print(index))
@@ -155,6 +154,8 @@ object LiftedAstPrinter {
       case AtomicOp.RecordEmpty => DocAst.Expression.RecordEmpty
 
       case AtomicOp.RecordSelect(field) => DocAst.Expression.RecordSelect(field, es.head)
+
+      case AtomicOp.RecordRestrict(field) => DocAst.Expression.RecordRestrict(field, es.head)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }

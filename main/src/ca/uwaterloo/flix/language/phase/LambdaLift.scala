@@ -230,7 +230,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
         val r = visitExp(rest)
-        LiftedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(r), tpe, purity, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp
