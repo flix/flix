@@ -246,11 +246,11 @@ object LambdaLift {
         val e2 = visitExp(exp2)
         LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), tpe, Purity.Impure, loc)
 
-      case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-        val b = visitExp(base)
-        val i = visitExp(index)
-        val e = visitExp(elm)
-        LiftedAst.Expression.ArrayStore(b, i, e, tpe, loc)
+      case SimplifiedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.ArrayLength(base, tpe, _, loc) =>
         val b = visitExp(base)

@@ -120,7 +120,7 @@ object OccurrenceAst {
       def purity: Purity = Impure
     }
 
-    case class ArrayStore(base: OccurrenceAst.Expression, index: OccurrenceAst.Expression, elm: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class ArrayStore(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 

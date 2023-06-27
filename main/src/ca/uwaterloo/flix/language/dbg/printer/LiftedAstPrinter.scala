@@ -69,7 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case ArrayStore(base, index, elm, _, _) => DocAst.Expression.ArrayStore(print(base), print(index), print(elm))
     case ArrayLength(base, _, _, _) => DocAst.Expression.ArrayLength(print(base))
     case Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
     case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
@@ -163,6 +162,10 @@ object LiftedAstPrinter {
       case AtomicOp.ArrayLoad =>
         val List(e1, e2) = es
         DocAst.Expression.ArrayLoad(e1, e2)
+
+      case AtomicOp.ArrayStore =>
+        val List(e1, e2, e3) = es
+        DocAst.Expression.ArrayStore(e1, e2, e3)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }
