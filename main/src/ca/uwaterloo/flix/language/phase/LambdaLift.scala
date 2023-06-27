@@ -210,7 +210,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Index(e, offset, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Index(offset), List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Tuple(elms, tpe, purity, loc) =>
         val es = elms map visitExp

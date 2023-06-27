@@ -287,8 +287,8 @@ object Inliner {
       }
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
-      val b = visitExp(base, subst0)
-      LiftedAst.Expression.Index(b, offset, tpe, purity, loc)
+      val e = visitExp(base, subst0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Index(offset), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Tuple(elms, tpe, purity, loc) =>
       val es = elms.map(visitExp(_, subst0))
@@ -626,8 +626,8 @@ object Inliner {
       LiftedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
-      val b = substituteExp(base, env0)
-      LiftedAst.Expression.Index(b, offset, tpe, purity, loc)
+      val e = substituteExp(base, env0)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Index(offset), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.Tuple(elms, tpe, purity, loc) =>
       val es = elms.map(substituteExp(_, env0))
