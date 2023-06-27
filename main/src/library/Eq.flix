@@ -121,9 +121,6 @@ instance Eq[String] {
         import java.lang.String.equals(##java.lang.Object): Bool \ {};
         equals(x, checked_cast(y))
 
-    pub override def neq(x: String, y: String): Bool =
-        import java.lang.String.equals(##java.lang.Object): Bool \ {};
-        not equals(x, checked_cast(y))
 }
 
 instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {
