@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -97,8 +96,8 @@ object LateTreeShaker {
     case Expression.Var(_, _, _) =>
       Set.empty
 
-    case Expression.Closure(sym, closureArgs, _, _) =>
-      Set(sym) ++ visitExps(closureArgs)
+    case Expression.ApplyAtomic(op, exps, _, _, _) =>
+      visitAtomicOp(op) ++ visitExps(exps)
 
     case Expression.ApplyClo(exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
@@ -115,12 +114,6 @@ object LateTreeShaker {
     case Expression.ApplySelfTail(sym, _, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
-    case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -136,14 +129,8 @@ object LateTreeShaker {
     case Expression.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Region(_, _) =>
-      Set.empty
-
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
-
-    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Is(_, exp, _, _) =>
       visitExp(exp)
@@ -253,6 +240,14 @@ object LateTreeShaker {
     case Expression.MatchError(_, _) =>
       Set.empty
 
+  }
+
+  /**
+    * Returns the function symbols reachable from the given [[AtomicOp]] `op`.
+    */
+  private def visitAtomicOp(op: AtomicOp): Set[Symbol.DefnSym] = op match {
+    case AtomicOp.Closure(sym) => Set(sym)
+    case _ => Set.empty
   }
 
   /**
