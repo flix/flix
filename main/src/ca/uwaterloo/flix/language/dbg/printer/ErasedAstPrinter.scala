@@ -66,7 +66,7 @@ object ErasedAstPrinter {
       case CallType.NonTailCall => DocAst.Expression.ApplyDef(sym, exps.map(print))
     }
     case ApplySelfTail(sym, _, exps, _, _) => DocAst.Expression.ApplySelfTail(sym, exps.map(print))
-    case ApplyAtomic(op, exps, tpe, _) => OperatorPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
+    case ApplyAtomic(op, exps, tpe, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
