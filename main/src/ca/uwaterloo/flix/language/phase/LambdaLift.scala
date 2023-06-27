@@ -143,7 +143,7 @@ object LambdaLift {
       case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Binary(sop, e1, e2, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

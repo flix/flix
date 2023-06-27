@@ -64,8 +64,6 @@ object LiftedAst {
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[LiftedAst.FormalParam], actuals: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Binary(sop: SemanticOperator, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
     case class IfThenElse(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, exp3: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression

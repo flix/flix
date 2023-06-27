@@ -62,7 +62,6 @@ object LiftedAstPrinter {
     case ApplyCloTail(exp, args, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
     case ApplyDefTail(sym, args, _, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
     case ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
-    case Binary(sop, exp1, exp2, _, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
@@ -139,6 +138,9 @@ object LiftedAstPrinter {
     op match {
       case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, es)
       case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OperatorPrinter.print(sop), es.head)
+      case AtomicOp.Binary(sop) =>
+        val List(e1, e2) = es
+        DocAst.Expression.Binary(e1, OperatorPrinter.print(sop), e2)
       case _ => ???
     }
   }

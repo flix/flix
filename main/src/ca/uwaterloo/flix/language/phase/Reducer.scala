@@ -56,7 +56,7 @@ object Reducer {
 
     case LiftedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      ReducedAst.Expr.ApplyAtomic(op, es, tpe, Purity.Pure, loc)
+      ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExpr(exp)
@@ -80,12 +80,6 @@ object Reducer {
       val fs = formals.map(visitFormalParam)
       val as = exps.map(visitExpr)
       ReducedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
-
-    case LiftedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-      val op = AtomicOp.Binary(sop)
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)

@@ -799,7 +799,7 @@ object Inliner {
       case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(false), _, _)) => e1
       case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
       case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
-      case _ => LiftedAst.Expression.Binary(sop, e1, e2, tpe, purity, loc)
+      case _ => LiftedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, purity, loc)
     }
   }
 
@@ -819,7 +819,11 @@ object Inliner {
         case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
           (outerElse, innerElse) match {
             case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
-              val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, outerCond, innerCond, outerCond.tpe, combine(outerCond.purity, innerCond.purity), loc)
+              val op = AtomicOp.Binary(SemanticOperator.BoolOp.And)
+              val es = List(outerCond, innerCond)
+              val tpe = outerCond.tpe
+              val pur = combine(outerCond.purity, innerCond.purity)
+              val andExp = LiftedAst.Expression.ApplyAtomic(op, es, tpe, pur, loc)
               LiftedAst.Expression.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
             case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
           }
