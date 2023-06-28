@@ -76,18 +76,6 @@ object OccurrenceAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Spawn(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class Lazy(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
-    case class Force(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }

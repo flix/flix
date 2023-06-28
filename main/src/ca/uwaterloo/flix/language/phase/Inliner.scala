@@ -280,19 +280,6 @@ object Inliner {
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), tpe, Purity.Impure, loc)
-
-    case OccurrenceAst.Expression.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
-
-    case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
-
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 
     case OccurrenceAst.Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
@@ -509,19 +496,6 @@ object Inliner {
           LiftedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-    case OccurrenceAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
-      val e1 = substituteExp(exp1, env0)
-      val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), tpe, Purity.Impure, loc)
-
-    case OccurrenceAst.Expression.Lazy(exp, tpe, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
-
-    case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 
