@@ -341,7 +341,9 @@ object Simplifier {
           return SimplifiedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
 
         case (Some(TypeConstructor.Str), _) =>
-          val method = Class.forName("java.lang.String").getMethod("equals", Class.forName("java.lang.Object"))
+          val strClass = Class.forName("java.lang.String")
+          val objClass = Class.forName("java.lang.Object")
+          val method = strClass.getMethod("equals", objClass)
           return SimplifiedAst.Expression.InvokeMethod(method, e1, List(e2), Type.Bool, combine(e1.purity, e2.purity), loc)
 
         case _ => // fallthrough
