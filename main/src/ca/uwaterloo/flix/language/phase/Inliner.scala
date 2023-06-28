@@ -311,24 +311,24 @@ object Inliner {
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Ref(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Deref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Deref(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Assign(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Assign, List(e1, e2), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.InstanceOf(e, clazz, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.purity, loc)
 
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Cast(e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Cast, List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -339,33 +339,34 @@ object Inliner {
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) => LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
+    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
@@ -381,15 +382,15 @@ object Inliner {
     case OccurrenceAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.Spawn(e1, e2, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Lazy(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Force(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 
@@ -636,24 +637,24 @@ object Inliner {
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Ref(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Deref(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Deref(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Assign(exp1, exp2, tpe, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Assign, List(e1, e2), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.InstanceOf(exp, clazz, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.InstanceOf(e, clazz, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.purity, loc)
 
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Cast(e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Cast, List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -666,33 +667,34 @@ object Inliner {
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) => LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
+    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
@@ -708,15 +710,15 @@ object Inliner {
     case OccurrenceAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.Spawn(e1, e2, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Lazy(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Lazy(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Force(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 
