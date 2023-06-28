@@ -259,24 +259,24 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Ref(e, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Deref(e, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Assign, List(e1, e2), tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.InstanceOf(exp, clazz, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.InstanceOf(e, clazz, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.purity, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Cast(e, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Cast, List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -305,34 +305,34 @@ object LambdaLift {
         val e = visitExp(exp)
         LiftedAst.Expression.Resume(e, tpe, loc)
 
-      case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-        val as = args.map(visitExp)
-        LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
+      case SimplifiedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
-        val as = args.map(visitExp)
-        LiftedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
+        val es = exps.map(visitExp)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-        val as = args.map(visitExp)
-        LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
+      case SimplifiedAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, tpe, purity, loc)
 
       case SimplifiedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.GetStaticField(field, tpe, purity, loc) =>
-        LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, tpe, purity, loc)
 
       case SimplifiedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod)
@@ -341,15 +341,15 @@ object LambdaLift {
       case SimplifiedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Spawn(e1, e2, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Lazy(e, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Force(e, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         LiftedAst.Expression.HoleError(sym, tpe, loc)

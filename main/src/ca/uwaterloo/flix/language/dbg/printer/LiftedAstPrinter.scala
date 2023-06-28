@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -57,7 +57,7 @@ object LiftedAstPrinter {
   def print(e: LiftedAst.Expression): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, _, _, _) => printAtomic(op, exps)
+    case ApplyAtomic(op, exps, tpe, _, _) => printAtomic(op, exps, tpe)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case ApplyCloTail(exp, args, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
@@ -69,11 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
-    case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
-    case Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))
-    case InstanceOf(exp, clazz, _) => DocAst.Expression.InstanceOf(print(exp), clazz)
-    case Cast(exp, tpe, _, _) => DocAst.Expression.Cast(print(exp), TypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
@@ -83,20 +78,10 @@ object LiftedAstPrinter {
     })
     case Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
-    case InvokeConstructor(constructor, args, _, _, _) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
-    case InvokeMethod(method, exp, args, _, _, _) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
-    case InvokeStaticMethod(method, args, _, _, _) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
-    case GetField(field, exp, _, _, _) => DocAst.Expression.JavaGetField(field, print(exp))
-    case PutField(field, exp1, exp2, _, _, _) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
-    case GetStaticField(field, _, _, _) => DocAst.Expression.JavaGetStaticField(field)
-    case PutStaticField(field, exp, _, _, _) => DocAst.Expression.JavaPutStaticField(field, print(exp))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methods.map {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), TypePrinter.print(retTpe))
     })
-    case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
-    case Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
-    case Force(exp, _, _) => DocAst.Expression.Force(print(exp))
     case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
     case MatchError(_, _) => DocAst.Expression.MatchError
   }
@@ -118,17 +103,17 @@ object LiftedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op` and `exps`.
     */
-  private def printAtomic(op: AtomicOp, exps: List[Expression]): DocAst.Expression = {
+  private def printAtomic(op: AtomicOp, exps: List[Expression], tpe: Type): DocAst.Expression = {
     val es = exps.map(print)
 
     op match { // Will be removed
       case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, es)
 
-      case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OperatorPrinter.print(sop), es.head)
+      case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OpPrinter.print(sop), es.head)
 
       case AtomicOp.Binary(sop) =>
         val List(e1, e2) = es
-        DocAst.Expression.Binary(e1, OperatorPrinter.print(sop), e2)
+        DocAst.Expression.Binary(e1, OpPrinter.print(sop), e2)
 
       case AtomicOp.Region => DocAst.Expression.Region
 
@@ -168,6 +153,42 @@ object LiftedAstPrinter {
 
       case AtomicOp.ArrayLength =>
         DocAst.Expression.ArrayLength(es.head)
+
+      case AtomicOp.Ref => DocAst.Expression.Ref(es.head)
+
+      case AtomicOp.Deref => DocAst.Expression.Deref(es.head)
+
+      case AtomicOp.Assign =>
+        val List(e1, e2) = es
+        DocAst.Expression.Assign(e1, e2)
+
+      case AtomicOp.InstanceOf(clazz) => DocAst.Expression.InstanceOf(es.head, clazz)
+
+      case AtomicOp.Cast => DocAst.Expression.Cast(es.head, TypePrinter.print(tpe))
+
+      case AtomicOp.InvokeConstructor(constructor) => DocAst.Expression.JavaInvokeConstructor(constructor, es)
+
+      case AtomicOp.InvokeMethod(method) => DocAst.Expression.JavaInvokeMethod(method, es.head, es.tail)
+
+      case AtomicOp.InvokeStaticMethod(method) => DocAst.Expression.JavaInvokeStaticMethod(method, es)
+
+      case AtomicOp.GetField(field) => DocAst.Expression.JavaGetField(field, es.head)
+
+      case AtomicOp.PutField(field) =>
+        val List(e1, e2) = es
+        DocAst.Expression.JavaPutField(field, e1, e2)
+
+      case AtomicOp.GetStaticField(field) => DocAst.Expression.JavaGetStaticField(field)
+
+      case AtomicOp.PutStaticField(field) => DocAst.Expression.JavaPutStaticField(field, es.head)
+
+      case AtomicOp.Spawn =>
+        val List(e1, e2) = es
+        DocAst.Expression.Spawn(e1, e2)
+
+      case AtomicOp.Lazy => DocAst.Expression.Lazy(es.head)
+
+      case AtomicOp.Force => DocAst.Expression.Force(es.head)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }

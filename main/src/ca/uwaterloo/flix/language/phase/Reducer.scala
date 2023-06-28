@@ -111,32 +111,6 @@ object Reducer {
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Ref(exp, tpe, loc) =>
-      val op = AtomicOp.Ref
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, Purity.Impure, loc)
-
-    case LiftedAst.Expression.Deref(exp, tpe, loc) =>
-      val op = AtomicOp.Deref
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, Purity.Impure, loc)
-
-    case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.Assign
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc)
-
-    case LiftedAst.Expression.InstanceOf(exp, clazz, loc) =>
-      val op = AtomicOp.InstanceOf(clazz)
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), Type.Bool, Purity.Pure, loc)
-
-    case LiftedAst.Expression.Cast(exp, tpe, purity, loc) =>
-      val op = AtomicOp.Cast
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, purity, loc)
-
     case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val rs = rules map {
@@ -158,61 +132,9 @@ object Reducer {
       // TODO AE erasing to unit for now
       ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
-    case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
-      val op = AtomicOp.InvokeConstructor(constructor)
-      val es = exps.map(visitExpr)
-      ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-
-    case LiftedAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
-      val op = AtomicOp.InvokeMethod(method)
-      val e = visitExpr(exp)
-      val es = exps.map(visitExpr)
-      ReducedAst.Expr.ApplyAtomic(op, e :: es, tpe, purity, loc)
-
-    case LiftedAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
-      val op = AtomicOp.InvokeStaticMethod(method)
-      val es = exps.map(visitExpr)
-      ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-
-    case LiftedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
-      val op = AtomicOp.GetField(field)
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, purity, loc)
-
-    case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
-      val op = AtomicOp.PutField(field)
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
-
-    case LiftedAst.Expression.GetStaticField(field, tpe, purity, loc) =>
-      val op = AtomicOp.GetStaticField(field)
-      ReducedAst.Expr.ApplyAtomic(op, Nil, tpe, purity, loc)
-
-    case LiftedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-      val op = AtomicOp.PutStaticField(field)
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, purity, loc)
-
     case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
-
-    case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.Spawn
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc)
-
-    case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
-      val op = AtomicOp.Lazy
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, Purity.Pure, loc)
-
-    case LiftedAst.Expression.Force(exp, tpe, loc) =>
-      val op = AtomicOp.Force
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, Purity.Pure, loc)
 
     case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
       val op = AtomicOp.HoleError(sym)
