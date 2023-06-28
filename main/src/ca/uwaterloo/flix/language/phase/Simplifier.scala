@@ -333,11 +333,19 @@ object Simplifier {
     def mkEqual(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       /*
        * Special Case 1: Unit
+       * Special Case 2: String - must be desugared to String.equals
        */
       (e1.tpe.typeConstructor, e2.tpe.typeConstructor) match {
         case (Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
           // Unit is always equal to itself.
           return SimplifiedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+
+        case (Some(TypeConstructor.Str), _) =>
+          val strClass = Class.forName("java.lang.String")
+          val objClass = Class.forName("java.lang.Object")
+          val method = strClass.getMethod("equals", objClass)
+          return SimplifiedAst.Expression.InvokeMethod(method, e1, List(e2), Type.Bool, combine(e1.purity, e2.purity), loc)
+
         case _ => // fallthrough
       }
 
@@ -353,7 +361,6 @@ object Simplifier {
         case Some(TypeConstructor.Int16) => SemanticOp.Int16Op.Eq
         case Some(TypeConstructor.Int32) => SemanticOp.Int32Op.Eq
         case Some(TypeConstructor.Int64) => SemanticOp.Int64Op.Eq
-        case Some(TypeConstructor.Str) => SemanticOp.StringOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)

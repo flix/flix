@@ -840,8 +840,7 @@ object Typer {
              | SemanticOp.Int8Op.Eq | SemanticOp.Int8Op.Neq
              | SemanticOp.Int16Op.Eq | SemanticOp.Int16Op.Neq
              | SemanticOp.Int32Op.Eq | SemanticOp.Int32Op.Neq
-             | SemanticOp.Int64Op.Eq | SemanticOp.Int64Op.Neq
-             | SemanticOp.StringOp.Eq | SemanticOp.StringOp.Neq =>
+             | SemanticOp.Int64Op.Eq | SemanticOp.Int64Op.Neq =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)

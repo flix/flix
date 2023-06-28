@@ -360,6 +360,66 @@ mod Test.Type.Bool {
     @Test
     def testAdd20(): Bool = isThree(add(mkThree(), add(add(mkThree(), mkThree()), add(mkThree(), mkThree()))))
 
+    @Test
+    def testMul01(): Bool = isZero(mul(mkZero(), mkZero()))
+
+    @Test
+    def testMul02(): Bool = isOne(mul(mkOne(), mkOne()))
+
+    @Test
+    def testMul03(): Bool = isZero(mul(mkTwo(), mkTwo()))
+
+    @Test
+    def testMul04(): Bool = isOne(mul(mkThree(), mkThree()))
+
+    @Test
+    def testMul05(): Bool = isZero(mul(mkZero(), mkOne()))
+
+    @Test
+    def testMul06(): Bool = isZero(mul(mkOne(), mkZero()))
+
+    @Test
+    def testMul07(): Bool = isZero(mul(mkTwo(), mkZero()))
+
+    @Test
+    def testMul08(): Bool = isZero(mul(mkZero(), mkTwo()))
+
+    @Test
+    def testMul09(): Bool = isZero(mul(mkZero(), mkThree()))
+
+    @Test
+    def testMul10(): Bool = isZero(mul(mkThree(), mkZero()))
+
+    @Test
+    def testMul11(): Bool = isTwo(mul(mkOne(), mkTwo()))
+
+    @Test
+    def testMul12(): Bool = isTwo(mul(mkTwo(), mkOne()))
+
+    @Test
+    def testMul13(): Bool = isTwo(mul(mkThree(), mkTwo()))
+
+    @Test
+    def testMul14(): Bool = isTwo(mul(mkTwo(), mkThree()))
+
+    @Test
+    def testMul15(): Bool = isThree(mul(mkThree(), mkOne()))
+
+    @Test
+    def testMul16(): Bool = isThree(mul(mkOne(), mkThree()))
+
+    @Test
+    def testMul17(): Bool = isTwo(mul(mul(mkOne(), mkThree()), mkTwo()))
+
+    @Test
+    def testMul18(): Bool = isOne(mul(mul(mkThree(), mkThree()), mul(mkThree(), mkThree())))
+
+    @Test
+    def testMul19(): Bool = isZero(mul(mul(mul(mkOne(), mkThree()), mkTwo()), mkZero()))
+
+    @Test
+    def testMul20(): Bool = isTwo(mul(mul(mkTwo(), mul(mkOne(), mkThree())), mul(mkThree(), mkOne())))
+
     def assertEqual(_: B[a], _: B[a]): Bool = true
     def assertTrue(_: B[true]): Bool = true
     def assertFalse(_: B[false]): Bool = true
@@ -390,5 +450,8 @@ mod Test.Type.Bool {
     def add(_: I2[a1, b1], _: I2[a2, b2]):
       I2[((((a1 and (not a2)) or (a2 and (not a1))) and (not (b1 and b2))) or (((a1 and a2) or ((not a1) and (not a2))) and (b1 and b2))),
       ((b1 and (not b2)) or (b2 and (not b1)))] = I2.I2
+    def mul(_: I2[a1, b1], _: I2[a2, b2]):
+      I2[(((a1 and b2) and (not (b1 and a2))) or ((b1 and a2) and (not (a1 and b2)))),
+      (b1 and b2)] = I2.I2
 
 }

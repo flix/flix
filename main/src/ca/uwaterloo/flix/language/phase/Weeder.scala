@@ -756,9 +756,6 @@ object Weeder {
           case ("INT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc).toSuccess
           case ("INT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc).toSuccess
 
-          case ("STRING_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.StringOp.Eq, e1, e2, loc).toSuccess
-          case ("STRING_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.StringOp.Neq, e1, e2, loc).toSuccess
-
           case ("CHANNEL_GET", e1 :: Nil) => WeededAst.Expression.GetChannel(e1, loc).toSuccess
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
@@ -1176,26 +1173,27 @@ object Weeder {
                 WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
               } else {
 
-              // Introduce a formal parameter (of appropriate type) for each declared argument.
-              val fs = ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val id = Name.Ident(sp1, "a" + index, sp2)
-                  WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
-              }
+                // Introduce a formal parameter (of appropriate type) for each declared argument.
+                val fs = ts.zipWithIndex.map {
+                  case (tpe, index) =>
+                    val id = Name.Ident(sp1, "a" + index, sp2)
+                    WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
+                }
 
-              // Compute the argument to the method call.
-              val as = ts.zipWithIndex.map {
-                case (_, index) =>
-                  val ident = Name.Ident(sp1, "a" + index, sp2)
-                  WeededAst.Expression.Ambiguous(Name.mkQName(ident), loc)
-              }
+                // Compute the argument to the method call.
+                val as = ts.zipWithIndex.map {
+                  case (_, index) =>
+                    val ident = Name.Ident(sp1, "a" + index, sp2)
+                    WeededAst.Expression.Ambiguous(Name.mkQName(ident), loc)
+                }
 
-              // Assemble the lambda expression.
-              val call = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
-              val lambdaBody = WeededAst.Expression.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }}
+                // Assemble the lambda expression.
+                val call = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
+                val lambdaBody = WeededAst.Expression.UncheckedCast(call, Some(tpe), eff, loc)
+                val e1 = mkCurried(fs, lambdaBody, loc)
+                WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+              }
+          }
 
         case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
 
