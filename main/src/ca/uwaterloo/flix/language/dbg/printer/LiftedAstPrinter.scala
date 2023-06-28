@@ -69,7 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
     case Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))
     case InstanceOf(exp, clazz, _) => DocAst.Expression.InstanceOf(print(exp), clazz)
     case Cast(exp, tpe, _, _) => DocAst.Expression.Cast(print(exp), TypePrinter.print(tpe))
@@ -169,6 +168,8 @@ object LiftedAstPrinter {
         DocAst.Expression.ArrayLength(es.head)
 
       case AtomicOp.Ref => DocAst.Expression.Ref(es.head)
+
+      case AtomicOp.Deref => DocAst.Expression.Deref(es.head)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }

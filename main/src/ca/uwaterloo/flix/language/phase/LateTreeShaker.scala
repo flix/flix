@@ -132,9 +132,6 @@ object LateTreeShaker {
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Deref(exp, _, _) =>
-      visitExp(exp)
-
     case Expression.Assign(exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
