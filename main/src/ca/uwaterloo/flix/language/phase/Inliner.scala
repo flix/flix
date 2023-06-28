@@ -416,7 +416,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Force(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 
@@ -758,7 +758,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Force(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 

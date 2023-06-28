@@ -349,7 +349,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Force(e, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         LiftedAst.Expression.HoleError(sym, tpe, loc)
