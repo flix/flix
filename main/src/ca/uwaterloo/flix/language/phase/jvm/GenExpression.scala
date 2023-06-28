@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -156,7 +156,7 @@ object GenExpression {
         compileExpr(exp)
 
         sop match {
-          case SemanticOperator.BoolOp.Not =>
+          case SemanticOp.BoolOp.Not =>
             val condElse = new Label()
             val condEnd = new Label()
             mv.visitJumpInsn(IFNE, condElse)
