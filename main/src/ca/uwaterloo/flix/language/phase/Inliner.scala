@@ -117,13 +117,7 @@ object Inliner {
     case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       op match {
-        case AtomicOp.Is(sym) =>
-          val List(e) = es
-          val enum0 = root.enums(sym.enumSym)
-          if (enum0.cases.size == 1 && e.purity == Pure)
-            LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
-          else
-            LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
+        case AtomicOp.Is(sym) if isSingleCaseEnum(sym, es) => LiftedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
 
         case AtomicOp.Untag(_) =>
           val List(e) = es
@@ -798,4 +792,18 @@ object Inliner {
         case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
       }
   }
+
+
+  /**
+    * Helper function for dealing with [[AtomicOp]].
+    * Returns `true` if `sym` is an enum with one case and `exps` is pure.
+    */
+  private def isSingleCaseEnum(sym: Symbol.CaseSym, exps: List[LiftedAst.Expression])(implicit root: Root, flix: Flix): Boolean =
+    exps match {
+      case e :: Nil =>
+        val enum0 = root.enums(sym.enumSym)
+        enum0.cases.size == 1 && e.purity == Pure
+      case _ => false
+    }
+
 }
