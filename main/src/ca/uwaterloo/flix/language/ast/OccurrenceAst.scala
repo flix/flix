@@ -74,10 +74,6 @@ object OccurrenceAst {
 
     case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
     case class RecordSelect(exp: OccurrenceAst.Expression, field: Name.Field, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class RecordExtend(field: Name.Field, value: OccurrenceAst.Expression, rest: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
