@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
 import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, Source}
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift}
+
+import java.lang.reflect.{Constructor, Field, Method}
 
 object SimplifiedAst {
 
@@ -78,9 +79,9 @@ object SimplifiedAst {
     @IntroducedBy(ClosureConv.getClass)
     case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Unary(sop: SemanticOperator, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Unary(sop: SemanticOp, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Binary(sop: SemanticOperator, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Binary(sop: SemanticOp, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class IfThenElse(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 

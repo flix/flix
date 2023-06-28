@@ -105,9 +105,9 @@ object NamedAst {
 
     case class Lambda(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Unary(sop: SemanticOperator, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Unary(sop: SemanticOp, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Binary(sop: SemanticOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Binary(sop: SemanticOp, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class IfThenElse(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 

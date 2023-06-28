@@ -345,15 +345,15 @@ object Simplifier {
        * Compute the semantic operator.
        */
       val sop = e1.tpe.typeConstructor match {
-        case Some(TypeConstructor.Bool) => SemanticOperator.BoolOp.Eq
-        case Some(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
-        case Some(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
-        case Some(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
-        case Some(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
-        case Some(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
-        case Some(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
-        case Some(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
-        case Some(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
+        case Some(TypeConstructor.Bool) => SemanticOp.BoolOp.Eq
+        case Some(TypeConstructor.Char) => SemanticOp.CharOp.Eq
+        case Some(TypeConstructor.Float32) => SemanticOp.Float32Op.Eq
+        case Some(TypeConstructor.Float64) => SemanticOp.Float64Op.Eq
+        case Some(TypeConstructor.Int8) => SemanticOp.Int8Op.Eq
+        case Some(TypeConstructor.Int16) => SemanticOp.Int16Op.Eq
+        case Some(TypeConstructor.Int32) => SemanticOp.Int32Op.Eq
+        case Some(TypeConstructor.Int64) => SemanticOp.Int64Op.Eq
+        case Some(TypeConstructor.Str) => SemanticOp.StringOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)
