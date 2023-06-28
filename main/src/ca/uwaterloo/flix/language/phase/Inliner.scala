@@ -260,10 +260,6 @@ object Inliner {
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
-
     case OccurrenceAst.Expression.Deref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), tpe, Purity.Impure, loc)
@@ -537,10 +533,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.Deref(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
