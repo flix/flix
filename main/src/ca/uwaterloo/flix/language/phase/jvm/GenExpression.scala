@@ -384,22 +384,6 @@ object GenExpression {
 
           case Int64Op.Gt => visitComparison2(exp1, exp2, LCMP, IFLE)
 
-          case StringOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
-              AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
-            mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case StringOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
-              AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
-            mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
           case Float32Op.Add =>
             compileExpr(exp1)
             compileExpr(exp2)
