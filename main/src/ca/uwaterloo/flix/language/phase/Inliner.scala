@@ -269,10 +269,6 @@ object Inliner {
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp(_, subst0))
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, purity, loc)
-
     case OccurrenceAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val es = exps.map(visitExp(_, subst0))
@@ -527,10 +523,6 @@ object Inliner {
           LiftedAst.CatchRule(freshVar, clazz, e)
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
-      val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
