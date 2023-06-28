@@ -132,21 +132,6 @@ object LateTreeShaker {
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Ref(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Deref(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Assign(exp1, exp2, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.InstanceOf(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp)
-
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
@@ -159,38 +144,8 @@ object LateTreeShaker {
     case Expression.Resume(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
-      visitExps(args)
-
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      visitExps(args)
-
-    case Expression.GetField(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.GetStaticField(_, _, _, _) =>
-      Set.empty
-
-    case Expression.PutStaticField(_, exp, _, _, _) =>
-      visitExp(exp)
-
     case Expression.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
-
-    case Expression.Spawn(exp1, exp2, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Force(exp, _, _) =>
-      visitExp(exp)
 
     case Expression.HoleError(_, _, _) =>
       Set.empty

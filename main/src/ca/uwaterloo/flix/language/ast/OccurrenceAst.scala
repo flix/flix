@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 
-import java.lang.reflect.{Constructor, Field, Method}
-
 object OccurrenceAst {
 
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
@@ -50,9 +48,7 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
+    case class ApplyAtomic(op: AtomicOp, exps: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class ApplyClo(exp: OccurrenceAst.Expression, args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
@@ -64,10 +60,6 @@ object OccurrenceAst {
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[OccurrenceAst.FormalParam], actuals: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Unary(sop: SemanticOp, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Binary(sop: SemanticOp, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
     case class IfThenElse(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
@@ -78,103 +70,11 @@ object OccurrenceAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Region(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
     case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class ScopeExit(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Is(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def tpe: Type = Type.Bool
-    }
-
-    case class Tag(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Untag(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Index(base: OccurrenceAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Tuple(exps: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
-    case class RecordSelect(exp: OccurrenceAst.Expression, field: Name.Field, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class RecordExtend(field: Name.Field, value: OccurrenceAst.Expression, rest: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class RecordRestrict(field: Name.Field, rest: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class ArrayLit(exps: List[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayNew(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayLoad(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayStore(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class ArrayLength(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Ref(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class Deref(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class Assign(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class InstanceOf(exp: OccurrenceAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = exp.purity
-
-      def tpe: Type = Type.Bool
-    }
-
-    case class Cast(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class TryCatch(exp: OccurrenceAst.Expression, rules: List[OccurrenceAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class InvokeMethod(method: Method, exp: OccurrenceAst.Expression, args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class InvokeStaticMethod(method: Method, args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class GetField(field: Field, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class PutField(field: Field, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class GetStaticField(field: Field, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class PutStaticField(field: Field, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Spawn(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class Lazy(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
-    case class Force(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
