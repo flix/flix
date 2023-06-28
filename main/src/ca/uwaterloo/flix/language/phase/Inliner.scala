@@ -374,9 +374,9 @@ object Inliner {
       val es = exps.map(visitExp(_, subst0))
       LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -715,9 +715,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
