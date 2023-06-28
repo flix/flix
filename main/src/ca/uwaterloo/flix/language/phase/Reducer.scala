@@ -132,11 +132,6 @@ object Reducer {
       // TODO AE erasing to unit for now
       ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
-    case LiftedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
-      val op = AtomicOp.GetField(field)
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, purity, loc)
-
     case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val op = AtomicOp.PutField(field)
       val e1 = visitExpr(exp1)

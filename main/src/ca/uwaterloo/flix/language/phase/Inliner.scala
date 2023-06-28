@@ -380,7 +380,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -721,7 +721,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)

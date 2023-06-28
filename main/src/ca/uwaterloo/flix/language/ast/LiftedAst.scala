@@ -86,8 +86,6 @@ object LiftedAst {
       def purity: Purity = Pure
     }
 
-    case class GetField(field: Field, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
     case class PutField(field: Field, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class GetStaticField(field: Field, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
