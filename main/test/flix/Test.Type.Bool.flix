@@ -421,7 +421,7 @@ mod Test.Type.Bool {
     def testMul20(): Bool = isTwo(mul(mul(mkTwo(), mul(mkOne(), mkThree())), mul(mkThree(), mkOne())))
 
     ///
-    /// Flix's type system can be used to prove De Morgan's laws
+    /// Flix's type system can be used to prove laws of propositional calculus.
     ///
     def _deMorgan01(x: B[a], y: B[b]): Bool = mkNot(mkAnd(x, y)) == mkOr(mkNot(x), mkNot(y))
     def _deMorgan02(x: B[a], y: B[b]): Bool = mkNot(mkOr(x, y)) == mkAnd(mkNot(x), mkNot(y))
