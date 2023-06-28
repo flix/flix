@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.Ast.CallType
-import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -44,7 +44,7 @@ object ErasedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          MonoTypePrinter.print(tpe),
+          DocAst.Type.Arrow(Nil, MonoTypePrinter.print(tpe)),
           print(exp)
         )
     }.toList

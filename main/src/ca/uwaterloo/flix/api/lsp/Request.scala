@@ -145,6 +145,11 @@ object Request {
   case class ShowAst(requestId: String, phase: String) extends Request
 
   /**
+    * A request to view available code actions.
+    */
+  case class CodeAction(requestId: String, uri: String, range: Range, context: CodeActionContext) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -434,6 +439,18 @@ object Request {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected projectRootUri: '$s'.")
     }
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[CodeAction]] request.
+    */
+  def parseCodeAction(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      range <- Range.parse(json \ "range")
+      context <- CodeActionContext.parse(json \ "context")
+    } yield Request.CodeAction(id, uri, range, context)
   }
 
 }

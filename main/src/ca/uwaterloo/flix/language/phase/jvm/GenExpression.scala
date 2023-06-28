@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -156,7 +156,7 @@ object GenExpression {
         compileExpr(exp)
 
         sop match {
-          case SemanticOperator.BoolOp.Not =>
+          case SemanticOp.BoolOp.Not =>
             val condElse = new Label()
             val condEnd = new Label()
             mv.visitJumpInsn(IFNE, condElse)
@@ -383,22 +383,6 @@ object GenExpression {
           case Int64Op.Ge => visitComparison2(exp1, exp2, LCMP, IFLT)
 
           case Int64Op.Gt => visitComparison2(exp1, exp2, LCMP, IFLE)
-
-          case StringOp.Eq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
-              AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
-            mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(IF_ICMPNE, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
-
-          case StringOp.Neq =>
-            val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.JavaObject.jvmName.toInternalName, "equals",
-              AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
-            mv.visitInsn(ICONST_1)
-            mv.visitJumpInsn(IF_ICMPEQ, condElse)
-            visitComparisonEpilogue(mv, condElse, condEnd)
 
           case Float32Op.Add =>
             compileExpr(exp1)
@@ -1326,10 +1310,8 @@ object GenExpression {
 
     case Expr.ApplyDef(sym, exps, ct, tpe, loc) => ct match {
       case CallType.TailCall =>
-        // Type of the function
-        val fnType = root.defs(sym).tpe
         // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
+        val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1371,13 +1353,13 @@ object GenExpression {
 
     case Expr.ApplySelfTail(sym, formals, exps, tpe, loc) =>
       // The function abstract class name
-      val functionType = JvmOps.getFunctionInterfaceType(root.defs(sym).tpe)
+      val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
       for ((arg, i) <- exps.zipWithIndex) {
         mv.visitVarInsn(ALOAD, 0)
         // Evaluate the argument and push the result on the stack.
         compileExpr(arg)
-        mv.visitFieldInsn(PUTFIELD, functionType.name.toInternalName,
+        mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
       // Jump to the entry point of the method.

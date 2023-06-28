@@ -39,8 +39,7 @@ object MonoTyper {
     val cs = def0.cparams.map(visitFormalParam)
     val fs = def0.fparams.map(visitFormalParam)
     val s = visitStmt(def0.stmt)
-    val tpe0 = visitType(def0.tpe)
-    val tpe = MonoType.Arrow(fs.map(_.tpe), tpe0)
+    val tpe = visitType(def0.tpe)
     MonoTypedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, s, tpe, def0.loc)
   }
 
@@ -63,12 +62,6 @@ object MonoTyper {
     case ReducedAst.Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       MonoTypedAst.Expr.Var(sym, t, loc)
-
-    case ReducedAst.Expr.Closure(sym, exps, tpe, loc) =>
-      val op = AtomicOp.Closure(sym)
-      val es = exps.map(visitExpr)
-      val t = visitType(tpe)
-      MonoTypedAst.Expr.ApplyAtomic(op, es, t, loc)
 
     case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
       val es = exps.map(visitExpr)

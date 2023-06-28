@@ -89,7 +89,7 @@ object MavenPackageManager {
   def getMavenDependencyStrings(manifest: Manifest): List[String] = {
     manifest.dependencies.collect {
       case dep: MavenDependency => dep
-    }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.version.toString}")
+    }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.versionTag}")
   }
 
   /**

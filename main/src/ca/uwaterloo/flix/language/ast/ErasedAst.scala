@@ -33,6 +33,7 @@ object ErasedAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
+    val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
   }
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: MonoType, loc: SourceLocation)

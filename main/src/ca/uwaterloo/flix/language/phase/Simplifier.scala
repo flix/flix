@@ -209,17 +209,23 @@ object Simplifier {
         }
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.TryWith(_, _, _, _, _, loc) =>
-        // TODO AE temporarily reducing to unit
-        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+      case LoweredAst.Expression.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val rs = rules map {
+          case LoweredAst.HandlerRule(sym, fparams, body) =>
+            val fps = fparams.map(visitFormalParam)
+            val b = visitExp(body)
+            SimplifiedAst.HandlerRule(sym, fps, b)
+        }
+        SimplifiedAst.Expression.TryWith(e, effUse, rs, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Do(_, _, _, _, loc) =>
-        // TODO AE temporarily reducing to unit
-        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+      case LoweredAst.Expression.Do(op, exps, tpe, eff, loc) =>
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.Do(op, es, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Resume(_, _, loc) =>
-        // TODO AE temporarily reducing to unit
-        SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+      case LoweredAst.Expression.Resume(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Resume(e, tpe, loc)
 
       case LoweredAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
@@ -327,11 +333,19 @@ object Simplifier {
     def mkEqual(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       /*
        * Special Case 1: Unit
+       * Special Case 2: String - must be desugared to String.equals
        */
       (e1.tpe.typeConstructor, e2.tpe.typeConstructor) match {
         case (Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
           // Unit is always equal to itself.
           return SimplifiedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+
+        case (Some(TypeConstructor.Str), _) =>
+          val strClass = Class.forName("java.lang.String")
+          val objClass = Class.forName("java.lang.Object")
+          val method = strClass.getMethod("equals", objClass)
+          return SimplifiedAst.Expression.InvokeMethod(method, e1, List(e2), Type.Bool, combine(e1.purity, e2.purity), loc)
+
         case _ => // fallthrough
       }
 
@@ -339,15 +353,14 @@ object Simplifier {
        * Compute the semantic operator.
        */
       val sop = e1.tpe.typeConstructor match {
-        case Some(TypeConstructor.Bool) => SemanticOperator.BoolOp.Eq
-        case Some(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
-        case Some(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
-        case Some(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
-        case Some(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
-        case Some(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
-        case Some(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
-        case Some(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
-        case Some(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
+        case Some(TypeConstructor.Bool) => SemanticOp.BoolOp.Eq
+        case Some(TypeConstructor.Char) => SemanticOp.CharOp.Eq
+        case Some(TypeConstructor.Float32) => SemanticOp.Float32Op.Eq
+        case Some(TypeConstructor.Float64) => SemanticOp.Float64Op.Eq
+        case Some(TypeConstructor.Int8) => SemanticOp.Int8Op.Eq
+        case Some(TypeConstructor.Int16) => SemanticOp.Int16Op.Eq
+        case Some(TypeConstructor.Int32) => SemanticOp.Int32Op.Eq
+        case Some(TypeConstructor.Int64) => SemanticOp.Int64Op.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)
@@ -673,6 +686,23 @@ object Simplifier {
             SimplifiedAst.CatchRule(sym, clazz, b)
         }
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
+
+      case SimplifiedAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+        val e = visitExp(exp)
+        val rs = rules map {
+          case SimplifiedAst.HandlerRule(sym, fparams, body) =>
+            val b = visitExp(body)
+            SimplifiedAst.HandlerRule(sym, fparams, b)
+        }
+        SimplifiedAst.Expression.TryWith(e, effUse, rs, tpe, purity, loc)
+
+      case SimplifiedAst.Expression.Do(op, exps, tpe, purity, loc) =>
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.Do(op, es, tpe, purity, loc)
+
+      case SimplifiedAst.Expression.Resume(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Resume(e, tpe, loc)
 
       case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
         val as = args.map(visitExp)
