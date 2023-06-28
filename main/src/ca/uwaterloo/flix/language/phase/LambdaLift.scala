@@ -268,7 +268,7 @@ object LambdaLift {
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Assign, List(e1, e2), tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.InstanceOf(exp, clazz, loc) =>
         val e = visitExp(exp)

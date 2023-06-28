@@ -76,10 +76,6 @@ object LiftedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Assign(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
-      def purity: Purity = Impure
-    }
-
     case class InstanceOf(exp: LiftedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = exp.purity
 
