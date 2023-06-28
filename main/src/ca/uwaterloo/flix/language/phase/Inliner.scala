@@ -387,7 +387,8 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) => LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
+    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -728,7 +729,8 @@ object Inliner {
       val e2 = substituteExp(exp2, env0)
       LiftedAst.Expression.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) => LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
+    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, tpe, purity, loc)
 
     case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

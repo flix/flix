@@ -144,9 +144,6 @@ object LateTreeShaker {
     case Expression.Resume(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.GetStaticField(_, _, _, _) =>
-      Set.empty
-
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
