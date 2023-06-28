@@ -76,8 +76,6 @@ object OccurrenceAst {
 
     case class TryCatch(exp: OccurrenceAst.Expression, rules: List[OccurrenceAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class GetStaticField(field: Field, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
     case class PutStaticField(field: Field, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
