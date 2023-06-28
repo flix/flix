@@ -260,6 +260,8 @@ object OccurrenceAnalyzer {
 
         case AtomicOp.GetStaticField(field) => (OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc), OccurInfo.One)
 
+        case AtomicOp.PutStaticField(field) => (OccurrenceAst.Expression.PutStaticField(field, es.head, tpe, purity, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -371,10 +373,6 @@ object OccurrenceAnalyzer {
     case Expression.Resume(exp, tpe, loc) =>
       // TODO AE erasing to unit for now
       (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
-
-    case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-      val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.PutStaticField(field, e, tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {
