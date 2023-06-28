@@ -262,6 +262,10 @@ object OccurrenceAnalyzer {
 
         case AtomicOp.PutStaticField(field) => (OccurrenceAst.Expression.PutStaticField(field, es.head, tpe, purity, loc), o.increaseSizeByOne())
 
+        case AtomicOp.Spawn =>
+          val List(e1, e2) = es
+          (OccurrenceAst.Expression.Spawn(e1, e2, tpe, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -386,12 +390,6 @@ object OccurrenceAnalyzer {
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
-
-    case Expression.Spawn(exp1, exp2, tpe, loc) =>
-      val (e1, o1) = visitExp(sym0, exp1)
-      val (e2, o2) = visitExp(sym0, exp2)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.Spawn(e1, e2, tpe, loc), o3.increaseSizeByOne())
 
     case Expression.Lazy(exp, tpe, loc) =>
       val (e, o1) = visitExp(sym0, exp)

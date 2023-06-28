@@ -82,7 +82,6 @@ object LiftedAstPrinter {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), TypePrinter.print(retTpe))
     })
-    case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
     case Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
     case Force(exp, _, _) => DocAst.Expression.Force(print(exp))
     case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
@@ -184,6 +183,10 @@ object LiftedAstPrinter {
       case AtomicOp.GetStaticField(field) => DocAst.Expression.JavaGetStaticField(field)
 
       case AtomicOp.PutStaticField(field) => DocAst.Expression.JavaPutStaticField(field, es.head)
+
+      case AtomicOp.Spawn =>
+        val List(e1, e2) = es
+        DocAst.Expression.Spawn(e1, e2)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }

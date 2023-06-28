@@ -136,12 +136,6 @@ object Reducer {
       val ms = methods.map(visitJvmMethod)
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
 
-    case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
-      val op = AtomicOp.Spawn
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, Purity.Impure, loc)
-
     case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
       val op = AtomicOp.Lazy
       val e = visitExpr(exp)
