@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
   * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
@@ -120,7 +120,7 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expression.ApplyDefTail(_, _, _, _, _) => true
       case OccurrenceAst.Expression.ApplyCloTail(clo, _, _, _, _) =>
         clo match {
-          case OccurrenceAst.Expression.Closure(_, _, _, _) => true
+          case OccurrenceAst.Expression.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
           case _ => false
         }
       case _ => false
@@ -156,122 +156,11 @@ object OccurrenceAnalyzer {
 
     case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val (es, o) = visitExps(sym0, exps)
-
-      op match { // Will be removed later
-        case AtomicOp.Closure(sym) => (OccurrenceAst.Expression.Closure(sym, es, tpe, loc), o)
-
-        case AtomicOp.Unary(sop) => (OccurrenceAst.Expression.Unary(sop, es.head, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Binary(sop) =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.Binary(sop, e1, e2, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Region => (OccurrenceAst.Expression.Region(tpe, loc), OccurInfo.One)
-
-        case AtomicOp.ScopeExit =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.ScopeExit(e1, e2, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Is(sym) if sym.name == "Choice" =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
-
-        case AtomicOp.Is(sym) =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Is(sym, e, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Tag(sym) =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Tag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Untag(sym) =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Untag(sym, e, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Index(idx) =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Index(e, idx, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Tuple => (OccurrenceAst.Expression.Tuple(es, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.RecordEmpty => (OccurrenceAst.Expression.RecordEmpty(tpe, loc), OccurInfo.One)
-
-        case AtomicOp.RecordSelect(field) =>
-          val List(e) = es
-          (OccurrenceAst.Expression.RecordSelect(e, field, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.RecordExtend(field) =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.RecordExtend(field, e1, e2, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.RecordRestrict(field) =>
-          val List(e) = es
-          (OccurrenceAst.Expression.RecordRestrict(field, e, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.ArrayLit => (OccurrenceAst.Expression.ArrayLit(es, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.ArrayNew =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.ArrayNew(e1, e2, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.ArrayLoad =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.ArrayLoad(e1, e2, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.ArrayStore =>
-          val List(e1, e2, e3) = es
-          (OccurrenceAst.Expression.ArrayStore(e1, e2, e3, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.ArrayLength =>
-          val List(e) = es
-          (OccurrenceAst.Expression.ArrayLength(e, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Ref =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Ref(e, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Deref =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Deref(e, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Assign =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.Assign(e1, e2, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.InstanceOf(clazz) =>
-          val List(e) = es
-          (OccurrenceAst.Expression.InstanceOf(e, clazz, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Cast =>
-          val List(e) = es
-          (OccurrenceAst.Expression.Cast(e, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.InvokeConstructor(constructor) => (OccurrenceAst.Expression.InvokeConstructor(constructor, es, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.InvokeMethod(method) => (OccurrenceAst.Expression.InvokeMethod(method, es.head, es.tail, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.InvokeStaticMethod(method) => (OccurrenceAst.Expression.InvokeStaticMethod(method, es, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.GetField(field) => (OccurrenceAst.Expression.GetField(field, es.head, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.PutField(field) =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.PutField(field, e1, e2, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.GetStaticField(field) => (OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc), OccurInfo.One)
-
-        case AtomicOp.PutStaticField(field) => (OccurrenceAst.Expression.PutStaticField(field, es.head, tpe, purity, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Spawn =>
-          val List(e1, e2) = es
-          (OccurrenceAst.Expression.Spawn(e1, e2, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Lazy => (OccurrenceAst.Expression.Lazy(es.head, tpe, loc), o.increaseSizeByOne())
-
-        case AtomicOp.Force => (OccurrenceAst.Expression.Force(es.head, tpe, loc), o.increaseSizeByOne())
-
-        case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
+      val o1 = op match {
+        case AtomicOp.Is(sym) if sym.name == "Choice" => o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne()
+        case _ => o.increaseSizeByOne()
       }
+      (OccurrenceAst.Expression.ApplyAtomic(op, es, tpe, purity, loc), o1)
 
     case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
