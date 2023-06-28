@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
 
-object OperatorPrinter {
+object OpPrinter {
 
   private val and = "and"
   private val div = "/"
@@ -172,7 +172,7 @@ object OperatorPrinter {
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError
 
-    case (AtomicOp.Unary(sop), List(d)) => Unary(OperatorPrinter.print(sop), d)
+    case (AtomicOp.Unary(sop), List(d)) => Unary(OpPrinter.print(sop), d)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
     case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
     case (AtomicOp.Untag(sym), List(d)) => Untag(sym, d)

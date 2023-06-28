@@ -109,11 +109,11 @@ object LiftedAstPrinter {
     op match { // Will be removed
       case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, es)
 
-      case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OperatorPrinter.print(sop), es.head)
+      case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OpPrinter.print(sop), es.head)
 
       case AtomicOp.Binary(sop) =>
         val List(e1, e2) = es
-        DocAst.Expression.Binary(e1, OperatorPrinter.print(sop), e2)
+        DocAst.Expression.Binary(e1, OpPrinter.print(sop), e2)
 
       case AtomicOp.Region => DocAst.Expression.Region
 
