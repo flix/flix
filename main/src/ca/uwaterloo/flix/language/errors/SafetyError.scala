@@ -26,7 +26,7 @@ object SafetyError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Non Tail Recursive Call Error
+         |>> Could not optimize @tailrec annotated method.
          |
          |${code(loc, "not in tail call position")}
          |
