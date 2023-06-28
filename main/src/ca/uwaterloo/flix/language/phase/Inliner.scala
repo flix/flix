@@ -260,10 +260,6 @@ object Inliner {
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
-      val r = visitExp(rest, subst0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(r), tpe, purity, loc)
-
     case OccurrenceAst.Expression.ArrayLit(exps, tpe, loc) =>
       val es = exps.map(visitExp(_, subst0))
       LiftedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
@@ -566,10 +562,6 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
-      val r = substituteExp(rest, env0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(r), tpe, purity, loc)
 
     case OccurrenceAst.Expression.ArrayLit(exps, tpe, loc) =>
       val es = exps.map(substituteExp(_, env0))
