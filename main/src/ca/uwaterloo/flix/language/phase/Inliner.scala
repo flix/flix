@@ -405,14 +405,11 @@ object Inliner {
 
       op match {
         case AtomicOp.Unary(sop) =>
-          val List(exp) = exps
-          val e = substituteExp(exp, env0)
+          val List(e) = es
           unaryFold(sop, e, tpe, purity, loc)
 
         case AtomicOp.Binary(sop) =>
-          val List(exp1, exp2) = exps
-          val e1 = substituteExp(exp1, env0)
-          val e2 = substituteExp(exp2, env0)
+          val List(e1, e2) = es
           binaryFold(sop, e1, e2, tpe, purity, loc)
 
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
