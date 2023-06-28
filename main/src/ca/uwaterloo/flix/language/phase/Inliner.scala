@@ -269,11 +269,6 @@ object Inliner {
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      val es = exps.map(visitExp(_, subst0))
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, purity, loc)
-
     case OccurrenceAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, tpe, purity, loc)
@@ -523,11 +518,6 @@ object Inliner {
           LiftedAst.CatchRule(freshVar, clazz, e)
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.InvokeStaticMethod(method, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
