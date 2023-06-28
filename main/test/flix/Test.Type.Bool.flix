@@ -426,6 +426,15 @@ mod Test.Type.Bool {
     def _deMorgan01(x: B[a], y: B[b]): Bool = mkNot(mkAnd(x, y)) == mkOr(mkNot(x), mkNot(y))
     def _deMorgan02(x: B[a], y: B[b]): Bool = mkNot(mkOr(x, y)) == mkAnd(mkNot(x), mkNot(y))
 
+    def _assoc01(x: B[a], y: B[b], z: B[c]): Bool = mkOr(x, mkOr(y, z)) == mkOr(mkOr(x, y), z)
+    def _assoc02(x: B[a], y: B[b], z: B[c]): Bool = mkAnd(x, mkAnd(y, z)) == mkAnd(mkAnd(x, y), z)
+
+    def _distr01(x: B[a], y: B[b], z: B[c]): Bool = mkAnd(x, mkOr(y, z)) == mkOr(mkAnd(x, y), mkAnd(x, z))
+    def _distr02(x: B[a], y: B[b], z: B[c]): Bool = mkOr(x, mkAnd(y, z)) == mkAnd(mkOr(x, y), mkOr(x, z))
+
+    def _tautologyAnd(x: B[a]): Bool = x == mkAnd(x, x)
+    def _tautologyOr(x: B[a]): Bool = x == mkOr(x, x)
+
     def assertEqual(_: B[a], _: B[a]): Bool = true
     def assertTrue(_: B[true]): Bool = true
     def assertFalse(_: B[false]): Bool = true
