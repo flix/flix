@@ -132,9 +132,6 @@ object LateTreeShaker {
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.InstanceOf(exp, _, _) =>
-      visitExp(exp)
-
     case Expression.Cast(exp, _, _, _) =>
       visitExp(exp)
 
