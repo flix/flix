@@ -412,7 +412,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Lazy(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -754,7 +754,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Lazy(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Lazy(e, tpe, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
 
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)

@@ -147,9 +147,6 @@ object LateTreeShaker {
     case Expression.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
-    case Expression.Lazy(exp, _, _) =>
-      visitExp(exp)
-
     case Expression.Force(exp, _, _) =>
       visitExp(exp)
 

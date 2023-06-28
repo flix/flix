@@ -266,6 +266,8 @@ object OccurrenceAnalyzer {
           val List(e1, e2) = es
           (OccurrenceAst.Expression.Spawn(e1, e2, tpe, loc), o.increaseSizeByOne())
 
+        case AtomicOp.Lazy => (OccurrenceAst.Expression.Lazy(es.head, tpe, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -390,10 +392,6 @@ object OccurrenceAnalyzer {
       }.unzip
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
-
-    case Expression.Lazy(exp, tpe, loc) =>
-      val (e, o1) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Lazy(e, tpe, loc), o1.increaseSizeByOne())
 
     case Expression.Force(exp, tpe, loc) =>
       val (e, o1) = visitExp(sym0, exp)

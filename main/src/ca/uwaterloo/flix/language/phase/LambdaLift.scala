@@ -345,7 +345,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Lazy(e, tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
