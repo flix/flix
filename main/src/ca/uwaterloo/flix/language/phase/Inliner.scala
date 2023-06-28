@@ -793,7 +793,6 @@ object Inliner {
       }
   }
 
-
   /**
     * Helper function for dealing with [[AtomicOp]].
     * Returns `true` if `sym` is an enum with one case and `exps` is pure.
@@ -805,5 +804,4 @@ object Inliner {
         enum0.cases.size == 1 && e.purity == Pure
       case _ => false
     }
-
 }
