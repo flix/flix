@@ -333,11 +333,17 @@ object Simplifier {
     def mkEqual(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       /*
        * Special Case 1: Unit
+       * Special Case 2: String - must be desugared to String.equals
        */
       (e1.tpe.typeConstructor, e2.tpe.typeConstructor) match {
         case (Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
           // Unit is always equal to itself.
           return SimplifiedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+
+        case (Some(TypeConstructor.Str), _) =>
+          val method = Class.forName("String").getMethod("equals")
+          return SimplifiedAst.Expression.InvokeStaticMethod(method, List(e1, e2), Type.Bool, combine(e1.purity, e2.purity), loc)
+
         case _ => // fallthrough
       }
 
