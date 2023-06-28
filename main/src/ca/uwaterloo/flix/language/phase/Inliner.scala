@@ -354,7 +354,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Cast(e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Cast, List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -693,7 +693,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Cast(e, tpe, purity, loc)
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.Cast, List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

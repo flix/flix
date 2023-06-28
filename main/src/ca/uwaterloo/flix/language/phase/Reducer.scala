@@ -111,11 +111,6 @@ object Reducer {
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.Cast(exp, tpe, purity, loc) =>
-      val op = AtomicOp.Cast
-      val e = visitExpr(exp)
-      ReducedAst.Expr.ApplyAtomic(op, List(e), tpe, purity, loc)
-
     case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val rs = rules map {

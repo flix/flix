@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -57,7 +57,7 @@ object LiftedAstPrinter {
   def print(e: LiftedAst.Expression): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, _, _, _) => printAtomic(op, exps)
+    case ApplyAtomic(op, exps, tpe, _, _) => printAtomic(op, exps, tpe)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case ApplyCloTail(exp, args, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
@@ -69,7 +69,6 @@ object LiftedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Cast(exp, tpe, _, _) => DocAst.Expression.Cast(print(exp), TypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
@@ -114,7 +113,7 @@ object LiftedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op` and `exps`.
     */
-  private def printAtomic(op: AtomicOp, exps: List[Expression]): DocAst.Expression = {
+  private def printAtomic(op: AtomicOp, exps: List[Expression], tpe: Type): DocAst.Expression = {
     val es = exps.map(print)
 
     op match { // Will be removed
@@ -174,6 +173,8 @@ object LiftedAstPrinter {
         DocAst.Expression.Assign(e1, e2)
 
       case AtomicOp.InstanceOf(clazz) => DocAst.Expression.InstanceOf(es.head, clazz)
+
+      case AtomicOp.Cast => DocAst.Expression.Cast(es.head, TypePrinter.print(tpe))
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
     }
