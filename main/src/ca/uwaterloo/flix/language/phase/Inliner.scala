@@ -269,10 +269,6 @@ object Inliner {
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), tpe, purity, loc)
-
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
         case OccurrenceAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
@@ -502,10 +498,6 @@ object Inliner {
           LiftedAst.CatchRule(freshVar, clazz, e)
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
