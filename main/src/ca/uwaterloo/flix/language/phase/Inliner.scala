@@ -402,7 +402,6 @@ object Inliner {
 
     case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
-
       op match {
         case AtomicOp.Unary(sop) =>
           val List(e) = es
@@ -413,7 +412,6 @@ object Inliner {
           binaryFold(sop, e1, e2, tpe, purity, loc)
 
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
-
       }
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
