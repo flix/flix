@@ -246,6 +246,8 @@ object OccurrenceAnalyzer {
           val List(e) = es
           (OccurrenceAst.Expression.Cast(e, tpe, purity, loc), o.increaseSizeByOne())
 
+        case AtomicOp.InvokeConstructor(constructor) => (OccurrenceAst.Expression.InvokeConstructor(constructor, es, tpe, purity, loc), o.increaseSizeByOne())
+
         case _ => throw InternalCompilerException("Unexpected AtomicOp", loc)
       }
 
@@ -357,10 +359,6 @@ object OccurrenceAnalyzer {
     case Expression.Resume(exp, tpe, loc) =>
       // TODO AE erasing to unit for now
       (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
-
-    case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-      val (as, o) = visitExps(sym0, args)
-      (OccurrenceAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc), o.increaseSizeByOne())
 
     case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)

@@ -365,9 +365,9 @@ object Inliner {
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -706,9 +706,9 @@ object Inliner {
       }
       LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

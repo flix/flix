@@ -132,11 +132,6 @@ object Reducer {
       // TODO AE erasing to unit for now
       ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
-    case LiftedAst.Expression.InvokeConstructor(constructor, exps, tpe, purity, loc) =>
-      val op = AtomicOp.InvokeConstructor(constructor)
-      val es = exps.map(visitExpr)
-      ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-
     case LiftedAst.Expression.InvokeMethod(method, exp, exps, tpe, purity, loc) =>
       val op = AtomicOp.InvokeMethod(method)
       val e = visitExpr(exp)

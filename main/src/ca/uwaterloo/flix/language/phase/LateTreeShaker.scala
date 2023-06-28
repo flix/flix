@@ -144,9 +144,6 @@ object LateTreeShaker {
     case Expression.Resume(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
-      visitExps(args)
-
     case Expression.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
 
