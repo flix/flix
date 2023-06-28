@@ -74,10 +74,6 @@ object OccurrenceAst {
 
     case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Assign(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
     case class InstanceOf(exp: OccurrenceAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = exp.purity
 
