@@ -154,7 +154,6 @@ object OccurrenceAnalyzer {
 
     case Expression.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
-
     case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val (es, o) = visitExps(sym0, exps)
       val o1 = op match {
