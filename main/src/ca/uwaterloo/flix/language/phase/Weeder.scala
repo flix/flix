@@ -2707,6 +2707,18 @@ object Weeder {
         case (t1, t2) => WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Type.Xor(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val t1Val = visitType(tpe1)
+      val t2Val = visitType(tpe2)
+      val loc = mkSL(sp1, sp2)
+      mapN(t1Val, t2Val) {
+        case (t1, t2) =>
+          val l = WeededAst.Type.And(t1, WeededAst.Type.Not(t2, loc), loc)
+          val r = WeededAst.Type.And(WeededAst.Type.Not(t1, loc), t2, loc)
+          WeededAst.Type.Or(l, r, loc)
+      }
+
     case ParsedAst.Type.Complement(sp1, tpe, sp2) =>
       val tVal = visitType(tpe)
       mapN(tVal) {
@@ -3380,6 +3392,7 @@ object Weeder {
     case ParsedAst.Type.Not(sp1, _, _) => sp1
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Xor(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Complement(sp1, _, _) => sp1
     case ParsedAst.Type.Difference(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
