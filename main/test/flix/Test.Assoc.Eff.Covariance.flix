@@ -22,7 +22,7 @@
     instance Functor[MutList[r]] {
         type Eff[MutList[r]] = r // Accessing a mutable list has an effect in its region.
 
-        pub def map(f: a -> b \ ef, x: MutList[r, a]): MutList[r, b] \ ef = checked_ecast(???)
+        pub def map(f: a -> b \ ef, x: MutList[r, a]): MutList[r, b] \ (ef + r) = checked_ecast(???)
     }
 
 }
