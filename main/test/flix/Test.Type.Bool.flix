@@ -163,262 +163,431 @@ mod Test.Type.Bool {
     }
 
     @Test
-    def testTwoBitInt01(): Bool = isZero(mkZero())
+    def testTwoBitInt01(): Bool = isZero2(mkZero2())
 
     @Test
-    def testTwoBitInt02(): Bool = isOne(mkOne())
+    def test2BitInt02(): Bool = isOne2(mkOne2())
 
     @Test
-    def testTwoBitInt03(): Bool = isTwo(mkTwo())
+    def test2BitInt03(): Bool = isTwo2(mkTwo2())
 
     @Test
-    def testTwoBitInt04(): Bool = isThree(mkThree())
+    def test2BitInt04(): Bool = isThree2(mkThree2())
 
     @Test
-    def testBitwiseNot01(): Bool = isZero(bitwiseNot(mkThree()))
+    def test2BitwiseNot01(): Bool = isZero2(bitwiseNot2(mkThree2()))
 
     @Test
-    def testBitwiseNot02(): Bool = isOne(bitwiseNot(mkTwo()))
+    def test2BitwiseNot02(): Bool = isOne2(bitwiseNot2(mkTwo2()))
 
     @Test
-    def testBitwiseNot03(): Bool = isTwo(bitwiseNot(mkOne()))
+    def test2BitwiseNot03(): Bool = isTwo2(bitwiseNot2(mkOne2()))
 
     @Test
-    def testBitwiseNot04(): Bool = isThree(bitwiseNot(mkZero()))
+    def test2BitwiseNot04(): Bool = isThree2(bitwiseNot2(mkZero2()))
 
     @Test
-    def testBitwiseNot05(): Bool = isZero(bitwiseNot(bitwiseNot(mkZero())))
+    def test2BitwiseNot05(): Bool = isZero2(bitwiseNot2(bitwiseNot2(mkZero2())))
 
     @Test
-    def testBitwiseNot06(): Bool = isThree(bitwiseNot(bitwiseNot(mkThree())))
+    def test2BitwiseNot06(): Bool = isThree2(bitwiseNot2(bitwiseNot2(mkThree2())))
 
     @Test
-    def testBitwiseAnd01(): Bool = isZero(bitwiseAnd(mkThree(), mkZero()))
+    def test2BitwiseAnd01(): Bool = isZero2(bitwiseAnd2(mkThree2(), mkZero2()))
 
     @Test
-    def testBitwiseAnd02(): Bool = isZero(bitwiseAnd(mkZero(), mkThree()))
+    def test2BitwiseAnd02(): Bool = isZero2(bitwiseAnd2(mkZero2(), mkThree2()))
 
     @Test
-    def testBitwiseAnd03(): Bool = isZero(bitwiseAnd(mkOne(), mkTwo()))
+    def test2BitwiseAnd03(): Bool = isZero2(bitwiseAnd2(mkOne2(), mkTwo2()))
 
     @Test
-    def testBitwiseAnd04(): Bool = isOne(bitwiseAnd(mkOne(), mkThree()))
+    def test2BitwiseAnd04(): Bool = isOne2(bitwiseAnd2(mkOne2(), mkThree2()))
 
     @Test
-    def testBitwiseAnd05(): Bool = isTwo(bitwiseAnd(mkThree(), mkTwo()))
+    def test2BitwiseAnd05(): Bool = isTwo2(bitwiseAnd2(mkThree2(), mkTwo2()))
 
     @Test
-    def testBitwiseAnd06(): Bool = isThree(bitwiseAnd(mkThree(), mkThree()))
+    def test2BitwiseAnd06(): Bool = isThree2(bitwiseAnd2(mkThree2(), mkThree2()))
 
     @Test
-    def testBitwiseOr01(): Bool = isZero(bitwiseOr(mkZero(), mkZero()))
+    def test2BitwiseOr01(): Bool = isZero2(bitwiseOr2(mkZero2(), mkZero2()))
 
     @Test
-    def testBitwiseOr02(): Bool = isOne(bitwiseOr(mkZero(), mkOne()))
+    def test2BitwiseOr02(): Bool = isOne2(bitwiseOr2(mkZero2(), mkOne2()))
 
     @Test
-    def testBitwiseOr03(): Bool = isThree(bitwiseOr(mkOne(), mkTwo()))
+    def test2BitwiseOr03(): Bool = isThree2(bitwiseOr2(mkOne2(), mkTwo2()))
 
     @Test
-    def testBitwiseOr04(): Bool = isThree(bitwiseOr(mkTwo(), mkOne()))
+    def test2BitwiseOr04(): Bool = isThree2(bitwiseOr2(mkTwo2(), mkOne2()))
 
     @Test
-    def testBitwiseOr05(): Bool = isThree(bitwiseOr(mkThree(), mkZero()))
+    def test2BitwiseOr05(): Bool = isThree2(bitwiseOr2(mkThree2(), mkZero2()))
 
     @Test
-    def testBitwiseOr06(): Bool = isThree(bitwiseOr(mkZero(), mkThree()))
+    def test2BitwiseOr06(): Bool = isThree2(bitwiseOr2(mkZero2(), mkThree2()))
 
     @Test
-    def testBitwiseOr07(): Bool = isThree(bitwiseOr(mkThree(), mkOne()))
+    def test2BitwiseOr07(): Bool = isThree2(bitwiseOr2(mkThree2(), mkOne2()))
 
     @Test
-    def testBitwiseOr08(): Bool = isThree(bitwiseOr(mkTwo(), mkThree()))
+    def test2BitwiseOr08(): Bool = isThree2(bitwiseOr2(mkTwo2(), mkThree2()))
 
     @Test
-    def testSwap01(): Bool = isZero(swap(mkZero()))
+    def test2Swap01(): Bool = isZero2(swap2(mkZero2()))
 
     @Test
-    def testSwap02(): Bool = isTwo(swap(mkOne()))
+    def test2Swap02(): Bool = isTwo2(swap2(mkOne2()))
 
     @Test
-    def testSwap03(): Bool = isOne(swap(mkTwo()))
+    def test2Swap03(): Bool = isOne2(swap2(mkTwo2()))
 
     @Test
-    def testSwap04(): Bool = isThree(swap(mkThree()))
+    def test2Swap04(): Bool = isThree2(swap2(mkThree2()))
 
     @Test
-    def testNestedBitwiseNotAndOr01(): Bool =
-      isThree(bitwiseOr(bitwiseAnd(mkThree(), mkOne()), bitwiseNot(mkOne())))
+    def test2NestedBitwiseNotAndOr01(): Bool =
+      isThree2(bitwiseOr2(bitwiseAnd2(mkThree2(), mkOne2()), bitwiseNot2(mkOne2())))
 
     @Test
-    def testNestedBitwiseNotAndOr02(): Bool =
-      isThree(bitwiseOr(bitwiseAnd(mkThree(), bitwiseNot(mkThree())), mkThree()))
+    def test2NestedBitwiseNotAndOr02(): Bool =
+      isThree2(bitwiseOr2(bitwiseAnd2(mkThree2(), bitwiseNot2(mkThree2())), mkThree2()))
 
     @Test
-    def testNestedBitwiseNotAndOr03(): Bool =
-      isTwo(bitwiseAnd(bitwiseOr(mkThree(), mkOne()), bitwiseNot(bitwiseNot(mkTwo()))))
+    def test2NestedBitwiseNotAndOr03(): Bool =
+      isTwo2(bitwiseAnd2(bitwiseOr2(mkThree2(), mkOne2()), bitwiseNot2(bitwiseNot2(mkTwo2()))))
 
     @Test
-    def testNestedBitwiseNotAndOr04(): Bool =
-      isZero(bitwiseNot(bitwiseAnd(bitwiseOr(mkThree(), mkZero()), mkThree())))
+    def test2NestedBitwiseNotAndOr04(): Bool =
+      isZero2(bitwiseNot2(bitwiseAnd2(bitwiseOr2(mkThree2(), mkZero2()), mkThree2())))
 
     @Test
-    def testNestedBitwiseNotAndOr05(): Bool =
-      isThree(bitwiseNot(bitwiseAnd(bitwiseAnd(mkThree(), mkTwo()), bitwiseAnd(mkOne(), mkTwo()))))
+    def test2NestedBitwiseNotAndOr05(): Bool =
+      isThree2(bitwiseNot2(bitwiseAnd2(bitwiseAnd2(mkThree2(), mkTwo2()), bitwiseAnd2(mkOne2(), mkTwo2()))))
 
     @Test
-    def testNestedBitwiseNotAndOr06(): Bool =
-      isThree(bitwiseOr(bitwiseOr(mkThree(), mkZero()), bitwiseOr(bitwiseNot(mkTwo()), mkTwo())))
+    def test2NestedBitwiseNotAndOr06(): Bool =
+      isThree2(bitwiseOr2(bitwiseOr2(mkThree2(), mkZero2()), bitwiseOr2(bitwiseNot2(mkTwo2()), mkTwo2())))
 
     @Test
-    def testNestedBitwiseNotAndOr07(): Bool = {
-      let three = bitwiseOr(bitwiseAnd(mkThree(), mkOne()), mkTwo());
-      let two = bitwiseAnd(bitwiseOr(mkThree(), mkOne()), mkTwo());
-      let one = bitwiseAnd(bitwiseNot(mkTwo()), bitwiseNot(bitwiseNot(mkThree())));
-      let zero = bitwiseAnd(three, bitwiseAnd(two, bitwiseAnd(one, mkZero())));
-      isThree(bitwiseNot(bitwiseAnd(zero, bitwiseOr(one, bitwiseOr(two, three)))))
+    def test2NestedBitwiseNotAndOr07(): Bool = {
+      let three = bitwiseOr2(bitwiseAnd2(mkThree2(), mkOne2()), mkTwo2());
+      let two = bitwiseAnd2(bitwiseOr2(mkThree2(), mkOne2()), mkTwo2());
+      let one = bitwiseAnd2(bitwiseNot2(mkTwo2()), bitwiseNot2(bitwiseNot2(mkThree2())));
+      let zero = bitwiseAnd2(three, bitwiseAnd2(two, bitwiseAnd2(one, mkZero2())));
+      isThree2(bitwiseNot2(bitwiseAnd2(zero, bitwiseOr2(one, bitwiseOr2(two, three)))))
     }
 
     @Test
-    def testInc01(): Bool = isOne(inc(mkZero()))
+    def test2inc01(): Bool = isOne2(inc2(mkZero2()))
 
     @Test
-    def testInc02(): Bool = isTwo(inc(mkOne()))
+    def test2inc02(): Bool = isTwo2(inc2(mkOne2()))
 
     @Test
-    def testInc03(): Bool = isThree(inc(mkTwo()))
+    def test2inc03(): Bool = isThree2(inc2(mkTwo2()))
 
     @Test
-    def testInc04(): Bool = isZero(inc(mkThree()))
+    def test2inc04(): Bool = isZero2(inc2(mkThree2()))
 
     @Test
-    def testInc05(): Bool = isTwo(inc(inc(mkZero())))
+    def test2inc05(): Bool = isTwo2(inc2(inc2(mkZero2())))
 
     @Test
-    def testInc06(): Bool = isOne(inc(inc(inc(mkTwo()))))
+    def test2inc06(): Bool = isOne2(inc2(inc2(inc2(mkTwo2()))))
 
     @Test
-    def testInc07(): Bool = isZero(inc(inc(inc(inc(mkZero())))))
+    def test2inc07(): Bool = isZero2(inc2(inc2(inc2(inc2(mkZero2())))))
 
     @Test
-    def testAdd01(): Bool = isZero(add(mkZero(), mkZero()))
+    def test2Add01(): Bool = isZero2(add2(mkZero2(), mkZero2()))
 
     @Test
-    def testAdd02(): Bool = isOne(add(mkZero(), mkOne()))
+    def test2Add02(): Bool = isOne2(add2(mkZero2(), mkOne2()))
 
     @Test
-    def testAdd03(): Bool = isOne(add(mkOne(), mkZero()))
+    def test2Add03(): Bool = isOne2(add2(mkOne2(), mkZero2()))
 
     @Test
-    def testAdd04(): Bool = isZero(add(mkTwo(), mkTwo()))
+    def test2Add04(): Bool = isZero2(add2(mkTwo2(), mkTwo2()))
 
     @Test
-    def testAdd05(): Bool = isThree(add(mkTwo(), mkOne()))
+    def test2Add05(): Bool = isThree2(add2(mkTwo2(), mkOne2()))
 
     @Test
-    def testAdd06(): Bool = isThree(add(mkOne(), mkTwo()))
+    def test2Add06(): Bool = isThree2(add2(mkOne2(), mkTwo2()))
 
     @Test
-    def testAdd07(): Bool = isOne(add(mkThree(), mkTwo()))
+    def test2Add07(): Bool = isOne2(add2(mkThree2(), mkTwo2()))
 
     @Test
-    def testAdd08(): Bool = isOne(add(mkTwo(), mkThree()))
+    def test2Add08(): Bool = isOne2(add2(mkTwo2(), mkThree2()))
 
     @Test
-    def testAdd09(): Bool = isZero(add(mkThree(), mkOne()))
+    def test2Add09(): Bool = isZero2(add2(mkThree2(), mkOne2()))
 
     @Test
-    def testAdd10(): Bool = isZero(add(mkOne(), mkThree()))
+    def test2Add10(): Bool = isZero2(add2(mkOne2(), mkThree2()))
 
     @Test
-    def testAdd11(): Bool = isThree(add(mkThree(), mkZero()))
+    def test2Add11(): Bool = isThree2(add2(mkThree2(), mkZero2()))
 
     @Test
-    def testAdd12(): Bool = isThree(add(mkZero(), mkThree()))
+    def test2Add12(): Bool = isThree2(add2(mkZero2(), mkThree2()))
 
     @Test
-    def testAdd13(): Bool = isOne(add(mkThree(), add(mkThree(), mkThree())))
+    def test2Add13(): Bool = isOne2(add2(mkThree2(), add2(mkThree2(), mkThree2())))
 
     @Test
-    def testAdd14(): Bool = isOne(add(add(mkThree(), mkThree()), mkThree()))
+    def test2Add14(): Bool = isOne2(add2(add2(mkThree2(), mkThree2()), mkThree2()))
 
     @Test
-    def testAdd15(): Bool = isTwo(add(mkTwo(), add(mkTwo(), mkTwo())))
+    def test2Add15(): Bool = isTwo2(add2(mkTwo2(), add2(mkTwo2(), mkTwo2())))
 
     @Test
-    def testAdd16(): Bool = isTwo(add(add(mkTwo(), mkTwo()), mkTwo()))
+    def test2Add16(): Bool = isTwo2(add2(add2(mkTwo2(), mkTwo2()), mkTwo2()))
 
     @Test
-    def testAdd17(): Bool = isTwo(add(add(mkZero(), mkOne()), add(mkTwo(), mkThree())))
+    def test2Add17(): Bool = isTwo2(add2(add2(mkZero2(), mkOne2()), add2(mkTwo2(), mkThree2())))
 
     @Test
-    def testAdd18(): Bool = isThree(add(add(mkTwo(), mkOne()), add(mkOne(), mkThree())))
+    def test2Add18(): Bool = isThree2(add2(add2(mkTwo2(), mkOne2()), add2(mkOne2(), mkThree2())))
 
     @Test
-    def testAdd19(): Bool = isOne(add(mkZero(), add(mkZero(), mkOne())))
+    def test2Add19(): Bool = isOne2(add2(mkZero2(), add2(mkZero2(), mkOne2())))
 
     @Test
-    def testAdd20(): Bool = isThree(add(mkThree(), add(add(mkThree(), mkThree()), add(mkThree(), mkThree()))))
+    def test2Add20(): Bool = isThree2(add2(mkThree2(), add2(add2(mkThree2(), mkThree2()), add2(mkThree2(), mkThree2()))))
 
     @Test
-    def testMul01(): Bool = isZero(mul(mkZero(), mkZero()))
+    def test2Mul01(): Bool = isZero2(mul2(mkZero2(), mkZero2()))
 
     @Test
-    def testMul02(): Bool = isOne(mul(mkOne(), mkOne()))
+    def test2Mul02(): Bool = isOne2(mul2(mkOne2(), mkOne2()))
 
     @Test
-    def testMul03(): Bool = isZero(mul(mkTwo(), mkTwo()))
+    def test2Mul03(): Bool = isZero2(mul2(mkTwo2(), mkTwo2()))
 
     @Test
-    def testMul04(): Bool = isOne(mul(mkThree(), mkThree()))
+    def test2Mul04(): Bool = isOne2(mul2(mkThree2(), mkThree2()))
 
     @Test
-    def testMul05(): Bool = isZero(mul(mkZero(), mkOne()))
+    def test2Mul05(): Bool = isZero2(mul2(mkZero2(), mkOne2()))
 
     @Test
-    def testMul06(): Bool = isZero(mul(mkOne(), mkZero()))
+    def test2Mul06(): Bool = isZero2(mul2(mkOne2(), mkZero2()))
 
     @Test
-    def testMul07(): Bool = isZero(mul(mkTwo(), mkZero()))
+    def test2Mul07(): Bool = isZero2(mul2(mkTwo2(), mkZero2()))
 
     @Test
-    def testMul08(): Bool = isZero(mul(mkZero(), mkTwo()))
+    def test2Mul08(): Bool = isZero2(mul2(mkZero2(), mkTwo2()))
 
     @Test
-    def testMul09(): Bool = isZero(mul(mkZero(), mkThree()))
+    def test2Mul09(): Bool = isZero2(mul2(mkZero2(), mkThree2()))
 
     @Test
-    def testMul10(): Bool = isZero(mul(mkThree(), mkZero()))
+    def test2Mul10(): Bool = isZero2(mul2(mkThree2(), mkZero2()))
 
     @Test
-    def testMul11(): Bool = isTwo(mul(mkOne(), mkTwo()))
+    def test2Mul11(): Bool = isTwo2(mul2(mkOne2(), mkTwo2()))
 
     @Test
-    def testMul12(): Bool = isTwo(mul(mkTwo(), mkOne()))
+    def test2Mul12(): Bool = isTwo2(mul2(mkTwo2(), mkOne2()))
 
     @Test
-    def testMul13(): Bool = isTwo(mul(mkThree(), mkTwo()))
+    def test2Mul13(): Bool = isTwo2(mul2(mkThree2(), mkTwo2()))
 
     @Test
-    def testMul14(): Bool = isTwo(mul(mkTwo(), mkThree()))
+    def test2Mul14(): Bool = isTwo2(mul2(mkTwo2(), mkThree2()))
 
     @Test
-    def testMul15(): Bool = isThree(mul(mkThree(), mkOne()))
+    def test2Mul15(): Bool = isThree2(mul2(mkThree2(), mkOne2()))
 
     @Test
-    def testMul16(): Bool = isThree(mul(mkOne(), mkThree()))
+    def test2Mul16(): Bool = isThree2(mul2(mkOne2(), mkThree2()))
 
     @Test
-    def testMul17(): Bool = isTwo(mul(mul(mkOne(), mkThree()), mkTwo()))
+    def test2Mul17(): Bool = isTwo2(mul2(mul2(mkOne2(), mkThree2()), mkTwo2()))
 
     @Test
-    def testMul18(): Bool = isOne(mul(mul(mkThree(), mkThree()), mul(mkThree(), mkThree())))
+    def test2Mul18(): Bool = isOne2(mul2(mul2(mkThree2(), mkThree2()), mul2(mkThree2(), mkThree2())))
 
     @Test
-    def testMul19(): Bool = isZero(mul(mul(mul(mkOne(), mkThree()), mkTwo()), mkZero()))
+    def test2Mul19(): Bool = isZero2(mul2(mul2(mul2(mkOne2(), mkThree2()), mkTwo2()), mkZero2()))
 
     @Test
-    def testMul20(): Bool = isTwo(mul(mul(mkTwo(), mul(mkOne(), mkThree())), mul(mkThree(), mkOne())))
+    def test2Mul20(): Bool = isTwo2(mul2(mul2(mkTwo2(), mul2(mkOne2(), mkThree2())), mul2(mkThree2(), mkOne2())))
+
+    enum I4[_: Bool, _: Bool, _: Bool, _: Bool] with Eq {
+      case I4
+    }
+
+    @Test
+    def test4BitInt01(): Bool = isZero4(mkZero4())
+
+    @Test
+    def test4BitInt02(): Bool = isOne4(mkOne4())
+
+    @Test
+    def test4BitInt03(): Bool = isTwo4(mkTwo4())
+
+    @Test
+    def test4BitInt04(): Bool = isThree4(mkThree4())
+
+    @Test
+    def test4BitInt05(): Bool = isFour4(mkFour4())
+
+    @Test
+    def test4BitInt06(): Bool = isFive4(mkFive4())
+
+    @Test
+    def test4BitInt07(): Bool = isSix4(mkSix4())
+
+    @Test
+    def test4BitInt08(): Bool = isSeven4(mkSeven4())
+
+    @Test
+    def test4BitInt09(): Bool = isEight4(mkEight4())
+
+    @Test
+    def test4BitInt10(): Bool = isNine4(mkNine4())
+
+    @Test
+    def test4BitInt11(): Bool = isTen4(mkTen4())
+
+    @Test
+    def test4BitInt12(): Bool = isEleven4(mkEleven4())
+
+    @Test
+    def test4BitInt13(): Bool = isTwelve4(mkTwelve4())
+
+    @Test
+    def test4BitInt14(): Bool = isThirteen4(mkThirteen4())
+
+    @Test
+    def test4BitInt15(): Bool = isFourteen4(mkFourteen4())
+
+    @Test
+    def test4BitInt16(): Bool = isFifteen4(mkFifteen4())
+
+    @Test
+    def test4Inc01(): Bool = isOne4(inc4(mkZero4()))
+
+    @Test
+    def test4Inc02(): Bool = isTwo4(inc4(mkOne4()))
+
+    @Test
+    def test4Inc03(): Bool = isThree4(inc4(mkTwo4()))
+
+    @Test
+    def test4Inc04(): Bool = isFour4(inc4(mkThree4()))
+
+    @Test
+    def test4Inc05(): Bool = isFive4(inc4(mkFour4()))
+
+    @Test
+    def test4Inc06(): Bool = isSix4(inc4(mkFive4()))
+
+    @Test
+    def test4Inc07(): Bool = isSeven4(inc4(mkSix4()))
+
+    @Test
+    def test4Inc08(): Bool = isEight4(inc4(mkSeven4()))
+
+    @Test
+    def test4Inc09(): Bool = isNine4(inc4(mkEight4()))
+
+    @Test
+    def test4Inc10(): Bool = isTen4(inc4(mkNine4()))
+
+    @Test
+    def test4Inc11(): Bool = isEleven4(inc4(mkTen4()))
+
+    @Test
+    def test4Inc12(): Bool = isTwelve4(inc4(mkEleven4()))
+
+    @Test
+    def test4Inc13(): Bool = isThirteen4(inc4(mkTwelve4()))
+
+    @Test
+    def test4Inc14(): Bool = isFourteen4(inc4(mkThirteen4()))
+
+    @Test
+    def test4Inc15(): Bool = isFifteen4(inc4(mkFourteen4()))
+
+    @Test
+    def test4Inc16(): Bool = isZero4(inc4(mkFifteen4()))
+
+    @Test
+    def test4Add01(): Bool = isZero4(add4(mkZero4(), mkZero4()))
+
+    @Test
+    def test4Add02(): Bool = isOne4(add4(mkZero4(), mkOne4()))
+
+    @Test
+    def test4Add03(): Bool = isOne4(add4(mkOne4(), mkZero4()))
+
+    @Test
+    def test4Add04(): Bool = isTwo4(add4(mkOne4(), mkOne4()))
+
+    @Test
+    def test4Add05(): Bool = isSix4(add4(mkFour4(), mkTwo4()))
+
+    @Test
+    def test4Add06(): Bool = isEight4(add4(mkSeven4(), mkOne4()))
+
+    @Test
+    def test4Add07(): Bool = isEight4(add4(mkSeven4(), mkOne4()))
+
+    @Test
+    def test4Add08(): Bool = isEight4(add4(mkOne4(), mkSeven4()))
+
+    @Test
+    def test4Add09(): Bool = isEight4(add4(mkFour4(), mkFour4()))
+
+    @Test
+    def test4Add10(): Bool = isNine4(add4(mkFour4(), mkFive4()))
+
+    @Test
+    def test4Add11(): Bool = isTen4(add4(mkSeven4(), mkThree4()))
+
+    @Test
+    def test4Add12(): Bool = isTen4(add4(mkTwo4(), mkEight4()))
+
+    @Test
+    def test4Add13(): Bool = isFifteen4(add4(mkSeven4(), mkEight4()))
+
+    @Test
+    def test4Add14(): Bool = isFifteen4(add4(mkEight4(), mkSeven4()))
+
+    @Test
+    def test4Add15(): Bool = isFourteen4(add4(mkFourteen4(), mkZero4()))
+
+    @Test
+    def test4Add16(): Bool = isSeven4(add4(mkSeven4(), mkZero4()))
+
+    @Test
+    def test4Add17(): Bool = isEight4(add4(mkZero4(), mkEight4()))
+
+    @Test
+    def test4Add18(): Bool = isThirteen4(add4(mkFifteen4(), add4(mkFifteen4(), mkFifteen4())))
+
+    @Test
+    def test4Add19(): Bool = isTwelve4(add4(add4(mkSeven4(), mkSeven4()), add4(mkSeven4(), mkSeven4())))
+
+    @Test
+    def test4Add20(): Bool = isZero4(add4(add4(mkZero4(), mkZero4()), add4(mkZero4(), mkZero4())))
+
+    @Test
+    def test4Add21(): Bool = isZero4(add4(add4(mkEight4(), mkEight4()), add4(mkEight4(), mkEight4())))
+
+    @Test
+    def test4Add24(): Bool = isFourteen4(add4(add4(mkTen4(), mkEleven4()), add4(mkTwelve4(), mkThirteen4())))
+
+    @Test
+    def test4Add25(): Bool = isFifteen4(add4(add4(add4(add4(mkOne4(), mkTwo4()), mkThree4()), mkFour4()), mkFive4()))
 
     ///
     /// Flix's type system can be used to prove laws of propositional calculus.
@@ -447,26 +616,71 @@ mod Test.Type.Bool {
     def mkAnd(_: B[a], _: B[b]): B[b and a] = B.B
     def mkXor(_: B[a], _: B[b]): B[(b and (not a)) or (a and (not b))] = B.B
 
-    def mkZero(): I2[false, false] = I2.I2
-    def mkOne(): I2[false, true] = I2.I2
-    def mkTwo(): I2[true, false] = I2.I2
-    def mkThree(): I2[true, true] = I2.I2
+    def mkZero2(): I2[false, false] = I2.I2
+    def mkOne2(): I2[false, true] = I2.I2
+    def mkTwo2(): I2[true, false] = I2.I2
+    def mkThree2(): I2[true, true] = I2.I2
 
-    def isZero(_: I2[false, false]): Bool = true
-    def isOne(_: I2[false, true]): Bool = true
-    def isTwo(_: I2[true, false]): Bool = true
-    def isThree(_: I2[true, true]): Bool = true
+    def isZero2(_: I2[false, false]): Bool = true
+    def isOne2(_: I2[false, true]): Bool = true
+    def isTwo2(_: I2[true, false]): Bool = true
+    def isThree2(_: I2[true, true]): Bool = true
 
-    def bitwiseNot(_: I2[a, b]): I2[not a, not b] = I2.I2
-    def bitwiseOr(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 or a2, b1 or b2] = I2.I2
-    def bitwiseAnd(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 and a2, b1 and b2] = I2.I2
-    def swap(_: I2[a, b]): I2[b, a] = I2.I2
-    def inc(_: I2[a, b]): I2[((a and (not b)) or (b and (not a))), (not b)] = I2.I2
-    def add(_: I2[a1, b1], _: I2[a2, b2]):
+    def bitwiseNot2(_: I2[a, b]): I2[not a, not b] = I2.I2
+    def bitwiseOr2(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 or a2, b1 or b2] = I2.I2
+    def bitwiseAnd2(_: I2[a1, b1], _: I2[a2, b2]): I2[a1 and a2, b1 and b2] = I2.I2
+    def swap2(_: I2[a, b]): I2[b, a] = I2.I2
+    def inc2(_: I2[a, b]): I2[((a and (not b)) or (b and (not a))), (not b)] = I2.I2
+    def add2(_: I2[a1, b1], _: I2[a2, b2]):
       I2[((((a1 and (not a2)) or (a2 and (not a1))) and (not (b1 and b2))) or (((a1 and a2) or ((not a1) and (not a2))) and (b1 and b2))),
       ((b1 and (not b2)) or (b2 and (not b1)))] = I2.I2
-    def mul(_: I2[a1, b1], _: I2[a2, b2]):
+    def mul2(_: I2[a1, b1], _: I2[a2, b2]):
       I2[(((a1 and b2) and (not (b1 and a2))) or ((b1 and a2) and (not (a1 and b2)))),
       (b1 and b2)] = I2.I2
 
+    def mkZero4(): I4[false, false, false, false] = I4.I4
+    def mkOne4(): I4[false, false, false, true] = I4.I4
+    def mkTwo4(): I4[false, false, true, false] = I4.I4
+    def mkThree4(): I4[false, false, true, true] = I4.I4
+    def mkFour4(): I4[false, true, false, false] = I4.I4
+    def mkFive4(): I4[false, true, false, true] = I4.I4
+    def mkSix4(): I4[false, true, true, false] = I4.I4
+    def mkSeven4(): I4[false, true, true, true] = I4.I4
+    def mkEight4(): I4[true, false, false, false] = I4.I4
+    def mkNine4(): I4[true, false, false, true] = I4.I4
+    def mkTen4(): I4[true, false, true, false] = I4.I4
+    def mkEleven4(): I4[true, false, true, true] = I4.I4
+    def mkTwelve4(): I4[true, true, false, false] = I4.I4
+    def mkThirteen4(): I4[true, true, false, true] = I4.I4
+    def mkFourteen4(): I4[true, true, true, false] = I4.I4
+    def mkFifteen4(): I4[true, true, true, true] = I4.I4
+
+    def isZero4(_: I4[false, false, false, false]): Bool = true
+    def isOne4(_: I4[false, false, false, true]): Bool = true
+    def isTwo4(_: I4[false, false, true, false]): Bool = true
+    def isThree4(_: I4[false, false, true, true]): Bool = true
+    def isFour4(_: I4[false, true, false, false]): Bool = true
+    def isFive4(_: I4[false, true, false, true]): Bool = true
+    def isSix4(_: I4[false, true, true, false]): Bool = true
+    def isSeven4(_: I4[false, true, true, true]): Bool = true
+    def isEight4(_: I4[true, false, false, false]): Bool = true
+    def isNine4(_: I4[true, false, false, true]): Bool = true
+    def isTen4(_: I4[true, false, true, false]): Bool = true
+    def isEleven4(_: I4[true, false, true, true]): Bool = true
+    def isTwelve4(_: I4[true, true, false, false]): Bool = true
+    def isThirteen4(_: I4[true, true, false, true]): Bool = true
+    def isFourteen4(_: I4[true, true, true, false]): Bool = true
+    def isFifteen4(_: I4[true, true, true, true]): Bool = true
+
+    def _bitwiseNot4(_: I4[a, b, c, d]): I4[not a, not b, not c, not d] = I4.I4
+    def _bitwiseOr4(_: I4[a1, b1, c1, d1], _: I4[a2, b2, c2, d2]):
+      I4[a1 or a2, b1 or b2, c1 or c2, d1 or d2] = I4.I4
+    def _bitwiseAnd4(_: I4[a1, b1, c1, d1], _: I4[a2, b2, c2, d2]):
+      I4[a1 and a2, b1 and b2, c1 and c2, d1 and d2] = I4.I4
+    def inc4(_: I4[a, b, c, d]): I4[a xor (b and c and d), b xor (c and d), c xor d, not d] = I4.I4
+    def add4(_: I4[a1, b1, c1, d1], _: I4[a2, b2, c2, d2]):
+      I4[(a1 xor a2 xor ((b1 and b2) or ((b1 xor b2) and ((c1 and c2) or ((c1 xor c2) and (d1 and d2)))))),
+        (b1 xor b2 xor ((c1 and c2) or ((c1 xor c2) and (d1 and d2)))),
+        (d1 and d2) xor c1 xor c2,
+        (d1 xor d2)] = I4.I4
 }

@@ -1,10 +1,11 @@
-/// A list that tracks whether its length is even or odd.
+/// A list of type `a` that uses a Boolean at the type level to trackwhether it has
+/// even or odd length.
 enum EOList[a: Type, even: Bool] {
     case EONil
     case EOCons(a, EOList[a, not even])
 }
 
-/// Returns an empty and even list.
+/// Returns an empty list of `a` with even length
 def mkNilEO(): EOList[a, true] = EOList.EONil
 
 /// Attaches an element to the front of the list.
