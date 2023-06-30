@@ -72,11 +72,14 @@ object Simplifier {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.Apply(e, es, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Unary(sop, e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Unary(sop, visitExp(e), tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Binary(sop, e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Binary(sop, visitExp(e1), visitExp(e2), tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, simplifyEffect(eff), loc)
@@ -96,13 +99,15 @@ object Simplifier {
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.Region(tpe, loc) =>
-        SimplifiedAst.Expression.Region(tpe, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, tpe, Purity.Pure, loc)
 
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, simplifyEffect(eff), loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ScopeExit, List(e1, e2), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -110,8 +115,9 @@ object Simplifier {
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
-      case LoweredAst.Expression.Tag(Ast.CaseSymUse(sym, _), e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Tag(sym, visitExp(e), tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.Tag(Ast.CaseSymUse(sym, _), exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, simplifyEffect(eff), loc)
@@ -311,7 +317,7 @@ object Simplifier {
       case LoweredAst.Pattern.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
       case LoweredAst.Pattern.Tag(Ast.CaseSymUse(sym, _), p, tpe, loc) =>
         val e = pat2exp(p)
-        SimplifiedAst.Expression.Tag(sym, e, tpe, e.purity, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, e.purity, loc)
       case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms.map(pat2exp)
         val purity = combineAll(es.map(_.purity))
@@ -364,7 +370,7 @@ object Simplifier {
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(sop, e1, e2, Type.Bool, purity, loc)
+      SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), Type.Bool, purity, loc)
     }
 
     /**
@@ -517,11 +523,12 @@ object Simplifier {
           * the value of the tag.
           */
         case (LoweredAst.Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, loc) :: ps, v :: vs) =>
-          val cond = SimplifiedAst.Expression.Is(sym, SimplifiedAst.Expression.Var(v, tpe, loc), Pure, loc)
+          val varExp = SimplifiedAst.Expression.Var(v, tpe, loc)
+          val cond = SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(varExp), Type.Bool, Pure, loc)
           val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val purity1 = inner.purity
-          val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, purity1, loc), inner, succ.tpe, purity1, loc)
+          val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(varExp), pat.tpe, purity1, loc), inner, succ.tpe, purity1, loc)
           val purity2 = combine(cond.purity, consequent.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
@@ -579,11 +586,9 @@ object Simplifier {
       case SimplifiedAst.Expression.Apply(exp, args, tpe, purity, loc) =>
         SimplifiedAst.Expression.Apply(visitExp(exp), args.map(visitExp), tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Unary(sop, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Binary(sop, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
+      case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps map visitExp
+        SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, purity, loc)
@@ -604,23 +609,8 @@ object Simplifier {
       case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
         SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Region(tpe, loc) =>
-        SimplifiedAst.Expression.Region(tpe, loc)
-
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
-        SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)
-
-      case SimplifiedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Tag(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Untag(sym, visitExp(exp), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
         SimplifiedAst.Expression.Index(visitExp(exp), offset, tpe, purity, loc)
@@ -754,7 +744,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
