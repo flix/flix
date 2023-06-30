@@ -523,11 +523,12 @@ object Simplifier {
           * the value of the tag.
           */
         case (LoweredAst.Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, loc) :: ps, v :: vs) =>
-          val cond = SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(SimplifiedAst.Expression.Var(v, tpe, loc)), Type.Bool, Pure, loc)
+          val varExp = SimplifiedAst.Expression.Var(v, tpe, loc)
+          val cond = SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(varExp), Type.Bool, Pure, loc)
           val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val purity1 = inner.purity
-          val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, purity1, loc), inner, succ.tpe, purity1, loc)
+          val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(varExp), pat.tpe, purity1, loc), inner, succ.tpe, purity1, loc)
           val purity2 = combine(cond.purity, consequent.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
@@ -610,9 +611,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Untag(sym, visitExp(exp), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
         SimplifiedAst.Expression.Index(visitExp(exp), offset, tpe, purity, loc)
