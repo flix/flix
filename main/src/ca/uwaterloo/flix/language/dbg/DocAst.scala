@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -291,6 +292,98 @@ object DocAst {
 
     def Present(d: Expression): Expression =
       App(AsIs("Present"), List(d))
+
+    // Temporary function to reduce code duplication until DocAst uses AtomicOp.
+    def fromAtomic(op: AtomicOp): (List[Expression], Type, SourceLocation) => Expression = {
+      (es: List[Expression], tpe: Type, loc: SourceLocation) => {
+        op match {
+          case AtomicOp.Closure(sym) => DocAst.Expression.ClosureLifted(sym, es)
+
+          case AtomicOp.Unary(sop) => DocAst.Expression.Unary(printer.OpPrinter.print(sop), es.head)
+
+          case AtomicOp.Binary(sop) =>
+            val List(e1, e2) = es
+            DocAst.Expression.Binary(e1, printer.OpPrinter.print(sop), e2)
+
+          case AtomicOp.Region => DocAst.Expression.Region
+
+          case AtomicOp.ScopeExit =>
+            val List(e1, e2) = es
+            DocAst.Expression.ScopeExit(e1, e2)
+
+          case AtomicOp.Is(sym) => DocAst.Expression.Is(sym, es.head)
+
+          case AtomicOp.Tag(sym) => DocAst.Expression.Tag(sym, es)
+
+          case AtomicOp.Untag(sym) => DocAst.Expression.Untag(sym, es.head)
+
+          case AtomicOp.Index(idx) => DocAst.Expression.Index(idx, es.head)
+
+          case AtomicOp.Tuple => DocAst.Expression.Tuple(es)
+
+          case AtomicOp.RecordEmpty => DocAst.Expression.RecordEmpty
+
+          case AtomicOp.RecordSelect(field) => DocAst.Expression.RecordSelect(field, es.head)
+
+          case AtomicOp.RecordRestrict(field) => DocAst.Expression.RecordRestrict(field, es.head)
+
+          case AtomicOp.ArrayLit => DocAst.Expression.ArrayLit(es)
+
+          case AtomicOp.ArrayNew =>
+            val List(e1, e2) = es
+            DocAst.Expression.ArrayNew(e1, e2)
+
+          case AtomicOp.ArrayLoad =>
+            val List(e1, e2) = es
+            DocAst.Expression.ArrayLoad(e1, e2)
+
+          case AtomicOp.ArrayStore =>
+            val List(e1, e2, e3) = es
+            DocAst.Expression.ArrayStore(e1, e2, e3)
+
+          case AtomicOp.ArrayLength =>
+            DocAst.Expression.ArrayLength(es.head)
+
+          case AtomicOp.Ref => DocAst.Expression.Ref(es.head)
+
+          case AtomicOp.Deref => DocAst.Expression.Deref(es.head)
+
+          case AtomicOp.Assign =>
+            val List(e1, e2) = es
+            DocAst.Expression.Assign(e1, e2)
+
+          case AtomicOp.InstanceOf(clazz) => DocAst.Expression.InstanceOf(es.head, clazz)
+
+          case AtomicOp.Cast => DocAst.Expression.Cast(es.head, tpe)
+
+          case AtomicOp.InvokeConstructor(constructor) => DocAst.Expression.JavaInvokeConstructor(constructor, es)
+
+          case AtomicOp.InvokeMethod(method) => DocAst.Expression.JavaInvokeMethod(method, es.head, es.tail)
+
+          case AtomicOp.InvokeStaticMethod(method) => DocAst.Expression.JavaInvokeStaticMethod(method, es)
+
+          case AtomicOp.GetField(field) => DocAst.Expression.JavaGetField(field, es.head)
+
+          case AtomicOp.PutField(field) =>
+            val List(e1, e2) = es
+            DocAst.Expression.JavaPutField(field, e1, e2)
+
+          case AtomicOp.GetStaticField(field) => DocAst.Expression.JavaGetStaticField(field)
+
+          case AtomicOp.PutStaticField(field) => DocAst.Expression.JavaPutStaticField(field, es.head)
+
+          case AtomicOp.Spawn =>
+            val List(e1, e2) = es
+            DocAst.Expression.Spawn(e1, e2)
+
+          case AtomicOp.Lazy => DocAst.Expression.Lazy(es.head)
+
+          case AtomicOp.Force => DocAst.Expression.Force(es.head)
+
+          case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", loc)
+        }
+      }
+    }
 
   }
 

@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, SimplifiedAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
-import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object SimplifiedAstPrinter {
@@ -60,7 +59,7 @@ object SimplifiedAstPrinter {
     case Lambda(fparams, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
     case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
-    case ApplyAtomic(op, exps, tpe, _, loc) => printAtomic(op, exps, tpe, loc)
+    case ApplyAtomic(op, exps, tpe, _, loc) => DocAst.Expression.fromAtomic(op)(exps.map(print), TypePrinter.print(tpe), loc)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
@@ -123,42 +122,5 @@ object SimplifiedAstPrinter {
     */
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
     DocAst.Expression.Var(sym)
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op` and `exps`.
-    */
-  private def printAtomic(op: AtomicOp, exps: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation): DocAst.Expression = {
-    val es = exps.map(print)
-
-    op match {
-      case AtomicOp.Closure(sym) => DocAst.Expression.Def(sym)
-
-      case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OpPrinter.print(sop), es.head)
-
-      case AtomicOp.Binary(sop) =>
-        val List(e1, e2) = es
-        DocAst.Expression.Binary(e1, OpPrinter.print(sop), e2)
-
-      case AtomicOp.Region => DocAst.Expression.Region
-
-      case AtomicOp.ScopeExit =>
-        val List(e1, e2) = es
-        DocAst.Expression.ScopeExit(e1, e2)
-
-      case AtomicOp.Is(sym) => DocAst.Expression.Is(sym, es.head)
-
-      case AtomicOp.Tag(sym) => DocAst.Expression.Tag(sym, es)
-
-      case AtomicOp.Untag(sym) => DocAst.Expression.Untag(sym, es.head)
-
-      case AtomicOp.Index(idx) => DocAst.Expression.Index(idx, es.head)
-
-      case AtomicOp.Tuple => DocAst.Expression.Tuple(es)
-
-      case AtomicOp.RecordEmpty => DocAst.Expression.RecordEmpty
-
-      case _ => throw InternalCompilerException(s"Unexpected AtomicOp in SimplifiedAstPrinter: $op", loc)
-    }
-  }
 
 }
