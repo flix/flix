@@ -149,7 +149,7 @@ object LoweredAst {
 
     case class ArrayNew(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class ArrayLoad(base: LoweredAst.Expression, index: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class ArrayLoad(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class ArrayLength(base: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def tpe: Type = Type.Int32
