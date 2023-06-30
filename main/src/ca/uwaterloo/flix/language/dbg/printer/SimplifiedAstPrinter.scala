@@ -51,13 +51,6 @@ object SimplifiedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
-  def printAtomic(op: AtomicOp, exps: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation): DocAst.Expression = op match {
-    case _ => throw InternalCompilerException(s"Unexpected AtomicOp in SimplifiedAstPrinter: $op", loc)
-  }
-
-  /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
   def print(e: SimplifiedAst.Expression): DocAst.Expression = e match {
@@ -142,5 +135,11 @@ object SimplifiedAstPrinter {
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
     DocAst.Expression.Var(sym)
 
+  /**
+    * Returns the [[DocAst.Expression]] representation of `op`.
+    */
+  def printAtomic(op: AtomicOp, exps: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation): DocAst.Expression = op match {
+    case _ => throw InternalCompilerException(s"Unexpected AtomicOp in SimplifiedAstPrinter: $op", loc)
+  }
 
 }
