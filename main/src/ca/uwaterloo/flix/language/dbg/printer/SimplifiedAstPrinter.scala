@@ -54,7 +54,7 @@ object SimplifiedAstPrinter {
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
   def printAtomic(op: AtomicOp, exps: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation): DocAst.Expression = op match {
-    case _ => throw InternalCompilerException(s"Unexpected AtomicOp $op", loc)
+    case _ => throw InternalCompilerException(s"Unexpected AtomicOp in SimplifiedAstPrinter: $op", loc)
   }
 
   /**
