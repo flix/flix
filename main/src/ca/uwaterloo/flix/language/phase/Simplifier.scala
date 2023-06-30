@@ -135,9 +135,9 @@ object Simplifier {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordExtend(field), List(e1, e2), tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
-        val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordRestrict(field, r, tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.RecordRestrict(field, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(e), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.ArrayLit(exps, _, tpe, eff, loc) =>
         // Note: The region expression is erased.
@@ -614,10 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
-        val r = visitExp(rest)
-        SimplifiedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)

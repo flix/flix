@@ -88,8 +88,6 @@ object SimplifiedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class RecordRestrict(field: Name.Field, rest: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class ArrayLit(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
     }

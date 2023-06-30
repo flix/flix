@@ -143,7 +143,7 @@ object LoweredAst {
 
     case class RecordExtend(field: Name.Field, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class RecordRestrict(field: Name.Field, rest: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class RecordRestrict(field: Name.Field, exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class ArrayLit(exps: List[LoweredAst.Expression], exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
