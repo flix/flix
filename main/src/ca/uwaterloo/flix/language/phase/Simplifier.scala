@@ -119,8 +119,9 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Tuple(elms, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.Tuple(exps, tpe, eff, loc) =>
+        val es = exps map visitExp
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
@@ -321,7 +322,7 @@ object Simplifier {
       case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms.map(pat2exp)
         val purity = combineAll(es.map(_.purity))
-        SimplifiedAst.Expression.Tuple(es, tpe, purity, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, tpe, purity, loc)
       case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
     }
 
@@ -613,9 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Tuple(elms, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Tuple(elms.map(visitExp), tpe, purity, loc)
 
       case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)

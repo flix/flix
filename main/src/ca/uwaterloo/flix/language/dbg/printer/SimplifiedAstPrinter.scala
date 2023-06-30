@@ -69,7 +69,6 @@ object SimplifiedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(sym, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Tuple(elms, _, _, _) => DocAst.Expression.Tuple(elms.map(print))
     case RecordEmpty(_, _) => DocAst.Expression.RecordEmpty
     case RecordSelect(exp, field, _, _, _) => DocAst.Expression.RecordSelect(field, print(exp))
     case RecordExtend(field, value, rest, _, _, _) => DocAst.Expression.RecordExtend(field, print(value), print(rest))
@@ -154,6 +153,8 @@ object SimplifiedAstPrinter {
       case AtomicOp.Untag(sym) => DocAst.Expression.Untag(sym, es.head)
 
       case AtomicOp.Index(idx) => DocAst.Expression.Index(idx, es.head)
+
+      case AtomicOp.Tuple => DocAst.Expression.Tuple(es)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in SimplifiedAstPrinter: $op", loc)
     }

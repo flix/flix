@@ -119,9 +119,6 @@ object ClosureConv {
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
 
-    case Expression.Tuple(elms, tpe, purity, loc) =>
-      Expression.Tuple(elms.map(visitExp), tpe, purity, loc)
-
     case Expression.RecordEmpty(tpe, loc) =>
       Expression.RecordEmpty(tpe, loc)
 
@@ -344,8 +341,6 @@ object ClosureConv {
 
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
-    case Expression.Tuple(exps, _, _, _) => freeVarsExps(exps)
-
     case Expression.RecordEmpty(_, _) => SortedSet.empty
 
     case Expression.RecordSelect(exp, _, _, _, _) => freeVars(exp)
@@ -526,10 +521,6 @@ object ClosureConv {
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
-
-      case Expression.Tuple(elms, tpe, purity, loc) =>
-        val es = elms map visitExp
-        Expression.Tuple(es, tpe, purity, loc)
 
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(tpe, loc)
