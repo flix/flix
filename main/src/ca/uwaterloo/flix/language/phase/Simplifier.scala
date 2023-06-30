@@ -186,7 +186,7 @@ object Simplifier {
       case LoweredAst.Expression.Ref(exp, _, tpe, eff, loc) =>
         // Note: The region expression is erased.
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Ref(e, tpe, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.Deref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -614,9 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
-        SimplifiedAst.Expression.Ref(visitExp(exp), tpe, loc)
 
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Deref(visitExp(exp), tpe, loc)
