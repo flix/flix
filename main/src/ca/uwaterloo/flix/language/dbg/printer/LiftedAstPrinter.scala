@@ -57,7 +57,7 @@ object LiftedAstPrinter {
   def print(e: LiftedAst.Expression): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, tpe, _, _) => printAtomic(op, exps, tpe)
+    case ApplyAtomic(op, exps, tpe, _, loc) => printAtomic(op, exps, tpe, loc)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case ApplyCloTail(exp, args, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
@@ -103,7 +103,7 @@ object LiftedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op` and `exps`.
     */
-  private def printAtomic(op: AtomicOp, exps: List[Expression], tpe: Type): DocAst.Expression = {
+  private def printAtomic(op: AtomicOp, exps: List[Expression], tpe: Type, loc: SourceLocation): DocAst.Expression = {
     val es = exps.map(print)
 
     op match { // Will be removed
@@ -190,7 +190,7 @@ object LiftedAstPrinter {
 
       case AtomicOp.Force => DocAst.Expression.Force(es.head)
 
-      case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", SourceLocation.Unknown)
+      case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", loc)
     }
   }
 
