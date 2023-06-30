@@ -148,7 +148,7 @@ object Simplifier {
         // Note: The region expression is erased.
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ArrayNew(e2, e3, tpe, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e2, e3), tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         val b = visitExp(base)
@@ -614,9 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayNew(visitExp(elm), visitExp(len), tpe, loc)
 
       case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLoad(visitExp(base), visitExp(index), tpe, loc)
