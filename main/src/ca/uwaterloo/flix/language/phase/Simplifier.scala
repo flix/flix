@@ -142,7 +142,7 @@ object Simplifier {
       case LoweredAst.Expression.ArrayLit(exps, _, tpe, eff, loc) =>
         // Note: The region expression is erased.
         val es = exps.map(visitExp)
-        SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.ArrayNew(_, exp2, exp3, tpe, eff, loc) =>
         // Note: The region expression is erased.
@@ -169,7 +169,7 @@ object Simplifier {
       case LoweredAst.Expression.VectorLit(exps, tpe, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
         val es = exps.map(visitExp)
-        SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
@@ -614,9 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)
 
       case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
         SimplifiedAst.Expression.ArrayNew(visitExp(elm), visitExp(len), tpe, loc)
