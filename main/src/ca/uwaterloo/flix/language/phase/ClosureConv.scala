@@ -94,10 +94,6 @@ object ClosureConv {
       val es = exps map visitExp
       Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      Expression.Unary(sop, e, tpe, purity, loc)
-
     case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -353,8 +349,6 @@ object ClosureConv {
     case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       freeVarsExps(exps)
 
-    case Expression.Unary(_, exp, _, _, _) => freeVars(exp)
-
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
@@ -516,9 +510,10 @@ object ClosureConv {
         Expression.Lambda(fs, e, tpe, loc)
 
       case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps map visitExp
         op match {
           case AtomicOp.Closure(_) => e
-          case _ => throw InternalCompilerException("Unexpected AtomicOp in ClosureConv", loc)
+          case _ => Expression.ApplyAtomic(op, es, tpe, purity, loc)
         }
 
       case Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
@@ -538,10 +533,6 @@ object ClosureConv {
         val e = visitExp(exp)
         val as = args map visitExp
         Expression.Apply(e, as, tpe, purity, loc)
-
-      case Expression.Unary(sop, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.Unary(sop, e, tpe, purity, loc)
 
       case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

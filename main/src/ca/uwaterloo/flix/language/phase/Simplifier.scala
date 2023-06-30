@@ -72,8 +72,9 @@ object Simplifier {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.Apply(e, es, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Unary(sop, e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Unary(sop, visitExp(e), tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.Binary(sop, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Binary(sop, visitExp(e1), visitExp(e2), tpe, simplifyEffect(eff), loc)
@@ -582,9 +583,6 @@ object Simplifier {
       case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps map visitExp
         SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Unary(sop, visitExp(exp), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
         SimplifiedAst.Expression.Binary(sop, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
