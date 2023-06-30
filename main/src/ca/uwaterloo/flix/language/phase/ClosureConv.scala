@@ -515,7 +515,7 @@ object ClosureConv {
       case Expression.Closure(_, _, _) => e
 
       case Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
-        val e = visitExp(exp).asInstanceOf[Expression.Lambda]
+        val e = visitExp(exp)
         Expression.LambdaClosure(cparams, fparams, freeVars, e, tpe, loc)
 
       case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
