@@ -88,8 +88,6 @@ object SimplifiedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Tag(sym: Symbol.CaseSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class Untag(sym: Symbol.CaseSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Index(base: SimplifiedAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression

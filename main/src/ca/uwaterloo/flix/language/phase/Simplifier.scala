@@ -115,8 +115,9 @@ object Simplifier {
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
-      case LoweredAst.Expression.Tag(Ast.CaseSymUse(sym, _), e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Tag(sym, visitExp(e), tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.Tag(Ast.CaseSymUse(sym, _), exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, simplifyEffect(eff), loc)
@@ -316,7 +317,7 @@ object Simplifier {
       case LoweredAst.Pattern.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
       case LoweredAst.Pattern.Tag(Ast.CaseSymUse(sym, _), p, tpe, loc) =>
         val e = pat2exp(p)
-        SimplifiedAst.Expression.Tag(sym, e, tpe, e.purity, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, e.purity, loc)
       case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms.map(pat2exp)
         val purity = combineAll(es.map(_.purity))
@@ -609,9 +610,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Tag(sym, visitExp(exp), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Untag(sym, visitExp(exp), tpe, purity, loc)
