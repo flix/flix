@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Purity, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
@@ -66,7 +66,7 @@ object ClosureConv {
       //
       // let m = List.map; ...
       //
-      Expression.Closure(sym, tpe, loc)
+      Expression.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
 
     case Expression.Lambda(fparams, exp, tpe, loc) =>
       //
@@ -90,14 +90,9 @@ object ClosureConv {
         Expression.ApplyClo(e, es, tpe, purity, loc)
     }
 
-    case Expression.Unary(sop, exp, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      Expression.Unary(sop, e, tpe, purity, loc)
-
-    case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.Binary(sop, e1, e2, tpe, purity, loc)
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      val es = exps map visitExp
+      Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -121,23 +116,8 @@ object ClosureConv {
     case Expression.LetRec(sym, e1, e2, tpe, purity, loc) =>
       Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-    case Expression.Region(tpe, loc) =>
-      Expression.Region(tpe, loc)
-
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
-
-    case Expression.ScopeExit(e1, e2, tpe, purity, loc) =>
-      Expression.ScopeExit(visitExp(e1), visitExp(e2), tpe, purity, loc)
-
-    case Expression.Is(sym, e, purity, loc) =>
-      Expression.Is(sym, visitExp(e), purity, loc)
-
-    case Expression.Tag(enum, e, tpe, purity, loc) =>
-      Expression.Tag(enum, visitExp(e), tpe, purity, loc)
-
-    case Expression.Untag(sym, e, tpe, purity, loc) =>
-      Expression.Untag(sym, visitExp(e), tpe, purity, loc)
 
     case Expression.Index(e, offset, tpe, purity, loc) =>
       Expression.Index(visitExp(e), offset, tpe, purity, loc)
@@ -287,8 +267,6 @@ object ClosureConv {
 
     case Expression.MatchError(_, _) => exp0
 
-    case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
     case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
@@ -348,10 +326,8 @@ object ClosureConv {
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
-    case Expression.Unary(_, exp, _, _, _) => freeVars(exp)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      freeVarsExps(exps)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -369,19 +345,7 @@ object ClosureConv {
     case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
-    case Expression.Region(tpe, loc) =>
-      SortedSet.empty
-
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
-
-    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.Is(_, exp, _, _) => freeVars(exp)
-
-    case Expression.Untag(_, exp, _, _, _) => freeVars(exp)
-
-    case Expression.Tag(_, exp, _, _, _) => freeVars(exp)
 
     case Expression.Index(base, _, _, _, _) => freeVars(base)
 
@@ -461,8 +425,6 @@ object ClosureConv {
 
     case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
     case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
@@ -512,7 +474,12 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
-      case Expression.Closure(_, _, _) => e
+      case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
+        case AtomicOp.Closure(_) => e
+        case _ =>
+          val es = exps map visitExp
+          Expression.ApplyAtomic(op, es, tpe, purity, loc)
+      }
 
       case Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -531,15 +498,6 @@ object ClosureConv {
         val e = visitExp(exp)
         val as = args map visitExp
         Expression.Apply(e, as, tpe, purity, loc)
-
-      case Expression.Unary(sop, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.Unary(sop, e, tpe, purity, loc)
-
-      case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.Binary(sop, e1, e2, tpe, purity, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
@@ -569,30 +527,10 @@ object ClosureConv {
         val e2 = visitExp(exp2)
         Expression.LetRec(newSym, e1, e2, tpe, purity, loc)
 
-      case Expression.Region(tpe, loc) =>
-        Expression.Region(tpe, loc)
-
       case Expression.Scope(sym, exp, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
-
-      case Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.ScopeExit(e1, e2, tpe, purity, loc)
-
-      case Expression.Is(sym, exp, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.Is(sym, e, purity, loc)
-
-      case Expression.Untag(sym, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.Untag(sym, e, tpe, purity, loc)
-
-      case Expression.Tag(enum, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.Tag(enum, e, tpe, purity, loc)
 
       case Expression.Index(exp, offset, tpe, purity, loc) =>
         val e = visitExp(exp)
