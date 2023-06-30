@@ -94,11 +94,6 @@ object ClosureConv {
       val es = exps map visitExp
       Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.Binary(sop, e1, e2, tpe, purity, loc)
-
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -349,9 +344,6 @@ object ClosureConv {
     case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       freeVarsExps(exps)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
@@ -533,11 +525,6 @@ object ClosureConv {
         val e = visitExp(exp)
         val as = args map visitExp
         Expression.Apply(e, as, tpe, purity, loc)
-
-      case Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.Binary(sop, e1, e2, tpe, purity, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

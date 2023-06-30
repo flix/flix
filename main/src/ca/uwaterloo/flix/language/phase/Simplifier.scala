@@ -76,8 +76,10 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Binary(sop, e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Binary(sop, visitExp(e1), visitExp(e2), tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, simplifyEffect(eff), loc)
@@ -365,7 +367,7 @@ object Simplifier {
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)
-      SimplifiedAst.Expression.Binary(sop, e1, e2, Type.Bool, purity, loc)
+      SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), Type.Bool, purity, loc)
     }
 
     /**
@@ -583,9 +585,6 @@ object Simplifier {
       case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps map visitExp
         SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Binary(sop, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, purity, loc)

@@ -63,7 +63,6 @@ object SimplifiedAstPrinter {
     case ApplyAtomic(op, exps, tpe, _, loc) => printAtomic(op, exps, tpe, loc)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
-    case Binary(sop, exp1, exp2, _, _, _) => DocAst.Expression.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
@@ -143,6 +142,10 @@ object SimplifiedAstPrinter {
       case AtomicOp.Closure(sym) => DocAst.Expression.Def(sym)
 
       case AtomicOp.Unary(sop) => DocAst.Expression.Unary(OpPrinter.print(sop), es.head)
+
+      case AtomicOp.Binary(sop) =>
+        val List(e1, e2) = es
+        DocAst.Expression.Binary(e1, OpPrinter.print(sop), e2)
 
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in SimplifiedAstPrinter: $op", loc)
     }
