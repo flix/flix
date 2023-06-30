@@ -133,7 +133,7 @@ object LoweredAst {
 
     case class Tag(sym: Ast.CaseSymUse, exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Tuple(elms: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class Tuple(exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def eff: Type = Type.Pure
@@ -141,21 +141,21 @@ object LoweredAst {
 
     case class RecordSelect(exp: LoweredAst.Expression, field: Name.Field, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class RecordExtend(field: Name.Field, value: LoweredAst.Expression, rest: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class RecordExtend(field: Name.Field, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class RecordRestrict(field: Name.Field, rest: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class RecordRestrict(field: Name.Field, exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class ArrayLit(exps: List[LoweredAst.Expression], exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class ArrayNew(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class ArrayLoad(base: LoweredAst.Expression, index: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class ArrayLoad(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class ArrayLength(base: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
+    case class ArrayLength(exp: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def tpe: Type = Type.Int32
     }
 
-    case class ArrayStore(base: LoweredAst.Expression, index: LoweredAst.Expression, elm: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
+    case class ArrayStore(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def tpe: Type = Type.Unit
     }
 
