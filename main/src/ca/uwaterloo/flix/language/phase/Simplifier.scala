@@ -522,7 +522,7 @@ object Simplifier {
           * the value of the tag.
           */
         case (LoweredAst.Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, loc) :: ps, v :: vs) =>
-          val cond = SimplifiedAst.Expression.Is(sym, SimplifiedAst.Expression.Var(v, tpe, loc), Pure, loc)
+          val cond = SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(SimplifiedAst.Expression.Var(v, tpe, loc)), Type.Bool, Pure, loc)
           val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val purity1 = inner.purity
@@ -609,9 +609,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
-        SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)
 
       case SimplifiedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Tag(sym, visitExp(exp), tpe, purity, loc)

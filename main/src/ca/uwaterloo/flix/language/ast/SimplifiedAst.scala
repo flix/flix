@@ -88,10 +88,6 @@ object SimplifiedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Is(sym: Symbol.CaseSym, exp: SimplifiedAst.Expression, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def tpe: Type = Type.Bool
-    }
-
     case class Tag(sym: Symbol.CaseSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Untag(sym: Symbol.CaseSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
