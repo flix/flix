@@ -119,9 +119,6 @@ object ClosureConv {
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
 
-    case Expression.ScopeExit(e1, e2, tpe, purity, loc) =>
-      Expression.ScopeExit(visitExp(e1), visitExp(e2), tpe, purity, loc)
-
     case Expression.Is(sym, e, purity, loc) =>
       Expression.Is(sym, visitExp(e), purity, loc)
 
@@ -359,9 +356,6 @@ object ClosureConv {
 
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
-    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
-
     case Expression.Is(_, exp, _, _) => freeVars(exp)
 
     case Expression.Untag(_, exp, _, _, _) => freeVars(exp)
@@ -552,11 +546,6 @@ object ClosureConv {
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
-
-      case Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
       case Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
