@@ -68,7 +68,6 @@ object SimplifiedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(sym, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case ArrayLength(base, _, _, _) => DocAst.Expression.ArrayLength(print(base))
     case Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
     case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
     case Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))

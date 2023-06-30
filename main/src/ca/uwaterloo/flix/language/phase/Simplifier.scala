@@ -161,10 +161,10 @@ object Simplifier {
         val e3 = visitExp(exp3)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, Purity.Impure, loc)
 
-      case LoweredAst.Expression.ArrayLength(base, _, loc) =>
-        val b = visitExp(base)
-        val purity = b.purity
-        SimplifiedAst.Expression.ArrayLength(b, Type.Int32, purity, loc)
+      case LoweredAst.Expression.ArrayLength(exp, _, loc) =>
+        val e = visitExp(exp)
+        val purity = e.purity
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, purity, loc)
 
       case LoweredAst.Expression.VectorLit(exps, tpe, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
@@ -180,8 +180,8 @@ object Simplifier {
       case LoweredAst.Expression.VectorLength(exp, loc) =>
         // Note: We simplify Vectors to Arrays.
         val e = visitExp(exp)
-        val eff = e.purity
-        SimplifiedAst.Expression.ArrayLength(e, Type.Int32, eff, loc)
+        val purity = e.purity
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, purity, loc)
 
       case LoweredAst.Expression.Ref(exp, _, tpe, eff, loc) =>
         // Note: The region expression is erased.
@@ -614,11 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ArrayLength(base, tpe, _, loc) =>
-        val b = visitExp(base)
-        val purity = b.purity
-        SimplifiedAst.Expression.ArrayLength(b, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visitExp(exp), tpe, loc)
