@@ -501,12 +501,12 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
-      case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps map visitExp
-        op match {
-          case AtomicOp.Closure(_) => e
-          case _ => Expression.ApplyAtomic(op, es, tpe, purity, loc)
-        }
+      case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
+        case AtomicOp.Closure(_) => e
+        case _ =>
+          val es = exps map visitExp
+          Expression.ApplyAtomic(op, es, tpe, purity, loc)
+      }
 
       case Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp).asInstanceOf[Expression.Lambda]
