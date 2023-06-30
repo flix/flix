@@ -680,7 +680,7 @@ mod Test.Type.Bool {
     def inc4(_: I4[a, b, c, d]): I4[a xor (b and c and d), b xor (c and d), c xor d, not d] = I4.I4
     def add4(_: I4[a1, b1, c1, d1], _: I4[a2, b2, c2, d2]):
       I4[(a1 xor a2 xor ((b1 and b2) or ((b1 xor b2) and ((c1 and c2) or ((c1 xor c2) and (d1 and d2)))))),
-        (b1 xor b2 xor ((c1 and c2) or ((c1 xor c2) and (d1 and d2)))),
-        (d1 and d2) xor c1 xor c2,
-        (d1 xor d2)] = I4.I4
+         (b1 xor b2 xor ((c1 and c2) or ((c1 xor c2) and (d1 and d2)))),
+         (d1 and d2) xor c1 xor c2,
+         (d1 xor d2)] = I4.I4
 }
