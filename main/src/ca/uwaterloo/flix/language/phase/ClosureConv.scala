@@ -119,12 +119,6 @@ object ClosureConv {
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expression.ArrayStore(e1, e2, e3, tpe, loc)
-
     case Expression.ArrayLength(exp, tpe, _, loc) =>
       val b = visitExp(exp)
       val purity = b.purity
@@ -312,8 +306,6 @@ object ClosureConv {
 
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
-    case Expression.ArrayStore(base, index, elm, _, _) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
-
     case Expression.ArrayLength(base, _, _, _) => freeVars(base)
 
     case Expression.Ref(exp, _, _) => freeVars(exp)
@@ -478,12 +470,6 @@ object ClosureConv {
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
-
-      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
-        val b = visitExp(base)
-        val i = visitExp(index)
-        val e = visitExp(elm)
-        Expression.ArrayStore(b, i, e, tpe, loc)
 
       case Expression.ArrayLength(base, tpe, _, loc) =>
         val b = visitExp(base)

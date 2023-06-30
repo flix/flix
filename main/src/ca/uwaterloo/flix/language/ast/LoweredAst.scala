@@ -155,7 +155,7 @@ object LoweredAst {
       def tpe: Type = Type.Int32
     }
 
-    case class ArrayStore(base: LoweredAst.Expression, index: LoweredAst.Expression, elm: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
+    case class ArrayStore(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def tpe: Type = Type.Unit
     }
 

@@ -155,11 +155,11 @@ object Simplifier {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), tpe, Purity.Impure, loc)
 
-      case LoweredAst.Expression.ArrayStore(base, index, elm, _, loc) =>
-        val b = visitExp(base)
-        val i = visitExp(index)
-        val e = visitExp(elm)
-        SimplifiedAst.Expression.ArrayStore(b, i, e, Type.Unit, loc)
+      case LoweredAst.Expression.ArrayStore(exp1, exp2, exp3, _, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, Purity.Impure, loc)
 
       case LoweredAst.Expression.ArrayLength(base, _, loc) =>
         val b = visitExp(base)
@@ -614,9 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), tpe, loc)
 
       case SimplifiedAst.Expression.ArrayLength(base, tpe, _, loc) =>
         val b = visitExp(base)
