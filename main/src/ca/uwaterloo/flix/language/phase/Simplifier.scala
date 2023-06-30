@@ -579,6 +579,10 @@ object Simplifier {
       case SimplifiedAst.Expression.Apply(exp, args, tpe, purity, loc) =>
         SimplifiedAst.Expression.Apply(visitExp(exp), args.map(visitExp), tpe, purity, loc)
 
+      case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps map visitExp
+        SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
+
       case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Unary(sop, visitExp(exp), tpe, purity, loc)
 
@@ -754,7 +758,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)

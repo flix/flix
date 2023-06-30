@@ -60,7 +60,6 @@ object SimplifiedAstPrinter {
     case Lambda(fparams, exp, _, _) => DocAst.Expression.Lambda(fparams.map(printFormalParam), print(exp))
     case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
-    case Closure(sym, _, _) => DocAst.Expression.Def(sym)
     case ApplyAtomic(op, exps, tpe, _, loc) => printAtomic(op, exps, tpe, loc)
     case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
@@ -138,7 +137,8 @@ object SimplifiedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def printAtomic(op: AtomicOp, exps: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation): DocAst.Expression = op match {
+  private def printAtomic(op: AtomicOp, exps: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation): DocAst.Expression = op match {
+    case AtomicOp.Closure(sym) => DocAst.Expression.Def(sym)
     case _ => throw InternalCompilerException(s"Unexpected AtomicOp in SimplifiedAstPrinter: $op", loc)
   }
 

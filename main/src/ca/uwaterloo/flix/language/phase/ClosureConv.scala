@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Purity, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
@@ -66,7 +66,7 @@ object ClosureConv {
       //
       // let m = List.map; ...
       //
-      Expression.Closure(sym, tpe, loc)
+      Expression.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
 
     case Expression.Lambda(fparams, exp, tpe, loc) =>
       //
@@ -89,6 +89,10 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expression.ApplyClo(e, es, tpe, purity, loc)
     }
+
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      val es = exps map visitExp
+      Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
     case Expression.Unary(sop, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -287,8 +291,6 @@ object ClosureConv {
 
     case Expression.MatchError(_, _) => exp0
 
-    case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
     case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
@@ -347,6 +349,9 @@ object ClosureConv {
 
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
+
+    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      freeVarsExps(exps)
 
     case Expression.Unary(_, exp, _, _, _) => freeVars(exp)
 
@@ -461,8 +466,6 @@ object ClosureConv {
 
     case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
-
     case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
@@ -512,7 +515,11 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
-      case Expression.Closure(_, _, _) => e
+      case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        op match {
+          case AtomicOp.Closure(_) => e
+          case _ => throw InternalCompilerException("Unexpected AtomicOp in ClosureConv", loc)
+        }
 
       case Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp).asInstanceOf[Expression.Lambda]

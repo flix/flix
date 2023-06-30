@@ -123,8 +123,9 @@ object LambdaLift {
         // Construct the closure expression.
         LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, tpe, Purity.Pure, loc)
 
-      case SimplifiedAst.Expression.Closure(sym, tpe, loc) =>
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
+      case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps map visitExp
+        LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)

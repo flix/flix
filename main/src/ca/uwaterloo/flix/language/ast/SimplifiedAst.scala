@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, Source}
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift}
+import ca.uwaterloo.flix.language.phase.ClosureConv
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -65,11 +65,6 @@ object SimplifiedAst {
 
     @IntroducedBy(ClosureConv.getClass)
     case class LambdaClosure(cparams: List[SimplifiedAst.FormalParam], fparams: List[SimplifiedAst.FormalParam], freeVars: List[FreeVar], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Pure
-    }
-
-    @IntroducedBy(LambdaLift.getClass)
-    case class Closure(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Pure
     }
 
