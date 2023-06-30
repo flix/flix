@@ -179,10 +179,6 @@ object LambdaLift {
         val e = visitExp(exp)
         LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Index(offset), List(e), tpe, purity, loc)
-
       case SimplifiedAst.Expression.Tuple(exps, tpe, purity, loc) =>
         val es = exps map visitExp
         LiftedAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, tpe, purity, loc)

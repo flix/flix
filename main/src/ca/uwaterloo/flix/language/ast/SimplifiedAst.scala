@@ -88,8 +88,6 @@ object SimplifiedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Index(base: SimplifiedAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {

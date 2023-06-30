@@ -544,7 +544,9 @@ object Simplifier {
           val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
           elms.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
-              SimplifiedAst.Expression.Let(name, SimplifiedAst.Expression.Index(SimplifiedAst.Expression.Var(v, tpe, loc), idx, pat.tpe, Pure, loc), exp, succ.tpe, exp.purity, loc)
+              val varExp = SimplifiedAst.Expression.Var(v, tpe, loc)
+              val indexExp = SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Index(idx), List(varExp), pat.tpe, Pure, loc)
+              SimplifiedAst.Expression.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
           }
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
@@ -611,9 +613,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Index(visitExp(exp), offset, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Tuple(elms, tpe, purity, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visitExp), tpe, purity, loc)
