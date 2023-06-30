@@ -123,8 +123,9 @@ object LambdaLift {
         // Construct the closure expression.
         LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, tpe, Purity.Pure, loc)
 
-      case SimplifiedAst.Expression.Closure(sym, tpe, loc) =>
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
+      case SimplifiedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps map visitExp
+        LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -134,16 +135,6 @@ object LambdaLift {
       case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
         val as = args map visitExp
         LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Unary(sop, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val op = AtomicOp.Unary(sop)
-        LiftedAst.Expression.ApplyAtomic(op, List(e), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Binary(sop, exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
@@ -184,29 +175,9 @@ object LambdaLift {
           case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
         }
 
-      case SimplifiedAst.Expression.Region(tpe, loc) =>
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, tpe, Purity.Pure, loc)
-
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.ScopeExit, List(e1, e2), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Is(sym), List(e), Type.Bool, purity, loc)
-
-      case SimplifiedAst.Expression.Tag(sym, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Untag(sym, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Untag(sym), List(e), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
         val e = visitExp(exp)
