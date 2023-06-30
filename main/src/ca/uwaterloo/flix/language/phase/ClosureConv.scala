@@ -119,11 +119,6 @@ object ClosureConv {
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
 
-    case Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
-      val v = visitExp(value)
-      val r = visitExp(rest)
-      Expression.RecordExtend(field, v, r, tpe, purity, loc)
-
     case Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
       val r = visitExp(rest)
       Expression.RecordRestrict(field, r, tpe, purity, loc)
@@ -334,8 +329,6 @@ object ClosureConv {
 
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
-    case Expression.RecordExtend(_, value, rest, _, _, _) => freeVars(value) ++ freeVars(rest)
-
     case Expression.RecordRestrict(_, rest, _, _, _) => freeVars(rest)
 
     case Expression.ArrayLit(exps, _, _) => freeVarsExps(exps)
@@ -510,11 +503,6 @@ object ClosureConv {
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
-
-      case Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
-        val v = visitExp(value)
-        val r = visitExp(rest)
-        Expression.RecordExtend(field, v, r, tpe, purity, loc)
 
       case Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
         val r = visitExp(rest)
