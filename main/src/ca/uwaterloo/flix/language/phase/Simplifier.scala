@@ -190,7 +190,7 @@ object Simplifier {
 
       case LoweredAst.Expression.Deref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Deref(e, tpe, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -614,9 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
-        SimplifiedAst.Expression.Deref(visitExp(exp), tpe, loc)
 
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
