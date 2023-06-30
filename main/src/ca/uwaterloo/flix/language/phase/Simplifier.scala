@@ -126,9 +126,9 @@ object Simplifier {
       case LoweredAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, tpe, Purity.Pure, loc)
 
-      case LoweredAst.Expression.RecordSelect(base, field, tpe, eff, loc) =>
-        val b = visitExp(base)
-        SimplifiedAst.Expression.RecordSelect(b, field, tpe, simplifyEffect(eff), loc)
+      case LoweredAst.Expression.RecordSelect(exp, field, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
         val v = visitExp(value)
@@ -614,10 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
 
       case SimplifiedAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
         val v = visitExp(value)
