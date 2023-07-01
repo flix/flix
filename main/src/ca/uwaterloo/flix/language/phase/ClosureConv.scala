@@ -154,10 +154,6 @@ object ClosureConv {
       }
       Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case Expression.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Lazy(e, tpe, loc)
-
     case Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Force(e, tpe, loc)
@@ -265,8 +261,6 @@ object ClosureConv {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
-
-    case Expression.Lazy(exp, _, _) => freeVars(exp)
 
     case Expression.Force(exp, _, _) => freeVars(exp)
 
@@ -411,10 +405,6 @@ object ClosureConv {
       case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case Expression.Lazy(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.Lazy(e, tpe, loc)
 
       case Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
