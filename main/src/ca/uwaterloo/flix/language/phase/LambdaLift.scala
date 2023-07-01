@@ -210,11 +210,6 @@ object LambdaLift {
         val methods = methods0.map(visitJvmMethod)
         LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), tpe, Purity.Impure, loc)
-
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), tpe, Purity.Pure, loc)

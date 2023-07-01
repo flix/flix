@@ -82,7 +82,6 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
     })
-    case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
     case Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
     case Force(exp, _, _) => DocAst.Expression.Force(print(exp))
     case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)

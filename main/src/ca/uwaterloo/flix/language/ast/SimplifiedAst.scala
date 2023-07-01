@@ -98,10 +98,6 @@ object SimplifiedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[SimplifiedAst.JvmMethod], loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Spawn(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
-
     case class Lazy(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Pure
     }
