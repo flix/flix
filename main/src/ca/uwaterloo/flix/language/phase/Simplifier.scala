@@ -105,11 +105,6 @@ object Simplifier {
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ScopeExit, List(e1, e2), tpe, simplifyEffect(eff), loc)
-
       case LoweredAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 

@@ -420,7 +420,7 @@ object Lowering {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.ScopeExit(e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ScopeExit, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1943,11 +1943,6 @@ object Lowering {
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
       LoweredAst.Expression.Scope(s, regionVar, e, tpe, eff, loc)
-
-    case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.ScopeExit(e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

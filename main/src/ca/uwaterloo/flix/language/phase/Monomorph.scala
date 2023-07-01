@@ -373,11 +373,6 @@ object Monomorph {
       val subst2 = subst1 + (regionVar.sym -> Type.Impure)
       Expression.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
 
-    case Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.ScopeExit(e1, e2, subst(tpe), subst(eff), loc)
-
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
       val e2 = visitExp(exp2, env0, subst)

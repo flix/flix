@@ -62,7 +62,6 @@ object LoweredAstPrinter {
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => DocAst.Expression.Let(DocAst.Expression.Var(sym), None, print(exp1), print(exp2))
     case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => DocAst.Expression.LetRec(DocAst.Expression.Var(sym), None, print(exp1), print(exp2))
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) => DocAst.Expression.Scope(DocAst.Expression.Var(sym), print(exp))
-    case Expression.ScopeExit(exp1, exp2, tpe, eff, loc) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expression.Stm(exp1, exp2, tpe, eff, loc) => DocAst.Expression.Stm(print(exp1), print(exp2))
     case Expression.Discard(exp, eff, loc) => DocAst.Expression.Discard(print(exp))
