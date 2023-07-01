@@ -88,8 +88,6 @@ object SimplifiedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Cast(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class TryWith(exp: SimplifiedAst.Expression, effUse: Ast.EffectSymUse, rules: List[SimplifiedAst.HandlerRule], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
