@@ -116,7 +116,8 @@ object GenExpression {
         addSourceLine(mv, loc)
         mv.visitLdcInsn(s)
 
-      case _ => throw InternalCompilerException(s"Unexpected Constant $cst", loc)
+      case Ast.Constant.Regex(lit) =>
+        throw InternalCompilerException(s"Unexpected Regex Constant $cst - this should have been eliminated in Simplifier", loc)
 
     }
 
