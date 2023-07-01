@@ -82,8 +82,6 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
     })
-    case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
-    case MatchError(_, _) => DocAst.Expression.MatchError
   }
 
   /**
