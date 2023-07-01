@@ -467,15 +467,14 @@ object Lowering {
     case TypedAst.Expression.Tag(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tag(sym, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Tag(sym.sym), List(e), t, eff, loc)
 
     case TypedAst.Expression.RestrictableTag(sym0, exp, tpe, eff, loc) =>
       // Lower a restrictable tag into a normal tag.
       val caseSym = visitRestrictableCaseSym(sym0.sym)
-      val sym = CaseSymUse(caseSym, sym0.loc)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tag(sym, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Tag(caseSym), List(e), t, eff, loc)
 
     case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
       val es = visitExps(elms)
@@ -1625,8 +1624,8 @@ object Lowering {
     * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
     */
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val caseSym = new Symbol.CaseSym(sym, tag, SourceLocation.Unknown)
-    LoweredAst.Expression.Tag(Ast.CaseSymUse(caseSym, loc), exp, tpe, Type.Pure, loc)
+    val caseSym = new Symbol.CaseSym(sym, tag, loc.asSynthetic)
+    LoweredAst.Expression.ApplyAtomic(AtomicOp.Tag(caseSym), List(exp), tpe, Type.Pure, loc)
   }
 
   /**
@@ -1971,10 +1970,6 @@ object Lowering {
           LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
       }
       LoweredAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
-
-    case LoweredAst.Expression.Tag(sym, exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Tag(sym, e, tpe, eff, loc)
 
     case LoweredAst.Expression.Tuple(elms, tpe, eff, loc) =>
       val es = elms.map(substExp(_, subst))

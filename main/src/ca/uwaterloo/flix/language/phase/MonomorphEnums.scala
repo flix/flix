@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -57,8 +57,8 @@ object MonomorphEnums {
       * The types in this must must:
       * 1. Be ground, i.e. no type variables
       * 2. Be normalized, i.e.
-      *   2a. {a=Int32, b=Int32} and {b=Int32, a=Int32} should not both be present (labels should be sorted)
-      *   2b. Pure + Pure and Pure should not both be present (formulas should be fully evaluated)
+      * 2a. {a=Int32, b=Int32} and {b=Int32, a=Int32} should not both be present (labels should be sorted)
+      * 2b. Pure + Pure and Pure should not both be present (formulas should be fully evaluated)
       * 3. Contain no specialized enums, i.e. should use List[Int32] instead of List$32
       */
     val enum2enum: mutable.Map[(Symbol.EnumSym, Type), Symbol.EnumSym] = mutable.Map.empty
@@ -162,10 +162,19 @@ object MonomorphEnums {
       val p = visitType(eff)
       Expression.Apply(e, es, t, p, loc)
     case Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val op1 = op match {
+        case AtomicOp.Tag(sym) =>
+          //
+          // Specialize the enum
+          //
+          val freshCaseSym = specializeCaseSymUse(CaseSymUse(sym, sym.loc), tpe.typeArguments, tpe.loc)
+          AtomicOp.Tag(freshCaseSym.sym)
+        case _ => op
+      }
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.ApplyAtomic(op, es, t, p, loc)
+      Expression.ApplyAtomic(op1, es, t, p, loc)
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -228,15 +237,6 @@ object MonomorphEnums {
       Expression.TypeMatch(e, rs, t, p, loc)
     case Expression.RelationalChoose(_, _, _, _, loc) =>
       throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-    case Expression.Tag(sym, exp, tpe, eff, loc) =>
-      //
-      // Specialize the enum
-      //
-      val freshCaseSym = specializeCaseSymUse(sym, tpe.typeArguments, tpe.loc)
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Tag(freshCaseSym, e, t, p, loc)
     case Expression.Tuple(elms, tpe, eff, loc) =>
       val es = elms.map(visitExp)
       val t = visitType(tpe)
