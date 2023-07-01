@@ -146,9 +146,6 @@ object EarlyTreeShaker {
     case Expression.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 

@@ -393,7 +393,7 @@ object Lowering {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Binary(sop, e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1925,11 +1925,6 @@ object Lowering {
     case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expression.ApplyAtomic(op, es, tpe, eff, loc)
-
-    case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)

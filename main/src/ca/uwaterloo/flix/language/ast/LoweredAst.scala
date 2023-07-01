@@ -103,8 +103,6 @@ object LoweredAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Binary(sop: SemanticOp, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

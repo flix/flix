@@ -166,12 +166,6 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.ApplyAtomic(op, es, t, p, loc)
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Binary(sop, e1, e2, t, p, loc)
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

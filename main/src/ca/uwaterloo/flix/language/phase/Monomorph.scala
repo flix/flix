@@ -353,14 +353,6 @@ object Monomorph {
       val es = exps.map(visitExp(_, env0, subst))
       Expression.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
-    /*
-     * Other Binary Expression.
-     */
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.Binary(sop, e1, e2, subst(tpe), subst(eff), loc)
-
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
