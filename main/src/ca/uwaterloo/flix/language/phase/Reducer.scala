@@ -136,10 +136,6 @@ object Reducer {
       val ms = methods.map(visitJvmMethod)
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
 
-    case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
-      val op = AtomicOp.HoleError(sym)
-      ReducedAst.Expr.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)
-
     case LiftedAst.Expression.MatchError(tpe, loc) =>
       val op = AtomicOp.MatchError
       ReducedAst.Expr.ApplyAtomic(op, Nil, tpe, Purity.Pure, loc)

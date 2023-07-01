@@ -280,7 +280,8 @@ object Inliner {
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
+    case OccurrenceAst.Expression.HoleError(sym, tpe, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
@@ -492,7 +493,8 @@ object Inliner {
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
+    case OccurrenceAst.Expression.HoleError(sym, tpe, loc) =>
+      LiftedAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, tpe, Purity.Impure, loc)
 
     case OccurrenceAst.Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }

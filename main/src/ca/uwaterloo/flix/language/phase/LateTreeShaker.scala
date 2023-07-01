@@ -147,9 +147,6 @@ object LateTreeShaker {
     case Expression.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
-    case Expression.HoleError(_, _, _) =>
-      Set.empty
-
     case Expression.MatchError(_, _) =>
       Set.empty
 

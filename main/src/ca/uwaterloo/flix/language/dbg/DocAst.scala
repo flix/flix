@@ -378,6 +378,8 @@ object DocAst {
 
       case AtomicOp.Force => DocAst.Expression.Force(es.head)
 
+      case AtomicOp.HoleError(sym) => DocAst.Expression.HoleError(sym)
+
       case _ => throw InternalCompilerException(s"Unexpected AtomicOp in LiftedAstPrinter: $op", loc)
     }
   }

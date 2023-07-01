@@ -80,7 +80,6 @@ object LiftedAstPrinter {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), TypePrinter.print(retTpe))
     })
-    case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
     case MatchError(_, _) => DocAst.Expression.MatchError
   }
 
