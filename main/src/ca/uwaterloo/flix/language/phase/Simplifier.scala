@@ -249,7 +249,7 @@ object Simplifier {
 
       case LoweredAst.Expression.GetField(field, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.GetField(field, e, tpe, simplifyEffect(eff), loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -641,10 +641,6 @@ object Simplifier {
       case SimplifiedAst.Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Resume(e, tpe, loc)
-
-      case SimplifiedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.GetField(field, e, tpe, purity, loc)
 
       case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

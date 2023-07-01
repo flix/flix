@@ -206,10 +206,6 @@ object LambdaLift {
         val e = visitExp(exp)
         LiftedAst.Expression.Resume(e, tpe, loc)
 
-      case SimplifiedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, purity, loc)
-
       case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
