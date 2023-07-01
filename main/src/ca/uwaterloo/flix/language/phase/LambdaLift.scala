@@ -210,9 +210,6 @@ object LambdaLift {
         val methods = methods0.map(visitJvmMethod)
         LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
-        LiftedAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, tpe, Purity.Impure, loc)
-
       case SimplifiedAst.Expression.MatchError(tpe, loc) =>
         LiftedAst.Expression.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
 
