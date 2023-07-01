@@ -145,11 +145,6 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Resume(e, tpe, loc)
 
-    case Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.PutField(field, e1, e2, tpe, purity, loc)
-
     case Expression.GetStaticField(field, tpe, purity, loc) =>
       Expression.GetStaticField(field, tpe, purity, loc)
 
@@ -276,8 +271,6 @@ object ClosureConv {
     case Expression.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expression.Resume(exp, _, _) => freeVars(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _) => freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.GetStaticField(_, _, _, _) => SortedSet.empty
 
@@ -435,11 +428,6 @@ object ClosureConv {
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Resume(exp, tpe, loc)
-
-      case Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.PutField(field, e1, e2, tpe, purity, loc)
 
       case Expression.GetStaticField(_, _, _, _) =>
         e
