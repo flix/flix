@@ -530,12 +530,6 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(LREM)
 
-          case StringOp.Concat =>
-            compileExpr(exp1)
-            compileExpr(exp2)
-            mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat",
-              AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
-
           case _ => InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
 
         }
