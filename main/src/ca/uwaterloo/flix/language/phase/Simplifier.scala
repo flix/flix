@@ -60,7 +60,14 @@ object Simplifier {
 
       case LoweredAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
-      case LoweredAst.Expression.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
+      case LoweredAst.Expression.Cst(cst, tpe, loc) =>
+        cst match {
+          case Ast.Constant.Regex(lit) =>
+            val name = s"Anon$$${flix.genSym.freshId()}"
+            val clazz = Class.forName("java.util.regex.Pattern")
+            SimplifiedAst.Expression.NewObject(name, ???, ???, ???, ???, ???)
+          case _ => SimplifiedAst.Expression.Cst(cst, tpe, loc)
+        }
 
       case LoweredAst.Expression.Lambda(fparam, exp, tpe, loc) =>
         val p = visitFormalParam(fparam)
