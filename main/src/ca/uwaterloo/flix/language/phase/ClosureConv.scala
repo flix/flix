@@ -154,8 +154,6 @@ object ClosureConv {
       }
       Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case Expression.MatchError(_, _) => exp0
-
     case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
     case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
@@ -255,8 +253,6 @@ object ClosureConv {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
-
-    case Expression.MatchError(_, _) => SortedSet.empty
 
     case Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
@@ -396,7 +392,6 @@ object ClosureConv {
         val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case Expression.MatchError(_, _) => e
     }
 
     visitExp(e0)

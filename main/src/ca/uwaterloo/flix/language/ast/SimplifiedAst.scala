@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, Source}
-import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
+import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.phase.ClosureConv
 
 object SimplifiedAst {
@@ -97,10 +97,6 @@ object SimplifiedAst {
     }
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[SimplifiedAst.JvmMethod], loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
 
   }
 
