@@ -116,11 +116,7 @@ object GenExpression {
         addSourceLine(mv, loc)
         mv.visitLdcInsn(s)
 
-      case Ast.Constant.Regex(patt) =>
-        addSourceLine(mv, loc)
-        mv.visitLdcInsn(patt.pattern)
-        mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
+      case _ => throw InternalCompilerException(s"Unexpected Constant $cst", loc)
 
     }
 

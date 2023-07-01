@@ -64,9 +64,13 @@ object Simplifier {
       case LoweredAst.Expression.Cst(cst, tpe, loc) =>
         cst match {
           case Ast.Constant.Regex(lit) =>
-            val name = s"Anon$$${flix.genSym.freshId()}"
             val clazz = Class.forName("java.util.regex.Pattern")
-            SimplifiedAst.Expression.NewObject(name, ???, ???, ???, ???, ???)
+            val strClass = Class.forName("java.lang.String")
+            val method = clazz.getMethod("compile", strClass)
+            val op = AtomicOp.InvokeStaticMethod(method)
+            val exp = SimplifiedAst.Expression.Cst(Ast.Constant.Str(lit.pattern()), Type.Str, loc.asSynthetic)
+            SimplifiedAst.Expression.ApplyAtomic(op, List(exp), tpe, Purity.Pure, loc)
+
           case _ => SimplifiedAst.Expression.Cst(cst, tpe, loc)
         }
 
