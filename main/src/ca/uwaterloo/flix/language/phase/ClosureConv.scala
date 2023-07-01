@@ -119,10 +119,6 @@ object ClosureConv {
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
 
-    case Expression.InstanceOf(exp, clazz, loc) =>
-      val e = visitExp(exp)
-      Expression.InstanceOf(e, clazz, loc)
-
     case Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp)
       Expression.Cast(e, tpe, purity, loc)
@@ -288,8 +284,6 @@ object ClosureConv {
 
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
-    case Expression.InstanceOf(exp, _, _) => freeVars(exp)
-
     case Expression.Cast(exp, _, _, _) => freeVars(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
@@ -444,10 +438,6 @@ object ClosureConv {
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
-
-      case Expression.InstanceOf(exp, clazz, loc) =>
-        val e = visitExp(exp)
-        Expression.InstanceOf(e, clazz, loc)
 
       case Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)

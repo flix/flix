@@ -201,7 +201,7 @@ object Simplifier {
 
       case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.InstanceOf(e, clazz, loc)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.purity, loc)
 
       case LoweredAst.Expression.Cast(exp, _, _, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -614,10 +614,6 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
-
-      case SimplifiedAst.Expression.InstanceOf(exp, clazz, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.InstanceOf(e, clazz, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
