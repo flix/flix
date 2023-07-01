@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, Source}
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 import ca.uwaterloo.flix.language.phase.ClosureConv
 
-import java.lang.reflect.Field
-
 object SimplifiedAst {
 
   val empty: Root = SimplifiedAst.Root(Map.empty, Map.empty, None, Map.empty)
@@ -97,8 +95,6 @@ object SimplifiedAst {
     case class Resume(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Pure
     }
-
-    case class PutStaticField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[SimplifiedAst.JvmMethod], loc: SourceLocation) extends SimplifiedAst.Expression
 

@@ -145,10 +145,6 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Resume(e, tpe, loc)
 
-    case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      Expression.PutStaticField(field, e, tpe, purity, loc)
-
     case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
@@ -268,8 +264,6 @@ object ClosureConv {
     case Expression.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expression.Resume(exp, _, _) => freeVars(exp)
-
-    case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
 
     case Expression.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
@@ -420,10 +414,6 @@ object ClosureConv {
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Resume(exp, tpe, loc)
-
-      case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.PutStaticField(field, e, tpe, purity, loc)
 
       case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, subst))
