@@ -58,7 +58,8 @@ object Simplifier {
 
       case LoweredAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
 
-      case LoweredAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
+      case LoweredAst.Expression.Hole(sym, tpe, loc) =>
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
 
@@ -443,7 +444,8 @@ object Simplifier {
           )
       }
       // Construct the error branch.
-      val errorBranch = defaultLab -> SimplifiedAst.Expression.MatchError(tpe, loc)
+      val errorExp = SimplifiedAst.Expression.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
+      val errorBranch = defaultLab -> errorExp
 
       // The initial expression simply jumps to the first label.
       val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, jumpPurity, loc)
@@ -645,10 +647,6 @@ object Simplifier {
       case SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
-
-      case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
       case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
