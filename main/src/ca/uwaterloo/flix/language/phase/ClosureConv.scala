@@ -91,8 +91,12 @@ object ClosureConv {
     }
 
     case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps map visitExp
-      Expression.ApplyAtomic(op, es, tpe, purity, loc)
+      op match {
+        case AtomicOp.GetStaticField(_) => Expression.ApplyAtomic(op, exps, tpe, purity, loc)
+        case _ =>
+          val es = exps map visitExp
+          Expression.ApplyAtomic(op, es, tpe, purity, loc)
+      }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -144,9 +148,6 @@ object ClosureConv {
     case Expression.Resume(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Resume(e, tpe, loc)
-
-    case Expression.GetStaticField(field, tpe, purity, loc) =>
-      Expression.GetStaticField(field, tpe, purity, loc)
 
     case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -237,8 +238,10 @@ object ClosureConv {
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
-    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      freeVarsExps(exps)
+    case Expression.ApplyAtomic(op, exps, _, _, _) => op match {
+      case AtomicOp.GetStaticField(_) => SortedSet.empty
+      case _ => freeVarsExps(exps)
+    }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -271,8 +274,6 @@ object ClosureConv {
     case Expression.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expression.Resume(exp, _, _) => freeVars(exp)
-
-    case Expression.GetStaticField(_, _, _, _) => SortedSet.empty
 
     case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
 
@@ -344,7 +345,7 @@ object ClosureConv {
         Expression.Lambda(fs, e, tpe, loc)
 
       case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
-        case AtomicOp.Closure(_) => e
+        case AtomicOp.Closure(_) | AtomicOp.GetStaticField(_) => e
         case _ =>
           val es = exps map visitExp
           Expression.ApplyAtomic(op, es, tpe, purity, loc)
@@ -428,9 +429,6 @@ object ClosureConv {
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Resume(exp, tpe, loc)
-
-      case Expression.GetStaticField(_, _, _, _) =>
-        e
 
       case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)

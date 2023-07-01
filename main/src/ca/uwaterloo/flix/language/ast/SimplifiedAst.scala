@@ -98,8 +98,6 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class GetStaticField(field: Field, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class PutStaticField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[SimplifiedAst.JvmMethod], loc: SourceLocation) extends SimplifiedAst.Expression
