@@ -119,14 +119,6 @@ object ClosureConv {
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
 
-    case Expression.InstanceOf(exp, clazz, loc) =>
-      val e = visitExp(exp)
-      Expression.InstanceOf(e, clazz, loc)
-
-    case Expression.Cast(exp, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      Expression.Cast(e, tpe, purity, loc)
-
     case Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
@@ -153,35 +145,6 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Resume(e, tpe, loc)
 
-    case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-      val as = args map visitExp
-      Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
-
-    case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      val as = args.map(visitExp)
-      Expression.InvokeMethod(method, e, as, tpe, purity, loc)
-
-    case Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-      val as = args.map(visitExp)
-      Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
-
-    case Expression.GetField(field, exp, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      Expression.GetField(field, e, tpe, purity, loc)
-
-    case Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.PutField(field, e1, e2, tpe, purity, loc)
-
-    case Expression.GetStaticField(field, tpe, purity, loc) =>
-      Expression.GetStaticField(field, tpe, purity, loc)
-
-    case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      Expression.PutStaticField(field, e, tpe, purity, loc)
-
     case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
@@ -190,19 +153,6 @@ object ClosureConv {
           JvmMethod(ident, fparams, clo, retTpe, purity, loc)
       }
       Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-    case Expression.Spawn(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.Spawn(e1, e2, tpe, loc)
-
-    case Expression.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Lazy(e, tpe, loc)
-
-    case Expression.Force(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Force(e, tpe, loc)
 
     case Expression.HoleError(_, _, _) => exp0
 
@@ -267,7 +217,7 @@ object ClosureConv {
     case Expression.Apply(exp, args, _, _, _) =>
       freeVars(exp) ++ freeVarsExps(args)
 
-    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+    case Expression.ApplyAtomic(_, exps, _, _, _) =>
       freeVarsExps(exps)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -288,10 +238,6 @@ object ClosureConv {
 
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
-    case Expression.InstanceOf(exp, _, _) => freeVars(exp)
-
-    case Expression.Cast(exp, _, _, _) => freeVars(exp)
-
     case Expression.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
       case (acc, CatchRule(sym, _, exp)) =>
         acc ++ filterBoundVar(freeVars(exp), sym)
@@ -306,31 +252,11 @@ object ClosureConv {
 
     case Expression.Resume(exp, _, _) => freeVars(exp)
 
-    case Expression.InvokeConstructor(_, args, _, _, _) => freeVarsExps(args)
-
-    case Expression.InvokeMethod(_, exp, args, _, _, _) => freeVars(exp) ++ freeVarsExps(args)
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _) => freeVarsExps(args)
-
-    case Expression.GetField(_, exp, _, _, _) => freeVars(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _) => freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.GetStaticField(_, _, _, _) => SortedSet.empty
-
-    case Expression.PutStaticField(_, exp, _, _, _) => freeVars(exp)
-
     case Expression.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
-
-    case Expression.Spawn(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
-
-    case Expression.Lazy(exp, _, _) => freeVars(exp)
-
-    case Expression.Force(exp, _, _) => freeVars(exp)
 
     case Expression.HoleError(_, _, _) => SortedSet.empty
 
@@ -387,12 +313,9 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
-      case Expression.ApplyAtomic(op, exps, tpe, purity, loc) => op match {
-        case AtomicOp.Closure(_) => e
-        case _ =>
-          val es = exps map visitExp
-          Expression.ApplyAtomic(op, es, tpe, purity, loc)
-      }
+      case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val es = exps map visitExp
+        Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expression.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -445,14 +368,6 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
 
-      case Expression.InstanceOf(exp, clazz, loc) =>
-        val e = visitExp(exp)
-        Expression.InstanceOf(e, clazz, loc)
-
-      case Expression.Cast(exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.Cast(e, tpe, purity, loc)
-
       case Expression.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
@@ -481,51 +396,9 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Resume(e, tpe, loc)
 
-      case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-        val as = args.map(visitExp)
-        Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
-
-      case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val as = args.map(visitExp)
-        Expression.InvokeMethod(method, e, as, tpe, purity, loc)
-
-      case Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-        val as = args.map(visitExp)
-        Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
-
-      case Expression.GetField(field, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.GetField(field, e, tpe, purity, loc)
-
-      case Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.PutField(field, e1, e2, tpe, purity, loc)
-
-      case Expression.GetStaticField(_, _, _, _) =>
-        e
-
-      case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        Expression.PutStaticField(field, e, tpe, purity, loc)
-
       case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case Expression.Spawn(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.Spawn(e1, e2, tpe, loc)
-
-      case Expression.Lazy(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.Lazy(e, tpe, loc)
-
-      case Expression.Force(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.Force(e, tpe, loc)
 
       case Expression.HoleError(_, _, _) => e
 

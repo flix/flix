@@ -68,8 +68,6 @@ object SimplifiedAstPrinter {
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(sym, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case InstanceOf(exp, clazz, _) => DocAst.Expression.InstanceOf(print(exp), clazz)
-    case Cast(exp, tpe, _, _) => DocAst.Expression.Cast(print(exp), TypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case SimplifiedAst.CatchRule(sym, clazz, exp) =>
         (sym, clazz, print(exp))
@@ -80,20 +78,10 @@ object SimplifiedAstPrinter {
     })
     case Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
-    case InvokeConstructor(constructor, args, _, _, _) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
-    case InvokeMethod(method, exp, args, _, _, _) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
-    case InvokeStaticMethod(method, args, _, _, _) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
-    case GetField(field, exp, _, _, _) => DocAst.Expression.JavaGetField(field, print(exp))
-    case PutField(field, exp1, exp2, _, _, _) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
-    case GetStaticField(field, _, _, _) => DocAst.Expression.JavaGetStaticField(field)
-    case PutStaticField(field, exp, _, _, _) => DocAst.Expression.JavaPutStaticField(field, print(exp))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methods.map {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
     })
-    case Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
-    case Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
-    case Force(exp, _, _) => DocAst.Expression.Force(print(exp))
     case HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
     case MatchError(_, _) => DocAst.Expression.MatchError
   }
