@@ -154,10 +154,6 @@ object ClosureConv {
       }
       Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case Expression.Force(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Force(e, tpe, loc)
-
     case Expression.HoleError(_, _, _) => exp0
 
     case Expression.MatchError(_, _) => exp0
@@ -261,8 +257,6 @@ object ClosureConv {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
-
-    case Expression.Force(exp, _, _) => freeVars(exp)
 
     case Expression.HoleError(_, _, _) => SortedSet.empty
 
@@ -405,10 +399,6 @@ object ClosureConv {
       case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(name, clazz, tpe, purity, methods, loc)
-
-      case Expression.Force(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.Force(e, tpe, loc)
 
       case Expression.HoleError(_, _, _) => e
 
