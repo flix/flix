@@ -73,6 +73,8 @@ object Simplifier {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.Apply(e, es, tpe, simplifyEffect(eff), loc)
 
+      case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) => ???
+
       case LoweredAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, simplifyEffect(eff), loc)
