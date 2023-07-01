@@ -394,7 +394,7 @@ object ClosureConv {
 
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Resume(exp, tpe, loc)
+        Expression.Resume(e, tpe, loc)
 
       case Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod(_, subst))
