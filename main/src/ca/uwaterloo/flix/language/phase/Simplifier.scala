@@ -102,9 +102,6 @@ object Simplifier {
       case LoweredAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Region(tpe, loc) =>
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, tpe, Purity.Pure, loc)
-
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyEffect(eff), loc)
 

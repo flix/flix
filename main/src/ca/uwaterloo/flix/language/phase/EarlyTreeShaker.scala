@@ -152,9 +152,6 @@ object EarlyTreeShaker {
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Region(_, _) =>
-      Set.empty
-
     case Expression.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 

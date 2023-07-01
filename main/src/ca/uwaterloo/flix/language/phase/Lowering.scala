@@ -409,7 +409,7 @@ object Lowering {
 
     case TypedAst.Expression.Region(tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.Region(t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, t, Type.Pure, loc)
 
     case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1681,8 +1681,9 @@ object Lowering {
         val loc = e.loc.asSynthetic
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
-        val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        LoweredAst.Expression.Stm(e3, acc, acc.tpe, Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        val e3 = LoweredAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, Type.Unit, Type.Pure, loc)
+        val e4 = LoweredAst.Expression.Spawn(e2, e3, Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        LoweredAst.Expression.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
@@ -1937,9 +1938,6 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       LoweredAst.Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
-
-    case LoweredAst.Expression.Region(tpe, loc) =>
-      LoweredAst.Expression.Region(tpe, loc)
 
     case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
