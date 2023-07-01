@@ -145,10 +145,6 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Resume(e, tpe, loc)
 
-    case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-      val as = args map visitExp
-      Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
-
     case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
       val e = visitExp(exp)
       val as = args.map(visitExp)
@@ -293,8 +289,6 @@ object ClosureConv {
     case Expression.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expression.Resume(exp, _, _) => freeVars(exp)
-
-    case Expression.InvokeConstructor(_, args, _, _, _) => freeVarsExps(args)
 
     case Expression.InvokeMethod(_, exp, args, _, _, _) => freeVars(exp) ++ freeVarsExps(args)
 
@@ -460,10 +454,6 @@ object ClosureConv {
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Resume(exp, tpe, loc)
-
-      case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
-        val as = args.map(visitExp)
-        Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
 
       case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
