@@ -214,7 +214,7 @@ object LambdaLift {
         LiftedAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) =>
-        LiftedAst.Expression.MatchError(tpe, loc)
+        LiftedAst.Expression.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
 
       case SimplifiedAst.Expression.Def(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
       case SimplifiedAst.Expression.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)

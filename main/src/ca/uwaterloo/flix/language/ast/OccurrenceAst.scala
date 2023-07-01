@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
+import ca.uwaterloo.flix.language.ast.Purity.Pure
 
 object OccurrenceAst {
 
@@ -75,10 +75,6 @@ object OccurrenceAst {
     case class TryCatch(exp: OccurrenceAst.Expression, rules: List[OccurrenceAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class MatchError(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
 
   }
 

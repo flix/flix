@@ -280,7 +280,6 @@ object Inliner {
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
 
   /**
@@ -490,7 +489,6 @@ object Inliner {
       }
       LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case OccurrenceAst.Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
 
   /**
