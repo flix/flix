@@ -238,10 +238,10 @@ object Simplifier {
         val es = exps map visitExp
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      case LoweredAst.Expression.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
         val e = visitExp(exp)
-        val as = args.map(visitExp)
-        SimplifiedAst.Expression.InvokeMethod(method, e, as, tpe, simplifyEffect(eff), loc)
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
@@ -351,7 +351,8 @@ object Simplifier {
           val strClass = Class.forName("java.lang.String")
           val objClass = Class.forName("java.lang.Object")
           val method = strClass.getMethod("equals", objClass)
-          return SimplifiedAst.Expression.InvokeMethod(method, e1, List(e2), Type.Bool, combine(e1.purity, e2.purity), loc)
+          val op = AtomicOp.InvokeMethod(method)
+          return SimplifiedAst.Expression.ApplyAtomic(op, List(e1, e2), Type.Bool, combine(e1.purity, e2.purity), loc)
 
         case _ => // fallthrough
       }
@@ -640,11 +641,6 @@ object Simplifier {
       case SimplifiedAst.Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Resume(e, tpe, loc)
-
-      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val as = args.map(visitExp)
-        SimplifiedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
 
       case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
         val as = args.map(visitExp)

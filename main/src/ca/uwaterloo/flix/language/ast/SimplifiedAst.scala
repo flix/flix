@@ -98,8 +98,6 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class InvokeMethod(method: Method, exp: SimplifiedAst.Expression, exps: List[SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class InvokeStaticMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class GetField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression

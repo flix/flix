@@ -145,11 +145,6 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Resume(e, tpe, loc)
 
-    case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
-      val e = visitExp(exp)
-      val as = args.map(visitExp)
-      Expression.InvokeMethod(method, e, as, tpe, purity, loc)
-
     case Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
       val as = args.map(visitExp)
       Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
@@ -289,8 +284,6 @@ object ClosureConv {
     case Expression.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expression.Resume(exp, _, _) => freeVars(exp)
-
-    case Expression.InvokeMethod(_, exp, args, _, _, _) => freeVars(exp) ++ freeVarsExps(args)
 
     case Expression.InvokeStaticMethod(_, args, _, _, _) => freeVarsExps(args)
 
@@ -454,11 +447,6 @@ object ClosureConv {
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Resume(exp, tpe, loc)
-
-      case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
-        val e = visitExp(exp)
-        val as = args.map(visitExp)
-        Expression.InvokeMethod(method, e, as, tpe, purity, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
         val as = args.map(visitExp)

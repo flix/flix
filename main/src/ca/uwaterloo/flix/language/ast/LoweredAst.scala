@@ -197,7 +197,7 @@ object LoweredAst {
 
     case class InvokeConstructor(constructor: Constructor[_], exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class InvokeMethod(method: Method, exp: LoweredAst.Expression, args: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class InvokeMethod(method: Method, exp: LoweredAst.Expression, exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class InvokeStaticMethod(method: Method, args: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
