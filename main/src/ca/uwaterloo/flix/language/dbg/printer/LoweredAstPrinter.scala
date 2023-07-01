@@ -95,7 +95,6 @@ object LoweredAstPrinter {
           (patD, guardD, bodyD)
       }
       DocAst.Expression.Match(expD, rulesD)
-    case Expression.Tuple(elms, tpe, eff, loc) => DocAst.Expression.Tuple(elms.map(print))
     case Expression.RecordEmpty(tpe, loc) => DocAst.Expression.RecordEmpty
     case Expression.RecordSelect(exp, field, tpe, eff, loc) => DocAst.Expression.RecordSelect(field, print(exp))
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => DocAst.Expression.RecordExtend(field, print(value), print(rest))

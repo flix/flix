@@ -449,10 +449,6 @@ object Monomorph {
       }
       Expression.RelationalChoose(es, rs, subst(tpe), subst(eff), loc)
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
-      val es = elms.map(e => visitExp(e, env0, subst))
-      Expression.Tuple(es, subst(tpe), subst(eff), loc)
-
     case Expression.RecordEmpty(tpe, loc) =>
       Expression.RecordEmpty(subst(tpe), loc)
 

@@ -479,7 +479,7 @@ object Lowering {
     case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
       val es = visitExps(elms)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tuple(es, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, t, eff, loc)
 
     case TypedAst.Expression.RecordEmpty(tpe, loc) =>
       val t = visitType(tpe)
@@ -1634,7 +1634,7 @@ object Lowering {
   private def mkTuple(exps: List[LoweredAst.Expression], loc: SourceLocation): LoweredAst.Expression = {
     val tpe = Type.mkTuple(exps.map(_.tpe), loc)
     val eff = Type.Pure
-    LoweredAst.Expression.Tuple(exps, tpe, eff, loc)
+    LoweredAst.Expression.ApplyAtomic(AtomicOp.Tuple, exps, tpe, eff, loc)
   }
 
   /**
@@ -1806,8 +1806,8 @@ object Lowering {
     *   (<- ch0, <- ch1, <- ch2)
     * }}}
     */
-  private def mkParTuple(exp: LoweredAst.Expression.Tuple)(implicit flix: Flix): LoweredAst.Expression = {
-    val LoweredAst.Expression.Tuple(elms, tpe, eff, loc) = exp
+  private def mkParTuple(exp: LoweredAst.Expression.ApplyAtomic)(implicit flix: Flix): LoweredAst.Expression = {
+    val LoweredAst.Expression.ApplyAtomic(_, elms, tpe, eff, loc) = exp
 
     // Partition elements into complex and simple (vars or csts) exps.
     // We remember the index so we can sort the expression into the correct
@@ -1835,7 +1835,7 @@ object Lowering {
     val parElmExps = (waitExps ::: lastVarExp ::: varOrCsts).sortBy(_._2).map(_._1)
 
     // Make new tuple
-    val parTuple = LoweredAst.Expression.Tuple(parElmExps, tpe, eff, loc.asSynthetic)
+    val parTuple = LoweredAst.Expression.ApplyAtomic(AtomicOp.Tuple, parElmExps, tpe, eff, loc.asSynthetic)
 
     // Make let-exp that evaluates last under `lastVarExp` and prepend to the tuple.
     val lastLetExp = lastVarExpWithSym.map {
@@ -1970,10 +1970,6 @@ object Lowering {
           LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
       }
       LoweredAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
-
-    case LoweredAst.Expression.Tuple(elms, tpe, eff, loc) =>
-      val es = elms.map(substExp(_, subst))
-      LoweredAst.Expression.Tuple(es, tpe, eff, loc)
 
     case LoweredAst.Expression.RecordEmpty(_, _) => exp0
 
