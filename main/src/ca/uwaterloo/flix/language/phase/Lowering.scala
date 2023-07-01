@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -387,7 +387,7 @@ object Lowering {
     case TypedAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Unary(sop, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
 
     case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1922,9 +1922,9 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expression.Apply(e, es, tpe, eff, loc)
 
-    case LoweredAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Unary(sop, e, tpe, eff, loc)
+    case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expression.ApplyAtomic(op, es, tpe, eff, loc)
 
     case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

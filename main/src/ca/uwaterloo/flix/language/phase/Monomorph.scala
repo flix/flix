@@ -349,9 +349,9 @@ object Monomorph {
       val es = exps.map(visitExp(_, env0, subst))
       Expression.Apply(e, es, subst(tpe), subst(eff), loc)
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
-      val e1 = visitExp(exp, env0, subst)
-      Expression.Unary(sop, e1, subst(tpe), subst(eff), loc)
+    case Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      Expression.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
     /*
      * Other Binary Expression.

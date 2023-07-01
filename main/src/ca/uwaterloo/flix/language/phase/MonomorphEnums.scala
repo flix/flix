@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -161,11 +161,11 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.Apply(e, es, t, p, loc)
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Unary(sop, e, t, p, loc)
+      Expression.ApplyAtomic(op, es, t, p, loc)
     case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
