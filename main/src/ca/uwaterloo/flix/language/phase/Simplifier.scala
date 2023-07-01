@@ -80,7 +80,16 @@ object Simplifier {
       case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, simplifyEffect(eff), loc)
+        val op = sop match {
+          case SemanticOp.StringOp.Concat =>
+            // Translate to InvokeMethod exp
+            val strClass = Class.forName("java.lang.String")
+            val method = strClass.getMethod("concat", strClass)
+            AtomicOp.InvokeMethod(method)
+
+          case _ => AtomicOp.Binary(sop)
+        }
+        SimplifiedAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, simplifyEffect(eff), loc)
