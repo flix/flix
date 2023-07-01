@@ -145,10 +145,6 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Resume(e, tpe, loc)
 
-    case Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-      val as = args.map(visitExp)
-      Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
-
     case Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
       Expression.GetField(field, e, tpe, purity, loc)
@@ -284,8 +280,6 @@ object ClosureConv {
     case Expression.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
     case Expression.Resume(exp, _, _) => freeVars(exp)
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _) => freeVarsExps(args)
 
     case Expression.GetField(_, exp, _, _, _) => freeVars(exp)
 
@@ -447,10 +441,6 @@ object ClosureConv {
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Resume(exp, tpe, loc)
-
-      case Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
-        val as = args.map(visitExp)
-        Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
 
       case Expression.GetField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
