@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -387,13 +387,13 @@ object Lowering {
     case TypedAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Unary(sop, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), t, eff, loc)
 
     case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Binary(sop, e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -409,7 +409,7 @@ object Lowering {
 
     case TypedAst.Expression.Region(tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.Region(t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, t, Type.Pure, loc)
 
     case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -420,7 +420,7 @@ object Lowering {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.ScopeExit(e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ScopeExit, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -467,20 +467,19 @@ object Lowering {
     case TypedAst.Expression.Tag(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tag(sym, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Tag(sym.sym), List(e), t, eff, loc)
 
     case TypedAst.Expression.RestrictableTag(sym0, exp, tpe, eff, loc) =>
       // Lower a restrictable tag into a normal tag.
       val caseSym = visitRestrictableCaseSym(sym0.sym)
-      val sym = CaseSymUse(caseSym, sym0.loc)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tag(sym, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Tag(caseSym), List(e), t, eff, loc)
 
     case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
       val es = visitExps(elms)
       val t = visitType(tpe)
-      LoweredAst.Expression.Tuple(es, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, t, eff, loc)
 
     case TypedAst.Expression.RecordEmpty(tpe, loc) =>
       val t = visitType(tpe)
@@ -1625,8 +1624,8 @@ object Lowering {
     * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
     */
   private def mkTag(sym: Symbol.EnumSym, tag: String, exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val caseSym = new Symbol.CaseSym(sym, tag, SourceLocation.Unknown)
-    LoweredAst.Expression.Tag(Ast.CaseSymUse(caseSym, loc), exp, tpe, Type.Pure, loc)
+    val caseSym = new Symbol.CaseSym(sym, tag, loc.asSynthetic)
+    LoweredAst.Expression.ApplyAtomic(AtomicOp.Tag(caseSym), List(exp), tpe, Type.Pure, loc)
   }
 
   /**
@@ -1635,7 +1634,7 @@ object Lowering {
   private def mkTuple(exps: List[LoweredAst.Expression], loc: SourceLocation): LoweredAst.Expression = {
     val tpe = Type.mkTuple(exps.map(_.tpe), loc)
     val eff = Type.Pure
-    LoweredAst.Expression.Tuple(exps, tpe, eff, loc)
+    LoweredAst.Expression.ApplyAtomic(AtomicOp.Tuple, exps, tpe, eff, loc)
   }
 
   /**
@@ -1681,8 +1680,9 @@ object Lowering {
         val loc = e.loc.asSynthetic
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
-        val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
-        LoweredAst.Expression.Stm(e3, acc, acc.tpe, Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+        val e3 = LoweredAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, Type.Unit, Type.Pure, loc)
+        val e4 = LoweredAst.Expression.Spawn(e2, e3, Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        LoweredAst.Expression.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
     // Make let bindings `let ch = chan 1;`.
@@ -1840,14 +1840,9 @@ object Lowering {
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expression.Apply(e, es, tpe, eff, loc)
 
-    case LoweredAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Unary(sop, e, tpe, eff, loc)
-
-    case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Binary(sop, e1, e2, tpe, eff, loc)
+    case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expression.ApplyAtomic(op, es, tpe, eff, loc)
 
     case LoweredAst.Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
@@ -1861,18 +1856,10 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       LoweredAst.Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
 
-    case LoweredAst.Expression.Region(tpe, loc) =>
-      LoweredAst.Expression.Region(tpe, loc)
-
     case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
       LoweredAst.Expression.Scope(s, regionVar, e, tpe, eff, loc)
-
-    case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.ScopeExit(e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
@@ -1901,14 +1888,6 @@ object Lowering {
           LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
       }
       LoweredAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
-
-    case LoweredAst.Expression.Tag(sym, exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Tag(sym, e, tpe, eff, loc)
-
-    case LoweredAst.Expression.Tuple(elms, tpe, eff, loc) =>
-      val es = elms.map(substExp(_, subst))
-      LoweredAst.Expression.Tuple(es, tpe, eff, loc)
 
     case LoweredAst.Expression.RecordEmpty(_, _) => exp0
 

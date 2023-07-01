@@ -73,23 +73,17 @@ object Simplifier {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.Apply(e, es, tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Unary(sop, exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, simplifyEffect(eff), loc)
-
-      case LoweredAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val op = sop match {
-          case SemanticOp.StringOp.Concat =>
+      case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+        val es = exps map visitExp
+        val op1 = op match {
+          case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
             // Translate to InvokeMethod exp
             val strClass = Class.forName("java.lang.String")
             val method = strClass.getMethod("concat", strClass)
             AtomicOp.InvokeMethod(method)
-
-          case _ => AtomicOp.Binary(sop)
+          case _ => op
         }
-        SimplifiedAst.Expression.ApplyAtomic(op, List(e1, e2), tpe, simplifyEffect(eff), loc)
+        SimplifiedAst.Expression.ApplyAtomic(op1, es, tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, simplifyEffect(eff), loc)
@@ -108,30 +102,14 @@ object Simplifier {
       case LoweredAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expression.Region(tpe, loc) =>
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, tpe, Purity.Pure, loc)
-
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyEffect(eff), loc)
-
-      case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ScopeExit, List(e1, e2), tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-
-      case LoweredAst.Expression.Tag(Ast.CaseSymUse(sym, _), exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tag(sym), List(e), tpe, simplifyEffect(eff), loc)
-
-      case LoweredAst.Expression.Tuple(exps, tpe, eff, loc) =>
-        val es = exps map visitExp
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Tuple, es, tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, tpe, Purity.Pure, loc)
