@@ -479,7 +479,7 @@ object ClosureConv {
 
       case Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Resume(exp, tpe, loc)
+        Expression.Resume(e, tpe, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
         val as = args.map(visitExp)
