@@ -143,11 +143,8 @@ object EarlyTreeShaker {
     case Expression.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.ApplyAtomic(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -155,14 +152,8 @@ object EarlyTreeShaker {
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Region(_, _) =>
-      Set.empty
-
     case Expression.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
-
-    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -181,12 +172,6 @@ object EarlyTreeShaker {
 
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
-
-    case Expression.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Tuple(elms, _, _, _) =>
-      visitExps(elms)
 
     case Expression.RecordEmpty(_, _) =>
       Set.empty
