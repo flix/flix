@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
@@ -130,7 +131,7 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, exps, Ast.CallType.NonTailCall, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val es = exps.map(visitExp(_, subst0))
       e match {
@@ -140,7 +141,10 @@ object Inliner {
           // it is trivial
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
-            val e1 = rewriteTailCalls(def1.exp)
+            val e1 = ct match {
+              case CallType.TailCall => def1.exp
+              case CallType.NonTailCall => rewriteTailCalls(def1.exp)
+            }
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
             bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ es, Map.empty)
           } else {
@@ -160,26 +164,6 @@ object Inliner {
         bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
-      }
-
-    case OccurrenceAst.Expression.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      val es = exps.map(visitExp(_, subst0))
-      e match {
-        case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
-          val def1 = root.defs.apply(sym)
-          // If `def1` is a single non-self call or
-          // it is trivial
-          // then inline the body of `def1`
-          if (canInlineDef(def1)) {
-            // Map for substituting formal parameters of a function with the freevars currently in scope
-            bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ es, Map.empty)
-          } else {
-            LiftedAst.Expression.ApplyClo(e, es, Ast.CallType.TailCall, tpe, purity, loc)
-          }
-        case _ =>
-          val as = exps.map(visitExp(_, subst0))
-          LiftedAst.Expression.ApplyClo(e, as, Ast.CallType.TailCall, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
