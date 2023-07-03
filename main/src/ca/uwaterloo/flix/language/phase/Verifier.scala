@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, MonoTypedAst, SemanticOperator, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.ast.MonoTypedAst.{CatchRule, Def, Expr, Root, Stmt}
+import ca.uwaterloo.flix.language.ast.MonoTypedAst._
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, MonoTypedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -85,13 +85,13 @@ object Verifier {
 
       op match {
         case AtomicOp.Unary(sop) => sop match {
-          case op: SemanticOperator.BoolOp =>
+          case op: SemanticOp.BoolOp =>
             val List(t) = ts
             check(expected = MonoType.Bool)(actual = t, loc)
           case _ => tpe // TODO: VERIFIER: Add rest
         }
         case AtomicOp.Binary(sop) => sop match {
-          case SemanticOperator.Int32Op.Add =>
+          case SemanticOp.Int32Op.Add =>
             val List(t1, t2) = ts
             check(expected = MonoType.Int32)(t1, loc)
             check(expected = MonoType.Int32)(t2, loc)
@@ -133,13 +133,15 @@ object Verifier {
       tpe
 
     case Expr.ApplyDef(sym, exps, ct, tpe, loc) =>
-      val declared = root.defs(sym).tpe
+      val defn = root.defs(sym)
+      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-      val declared = root.defs(sym).tpe
+      val defn = root.defs(sym)
+      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe

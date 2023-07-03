@@ -47,7 +47,7 @@ object Weeder {
     "RecordRow", "Region", "SchemaRow", "Type", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "instanceof", "into", "law", "lawful", "lazy", "let", "let*", "match",
-    "null", "opaque", "override", "pub", "ref", "region",
+    "null", "override", "pub", "ref", "region",
     "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "discard", "object"
   )
@@ -327,7 +327,7 @@ object Weeder {
     case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, tpe0, derives, cases0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Opaque))
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
 
       val casesVal = (tpe0, cases0) match {
@@ -383,7 +383,7 @@ object Weeder {
     case ParsedAst.Declaration.RestrictableEnum(doc0, ann0, mods, sp1, ident, index0, tparams0, tpe0, derives, cases0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Opaque))
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val index = visitTypeParam(index0)
       val tparamsVal = visitTypeParams(tparams0)
 
@@ -637,127 +637,124 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       flatMapN(traverse(exps)(visitArgument(_, senv))) {
         case es => (op.name, es) match {
-          case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e1, loc).toSuccess
-          case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc).toSuccess
-          case ("BOOL_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.Or, e1, e2, loc).toSuccess
-          case ("BOOL_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.Eq, e1, e2, loc).toSuccess
-          case ("BOOL_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.Neq, e1, e2, loc).toSuccess
+          case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.BoolOp.Not, e1, loc).toSuccess
+          case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.BoolOp.And, e1, e2, loc).toSuccess
+          case ("BOOL_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.BoolOp.Or, e1, e2, loc).toSuccess
+          case ("BOOL_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.BoolOp.Eq, e1, e2, loc).toSuccess
+          case ("BOOL_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.BoolOp.Neq, e1, e2, loc).toSuccess
 
-          case ("CHAR_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.CharOp.Eq, e1, e2, loc).toSuccess
-          case ("CHAR_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.CharOp.Neq, e1, e2, loc).toSuccess
-          case ("CHAR_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.CharOp.Lt, e1, e2, loc).toSuccess
-          case ("CHAR_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.CharOp.Le, e1, e2, loc).toSuccess
-          case ("CHAR_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.CharOp.Gt, e1, e2, loc).toSuccess
-          case ("CHAR_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.CharOp.Ge, e1, e2, loc).toSuccess
+          case ("CHAR_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.CharOp.Eq, e1, e2, loc).toSuccess
+          case ("CHAR_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.CharOp.Neq, e1, e2, loc).toSuccess
+          case ("CHAR_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.CharOp.Lt, e1, e2, loc).toSuccess
+          case ("CHAR_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.CharOp.Le, e1, e2, loc).toSuccess
+          case ("CHAR_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.CharOp.Gt, e1, e2, loc).toSuccess
+          case ("CHAR_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.CharOp.Ge, e1, e2, loc).toSuccess
 
-          case ("FLOAT32_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Float32Op.Neg, e1, loc).toSuccess
-          case ("FLOAT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Add, e1, e2, loc).toSuccess
-          case ("FLOAT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Sub, e1, e2, loc).toSuccess
-          case ("FLOAT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Mul, e1, e2, loc).toSuccess
-          case ("FLOAT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Div, e1, e2, loc).toSuccess
-          case ("FLOAT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Exp, e1, e2, loc).toSuccess
-          case ("FLOAT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Eq, e1, e2, loc).toSuccess
-          case ("FLOAT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Neq, e1, e2, loc).toSuccess
-          case ("FLOAT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Lt, e1, e2, loc).toSuccess
-          case ("FLOAT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Le, e1, e2, loc).toSuccess
-          case ("FLOAT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Gt, e1, e2, loc).toSuccess
-          case ("FLOAT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float32Op.Ge, e1, e2, loc).toSuccess
+          case ("FLOAT32_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Float32Op.Neg, e1, loc).toSuccess
+          case ("FLOAT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Add, e1, e2, loc).toSuccess
+          case ("FLOAT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc).toSuccess
+          case ("FLOAT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Mul, e1, e2, loc).toSuccess
+          case ("FLOAT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Div, e1, e2, loc).toSuccess
+          case ("FLOAT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Exp, e1, e2, loc).toSuccess
+          case ("FLOAT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc).toSuccess
+          case ("FLOAT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc).toSuccess
+          case ("FLOAT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Lt, e1, e2, loc).toSuccess
+          case ("FLOAT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Le, e1, e2, loc).toSuccess
+          case ("FLOAT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Gt, e1, e2, loc).toSuccess
+          case ("FLOAT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float32Op.Ge, e1, e2, loc).toSuccess
 
-          case ("FLOAT64_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Float64Op.Neg, e1, loc).toSuccess
-          case ("FLOAT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Add, e1, e2, loc).toSuccess
-          case ("FLOAT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Sub, e1, e2, loc).toSuccess
-          case ("FLOAT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Mul, e1, e2, loc).toSuccess
-          case ("FLOAT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Div, e1, e2, loc).toSuccess
-          case ("FLOAT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Exp, e1, e2, loc).toSuccess
-          case ("FLOAT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Eq, e1, e2, loc).toSuccess
-          case ("FLOAT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Neq, e1, e2, loc).toSuccess
-          case ("FLOAT64_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Lt, e1, e2, loc).toSuccess
-          case ("FLOAT64_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Le, e1, e2, loc).toSuccess
-          case ("FLOAT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Gt, e1, e2, loc).toSuccess
-          case ("FLOAT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Float64Op.Ge, e1, e2, loc).toSuccess
+          case ("FLOAT64_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Float64Op.Neg, e1, loc).toSuccess
+          case ("FLOAT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Add, e1, e2, loc).toSuccess
+          case ("FLOAT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc).toSuccess
+          case ("FLOAT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Mul, e1, e2, loc).toSuccess
+          case ("FLOAT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Div, e1, e2, loc).toSuccess
+          case ("FLOAT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Exp, e1, e2, loc).toSuccess
+          case ("FLOAT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc).toSuccess
+          case ("FLOAT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc).toSuccess
+          case ("FLOAT64_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Lt, e1, e2, loc).toSuccess
+          case ("FLOAT64_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Le, e1, e2, loc).toSuccess
+          case ("FLOAT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Gt, e1, e2, loc).toSuccess
+          case ("FLOAT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Float64Op.Ge, e1, e2, loc).toSuccess
 
-          case ("INT8_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int8Op.Neg, e1, loc).toSuccess
-          case ("INT8_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int8Op.Not, e1, loc).toSuccess
-          case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Add, e1, e2, loc).toSuccess
-          case ("INT8_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Sub, e1, e2, loc).toSuccess
-          case ("INT8_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Mul, e1, e2, loc).toSuccess
-          case ("INT8_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Div, e1, e2, loc).toSuccess
-          case ("INT8_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Rem, e1, e2, loc).toSuccess
-          case ("INT8_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Exp, e1, e2, loc).toSuccess
-          case ("INT8_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.And, e1, e2, loc).toSuccess
-          case ("INT8_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Or, e1, e2, loc).toSuccess
-          case ("INT8_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Xor, e1, e2, loc).toSuccess
-          case ("INT8_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Shl, e1, e2, loc).toSuccess
-          case ("INT8_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Shr, e1, e2, loc).toSuccess
-          case ("INT8_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Eq, e1, e2, loc).toSuccess
-          case ("INT8_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Neq, e1, e2, loc).toSuccess
-          case ("INT8_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Lt, e1, e2, loc).toSuccess
-          case ("INT8_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Le, e1, e2, loc).toSuccess
-          case ("INT8_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Gt, e1, e2, loc).toSuccess
-          case ("INT8_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int8Op.Ge, e1, e2, loc).toSuccess
+          case ("INT8_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int8Op.Neg, e1, loc).toSuccess
+          case ("INT8_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int8Op.Not, e1, loc).toSuccess
+          case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Add, e1, e2, loc).toSuccess
+          case ("INT8_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc).toSuccess
+          case ("INT8_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Mul, e1, e2, loc).toSuccess
+          case ("INT8_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Div, e1, e2, loc).toSuccess
+          case ("INT8_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Rem, e1, e2, loc).toSuccess
+          case ("INT8_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Exp, e1, e2, loc).toSuccess
+          case ("INT8_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.And, e1, e2, loc).toSuccess
+          case ("INT8_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Or, e1, e2, loc).toSuccess
+          case ("INT8_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc).toSuccess
+          case ("INT8_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc).toSuccess
+          case ("INT8_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc).toSuccess
+          case ("INT8_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Eq, e1, e2, loc).toSuccess
+          case ("INT8_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Neq, e1, e2, loc).toSuccess
+          case ("INT8_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Lt, e1, e2, loc).toSuccess
+          case ("INT8_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Le, e1, e2, loc).toSuccess
+          case ("INT8_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Gt, e1, e2, loc).toSuccess
+          case ("INT8_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int8Op.Ge, e1, e2, loc).toSuccess
 
-          case ("INT16_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int16Op.Neg, e1, loc).toSuccess
-          case ("INT16_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int16Op.Not, e1, loc).toSuccess
-          case ("INT16_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Add, e1, e2, loc).toSuccess
-          case ("INT16_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Sub, e1, e2, loc).toSuccess
-          case ("INT16_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Mul, e1, e2, loc).toSuccess
-          case ("INT16_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Div, e1, e2, loc).toSuccess
-          case ("INT16_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Rem, e1, e2, loc).toSuccess
-          case ("INT16_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Exp, e1, e2, loc).toSuccess
-          case ("INT16_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.And, e1, e2, loc).toSuccess
-          case ("INT16_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Or, e1, e2, loc).toSuccess
-          case ("INT16_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Xor, e1, e2, loc).toSuccess
-          case ("INT16_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Shl, e1, e2, loc).toSuccess
-          case ("INT16_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Shr, e1, e2, loc).toSuccess
-          case ("INT16_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Eq, e1, e2, loc).toSuccess
-          case ("INT16_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Neq, e1, e2, loc).toSuccess
-          case ("INT16_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Lt, e1, e2, loc).toSuccess
-          case ("INT16_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Le, e1, e2, loc).toSuccess
-          case ("INT16_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Gt, e1, e2, loc).toSuccess
-          case ("INT16_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int16Op.Ge, e1, e2, loc).toSuccess
+          case ("INT16_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int16Op.Neg, e1, loc).toSuccess
+          case ("INT16_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int16Op.Not, e1, loc).toSuccess
+          case ("INT16_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Add, e1, e2, loc).toSuccess
+          case ("INT16_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc).toSuccess
+          case ("INT16_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Mul, e1, e2, loc).toSuccess
+          case ("INT16_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Div, e1, e2, loc).toSuccess
+          case ("INT16_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Rem, e1, e2, loc).toSuccess
+          case ("INT16_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Exp, e1, e2, loc).toSuccess
+          case ("INT16_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.And, e1, e2, loc).toSuccess
+          case ("INT16_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Or, e1, e2, loc).toSuccess
+          case ("INT16_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc).toSuccess
+          case ("INT16_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc).toSuccess
+          case ("INT16_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc).toSuccess
+          case ("INT16_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Eq, e1, e2, loc).toSuccess
+          case ("INT16_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Neq, e1, e2, loc).toSuccess
+          case ("INT16_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Lt, e1, e2, loc).toSuccess
+          case ("INT16_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Le, e1, e2, loc).toSuccess
+          case ("INT16_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Gt, e1, e2, loc).toSuccess
+          case ("INT16_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int16Op.Ge, e1, e2, loc).toSuccess
 
-          case ("INT32_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int32Op.Neg, e1, loc).toSuccess
-          case ("INT32_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int32Op.Not, e1, loc).toSuccess
-          case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Add, e1, e2, loc).toSuccess
-          case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Sub, e1, e2, loc).toSuccess
-          case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Mul, e1, e2, loc).toSuccess
-          case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Div, e1, e2, loc).toSuccess
-          case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Rem, e1, e2, loc).toSuccess
-          case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Exp, e1, e2, loc).toSuccess
-          case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.And, e1, e2, loc).toSuccess
-          case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Or, e1, e2, loc).toSuccess
-          case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Xor, e1, e2, loc).toSuccess
-          case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Shl, e1, e2, loc).toSuccess
-          case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Shr, e1, e2, loc).toSuccess
-          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Eq, e1, e2, loc).toSuccess
-          case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Neq, e1, e2, loc).toSuccess
-          case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Lt, e1, e2, loc).toSuccess
-          case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Le, e1, e2, loc).toSuccess
-          case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Gt, e1, e2, loc).toSuccess
-          case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int32Op.Ge, e1, e2, loc).toSuccess
+          case ("INT32_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int32Op.Neg, e1, loc).toSuccess
+          case ("INT32_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int32Op.Not, e1, loc).toSuccess
+          case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Add, e1, e2, loc).toSuccess
+          case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc).toSuccess
+          case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Mul, e1, e2, loc).toSuccess
+          case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Div, e1, e2, loc).toSuccess
+          case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Rem, e1, e2, loc).toSuccess
+          case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Exp, e1, e2, loc).toSuccess
+          case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.And, e1, e2, loc).toSuccess
+          case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Or, e1, e2, loc).toSuccess
+          case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc).toSuccess
+          case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc).toSuccess
+          case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc).toSuccess
+          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Eq, e1, e2, loc).toSuccess
+          case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Neq, e1, e2, loc).toSuccess
+          case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Lt, e1, e2, loc).toSuccess
+          case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Le, e1, e2, loc).toSuccess
+          case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Gt, e1, e2, loc).toSuccess
+          case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int32Op.Ge, e1, e2, loc).toSuccess
 
-          case ("INT64_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int64Op.Neg, e1, loc).toSuccess
-          case ("INT64_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.Int64Op.Not, e1, loc).toSuccess
-          case ("INT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Add, e1, e2, loc).toSuccess
-          case ("INT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Sub, e1, e2, loc).toSuccess
-          case ("INT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Mul, e1, e2, loc).toSuccess
-          case ("INT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Div, e1, e2, loc).toSuccess
-          case ("INT64_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Rem, e1, e2, loc).toSuccess
-          case ("INT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Exp, e1, e2, loc).toSuccess
-          case ("INT64_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.And, e1, e2, loc).toSuccess
-          case ("INT64_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Or, e1, e2, loc).toSuccess
-          case ("INT64_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Xor, e1, e2, loc).toSuccess
-          case ("INT64_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Shl, e1, e2, loc).toSuccess
-          case ("INT64_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Shr, e1, e2, loc).toSuccess
-          case ("INT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Eq, e1, e2, loc).toSuccess
-          case ("INT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Neq, e1, e2, loc).toSuccess
-          case ("INT64_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Lt, e1, e2, loc).toSuccess
-          case ("INT64_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Le, e1, e2, loc).toSuccess
-          case ("INT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Gt, e1, e2, loc).toSuccess
-          case ("INT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.Int64Op.Ge, e1, e2, loc).toSuccess
-
-          case ("STRING_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Eq, e1, e2, loc).toSuccess
-          case ("STRING_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Neq, e1, e2, loc).toSuccess
+          case ("INT64_NEG", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int64Op.Neg, e1, loc).toSuccess
+          case ("INT64_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOp.Int64Op.Not, e1, loc).toSuccess
+          case ("INT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Add, e1, e2, loc).toSuccess
+          case ("INT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc).toSuccess
+          case ("INT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Mul, e1, e2, loc).toSuccess
+          case ("INT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Div, e1, e2, loc).toSuccess
+          case ("INT64_REM", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Rem, e1, e2, loc).toSuccess
+          case ("INT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Exp, e1, e2, loc).toSuccess
+          case ("INT64_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.And, e1, e2, loc).toSuccess
+          case ("INT64_OR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Or, e1, e2, loc).toSuccess
+          case ("INT64_XOR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc).toSuccess
+          case ("INT64_SHL", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc).toSuccess
+          case ("INT64_SHR", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc).toSuccess
+          case ("INT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Eq, e1, e2, loc).toSuccess
+          case ("INT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Neq, e1, e2, loc).toSuccess
+          case ("INT64_LT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc).toSuccess
+          case ("INT64_LE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Le, e1, e2, loc).toSuccess
+          case ("INT64_GT", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc).toSuccess
+          case ("INT64_GE", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc).toSuccess
 
           case ("CHANNEL_GET", e1 :: Nil) => WeededAst.Expression.GetChannel(e1, loc).toSuccess
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
@@ -1176,26 +1173,27 @@ object Weeder {
                 WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
               } else {
 
-              // Introduce a formal parameter (of appropriate type) for each declared argument.
-              val fs = ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val id = Name.Ident(sp1, "a" + index, sp2)
-                  WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
-              }
+                // Introduce a formal parameter (of appropriate type) for each declared argument.
+                val fs = ts.zipWithIndex.map {
+                  case (tpe, index) =>
+                    val id = Name.Ident(sp1, "a" + index, sp2)
+                    WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
+                }
 
-              // Compute the argument to the method call.
-              val as = ts.zipWithIndex.map {
-                case (_, index) =>
-                  val ident = Name.Ident(sp1, "a" + index, sp2)
-                  WeededAst.Expression.Ambiguous(Name.mkQName(ident), loc)
-              }
+                // Compute the argument to the method call.
+                val as = ts.zipWithIndex.map {
+                  case (_, index) =>
+                    val ident = Name.Ident(sp1, "a" + index, sp2)
+                    WeededAst.Expression.Ambiguous(Name.mkQName(ident), loc)
+                }
 
-              // Assemble the lambda expression.
-              val call = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
-              val lambdaBody = WeededAst.Expression.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }}
+                // Assemble the lambda expression.
+                val call = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
+                val lambdaBody = WeededAst.Expression.UncheckedCast(call, Some(tpe), eff, loc)
+                val e1 = mkCurried(fs, lambdaBody, loc)
+                WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+              }
+          }
 
         case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
 
@@ -1620,7 +1618,7 @@ object Weeder {
         * Returns an expression that concatenates the result of the expression `e1` with the expression `e2`.
         */
       def mkConcat(e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
-        val sop = SemanticOperator.StringOp.Concat
+        val sop = SemanticOp.StringOp.Concat
         val l = loc.asSynthetic
         WeededAst.Expression.Binary(sop, e1, e2, l)
       }
@@ -2139,7 +2137,7 @@ object Weeder {
     /**
       * The operator represents a semantic operator.
       */
-    case class Operator(op: SemanticOperator) extends OperatorResult
+    case class Operator(op: SemanticOp) extends OperatorResult
 
     /**
       * The operator is unrecognized: it must have been defined elsewhere.
@@ -2153,7 +2151,7 @@ object Weeder {
   private def visitUnaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
-        case "not" => OperatorResult.Operator(SemanticOperator.BoolOp.Not)
+        case "not" => OperatorResult.Operator(SemanticOp.BoolOp.Not)
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
@@ -2176,8 +2174,8 @@ object Weeder {
         case "==" => OperatorResult.BuiltIn(Name.mkQName("Eq.eq", sp1, sp2))
         case "!=" => OperatorResult.BuiltIn(Name.mkQName("Eq.neq", sp1, sp2))
         case "<=>" => OperatorResult.BuiltIn(Name.mkQName("Order.compare", sp1, sp2))
-        case "and" => OperatorResult.Operator(SemanticOperator.BoolOp.And)
-        case "or" => OperatorResult.Operator(SemanticOperator.BoolOp.Or)
+        case "and" => OperatorResult.Operator(SemanticOp.BoolOp.And)
+        case "or" => OperatorResult.Operator(SemanticOp.BoolOp.Or)
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
   }
@@ -2562,7 +2560,6 @@ object Weeder {
   private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
     val modifier = m.name match {
       case "lawful" => Ast.Modifier.Lawful
-      case "opaque" => Ast.Modifier.Opaque
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
@@ -2708,6 +2705,18 @@ object Weeder {
       val t2Val = visitType(tpe2)
       mapN(t1Val, t2Val) {
         case (t1, t2) => WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Type.Xor(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val t1Val = visitType(tpe1)
+      val t2Val = visitType(tpe2)
+      val loc = mkSL(sp1, sp2)
+      mapN(t1Val, t2Val) {
+        case (t1, t2) =>
+          val l = WeededAst.Type.And(t1, WeededAst.Type.Not(t2, loc), loc)
+          val r = WeededAst.Type.And(WeededAst.Type.Not(t1, loc), t2, loc)
+          WeededAst.Type.Or(l, r, loc)
       }
 
     case ParsedAst.Type.Complement(sp1, tpe, sp2) =>
@@ -3383,6 +3392,7 @@ object Weeder {
     case ParsedAst.Type.Not(sp1, _, _) => sp1
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Xor(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Complement(sp1, _, _) => sp1
     case ParsedAst.Type.Difference(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)

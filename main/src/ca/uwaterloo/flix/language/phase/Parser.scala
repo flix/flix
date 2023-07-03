@@ -1461,7 +1461,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Intersection: Rule1[ParsedAst.Type] = rule {
-      Or ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+      Xor ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+    }
+
+    def Xor: Rule1[ParsedAst.Type] = rule {
+      Or ~ zeroOrMore(WS ~ atomic("xor") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Xor)
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
@@ -1692,10 +1696,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("lawful")) ~ SP ~> ParsedAst.Modifier
     }
 
-    def Opaque: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("opaque")) ~ SP ~> ParsedAst.Modifier
-    }
-
     def Override: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("override")) ~ SP ~> ParsedAst.Modifier
     }
@@ -1709,7 +1709,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawful | Opaque | Override | Public | Sealed
+      Inline | Lawful | Override | Public | Sealed
     }
 
     rule {

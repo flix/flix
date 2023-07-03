@@ -61,9 +61,6 @@ object VarNumbering {
 
       case Expr.Var(_, _, _) => i0
 
-      case Expr.Closure(_, args, _, _) =>
-        visitExps(args, i0)
-
       case Expr.ApplyAtomic(_, exps, _, _, _) =>
         visitExps(exps, i0)
 

@@ -1,5 +1,14 @@
 # Changelog
 
+Version 0.38.0:
+
+- VSCode: Added preliminary support for code actions (thanks Holger!)
+  - Added quickfix for unused local variable (thanks Magnus!)
+  - Added quickfix to introduce new type (thanks Magnus!)
+- Library: Added `toVector` functions (thanks Stephen!)
+- Library: Use `Vector` in Datalog engine (thanks Holger!)
+- Compiler: Significantly improved performance of compiler backend (thanks Jonathan, Matt!)
+
 Version 0.37.0:
 
 - Language: Uniform effect syntax (thanks Matthew!)

@@ -44,7 +44,7 @@ object MonoTypedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          MonoTypePrinter.print(tpe),
+          DocAst.Type.Arrow(Nil, MonoTypePrinter.print(tpe)),
           print(exp)
         )
     }.toList
@@ -57,7 +57,7 @@ object MonoTypedAstPrinter {
   def print(e: MonoTypedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => DocAst.Expression.Cst(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, tpe, _) => OperatorPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
+    case ApplyAtomic(op, exps, tpe, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case ApplyClo(exp, exps, TailCall, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
     case ApplyClo(exp, exps, NonTailCall, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
     case ApplyDef(sym, exps, TailCall, _, _) => DocAst.Expression.ApplyDefTail(sym, exps.map(print))

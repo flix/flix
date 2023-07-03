@@ -2884,42 +2884,6 @@ object Resolver {
   }
 
   /**
-    * Determines if the enum is accessible from the namespace.
-    *
-    * Accessibility depends on the modifiers on the enum
-    * and the accessing namespace's relation to the enum namespace:
-    *
-    * |            | same | child | other |
-    * |------------|------|-------|-------|
-    * | (none)     | A    | A     | I     |
-    * | opaque     | A    | A     | I     |
-    * | pub        | A    | A     | A     |
-    * | pub opaque | A    | A     | O     |
-    *
-    * (A: Accessible, O: Opaque, I: Inaccessible)
-    */
-  private def getEnumAccessibility(enum0: NamedAst.Declaration.Enum, ns0: Name.NName): EnumAccessibility = {
-
-    val enumNs = enum0.sym.namespace
-    val accessingNs = ns0.idents.map(_.name)
-
-    val fromChild = accessingNs.startsWith(enumNs)
-    (enum0.mod.isPublic, enum0.mod.isOpaque, fromChild) match {
-      // Case 1: Access from child namespace. Accessible.
-      case (_, _, true) => EnumAccessibility.Accessible
-
-      // Case 2: Private. Inaccessible.
-      case (false, _, false) => EnumAccessibility.Inaccessible
-
-      // Case 3: Public but opaque. Opaque.
-      case (true, true, false) => EnumAccessibility.Opaque
-
-      // Case 4: Public and non-opaque. Accessible.
-      case (true, false, false) => EnumAccessibility.Accessible
-    }
-  }
-
-  /**
     * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
@@ -3601,20 +3565,6 @@ object Resolver {
     case object Sealed extends ClassAccessibility
 
     case object Inaccessible extends ClassAccessibility
-  }
-
-
-  /**
-    * Enum describing the extent to which an enum is accessible.
-    */
-  private sealed trait EnumAccessibility
-
-  private object EnumAccessibility {
-    case object Accessible extends EnumAccessibility
-
-    case object Opaque extends EnumAccessibility
-
-    case object Inaccessible extends EnumAccessibility
   }
 
   /**

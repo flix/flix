@@ -16,13 +16,13 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
 
-object OperatorPrinter {
+object OpPrinter {
 
   private val and = "and"
   private val div = "/"
@@ -47,7 +47,7 @@ object OperatorPrinter {
   /**
     * Returns the string representation of `so`.
     */
-  def print(so: SemanticOperator): String = so match {
+  def print(so: SemanticOp): String = so match {
     case BoolOp.Not |
          Int8Op.Not |
          Int16Op.Not |
@@ -69,8 +69,7 @@ object OperatorPrinter {
          Int8Op.Eq |
          Int16Op.Eq |
          Int32Op.Eq |
-         Int64Op.Eq |
-         StringOp.Eq => eq
+         Int64Op.Eq => eq
     case BoolOp.Neq |
          CharOp.Neq |
          Float32Op.Neq |
@@ -78,8 +77,7 @@ object OperatorPrinter {
          Int8Op.Neq |
          Int16Op.Neq |
          Int32Op.Neq |
-         Int64Op.Neq |
-         StringOp.Neq => neq
+         Int64Op.Neq => neq
     case CharOp.Lt |
          Float32Op.Lt |
          Float64Op.Lt |
@@ -174,7 +172,7 @@ object OperatorPrinter {
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError
 
-    case (AtomicOp.Unary(sop), List(d)) => Unary(OperatorPrinter.print(sop), d)
+    case (AtomicOp.Unary(sop), List(d)) => Unary(OpPrinter.print(sop), d)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
     case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
     case (AtomicOp.Untag(sym), List(d)) => Untag(sym, d)
