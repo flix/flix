@@ -95,7 +95,6 @@ object LoweredAstPrinter {
           (patD, guardD, bodyD)
       }
       DocAst.Expression.Match(expD, rulesD)
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => DocAst.Expression.ArrayLoad(print(base), print(index))
     case Expression.ArrayLength(base, eff, loc) => DocAst.Expression.ArrayLength(print(base))
     case Expression.ArrayStore(base, index, elm, eff, loc) => DocAst.Expression.ArrayStore(print(base), print(index), print(elm))
     case Expression.VectorLit(exps, tpe, eff, loc) => DocAst.Expression.VectorLit(exps.map(print))
