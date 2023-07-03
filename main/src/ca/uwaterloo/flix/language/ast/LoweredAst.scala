@@ -123,10 +123,6 @@ object LoweredAst {
 
     case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class ArrayLength(exp: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Int32
-    }
-
     case class VectorLit(exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class VectorLoad(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

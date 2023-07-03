@@ -520,9 +520,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expression.ArrayLength(base, eff, loc) =>
-      val b = visitExp(base)
-      LoweredAst.Expression.ArrayLength(b, eff, loc)
+    case TypedAst.Expression.ArrayLength(exp, eff, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, eff, loc)
 
     case TypedAst.Expression.ArrayStore(exp1, exp2, exp3, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1888,10 +1888,6 @@ object Lowering {
           LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
       }
       LoweredAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
-
-    case LoweredAst.Expression.ArrayLength(base, eff, loc) =>
-      val b = substExp(base, subst)
-      LoweredAst.Expression.ArrayLength(b, eff, loc)
 
     case LoweredAst.Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

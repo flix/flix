@@ -173,9 +173,6 @@ object EarlyTreeShaker {
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.ArrayLength(base, _, _) =>
-      visitExp(base)
-
     case Expression.VectorLit(exps, exp, _, _) =>
       visitExps(exps)
 
