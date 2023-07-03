@@ -117,7 +117,7 @@ object OccurrenceAnalyzer {
     val (e, oi) = visitExp(defn.sym, defn.exp)
     /// Def consists of a single direct call to a def
     val isDirectCall = e match {
-      case OccurrenceAst.Expression.ApplyDefTail(_, _, _, _, _) => true
+      case OccurrenceAst.Expression.ApplyDef(_, _, Ast.CallType.TailCall, _, _, _) => true
       case OccurrenceAst.Expression.ApplyClo(clo, _, Ast.CallType.TailCall, _, _, _) =>
         clo match {
           case OccurrenceAst.Expression.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
@@ -180,11 +180,11 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expression.ApplyDef(sym, args, Ast.CallType.TailCall, tpe, purity, loc) =>
-      val (as, o1) = visitExps(sym0, args)
+    case Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) =>
+      val (es, o1) = visitExps(sym0, exps)
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.ApplyDef(sym, es, Ast.CallType.TailCall, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val (as, o1) = visitExps(sym0, actuals)

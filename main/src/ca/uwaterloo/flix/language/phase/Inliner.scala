@@ -153,7 +153,7 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or
@@ -166,7 +166,7 @@ object Inliner {
         LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or
@@ -350,7 +350,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.ApplyClo(exp, args, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, Ast.CallType.NonTailCall, tpe, purity, loc)
 
@@ -398,11 +398,11 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.TailCall, tpe, purity, loc)
 

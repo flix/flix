@@ -54,8 +54,6 @@ object OccurrenceAst {
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[OccurrenceAst.FormalParam], actuals: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class IfThenElse(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
