@@ -191,9 +191,6 @@ object EarlyTreeShaker {
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
-      visitExps(args)
-
     case Expression.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
 

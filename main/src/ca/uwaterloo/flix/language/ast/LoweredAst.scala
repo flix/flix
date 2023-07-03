@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
 import ca.uwaterloo.flix.language.phase.Monomorph
 import ca.uwaterloo.flix.util.collection.ListMap
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{Field, Method}
 
 object LoweredAst {
 
@@ -146,8 +146,6 @@ object LoweredAst {
     case class Resume(exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def eff: Type = Type.Pure
     }
-
-    case class InvokeConstructor(constructor: Constructor[_], exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class InvokeMethod(method: Method, exp: LoweredAst.Expression, exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
