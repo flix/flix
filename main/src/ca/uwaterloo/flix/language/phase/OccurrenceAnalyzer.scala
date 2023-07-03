@@ -118,7 +118,7 @@ object OccurrenceAnalyzer {
     /// Def consists of a single direct call to a def
     val isDirectCall = e match {
       case OccurrenceAst.Expression.ApplyDefTail(_, _, _, _, _) => true
-      case OccurrenceAst.Expression.ApplyCloTail(clo, _, _, _, _) =>
+      case OccurrenceAst.Expression.ApplyClo(clo, _, Ast.CallType.TailCall, _, _, _) =>
         clo match {
           case OccurrenceAst.Expression.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
           case _ => false
@@ -180,16 +180,16 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplyDef(sym, as, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expression.ApplyClo(exp, args, Ast.CallType.TailCall, tpe, purity, loc) =>
+    case Expression.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
-      val (as, o2) = visitExps(sym0, args)
+      val (es, o2) = visitExps(sym0, exps)
       val o3 = combineAllSeq(o1, o2)
       exp match {
         case Expression.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
-          (OccurrenceAst.Expression.ApplyCloTail(e, as, tpe, purity, loc), o5.increaseSizeByOne())
-        case _ => (OccurrenceAst.Expression.ApplyCloTail(e, as, tpe, purity, loc), o3.increaseSizeByOne())
+          (OccurrenceAst.Expression.ApplyClo(e, es, Ast.CallType.TailCall, tpe, purity, loc), o5.increaseSizeByOne())
+        case _ => (OccurrenceAst.Expression.ApplyClo(e, es, Ast.CallType.TailCall, tpe, purity, loc), o3.increaseSizeByOne())
       }
 
     case Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
