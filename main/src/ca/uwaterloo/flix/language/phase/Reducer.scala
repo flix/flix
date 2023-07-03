@@ -58,10 +58,10 @@ object Reducer {
       val es = exps.map(visitExpr)
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case LiftedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
+    case LiftedAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val es = exps.map(visitExpr)
-      ReducedAst.Expr.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
+      ReducedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case LiftedAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)

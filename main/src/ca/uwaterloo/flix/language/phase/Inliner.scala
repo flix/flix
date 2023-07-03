@@ -130,9 +130,9 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      val as = args.map(visitExp(_, subst0))
+      val es = exps.map(visitExp(_, subst0))
       e match {
         case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
@@ -142,13 +142,11 @@ object Inliner {
           if (canInlineDef(def1)) {
             val e1 = rewriteTailCalls(def1.exp)
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ as, Map.empty)
+            bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ es, Map.empty)
           } else {
-            LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+            LiftedAst.Expression.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
           }
-        case _ =>
-          val as = args.map(visitExp(_, subst0))
-          LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+        case _ => LiftedAst.Expression.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
@@ -411,10 +409,10 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))

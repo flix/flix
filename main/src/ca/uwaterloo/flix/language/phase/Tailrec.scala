@@ -79,7 +79,7 @@ object Tailrec {
       /*
        * ApplyClo.
        */
-      case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+      case Expression.ApplyClo(exp, args, ct, tpe, purity, loc) =>
         Expression.ApplyCloTail(exp, args, tpe, purity, loc)
 
       /*
