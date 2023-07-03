@@ -98,7 +98,6 @@ object LoweredAstPrinter {
     case Expression.VectorLit(exps, tpe, eff, loc) => DocAst.Expression.VectorLit(exps.map(print))
     case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expression.VectorLoad(print(exp1), print(exp2))
     case Expression.VectorLength(exp, loc) => DocAst.Expression.ArrayLength(print(exp))
-    case Expression.Deref(exp, tpe, eff, loc) => DocAst.Expression.Deref(print(exp))
     case Expression.Assign(exp1, exp2, tpe, eff, loc) => DocAst.Expression.Assign(print(exp1), print(exp2))
     case Expression.Ascribe(exp, tpe, eff, loc) => DocAst.Expression.Ascription(print(exp), TypePrinter.print(tpe))
     case Expression.InstanceOf(exp, clazz, loc) => DocAst.Expression.InstanceOf(print(exp), clazz)

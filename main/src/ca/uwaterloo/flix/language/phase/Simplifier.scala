@@ -139,10 +139,6 @@ object Simplifier {
         val purity = e.purity
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, purity, loc)
 
-      case LoweredAst.Expression.Deref(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), tpe, Purity.Impure, loc)
-
       case LoweredAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)

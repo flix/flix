@@ -554,7 +554,7 @@ object Lowering {
     case TypedAst.Expression.Deref(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Deref(e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), t, eff, loc)
 
     case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1901,10 +1901,6 @@ object Lowering {
     case LoweredAst.Expression.VectorLength(exp, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.VectorLength(e, loc)
-
-    case LoweredAst.Expression.Deref(exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Deref(e, tpe, eff, loc)
 
     case LoweredAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
