@@ -61,7 +61,7 @@ object LiftedAstPrinter {
       case CallType.TailCall => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
       case CallType.NonTailCall => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
     }
-    case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
+    case ApplyDef(sym, args, ct, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case ApplyDefTail(sym, args, _, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
     case ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))

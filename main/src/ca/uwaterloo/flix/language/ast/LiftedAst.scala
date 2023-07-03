@@ -54,7 +54,7 @@ object LiftedAst {
 
     case class ApplyClo(exp: LiftedAst.Expression, exps: List[LiftedAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[LiftedAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 

@@ -153,17 +153,17 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
         val e1 = rewriteTailCalls(def1.exp)
-        bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), as, Map.empty)
+        bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), es, Map.empty)
       } else {
-        LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
+        LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
@@ -398,9 +398,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))

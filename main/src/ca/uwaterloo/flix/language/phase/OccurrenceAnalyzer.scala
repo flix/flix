@@ -174,11 +174,11 @@ object OccurrenceAnalyzer {
         case _ => (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
       }
 
-    case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
-      val (as, o1) = visitExps(sym0, args)
+    case Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      val (es, o1) = visitExps(sym0, exps)
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ApplyDef(sym, as, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.ApplyDef(sym, es, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val (as, o1) = visitExps(sym0, args)

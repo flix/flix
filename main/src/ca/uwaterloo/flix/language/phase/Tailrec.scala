@@ -86,7 +86,7 @@ object Tailrec {
       /*
        * ApplyDef.
        */
-      case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
+      case Expression.ApplyDef(sym, args, Ast.CallType.NonTailCall, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
           // Case 1: Tail recursive call.
