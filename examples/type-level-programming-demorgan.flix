@@ -1,4 +1,4 @@
-/// We can abuse Flix' type system to prove deMorgan's laws.
+/// We can abuse Flix' type system to prove De Morgan's laws.
 
 ///
 /// We define a new type indexed by a type-level Boolean:
@@ -15,11 +15,11 @@ def mkOr(_: B[a], _: B[b]): B[b or a] = B.B
 def mkAnd(_: B[a], _: B[b]): B[b and a] = B.B
 
 ///
-/// We encode deMorgan's laws as equations between terms.
+/// We encode De Morgan's laws as equations between terms.
 /// But since == requires the LHS and RHS to have the same
 /// types, this enforces that the formulas are the same.
 ///
-/// Moreover, since the a's and b's are parameter they
+/// Moreover, since the a's and b's are parameters they
 /// must be kept symbolic (i.e. the type system will not
 /// instantiate them to true or false).
 ///
