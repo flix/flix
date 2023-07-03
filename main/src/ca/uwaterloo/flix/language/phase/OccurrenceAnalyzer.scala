@@ -162,25 +162,35 @@ object OccurrenceAnalyzer {
       }
       (OccurrenceAst.Expression.ApplyAtomic(op, es, tpe, purity, loc), o1)
 
-    case Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
-      val (es, o2) = visitExps(sym0, exps)
+      val (as, o2) = visitExps(sym0, args)
       val o3 = combineAllSeq(o1, o2)
-
       exp match {
         case Expression.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
-          (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o5.increaseSizeByOne())
-        case _ => (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
+          (OccurrenceAst.Expression.ApplyClo(e, as, tpe, purity, loc), o5.increaseSizeByOne())
+        case _ => (OccurrenceAst.Expression.ApplyClo(e, as, tpe, purity, loc), o3.increaseSizeByOne())
       }
-
 
     case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val (as, o1) = visitExps(sym0, args)
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplyDef(sym, as, tpe, purity, loc), o3.increaseSizeByOne())
+
+    case Expression.ApplyCloTail(exp, args, tpe, purity, loc) =>
+      val (e, o1) = visitExp(sym0, exp)
+      val (as, o2) = visitExps(sym0, args)
+      val o3 = combineAllSeq(o1, o2)
+      exp match {
+        case Expression.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
+          val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
+          val o5 = combineAllSeq(o3, o4)
+          (OccurrenceAst.Expression.ApplyCloTail(e, as, tpe, purity, loc), o5.increaseSizeByOne())
+        case _ => (OccurrenceAst.Expression.ApplyCloTail(e, as, tpe, purity, loc), o3.increaseSizeByOne())
+      }
 
     case Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val (as, o1) = visitExps(sym0, args)
