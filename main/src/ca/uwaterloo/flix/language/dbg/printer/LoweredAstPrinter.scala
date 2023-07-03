@@ -34,13 +34,13 @@ object LoweredAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
     val defs = root.defs.values.map {
-      case LoweredAst.Def(sym, LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, loc), LoweredAst.Impl(exp, inferredScheme)) =>
+      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, _, _, _), LoweredAst.Impl(exp, _)) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           fparams.map(printFormalParam),
-          DocAst.Type.Arrow(List(DocAst.Type.AsIs("ignoreme")), TypePrinter.print(retTpe)), // TODO EVIL, EVIL hack due to formatter impl
+          TypePrinter.print(retTpe),
           print(exp)
         )
     }.toList

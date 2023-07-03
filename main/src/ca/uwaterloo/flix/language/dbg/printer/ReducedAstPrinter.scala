@@ -43,7 +43,7 @@ object ReducedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          DocAst.Type.Arrow(Nil, TypePrinter.print(tpe)),
+          TypePrinter.print(tpe),
           print(stmt)
         )
     }.toList

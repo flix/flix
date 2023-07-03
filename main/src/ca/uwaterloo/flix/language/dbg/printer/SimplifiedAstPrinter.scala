@@ -42,7 +42,7 @@ object SimplifiedAstPrinter {
           mod,
           sym,
           formals.map(printFormalParam),
-          DocAst.Type.Arrow(Nil, TypePrinter.print(tpe)),
+          TypePrinter.print(tpe),
           print(exp)
         )
     }.toList

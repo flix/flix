@@ -42,7 +42,7 @@ object LiftedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          DocAst.Type.Arrow(Nil, TypePrinter.print(tpe)),
+          TypePrinter.print(tpe),
           print(exp)
         )
     }.toList
