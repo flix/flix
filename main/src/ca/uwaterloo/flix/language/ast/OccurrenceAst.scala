@@ -50,7 +50,7 @@ object OccurrenceAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ApplyClo(exp: OccurrenceAst.Expression, args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ApplyClo(exp: OccurrenceAst.Expression, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class ApplyDef(sym: Symbol.DefnSym, args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
@@ -117,12 +117,12 @@ object OccurrenceAst {
   }
 
   /**
-   * `OccurDef` contains information that indicates whether or not a def should be inlined
-   *  A def is `isDirectCall` if
-   *  the expression consist of a single (non-self) call with trivial arguments
-   *  `occur` represents the number of times a def is references in the entire program.
-   *  `size` denotes the cumulative weight of each expression in the body of the def
-   */
+    * `OccurDef` contains information that indicates whether or not a def should be inlined
+    * A def is `isDirectCall` if
+    * the expression consist of a single (non-self) call with trivial arguments
+    * `occur` represents the number of times a def is references in the entire program.
+    * `size` denotes the cumulative weight of each expression in the body of the def
+    */
   case class DefContext(isDirectCall: Boolean, occur: Occur, size: Int, isSelfRecursive: Boolean)
 
 }

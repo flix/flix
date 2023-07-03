@@ -99,14 +99,11 @@ object LateTreeShaker {
     case Expression.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case Expression.ApplyClo(exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
+    case Expression.ApplyClo(exp, exps, _, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps)
 
     case Expression.ApplyDef(sym, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
-
-    case Expression.ApplyCloTail(exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
 
     case Expression.ApplyDefTail(sym, args, _, _, _) =>
       Set(sym) ++ visitExps(args)

@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 
 /**
@@ -79,8 +80,8 @@ object Tailrec {
       /*
        * ApplyClo.
        */
-      case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
-        Expression.ApplyCloTail(exp, args, tpe, purity, loc)
+      case Expression.ApplyClo(exp, exps, _, tpe, purity, loc) =>
+        Expression.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc)
 
       /*
        * ApplyDef.

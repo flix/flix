@@ -130,7 +130,7 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, args, ct, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
@@ -144,11 +144,11 @@ object Inliner {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
             bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ as, Map.empty)
           } else {
-            LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+            LiftedAst.Expression.ApplyClo(e, as, Ast.CallType.NonTailCall, tpe, purity, loc)
           }
         case _ =>
           val as = args.map(visitExp(_, subst0))
-          LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+          LiftedAst.Expression.ApplyClo(e, as, Ast.CallType.NonTailCall, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
@@ -177,11 +177,11 @@ object Inliner {
             // Map for substituting formal parameters of a function with the freevars currently in scope
             bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ as, Map.empty)
           } else {
-            LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
+            LiftedAst.Expression.ApplyClo(e, as, Ast.CallType.TailCall, tpe, purity, loc)
           }
         case _ =>
           val as = args.map(visitExp(_, subst0))
-          LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
+          LiftedAst.Expression.ApplyClo(e, as, Ast.CallType.TailCall, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
@@ -366,7 +366,7 @@ object Inliner {
       }
       OccurrenceAst.Expression.Branch(e0, br, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyCloTail(exp, exps, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc)
 
@@ -411,10 +411,10 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+      val as = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyClo(e, as, ct, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))
@@ -423,7 +423,7 @@ object Inliner {
     case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
+      LiftedAst.Expression.ApplyClo(e, as, Ast.CallType.TailCall, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))

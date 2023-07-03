@@ -130,7 +130,7 @@ object LambdaLift {
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
         val as = args map visitExp
-        LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+        LiftedAst.Expression.ApplyClo(e, as, Ast.CallType.NonTailCall, tpe, purity, loc)
 
       case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
         val as = args map visitExp
