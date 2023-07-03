@@ -80,7 +80,7 @@ mod Time {
         pub def toString(x: Time.Instant): String =
             import java.time.Instant.toString(): String \ {} as str;
             let Time.Instant.Instant(t) = x;
-            str(i)
+            str(t)
 
     }
 
