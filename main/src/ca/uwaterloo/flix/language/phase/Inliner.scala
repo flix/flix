@@ -166,16 +166,16 @@ object Inliner {
         LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
+    case OccurrenceAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), as, Map.empty)
+        bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), es, Map.empty)
       } else {
-        LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
+        LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.TailCall, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
@@ -402,9 +402,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.TailCall, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val as = actuals.map(substituteExp(_, env0))

@@ -63,11 +63,11 @@ object Reducer {
       val es = exps.map(visitExpr)
       ReducedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
-    case LiftedAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case LiftedAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
       ReducedAst.Expr.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case LiftedAst.Expression.ApplyDefTail(sym, exps, tpe, purity, loc) =>
+    case LiftedAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
       ReducedAst.Expr.ApplyDef(sym, es, Ast.CallType.TailCall, tpe, purity, loc)
 
