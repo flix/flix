@@ -76,6 +76,7 @@ object TypeMinimization {
     // Check that the `tpe` argument is a Boolean formula.
     tpe0.kind match {
       case Kind.Eff => // OK
+      case Kind.Bool => // OK
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.", tpe0.loc)
     }
 
