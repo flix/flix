@@ -135,12 +135,6 @@ object LoweredAst {
 
     case class Ascribe(exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class InstanceOf(exp: LoweredAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends LoweredAst.Expression {
-      def eff: Type = exp.eff
-
-      def tpe: Type = Type.Bool
-    }
-
     case class Cast(exp: LoweredAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class TryCatch(exp: LoweredAst.Expression, rules: List[LoweredAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

@@ -99,7 +99,6 @@ object LoweredAstPrinter {
     case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expression.VectorLoad(print(exp1), print(exp2))
     case Expression.VectorLength(exp, loc) => DocAst.Expression.ArrayLength(print(exp))
     case Expression.Ascribe(exp, tpe, eff, loc) => DocAst.Expression.Ascription(print(exp), TypePrinter.print(tpe))
-    case Expression.InstanceOf(exp, clazz, loc) => DocAst.Expression.InstanceOf(print(exp), clazz)
     case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => declaredType match {
       case None => print(exp) // TODO needs eff
       case Some(t) => DocAst.Expression.Cast(print(exp), TypePrinter.print(t))

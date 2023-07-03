@@ -75,25 +75,25 @@ object Simplifier {
 
       case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val es = exps map visitExp
-        val simplifiedEff = simplifyEffect(eff)
+        val purity = simplifyEffect(eff)
         op match {
           case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
             // Translate to InvokeMethod exp
             val strClass = Class.forName("java.lang.String")
             val method = strClass.getMethod("concat", strClass)
-            SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), es, tpe, simplifiedEff, loc)
+            SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), es, tpe, purity, loc)
 
           case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
             // The region expression is dropped (head of exps / es)
             val es1 = es.tail
-            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, simplifiedEff, loc)
+            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
 
           case AtomicOp.Ref =>
             // The region expression is dropped (tail of exps / es)
             val es1 = List(es.head)
-            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, simplifiedEff, loc)
+            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
 
-          case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, simplifiedEff, loc)
+          case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
         }
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
@@ -140,10 +140,6 @@ object Simplifier {
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, purity, loc)
 
       case LoweredAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
-
-      case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.purity, loc)
 
       case LoweredAst.Expression.Cast(exp, _, _, tpe, eff, loc) =>
         val e = visitExp(exp)

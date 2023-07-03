@@ -569,7 +569,7 @@ object Lowering {
 
     case TypedAst.Expression.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)
-      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
 
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
@@ -1905,10 +1905,6 @@ object Lowering {
     case LoweredAst.Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Ascribe(e, tpe, eff, loc)
-
-    case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.InstanceOf(e, clazz, loc)
 
     case LoweredAst.Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = substExp(exp, subst)
