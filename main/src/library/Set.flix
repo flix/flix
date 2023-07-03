@@ -499,7 +499,7 @@ mod Set {
     /// Returns the set `s` as a list.
     ///
     pub def toList(s: Set[a]): List[a] =
-        foldLeft((acc, x) -> x :: acc, Nil, s)
+        foldRight((x, acc) -> x :: acc, Nil, s)
 
     ///
     /// Returns the set `s` as a chain.
