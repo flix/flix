@@ -356,7 +356,7 @@ object Typer {
           /// (or y) to determine the type of floating-point or integer operations.
           ///
           val initialSubst = getSubstFromParams(fparams0)
-          val initialRenv = getRigidityFromParams(fparams0)
+          val initialRenv = getRigidityFromParams(fparams0) // MATT should get from return type and effect too
 
           run(initialSubst, Nil, initialRenv, Set.empty) match { // TODO ASSOC-TYPES initial econstrs? // MATT
             case Ok((subst, partialEconstrs, renv0, _, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
