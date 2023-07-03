@@ -1264,16 +1264,16 @@ object ParsedAst {
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
-    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
 
   }
 
   /**
     * Record Field Patterns.
     */
-  trait RecordFieldPattern
+  trait RecordPattern
 
-  object RecordFieldPattern {
+  object RecordPattern {
 
     /**
       *
@@ -1283,7 +1283,7 @@ object ParsedAst {
       * @param field the name of the field.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Var(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends RecordFieldPattern
+    case class Var(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends RecordPattern
 
     /**
       *
