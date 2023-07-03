@@ -69,6 +69,15 @@ mod Time {
             let Time.Instant.Instant(t) = x;
             Time.Instant.Instant(t `minusNanos` d)
 
+        ///
+        /// Returns `x` as a string using the ISO-8601 representation.
+        ///
+        @Experimental
+        pub def toString(x: Time.Instant): String =
+            import java.time.Instant.toString(): String \ {} as str;
+            let Time.Instant.Instant(t) = x;
+            str(i)
+
     }
 
 }
