@@ -398,13 +398,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) =>
-      val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.TailCall, tpe, purity, loc)
+      LiftedAst.Expression.ApplyDef(sym, es, ct, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val as = actuals.map(substituteExp(_, env0))
