@@ -251,12 +251,6 @@ object MonomorphEnums {
     case Expression.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expression.VectorLength(e, loc)
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Ref(e1, e2, t, p, loc)
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)

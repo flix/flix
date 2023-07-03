@@ -88,6 +88,11 @@ object Simplifier {
             val es1 = es.tail
             SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, simplifiedEff, loc)
 
+          case AtomicOp.Ref =>
+            // The region expression is dropped (tail of exps / es)
+            val es1 = List(es.head)
+            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, simplifiedEff, loc)
+
           case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, simplifiedEff, loc)
         }
 
@@ -133,11 +138,6 @@ object Simplifier {
         val e = visitExp(exp)
         val purity = e.purity
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, purity, loc)
-
-      case LoweredAst.Expression.Ref(exp, _, tpe, eff, loc) =>
-        // Note: The region expression is erased.
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.Deref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)

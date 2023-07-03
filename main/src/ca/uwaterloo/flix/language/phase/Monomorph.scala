@@ -462,11 +462,6 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.VectorLength(e, loc)
 
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.Ref(e1, e2, subst(tpe), subst(eff), loc)
-
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       Expression.Deref(e, subst(tpe), subst(eff), loc)
