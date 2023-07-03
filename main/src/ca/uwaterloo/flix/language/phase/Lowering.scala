@@ -483,52 +483,52 @@ object Lowering {
 
     case TypedAst.Expression.RecordEmpty(tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordEmpty(t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, t, Type.Pure, loc)
 
     case TypedAst.Expression.RecordSelect(exp, field, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordSelect(e, field, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), t, eff, loc)
 
-    case TypedAst.Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
-      val v = visitExp(value)
-      val r = visitExp(rest)
+    case TypedAst.Expression.RecordExtend(field, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordExtend(field, v, r, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.RecordExtend(field), List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
-      val r = visitExp(rest)
+    case TypedAst.Expression.RecordRestrict(field, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordRestrict(field, r, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(e), t, eff, loc)
 
     case TypedAst.Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
       val es = visitExps(exps)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArrayLit(es, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, e :: es, t, eff, loc)
 
     case TypedAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArrayNew(e1, e2, e3, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e1, e2, e3), t, eff, loc)
 
-    case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
+    case TypedAst.Expression.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArrayLoad(b, i, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expression.ArrayLength(base, eff, loc) =>
-      val b = visitExp(base)
-      LoweredAst.Expression.ArrayLength(b, eff, loc)
+    case TypedAst.Expression.ArrayLength(exp, eff, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, eff, loc)
 
-    case TypedAst.Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
-      val e = visitExp(elm)
-      LoweredAst.Expression.ArrayStore(b, i, e, eff, loc)
+    case TypedAst.Expression.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case TypedAst.Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -549,18 +549,18 @@ object Lowering {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Ref(e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.Deref(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Deref(e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), t, eff, loc)
 
     case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Assign(e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Assign, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -569,7 +569,7 @@ object Lowering {
 
     case TypedAst.Expression.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)
-      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
 
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
@@ -583,7 +583,7 @@ object Lowering {
     case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
-    case TypedAst.Expression.Without(exp, sym, tpe, eff, loc) =>
+    case TypedAst.Expression.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
     case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -607,10 +607,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Resume(e, t, loc)
 
-    case TypedAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      val as = visitExps(args)
+    case TypedAst.Expression.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+      val es = visitExps(exps)
       val t = visitType(tpe)
-      LoweredAst.Expression.InvokeConstructor(constructor, as, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
     case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1889,46 +1889,6 @@ object Lowering {
       }
       LoweredAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
 
-    case LoweredAst.Expression.RecordEmpty(_, _) => exp0
-
-    case LoweredAst.Expression.RecordSelect(exp, field, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.RecordSelect(e, field, tpe, eff, loc)
-
-    case LoweredAst.Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
-      val v = substExp(value, subst)
-      val r = substExp(rest, subst)
-      LoweredAst.Expression.RecordExtend(field, v, r, tpe, eff, loc)
-
-    case LoweredAst.Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
-      val r = substExp(rest, subst)
-      LoweredAst.Expression.RecordRestrict(field, r, tpe, eff, loc)
-
-    case LoweredAst.Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
-      val es = exps.map(substExp(_, subst))
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.ArrayLit(es, e, tpe, eff, loc)
-
-    case LoweredAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      val e3 = substExp(exp3, subst)
-      LoweredAst.Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
-
-    case LoweredAst.Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      val b = substExp(base, subst)
-      val i = substExp(index, subst)
-      LoweredAst.Expression.ArrayLoad(b, i, tpe, eff, loc)
-
-    case LoweredAst.Expression.ArrayLength(base, eff, loc) =>
-      val b = substExp(base, subst)
-      LoweredAst.Expression.ArrayLength(b, eff, loc)
-
-    case LoweredAst.Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = substExp(base, subst)
-      val i = substExp(index, subst)
-      LoweredAst.Expression.ArrayStore(b, i, elm, eff, loc)
-
     case LoweredAst.Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expression.VectorLit(es, tpe, eff, loc)
@@ -1942,27 +1902,9 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.VectorLength(e, loc)
 
-    case LoweredAst.Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Ref(e1, e2, tpe, eff, loc)
-
-    case LoweredAst.Expression.Deref(exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Deref(e, tpe, eff, loc)
-
-    case LoweredAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Assign(e1, e2, tpe, eff, loc)
-
     case LoweredAst.Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Ascribe(e, tpe, eff, loc)
-
-    case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.InstanceOf(e, clazz, loc)
 
     case LoweredAst.Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1987,10 +1929,6 @@ object Lowering {
     case LoweredAst.Expression.Resume(exp, tpe, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Resume(e, tpe, loc)
-
-    case LoweredAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      val as = args.map(substExp(_, subst))
-      LoweredAst.Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
 
     case LoweredAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       val e = substExp(exp, subst)

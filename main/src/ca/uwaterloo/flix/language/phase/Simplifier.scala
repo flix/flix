@@ -75,15 +75,26 @@ object Simplifier {
 
       case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val es = exps map visitExp
-        val op1 = op match {
+        val purity = simplifyEffect(eff)
+        op match {
           case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
             // Translate to InvokeMethod exp
             val strClass = Class.forName("java.lang.String")
             val method = strClass.getMethod("concat", strClass)
-            AtomicOp.InvokeMethod(method)
-          case _ => op
+            SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), es, tpe, purity, loc)
+
+          case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
+            // The region expression is dropped (head of exps / es)
+            val es1 = es.tail
+            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
+
+          case AtomicOp.Ref =>
+            // The region expression is dropped (tail of exps / es)
+            val es1 = List(es.head)
+            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
+
+          case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
         }
-        SimplifiedAst.Expression.ApplyAtomic(op1, es, tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, simplifyEffect(eff), loc)
@@ -111,49 +122,6 @@ object Simplifier {
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
-      case LoweredAst.Expression.RecordEmpty(tpe, loc) =>
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, tpe, Purity.Pure, loc)
-
-      case LoweredAst.Expression.RecordSelect(exp, field, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, simplifyEffect(eff), loc)
-
-      case LoweredAst.Expression.RecordExtend(field, exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordExtend(field), List(e1, e2), tpe, simplifyEffect(eff), loc)
-
-      case LoweredAst.Expression.RecordRestrict(field, exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(e), tpe, simplifyEffect(eff), loc)
-
-      case LoweredAst.Expression.ArrayLit(exps, _, tpe, eff, loc) =>
-        // Note: The region expression is erased.
-        val es = exps.map(visitExp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
-
-      case LoweredAst.Expression.ArrayNew(_, exp2, exp3, tpe, eff, loc) =>
-        // Note: The region expression is erased.
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e2, e3), tpe, Purity.Impure, loc)
-
-      case LoweredAst.Expression.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), tpe, Purity.Impure, loc)
-
-      case LoweredAst.Expression.ArrayStore(exp1, exp2, exp3, _, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, Purity.Impure, loc)
-
-      case LoweredAst.Expression.ArrayLength(exp, _, loc) =>
-        val e = visitExp(exp)
-        val purity = e.purity
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, purity, loc)
-
       case LoweredAst.Expression.VectorLit(exps, tpe, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
         val es = exps.map(visitExp)
@@ -171,25 +139,7 @@ object Simplifier {
         val purity = e.purity
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayLength, List(e), Type.Int32, purity, loc)
 
-      case LoweredAst.Expression.Ref(exp, _, tpe, eff, loc) =>
-        // Note: The region expression is erased.
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Ref, List(e), tpe, Purity.Impure, loc)
-
-      case LoweredAst.Expression.Deref(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Deref, List(e), tpe, Purity.Impure, loc)
-
-      case LoweredAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Assign, List(e1, e2), tpe, Purity.Impure, loc)
-
       case LoweredAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
-
-      case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.purity, loc)
 
       case LoweredAst.Expression.Cast(exp, _, _, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -221,10 +171,6 @@ object Simplifier {
       case LoweredAst.Expression.Resume(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Resume(e, tpe, loc)
-
-      case LoweredAst.Expression.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
-        val es = exps map visitExp
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
         val e = visitExp(exp)
