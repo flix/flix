@@ -83,8 +83,8 @@ object Simplifier {
             val method = strClass.getMethod("concat", strClass)
             SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), es, tpe, simplifiedEff, loc)
 
-          case AtomicOp.ArrayLit =>
-            // The region expression is dropped (the first expression, reversed in Lowering)
+          case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
+            // The region expression is dropped (head of exps / es)
             val es1 = es.tail
             SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, simplifiedEff, loc)
 
@@ -116,12 +116,6 @@ object Simplifier {
 
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-
-      case LoweredAst.Expression.ArrayNew(_, exp2, exp3, tpe, eff, loc) =>
-        // Note: The region expression is erased.
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayNew, List(e2, e3), tpe, Purity.Impure, loc)
 
       case LoweredAst.Expression.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
