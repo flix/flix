@@ -1264,7 +1264,51 @@ object ParsedAst {
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
+    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
+
   }
+
+  /**
+    * Record Field Patterns.
+    */
+  trait RecordFieldPattern
+
+  object RecordFieldPattern {
+
+    /**
+      *
+      * Pattern `{ x }` where `x` is a valid field on a record.
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param field the name of the field.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class Var(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends RecordFieldPattern
+
+    /**
+      *
+      * Pattern `{ x = y }` where `x` is a valid field on a record.
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param field the name of the field.
+      * @param name  the custom alias for the field.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class Alias(sp1: SourcePosition, field: Name.Ident, name: Name.Ident, sp2: SourcePosition)
+
+    /**
+      *
+      * Pattern `{ x = 1 }` where `x` is a valid field on a record.
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param field the name of the field.
+      * @param lit   the literal which must match the field value.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class Lit(sp1: SourcePosition, field: Name.Ident, lit: ParsedAst.Expression.Lit, sp2: SourcePosition)
+
+  }
+
 
   /**
     * Relational Choice Patterns.
@@ -1559,11 +1603,11 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-     * A type representing a logical negation.
-     *
-     * @param tpe the complemented type.
-     * @param sp2 the position of the last character in the type.
-     */
+      * A type representing a logical negation.
+      *
+      * @param tpe the complemented type.
+      * @param sp2 the position of the last character in the type.
+      */
     case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
@@ -1585,12 +1629,12 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-     * A type representing a logical exclusive or.
-     *
-     * @param tpe1 the 1st type.
-     * @param tpe2 the 2nd type.
-     * @param sp2  the position of the last character in the type.
-     */
+      * A type representing a logical exclusive or.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
     case class Xor(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
@@ -2219,4 +2263,5 @@ object ParsedAst {
     * @param sp2 the position of the last character in the fragment.
     */
   case class ParYieldFragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
+
 }
