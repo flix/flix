@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Type}
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, toType}
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, fromEffType, toType}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable.minimizeFormula
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -33,6 +33,7 @@ object TypeMinimization {
     */
   def minimizeType(t: Type)(implicit flix: Flix): Type = t.kind match {
     case Kind.Eff => minimizeBoolAlg(t)
+    case Kind.Bool => minimizeBoolAlg(t)
     case _ => t match {
       case tpe: Type.Var => tpe
       case tpe: Type.Cst => tpe
@@ -101,7 +102,8 @@ object TypeMinimization {
 
     // Convert the type `tpe` to a Boolean formula.
     val input = tpe.kind match {
-      case Kind.Eff => fromBoolType(tpe, m)
+      case Kind.Eff => fromEffType(tpe, m)
+      case Kind.Bool => fromBoolType(tpe, m)
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect/non-Case kind: '${tpe.kind}'.", tpe.loc)
     }
 
