@@ -180,7 +180,7 @@ mod TestMutSet {
         region r2 {
             let s2 = MutSet.new(r2);
             MutSet.addAll!(MutSet.toSet(s1), s2);
-            MutSet.toList(s2) == "c" :: "b" :: "a" :: Nil
+            MutSet.toList(s2) == "a" :: "b" :: "c" :: Nil
         }
     }
 

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
+import ca.uwaterloo.flix.language.ast.Purity.Pure
 
 object LiftedAst {
 
@@ -85,14 +85,6 @@ object LiftedAst {
     }
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[LiftedAst.JvmMethod], loc: SourceLocation) extends LiftedAst.Expression
-
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
-      def purity: Purity = Impure
-    }
-
-    case class MatchError(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
-      def purity: Purity = Impure
-    }
 
   }
 

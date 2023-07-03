@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.{Ast, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -57,8 +57,8 @@ object MonomorphEnums {
       * The types in this must must:
       * 1. Be ground, i.e. no type variables
       * 2. Be normalized, i.e.
-      *   2a. {a=Int32, b=Int32} and {b=Int32, a=Int32} should not both be present (labels should be sorted)
-      *   2b. Pure + Pure and Pure should not both be present (formulas should be fully evaluated)
+      * 2a. {a=Int32, b=Int32} and {b=Int32, a=Int32} should not both be present (labels should be sorted)
+      * 2b. Pure + Pure and Pure should not both be present (formulas should be fully evaluated)
       * 3. Contain no specialized enums, i.e. should use List[Int32] instead of List$32
       */
     val enum2enum: mutable.Map[(Symbol.EnumSym, Type), Symbol.EnumSym] = mutable.Map.empty
@@ -161,17 +161,20 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.Apply(e, es, t, p, loc)
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
+    case Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val op1 = op match {
+        case AtomicOp.Tag(sym) =>
+          //
+          // Specialize the enum
+          //
+          val freshCaseSym = specializeCaseSymUse(CaseSymUse(sym, sym.loc), tpe.typeArguments, tpe.loc)
+          AtomicOp.Tag(freshCaseSym.sym)
+        case _ => op
+      }
+      val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Unary(sop, e, t, p, loc)
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Binary(sop, e1, e2, t, p, loc)
+      Expression.ApplyAtomic(op1, es, t, p, loc)
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -184,8 +187,6 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.LetRec(sym, mod, e1, e2, t, p, loc)
-    case Expression.Region(tpe, loc) =>
-      Expression.Region(visitType(tpe), loc)
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       // The region variable has been rendered redundant by Monomorph.
       // It has replaced the region with pure/impure and the variable could
@@ -194,12 +195,6 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.Scope(sym, regionVar, e, t, p, loc)
-    case Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.ScopeExit(e1, e2, t, p, loc)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -242,68 +237,6 @@ object MonomorphEnums {
       Expression.TypeMatch(e, rs, t, p, loc)
     case Expression.RelationalChoose(_, _, _, _, loc) =>
       throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-    case Expression.Tag(sym, exp, tpe, eff, loc) =>
-      //
-      // Specialize the enum
-      //
-      val freshCaseSym = specializeCaseSymUse(sym, tpe.typeArguments, tpe.loc)
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Tag(freshCaseSym, e, t, p, loc)
-    case Expression.Tuple(elms, tpe, eff, loc) =>
-      val es = elms.map(visitExp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Tuple(es, t, p, loc)
-    case Expression.RecordEmpty(tpe, loc) =>
-      val t = visitType(tpe)
-      Expression.RecordEmpty(t, loc)
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.RecordSelect(e, field, t, p, loc)
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
-      val v = visitExp(value)
-      val r = visitExp(rest)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.RecordExtend(field, v, r, t, p, loc)
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
-      val r = visitExp(rest)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.RecordRestrict(field, r, t, p, loc)
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.ArrayLit(es, e, t, p, loc)
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.ArrayNew(e1, e2, e3, t, p, loc)
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.ArrayLoad(b, i, t, p, loc)
-    case Expression.ArrayLength(base, eff, loc) =>
-      val b = visitExp(base)
-      val p = visitType(eff)
-      Expression.ArrayLength(b, p, loc)
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
-      val e = visitExp(elm)
-      val p = visitType(eff)
-      Expression.ArrayStore(b, i, e, p, loc)
     case Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
@@ -318,31 +251,11 @@ object MonomorphEnums {
     case Expression.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expression.VectorLength(e, loc)
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Ref(e1, e2, t, p, loc)
-    case Expression.Deref(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Deref(e, t, p, loc)
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Assign(e1, e2, t, p, loc)
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.Ascribe(e, t, p, loc)
-    case Expression.InstanceOf(exp, clazz, loc) =>
-      val e = visitExp(exp)
-      Expression.InstanceOf(e, clazz, loc)
     case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
@@ -380,11 +293,6 @@ object MonomorphEnums {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Resume(e, t, loc)
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      val as = args.map(visitExp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.InvokeConstructor(constructor, as, t, p, loc)
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       val e = visitExp(exp)
       val as = args.map(visitExp)
