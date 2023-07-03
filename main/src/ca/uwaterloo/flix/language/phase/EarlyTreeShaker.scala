@@ -182,9 +182,6 @@ object EarlyTreeShaker {
     case Expression.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
