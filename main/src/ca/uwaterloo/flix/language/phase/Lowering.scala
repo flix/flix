@@ -505,7 +505,7 @@ object Lowering {
       val es = visitExps(exps)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArrayLit(es, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayLit, e :: es, t, eff, loc)
 
     case TypedAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -583,7 +583,7 @@ object Lowering {
     case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
-    case TypedAst.Expression.Without(exp, sym, tpe, eff, loc) =>
+    case TypedAst.Expression.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
     case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -1888,11 +1888,6 @@ object Lowering {
           LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
       }
       LoweredAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
-
-    case LoweredAst.Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
-      val es = exps.map(substExp(_, subst))
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.ArrayLit(es, e, tpe, eff, loc)
 
     case LoweredAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

@@ -449,11 +449,6 @@ object Monomorph {
       }
       Expression.RelationalChoose(es, rs, subst(tpe), subst(eff), loc)
 
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, env0, subst))
-      val e = visitExp(exp, env0, subst)
-      Expression.ArrayLit(es, e, subst(tpe), subst(eff), loc)
-
     case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
       val e2 = visitExp(exp2, env0, subst)

@@ -173,9 +173,6 @@ object EarlyTreeShaker {
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.ArrayLit(exps, exp, _, _, _) =>
-      visitExps(exps) ++ visitExp(exp)
-
     case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
