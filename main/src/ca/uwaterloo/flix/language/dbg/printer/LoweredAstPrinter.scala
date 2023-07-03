@@ -95,7 +95,6 @@ object LoweredAstPrinter {
           (patD, guardD, bodyD)
       }
       DocAst.Expression.Match(expD, rulesD)
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => DocAst.Expression.RecordRestrict(field, print(rest))
     case Expression.ArrayLit(exps, exp, tpe, eff, loc) => DocAst.Expression.InRegion(DocAst.Expression.ArrayLit(exps.map(print)), print(exp))
     case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => DocAst.Expression.InRegion(DocAst.Expression.ArrayNew(print(exp1), print(exp2)), print(exp3))
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => DocAst.Expression.ArrayLoad(print(base), print(index))

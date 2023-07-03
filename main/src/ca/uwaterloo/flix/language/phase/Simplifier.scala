@@ -111,10 +111,6 @@ object Simplifier {
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
-      case LoweredAst.Expression.RecordRestrict(field, exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordRestrict(field), List(e), tpe, simplifyEffect(eff), loc)
-
       case LoweredAst.Expression.ArrayLit(exps, _, tpe, eff, loc) =>
         // Note: The region expression is erased.
         val es = exps.map(visitExp)

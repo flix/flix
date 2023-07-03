@@ -123,8 +123,6 @@ object LoweredAst {
 
     case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class RecordRestrict(field: Name.Field, exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class ArrayLit(exps: List[LoweredAst.Expression], exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class ArrayNew(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

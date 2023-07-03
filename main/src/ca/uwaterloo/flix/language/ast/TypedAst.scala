@@ -164,7 +164,7 @@ object TypedAst {
 
     case class RecordExtend(field: Name.Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordRestrict(field: Name.Field, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordRestrict(field: Name.Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayLit(exps: List[TypedAst.Expression], exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
