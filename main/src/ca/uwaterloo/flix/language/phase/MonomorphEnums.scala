@@ -237,11 +237,6 @@ object MonomorphEnums {
       Expression.TypeMatch(e, rs, t, p, loc)
     case Expression.RelationalChoose(_, _, _, _, loc) =>
       throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.RecordSelect(e, field, t, p, loc)
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
       val v = visitExp(value)
       val r = visitExp(rest)
