@@ -1,13 +1,14 @@
 ///
 /// We can use type-level Booleans to represent 4-bit integers.
-/// Here each Boolean is a bit from msb to lsb.
 ///
-enum I4[_: Bool, _: Bool, _: Bool, _: Bool] with Eq {
+/// We represent a 4-bit integer as 4bits: a, b, c, d.
+///
+enum I4[_a: Bool, _b: Bool, _c: Bool, _d: Bool] with Eq {
     case I4
 }
 
 ///
-/// We can specify a function that returns the 3.
+/// We can specify a function that returns the number 3.
 ///
 def mk3(): I4[false, false, true, true] = I4.I4
 
@@ -20,8 +21,15 @@ def inc(_: I4[a, b, c, d]):
     I4[a xor (b and c and d), b xor (c and d), c xor d, not d] = I4.I4
 
 ///
-/// We can now specify a function that returns 4.
+/// We can now specify a function that returns the number 4.
 ///
 /// The type system ensures that we cannot make a mistake.
 ///
 def mk4(): I4[false, true, false, false] = inc(mk3())
+
+///
+/// Flix has type inference, so we can easily use it to compute 7:
+///
+def f(): Unit =
+    let _seven = inc(inc(inc(mk4()))); // Hover to see type.
+    ()
