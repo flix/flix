@@ -95,23 +95,10 @@ object LoweredAstPrinter {
           (patD, guardD, bodyD)
       }
       DocAst.Expression.Match(expD, rulesD)
-    case Expression.RecordEmpty(tpe, loc) => DocAst.Expression.RecordEmpty
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) => DocAst.Expression.RecordSelect(field, print(exp))
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => DocAst.Expression.RecordExtend(field, print(value), print(rest))
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => DocAst.Expression.RecordRestrict(field, print(rest))
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) => DocAst.Expression.InRegion(DocAst.Expression.ArrayLit(exps.map(print)), print(exp))
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => DocAst.Expression.InRegion(DocAst.Expression.ArrayNew(print(exp1), print(exp2)), print(exp3))
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => DocAst.Expression.ArrayLoad(print(base), print(index))
-    case Expression.ArrayLength(base, eff, loc) => DocAst.Expression.ArrayLength(print(base))
-    case Expression.ArrayStore(base, index, elm, eff, loc) => DocAst.Expression.ArrayStore(print(base), print(index), print(elm))
     case Expression.VectorLit(exps, tpe, eff, loc) => DocAst.Expression.VectorLit(exps.map(print))
     case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expression.VectorLoad(print(exp1), print(exp2))
     case Expression.VectorLength(exp, loc) => DocAst.Expression.ArrayLength(print(exp))
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) => DocAst.Expression.InRegion(DocAst.Expression.Ref(print(exp1)), print(exp2))
-    case Expression.Deref(exp, tpe, eff, loc) => DocAst.Expression.Deref(print(exp))
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => DocAst.Expression.Assign(print(exp1), print(exp2))
     case Expression.Ascribe(exp, tpe, eff, loc) => DocAst.Expression.Ascription(print(exp), TypePrinter.print(tpe))
-    case Expression.InstanceOf(exp, clazz, loc) => DocAst.Expression.InstanceOf(print(exp), clazz)
     case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => declaredType match {
       case None => print(exp) // TODO needs eff
       case Some(t) => DocAst.Expression.Cast(print(exp), TypePrinter.print(t))
@@ -131,7 +118,6 @@ object LoweredAstPrinter {
       DocAst.Expression.TryWith(expD, effD, rulesD)
     case Expression.Do(op, exps, tpe, eff, loc) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Expression.Resume(exp, tpe, loc) => DocAst.Expression.Resume(print(exp))
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
     case Expression.GetField(field, exp, tpe, eff, loc) => DocAst.Expression.JavaGetField(field, print(exp))
