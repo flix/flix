@@ -117,12 +117,6 @@ object Simplifier {
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
-      case LoweredAst.Expression.ArrayStore(exp1, exp2, exp3, _, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, Purity.Impure, loc)
-
       case LoweredAst.Expression.ArrayLength(exp, _, loc) =>
         val e = visitExp(exp)
         val purity = e.purity

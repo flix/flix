@@ -127,10 +127,6 @@ object LoweredAst {
       def tpe: Type = Type.Int32
     }
 
-    case class ArrayStore(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, eff: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def tpe: Type = Type.Unit
-    }
-
     case class VectorLit(exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class VectorLoad(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

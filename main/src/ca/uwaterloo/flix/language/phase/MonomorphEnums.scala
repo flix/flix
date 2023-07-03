@@ -241,12 +241,6 @@ object MonomorphEnums {
       val b = visitExp(base)
       val p = visitType(eff)
       Expression.ArrayLength(b, p, loc)
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
-      val e = visitExp(elm)
-      val p = visitType(eff)
-      Expression.ArrayStore(b, i, e, p, loc)
     case Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)

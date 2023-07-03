@@ -176,7 +176,7 @@ object TypedAst {
       def tpe: Type = Type.Int32
     }
 
-    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+    case class ArrayStore(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Unit
     }
 

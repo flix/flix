@@ -524,11 +524,11 @@ object Lowering {
       val b = visitExp(base)
       LoweredAst.Expression.ArrayLength(b, eff, loc)
 
-    case TypedAst.Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
-      val e = visitExp(elm)
-      LoweredAst.Expression.ArrayStore(b, i, e, eff, loc)
+    case TypedAst.Expression.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.ArrayStore, List(e1, e2, e3), Type.Unit, eff, loc)
 
     case TypedAst.Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -1892,11 +1892,6 @@ object Lowering {
     case LoweredAst.Expression.ArrayLength(base, eff, loc) =>
       val b = substExp(base, subst)
       LoweredAst.Expression.ArrayLength(b, eff, loc)
-
-    case LoweredAst.Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = substExp(base, subst)
-      val i = substExp(index, subst)
-      LoweredAst.Expression.ArrayStore(b, i, elm, eff, loc)
 
     case LoweredAst.Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
