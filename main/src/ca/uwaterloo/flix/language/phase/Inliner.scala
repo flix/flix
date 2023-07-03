@@ -148,9 +148,9 @@ object Inliner {
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
             bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ es, Map.empty)
           } else {
-            LiftedAst.Expression.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
+            LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
           }
-        case _ => LiftedAst.Expression.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
+        case _ => LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
