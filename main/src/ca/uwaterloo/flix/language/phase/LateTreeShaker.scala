@@ -105,9 +105,6 @@ object LateTreeShaker {
     case Expression.ApplyDef(sym, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
-    case Expression.ApplyCloTail(exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
-
     case Expression.ApplyDefTail(sym, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
