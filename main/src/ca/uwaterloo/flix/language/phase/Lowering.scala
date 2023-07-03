@@ -483,7 +483,7 @@ object Lowering {
 
     case TypedAst.Expression.RecordEmpty(tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.RecordEmpty(t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, t, Type.Pure, loc)
 
     case TypedAst.Expression.RecordSelect(exp, field, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1888,8 +1888,6 @@ object Lowering {
           LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
       }
       LoweredAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
-
-    case LoweredAst.Expression.RecordEmpty(_, _) => exp0
 
     case LoweredAst.Expression.RecordSelect(exp, field, tpe, eff, loc) =>
       val e = substExp(exp, subst)

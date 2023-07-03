@@ -173,9 +173,6 @@ object EarlyTreeShaker {
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.RecordEmpty(_, _) =>
-      Set.empty
-
     case Expression.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 

@@ -111,9 +111,6 @@ object Simplifier {
       case LoweredAst.Expression.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
-      case LoweredAst.Expression.RecordEmpty(tpe, loc) =>
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, tpe, Purity.Pure, loc)
-
       case LoweredAst.Expression.RecordSelect(exp, field, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), tpe, simplifyEffect(eff), loc)

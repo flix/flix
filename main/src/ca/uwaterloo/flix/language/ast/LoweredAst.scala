@@ -123,10 +123,6 @@ object LoweredAst {
 
     case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def eff: Type = Type.Pure
-    }
-
     case class RecordSelect(exp: LoweredAst.Expression, field: Name.Field, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class RecordExtend(field: Name.Field, exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
