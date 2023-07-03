@@ -170,8 +170,8 @@ object OccurrenceAnalyzer {
         case Expression.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
-          (OccurrenceAst.Expression.ApplyClo(e, es, tpe, purity, loc), o5.increaseSizeByOne())
-        case _ => (OccurrenceAst.Expression.ApplyClo(e, es, tpe, purity, loc), o3.increaseSizeByOne())
+          (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o5.increaseSizeByOne())
+        case _ => (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
       }
 
     case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
