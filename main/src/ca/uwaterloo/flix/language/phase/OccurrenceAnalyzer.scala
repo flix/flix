@@ -284,11 +284,6 @@ object OccurrenceAnalyzer {
       val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
       (OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, ms, loc), o2.increaseSizeByOne())
 
-    case Expression.HoleError(sym, tpe, loc) =>
-      (OccurrenceAst.Expression.HoleError(sym, tpe, loc), OccurInfo.One)
-
-    case Expression.MatchError(tpe, loc) =>
-      (OccurrenceAst.Expression.MatchError(tpe, loc), OccurInfo.One)
   }
 
   /**
