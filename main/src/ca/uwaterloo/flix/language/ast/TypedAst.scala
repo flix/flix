@@ -162,7 +162,7 @@ object TypedAst {
 
     case class RecordSelect(exp: TypedAst.Expression, field: Name.Field, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordExtend(field: Name.Field, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordExtend(field: Name.Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class RecordRestrict(field: Name.Field, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
