@@ -1294,7 +1294,7 @@ object ParsedAst {
       * @param alias the custom alias for the field.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Alias(sp1: SourcePosition, field: Name.Ident, alias: Pattern.Var, sp2: SourcePosition)
+    case class Alias(sp1: SourcePosition, field: Name.Ident, alias: Pattern.Var, sp2: SourcePosition) extends RecordPattern
 
     /**
       *
@@ -1305,7 +1305,7 @@ object ParsedAst {
       * @param lit   the literal which must match the field value.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Lit(sp1: SourcePosition, field: Pattern.Var, lit: Pattern.Lit, sp2: SourcePosition)
+    case class Lit(sp1: SourcePosition, field: Pattern.Var, lit: Pattern.Lit, sp2: SourcePosition) extends RecordPattern
 
   }
 
