@@ -1275,7 +1275,7 @@ object ParsedAst {
   trait RecordPattern // extends Pattern ?
 
   object RecordPattern {
-
+/*
     /**
       *
       * Pattern `{ x }` where `x` is a valid field on a record.
@@ -1296,6 +1296,7 @@ object ParsedAst {
       * @param sp2   the position of the last character in the pattern.
       */
     case class Alias(sp1: SourcePosition, field: Name.Ident, alias: Pattern.Var, sp2: SourcePosition) extends RecordPattern
+*/
 
     /**
       *
