@@ -351,9 +351,7 @@ object Monomorph {
 
     case Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
-      val t = subst(tpe)
-      val p = subst(eff)
-      Expression.ApplyAtomic(op, es, t, p, loc)
+      Expression.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       // Generate a fresh symbol for the let-bound variable.
