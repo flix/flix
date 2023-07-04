@@ -162,7 +162,7 @@ object EffUnification {
     // Run the expensive Boolean unification algorithm.
     //
     booleanUnification(f1, f2, renv) match {
-      case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
+      case None => UnificationError.MismatchedEffects(tpe1, tpe2).toErr
       case Some(subst) =>
         if (!flix.options.xnoboolcache) {
           cache.put(f1, f2, renv, subst)
