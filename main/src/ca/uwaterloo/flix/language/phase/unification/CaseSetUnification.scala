@@ -98,7 +98,7 @@ object CaseSetUnification {
       case SetUnificationException =>
         val t1 = toCaseType(tpe1, sym, env, SourceLocation.Unknown)
         val t2 = toCaseType(tpe2, sym, env, SourceLocation.Unknown)
-        Err(UnificationError.MismatchedBools(t1, t2)) // TODO make setty
+        Err(UnificationError.MismatchedCaseSets(t1, t2))
     }
   }
 
