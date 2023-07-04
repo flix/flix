@@ -194,9 +194,6 @@ object EarlyTreeShaker {
     case Expression.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expression.Force(exp, _, _, _) =>
-      visitExp(exp)
-
     case Expression.Do(_, exps, _, _, _) =>
       visitExps(exps)
 

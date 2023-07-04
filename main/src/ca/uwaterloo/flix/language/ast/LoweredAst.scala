@@ -147,8 +147,6 @@ object LoweredAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, eff: Type, methods: List[LoweredAst.JvmMethod], loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Force(exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
   }
 
   sealed trait Pattern {

@@ -737,7 +737,7 @@ object Lowering {
     case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Force(e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
     case TypedAst.Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
@@ -1931,10 +1931,6 @@ object Lowering {
       LoweredAst.Expression.Resume(e, tpe, loc)
 
     case LoweredAst.Expression.NewObject(_, _, _, _, _, _) => exp0
-
-    case LoweredAst.Expression.Force(exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Force(e, tpe, eff, loc)
 
   }
 

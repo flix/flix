@@ -192,10 +192,6 @@ object Simplifier {
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyEffect(eff), methods, loc)
 
-      case LoweredAst.Expression.Force(exp, tpe, _, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), tpe, Purity.Pure, loc)
-
       case LoweredAst.Expression.Sig(_, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 

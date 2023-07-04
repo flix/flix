@@ -123,7 +123,6 @@ object LoweredAstPrinter {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
       }
       DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
-    case Expression.Force(exp, tpe, eff, loc) => DocAst.Expression.Force(print(exp))
   }
 
   /**

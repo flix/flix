@@ -506,9 +506,6 @@ object Monomorph {
       val methods = methods0.map(visitJvmMethod(_, env0, subst))
       Expression.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
-    case Expression.Force(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.Force(e, subst(tpe), subst(eff), loc)
   }
 
   /**
