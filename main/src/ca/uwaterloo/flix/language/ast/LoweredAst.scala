@@ -147,8 +147,6 @@ object LoweredAst {
       def eff: Type = Type.Pure
     }
 
-    case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class PutStaticField(field: Field, exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, eff: Type, methods: List[LoweredAst.JvmMethod], loc: SourceLocation) extends LoweredAst.Expression

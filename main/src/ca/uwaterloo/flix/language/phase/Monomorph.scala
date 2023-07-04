@@ -504,9 +504,6 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.Resume(e, subst(tpe), loc)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
-      Expression.GetStaticField(field, subst(tpe), subst(eff), loc)
-
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       Expression.PutStaticField(field, e, subst(tpe), subst(eff), loc)

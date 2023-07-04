@@ -293,10 +293,6 @@ object MonomorphEnums {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Resume(e, t, loc)
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.GetStaticField(field, t, p, loc)
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)

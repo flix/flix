@@ -118,7 +118,6 @@ object LoweredAstPrinter {
       DocAst.Expression.TryWith(expD, effD, rulesD)
     case Expression.Do(op, exps, tpe, eff, loc) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Expression.Resume(exp, tpe, loc) => DocAst.Expression.Resume(print(exp))
-    case Expression.GetStaticField(field, tpe, eff, loc) => DocAst.Expression.JavaGetStaticField(field)
     case Expression.PutStaticField(field, exp, tpe, eff, loc) => DocAst.Expression.JavaPutStaticField(field, print(exp))
     case Expression.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val methodsD = methods.map {
