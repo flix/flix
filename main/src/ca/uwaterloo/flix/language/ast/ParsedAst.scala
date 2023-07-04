@@ -1305,7 +1305,7 @@ object ParsedAst {
       * @param lit   the literal which must match the field value.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Lit(sp1: SourcePosition, field: Name.Ident, lit: ParsedAst.Expression.Lit, sp2: SourcePosition)
+    case class Lit(sp1: SourcePosition, field: Name.Ident, lit: ParsedAst.Literal, sp2: SourcePosition)
 
   }
 
