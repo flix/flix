@@ -134,9 +134,6 @@ object EarlyTreeShaker {
     case Expression.Sig(sym, _, _) =>
       Set(ReachableSym.SigSym(sym))
 
-    case Expression.Hole(_, _, _) =>
-      Set.empty
-
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
@@ -191,35 +188,8 @@ object EarlyTreeShaker {
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      visitExps(args)
-
-    case Expression.GetField(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.GetStaticField(_, _, _, _) =>
-      Set.empty
-
-    case Expression.PutStaticField(_, exp, _, _, _) =>
-      visitExp(exp)
-
     case Expression.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
-
-    case Expression.Spawn(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Force(exp, _, _, _) =>
-      visitExp(exp)
 
     case Expression.Do(_, exps, _, _, _) =>
       visitExps(exps)
