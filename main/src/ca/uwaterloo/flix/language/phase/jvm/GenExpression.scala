@@ -95,7 +95,7 @@ object GenExpression {
         compileLong(l)
 
       case Ast.Constant.BigInt(ii) =>
-        // Can fail with NumberFormatException
+        // Add source line number for debugging (can fail with NumberFormatException)
         addSourceLine(mv, loc)
         mv.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
         mv.visitInsn(DUP)
@@ -107,7 +107,7 @@ object GenExpression {
         mv.visitLdcInsn(s)
 
       case Ast.Constant.Regex(patt) =>
-        // Can fail with PatternSyntaxException
+        // Add source line number for debugging (can fail with PatternSyntaxException)
         addSourceLine(mv, loc)
         mv.visitLdcInsn(patt.pattern)
         mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
@@ -141,9 +141,6 @@ object GenExpression {
 
       case AtomicOp.Unary(sop) =>
         val List(exp) = exps
-
-        // Adding source line number for debugging
-        addSourceLine(mv, exp.loc)
         compileExpr(exp)
 
         sop match {
@@ -554,12 +551,8 @@ object GenExpression {
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We get the JvmType of the class for tag
         val classType = JvmOps.getTagClassType(sym)
-
         // First we compile the `exp`
         compileExpr(exp)
         // We check if the enum is `instanceof` the class
@@ -568,8 +561,6 @@ object GenExpression {
       // Normal Tag
       case AtomicOp.Tag(sym) =>
         val List(exp) = exps
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We get the JvmType of the class for tag
         val classType = JvmOps.getTagClassType(sym)
         // Find the tag
@@ -586,9 +577,6 @@ object GenExpression {
 
       case AtomicOp.Untag(sym) =>
         val List(exp) = exps
-
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We get the JvmType of the class for the tag
         val classType = JvmOps.getTagClassType(sym)
         // Find the tag
@@ -616,8 +604,6 @@ object GenExpression {
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Tuple =>
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We get the JvmType of the class for the tuple
         val classType = JvmOps.getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
         // Instantiating a new object of tuple
@@ -634,8 +620,6 @@ object GenExpression {
         mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
       case AtomicOp.RecordEmpty =>
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We get the JvmType of the class for the RecordEmpty
         val classType = JvmOps.getRecordEmptyClassType()
         // Instantiating a new object of tuple
@@ -643,8 +627,6 @@ object GenExpression {
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
 
         // Get the correct record extend class, given the expression type 'tpe'
         // We get the JvmType of the extended record class to retrieve the proper field
@@ -655,21 +637,21 @@ object GenExpression {
 
         val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(tpe), BackendObjType.RecordEmpty.toTpe)
 
-        //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
-        //lookupField
+        // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
+        // lookupField
         compileExpr(exp)
 
-        //Push the desired label of the field we want get of the record onto the stack
+        // Push the desired label of the field we want get of the record onto the stack
         mv.visitLdcInsn(field.name)
 
-        //Invoke the lookupField method on the record. (To get the proper record object)
+        // Invoke the lookupField method on the record. (To get the proper record object)
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "lookupField",
           AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
-        //Cast to proper record extend class
+        // Cast to proper record extend class
         mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
 
-        //Retrieve the value field  (To get the proper value)
+        // Retrieve the value field  (To get the proper value)
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
         // Cast the field value to the expected type.
@@ -678,15 +660,13 @@ object GenExpression {
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
 
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We get the JvmType of the class for the record extend
         val classType = JvmOps.getRecordExtendClassType(tpe)
 
         // We get the JvmType of the record interface
         val interfaceType = JvmOps.getRecordInterfaceType()
 
-        // previous functions are already partial matches
+        // Previous functions are already partial matches
         val MonoType.RecordExtend(_, recordValueType, _) = tpe
         val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(recordValueType), BackendObjType.RecordEmpty.toTpe)
 
@@ -696,31 +676,30 @@ object GenExpression {
         // Invoking the constructor
         mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
 
-        //Put the label of field (which is going to be the extension).
+        // Put the label of field (which is going to be the extension).
         mv.visitInsn(DUP)
         mv.visitLdcInsn(field.name)
         mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.LabelField.name, BackendObjType.String.toDescriptor)
 
-        //Put the value of the field onto the stack, since it is an expression we first need to compile it.
+        // Put the value of the field onto the stack, since it is an expression we first need to compile it.
         mv.visitInsn(DUP)
         compileExpr(exp1)
         mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
 
-        //Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+        // Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
         mv.visitInsn(DUP)
         compileExpr(exp2)
         mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.RestField.name, interfaceType.toDescriptor)
 
       case AtomicOp.RecordRestrict(field) =>
         val List(exp) = exps
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
+
         // We get the JvmType of the record interface
         val interfaceType = JvmOps.getRecordInterfaceType()
 
-        //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+        // Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
         compileExpr(exp)
-        //Push the label of field (which is going to be the removed/restricted).
+        // Push the label of field (which is going to be the removed/restricted).
         mv.visitLdcInsn(field.name)
 
         // Invoking the restrictField method
@@ -728,8 +707,6 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
       case AtomicOp.ArrayLit =>
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We push the 'length' of the array on top of stack
         compileInt(exps.length)
         // We get the inner type of the array
@@ -756,9 +733,6 @@ object GenExpression {
 
       case AtomicOp.ArrayNew =>
         val List(exp1, exp2) = exps
-
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
         // We get the inner type of the array
         val elmType = tpe.asInstanceOf[MonoType.Array].tpe
         // We get the erased elm type.
@@ -799,9 +773,9 @@ object GenExpression {
 
       case AtomicOp.ArrayLoad =>
         val List(exp1, exp2) = exps
-
-        // Adding source line number for debugging
+        // Add source line number for debugging (can fail with out of bounds)
         addSourceLine(mv, loc)
+
         // We get the jvmType of the element to be loaded
         val jvmType = JvmOps.getErasedJvmType(tpe)
         // Evaluating the 'base'
@@ -816,8 +790,9 @@ object GenExpression {
 
       case AtomicOp.ArrayStore => exps match {
         case List(exp1, exp2, exp3) =>
-          // Adding source line number for debugging
+          // Add source line number for debugging (can fail with ???)
           addSourceLine(mv, loc)
+
           // We get the jvmType of the element to be stored
           val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
           // Evaluating the 'base'
@@ -838,8 +813,9 @@ object GenExpression {
 
       case AtomicOp.ArrayLength =>
         val List(exp) = exps
-        // Adding source line number for debugging
+        // Add source line number for debugging (can fail with ???)
         addSourceLine(mv, loc)
+
         // We get the inner type of the array
         val jvmType = JvmOps.getErasedJvmType(exp.tpe.asInstanceOf[MonoType.Array].tpe)
         // Evaluating the 'base'
@@ -851,8 +827,7 @@ object GenExpression {
 
       case AtomicOp.Ref =>
         val List(exp) = exps
-        // Adding source line number for debugging
-        addSourceLine(mv, loc)
+
         // JvmType of the reference class
         val classType = JvmOps.getRefClassType(tpe)
 
@@ -877,8 +852,9 @@ object GenExpression {
 
       case AtomicOp.Deref =>
         val List(exp) = exps
-        // Adding source line number for debugging
+        // Add source line number for debugging (can fail with ???)
         addSourceLine(mv, loc)
+
         // Evaluate the exp
         compileExpr(exp)
         // JvmType of the reference class
@@ -898,8 +874,9 @@ object GenExpression {
       case AtomicOp.Assign =>
         val List(exp1, exp2) = exps
 
-        // Adding source line number for debugging
+        // Add source line number for debugging (can fail with ??? same as deref)
         addSourceLine(mv, loc)
+
         // Evaluate the reference address
         compileExpr(exp1)
         // Evaluating the value to be assigned to the reference
@@ -918,19 +895,17 @@ object GenExpression {
 
       case AtomicOp.InstanceOf(clazz) =>
         val List(exp) = exps
-        addSourceLine(mv, loc)
         val className = asm.Type.getInternalName(clazz)
         compileExpr(exp)
         mv.visitTypeInsn(INSTANCEOF, className.toString)
 
       case AtomicOp.Cast =>
         val List(exp) = exps
-        addSourceLine(mv, loc)
         compileExpr(exp)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.InvokeConstructor(constructor) =>
-        // Adding source line number for debugging
+        // Add source line number for debugging (can fail when calling unsafe java methods)
         addSourceLine(mv, loc)
         val descriptor = asm.Type.getConstructorDescriptor(constructor)
         val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
@@ -949,7 +924,7 @@ object GenExpression {
       case AtomicOp.InvokeMethod(method) =>
         val exp :: args = exps
 
-        // Adding source line number for debugging
+        // Add source line number for debugging (can fail when calling unsafe java methods)
         addSourceLine(mv, loc)
 
         // Evaluate the receiver object.
@@ -979,6 +954,7 @@ object GenExpression {
         }
 
       case AtomicOp.InvokeStaticMethod(method) =>
+        // Add source line number for debugging (can fail when calling unsafe java methods)
         addSourceLine(mv, loc)
         val signature = method.getParameterTypes
         pushArgs(exps, signature)
@@ -997,6 +973,7 @@ object GenExpression {
 
       case AtomicOp.GetField(field) =>
         val List(exp) = exps
+        // Add source line number for debugging (can fail when calling java)
         addSourceLine(mv, loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
@@ -1004,6 +981,7 @@ object GenExpression {
 
       case AtomicOp.PutField(field) =>
         val List(exp1, exp2) = exps
+        // Add source line number for debugging (can fail when calling java)
         addSourceLine(mv, loc)
         compileExpr(exp1)
         compileExpr(exp2)
@@ -1014,12 +992,14 @@ object GenExpression {
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
       case AtomicOp.GetStaticField(field) =>
+        // Add source line number for debugging (can fail when calling java)
         addSourceLine(mv, loc)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         mv.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
       case AtomicOp.PutStaticField(field) =>
         val List(exp) = exps
+        // Add source line number for debugging (can fail when calling java)
         addSourceLine(mv, loc)
         compileExpr(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
@@ -1031,7 +1011,7 @@ object GenExpression {
 
       case AtomicOp.Spawn =>
         val List(exp1, exp2) = exps
-
+        // Add source line number for debugging (can fail when spawning thread)
         addSourceLine(mv, loc)
 
         exp2 match {
@@ -1073,8 +1053,6 @@ object GenExpression {
 
       case AtomicOp.Lazy =>
         val List(exp) = exps
-        // Add source line numbers for debugging.
-        addSourceLine(mv, loc)
 
         // Find the Lazy class name (Lazy$tpe).
         val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
@@ -1089,8 +1067,6 @@ object GenExpression {
 
       case AtomicOp.Force =>
         val List(exp) = exps
-        // Add source line numbers for debugging.
-        addSourceLine(mv, loc)
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
