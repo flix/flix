@@ -1271,7 +1271,7 @@ object ParsedAst {
   /**
     * Record Field Patterns.
     */
-  trait RecordPattern
+  trait RecordPattern // extends Pattern ?
 
   object RecordPattern {
 
@@ -1291,10 +1291,10 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character in the pattern.
       * @param field the name of the field.
-      * @param name  the custom alias for the field.
+      * @param alias the custom alias for the field.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Alias(sp1: SourcePosition, field: Name.Ident, name: Name.Ident, sp2: SourcePosition)
+    case class Alias(sp1: SourcePosition, field: Name.Ident, alias: Pattern.Var, sp2: SourcePosition)
 
     /**
       *
@@ -1305,7 +1305,7 @@ object ParsedAst {
       * @param lit   the literal which must match the field value.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class Lit(sp1: SourcePosition, field: Name.Ident, lit: ParsedAst.Literal, sp2: SourcePosition)
+    case class Lit(sp1: SourcePosition, field: Pattern.Var, lit: Pattern.Lit, sp2: SourcePosition)
 
   }
 
