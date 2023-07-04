@@ -641,7 +641,7 @@ object Lowering {
     case TypedAst.Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.PutStaticField(field, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
     case TypedAst.Expression.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val t = visitType(tpe)
@@ -1929,10 +1929,6 @@ object Lowering {
     case LoweredAst.Expression.Resume(exp, tpe, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Resume(e, tpe, loc)
-
-    case LoweredAst.Expression.PutStaticField(field, exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.PutStaticField(field, e, tpe, eff, loc)
 
     case LoweredAst.Expression.NewObject(_, _, _, _, _, _) => exp0
 
