@@ -1334,6 +1334,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Record: Rule1[ParsedAst.Pattern] = {
       def FieldPattern: Rule1[ParsedAst.RecordPattern] = rule {
         // Later: Use Pattern instead of lit
+        // Later: Allow type ascription in pattern
         SP ~ Var ~ optWS ~ "=" ~ optWS ~ Lit ~ SP ~> ParsedAst.RecordPattern.Lit
       }
 
