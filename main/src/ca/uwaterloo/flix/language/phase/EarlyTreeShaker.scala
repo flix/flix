@@ -191,9 +191,6 @@ object EarlyTreeShaker {
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      visitExps(args)
-
     case Expression.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 

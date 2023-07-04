@@ -118,7 +118,6 @@ object LoweredAstPrinter {
       DocAst.Expression.TryWith(expD, effD, rulesD)
     case Expression.Do(op, exps, tpe, eff, loc) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Expression.Resume(exp, tpe, loc) => DocAst.Expression.Resume(print(exp))
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
     case Expression.GetField(field, exp, tpe, eff, loc) => DocAst.Expression.JavaGetField(field, print(exp))
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
     case Expression.GetStaticField(field, tpe, eff, loc) => DocAst.Expression.JavaGetStaticField(field)

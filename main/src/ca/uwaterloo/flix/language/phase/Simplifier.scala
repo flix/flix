@@ -172,10 +172,6 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Resume(e, tpe, loc)
 
-      case LoweredAst.Expression.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
-        val es = exps.map(visitExp)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, tpe, simplifyEffect(eff), loc)
-
       case LoweredAst.Expression.GetField(field, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), tpe, simplifyEffect(eff), loc)
