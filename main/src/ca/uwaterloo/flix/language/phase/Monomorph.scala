@@ -333,9 +333,6 @@ object Monomorph {
       val newSym = specializeSigSym(sym, subst(tpe))
       Expression.Def(newSym, subst(tpe), loc)
 
-    case Expression.Hole(sym, tpe, loc) =>
-      Expression.Hole(sym, subst(tpe), loc)
-
     case Expression.Cst(cst, tpe, loc) =>
       Expression.Cst(cst, subst(tpe), loc)
 

@@ -89,10 +89,6 @@ object LoweredAst {
       def eff: Type = Type.Pure
     }
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def eff: Type = Type.Pure
-    }
-
     case class Lambda(fparam: LoweredAst.FormalParam, exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def eff: Type = Type.Pure
     }

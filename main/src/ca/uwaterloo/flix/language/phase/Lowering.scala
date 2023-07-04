@@ -359,12 +359,12 @@ object Lowering {
 
     case TypedAst.Expression.Hole(sym, tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.Hole(sym, t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
 
-    case TypedAst.Expression.HoleWithExp(exp, tpe, eff, loc) =>
+    case TypedAst.Expression.HoleWithExp(_, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)
       val t = visitType(tpe)
-      LoweredAst.Expression.Hole(sym, t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
 
     case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
       visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
@@ -1827,8 +1827,6 @@ object Lowering {
     case LoweredAst.Expression.Def(_, _, _) => exp0
 
     case LoweredAst.Expression.Sig(_, _, _) => exp0
-
-    case LoweredAst.Expression.Hole(_, _, _) => exp0
 
     case LoweredAst.Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)

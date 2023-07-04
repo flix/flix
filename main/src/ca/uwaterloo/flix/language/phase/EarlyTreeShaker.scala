@@ -134,9 +134,6 @@ object EarlyTreeShaker {
     case Expression.Sig(sym, _, _) =>
       Set(ReachableSym.SigSym(sym))
 
-    case Expression.Hole(_, _, _) =>
-      Set.empty
-
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 

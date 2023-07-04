@@ -147,9 +147,6 @@ object MonomorphEnums {
     case Expression.Sig(sym, tpe, loc) =>
       val t = visitType(tpe)
       Expression.Sig(sym, t, loc)
-    case Expression.Hole(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      Expression.Hole(sym, t, loc)
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val fs = visitFormalParam(fparam)
       val e = visitExp(exp)
