@@ -237,54 +237,6 @@ object MonomorphEnums {
       Expression.TypeMatch(e, rs, t, p, loc)
     case Expression.RelationalChoose(_, _, _, _, loc) =>
       throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-    case Expression.RecordEmpty(tpe, loc) =>
-      val t = visitType(tpe)
-      Expression.RecordEmpty(t, loc)
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.RecordSelect(e, field, t, p, loc)
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
-      val v = visitExp(value)
-      val r = visitExp(rest)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.RecordExtend(field, v, r, t, p, loc)
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
-      val r = visitExp(rest)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.RecordRestrict(field, r, t, p, loc)
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.ArrayLit(es, e, t, p, loc)
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.ArrayNew(e1, e2, e3, t, p, loc)
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.ArrayLoad(b, i, t, p, loc)
-    case Expression.ArrayLength(base, eff, loc) =>
-      val b = visitExp(base)
-      val p = visitType(eff)
-      Expression.ArrayLength(b, p, loc)
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = visitExp(base)
-      val i = visitExp(index)
-      val e = visitExp(elm)
-      val p = visitType(eff)
-      Expression.ArrayStore(b, i, e, p, loc)
     case Expression.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
@@ -299,31 +251,11 @@ object MonomorphEnums {
     case Expression.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expression.VectorLength(e, loc)
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Ref(e1, e2, t, p, loc)
-    case Expression.Deref(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Deref(e, t, p, loc)
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Assign(e1, e2, t, p, loc)
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expression.Ascribe(e, t, p, loc)
-    case Expression.InstanceOf(exp, clazz, loc) =>
-      val e = visitExp(exp)
-      Expression.InstanceOf(e, clazz, loc)
     case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
@@ -361,11 +293,6 @@ object MonomorphEnums {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Resume(e, t, loc)
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      val as = args.map(visitExp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.InvokeConstructor(constructor, as, t, p, loc)
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       val e = visitExp(exp)
       val as = args.map(visitExp)
