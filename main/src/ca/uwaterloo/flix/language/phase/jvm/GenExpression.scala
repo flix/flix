@@ -1312,8 +1312,6 @@ object GenExpression {
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(mv, loc)
       val ifElse = new Label()
       val ifEnd = new Label()
       compileExpr(exp1)
@@ -1325,8 +1323,6 @@ object GenExpression {
       mv.visitLabel(ifEnd)
 
     case Expr.Branch(exp, branches, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(mv, loc)
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
       val ctx1 = ctx.copy(lenv = updatedJumpLabels)
@@ -1349,14 +1345,10 @@ object GenExpression {
       mv.visitLabel(endLabel)
 
     case Expr.JumpTo(sym, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(mv, loc)
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
     case Expr.Let(sym, exp1, exp2, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(mv, loc)
       compileExpr(exp1)
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
@@ -1366,8 +1358,6 @@ object GenExpression {
       compileExpr(exp2)
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(mv, loc)
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
@@ -1488,7 +1478,6 @@ object GenExpression {
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.NewObject(name, _, tpe, methods, loc) =>
-      addSourceLine(mv, loc)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
