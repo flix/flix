@@ -1306,7 +1306,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      Lit | Var | Tag | Tuple
+      Lit | Var | Tag | Tuple | Record
     }
 
     def Var: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -1331,11 +1331,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Record: Rule1[ParsedAst.Pattern] = {
       def FieldPattern: Rule1[ParsedAst.RecordPattern] = rule {
+        // Later: Use Pattern instead of lit
         SP ~ Var ~ optWS ~ "=" ~ optWS ~ Lit ~ SP ~> ParsedAst.RecordPattern.Lit
       }
 
       rule {
-        FCons ~ optional(optWS ~ SP ~ "{" ~ optWS ~ zeroOrMore(FieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record)
+        SP ~ "{" ~ optWS ~ zeroOrMore(FieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Var) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
       }
     }
 

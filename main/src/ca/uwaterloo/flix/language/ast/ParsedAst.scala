@@ -1209,6 +1209,7 @@ object ParsedAst {
       case Pattern.Tag(sp1, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
+      case Pattern.Record(sp1, _, _, _) => sp1
     }
 
   }
