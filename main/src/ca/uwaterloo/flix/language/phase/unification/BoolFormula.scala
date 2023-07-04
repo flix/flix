@@ -123,7 +123,7 @@ object BoolFormula {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
+  def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
     case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
@@ -134,9 +134,27 @@ object BoolFormula {
     }
     case Type.Pure => True
     case Type.EffUniv => False
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromBoolType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromEffType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+  }
+
+  /**
+    * Converts the given type `tpe` to a Boolean algebra expression under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
+    */
+  def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
+    case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
+      case Some(x) => Var(x)
+    }
+    case Type.True => True
+    case Type.False => False
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Not(fromBoolType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
@@ -146,7 +164,8 @@ object BoolFormula {
     * The map `m` must bind each free variable in `f` to a type variable.
     */
   def toType(f: BoolFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
-    case Kind.Eff => toBoolType(f, m, loc)
+    case Kind.Eff => toEffType(f, m, loc)
+    case Kind.Bool => toBoolType(f, m, loc)
     case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.", loc)
   }
 
@@ -155,7 +174,7 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toBoolType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+  private def toEffType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
     case True => Type.Pure
     case False => Type.EffUniv
     case Var(x) => m.getBackward(x) match {
@@ -163,9 +182,27 @@ object BoolFormula {
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
     }
-    case Not(f1) => Type.mkComplement(toBoolType(f1, m, loc), loc)
-    case And(t1, t2) => Type.mkUnion(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
-    case Or(t1, t2) => Type.mkIntersection(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
+    case And(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+    case Or(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+  }
+
+  /**
+    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
+  private def toBoolType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+    case True => Type.True
+    case False => Type.False
+    case Var(x) => m.getBackward(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
+      case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
+      case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect in Boolean type: '$sym'.'", loc)
+    }
+    case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
+    case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Or(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
   }
 
   /**

@@ -1093,10 +1093,10 @@ def toList01(): Bool = Set.toList(Set#{}: Set[Unit]) == Nil
 def toList02(): Bool = Set.toList(Set#{1}) == 1 :: Nil
 
 @test
-def toList03(): Bool = Set.toList(Set#{1, 2}) == 2 :: 1 :: Nil
+def toList03(): Bool = Set.toList(Set#{1, 2}) == 1 :: 2 :: Nil
 
 @test
-def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 3 :: 2 :: 1 :: Nil
+def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // toChain                                                                 //

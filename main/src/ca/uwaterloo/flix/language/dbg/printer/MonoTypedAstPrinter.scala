@@ -44,7 +44,7 @@ object MonoTypedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          DocAst.Type.Arrow(Nil, MonoTypePrinter.print(tpe)),
+          MonoTypePrinter.print(tpe),
           print(exp)
         )
     }.toList
