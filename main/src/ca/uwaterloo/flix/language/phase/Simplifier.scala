@@ -71,43 +71,7 @@ object Simplifier {
         SimplifiedAst.Expression.Apply(e, es, tpe, simplifyEffect(eff), loc)
 
       case LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
-        val es = exps map visitExp
-        val purity = simplifyEffect(eff)
-        op match {
-          case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
-            // Translate to InvokeMethod exp
-            val strClass = Class.forName("java.lang.String")
-            val method = strClass.getMethod("concat", strClass)
-            SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), es, tpe, purity, loc)
-
-          case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
-            // The region expression is dropped (head of exps / es)
-            val es1 = es.tail
-            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
-
-          case AtomicOp.Ref =>
-            // The region expression is dropped (tail of exps / es)
-            val es1 = List(es.head)
-            SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
-
-          case AtomicOp.Spawn =>
-            // Wrap the expression in a closure: () -> tpe \ eff
-            val List(e1, e2) = es
-            val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, e1.tpe, loc)
-            val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc)
-            val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e1, lambdaTyp, loc)
-            SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), tpe, Purity.Impure, loc)
-
-          case AtomicOp.Lazy =>
-            // Wrap the expression in a closure: () -> tpe \ Pure
-            val e = es.head
-            val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe, loc)
-            val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc)
-            val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e, lambdaTyp, loc)
-            SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), tpe, Purity.Pure, loc)
-
-          case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
-        }
+        visitAtomic(LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc))
 
       case LoweredAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, simplifyEffect(eff), loc)
@@ -210,6 +174,50 @@ object Simplifier {
         val fparams = fparams0 map visitFormalParam
         val exp = visitExp(exp0)
         SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, simplifyEffect(eff), loc)
+    }
+
+    /**
+      * Translates the given `ApplyAtomic` expression to the corresponding [[SimplifiedAst]] expression.
+      */
+    def visitAtomic(atomicExp: LoweredAst.Expression.ApplyAtomic): SimplifiedAst.Expression.ApplyAtomic = {
+      val LoweredAst.Expression.ApplyAtomic(op, exps, tpe, eff, loc) = atomicExp
+      val es = exps map visitExp
+      val purity = simplifyEffect(eff)
+      op match {
+        case AtomicOp.Binary(SemanticOp.StringOp.Concat) =>
+          // Translate to InvokeMethod exp
+          val strClass = Class.forName("java.lang.String")
+          val method = strClass.getMethod("concat", strClass)
+          SimplifiedAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), es, tpe, purity, loc)
+
+        case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
+          // The region expression is dropped (head of exps / es)
+          val es1 = es.tail
+          SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
+
+        case AtomicOp.Ref =>
+          // The region expression is dropped (tail of exps / es)
+          val es1 = List(es.head)
+          SimplifiedAst.Expression.ApplyAtomic(op, es1, tpe, purity, loc)
+
+        case AtomicOp.Spawn =>
+          // Wrap the expression in a closure: () -> tpe \ eff
+          val List(e1, e2) = es
+          val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, e1.tpe, loc)
+          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc)
+          val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e1, lambdaTyp, loc)
+          SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), tpe, Purity.Impure, loc)
+
+        case AtomicOp.Lazy =>
+          // Wrap the expression in a closure: () -> tpe \ Pure
+          val e = es.head
+          val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe, loc)
+          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc)
+          val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e, lambdaTyp, loc)
+          SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), tpe, Purity.Pure, loc)
+
+        case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
+      }
     }
 
     /**
