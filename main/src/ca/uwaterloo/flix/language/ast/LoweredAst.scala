@@ -147,8 +147,6 @@ object LoweredAst {
       def eff: Type = Type.Pure
     }
 
-    case class InvokeMethod(method: Method, exp: LoweredAst.Expression, exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
     case class InvokeStaticMethod(method: Method, exps: List[LoweredAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class GetField(field: Field, exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

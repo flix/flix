@@ -612,11 +612,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
-    case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+    case TypedAst.Expression.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val as = visitExps(args)
+      val es = visitExps(exps)
       val t = visitType(tpe)
-      LoweredAst.Expression.InvokeMethod(method, e, as, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, t, eff, loc)
 
     case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       val as = visitExps(args)
@@ -1929,11 +1929,6 @@ object Lowering {
     case LoweredAst.Expression.Resume(exp, tpe, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Resume(e, tpe, loc)
-
-    case LoweredAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      val as = args.map(substExp(_, subst))
-      LoweredAst.Expression.InvokeMethod(method, e, as, tpe, eff, loc)
 
     case LoweredAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       val as = args.map(substExp(_, subst))

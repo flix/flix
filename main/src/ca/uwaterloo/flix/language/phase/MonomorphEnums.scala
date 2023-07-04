@@ -293,12 +293,6 @@ object MonomorphEnums {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Resume(e, t, loc)
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val as = args.map(visitExp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.InvokeMethod(method, e, as, t, p, loc)
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       val as = args.map(visitExp)
       val t = visitType(tpe)

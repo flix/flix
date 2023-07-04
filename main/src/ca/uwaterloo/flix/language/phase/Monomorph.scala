@@ -502,11 +502,6 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.Resume(e, subst(tpe), loc)
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      val as = args.map(visitExp(_, env0, subst))
-      Expression.InvokeMethod(method, e, as, subst(tpe), subst(eff), loc)
-
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       val as = args.map(visitExp(_, env0, subst))
       Expression.InvokeStaticMethod(method, as, subst(tpe), subst(eff), loc)
