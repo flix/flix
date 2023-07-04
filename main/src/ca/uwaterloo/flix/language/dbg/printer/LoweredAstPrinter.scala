@@ -34,13 +34,13 @@ object LoweredAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
     val defs = root.defs.values.map {
-      case LoweredAst.Def(sym, LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, loc), LoweredAst.Impl(exp, inferredScheme)) =>
+      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, _, _, _), LoweredAst.Impl(exp, _)) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           fparams.map(printFormalParam),
-          DocAst.Type.Arrow(List(DocAst.Type.AsIs("ignoreme")), TypePrinter.print(retTpe)), // TODO EVIL, EVIL hack due to formatter impl
+          TypePrinter.print(retTpe),
           print(exp)
         )
     }.toList
@@ -58,7 +58,7 @@ object LoweredAstPrinter {
     case Expression.Hole(sym, tpe, loc) => DocAst.Expression.Hole(sym)
     case Expression.Lambda(fparam, exp, tpe, loc) => DocAst.Expression.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expression.Apply(exp, exps, tpe, eff, loc) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
-    case Expression.ApplyAtomic(op, exps, tpe, _, loc) => DocAst.Expression.fromAtomic(op, exps.map(print), TypePrinter.print(tpe), loc)
+    case Expression.ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => DocAst.Expression.Let(DocAst.Expression.Var(sym), None, print(exp1), print(exp2))
     case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => DocAst.Expression.LetRec(DocAst.Expression.Var(sym), None, print(exp1), print(exp2))
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) => DocAst.Expression.Scope(DocAst.Expression.Var(sym), print(exp))

@@ -43,7 +43,7 @@ object LiftedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          DocAst.Type.Arrow(Nil, TypePrinter.print(tpe)),
+          TypePrinter.print(tpe),
           print(exp)
         )
     }.toList
@@ -56,7 +56,7 @@ object LiftedAstPrinter {
   def print(e: LiftedAst.Expression): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, tpe, _, loc) => DocAst.Expression.fromAtomic(op, exps.map(print), TypePrinter.print(tpe), loc)
+    case ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
     case ApplyClo(exp, exps, ct, _, _, _) => ct match {
       case CallType.TailCall => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
       case CallType.NonTailCall => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
