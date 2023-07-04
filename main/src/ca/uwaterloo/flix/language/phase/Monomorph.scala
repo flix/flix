@@ -506,11 +506,6 @@ object Monomorph {
       val methods = methods0.map(visitJvmMethod(_, env0, subst))
       Expression.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
-    case Expression.Spawn(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.Spawn(e1, e2, subst(tpe), subst(eff), loc)
-
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp, env0, subst)
       Expression.Lazy(e, subst(tpe), loc)

@@ -719,7 +719,7 @@ object Lowering {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Spawn(e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.ParYield(frags, exp, tpe, eff, loc) =>
       val fs = frags.map {
@@ -1681,7 +1681,7 @@ object Lowering {
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
         val e3 = LoweredAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, Type.Unit, Type.Pure, loc)
-        val e4 = LoweredAst.Expression.Spawn(e2, e3, Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        val e4 = LoweredAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         LoweredAst.Expression.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
@@ -1931,11 +1931,6 @@ object Lowering {
       LoweredAst.Expression.Resume(e, tpe, loc)
 
     case LoweredAst.Expression.NewObject(_, _, _, _, _, _) => exp0
-
-    case LoweredAst.Expression.Spawn(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Spawn(e1, e2, tpe, eff, loc)
 
     case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)
