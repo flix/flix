@@ -106,6 +106,10 @@ object Simplifier {
             val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e, lambdaTyp, loc)
             SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), tpe, Purity.Pure, loc)
 
+          case AtomicOp.HoleError(_) =>
+            // Simplify purity to impure, must be done after Monomorph
+            SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, Purity.Impure, loc)
+
           case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
         }
 
