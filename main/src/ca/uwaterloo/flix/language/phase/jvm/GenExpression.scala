@@ -42,29 +42,23 @@ object GenExpression {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Ast.Constant.Unit =>
-        addSourceLine(mv, loc)
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
           BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.toDescriptor)
 
       case Ast.Constant.Null =>
-        addSourceLine(mv, loc)
         mv.visitInsn(ACONST_NULL)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case Ast.Constant.Bool(true) =>
-        addSourceLine(mv, loc)
         mv.visitInsn(ICONST_1)
 
       case Ast.Constant.Bool(false) =>
-        addSourceLine(mv, loc)
         mv.visitInsn(ICONST_0)
 
       case Ast.Constant.Char(c) =>
-        addSourceLine(mv, loc)
         compileInt(c)
 
       case Ast.Constant.Float32(f) =>
-        addSourceLine(mv, loc)
         f match {
           case 0f => mv.visitInsn(FCONST_0)
           case 1f => mv.visitInsn(FCONST_1)
@@ -73,7 +67,6 @@ object GenExpression {
         }
 
       case Ast.Constant.Float64(d) =>
-        addSourceLine(mv, loc)
         d match {
           case 0d => mv.visitInsn(DCONST_0)
           case 1d => mv.visitInsn(DCONST_1)
@@ -81,6 +74,7 @@ object GenExpression {
         }
 
       case Ast.Constant.BigDecimal(dd) =>
+        // Can fail with NumberFormatException
         addSourceLine(mv, loc)
         mv.visitTypeInsn(NEW, BackendObjType.BigDecimal.jvmName.toInternalName)
         mv.visitInsn(DUP)
@@ -89,22 +83,19 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
       case Ast.Constant.Int8(b) =>
-        addSourceLine(mv, loc)
         compileInt(b)
 
       case Ast.Constant.Int16(s) =>
-        addSourceLine(mv, loc)
         compileInt(s)
 
       case Ast.Constant.Int32(i) =>
-        addSourceLine(mv, loc)
         compileInt(i)
 
       case Ast.Constant.Int64(l) =>
-        addSourceLine(mv, loc)
         compileLong(l)
 
       case Ast.Constant.BigInt(ii) =>
+        // Can fail with NumberFormatException
         addSourceLine(mv, loc)
         mv.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
         mv.visitInsn(DUP)
@@ -113,10 +104,10 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
       case Ast.Constant.Str(s) =>
-        addSourceLine(mv, loc)
         mv.visitLdcInsn(s)
 
       case Ast.Constant.Regex(patt) =>
+        // Can fail with PatternSyntaxException
         addSourceLine(mv, loc)
         mv.visitLdcInsn(patt.pattern)
         mv.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
