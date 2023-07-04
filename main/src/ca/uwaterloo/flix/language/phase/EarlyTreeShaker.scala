@@ -143,11 +143,8 @@ object EarlyTreeShaker {
     case Expression.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.ApplyAtomic(_, exps, _, _, _) =>
+      visitExps(exps)
 
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -155,14 +152,8 @@ object EarlyTreeShaker {
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Region(_, _) =>
-      Set.empty
-
     case Expression.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
-
-    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -182,39 +173,6 @@ object EarlyTreeShaker {
     case Expression.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.Tag(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Tuple(elms, _, _, _) =>
-      visitExps(elms)
-
-    case Expression.RecordEmpty(_, _) =>
-      Set.empty
-
-    case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RecordExtend(_, value, rest, _, _, _) =>
-      visitExp(value) ++ visitExp(rest)
-
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
-      visitExp(rest)
-
-    case Expression.ArrayLit(exps, exp, _, _, _) =>
-      visitExps(exps) ++ visitExp(exp)
-
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-    case Expression.ArrayLoad(base, index, _, _, _) =>
-      visitExp(base) ++ visitExp(index)
-
-    case Expression.ArrayLength(base, _, _) =>
-      visitExp(base)
-
-    case Expression.ArrayStore(base, index, elm, _, _) =>
-      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-
     case Expression.VectorLit(exps, exp, _, _) =>
       visitExps(exps)
 
@@ -224,19 +182,7 @@ object EarlyTreeShaker {
     case Expression.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expression.Ref(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
     case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.InstanceOf(exp, _, _) =>
       visitExp(exp)
 
     case Expression.Cast(exp, _, _, _, _, _) =>
@@ -244,9 +190,6 @@ object EarlyTreeShaker {
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
-
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
-      visitExps(args)
 
     case Expression.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)

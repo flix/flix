@@ -41,6 +41,22 @@ object UnificationError {
   case class MismatchedBools(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
+    * An unification error due to a mismatch between the effect formulas `tpe1` and `tpe2`.
+    *
+    * @param tpe1 the first effect formula.
+    * @param tpe2 the second effect formula.
+    */
+  case class MismatchedEffects(tpe1: Type, tpe2: Type) extends UnificationError
+
+  /**
+    * An unification error due to a mismatch between the case set formulas `tpe1` and `tpe2`.
+    *
+    * @param tpe1 the first case set formula.
+    * @param tpe2 the second case set formula.
+    */
+  case class MismatchedCaseSets(tpe1: Type, tpe2: Type) extends UnificationError
+
+  /**
     * An unification error due to a mismatch between the arity of `ts1` and `ts2`.
     *
     * @param ts1 the first list of types.
