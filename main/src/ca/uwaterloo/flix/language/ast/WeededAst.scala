@@ -113,7 +113,7 @@ object WeededAst {
 
     case class Scope(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ScopeExit(exp1 : WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ScopeExit(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
@@ -242,6 +242,8 @@ object WeededAst {
     case class Tag(qname: Name.QName, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Record(pats: List[RecordPattern.Lit], pat: List[Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 
@@ -436,4 +438,10 @@ object WeededAst {
 
   case class ParYieldFragment(pat: WeededAst.Pattern, exp: WeededAst.Expression, loc: SourceLocation)
 
+  trait RecordPattern
+
+  object RecordPattern {
+    case class Lit(pat: WeededAst.Pattern, lit: WeededAst.Pattern, loc: SourceLocation) extends RecordPattern
+
+  }
 }

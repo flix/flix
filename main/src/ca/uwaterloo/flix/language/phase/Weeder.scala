@@ -2403,6 +2403,21 @@ object Weeder {
             WeededAst.Pattern.Tag(qname, pat, loc)
         }
 
+      case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
+        val loc = mkSL(sp1, sp2)
+        val fs = traverse(fields) {
+          case ParsedAst.RecordPattern.Lit(sp11, field, lit, sp22) =>
+            mapN(visit(field), visit(lit)) {
+              case (f, l) =>
+                WeededAst.RecordPattern.Lit(f, l, mkSL(sp11, sp22))
+            }
+        }
+        val r = traverse(rest)(visit)
+
+        mapN(fs, r) {
+          case (f, r1) => WeededAst.Pattern.Record(f, r1, loc)
+        }
+
     }
 
     visit(pattern)
