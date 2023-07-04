@@ -54,7 +54,7 @@ object EffUnification {
           macc + (tvar.sym -> newTvar)
       }
       val subst = Substitution(alpha)
-      println(s"$loc: ${subst(tpe1)} =?= ${subst(tpe2)}")
+      println(s"${loc.format}: ${subst(tpe1)} =?= ${subst(tpe2)}")
     }
 
     if (!flix.options.xnoboolspecialcases) {
