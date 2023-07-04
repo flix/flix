@@ -592,6 +592,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       push(10) ~ SeparableDecDigits
     }
 
+    // TODO: Add empty record to literals
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
