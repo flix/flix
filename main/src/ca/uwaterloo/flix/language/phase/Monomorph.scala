@@ -504,10 +504,6 @@ object Monomorph {
       val e = visitExp(exp, env0, subst)
       Expression.Resume(e, subst(tpe), loc)
 
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.GetField(field, e, subst(tpe), subst(eff), loc)
-
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
       val e2 = visitExp(exp2, env0, subst)
