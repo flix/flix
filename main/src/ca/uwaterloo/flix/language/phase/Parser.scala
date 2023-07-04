@@ -1329,6 +1329,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Simple ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Pattern ~> ParsedAst.Pattern.FCons)
     }
 
+    def Record: Rule1[ParsedAst.Pattern] = {
+      def FieldPattern: Rule1[ParsedAst.RecordPattern] = rule {
+        SP ~ Var ~ optWS ~ "=" ~ optWS ~ Lit ~ SP ~> ParsedAst.RecordPattern.Lit
+      }
+
+      rule {
+        FCons ~ optional(optWS ~ SP ~ "{" ~ optWS ~ zeroOrMore(FieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record)
+      }
+    }
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
