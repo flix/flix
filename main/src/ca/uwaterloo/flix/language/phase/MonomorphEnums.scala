@@ -147,9 +147,6 @@ object MonomorphEnums {
     case Expression.Sig(sym, tpe, loc) =>
       val t = visitType(tpe)
       Expression.Sig(sym, t, loc)
-    case Expression.Hole(sym, tpe, loc) =>
-      val t = visitType(tpe)
-      Expression.Hole(sym, t, loc)
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val fs = visitFormalParam(fparam)
       val e = visitExp(exp)
@@ -293,37 +290,6 @@ object MonomorphEnums {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Resume(e, t, loc)
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val as = args.map(visitExp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.InvokeMethod(method, e, as, t, p, loc)
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
-      val as = args.map(visitExp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.InvokeStaticMethod(method, as, t, p, loc)
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.GetField(field, e, t, p, loc)
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.PutField(field, e1, e2, t, p, loc)
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.GetStaticField(field, t, p, loc)
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.PutStaticField(field, e, t, p, loc)
     case Expression.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val t = visitType(tpe)
       val p = visitType(eff)
@@ -336,21 +302,6 @@ object MonomorphEnums {
           LoweredAst.JvmMethod(ident, fs, me, mt, mp, loc)
       }
       Expression.NewObject(name, clazz, t, p, ms, loc)
-    case Expression.Spawn(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Spawn(e1, e2, t, p, loc)
-    case Expression.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expression.Lazy(e, t, loc)
-    case Expression.Force(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      val p = visitType(eff)
-      Expression.Force(e, t, p, loc)
   }
 
   /**

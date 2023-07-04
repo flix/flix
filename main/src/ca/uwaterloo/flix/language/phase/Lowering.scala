@@ -359,12 +359,12 @@ object Lowering {
 
     case TypedAst.Expression.Hole(sym, tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.Hole(sym, t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
 
-    case TypedAst.Expression.HoleWithExp(exp, tpe, eff, loc) =>
+    case TypedAst.Expression.HoleWithExp(_, tpe, _, loc) =>
       val sym = Symbol.freshHoleSym(loc)
       val t = visitType(tpe)
-      LoweredAst.Expression.Hole(sym, t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.HoleError(sym), List.empty, t, Type.Pure, loc)
 
     case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
       visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
@@ -612,36 +612,36 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.ApplyAtomic(AtomicOp.InvokeConstructor(constructor), es, t, eff, loc)
 
-    case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+    case TypedAst.Expression.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val as = visitExps(args)
+      val es = visitExps(exps)
       val t = visitType(tpe)
-      LoweredAst.Expression.InvokeMethod(method, e, as, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.InvokeMethod(method), e :: es, t, eff, loc)
 
-    case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
-      val as = visitExps(args)
+    case TypedAst.Expression.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+      val es = visitExps(exps)
       val t = visitType(tpe)
-      LoweredAst.Expression.InvokeStaticMethod(method, as, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.InvokeStaticMethod(method), es, t, eff, loc)
 
     case TypedAst.Expression.GetField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.GetField(field, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.GetField(field), List(e), t, eff, loc)
 
     case TypedAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.PutField(field, e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.PutField(field), List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.GetStaticField(field, tpe, eff, loc) =>
       val t = visitType(tpe)
-      LoweredAst.Expression.GetStaticField(field, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.GetStaticField(field), List.empty, t, eff, loc)
 
     case TypedAst.Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.PutStaticField(field, e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.PutStaticField(field), List(e), t, eff, loc)
 
     case TypedAst.Expression.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val t = visitType(tpe)
@@ -719,7 +719,7 @@ object Lowering {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Spawn(e1, e2, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e1, e2), t, eff, loc)
 
     case TypedAst.Expression.ParYield(frags, exp, tpe, eff, loc) =>
       val fs = frags.map {
@@ -732,12 +732,12 @@ object Lowering {
     case TypedAst.Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Lazy(e, t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
 
     case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Force(e, t, eff, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
     case TypedAst.Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
@@ -1681,7 +1681,7 @@ object Lowering {
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
         val e3 = LoweredAst.Expression.ApplyAtomic(AtomicOp.Region, List.empty, Type.Unit, Type.Pure, loc)
-        val e4 = LoweredAst.Expression.Spawn(e2, e3, Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        val e4 = LoweredAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         LoweredAst.Expression.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
@@ -1828,8 +1828,6 @@ object Lowering {
 
     case LoweredAst.Expression.Sig(_, _, _) => exp0
 
-    case LoweredAst.Expression.Hole(_, _, _) => exp0
-
     case LoweredAst.Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)
       val e = substExp(exp, subst)
@@ -1930,44 +1928,7 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Resume(e, tpe, loc)
 
-    case LoweredAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      val as = args.map(substExp(_, subst))
-      LoweredAst.Expression.InvokeMethod(method, e, as, tpe, eff, loc)
-
-    case LoweredAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
-      val as = args.map(substExp(_, subst))
-      LoweredAst.Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
-
-    case LoweredAst.Expression.GetField(field, exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.GetField(field, e, tpe, eff, loc)
-
-    case LoweredAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.PutField(field, e1, e2, tpe, eff, loc)
-
-    case LoweredAst.Expression.GetStaticField(_, _, _, _) => exp0
-
-    case LoweredAst.Expression.PutStaticField(field, exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.PutStaticField(field, e, tpe, eff, loc)
-
     case LoweredAst.Expression.NewObject(_, _, _, _, _, _) => exp0
-
-    case LoweredAst.Expression.Spawn(exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.Spawn(e1, e2, tpe, eff, loc)
-
-    case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Lazy(e, tpe, loc)
-
-    case LoweredAst.Expression.Force(exp, tpe, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Force(e, tpe, eff, loc)
 
   }
 

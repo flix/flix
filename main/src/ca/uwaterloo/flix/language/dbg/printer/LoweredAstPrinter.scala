@@ -55,7 +55,6 @@ object LoweredAstPrinter {
     case Expression.Var(sym, tpe, loc) => DocAst.Expression.Var(sym)
     case Expression.Def(sym, tpe, loc) => DocAst.Expression.Def(sym)
     case Expression.Sig(sym, tpe, loc) => DocAst.Expression.Sig(sym)
-    case Expression.Hole(sym, tpe, loc) => DocAst.Expression.Hole(sym)
     case Expression.Lambda(fparam, exp, tpe, loc) => DocAst.Expression.Lambda(List(printFormalParam(fparam)), print(exp))
     case Expression.Apply(exp, exps, tpe, eff, loc) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
     case Expression.ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
@@ -118,20 +117,11 @@ object LoweredAstPrinter {
       DocAst.Expression.TryWith(expD, effD, rulesD)
     case Expression.Do(op, exps, tpe, eff, loc) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Expression.Resume(exp, tpe, loc) => DocAst.Expression.Resume(print(exp))
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
-    case Expression.GetField(field, exp, tpe, eff, loc) => DocAst.Expression.JavaGetField(field, print(exp))
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
-    case Expression.GetStaticField(field, tpe, eff, loc) => DocAst.Expression.JavaGetStaticField(field)
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) => DocAst.Expression.JavaPutStaticField(field, print(exp))
     case Expression.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val methodsD = methods.map {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
       }
       DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
-    case Expression.Spawn(exp1, exp2, tpe, eff, loc) => DocAst.Expression.Spawn(print(exp1), print(exp2))
-    case Expression.Lazy(exp, tpe, loc) => DocAst.Expression.Lazy(print(exp))
-    case Expression.Force(exp, tpe, eff, loc) => DocAst.Expression.Force(print(exp))
   }
 
   /**
