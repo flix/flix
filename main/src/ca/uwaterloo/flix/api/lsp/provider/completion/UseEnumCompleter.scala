@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
-import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.api.lsp.TextEdit
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 
 object UseEnumCompleter extends Completer {
