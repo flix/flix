@@ -147,10 +147,6 @@ object LoweredAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, eff: Type, methods: List[LoweredAst.JvmMethod], loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Lazy(exp: LoweredAst.Expression, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
-      def eff: Type = Type.Pure
-    }
-
     case class Force(exp: LoweredAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
   }

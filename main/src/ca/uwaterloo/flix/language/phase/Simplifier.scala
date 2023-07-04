@@ -101,6 +101,14 @@ object Simplifier {
             val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e1, lambdaTyp, loc)
             SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), tpe, Purity.Impure, loc)
 
+          case AtomicOp.Lazy =>
+            // Wrap the expression in a closure: () -> tpe \ Pure
+            val e = es.head
+            val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe, loc)
+            val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc)
+            val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e, lambdaTyp, loc)
+            SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), tpe, Purity.Pure, loc)
+
           case _ => SimplifiedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
         }
 
@@ -183,14 +191,6 @@ object Simplifier {
       case LoweredAst.Expression.NewObject(name, clazz, tpe, eff, methods0, loc) =>
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyEffect(eff), methods, loc)
-
-      case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
-        // Wrap the expression in a closure: () -> tpe \ Pure
-        val e = visitExp(exp)
-        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, Type.Pure, e.tpe, loc)
-        val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc)
-        val lambdaExp = SimplifiedAst.Expression.Lambda(List(fp), e, lambdaTyp, loc)
-        SimplifiedAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), tpe, Purity.Pure, loc)
 
       case LoweredAst.Expression.Force(exp, tpe, _, loc) =>
         val e = visitExp(exp)

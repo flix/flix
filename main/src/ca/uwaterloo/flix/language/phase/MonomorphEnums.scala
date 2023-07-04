@@ -305,10 +305,6 @@ object MonomorphEnums {
           LoweredAst.JvmMethod(ident, fs, me, mt, mp, loc)
       }
       Expression.NewObject(name, clazz, t, p, ms, loc)
-    case Expression.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expression.Lazy(e, t, loc)
     case Expression.Force(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)

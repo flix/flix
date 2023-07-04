@@ -732,7 +732,7 @@ object Lowering {
     case TypedAst.Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expression.Lazy(e, t, loc)
+      LoweredAst.Expression.ApplyAtomic(AtomicOp.Lazy, List(e), t, Type.Pure, loc)
 
     case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1931,10 +1931,6 @@ object Lowering {
       LoweredAst.Expression.Resume(e, tpe, loc)
 
     case LoweredAst.Expression.NewObject(_, _, _, _, _, _) => exp0
-
-    case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Lazy(e, tpe, loc)
 
     case LoweredAst.Expression.Force(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
