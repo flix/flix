@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
@@ -718,6 +717,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
+      import Parser.Letters
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
@@ -1736,6 +1736,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Names                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object Names {
+
+    import Parser.Letters
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
