@@ -1111,7 +1111,7 @@ object Resolver {
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
-              val pVal = Patterns.resolve(pat, env0, ns0, root)
+              val pVal = Patterns.resolve(pat, env0, taenv, ns0, root)
               flatMapN(pVal) {
                 case p =>
                   val env = env0 ++ mkPatternEnv(p)
@@ -1687,7 +1687,7 @@ object Resolver {
       * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
       * Constraint patterns do not introduce new variables.
       */
-    def resolveInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Pattern, ResolutionError] = {
+    def resolveInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
         case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
@@ -1726,7 +1726,7 @@ object Resolver {
           val psVal = traverse(pats) {
             case NamedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
               // Unsure about Wildness
-              mapN(traverseOpt(tpe)(resolveType(_, Wildness.ForbidWild, env, Map.empty, ns0, root)), traverseOpt(pat1)(visit)) {
+              mapN(traverseOpt(tpe)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root)), traverseOpt(pat1)(visit)) {
                 case (t, p) => ResolvedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
               }
           }
@@ -1742,7 +1742,7 @@ object Resolver {
     /**
       * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
       */
-    def resolve(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Pattern, ResolutionError] = {
+    def resolve(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
         case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
@@ -1769,7 +1769,7 @@ object Resolver {
           val psVal = traverse(pats) {
             case NamedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
               // Unsure about Wildness
-              mapN(traverseOpt(tpe)(resolveType(_, Wildness.ForbidWild, env, Map.empty, ns0, root)), traverseOpt(pat1)(visit)) {
+              mapN(traverseOpt(tpe)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root)), traverseOpt(pat1)(visit)) {
                 case (t, p) => ResolvedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
               }
           }
