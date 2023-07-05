@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -85,7 +85,7 @@ object EqualityEnvironment {
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
       inst =>
-        Unification.unifyTypes(arg, inst.arg, renv, Set.empty).toOption.map { // MATT ???
+        Unification.unifyTypes(arg, inst.arg, renv, LevelEnv.Top).toOption.map { // TODO level env?
           case (subst, econstrs) => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
         }
     }.nextOption() match {

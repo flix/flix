@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -408,7 +408,7 @@ object Monomorph {
       rules.iterator.flatMap {
         case TypeMatchRule(sym, t, body0) =>
           // try to unify
-          Unification.unifyTypes(expTpe, subst.nonStrict(t), renv, Set.empty) match { // MATT ???
+          Unification.unifyTypes(expTpe, subst.nonStrict(t), renv, LevelEnv.Unleveled) match {
             // Case 1: types don't unify; just continue
             case Result.Err(_) => None
             // Case 2: types unify; use the substitution in the body
@@ -662,7 +662,7 @@ object Monomorph {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, Set.empty) match { // MATT ???
+    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Unleveled) match {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
         StrictSubstitution(subst, root.eqEnv)
       case Result.Err(_) =>

@@ -47,9 +47,9 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.Var, tpe0: Type, renv: RigidityEnv, senv: Set[Symbol.KindedTypeVarSym])(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unifyVar(x: Type.Var, tpe0: Type, renv: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     // MATT docs
-    val tpe = purifyType(tpe0, senv)
+    val tpe = lenv.purify(tpe0)
     tpe match {
 
       // ensure the kinds are compatible
@@ -83,19 +83,11 @@ object Unification {
     }
   }
 
-  // MATT docs
-  // MATT move
-  // MATT rename
-  def purifyType(tpe: Type, senv: Set[Symbol.KindedTypeVarSym]): Type = tpe.map {
-    case Type.Var(sym, loc) if sym.isRegion && !senv.contains(sym) => Type.mkPure(loc)
-    case tvar => tvar
-  }
-
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, lenv: Set[Symbol.KindedTypeVarSym])(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
     //
     // Bools
@@ -134,21 +126,21 @@ object Unification {
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, senv: Set[Symbol.KindedTypeVarSym])(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
 
-    case (x: Type.Var, _) => unifyVar(x, tpe2, renv, senv)
+    case (x: Type.Var, _) => unifyVar(x, tpe2, renv, lenv)
 
-    case (_, x: Type.Var) => unifyVar(x, tpe1, renv, senv)
+    case (_, x: Type.Var) => unifyVar(x, tpe1, renv, lenv)
 
     case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty, Nil)
 
-    case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2, renv, senv)
+    case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2, renv, lenv)
 
-    case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe, renv, senv)
+    case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe, renv, lenv)
 
     case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
-      unifyTypes(t11, t21, renv, senv) match {
-        case Result.Ok((subst1, econstrs1)) => unifyTypes(subst1(t12), subst1(t22), renv, senv) match {
+      unifyTypes(t11, t21, renv, lenv) match {
+        case Result.Ok((subst1, econstrs1)) => unifyTypes(subst1(t12), subst1(t22), renv, lenv) match {
           case Result.Ok((subst2, econstrs2)) => Result.Ok(subst2 @@ subst1, econstrs1 ++ econstrs2) // TODO ASSOC-TYPES do we need to subst on econstrs?
           case Result.Err(e) => Result.Err(e)
         }
@@ -180,7 +172,7 @@ object Unification {
     * associated substitution into the type inference monad.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, lenv: Set[Symbol.KindedTypeVarSym]) => {
+    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, lenv: LevelEnv) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
       unifyTypes(type1, type2, renv, lenv) match {
@@ -368,7 +360,7 @@ object Unification {
     * Unifies the two given effect formulas `tpe1` and `tpe2`.
     */
   def unifyEffM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, lenv: Set[Symbol.KindedTypeVarSym]) => {
+    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, lenv: LevelEnv) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)
       EffUnification.unify(bf1, bf2, renv, lenv) match {
@@ -392,7 +384,7 @@ object Unification {
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, lenv: Set[Symbol.KindedTypeVarSym]) => {
+    InferMonad((s: Substitution, econstrs: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, lenv: LevelEnv) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)
       BoolUnification.unify(bf1, bf2, renv) match {
@@ -509,14 +501,14 @@ object Unification {
   // MATT docs
   def enterScopeM(sym: Symbol.KindedTypeVarSym): InferMonad[Unit] = {
     InferMonad {
-      case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv, lenv + sym, ()))
+      case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv, lenv.enterScope(sym), ()))
     }
   }
 
   // MATT docs
   def exitScopeM(sym: Symbol.KindedTypeVarSym): InferMonad[Unit] = {
     InferMonad {
-      case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv, lenv - sym, ()))
+      case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv, lenv.exitScope(sym), ()))
     }
   }
 
@@ -524,7 +516,7 @@ object Unification {
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
-    Unification.unifyTypes(tpe1, tpe2, renv, Set.empty) match { // MATT lenv???
+    Unification.unifyTypes(tpe1, tpe2, renv, LevelEnv.Unleveled) match { // MATT lenv???
       case Result.Ok((_, econstrs)) =>
         // check that all econstrs hold under the environment
         econstrs.forall {
