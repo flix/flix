@@ -53,6 +53,6 @@ object UseEnumCompleter extends Completer {
 
   private def getUseEnumCompletion(decl: TypedAst.Enum): UseEnumCompletion = {
     val sym = decl.sym
-    Completion.UseEnumCompletion(s"${sym.toString}")
+    Completion.UseEnumCompletion(sym.toString)
   }
 }
