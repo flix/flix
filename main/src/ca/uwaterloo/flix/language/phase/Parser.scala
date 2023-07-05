@@ -1336,7 +1336,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ "{" ~ optWS ~ oneOrMore(RecordFieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Var) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
+        SP ~ "{" ~ optWS ~ zeroOrMore(RecordFieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Var) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
       }
     }
 
