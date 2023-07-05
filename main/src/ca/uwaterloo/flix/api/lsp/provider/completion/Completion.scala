@@ -200,7 +200,7 @@ sealed trait Completion {
         kind = kind)
     case Completion.UseEnumCompletion(name) =>
       CompletionItem(
-        sortText = "",
+        sortText = name,
         textEdit = TextEdit(context.range, name),
         label = name,
         documentation = None,
