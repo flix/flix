@@ -1107,9 +1107,9 @@ object Namer {
 
     case WeededAst.Pattern.Record(pats, pat, loc) =>
       val ps = traverse(pats) {
-        case WeededAst.Pattern.Record.RecordFieldPattern(field, tpe, pat, loc) =>
-          mapN(traverseOpt(tpe)(visitType), traverseOpt(pat)(visitPattern)) {
-            case (t, p) => NamedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc)
+        case WeededAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
+          mapN(traverseOpt(tpe)(visitType), traverseOpt(pat1)(visitPattern)) {
+            case (t, p) => NamedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
           }
       }
       val p = traverseOpt(pat)(visitPattern)
