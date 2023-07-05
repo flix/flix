@@ -45,7 +45,7 @@ mod Test.Exp.Record.Polymorphism {
     def testRecordPolyExtend02(): Unit =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = { fstName = "Lucky", lstName = "Luke" };
-        let p3 = { fstName = "Bruce", lstName = "Wayne", alias = "Batman" };
+        let p3 = { fstName = "Bruce", lstName = "Wayne", alias0 = "Batman" };
         let p4 = { name = "Cher" };
         let _p5 = withAgeAndSex(21, "m", p1);
         let _p6 = withAgeAndSex(42, "m", p2);
