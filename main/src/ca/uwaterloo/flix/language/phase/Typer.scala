@@ -937,8 +937,6 @@ object Typer {
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
           _ <- exitScopeM(regionVar.sym)
-//          purifiedEff <- purifyEffM(regionVar, eff)
-//          resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           resultEff <- unifyTypeM(pvar, eff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
@@ -1900,7 +1898,6 @@ object Typer {
     for {
       (tconstrs, tpe, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
-      // TODO Currently disabled due to region issues. See issue #5603 // MATT
       _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, eff)
   }

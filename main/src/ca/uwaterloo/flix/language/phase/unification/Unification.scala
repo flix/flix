@@ -48,7 +48,7 @@ object Unification {
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   def unifyVar(x: Type.Var, tpe0: Type, renv: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-    // MATT docs
+    // purify the regions of the type that are out of scope
     val tpe = lenv.purify(tpe0)
     tpe match {
 
@@ -183,8 +183,8 @@ object Unification {
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
-            case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, loc))
-            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, loc))
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, lenv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, lenv, loc))
             case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
           }
 
@@ -302,12 +302,12 @@ object Unification {
   /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
-  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, lenv: LevelEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
 
     arrowType match {
       case Type.Apply(_, resultType, _) =>
-        if (Unification.unifiesWith(resultType, argType, renv, ListMap.empty)) { // TODO ASSOC-TYPES empty OK?
+        if (Unification.unifiesWith(resultType, argType, renv, lenv, ListMap.empty)) { // TODO ASSOC-TYPES empty OK?
           arrowType.typeArguments.lift(1) match {
             case None => default
             case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
@@ -497,15 +497,22 @@ object Unification {
       case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv.markRigid(rvar.sym), lenv, ()))
     }
 
-  // MATT make underScopeM HOF so we never forget to exit
-  // MATT docs
+  /**
+    * Enters the scope of the given region.
+    *
+    * Unifications involving the region are not purified under its scope.
+    */
   def enterScopeM(sym: Symbol.KindedTypeVarSym): InferMonad[Unit] = {
     InferMonad {
       case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv, lenv.enterScope(sym), ()))
     }
   }
 
-  // MATT docs
+  /**
+    * Exits the scope of the given region.
+    *
+    * Unifications involving the region are purified outside its scope.
+    */
   def exitScopeM(sym: Symbol.KindedTypeVarSym): InferMonad[Unit] = {
     InferMonad {
       case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv, lenv.exitScope(sym), ()))
@@ -515,8 +522,8 @@ object Unification {
   /**
     * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
-    Unification.unifyTypes(tpe1, tpe2, renv, LevelEnv.Unleveled) match { // MATT lenv???
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, lenv: LevelEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+    Unification.unifyTypes(tpe1, tpe2, renv, lenv) match {
       case Result.Ok((_, econstrs)) =>
         // check that all econstrs hold under the environment
         econstrs.forall {

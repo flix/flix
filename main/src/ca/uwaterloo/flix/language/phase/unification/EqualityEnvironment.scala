@@ -41,7 +41,7 @@ object EqualityEnvironment {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
       renv = (res1.typeVars ++ res2.typeVars).map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-      res <- if (Unification.unifiesWith(res1, res2, renv, ListMap.empty)) Result.Ok(()): Result[Unit, UnificationError] else Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Unit, UnificationError]
+      res <- if (Unification.unifiesWith(res1, res2, renv, LevelEnv.Top, ListMap.empty)) Result.Ok(()): Result[Unit, UnificationError] else Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Unit, UnificationError]
       // TODO ASSOC-TYPES weird typing hack
       // TODO ASSOC-TYPES using empty eqEnv correct?
     } yield ()
