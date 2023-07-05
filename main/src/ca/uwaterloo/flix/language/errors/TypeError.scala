@@ -189,6 +189,29 @@ object TypeError {
   }
 
   /**
+    * Unexpected Effect.
+    *
+    * @param expected the expected type.
+    * @param inferred the inferred type.
+    * @param renv     the rigidity environment.
+    * @param loc      the location of the inferred type.
+    */
+  case class UnexpectedEffect(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
+         |
+         |${code(loc, "expression has unexpected type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * Unexpected type, but a checked type cast might work.
     *
     * @param expected the expected type.
