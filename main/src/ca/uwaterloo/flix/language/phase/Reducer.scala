@@ -49,60 +49,60 @@ object Reducer {
       ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
-  private def visitExpr(exp0: LiftedAst.Expression): ReducedAst.Expr = exp0 match {
-    case LiftedAst.Expression.Cst(cst, tpe, loc) => ReducedAst.Expr.Cst(cst, tpe, loc)
+  private def visitExpr(exp0: LiftedAst.Expr): ReducedAst.Expr = exp0 match {
+    case LiftedAst.Expr.Cst(cst, tpe, loc) => ReducedAst.Expr.Cst(cst, tpe, loc)
 
-    case LiftedAst.Expression.Var(sym, tpe, loc) => ReducedAst.Expr.Var(sym, tpe, loc)
+    case LiftedAst.Expr.Var(sym, tpe, loc) => ReducedAst.Expr.Var(sym, tpe, loc)
 
-    case LiftedAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case LiftedAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val es = exps.map(visitExpr)
       ReducedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
-    case LiftedAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
       ReducedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-    case LiftedAst.Expression.ApplySelfTail(sym, formals, exps, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplySelfTail(sym, formals, exps, tpe, purity, loc) =>
       val fs = formals.map(visitFormalParam)
       val as = exps.map(visitExpr)
       ReducedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+    case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
       val e3 = visitExpr(exp3)
       ReducedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case LiftedAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
+    case LiftedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val bs = branches map {
         case (label, body) => label -> visitExpr(body)
       }
       ReducedAst.Expr.Branch(e, bs, tpe, purity, loc)
 
-    case LiftedAst.Expression.JumpTo(sym, tpe, purity, loc) =>
+    case LiftedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
       ReducedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
-    case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
       ReducedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
-    case LiftedAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
       ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-    case LiftedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+    case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
-    case LiftedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
+    case LiftedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val rs = rules map {
         case LiftedAst.CatchRule(sym, clazz, body) =>
@@ -111,19 +111,19 @@ object Reducer {
       }
       ReducedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
-    case LiftedAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case LiftedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       // TODO AE erasing to unit for now
       ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
-    case LiftedAst.Expression.Do(op, exps, tpe, purity, loc) =>
+    case LiftedAst.Expr.Do(op, exps, tpe, purity, loc) =>
       // TODO AE erasing to unit for now
       ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
-    case LiftedAst.Expression.Resume(exp, tpe, loc) =>
+    case LiftedAst.Expr.Resume(exp, tpe, loc) =>
       // TODO AE erasing to unit for now
       ReducedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
 
-    case LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
+    case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
 

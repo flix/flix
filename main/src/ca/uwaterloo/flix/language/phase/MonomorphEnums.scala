@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
-import ca.uwaterloo.flix.language.ast.LoweredAst.{Expression, Pattern}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
@@ -134,31 +134,31 @@ object MonomorphEnums {
   /**
     * Returns an expression with specialized enums and without aliases in its types
     */
-  private def visitExp(exp: LoweredAst.Expression)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Expression = exp match {
-    case Expression.Cst(cst, tpe, loc) =>
+  private def visitExp(exp: LoweredAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Expr = exp match {
+    case Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Cst(cst, t, loc)
-    case Expression.Var(sym, tpe, loc) =>
+      Expr.Cst(cst, t, loc)
+    case Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Var(sym, t, loc)
-    case Expression.Def(sym, tpe, loc) =>
+      Expr.Var(sym, t, loc)
+    case Expr.Def(sym, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Def(sym, t, loc)
-    case Expression.Sig(sym, tpe, loc) =>
+      Expr.Def(sym, t, loc)
+    case Expr.Sig(sym, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Sig(sym, t, loc)
-    case Expression.Lambda(fparam, exp, tpe, loc) =>
+      Expr.Sig(sym, t, loc)
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       val fs = visitFormalParam(fparam)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Lambda(fs, e, t, loc)
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+      Expr.Lambda(fs, e, t, loc)
+    case Expr.Apply(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Apply(e, es, t, p, loc)
-    case Expression.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      Expr.Apply(e, es, t, p, loc)
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val op1 = op match {
         case AtomicOp.Tag(sym) =>
           //
@@ -171,45 +171,45 @@ object MonomorphEnums {
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.ApplyAtomic(op1, es, t, p, loc)
-    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      Expr.ApplyAtomic(op1, es, t, p, loc)
+    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Let(sym, mod, e1, e2, t, p, loc)
-    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      Expr.Let(sym, mod, e1, e2, t, p, loc)
+    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.LetRec(sym, mod, e1, e2, t, p, loc)
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+      Expr.LetRec(sym, mod, e1, e2, t, p, loc)
+    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       // The region variable has been rendered redundant by Monomorph.
       // It has replaced the region with pure/impure and the variable could
       // conceptually be removed.
       val e = visitExp(exp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Scope(sym, regionVar, e, t, p, loc)
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      Expr.Scope(sym, regionVar, e, t, p, loc)
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.IfThenElse(e1, e2, e3, t, p, loc)
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+      Expr.IfThenElse(e1, e2, e3, t, p, loc)
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Stm(e1, e2, t, p, loc)
-    case Expression.Discard(exp, eff, loc) =>
+      Expr.Stm(e1, e2, t, p, loc)
+    case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp)
       val p = visitType(eff)
-      Expression.Discard(e, p, loc)
-    case Expression.Match(exp, rules, tpe, eff, loc) =>
+      Expr.Discard(e, p, loc)
+    case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
         case LoweredAst.MatchRule(pat, guard, exp) =>
@@ -220,8 +220,8 @@ object MonomorphEnums {
       }
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Match(e, rs, t, p, loc)
-    case Expression.TypeMatch(exp, rules, tpe, eff, loc) =>
+      Expr.Match(e, rs, t, p, loc)
+    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
         case LoweredAst.TypeMatchRule(sym, tpe, exp) =>
@@ -231,36 +231,36 @@ object MonomorphEnums {
       }
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.TypeMatch(e, rs, t, p, loc)
-    case Expression.RelationalChoose(_, _, _, _, loc) =>
+      Expr.TypeMatch(e, rs, t, p, loc)
+    case Expr.RelationalChoose(_, _, _, _, loc) =>
       throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-    case Expression.VectorLit(exps, tpe, eff, loc) =>
+    case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.VectorLit(es, t, p, loc)
-    case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      Expr.VectorLit(es, t, p, loc)
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.VectorLoad(e1, e2, t, p, loc)
-    case Expression.VectorLength(exp, loc) =>
+      Expr.VectorLoad(e1, e2, t, p, loc)
+    case Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp)
-      Expression.VectorLength(e, loc)
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      Expr.VectorLength(e, loc)
+    case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Ascribe(e, t, p, loc)
-    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      Expr.Ascribe(e, t, p, loc)
+    case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
       val dp = declaredEff.map(visitType)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Cast(e, dt, dp, t, p, loc)
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      Expr.Cast(e, dt, dp, t, p, loc)
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
         case LoweredAst.CatchRule(sym, clazz, exp) =>
@@ -269,8 +269,8 @@ object MonomorphEnums {
       }
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.TryCatch(e, rs, t, p, loc)
-    case Expression.TryWith(exp, effUse, rules, tpe, eff, loc) =>
+      Expr.TryCatch(e, rs, t, p, loc)
+    case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
         case LoweredAst.HandlerRule(op, fparams, exp) =>
@@ -280,17 +280,17 @@ object MonomorphEnums {
       }
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.TryWith(e, effUse, rs, t, p, loc)
-    case Expression.Do(op, exps, tpe, eff, loc) =>
+      Expr.TryWith(e, effUse, rs, t, p, loc)
+    case Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expression.Do(op, es, t, p, loc)
-    case Expression.Resume(exp, tpe, loc) =>
+      Expr.Do(op, es, t, p, loc)
+    case Expr.Resume(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.Resume(e, t, loc)
-    case Expression.NewObject(name, clazz, tpe, eff, methods, loc) =>
+      Expr.Resume(e, t, loc)
+    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val t = visitType(tpe)
       val p = visitType(eff)
       val ms = methods.map {
@@ -301,7 +301,7 @@ object MonomorphEnums {
           val mp = visitType(eff)
           LoweredAst.JvmMethod(ident, fs, me, mt, mp, loc)
       }
-      Expression.NewObject(name, clazz, t, p, ms, loc)
+      Expr.NewObject(name, clazz, t, p, ms, loc)
   }
 
   /**

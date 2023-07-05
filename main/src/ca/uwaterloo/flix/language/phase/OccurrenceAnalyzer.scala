@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
+import ca.uwaterloo.flix.language.ast.LiftedAst.Expr
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
@@ -149,12 +149,12 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on the given expression `exp0`
     */
-  private def visitExp(sym0: Symbol.DefnSym, exp0: LiftedAst.Expression): (OccurrenceAst.Expression, OccurInfo) = exp0 match {
-    case Expression.Cst(cst, tpe, loc) => (OccurrenceAst.Expression.Constant(cst, tpe, loc), OccurInfo.One)
+  private def visitExp(sym0: Symbol.DefnSym, exp0: LiftedAst.Expr): (OccurrenceAst.Expression, OccurInfo) = exp0 match {
+    case Expr.Cst(cst, tpe, loc) => (OccurrenceAst.Expression.Constant(cst, tpe, loc), OccurInfo.One)
 
-    case Expression.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
+    case Expr.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), OccurInfo(Map.empty, Map(sym -> Once), 1))
 
-    case Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
+    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val (es, o) = visitExps(sym0, exps)
       val o1 = op match {
         case AtomicOp.Is(sym) if sym.name == "Choice" => o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne()
@@ -162,25 +162,25 @@ object OccurrenceAnalyzer {
       }
       (OccurrenceAst.Expression.ApplyAtomic(op, es, tpe, purity, loc), o1)
 
-    case Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
       val (es, o2) = visitExps(sym0, exps)
       val o3 = combineAllSeq(o1, o2)
       exp match {
-        case Expression.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
+        case Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
           (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o5.increaseSizeByOne())
         case _ => (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
       }
 
-    case Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val (es, o1) = visitExps(sym0, exps)
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplyDef(sym, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val (as, o1) = visitExps(sym0, actuals)
       val f = formals.map {
         case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc)
@@ -189,14 +189,14 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplySelfTail(sym, f, as, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val (e3, o3) = visitExp(sym0, exp3)
       val o4 = combineAllSeq(o1, combineAllBranch(o2, o3))
       (OccurrenceAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc), o4.increaseSizeByOne())
 
-    case Expression.Branch(exp, branches, tpe, purity, loc) =>
+    case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp)
       val (o2, bs) = branches.foldLeft(OccurInfo.Empty, Map[LabelSym, OccurrenceAst.Expression]())((acc, b) => {
         val (oacc, bsacc) = acc
@@ -211,9 +211,9 @@ object OccurrenceAnalyzer {
       val o5 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.Branch(e1, bs, tpe, purity, loc), o5.increaseSizeByOne())
 
-    case Expression.JumpTo(sym, tpe, purity, loc) => (OccurrenceAst.Expression.JumpTo(sym, tpe, purity, loc), OccurInfo.One)
+    case Expr.JumpTo(sym, tpe, purity, loc) => (OccurrenceAst.Expression.JumpTo(sym, tpe, purity, loc), OccurInfo.One)
 
-    case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
@@ -221,17 +221,17 @@ object OccurrenceAnalyzer {
       val o4 = o3.copy(vars = o3.vars - sym)
       (OccurrenceAst.Expression.Let(sym, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
 
-    case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expression.Scope(sym, exp, tpe, purity, loc) =>
+    case Expr.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
-    case Expression.TryCatch(exp, rules, tpe, purity, loc) =>
+    case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
       val (rs, o2) = rules.map {
         case LiftedAst.CatchRule(sym, clazz, exp) =>
@@ -241,19 +241,19 @@ object OccurrenceAnalyzer {
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
       (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
-    case Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       // TODO AE erasing to unit for now
       (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
 
-    case Expression.Do(op, exps, tpe, purity, loc) =>
+    case Expr.Do(op, exps, tpe, purity, loc) =>
       // TODO AE erasing to unit for now
       (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
 
-    case Expression.Resume(exp, tpe, loc) =>
+    case Expr.Resume(exp, tpe, loc) =>
       // TODO AE erasing to unit for now
       (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
 
-    case Expression.NewObject(name, clazz, tpe, purity, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {
         case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) => {
           val f = fparams.map {
@@ -271,7 +271,7 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
     */
-  private def visitExps(sym0: Symbol.DefnSym, exps: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], OccurInfo) = {
+  private def visitExps(sym0: Symbol.DefnSym, exps: List[LiftedAst.Expr]): (List[OccurrenceAst.Expression], OccurInfo) = {
     val (es, o1) = exps.map(visitExp(sym0, _)).unzip
     val o2 = o1.foldLeft(OccurInfo.Empty)((acc, o3) => combineAllSeq(acc, o3))
     (es, o2)
