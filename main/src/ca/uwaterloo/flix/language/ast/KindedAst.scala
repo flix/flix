@@ -240,6 +240,11 @@ object KindedAst {
 
     case class Tuple(elms: List[KindedAst.Pattern], loc: SourceLocation) extends KindedAst.Pattern
 
+    case class Record(pats: List[Record.RecordFieldPattern], pat: Option[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
+
+    object Record {
+      case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], pat: Option[Pattern], loc: SourceLocation)
+    }
   }
 
   sealed trait RelationalChoosePattern {
