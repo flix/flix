@@ -35,7 +35,7 @@ class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
     val tpe1 = Type.AssocType(ElemCst, Type.Str, Kind.Star, loc)
     val tpe2 = Type.Char
     val renv = RigidityEnv.empty
-    val result = Unification.unifyTypes(tpe1, tpe2, renv)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv, Set.empty)
 
     val expectedSubst = Substitution.empty
     val expectedEconstrs = List(Ast.EqualityConstraint(ElemCst, Type.Str, Type.Char, loc))

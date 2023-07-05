@@ -85,7 +85,7 @@ object EqualityEnvironment {
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
       inst =>
-        Unification.unifyTypes(arg, inst.arg, renv).toOption.map {
+        Unification.unifyTypes(arg, inst.arg, renv, Set.empty).toOption.map { // MATT ???
           case (subst, econstrs) => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
         }
     }.nextOption() match {

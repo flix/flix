@@ -131,7 +131,7 @@ object Scheme {
     val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
-    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
+    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv, Set.empty).toValidation) { // MATT ???
       case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
         val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
         val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)

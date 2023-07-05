@@ -126,7 +126,7 @@ object Instances {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
-      Unification.unifyTypes(inst1.tpe, inst2.tpe, RigidityEnv.empty) match {
+      Unification.unifyTypes(inst1.tpe, inst2.tpe, RigidityEnv.empty, Set.empty) match { // MATT ???
         case Ok(_) =>
           List(
             InstanceError.OverlappingInstances(inst1.clazz.loc, inst2.clazz.loc),
@@ -185,7 +185,7 @@ object Instances {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
-        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
+        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty, Set.empty).toOption.map { // MATT ???
           case (subst, econstrs) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
         }
       }.nextOption()
