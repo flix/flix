@@ -1578,7 +1578,7 @@ object Resolver {
 
           val fragsVal = traverse(frags) {
             case NamedAst.ParYieldFragment(pat, e0, l0) =>
-              val pVal = Patterns.resolve(pat, env0, ns0, root)
+              val pVal = Patterns.resolve(pat, env0, taenv, ns0, root)
               flatMapN(pVal) {
                 case p =>
                   val patEnv = mkPatternEnv(p)
@@ -1806,7 +1806,7 @@ object Resolver {
         */
       def resolve(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-          val tsVal = traverse(terms)(t => Patterns.resolveInConstraint(t, env, ns0, root))
+          val tsVal = traverse(terms)(Patterns.resolveInConstraint(_, env, taenv, ns0, root))
           mapN(tsVal) {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
