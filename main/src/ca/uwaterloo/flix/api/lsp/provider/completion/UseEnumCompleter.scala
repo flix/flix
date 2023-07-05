@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher, Lukas Rønn
+ * Copyright 2023 Xavier deSouza
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumCompletion
-import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
-import ca.uwaterloo.flix.api.lsp.TextEdit
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumCompletion
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 
@@ -32,7 +30,7 @@ object UseEnumCompleter extends Completer {
     ctx.prefix match {
       case regex(word) =>
         val enums = getLocalEnumSyms(word)
-        enums.map(enum => getEnumCompletion(root.enums(enum), ctx))
+        enums.map(enum => getUseEnumCompletion(root.enums(enum), ctx))
       case _ => Nil
     }
   }
@@ -53,11 +51,8 @@ object UseEnumCompleter extends Completer {
     sym.name.startsWith(suffix)
   }
 
-  private def getEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): EnumCompletion = {
+  private def getUseEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): UseEnumCompletion = {
     val sym = decl.sym
-    val name = decl.sym.name
-    val internalPriority = getInternalPriority(decl.loc, decl.sym.namespace)(ctx)
-    Completion.EnumCompletion(sym, formatTParams(decl.tparams), priorityBoostForTypes(internalPriority(name))(ctx),
-      TextEdit(ctx.range, s"${sym.toString}${formatTParamsSnippet(decl.tparams)}"), Some(decl.doc.text))
+    Completion.UseEnumCompletion(s"${sym.toString}")
   }
 }
