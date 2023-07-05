@@ -1265,52 +1265,14 @@ object ParsedAst {
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
-    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
 
   }
 
   /**
-    * Record Field Patterns.
+    * Record Field Subpattern.
     */
-  trait RecordPattern // extends Pattern ?
-
-  object RecordPattern {
-/*
-    /**
-      *
-      * Pattern `{ x }` where `x` is a valid field on a record.
-      *
-      * @param sp1   the position of the first character in the pattern.
-      * @param field the name of the field.
-      * @param sp2   the position of the last character in the pattern.
-      */
-    case class Var(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends RecordPattern
-
-    /**
-      *
-      * Pattern `{ x = y }` where `x` is a valid field on a record.
-      *
-      * @param sp1   the position of the first character in the pattern.
-      * @param field the name of the field.
-      * @param alias the custom alias for the field.
-      * @param sp2   the position of the last character in the pattern.
-      */
-    case class Alias(sp1: SourcePosition, field: Name.Ident, alias: Pattern.Var, sp2: SourcePosition) extends RecordPattern
-*/
-
-    /**
-      *
-      * Pattern `{ x = 1 }` where `x` is a valid field on a record.
-      *
-      * @param sp1   the position of the first character in the pattern.
-      * @param field the name of the field.
-      * @param lit   the literal which must match the field value.
-      * @param sp2   the position of the last character in the pattern.
-      */
-    case class Lit(sp1: SourcePosition, field: Pattern.Var, lit: Pattern.Lit, sp2: SourcePosition) extends RecordPattern
-
-  }
-
+  case class RecordFieldPattern(sp1: SourcePosition, field: Name.Ident, tpe: Option[Type], pat: Option[Pattern], sp2: SourcePosition)
 
   /**
     * Relational Choice Patterns.

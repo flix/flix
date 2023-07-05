@@ -592,8 +592,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       push(10) ~ SeparableDecDigits
     }
 
-    // TODO: Add empty record to literals
-
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -719,7 +717,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
-      import Parser.Letters
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
@@ -1332,14 +1329,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Record: Rule1[ParsedAst.Pattern] = {
-      def FieldPattern: Rule1[ParsedAst.RecordPattern] = rule {
-        // Later: Use Pattern instead of lit
-        // Later: Allow type ascription in pattern
-        SP ~ Var ~ optWS ~ "=" ~ optWS ~ Lit ~ SP ~> ParsedAst.RecordPattern.Lit
+      def RecordFieldPattern: Rule1[ParsedAst.RecordFieldPattern] = rule {
+        // TODO: 
+        SP ~ Names.Field ~ optWS ~ optional(":" ~ optWS ~ Type) ~ optWS ~ optional("=" ~ optWS ~ Pattern) ~ SP ~> ParsedAst.RecordFieldPattern
       }
 
       rule {
-        SP ~ "{" ~ optWS ~ zeroOrMore(FieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Var) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
+        SP ~ "{" ~ optWS ~ oneOrMore(RecordFieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Var) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
       }
     }
 
@@ -1739,8 +1735,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Names                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object Names {
-
-    import Parser.Letters
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.

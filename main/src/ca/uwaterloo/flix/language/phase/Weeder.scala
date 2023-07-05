@@ -16,21 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
-import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
-import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
-
-import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
-import java.math.{BigDecimal, BigInteger}
-import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
-import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
@@ -2406,10 +2394,12 @@ object Weeder {
       case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
         val loc = mkSL(sp1, sp2)
         val fs = traverse(fields) {
-          case ParsedAst.RecordPattern.Lit(sp11, field, lit, sp22) =>
-            mapN(visit(field), visit(lit)) {
-              case (f, l) =>
-                WeededAst.RecordPattern.Lit(f, l, mkSL(sp11, sp22))
+          case ParsedAst.RecordFieldPattern(sp11, field, tpe, pat, sp22) =>
+            mapN(visitName(field), traverseOpt(tpe)(visitType), traverseOpt(pat)(visit)) {
+              case (_, t, p) =>
+                val f = Name.mkField(field)
+                val patLoc = mkSL(sp11, sp22)
+                WeededAst.RecordFieldPattern(f, t, p, patLoc)
             }
         }
         val r = traverse(rest)(visit)

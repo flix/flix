@@ -16,10 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.util.collection.MultiMap
-
 object WeededAst {
 
   val empty: Root = Root(Map.empty, None, MultiMap.empty)
@@ -243,9 +239,11 @@ object WeededAst {
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Record(pats: List[RecordPattern.Lit], pat: List[Pattern], loc: SourceLocation) extends WeededAst.Pattern
+    case class Record(pats: List[RecordFieldPattern], pat: List[Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
+
+  case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], pat: Option[Pattern], loc: SourceLocation)
 
   sealed trait RelationalChoosePattern
 
@@ -438,10 +436,4 @@ object WeededAst {
 
   case class ParYieldFragment(pat: WeededAst.Pattern, exp: WeededAst.Expression, loc: SourceLocation)
 
-  trait RecordPattern
-
-  object RecordPattern {
-    case class Lit(pat: WeededAst.Pattern, lit: WeededAst.Pattern, loc: SourceLocation) extends RecordPattern
-
-  }
 }
