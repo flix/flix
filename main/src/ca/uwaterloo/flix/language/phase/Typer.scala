@@ -655,16 +655,14 @@ object Typer {
             //
             // Special Case: We are applying a Def or Sig and we break apart its declared type.
             //
-            val declaredEff = declaredType.typeArguments.head
-            val declaredArgumentTypes = declaredType.typeArguments.drop(1).dropRight(1)
-            val declaredResultType = declaredType.typeArguments.last
+            val declaredEff = declaredType.arrowEffectType
+            val declaredArgumentTypes = declaredType.arrowArgTypes
+            val declaredResultType = declaredType.arrowResultType
 
             for {
               (constrs2, tpes, effs) <- traverseM(exps)(visitExp).map(_.unzip3)
               _ <- expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
               _ <- unifyTypeM(tvar2, declaredType, loc)
-              // The below line should not be needed, but it seems it is.
-              _ <- expectTypeM(tvar2, Type.mkUncurriedArrowWithEffect(tpes, declaredEff, declaredResultType, loc), loc)
               resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
               resultEff <- unifyEffM(pvar, Type.mkUnion(declaredEff :: effs, loc), loc)
             } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)

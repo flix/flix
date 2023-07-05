@@ -285,7 +285,8 @@ object Unification {
         case (x :: xs, y :: ys, l :: ls) =>
           for {
             _ <- unifyTypeM(x, y, l).transformError(handler(i))
-          } yield visit(i + 1, xs, ys, ls)
+            _ <- visit(i + 1, xs, ys, ls)
+          } yield ()
         case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
         case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
         case _ => throw InternalCompilerException("Mismatched lists.", loc)
