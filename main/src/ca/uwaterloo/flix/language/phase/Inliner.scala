@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
@@ -130,9 +131,9 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      val as = args.map(visitExp(_, subst0))
+      val es = exps.map(visitExp(_, subst0))
       e match {
         case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
           val def1 = root.defs.apply(sym)
@@ -140,60 +141,32 @@ object Inliner {
           // it is trivial
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
-            val e1 = rewriteTailCalls(def1.exp)
+            val e1 = ct match {
+              case CallType.TailCall => def1.exp
+              case CallType.NonTailCall => rewriteTailCalls(def1.exp)
+            }
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ as, Map.empty)
+            bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ es, Map.empty)
           } else {
-            LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+            LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
           }
-        case _ =>
-          val as = args.map(visitExp(_, subst0))
-          LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+        case _ => LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        val e1 = rewriteTailCalls(def1.exp)
-        bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), as, Map.empty)
+        val e1 = ct match {
+          case CallType.TailCall => def1.exp
+          case CallType.NonTailCall => rewriteTailCalls(def1.exp)
+        }
+        bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), es, Map.empty)
       } else {
-        LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
-      }
-
-    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) =>
-      val e = visitExp(exp, subst0)
-      val as = args.map(visitExp(_, subst0))
-      e match {
-        case LiftedAst.Expression.ApplyAtomic(AtomicOp.Closure(sym), closureArgs, _, _, _) =>
-          val def1 = root.defs.apply(sym)
-          // If `def1` is a single non-self call or
-          // it is trivial
-          // then inline the body of `def1`
-          if (canInlineDef(def1)) {
-            // Map for substituting formal parameters of a function with the freevars currently in scope
-            bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ as, Map.empty)
-          } else {
-            LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
-          }
-        case _ =>
-          val as = args.map(visitExp(_, subst0))
-          LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
-      }
-
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
-      val as = args.map(visitExp(_, subst0))
-      val def1 = root.defs.apply(sym)
-      // If `def1` is a single non-self call or
-      // it is trivial
-      // then inline the body of `def1`
-      if (canInlineDef(def1)) {
-        bindFormals(def1.exp, (def1.cparams ++ def1.fparams).map(_.sym), as, Map.empty)
-      } else {
-        LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
+        LiftedAst.Expression.ApplyDef(sym, es, ct, tpe, purity, loc)
       }
 
     case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
@@ -366,11 +339,11 @@ object Inliner {
       }
       OccurrenceAst.Expression.Branch(e0, br, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyClo(exp, args, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case _ => exp0
   }
@@ -411,23 +384,14 @@ object Inliner {
         case _ => LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) =>
-      val e = substituteExp(exp, env0)
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
-      val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expression.ApplyDef(sym, es, ct, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val as = actuals.map(substituteExp(_, env0))

@@ -35,7 +35,7 @@ object LiftedAst {
   sealed trait Expression {
     def tpe: Type
 
-    def purity : Purity
+    def purity: Purity
 
     def loc: SourceLocation
   }
@@ -52,13 +52,9 @@ object LiftedAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ApplyClo(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplyClo(exp: LiftedAst.Expression, exps: List[LiftedAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class ApplyCloTail(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[LiftedAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[LiftedAst.FormalParam], actuals: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 

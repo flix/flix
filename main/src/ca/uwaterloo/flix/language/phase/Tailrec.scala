@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 
 /**
@@ -79,20 +80,20 @@ object Tailrec {
       /*
        * ApplyClo.
        */
-      case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
-        Expression.ApplyCloTail(exp, args, tpe, purity, loc)
+      case Expression.ApplyClo(exp, exps, _, tpe, purity, loc) =>
+        Expression.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc)
 
       /*
        * ApplyDef.
        */
-      case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
+      case Expression.ApplyDef(sym, exps, _, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
           // Case 1: Tail recursive call.
-          Expression.ApplyDefTail(sym, args, tpe, purity, loc)
+          Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc)
         } else {
           // Case 2: Self recursive call.
-          Expression.ApplySelfTail(sym, defn.cparams ++ defn.fparams, args, tpe, purity, loc)
+          Expression.ApplySelfTail(sym, defn.cparams ++ defn.fparams, exps, tpe, purity, loc)
         }
 
       /*
