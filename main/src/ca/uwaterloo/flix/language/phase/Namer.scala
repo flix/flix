@@ -687,11 +687,11 @@ object Namer {
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
         case WeededAst.MatchRule(pat, exp1, exp2) =>
-          val p = visitPattern(pat)
+          val pVal = visitPattern(pat)
           val e1Val = traverseOpt(exp1)(visitExp(_, ns0))
           val e2Val = visitExp(exp2, ns0)
-          mapN(e1Val, e2Val) {
-            case (e1, e2) => NamedAst.MatchRule(p, e1, e2)
+          mapN(pVal, e1Val, e2Val) {
+            case (p, e1, e2) => NamedAst.MatchRule(p, e1, e2)
           }
       }
       mapN(expVal, rulesVal) {
@@ -1016,9 +1016,8 @@ object Namer {
     case WeededAst.Expression.ParYield(frags, exp, loc) =>
       val fragsVal = traverse(frags) {
         case WeededAst.ParYieldFragment(pat, e, l) =>
-          val p = visitPattern(pat)
-          mapN(visitExp(e, ns0)) {
-            case e1 => NamedAst.ParYieldFragment(p, e1, l)
+          mapN(visitPattern(pat), visitExp(e, ns0)) {
+            case (p, e1) => NamedAst.ParYieldFragment(p, e1, l)
           }
       }
 
@@ -1087,20 +1086,36 @@ object Namer {
   /**
     * Names the given pattern `pat0`.
     */
-  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): NamedAst.Pattern = pat0 match {
-    case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
+  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): Validation[NamedAst.Pattern, NameError] = pat0 match {
+    case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc).toSuccess
     case WeededAst.Pattern.Var(ident, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-      NamedAst.Pattern.Var(sym, loc)
+      NamedAst.Pattern.Var(sym, loc).toSuccess
 
-    case WeededAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
+    case WeededAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc).toSuccess
 
     case WeededAst.Pattern.Tag(qname, pat, loc) =>
-      NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
+      mapN(visitPattern(pat)) {
+        case p => NamedAst.Pattern.Tag(qname, p, loc)
+      }
 
-    case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visitPattern, loc)
+    case WeededAst.Pattern.Tuple(elms, loc) =>
+      mapN(traverse(elms)(visitPattern)) {
+        case es => NamedAst.Pattern.Tuple(es, loc)
+      }
 
+    case WeededAst.Pattern.Record(pats, pat, loc) =>
+      val ps = traverse(pats) {
+        case WeededAst.Pattern.Record.RecordFieldPattern(field, tpe, pat, loc) =>
+          mapN(traverseOpt(tpe)(visitType), traverseOpt(pat)(visitPattern)) {
+            case (t, p) => NamedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc)
+          }
+      }
+      val p = traverseOpt(pat)(visitPattern)
+      mapN(ps, p) {
+        case (ps1, p1) => NamedAst.Pattern.Record(ps1, p1, loc)
+      }
   }
 
   /**
@@ -1136,8 +1151,9 @@ object Namer {
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-      val ts = terms.map(visitPattern)
-      NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
+      mapN(traverse(terms)(visitPattern)) {
+        case ts => NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
+      }
 
     case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
       for {
@@ -1349,6 +1365,10 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
+    case WeededAst.Pattern.Record(pats, pat, _) =>
+      // pats.map(_.tpe.map(freeTypeVars)).filterNot(_.isEmpty).flatMap(_.get) ++ <---- include type vars?
+      pats.map(_.pat.map(freeVars)).filterNot(_.isEmpty).flatMap(_.get) ++
+        pat.map(freeVars).getOrElse(Nil)
   }
 
   /**

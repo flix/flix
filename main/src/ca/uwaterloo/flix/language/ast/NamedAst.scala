@@ -253,6 +253,12 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
 
+    case class Record(pats: List[Record.RecordFieldPattern], pat: Option[Pattern], loc: SourceLocation) extends NamedAst.Pattern
+
+    object Record {
+      case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], pat: Option[Pattern], loc: SourceLocation)
+    }
+
   }
 
   sealed trait RelationalChoosePattern

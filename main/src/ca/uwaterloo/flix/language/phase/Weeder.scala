@@ -2406,15 +2406,15 @@ object Weeder {
       case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
         val loc = mkSL(sp1, sp2)
         val fs = traverse(fields) {
-          case ParsedAst.RecordFieldPattern(sp11, field, tpe, pat, sp22) =>
+          case ParsedAst.Pattern.RecordFieldPattern(sp11, field, tpe, pat, sp22) =>
             mapN(visitName(field), traverseOpt(tpe)(visitType), traverseOpt(pat)(visit)) {
               case (_, t, p) =>
                 val f = Name.mkField(field)
                 val patLoc = mkSL(sp11, sp22)
-                WeededAst.RecordFieldPattern(f, t, p, patLoc)
+                WeededAst.Pattern.Record.RecordFieldPattern(f, t, p, patLoc)
             }
         }
-        val r = traverse(rest)(visit)
+        val r = traverseOpt(rest)(visit)
 
         mapN(fs, r) {
           case (f, r1) => WeededAst.Pattern.Record(f, r1, loc)

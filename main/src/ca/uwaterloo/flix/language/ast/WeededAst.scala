@@ -243,11 +243,13 @@ object WeededAst {
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Record(pats: List[RecordFieldPattern], pat: List[Pattern], loc: SourceLocation) extends WeededAst.Pattern
+    case class Record(pats: List[Record.RecordFieldPattern], pat: Option[Pattern], loc: SourceLocation) extends WeededAst.Pattern
+
+    object Record {
+      case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], pat: Option[Pattern], loc: SourceLocation)
+    }
 
   }
-
-  case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], pat: Option[Pattern], loc: SourceLocation)
 
   sealed trait RelationalChoosePattern
 

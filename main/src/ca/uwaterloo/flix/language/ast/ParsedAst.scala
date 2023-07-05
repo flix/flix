@@ -1265,14 +1265,11 @@ object ParsedAst {
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
-    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Record(sp1: SourcePosition, fields: Seq[RecordFieldPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
+
+    case class RecordFieldPattern(sp1: SourcePosition, field: Name.Ident, tpe: Option[Type], pat: Option[Pattern], sp2: SourcePosition)
 
   }
-
-  /**
-    * Record Field Subpattern.
-    */
-  case class RecordFieldPattern(sp1: SourcePosition, field: Name.Ident, tpe: Option[Type], pat: Option[Pattern], sp2: SourcePosition)
 
   /**
     * Relational Choice Patterns.
