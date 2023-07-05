@@ -30,7 +30,7 @@ object UseEnumCompleter extends Completer {
     ctx.prefix match {
       case regex(word) =>
         val enums = getLocalEnumSyms(word)
-        enums.map(enum => getUseEnumCompletion(root.enums(enum), ctx))
+        enums.map(enum => getUseEnumCompletion(root.enums(enum))
       case _ => Nil
     }
   }
@@ -51,7 +51,7 @@ object UseEnumCompleter extends Completer {
     sym.name.startsWith(suffix)
   }
 
-  private def getUseEnumCompletion(decl: TypedAst.Enum, ctx: CompletionContext): UseEnumCompletion = {
+  private def getUseEnumCompletion(decl: TypedAst.Enum): UseEnumCompletion = {
     val sym = decl.sym
     Completion.UseEnumCompletion(s"${sym.toString}")
   }
