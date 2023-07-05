@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.Ast.CallType.{NonTailCall, TailCall}
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
+import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -53,7 +53,7 @@ object LiftedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: LiftedAst.Expression): DocAst.Expression = e match {
+  def print(e: LiftedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
