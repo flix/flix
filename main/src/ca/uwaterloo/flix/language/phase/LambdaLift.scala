@@ -127,14 +127,14 @@ object LambdaLift {
         val es = exps map visitExp
         LiftedAst.Expression.ApplyAtomic(op, es, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
         val e = visitExp(exp)
-        val as = args map visitExp
-        LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
+        val es = exps map visitExp
+        LiftedAst.Expression.ApplyClo(e, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
-        val as = args map visitExp
-        LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
+      case SimplifiedAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
+        val es = exps map visitExp
+        LiftedAst.Expression.ApplyDef(sym, es, Ast.CallType.NonTailCall, tpe, purity, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
