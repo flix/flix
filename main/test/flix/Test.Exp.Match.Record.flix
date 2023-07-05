@@ -15,7 +15,7 @@
  */
 
 mod Test.Exp.Match.Record {
-/*
+
     @test
     def testMatchEmptyRecord01(): Bool = match { } {
         case { } => true
@@ -26,7 +26,6 @@ mod Test.Exp.Match.Record {
         case { } => true
         case _   => false
     }
-*/
 
     @test
     def testMatchEmptyRecord03(): Bool = match { x = 1 } {
