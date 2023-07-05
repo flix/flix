@@ -1489,8 +1489,8 @@ object Weeder {
         case ParsedAst.RecordField(_, ident, exp, _) =>
           val expVal = visitExp(exp, senv)
 
-          mapN(expVal) {
-            case e => ident -> e
+          mapN(expVal, visitName(ident)) {
+            case (e, _) => ident -> e
           }
       }
 
