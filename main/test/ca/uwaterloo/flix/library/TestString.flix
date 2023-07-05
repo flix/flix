@@ -2213,6 +2213,61 @@ def padRight14(): Bool = String.padRight(3, '_', "ab") == "ab_"
 def padRight15(): Bool = String.padRight(3, '_', "abc") == "abc"
 
 /////////////////////////////////////////////////////////////////////////////
+// center                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def center01(): Bool = String.center(0, ' ', "") == ""
+
+@test
+def center02(): Bool = String.center(1, ' ', "") == " "
+
+@test
+def center03(): Bool = String.center(2, ' ', "") == "  "
+
+@test
+def center04(): Bool = String.center(3, ' ', "") == "   "
+
+@test
+def center05(): Bool = String.center(0, ' ', "a") == "a"
+
+@test
+def center06(): Bool = String.center(1, ' ', "a") == "a"
+
+@test
+def center07(): Bool = String.center(2, ' ', "a") == "a "
+
+@test
+def center08(): Bool = String.center(3, ' ', "a") == " a "
+
+@test
+def center09(): Bool = String.center(0, ' ', "ab") == "ab"
+
+@test
+def center10(): Bool = String.center(1, ' ', "ab") == "ab"
+
+@test
+def center11(): Bool = String.center(2, ' ', "ab") == "ab"
+
+@test
+def center12(): Bool = String.center(3, ' ', "ab") == "ab "
+
+@test
+def center13(): Bool = String.center(3, '_', "a") == "_a_"
+
+@test
+def center14(): Bool = String.center(3, '_', "ab") == "ab_"
+
+@test
+def center15(): Bool = String.center(3, '_', "abc") == "abc"
+
+@test
+def center16(): Bool = String.center(7, '_', "abc") == "__abc__"
+
+@test
+def center17(): Bool = String.center(8, '_', "abc") == "__abc___"
+
+/////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
