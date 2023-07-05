@@ -23,14 +23,14 @@ object LiftedAst {
 
   val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
 
-  case class Root(defs: Map[Symbol.DefnSym, LiftedAst.Def],
-                  enums: Map[Symbol.EnumSym, LiftedAst.Enum],
+  case class Root(defs: Map[Symbol.DefnSym, Def],
+                  enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[LiftedAst.FormalParam], fparams: List[LiftedAst.FormalParam], exp: LiftedAst.Expr, tpe: Type, purity: Type, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: Type, purity: Type, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, LiftedAst.Case], tpe: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: Type
@@ -42,55 +42,55 @@ object LiftedAst {
 
   object Expr {
 
-    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends LiftedAst.Expr {
+    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expr {
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class ApplyAtomic(op: AtomicOp, exps: List[LiftedAst.Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp: LiftedAst.Expr, exps: List[LiftedAst.Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[LiftedAst.Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[LiftedAst.FormalParam], actuals: List[LiftedAst.Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: LiftedAst.Expr, exp2: LiftedAst.Expr, exp3: LiftedAst.Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, LiftedAst.Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: LiftedAst.Expr, exp2: LiftedAst.Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: LiftedAst.Expr, exp2: LiftedAst.Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: Expr, exp2: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, exp: LiftedAst.Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: LiftedAst.Expr, rules: List[LiftedAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: LiftedAst.Expr, effUse: Ast.EffectSymUse, rules: List[LiftedAst.HandlerRule], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class TryWith(exp: Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Do(op: Ast.OpSymUse, exps: List[LiftedAst.Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expr
+    case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Resume(exp: LiftedAst.Expr, tpe: Type, loc: SourceLocation) extends LiftedAst.Expr {
+    case class Resume(exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[LiftedAst.JvmMethod], loc: SourceLocation) extends LiftedAst.Expr
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[LiftedAst.FormalParam], clo: LiftedAst.Expr, retTpe: Type, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: Type, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: LiftedAst.Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: List[LiftedAst.FormalParam], exp: LiftedAst.Expr)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
