@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
@@ -1330,7 +1331,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Record: Rule1[ParsedAst.Pattern] = {
       def RecordFieldPattern: Rule1[ParsedAst.RecordFieldPattern] = rule {
-        // TODO: 
+        // TODO: Use TypeAndEffect instead of Type
         SP ~ Names.Field ~ optWS ~ optional(":" ~ optWS ~ Type) ~ optWS ~ optional("=" ~ optWS ~ Pattern) ~ SP ~> ParsedAst.RecordFieldPattern
       }
 

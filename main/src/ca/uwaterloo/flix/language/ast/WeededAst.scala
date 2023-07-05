@@ -16,6 +16,10 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.util.collection.MultiMap
+
 object WeededAst {
 
   val empty: Root = Root(Map.empty, None, MultiMap.empty)

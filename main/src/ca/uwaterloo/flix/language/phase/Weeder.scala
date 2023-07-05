@@ -16,9 +16,21 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
+import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
+import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
+import ca.uwaterloo.flix.language.errors.WeederError._
+import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+
+import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
+import java.math.{BigDecimal, BigInteger}
+import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
+import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
