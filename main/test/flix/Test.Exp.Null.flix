@@ -10,15 +10,15 @@ mod Test.Exp.Null {
     def testNullString01(): String = unchecked_cast(null as String)
 
     @test
-    def testNullArray01(): Unit \ IO = region r {
-        let _ = r;
-        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Array[String, r] \ IO)
+    def testNullArray01(): Unit \ IO = region rc {
+        let _ = rc;
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Array[String, rc] \ IO)
     }
 
     @test
-    def testNullChannel01(): Unit \ IO = region r {
-        let _ = r;
-        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Receiver[String, r] \ IO)
+    def testNullChannel01(): Unit \ IO = region rc {
+        let _ = rc;
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Receiver[String, rc] \ IO)
     }
 
     @test
@@ -37,9 +37,9 @@ mod Test.Exp.Null {
     def testNullRecord05(): {fstName = String, lstName = String} = {fstName = unchecked_cast(null as String), lstName = unchecked_cast(null as String)}
 
     @test
-    def testNullRef01(): Unit \ IO = region r {
-        let _ = r;
-        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Ref[String, r] \ IO)
+    def testNullRef01(): Unit \ IO = region rc {
+        let _ = rc;
+        discard unchecked_cast(unchecked_cast(null as _ \ IO) as Ref[String, rc] \ IO)
     }
 
     @test

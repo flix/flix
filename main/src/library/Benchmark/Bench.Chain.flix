@@ -3,17 +3,17 @@ mod Bench.Chain {
     use Benchmark.Benchmark
     use Benchmark.defBenchmark
 
-    pub def runBenchmarks(): Unit \ IO = region r {
+    pub def runBenchmarks(): Unit \ IO = region rc {
         let s1 = chainSuite(1000);
-        discard Benchmark.runWithBudget(s1 |> List.toArray(r), 250_000_000_000i64);
+        discard Benchmark.runWithBudget(s1 |> List.toArray(rc), 250_000_000_000i64);
         ()
     }
 
     ////////////////////////////////////////////////////////////////////////////
     /// Chain Suite                                                          ///
     ////////////////////////////////////////////////////////////////////////////
-    pub def chainSuite(n: Int32): List[Benchmark] = region r {
-        let l = Array.range(r, 1, n);
+    pub def chainSuite(n: Int32): List[Benchmark] = region rc {
+        let l = Array.range(rc, 1, n);
         // Consing and Array.toList / Array.toChain should be pretty much the same
 
         // List

@@ -56,8 +56,8 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   test("SpawnedThreadError.01") {
      val input =
       """
-        |def main(): Unit \ IO = region r {
-        |    spawn { bug!("Something bad happened") } @ r;
+        |def main(): Unit \ IO = region rc {
+        |    spawn { bug!("Something bad happened") } @ rc;
         |    Thread.sleep(Time.Duration.fromSeconds(1))
         |}
       """.stripMargin
@@ -68,10 +68,10 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   test("SpawnedThreadError.02") {
      val input =
        """
-         |def main(): Unit \ IO = region r {
+         |def main(): Unit \ IO = region rc {
          |    spawn {
-         |        spawn { bug!("Something bad happened")  } @ r
-         |    } @ r;
+         |        spawn { bug!("Something bad happened")  } @ rc
+         |    } @ rc;
          |    Thread.sleep(Time.Duration.fromSeconds(1))
          |}
       """.stripMargin
@@ -82,10 +82,10 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   test("SpawnedThreadError.03") {
      val input =
        """
-         |def main(): Unit \ IO = region r {
+         |def main(): Unit \ IO = region rc {
          |    spawn {
-         |        spawn { String.concat(checked_cast(null), "foo") } @ r
-         |    } @ r;
+         |        spawn { String.concat(checked_cast(null), "foo") } @ rc
+         |    } @ rc;
          |    Thread.sleep(Time.Duration.fromSeconds(1))
          |}
       """.stripMargin
@@ -96,11 +96,11 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   test("SpawnedThreadError.04") {
      val input =
       """
-        |def main(): Unit \ IO = region r {
-        |    let (_tx, rx) = Channel.unbuffered(r);
+        |def main(): Unit \ IO = region rc {
+        |    let (_tx, rx) = Channel.unbuffered(rc);
         |    spawn {
-        |        spawn { String.concat(checked_cast(null), "foo") } @ r
-        |    } @ r;
+        |        spawn { String.concat(checked_cast(null), "foo") } @ rc
+        |    } @ rc;
         |    discard Channel.recv(rx)
         |}
       """.stripMargin

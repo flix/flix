@@ -21,21 +21,21 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toString01(): Bool = region r {
-        let d: MutDeque[Int32, r] = MutDeque.new(r);
+    def toString01(): Bool = region rc {
+        let d: MutDeque[Int32, rc] = MutDeque.new(rc);
         MutDeque.toString(d) == "MutDeque#{}"
     }
 
     @test
-    def toString02(): Bool = region r {
-        let d: MutDeque[Int32, r] = MutDeque.new(r);
+    def toString02(): Bool = region rc {
+        let d: MutDeque[Int32, rc] = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.toString(d) == "MutDeque#{1}"
     }
 
     @test
-    def toString03(): Bool = region r {
-        let d: MutDeque[Int32, r] = MutDeque.new(r);
+    def toString03(): Bool = region rc {
+        let d: MutDeque[Int32, rc] = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -49,13 +49,13 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def size01(): Bool = region r {
-        MutDeque.size(MutDeque.new(r)) == 0
+    def size01(): Bool = region rc {
+        MutDeque.size(MutDeque.new(rc)) == 0
     }
 
     @test
-    def size02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def size02(): Bool = region rc {
+        let d = MutDeque.new(rc);
 
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(1, d);
@@ -66,8 +66,8 @@ mod TestMutDeque {
     }
 
     @test
-    def size03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def size03(): Bool = region rc {
+        let d = MutDeque.new(rc);
 
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(1, d);
@@ -83,8 +83,8 @@ mod TestMutDeque {
     }
 
     @test
-    def size04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def size04(): Bool = region rc {
+        let d = MutDeque.new(rc);
 
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
@@ -104,8 +104,8 @@ mod TestMutDeque {
     }
 
     @test
-    def size05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def size05(): Bool = region rc {
+        let d = MutDeque.new(rc);
 
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
@@ -120,8 +120,8 @@ mod TestMutDeque {
     }
 
     @test
-    def size06(): Bool = region r {
-        let d = MutDeque.new(r);
+    def size06(): Bool = region rc {
+        let d = MutDeque.new(rc);
 
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
@@ -137,16 +137,16 @@ mod TestMutDeque {
     }
 
     @test
-    def size07(): Bool = region r {
-        let d = MutDeque.new(r);
+    def size07(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         discard MutDeque.popBack(d);
         MutDeque.size(d) == 0
     }
 
     @test
-    def size08(): Bool = region r {
-        let d = MutDeque.new(r);
+    def size08(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         discard MutDeque.popFront(d);
         MutDeque.size(d) == 0
@@ -158,35 +158,35 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def isEmpty01(): Bool = region r {
-        MutDeque.isEmpty(MutDeque.new(r))
+    def isEmpty01(): Bool = region rc {
+        MutDeque.isEmpty(MutDeque.new(rc))
     }
 
     @test
-    def isEmpty02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def isEmpty02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         not (MutDeque.isEmpty(d))
     }
 
     @test
-    def isEmpty03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def isEmpty03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         discard MutDeque.popBack(d);
         MutDeque.isEmpty(d)
     }
 
     @test
-    def isEmpty04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def isEmpty04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         not (MutDeque.isEmpty(d))
     }
 
     @test
-    def isEmpty05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def isEmpty05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         discard MutDeque.popFront(d);
         MutDeque.isEmpty(d)
@@ -198,21 +198,21 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def popFront01(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popFront01(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.popFront(d) == None: Option[Int32]
     }
 
     @test
-    def popFront02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popFront02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.popFront(d) == Some(1)
     }
 
     @test
-    def popFront03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popFront03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(3, d);
@@ -223,8 +223,8 @@ mod TestMutDeque {
     }
 
     @test
-    def popFront04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popFront04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -235,8 +235,8 @@ mod TestMutDeque {
     }
 
     @test
-    def popFront05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popFront05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.popFront(d) == Some(1)     and
@@ -245,8 +245,8 @@ mod TestMutDeque {
     }
 
     @test
-    def popFront06(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popFront06(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(2, d);
         MutDeque.popFront(d) == Some(2)     and
@@ -260,21 +260,21 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def popBack01(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popBack01(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.popBack(d) == None: Option[Int32]
     }
 
     @test
-    def popBack02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popBack02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.popBack(d) == Some(1)
     }
 
     @test
-    def popBack03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popBack03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -285,8 +285,8 @@ mod TestMutDeque {
     }
 
     @test
-    def popBack04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popBack04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(3, d);
@@ -297,8 +297,8 @@ mod TestMutDeque {
     }
 
     @test
-    def popBack05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popBack05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(2, d);
         MutDeque.popBack(d) == Some(1)     and
@@ -307,8 +307,8 @@ mod TestMutDeque {
     }
 
     @test
-    def popBack06(): Bool = region r {
-        let d = MutDeque.new(r);
+    def popBack06(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.popBack(d) == Some(2)     and
@@ -322,8 +322,8 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def pushFrontPushBack01(): Bool = region r {
-        let d = MutDeque.new(r);
+    def pushFrontPushBack01(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
@@ -376,44 +376,44 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def peekFront01(): Bool = region r {
-        let d = MutDeque.new(r): MutDeque[Int32, r];
+    def peekFront01(): Bool = region rc {
+        let d = MutDeque.new(rc): MutDeque[Int32, rc];
         MutDeque.peekFront(d) == None
     }
 
     @test
-    def peekFront02(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekFront02(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         MutDeque.peekFront(d) == Some(1)
     }
 
     @test
-    def peekFront03(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekFront03(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         MutDeque.peekFront(d) == Some(1) and
         MutDeque.peekFront(d) == Some(1) and
         MutDeque.peekFront(d) == Some(1)
     }
 
     @test
-    def peekFront04(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekFront04(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
         MutDeque.peekFront(d) == Some(3)
     }
 
     @test
-    def peekFront05(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekFront05(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popBack(d);
         MutDeque.peekFront(d) == Some(2)
     }
 
     @test
-    def peekFront06(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekFront06(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
@@ -426,44 +426,44 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def peekBack01(): Bool = region r {
-        let d = MutDeque.new(r): MutDeque[Int32, r];
+    def peekBack01(): Bool = region rc {
+        let d = MutDeque.new(rc): MutDeque[Int32, rc];
         MutDeque.peekBack(d) == None
     }
 
     @test
-    def peekBack02(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekBack02(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         MutDeque.peekBack(d) == Some(3)
     }
 
     @test
-    def peekBack03(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekBack03(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         MutDeque.peekBack(d) == Some(3) and
         MutDeque.peekBack(d) == Some(3) and
         MutDeque.peekBack(d) == Some(3)
     }
 
     @test
-    def peekBack04(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekBack04(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         MutDeque.peekBack(d) == Some(1)
     }
 
     @test
-    def peekBack05(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekBack05(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popFront(d);
         MutDeque.peekBack(d) == Some(2)
     }
 
     @test
-    def peekBack06(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def peekBack06(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
@@ -476,30 +476,30 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sameElements01(): Bool = region r {
-        let d1 = MutDeque.new(r): MutDeque[Int32, _];
-        let d2 = MutDeque.new(r): MutDeque[Int32, _];
+    def sameElements01(): Bool = region rc {
+        let d1 = MutDeque.new(rc): MutDeque[Int32, _];
+        let d2 = MutDeque.new(rc): MutDeque[Int32, _];
         MutDeque.sameElements(d1, d2)
     }
 
     @test
-    def sameElements02(): Bool = region r {
-        let d1 = MutDeque.new(r);
+    def sameElements02(): Bool = region rc {
+        let d1 = MutDeque.new(rc);
         MutDeque.pushBack(1, d1);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront(1, d2);
 
         MutDeque.sameElements(d1, d2)
     }
 
     @test
-    def sameElements03(): Bool = region r {
-        let d1 = MutDeque.new(r);
+    def sameElements03(): Bool = region rc {
+        let d1 = MutDeque.new(rc);
         MutDeque.pushBack(1, d1);
         MutDeque.pushBack(2, d1);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront(1, d2);
         MutDeque.pushFront(2, d2);
 
@@ -507,13 +507,13 @@ mod TestMutDeque {
     }
 
     @test
-    def sameElements04(): Bool = region r {
-        let d1 = MutDeque.new(r);
+    def sameElements04(): Bool = region rc {
+        let d1 = MutDeque.new(rc);
         MutDeque.pushBack("a", d1);
         MutDeque.pushBack("b", d1);
         MutDeque.pushBack("c", d1);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront("b", d2);
         MutDeque.pushBack("c", d2);
         MutDeque.pushFront("a", d2);
@@ -522,13 +522,13 @@ mod TestMutDeque {
     }
 
     @test
-    def sameElements05(): Bool = region r {
-        let d1 = MutDeque.new(r);
+    def sameElements05(): Bool = region rc {
+        let d1 = MutDeque.new(rc);
         MutDeque.pushBack("a", d1);
         MutDeque.pushBack("b", d1);
         MutDeque.pushBack("c", d1);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront("a", d2);
         MutDeque.pushFront("b", d2);
         MutDeque.pushBack("c", d2);
@@ -542,21 +542,21 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sum01(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.sum(d) == 0
     }
 
     @test
-    def sum02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sum02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.sum(d) == 1
     }
 
     @test
-    def sum03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sum03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -564,8 +564,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sum04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sum04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -574,8 +574,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sum05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sum05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -584,8 +584,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sum06(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sum06(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(-1, d);
         MutDeque.pushBack(-2, d);
         MutDeque.pushFront(-3, d);
@@ -594,8 +594,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sum07(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sum07(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(10, d);
         MutDeque.pushBack(-10, d);
         MutDeque.sum(d) == 0
@@ -607,21 +607,21 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumWith01(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sumWith01(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.sumWith(x -> x + 1, d) == 0
     }
 
     @test
-    def sumWith02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sumWith02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.sumWith(x -> x + 1, d) == 2
     }
 
     @test
-    def sumWith03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sumWith03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -629,8 +629,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sumWith04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sumWith04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -639,8 +639,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sumWith05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sumWith05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -649,8 +649,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sumWith06(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sumWith06(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(-1, d);
         MutDeque.pushBack(-2, d);
         MutDeque.pushFront(-3, d);
@@ -659,8 +659,8 @@ mod TestMutDeque {
     }
 
     @test
-    def sumWith07(): Bool = region r {
-        let d = MutDeque.new(r);
+    def sumWith07(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(10, d);
         MutDeque.pushBack(-10, d);
         MutDeque.sumWith(x -> x + 1, d) == 2
@@ -672,35 +672,35 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldLeft01(): Bool = region r {
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(r)) == 100
+    def foldLeft01(): Bool = region rc {
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(rc)) == 100
     }
 
     @test
-    def foldLeft02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldLeft02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
-    def foldLeft03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldLeft03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
-    def foldLeft04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldLeft04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 196
     }
 
     @test
-    def foldLeft05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldLeft05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
@@ -713,35 +713,35 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = region r {
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(r)) == 100
+    def foldRight01(): Bool = region rc {
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(rc)) == 100
     }
 
     @test
-    def foldRight02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRight02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
-    def foldRight03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRight03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
-    def foldRight04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRight04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 194
     }
 
     @test
-    def foldRight05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRight05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
@@ -754,35 +754,35 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRightWithCont01(): Bool = region r {
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(r)) == 100
+    def foldRightWithCont01(): Bool = region rc {
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(rc)) == 100
     }
 
     @test
-    def foldRightWithCont02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRightWithCont02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
-    def foldRightWithCont03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRightWithCont03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
-    def foldRightWithCont04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRightWithCont04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 194
     }
 
     @test
-    def foldRightWithCont05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldRightWithCont05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
@@ -794,28 +794,28 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldMap01(): Bool = region r {
-        MutDeque.foldMap(x -> 2 * x, MutDeque.new(r)) == 0
+    def foldMap01(): Bool = region rc {
+        MutDeque.foldMap(x -> 2 * x, MutDeque.new(rc)) == 0
     }
 
     @test
-    def foldMap02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldMap02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.foldMap(x -> 2 * x, d) == 2
     }
 
     @test
-    def foldMap03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldMap03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.foldMap(x -> 2 * x, d) == 6
     }
 
     @test
-    def foldMap04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldMap04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
@@ -823,8 +823,8 @@ mod TestMutDeque {
     }
 
     @test
-    def foldMap05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldMap05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushFront("c", d);
         MutDeque.pushFront("b", d);
         MutDeque.pushFront("a", d);
@@ -832,8 +832,8 @@ mod TestMutDeque {
     }
 
     @test
-    def foldMap06(): Bool = region r {
-        let d = MutDeque.new(r);
+    def foldMap06(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -846,28 +846,28 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toList01(): Bool = region r {
-        MutDeque.toList(MutDeque.new(r): MutDeque[Int32, _]) == Nil: List[Int32]
+    def toList01(): Bool = region rc {
+        MutDeque.toList(MutDeque.new(rc): MutDeque[Int32, _]) == Nil: List[Int32]
     }
 
     @test
-    def toList02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toList02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.toList(d) == 1 :: Nil
     }
 
     @test
-    def toList03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toList03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.toList(d) == 1 :: 2 :: Nil
     }
 
     @test
-    def toList04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toList04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -880,42 +880,42 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
-        let d = MutDeque.new(r): MutDeque[Int32, _];
+    def toArray01(): Bool = region rc {
+        let d = MutDeque.new(rc): MutDeque[Int32, _];
 
-        let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, Array#{} @ r)
+        let a = MutDeque.toArray(rc, d);
+        Array.sameElements(a, Array#{} @ rc)
     }
 
     @test
-    def toArray02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toArray02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
 
-        let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, Array#{1} @ r)
+        let a = MutDeque.toArray(rc, d);
+        Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
-    def toArray03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toArray03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
 
-        let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, Array#{1, 2} @ r)
+        let a = MutDeque.toArray(rc, d);
+        Array.sameElements(a, Array#{1, 2} @ rc)
     }
 
     @test
-    def toArray04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toArray04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushFront(3, d);
         MutDeque.pushFront(4, d);
 
-        let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, Array#{4, 3, 1, 2} @ r)
+        let a = MutDeque.toArray(rc, d);
+        Array.sameElements(a, Array#{4, 3, 1, 2} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -923,16 +923,16 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toVector01(): Bool = region r {
-        let d = MutDeque.new(r): MutDeque[Int32, _];
+    def toVector01(): Bool = region rc {
+        let d = MutDeque.new(rc): MutDeque[Int32, _];
 
         let v = MutDeque.toVector(d);
         v == Vector#{}
     }
 
     @test
-    def toVector02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toVector02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
 
         let v = MutDeque.toVector(d);
@@ -940,8 +940,8 @@ mod TestMutDeque {
     }
 
     @test
-    def toVector03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toVector03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
 
@@ -950,8 +950,8 @@ mod TestMutDeque {
     }
 
     @test
-    def toVector04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def toVector04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushFront(3, d);
@@ -967,20 +967,20 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool = region r {
-        MutDeque.new(r): MutDeque[Int32, _] |> MutDeque.join(",") == ""
+    def join01(): Bool = region rc {
+        MutDeque.new(rc): MutDeque[Int32, _] |> MutDeque.join(",") == ""
     }
 
     @test
-    def join02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def join02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.join(",", d) == "1"
     }
 
     @test
-    def join03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def join03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -988,8 +988,8 @@ mod TestMutDeque {
     }
 
     @test
-    def join04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def join04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);
@@ -1002,21 +1002,21 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool = region r {
-        let d = MutDeque.new(r);
+    def joinWith01(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.joinWith(x -> "${x + 1}", ",", d) == ""
     }
 
     @test
-    def joinWith02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def joinWith02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.joinWith(x -> "${x + 1}", ",", d) == "2"
     }
 
     @test
-    def joinWith03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def joinWith03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -1024,8 +1024,8 @@ mod TestMutDeque {
     }
 
     @test
-    def joinWith04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def joinWith04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);
@@ -1038,9 +1038,9 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        let d = MutDeque.new(r): MutDeque[Int32, r];
-        let iter = MutDeque.iterator(r, d);
+    def iterator01(): Bool = region rc {
+        let d = MutDeque.new(rc): MutDeque[Int32, rc];
+        let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
             case None => true
             case _    => false
@@ -1048,9 +1048,9 @@ mod TestMutDeque {
     }
 
     @test
-    def iterator02(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
-        let iter = MutDeque.iterator(r, d);
+    def iterator02(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
             case Some(_) => true
             case _       => false
@@ -1058,12 +1058,12 @@ mod TestMutDeque {
     }
 
     @test
-    def iterator03(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
+    def iterator03(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
-        let iter = MutDeque.iterator(r, d);
+        let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
             case None => true
             case _    => false
@@ -1071,23 +1071,23 @@ mod TestMutDeque {
     }
 
     @test
-    def iterator04(): Bool = region r {
-        let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
-        MutDeque.iterator(r, d) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def iterator04(): Bool = region rc {
+        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        MutDeque.iterator(rc, d) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def iterator05(): Bool = region r {
-        let d = List.range(0, 100) |> List.toMutDeque(r);
-        MutDeque.iterator(r, d) |> Iterator.toList == List.range(0, 100) and
+    def iterator05(): Bool = region rc {
+        let d = List.range(0, 100) |> List.toMutDeque(rc);
+        MutDeque.iterator(rc, d) |> Iterator.toList == List.range(0, 100) and
         MutDeque.toList(d) == List.range(0, 100)
     }
 
     @test
-    def iterator06(): Bool = region r {
-        let d = List.range(0, 100) |> List.toMutDeque(r);
-        let iter = MutDeque.iterator(r, d);
-        MutDeque.forEach(_ -> discard Iterator.next(iter), MutList.range(r, 0, 50) |> MutList.toMutDeque(r));
+    def iterator06(): Bool = region rc {
+        let d = List.range(0, 100) |> List.toMutDeque(rc);
+        let iter = MutDeque.iterator(rc, d);
+        MutDeque.forEach(_ -> discard Iterator.next(iter), MutList.range(rc, 0, 50) |> MutList.toMutDeque(rc));
         iter |> Iterator.toList == List.range(50, 100) and
         MutDeque.toList(d) == List.range(0, 100)
     }
@@ -1097,51 +1097,51 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool = region r {
-        let d = MutDeque.new(r);
-        let l = ref Nil @ r;
+    def forEach01(): Bool = region rc {
+        let d = MutDeque.new(rc);
+        let l = ref Nil @ rc;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == ""
     }
 
     @test
-    def forEach02(): Bool = region r {
-        let d = MutDeque.new(r);
+    def forEach02(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(0, d);
-        let l = ref Nil @ r;
+        let l = ref Nil @ rc;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "F"
     }
 
     @test
-    def forEach03(): Bool = region r {
-        let d = MutDeque.new(r);
+    def forEach03(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
-        let l = ref Nil @ r;
+        let l = ref Nil @ rc;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "T"
     }
 
     @test
-    def forEach04(): Bool = region r {
-        let d = MutDeque.new(r);
+    def forEach04(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
-        let l = ref Nil @ r;
+        let l = ref Nil @ rc;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "FT"
     }
 
     @test
-    def forEach05(): Bool = region r {
-        let d = MutDeque.new(r);
+    def forEach05(): Bool = region rc {
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(0, d);
-        let l = ref Nil @ r;
+        let l = ref Nil @ rc;
         let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.forEach(fn, d);
         List.reverse(deref l) |> List.join("") == "FT"
@@ -1152,26 +1152,26 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEachWithIndex01(): Bool = region r {
-        let d = MutDeque.new(r);
-        let ri = ref 21 @ r;
+    def forEachWithIndex01(): Bool = region rc {
+        let d = MutDeque.new(rc);
+        let ri = ref 21 @ rc;
         MutDeque.forEachWithIndex((i, _) -> ri := i, d);
         21 == deref ri
     }
 
     @test
-    def forEachWithIndex02(): Bool = region r {
-        let d = MutDeque.new(r);
-        let ri = ref 21 @ r;
+    def forEachWithIndex02(): Bool = region rc {
+        let d = MutDeque.new(rc);
+        let ri = ref 21 @ rc;
         MutDeque.pushBack(0, d);
         MutDeque.forEachWithIndex((i, _) -> ri := i, d);
         0 == deref ri
     }
 
     @test
-    def forEachWithIndex03(): Bool = region r {
-        let d = MutDeque.new(r);
-        let ri = ref 21 @ r;
+    def forEachWithIndex03(): Bool = region rc {
+        let d = MutDeque.new(rc);
+        let ri = ref 21 @ rc;
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
         MutDeque.forEachWithIndex((i, _) -> ri := i, d);
@@ -1183,37 +1183,37 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet = region r {
+    def shuffle01(): Bool \ NonDet = region rc {
         let l: List[Int32] = Nil;
-        let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(r, Random.new(), d1);
+        let d1 = List.toMutDeque(rc, l);
+        let d2 = MutDeque.shuffle(rc, Random.new(), d1);
 
         MutDeque.size(d2) == 0 and d2 |> MutDeque.toList |> List.toSet == Set#{}
     }
 
     @test
-    def shuffle02(): Bool \ NonDet = region r {
+    def shuffle02(): Bool \ NonDet = region rc {
         let l = 1 :: Nil;
-        let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(r, Random.new(), d1);
+        let d1 = List.toMutDeque(rc, l);
+        let d2 = MutDeque.shuffle(rc, Random.new(), d1);
 
         MutDeque.size(d2) == 1 and d2 |> MutDeque.toList |> List.toSet == Set#{1}
     }
 
     @test
-    def shuffle03(): Bool \ NonDet = region r {
+    def shuffle03(): Bool \ NonDet = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
-        let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(r, Random.new(), d1);
+        let d1 = List.toMutDeque(rc, l);
+        let d2 = MutDeque.shuffle(rc, Random.new(), d1);
 
         MutDeque.size(d2) == 3 and d2 |> MutDeque.toList |> List.toSet == Set#{1, 2, 3}
     }
 
     @test
-    def shuffle04(): Bool \ NonDet = region r {
+    def shuffle04(): Bool \ NonDet = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let d1 = List.toMutDeque(r, l);
-        let d2 = MutDeque.shuffle(r, Random.new(), d1);
+        let d1 = List.toMutDeque(rc, l);
+        let d2 = MutDeque.shuffle(rc, Random.new(), d1);
 
         MutDeque.size(d2) == 10 and
             d2 |> MutDeque.toList |> List.toSet == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}

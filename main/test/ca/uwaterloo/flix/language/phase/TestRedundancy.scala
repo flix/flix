@@ -47,8 +47,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 = region r {
-           |    let (_, rx) = Channel.buffered(r, 1);
+           |def f(): Int32 = region rc {
+           |    let (_, rx) = Channel.buffered(rc, 1);
            |    select {
            |        case _x <- recv(rx) => _x
            |    }
@@ -258,9 +258,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.Select.02") {
     val input =
       """
-        |def f(): Int32 = region r {
+        |def f(): Int32 = region rc {
         |    let x = 123;
-        |    let (tx, rx) = Channel.buffered(r, 1);
+        |    let (tx, rx) = Channel.buffered(rc, 1);
         |    Channel.send(456, tx);
         |    select {
         |        case y <- recv(rx) => y
@@ -277,10 +277,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit = {
-        |   region r {
-        |       discard Array#{} @ r;
-        |       region r {
-        |           discard Array#{} @ r;
+        |   region rc {
+        |       discard Array#{} @ rc;
+        |       region rc {
+        |           discard Array#{} @ rc;
         |           ()
         |       }
         |   }
@@ -1195,8 +1195,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 = region r {
-           |    let (_, rx) = Channel.unbuffered(r);
+           |def f(): Int32 = region rc {
+           |    let (_, rx) = Channel.unbuffered(rc);
            |    select {
            |        case x <- recv(rx) => 123
            |    }
@@ -1210,8 +1210,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedVarSym.Select.02") {
     val input =
       raw"""
-           |def f(): Int32 = region r {
-           |    let (_, rx) = Channel.unbuffered(r);
+           |def f(): Int32 = region rc {
+           |    let (_, rx) = Channel.unbuffered(rc);
            |    select {
            |        case x <- recv(rx) => x
            |        case x <- recv(rx) => 123
@@ -1698,8 +1698,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |        if (true)
         |            checked_cast(())
         |        else
-        |            region r {
-        |                let _ = $ARRAY_NEW$(r, 8, 8);
+        |            region rc {
+        |                let _ = $ARRAY_NEW$(rc, 8, 8);
         |                ()
         |            };
         |    ()
@@ -1791,8 +1791,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |        if (true)
         |            checked_ecast(())
         |        else
-        |            region r {
-        |                let _ = $ARRAY_NEW$(r, 8, 8);
+        |            region rc {
+        |                let _ = $ARRAY_NEW$(rc, 8, 8);
         |                ()
         |            };
         |    ()

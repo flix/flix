@@ -1,24 +1,24 @@
 @test
 def testChoose01(): Option[Int32] \ NonDet =
-    region r {
+    region rc {
         let rnd = Random.new();
-        let arr = Array.repeat(r, 10, 42i32);
+        let arr = Array.repeat(rc, 10, 42i32);
         Random.choose(rnd, arr)
     }
 
 @test
 def testChoose02(): Option[String] \ NonDet =
-    region r {
+    region rc {
         let rnd = Random.new();
-        let arr = Array.repeat(r, 10, "Hello World");
+        let arr = Array.repeat(rc, 10, "Hello World");
         Random.choose(rnd, arr)
     }
 
 @test
 def testChoose03(): Option[Result[Int32, Int32]] \ NonDet =
-    region r {
+    region rc {
         let rnd = Random.new();
-        let arr = Array#{Ok(123), Ok(456), Err(789)} @ r;
+        let arr = Array#{Ok(123), Ok(456), Err(789)} @ rc;
         Random.choose(rnd, arr)
     }
 

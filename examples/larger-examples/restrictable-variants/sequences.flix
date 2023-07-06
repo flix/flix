@@ -58,8 +58,8 @@ mod Seq {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: Seq[s][a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(l: Seq[s][a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -739,8 +739,8 @@ mod Seq {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], l: Seq[s][a]): MutList[a, r] \ r = region r2 {
-        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(r: Region[r], l: Seq[s][a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(r, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///

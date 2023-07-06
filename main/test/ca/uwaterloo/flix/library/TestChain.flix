@@ -21,18 +21,18 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def collect01(): Bool = region r {
-        Collectable.collect(Iterator.empty(r): Iterator[Int32, r, r]) == Chain.empty()
+    def collect01(): Bool = region rc {
+        Collectable.collect(Iterator.empty(rc): Iterator[Int32, rc, rc]) == Chain.empty()
     }
 
     @test
-    def collect02(): Bool = region r {
-        Collectable.collect(Iterator.singleton(r, 1)) == List.toChain(1 :: Nil)
+    def collect02(): Bool = region rc {
+        Collectable.collect(Iterator.singleton(rc, 1)) == List.toChain(1 :: Nil)
     }
 
     @test
-    def collect03(): Bool = region r {
-        Collectable.collect(Iterator.range(r, 1, 3)) == List.toChain(1 :: 2 :: Nil)
+    def collect03(): Bool = region rc {
+        Collectable.collect(Iterator.range(rc, 1, 3)) == List.toChain(1 :: 2 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1341,15 +1341,15 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Chain.forEach(x -> ri := x, Chain.empty());
         21 == deref ri
     }
 
     @test
-    def forEach02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Chain.forEach(x -> ri := x, List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref ri
     }
@@ -1359,15 +1359,15 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEachWithIndex01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEachWithIndex01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Chain.forEachWithIndex((i, _) -> ri := i, Chain.empty());
         21 == deref ri
     }
 
     @test
-    def forEachWithIndex02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEachWithIndex02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Chain.forEachWithIndex((i, _) -> ri := i, List.toChain(1 :: 2 :: 3 :: Nil));
         2 == deref ri
     }
@@ -1397,23 +1397,23 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutList01(): Bool = region r {
-        Chain.toMutList(r, Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(r, Nil): MutList[Int32, r]
+    def toMutList01(): Bool = region rc {
+        Chain.toMutList(rc, Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(rc, Nil): MutList[Int32, rc]
     }
 
     @test
-    def toMutList02(): Bool = region r {
-        Chain.toMutList(r, Chain.singleton(1)) `MutList.sameElements` List.toMutList(r, 1 :: Nil)
+    def toMutList02(): Bool = region rc {
+        Chain.toMutList(rc, Chain.singleton(1)) `MutList.sameElements` List.toMutList(rc, 1 :: Nil)
     }
 
     @test
-    def toMutList03(): Bool = region r {
-        Chain.toMutList(r, List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(r, 1 :: 2 :: Nil)
+    def toMutList03(): Bool = region rc {
+        Chain.toMutList(rc, List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(rc, 1 :: 2 :: Nil)
     }
 
     @test
-    def toMutList04(): Bool = region r {
-        Chain.toMutList(r, List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(r, 1 :: 2 :: 3 :: Nil)
+    def toMutList04(): Bool = region rc {
+        Chain.toMutList(rc, List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(rc, 1 :: 2 :: 3 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1421,32 +1421,32 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool = region r {
+    def toMutDeque01(): Bool = region rc {
         let c = Chain.empty(): Chain[Int32];
-        let d1 = Chain.toMutDeque(r, c);
+        let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
 
         d1 `MutDeque.sameElements` d2
     }
 
     @test
-    def toMutDeque02(): Bool = region r {
+    def toMutDeque02(): Bool = region rc {
         let c = Chain.singleton(1);
-        let d1 = Chain.toMutDeque(r, c);
+        let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
     }
 
     @test
-    def toMutDeque03(): Bool = region r {
+    def toMutDeque03(): Bool = region rc {
         let c = List.toChain(1 :: 2 :: Nil);
-        let d1 = Chain.toMutDeque(r, c);
+        let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -1454,11 +1454,11 @@ mod TestChain {
     }
 
     @test
-    def toMutDeque04(): Bool = region r {
+    def toMutDeque04(): Bool = region rc {
         let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
-        let d1 = Chain.toMutDeque(r, c);
+        let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront('b', d2);
         MutDeque.pushBack('c', d2);
         MutDeque.pushFront('a', d2);
@@ -1511,27 +1511,27 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
+    def toArray01(): Bool = region rc {
         let c: Chain[Int32] = Chain.empty();
-        Array.sameElements(Chain.toArray(r, c), Array#{} @ r)
+        Array.sameElements(Chain.toArray(rc, c), Array#{} @ rc)
     }
 
     @test
-    def toArray02(): Bool = region r {
-        let a = Chain.toArray(r, Chain.singleton(1));
-        Array.sameElements(a, Array#{1} @ r)
+    def toArray02(): Bool = region rc {
+        let a = Chain.toArray(rc, Chain.singleton(1));
+        Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
-    def toArray03(): Bool = region r {
-        let a = Chain.toArray(r, List.toChain(1 :: 2 :: Nil));
-        Array.sameElements(a, Array#{1, 2} @ r)
+    def toArray03(): Bool = region rc {
+        let a = Chain.toArray(rc, List.toChain(1 :: 2 :: Nil));
+        Array.sameElements(a, Array#{1, 2} @ rc)
     }
 
     @test
-    def toArray04(): Bool = region r {
-        let a = Chain.toArray(r, List.toChain(1 :: 2 :: 3 :: Nil));
-        Array.sameElements(a, Array#{1, 2, 3} @ r)
+    def toArray04(): Bool = region rc {
+        let a = Chain.toArray(rc, List.toChain(1 :: 2 :: 3 :: Nil));
+        Array.sameElements(a, Array#{1, 2, 3} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1563,18 +1563,18 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        Chain.empty() |> Chain.iterator(r) |> Iterator.toList == Nil: List[Int32]
+    def iterator01(): Bool = region rc {
+        Chain.empty() |> Chain.iterator(rc) |> Iterator.toList == Nil: List[Int32]
     }
 
     @test
-    def iterator02(): Bool = region r {
-        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def iterator02(): Bool = region rc {
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.iterator(rc) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def iterator03(): Bool = region r {
-        Chain.range(-100, 100) |> Chain.iterator(r) |> Iterator.toList == List.range(-100, 100)
+    def iterator03(): Bool = region rc {
+        Chain.range(-100, 100) |> Chain.iterator(rc) |> Iterator.toList == List.range(-100, 100)
     }
 
 
@@ -1583,18 +1583,18 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def enumerator01(): Bool = region r {
-        Chain.empty() |> Chain.enumerator(r) |> Iterator.toList == Nil: List[(Int32, Int32)]
+    def enumerator01(): Bool = region rc {
+        Chain.empty() |> Chain.enumerator(rc) |> Iterator.toList == Nil: List[(Int32, Int32)]
     }
 
     @test
-    def enumerator02(): Bool = region r {
-        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.enumerator(r) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+    def enumerator02(): Bool = region rc {
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.enumerator(rc) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
     @test
-    def enumerator03(): Bool = region r {
-        Chain.range(-100, 100) |> Chain.enumerator(r) |> Iterator.toList == List.range(-100, 100) |> List.zipWithIndex
+    def enumerator03(): Bool = region rc {
+        Chain.range(-100, 100) |> Chain.enumerator(rc) |> Iterator.toList == List.range(-100, 100) |> List.zipWithIndex
     }
 
 
@@ -1866,32 +1866,32 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def traverse01(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse01(): Bool = region rc {
+        let st = ref 0 @ rc;
         let c = Chain.empty();
         let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
         ans == Identity.Identity(Chain.empty()) and deref st == 0
     }
 
     @test
-    def traverse02(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse02(): Bool = region rc {
+        let st = ref 0 @ rc;
         let c = Chain.singleton(1);
         let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
         ans == Identity.Identity(Chain.singleton(1)) and deref st == 1
     }
 
     @test
-    def traverse03(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse03(): Bool = region rc {
+        let st = ref 0 @ rc;
         let c = List.toChain(1 :: 2 :: Nil);
         let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
         ans == Identity.Identity(List.toChain(1 :: 2 :: Nil)) and deref st == 2
     }
 
     @test
-    def traverse04(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse04(): Bool = region rc {
+        let st = ref 0 @ rc;
         let c = List.toChain(1 :: 2 :: 3 :: Nil);
         let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
         ans == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and deref st == 3
