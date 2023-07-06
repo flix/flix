@@ -137,177 +137,177 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayUnit01(): Bool = region r {
-        typematch Array#{()} @ r {
-            case _: Array[Unit, r] => true
+    def matchTypeArrayUnit01(): Bool = region rc {
+        typematch Array#{()} @ rc {
+            case _: Array[Unit, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayUnit02(): Bool = region r {
-        typematch Array#{()} @ r {
-            case x: Array[Unit, r] => Array.sameElements(x, Array#{()} @ r)
+    def matchTypeArrayUnit02(): Bool = region rc {
+        typematch Array#{()} @ rc {
+            case x: Array[Unit, rc] => Array.sameElements(x, Array#{()} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayBool01(): Bool = region r {
-        typematch Array#{true} @ r {
-            case _: Array[Bool, r] => true
+    def matchTypeArrayBool01(): Bool = region rc {
+        typematch Array#{true} @ rc {
+            case _: Array[Bool, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayBool02(): Bool = region r {
-        typematch Array#{true} @ r {
-            case x: Array[Bool, r] => Array.sameElements(x, Array#{true} @ r)
+    def matchTypeArrayBool02(): Bool = region rc {
+        typematch Array#{true} @ rc {
+            case x: Array[Bool, rc] => Array.sameElements(x, Array#{true} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayChar01(): Bool = region r {
-        typematch Array#{'a'} @ r {
-            case _: Array[Char, r] => true
+    def matchTypeArrayChar01(): Bool = region rc {
+        typematch Array#{'a'} @ rc {
+            case _: Array[Char, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayChar02(): Bool = region r {
-        typematch Array#{'a'} @ r {
-            case x: Array[Char, r] => Array.sameElements(x, Array#{'a'} @ r)
+    def matchTypeArrayChar02(): Bool = region rc {
+        typematch Array#{'a'} @ rc {
+            case x: Array[Char, rc] => Array.sameElements(x, Array#{'a'} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayFloat32_01(): Bool = region r {
-        typematch Array#{0.123f32} @ r {
-            case _: Array[Float32, r] => true
+    def matchTypeArrayFloat32_01(): Bool = region rc {
+        typematch Array#{0.123f32} @ rc {
+            case _: Array[Float32, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayFloat32_02(): Bool = region r {
-        typematch Array#{0.123f32} @ r {
-            case x: Array[Float32, r] => Array.sameElements(x, Array#{0.123f32} @ r)
+    def matchTypeArrayFloat32_02(): Bool = region rc {
+        typematch Array#{0.123f32} @ rc {
+            case x: Array[Float32, rc] => Array.sameElements(x, Array#{0.123f32} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayFloat64_01(): Bool = region r {
-        typematch Array#{0.123f64} @ r {
-            case _: Array[Float64, r] => true
+    def matchTypeArrayFloat64_01(): Bool = region rc {
+        typematch Array#{0.123f64} @ rc {
+            case _: Array[Float64, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayFloat64_02(): Bool = region r {
-        typematch Array#{0.123f64} @ r {
-            case x: Array[Float64, r] => Array.sameElements(x, Array#{0.123f64} @ r)
+    def matchTypeArrayFloat64_02(): Bool = region rc {
+        typematch Array#{0.123f64} @ rc {
+            case x: Array[Float64, rc] => Array.sameElements(x, Array#{0.123f64} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt8_01(): Bool = region r {
-        typematch Array#{123i8} @ r {
-            case _: Array[Int8, r] => true
+    def matchTypeArrayInt8_01(): Bool = region rc {
+        typematch Array#{123i8} @ rc {
+            case _: Array[Int8, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt8_02(): Bool = region r {
-        typematch Array#{123i8} @ r {
-            case x: Array[Int8, r] => Array.sameElements(x, Array#{123i8} @ r)
+    def matchTypeArrayInt8_02(): Bool = region rc {
+        typematch Array#{123i8} @ rc {
+            case x: Array[Int8, rc] => Array.sameElements(x, Array#{123i8} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt16_01(): Bool = region r {
-        typematch Array#{123i16} @ r {
-            case _: Array[Int16, r] => true
+    def matchTypeArrayInt16_01(): Bool = region rc {
+        typematch Array#{123i16} @ rc {
+            case _: Array[Int16, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt16_02(): Bool = region r {
-        typematch Array#{123i16} @ r {
-            case x: Array[Int16, r] => Array.sameElements(x, Array#{123i16} @ r)
+    def matchTypeArrayInt16_02(): Bool = region rc {
+        typematch Array#{123i16} @ rc {
+            case x: Array[Int16, rc] => Array.sameElements(x, Array#{123i16} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt32_01(): Bool = region r {
-        typematch Array#{123i32} @ r {
-            case _: Array[Int32, r] => true
+    def matchTypeArrayInt32_01(): Bool = region rc {
+        typematch Array#{123i32} @ rc {
+            case _: Array[Int32, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt32_02(): Bool = region r {
-        typematch Array#{123i32} @ r {
-            case x: Array[Int32, r] => Array.sameElements(x, Array#{123i32} @ r)
+    def matchTypeArrayInt32_02(): Bool = region rc {
+        typematch Array#{123i32} @ rc {
+            case x: Array[Int32, rc] => Array.sameElements(x, Array#{123i32} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt64_01(): Bool = region r {
-        typematch Array#{123i64} @ r {
-            case _: Array[Int64, r] => true
+    def matchTypeArrayInt64_01(): Bool = region rc {
+        typematch Array#{123i64} @ rc {
+            case _: Array[Int64, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayInt64_02(): Bool = region r {
-        typematch Array#{123i64} @ r {
-            case x: Array[Int64, r] => Array.sameElements(x, Array#{123i64} @ r)
+    def matchTypeArrayInt64_02(): Bool = region rc {
+        typematch Array#{123i64} @ rc {
+            case x: Array[Int64, rc] => Array.sameElements(x, Array#{123i64} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayBigInt01(): Bool = region r {
-        typematch Array#{123ii} @ r {
-            case _: Array[BigInt, r] => true
+    def matchTypeArrayBigInt01(): Bool = region rc {
+        typematch Array#{123ii} @ rc {
+            case _: Array[BigInt, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayBigInt02(): Bool = region r {
-        typematch Array#{123ii} @ r {
-            case x: Array[BigInt, r] => Array.sameElements(x, Array#{123ii} @ r)
+    def matchTypeArrayBigInt02(): Bool = region rc {
+        typematch Array#{123ii} @ rc {
+            case x: Array[BigInt, rc] => Array.sameElements(x, Array#{123ii} @ rc)
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayString01(): Bool = region r {
-        typematch Array#{"hello"} @ r {
-            case _: Array[String, r] => true
+    def matchTypeArrayString01(): Bool = region rc {
+        typematch Array#{"hello"} @ rc {
+            case _: Array[String, rc] => true
             case _: _ => false
         }
     }
 
     @Test
-    def matchTypeArrayString02(): Bool = region r {
-        typematch Array#{"hello"} @ r {
-            case x: Array[String, r] => Array.sameElements(x, Array#{"hello"} @ r)
+    def matchTypeArrayString02(): Bool = region rc {
+        typematch Array#{"hello"} @ rc {
+            case x: Array[String, rc] => Array.sameElements(x, Array#{"hello"} @ rc)
             case _: _ => false
         }
     }

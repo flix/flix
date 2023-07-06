@@ -1243,8 +1243,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            x
         |        }
         |    };
@@ -1260,8 +1260,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            (123, x)
         |        }
         |    };
@@ -1277,8 +1277,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            _w -> x
         |        }
         |    };
@@ -1294,8 +1294,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            w -> {
         |                discard deref x;
         |                w

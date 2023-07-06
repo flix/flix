@@ -697,27 +697,27 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
-        let a = Nel.toArray(r, Nel.singleton(1));
-        Array.sameElements(a, Array#{1} @ r)
+    def toArray01(): Bool = region rc {
+        let a = Nel.toArray(rc, Nel.singleton(1));
+        Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
-    def toArray02(): Bool = region r {
-        let a = Nel.toArray(r, Nel(1, List#{2}));
-        Array.sameElements(a, Array#{1, 2} @ r)
+    def toArray02(): Bool = region rc {
+        let a = Nel.toArray(rc, Nel(1, List#{2}));
+        Array.sameElements(a, Array#{1, 2} @ rc)
     }
 
     @test
-    def toArray03(): Bool = region r {
-        let a = Nel.toArray(r, Nel(1, List#{2, 3}));
-        Array.sameElements(a, Array#{1, 2, 3} @ r)
+    def toArray03(): Bool = region rc {
+        let a = Nel.toArray(rc, Nel(1, List#{2, 3}));
+        Array.sameElements(a, Array#{1, 2, 3} @ rc)
     }
 
     @test
-    def toArray04(): Bool = region r {
-        let a = Nel.toArray(r, Nel(3, List#{2, 3}));
-        Array.sameElements(a, Array#{3, 2, 3} @ r)
+    def toArray04(): Bool = region rc {
+        let a = Nel.toArray(rc, Nel(3, List#{2, 3}));
+        Array.sameElements(a, Array#{3, 2, 3} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -749,11 +749,11 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool = region r {
+    def toMutDeque01(): Bool = region rc {
         let l = Nel(1, 2 :: Nil);
-        let d1 = Nel.toMutDeque(r, l);
+        let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -761,11 +761,11 @@ mod TestNel {
     }
 
     @test
-    def toMutDeque02(): Bool = region r {
+    def toMutDeque02(): Bool = region rc {
         let l = Nel(3, 1 :: 2 :: Nil);
-        let d1 = Nel.toMutDeque(r, l);
+        let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushFront(3, d2);
@@ -774,11 +774,11 @@ mod TestNel {
     }
 
     @test
-    def toMutDeque03(): Bool = region r {
+    def toMutDeque03(): Bool = region rc {
         let l = Nel('a', 'b' :: 'c' :: Nil);
-        let d1 = Nel.toMutDeque(r, l);
+        let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront('c', d2);
         MutDeque.pushFront('b', d2);
         MutDeque.pushFront('a', d2);
@@ -791,15 +791,15 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nel.forEach(x -> ri := x, Nel.singleton(1));
         1 == deref ri
     }
 
     @test
-    def forEach02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nel.forEach(x -> ri := x, Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
     }
@@ -809,15 +809,15 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEachWithIndex01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEachWithIndex01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nel.forEachWithIndex((i, _) -> ri := i, Nel.singleton(1));
         0 == deref ri
     }
 
     @test
-    def forEachWithIndex02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEachWithIndex02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nel.forEachWithIndex((i, _) -> ri := i, Nel(1, List#{2, 3}));
         2 == deref ri
     }
@@ -1008,13 +1008,13 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        Nel(1, 2 :: 3 :: Nil) |> Nel.iterator(r) |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
+    def iterator01(): Bool = region rc {
+        Nel(1, 2 :: 3 :: Nil) |> Nel.iterator(rc) |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
     }
 
     @test
-    def iterator02(): Bool = region r {
-        Nel(-100, List.range(-99, 100)) |> Nel.iterator(r) |> Iterator.toList == List.range(-100, 100)
+    def iterator02(): Bool = region rc {
+        Nel(-100, List.range(-99, 100)) |> Nel.iterator(rc) |> Iterator.toList == List.range(-100, 100)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1022,13 +1022,13 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def enumerator01(): Bool = region r {
-        Nel(1, 2 :: 3 :: Nil) |> Nel.enumerator(r) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+    def enumerator01(): Bool = region rc {
+        Nel(1, 2 :: 3 :: Nil) |> Nel.enumerator(rc) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
     @test
-    def enumerator02(): Bool = region r {
-        Nel(-100, List.range(-99, 100)) |> Nel.enumerator(r) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
+    def enumerator02(): Bool = region rc {
+        Nel(-100, List.range(-99, 100)) |> Nel.enumerator(rc) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1055,24 +1055,24 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def traverse01(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse01(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = Nel.singleton(1);
         let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.singleton(1)) and deref st == 1
     }
 
     @test
-    def traverse02(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse02(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.singleton(2));
         let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
     }
 
     @test
-    def traverse03(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse03(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
         let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3

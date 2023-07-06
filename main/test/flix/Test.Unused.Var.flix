@@ -55,8 +55,8 @@ mod Test.Unused.Var {
         }
 
     @test
-    def testUnusedVar10(): Int32 = region r {
-        let (tx, rx) = Channel.buffered(r, 1);
+    def testUnusedVar10(): Int32 = region rc {
+        let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(0, tx);
         select {
             case _foo <- recv(rx) => 123
@@ -64,9 +64,9 @@ mod Test.Unused.Var {
     }
 
     @test
-    def testUnusedVar11(): Int32 = region r {
-        let (tx1, rx1) = Channel.buffered(r, 1);
-        let (tx2, rx2) = Channel.buffered(r, 1);
+    def testUnusedVar11(): Int32 = region rc {
+        let (tx1, rx1) = Channel.buffered(rc, 1);
+        let (tx2, rx2) = Channel.buffered(rc, 1);
         Channel.send(0, tx1);
         Channel.send(0, tx2);
         select {

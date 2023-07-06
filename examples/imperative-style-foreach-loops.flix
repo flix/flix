@@ -8,7 +8,7 @@
 /// In this example we explore how this loop
 /// works in Flix.
 ///
-def main(): Unit \ IO = region r {
+def main(): Unit \ IO = region rc {
 
     ///
     /// Construct a simple list.
@@ -43,7 +43,7 @@ def main(): Unit \ IO = region r {
     /// This may be familiar to you if you have
     /// some experience with Rust. ~~~
     ///
-    // foreach ((x, i) <- List.enumerator(r, l))
+    // foreach ((x, i) <- List.enumerator(rc, l))
     //     println("${(x, i)}");
 
     ///
@@ -54,7 +54,7 @@ def main(): Unit \ IO = region r {
     /// expression in the foreach loop must be
     /// of type unit.
     ///
-    let z = ref Nil @ r;
+    let z = ref Nil @ rc;
     foreach (x <- l)
         z := x :: deref z;
 
@@ -65,8 +65,8 @@ def main(): Unit \ IO = region r {
     /// However, foreach-loops can be much easier
     /// to read than `foreach` function calls.
     ///
-    let q = ref Nil @ r;
-    List.iterator(r, l) |>
+    let q = ref Nil @ rc;
+    List.iterator(rc, l) |>
     Iterator.forEach(match x -> q := x :: deref q);
 
     ///
@@ -74,7 +74,7 @@ def main(): Unit \ IO = region r {
     /// foreach-loops.
     ///
     let k = 4 :: 5 :: 6 :: Nil;
-    let w = ref Nil @ r;
+    let w = ref Nil @ rc;
     foreach (a <- l) {
         w := a :: deref w;
         foreach (b <- k)
@@ -86,11 +86,11 @@ def main(): Unit \ IO = region r {
     /// to the functional style expression
     /// below.
     ///
-    let v = ref Nil @ r;
-    List.iterator(r, l) |>
+    let v = ref Nil @ rc;
+    List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         v := a :: deref v;
-        List.iterator(r, k) |>
+        List.iterator(rc, k) |>
         Iterator.forEach(match b -> v := b :: deref v)
     });
 
@@ -104,7 +104,7 @@ def main(): Unit \ IO = region r {
     /// This may be familiar to you if you have
     /// some experience with Scala's for-loops.
     ///
-    let e = ref Nil @ r;
+    let e = ref Nil @ rc;
     foreach (a <- l;
              b <- k)
                 e := (a, b) :: deref e;
@@ -113,10 +113,10 @@ def main(): Unit \ IO = region r {
     /// The equivalent functional style expression
     /// has a bit more visual noise.
     ///
-    let e1 = ref Nil @ r;
-    List.iterator(r, l) |>
+    let e1 = ref Nil @ rc;
+    List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
-        List.iterator(r, k) |>
+        List.iterator(rc, k) |>
         Iterator.forEach(match b -> e1 := (a, b) :: deref e1)
     });
 
@@ -134,7 +134,7 @@ def main(): Unit \ IO = region r {
     /// Again, this is similar to Scala's
     /// for-loops.
     ///
-    let c = ref Nil @ r;
+    let c = ref Nil @ rc;
     foreach (a <- l;
              if a > 1;
              b <- k;
@@ -145,7 +145,7 @@ def main(): Unit \ IO = region r {
     /// Alternatively, we can put a single guard
     /// at the end of the parenthesis.
     ///
-    let d = ref Nil @ r;
+    let d = ref Nil @ rc;
     foreach (a <- l;
              b <- k;
              if a > 1 and b < 6)
@@ -167,10 +167,10 @@ def main(): Unit \ IO = region r {
     /// the same parenthesis, match on the exact pattern
     /// and include guards.
     ///
-    let cf = ref Nil @ r;
-    List.iterator(r, l) |>
+    let cf = ref Nil @ rc;
+    List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
-        List.iterator(r, k) |>
+        List.iterator(rc, k) |>
         Iterator.forEach(match b -> {
             if (a > 1 and b < 6) cf := (a, b) :: deref cf else ()
         })

@@ -49,13 +49,13 @@ mod Fixpoint {
             queryStmt |>
             lowerStmt;
         let model = match d {
-            case Datalog(_) => region r {
-                compiler(d) |> interpret(r) |> toModel
+            case Datalog(_) => region rc {
+                compiler(d) |> interpret(rc) |> toModel
             }
             case Model(_) => d
-            case Join(Model(m), cs) => region r {
-                let db = Map.map(Map.toMutMap(r), m) |> Map.toMutMap(r);
-                compiler(cs) |> interpretWithDatabase(r, db) |> toModel
+            case Join(Model(m), cs) => region rc {
+                let db = Map.map(Map.toMutMap(rc), m) |> Map.toMutMap(rc);
+                compiler(cs) |> interpretWithDatabase(rc, db) |> toModel
             }
             case _ => bug!("Datalog normalization bug")
         };
@@ -498,13 +498,13 @@ mod Fixpoint {
         , p, ts)
 
     def injectIntoX[f: Type -> Type, t: Type, ef: Eff](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
-        region r {
-            let db = MutMap.new(r);
+        region rc {
+            let db = MutMap.new(rc);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r), db);
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(rc), db);
                 MutMap.put!(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
@@ -702,8 +702,8 @@ mod Fixpoint {
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
     def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): Vector[t] \ ef = match d {
-        case Datalog(_, cs) => region r {
-            let pFacts = MutList.new(r);
+        case Datalog(_, cs) => region rc {
+            let pFacts = MutList.new(rc);
             Vector.forEach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), body) =>
                     if (headPred == p and Vector.isEmpty(body))
@@ -714,9 +714,9 @@ mod Fixpoint {
             }, cs);
             pFacts |> MutList.toVector
         }
-        case Model(db) => region r {
+        case Model(db) => region rc {
             use Fixpoint.Ram.toDenotation;
-            let pFacts = MutList.new(r);
+            let pFacts = MutList.new(rc);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
@@ -729,7 +729,7 @@ mod Fixpoint {
                     Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.forEach((tuple, lat) -> {
-                        let it = Iterator.range(r, 0, Vector.length(tuple) + 1);
+                        let it = Iterator.range(rc, 0, Vector.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {
                             if (i < Vector.length(tuple))
                                 Vector.get(i, tuple)

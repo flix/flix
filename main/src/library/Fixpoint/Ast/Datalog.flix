@@ -59,16 +59,16 @@ mod Fixpoint.Ast {
 
     instance ToString[Datalog[v]] {
         pub def toString(cs: Datalog[v]): String = match cs {
-            case Datalog.Datalog(facts, rules) => region r {
-                let sb = StringBuilder.new(r);
+            case Datalog.Datalog(facts, rules) => region rc {
+                let sb = StringBuilder.new(rc);
                 let appendConstraint = f -> StringBuilder.appendLineWith!(ToString.toString, f, sb);
                 foreach (f <- facts) appendConstraint(f);
                 foreach (ru <- rules) appendConstraint(ru);
                 StringBuilder.toString(sb)
             }
-            case Datalog.Model(db) => region r {
+            case Datalog.Model(db) => region rc {
                 use Fixpoint.Ram.toDenotation;
-                let sb = StringBuilder.new(r);
+                let sb = StringBuilder.new(rc);
                 Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Denotation.Relational => Map.forEach((tuple, _) -> {
                         let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
@@ -81,8 +81,8 @@ mod Fixpoint.Ast {
                 }, db);
                 StringBuilder.toString(sb)
             }
-            case Datalog.Join(d1, d2) => region r {
-                let sb = StringBuilder.new(r);
+            case Datalog.Join(d1, d2) => region rc {
+                let sb = StringBuilder.new(rc);
                 StringBuilder.appendLine!(ToString.toString(d1), sb);
                 StringBuilder.appendLine!(ToString.toString(d2), sb);
                 StringBuilder.toString(sb)

@@ -53,17 +53,17 @@ mod Test.Exp.Lazy {
         lazy "string"
 
     @test
-    def testArrayOfIntLazy01(): Unit = region r {
+    def testArrayOfIntLazy01(): Unit = region rc {
         discard {
-            let array = Array#{1, 2} @ r;
+            let array = Array#{1, 2} @ rc;
             lazy array
         }
     }
 
     @test
-    def testArrayOfStringLazy01(): Unit = region r {
+    def testArrayOfStringLazy01(): Unit = region rc {
         discard {
-            let array = Array#{"str", "str2"} @ r;
+            let array = Array#{"str", "str2"} @ rc;
             lazy array
         }
     }
