@@ -117,8 +117,8 @@ mod Test.Exp.Discard {
 
 
     @test
-    def testBuilderDiscard01(): Bool = region rh {
-        let counter = ref 0 @ rh;
+    def testBuilderDiscard01(): Bool = region rc {
+        let counter = ref 0 @ rc;
         def increaseBy(i, c) = {
             c := deref c + i;
             c
