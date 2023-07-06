@@ -198,6 +198,14 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = kind)
+    case Completion.UseEnumCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Enum
+      )
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.high(name),
@@ -404,6 +412,15 @@ object Completion {
     * @param kind the kind of completion.
     */
   case class UseCompletion(name: String, kind: CompletionItemKind) extends Completion
+
+
+  /**
+   * Represents a Use Enum completion.
+   *
+   * @param name the name of the use enum completion.
+   */
+  case class UseEnumCompletion(name: String) extends Completion
+
 
   /**
     * Represents a FromErrors completion
