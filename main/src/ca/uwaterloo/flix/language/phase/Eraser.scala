@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, MonoType, MonoTypedAst}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, MonoTypedAst}
 import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
 
 import scala.collection.mutable

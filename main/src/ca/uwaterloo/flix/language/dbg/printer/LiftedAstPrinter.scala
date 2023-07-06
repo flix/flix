@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expression._
+import ca.uwaterloo.flix.language.ast.Ast.CallType.{NonTailCall, TailCall}
+import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -52,14 +53,14 @@ object LiftedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: LiftedAst.Expression): DocAst.Expression = e match {
+  def print(e: LiftedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
-    case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
-    case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
-    case ApplyCloTail(exp, args, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), args.map(print))
-    case ApplyDefTail(sym, args, _, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
+    case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
+    case ApplyClo(exp, exps, NonTailCall, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
+    case ApplyClo(exp, exps, TailCall, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
+    case ApplyDef(sym, args, NonTailCall, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
+    case ApplyDef(sym, args, TailCall, _, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
     case ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))

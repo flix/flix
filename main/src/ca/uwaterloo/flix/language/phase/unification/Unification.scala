@@ -185,11 +185,17 @@ object Unification {
           }
 
         case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
+          Err(TypeError.MismatchedBools(baseType1, baseType2, type1, type2, renv, loc))
+
+        case Result.Err(UnificationError.MismatchedEffects(baseType1, baseType2)) =>
           (tpe1.typeConstructor, tpe2.typeConstructor) match {
-            case (Some(TypeConstructor.Arrow(_)), _) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
-            case (_, Some(TypeConstructor.Arrow(_))) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
-            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, type1, type2, renv, loc))
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, renv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, renv, loc))
+            case _ => Err(TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, renv, loc))
           }
+
+        case Result.Err(UnificationError.MismatchedCaseSets(baseType1, baseType2)) =>
+          Err(TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.MismatchedArity(_, _)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, renv, loc))
@@ -265,7 +271,7 @@ object Unification {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
         TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
 
-      case TypeError.MismatchedArrowBools(_, _, fullType1, fullType2, renv, loc) =>
+      case TypeError.MismatchedArrowEffects(_, _, fullType1, fullType2, renv, loc) =>
         TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
 
       case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
@@ -279,7 +285,8 @@ object Unification {
         case (x :: xs, y :: ys, l :: ls) =>
           for {
             _ <- unifyTypeM(x, y, l).transformError(handler(i))
-          } yield visit(i + 1, xs, ys, ls)
+            _ <- visit(i + 1, xs, ys, ls)
+          } yield ()
         case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
         case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
         case _ => throw InternalCompilerException("Mismatched lists.", loc)

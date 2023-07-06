@@ -89,62 +89,56 @@ object LateTreeShaker {
   /**
     * Returns the function symbols reachable from the given expression `e0`.
     */
-  private def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
-    case Expression.Cst(_, _, _) =>
+  private def visitExp(e0: Expr): Set[Symbol.DefnSym] = e0 match {
+    case Expr.Cst(_, _, _) =>
       Set.empty
 
-    case Expression.Var(_, _, _) =>
+    case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expression.ApplyAtomic(op, exps, _, _, _) =>
+    case Expr.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case Expression.ApplyClo(exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
+    case Expr.ApplyClo(exp, exps, _, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps)
 
-    case Expression.ApplyDef(sym, args, _, _, _) =>
+    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+      Set(sym) ++ visitExps(exps)
+
+    case Expr.ApplySelfTail(sym, _, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
-    case Expression.ApplyCloTail(exp, args, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
-
-    case Expression.ApplyDefTail(sym, args, _, _, _) =>
-      Set(sym) ++ visitExps(args)
-
-    case Expression.ApplySelfTail(sym, _, args, _, _, _) =>
-      Set(sym) ++ visitExps(args)
-
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Branch(exp, branches, _, _, _) =>
+    case Expr.Branch(exp, branches, _, _, _) =>
       visitExp(exp) ++ visitExps(branches.values.toList)
 
-    case Expression.JumpTo(_, _, _, _) =>
+    case Expr.JumpTo(_, _, _, _) =>
       Set.empty
 
-    case Expression.Let(_, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Scope(_, exp, _, _, _) =>
+    case Expr.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _) =>
+    case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.TryWith(exp, _, rules, _, _, _) =>
+    case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.Do(_, exps, _, _, _) =>
+    case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expression.Resume(exp, _, _) =>
+    case Expr.Resume(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, methods, _) =>
+    case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
   }
@@ -160,6 +154,6 @@ object LateTreeShaker {
   /**
     * Returns the function symbols reachable from `es`.
     */
-  private def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
+  private def visitExps(es: List[Expr]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
 
 }
