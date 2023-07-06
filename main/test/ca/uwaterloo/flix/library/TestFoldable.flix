@@ -355,18 +355,18 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, Nil)), Array#{1} @ r)
+    def toArray01(): Bool = region rc {
+        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc)
     }
 
     @test
-    def toArray02(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ r)
+    def toArray02(): Bool = region rc {
+        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc)
     }
 
     @test
-    def toArray03(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ r)
+    def toArray03(): Bool = region rc {
+        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -390,33 +390,33 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool = region r {
+    def toMutDeque01(): Bool = region rc {
         let l = Nil: List[Unit];
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
 
     @test
-    def toMutDeque02(): Bool = region r {
+    def toMutDeque02(): Bool = region rc {
         let l = 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
 
     @test
-    def toMutDeque03(): Bool = region r {
+    def toMutDeque03(): Bool = region rc {
         let l = 3 :: 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
 
     @test
-    def toMutDeque04(): Bool = region r {
+    def toMutDeque04(): Bool = region rc {
         let l = 'a' :: 'b' :: 'c' :: Nil;
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
@@ -426,33 +426,33 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutSet01(): Bool = region r {
+    def toMutSet01(): Bool = region rc {
         let s1 = Set#{}: Set[Int32];
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
 
     @test
-    def toMutSet02(): Bool = region r {
+    def toMutSet02(): Bool = region rc {
         let s1 = Set#{1, 2};
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
 
     @test
-    def toMutSet03(): Bool = region r {
+    def toMutSet03(): Bool = region rc {
         let s1 = Set#{1, 2, 3};
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
 
     @test
-    def toMutSet04(): Bool = region r {
+    def toMutSet04(): Bool = region rc {
         let s1 = Set#{'a', 'b', 'c'};
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
@@ -508,33 +508,33 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutMap01(): Bool = region r {
+    def toMutMap01(): Bool = region rc {
         let l = Nil: List[(Unit, Unit)];
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }
 
     @test
-    def toMutMap02(): Bool = region r {
+    def toMutMap02(): Bool = region rc {
         let l = (1, 2) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }
 
     @test
-    def toMutMap03(): Bool = region r {
+    def toMutMap03(): Bool = region rc {
         let l = (1, 4) :: (2, 3) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }
 
     @test
-    def toMutMap04(): Bool = region r {
+    def toMutMap04(): Bool = region rc {
         let l = (1, 'a') :: (2, 'b') :: (3, 'c') :: Nil;
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }

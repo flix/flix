@@ -250,18 +250,18 @@ def lineSeparator02(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def toArray01(): Bool = region r {
-    Array.sameElements(String.toArray(r, ""), Array#{} @ r)
+def toArray01(): Bool = region rc {
+    Array.sameElements(String.toArray(rc, ""), Array#{} @ rc)
 }
 
 @test
-def toArray02(): Bool = region r {
-    Array.sameElements(String.toArray(r, "ABC"), Array#{'A', 'B', 'C'} @ r)
+def toArray02(): Bool = region rc {
+    Array.sameElements(String.toArray(rc, "ABC"), Array#{'A', 'B', 'C'} @ rc)
 }
 
 @test
-def toArray03(): Bool = region r {
-    Array.sameElements(String.toArray(r, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ r)
+def toArray03(): Bool = region rc {
+    Array.sameElements(String.toArray(rc, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ rc)
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1658,8 +1658,8 @@ def toChar(step: Int32): Char = match step {
 }
 
 @test
-def unfoldWithIter01(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter01(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (true)
             None
@@ -1672,8 +1672,8 @@ def unfoldWithIter01(): Bool = region r {
 }
 
 @test
-def unfoldWithIter02(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter02(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 0)
             None
@@ -1686,8 +1686,8 @@ def unfoldWithIter02(): Bool = region r {
 }
 
 @test
-def unfoldWithIter03(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter03(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 1)
             None
@@ -1700,8 +1700,8 @@ def unfoldWithIter03(): Bool = region r {
 }
 
 @test
-def unfoldWithIter04(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter04(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1714,8 +1714,8 @@ def unfoldWithIter04(): Bool = region r {
 }
 
 @test
-def unfoldWithIter05(): Bool = region r {
-    let x = ref 5 @ r;
+def unfoldWithIter05(): Bool = region rc {
+    let x = ref 5 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1728,8 +1728,8 @@ def unfoldWithIter05(): Bool = region r {
 }
 
 @test
-def unfoldWithIter06(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter06(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1783,8 +1783,8 @@ def unfoldString08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldStringWithIter01(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter01(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (true)
             None
@@ -1799,8 +1799,8 @@ def unfoldStringWithIter01(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter02(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter02(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 0)
             None
@@ -1815,8 +1815,8 @@ def unfoldStringWithIter02(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter03(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter03(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 1)
             None
@@ -1831,8 +1831,8 @@ def unfoldStringWithIter03(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter04(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter04(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1847,8 +1847,8 @@ def unfoldStringWithIter04(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter05(): Bool = region r {
-    let x = ref 5 @ r;
+def unfoldStringWithIter05(): Bool = region rc {
+    let x = ref 5 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1863,8 +1863,8 @@ def unfoldStringWithIter05(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter06(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter06(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -3627,13 +3627,13 @@ def escapeInterpolation04(): String = "$"
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        String.iterator(r, "") |> Iterator.toList == Nil
+    def iterator01(): Bool = region rc {
+        String.iterator(rc, "") |> Iterator.toList == Nil
     }
 
     @test
-    def iterator02(): Bool = region r {
-        String.iterator(r, "abc") |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
+    def iterator02(): Bool = region rc {
+        String.iterator(rc, "abc") |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
     }
 
 
@@ -3642,13 +3642,13 @@ def escapeInterpolation04(): String = "$"
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def enumerator01(): Bool = region r {
-        String.enumerator(r, "") |> Iterator.toList == Nil
+    def enumerator01(): Bool = region rc {
+        String.enumerator(rc, "") |> Iterator.toList == Nil
     }
 
     @test
-    def enumerator02(): Bool = region r {
-        String.enumerator(r, "abc") |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
+    def enumerator02(): Bool = region rc {
+        String.enumerator(rc, "abc") |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
     }
 
 }

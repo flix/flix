@@ -51,14 +51,14 @@ mod Test.Exp.ParYield {
         (par (a <- par (a <- par (a <- 1) yield a) yield a) yield a) == 1
 
     @test
-    def testParYield13(): Int32 = region r {
-        let a = ref 10 @ r;
+    def testParYield13(): Int32 = region rc {
+        let a = ref 10 @ rc;
         par (x <- 1) yield x + deref a
     }
 
     @test
-    def testParYield14(): Bool = region r {
-        let a = ref 10 @ r;
+    def testParYield14(): Bool = region rc {
+        let a = ref 10 @ rc;
         (par (x <- 1) yield x + deref a) == 11
     }
 

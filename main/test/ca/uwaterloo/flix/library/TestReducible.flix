@@ -49,8 +49,8 @@ mod TestReducible {
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
     @test
-    def reduceLeft08(): Bool = region r {
-        let l = ref Nil @ r;
+    def reduceLeft08(): Bool = region rc {
+        let l = ref Nil @ rc;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (acc, a) -> {
             if (acc == 0)
@@ -96,8 +96,8 @@ mod TestReducible {
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
 
     @test
-    def reduceRight08(): Bool = region r {
-        let l = ref Nil @ r;
+    def reduceRight08(): Bool = region rc {
+        let l = ref Nil @ rc;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (a, acc) -> {
             if (acc == 0)
@@ -173,8 +173,8 @@ mod TestReducible {
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
 
     @test
-    def foldLeft07(): Bool = region r {
-        let l = ref Nil @ r;
+    def foldLeft07(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
     }
@@ -208,8 +208,8 @@ mod TestReducible {
         Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
-    def foldRight07(): Bool = region r {
-        let l = ref Nil @ r;
+    def foldRight07(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
     }
@@ -243,8 +243,8 @@ mod TestReducible {
         Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
-    def foldRightWithCont07(): Bool = region r {
-        let l = ref Nil @ r;
+    def foldRightWithCont07(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
     }
@@ -507,15 +507,15 @@ mod TestReducible {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Reducible.forEach(x -> ri := x, Nel.Nel(1, Nil));
         1 == deref ri
     }
 
     @test
-    def forEach02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Reducible.forEach(x -> ri := x, Nel.Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
     }
@@ -549,8 +549,8 @@ mod TestReducible {
         Reducible.findLeft(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     @test
-    def findLeft07(): Bool = region r {
-        let l = ref Nil @ r;
+    def findLeft07(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
     }
@@ -584,8 +584,8 @@ mod TestReducible {
         Reducible.findRight(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     @test
-    def findRight07(): Bool = region r {
-        let l = ref Nil @ r;
+    def findRight07(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
     }
@@ -809,18 +809,18 @@ mod TestReducible {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
-        Array.sameElements(Reducible.toArray(r, Nel.Nel(1, Nil)), Array#{1} @ r)
+    def toArray01(): Bool = region rc {
+        Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc)
     }
 
     @test
-    def toArray02(): Bool = region r {
-        Array.sameElements(Reducible.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ r)
+    def toArray02(): Bool = region rc {
+        Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc)
     }
 
     @test
-    def toArray03(): Bool = region r {
-        Array.sameElements(Reducible.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ r)
+    def toArray03(): Bool = region rc {
+        Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////

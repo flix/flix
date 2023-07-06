@@ -33,8 +33,8 @@ class TestRegions extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let m = ref None @ Static;
-        |    region r {
-        |        let x = ref 123 @ r;
+        |    region rc {
+        |        let x = ref 123 @ rc;
         |        m := Some(x);
         |        ()
         |    }
@@ -53,8 +53,8 @@ class TestRegions extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let m = ref None @ Static;
-        |    region r {
-        |        let x = ref 123 @ r;
+        |    region rc {
+        |        let x = ref 123 @ rc;
         |        m := Some(_ -> x);
         |        ()
         |    }
