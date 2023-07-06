@@ -38,9 +38,9 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
-    pub def testChooseStar3(): Bool = region r {
+    pub def testChooseStar3(): Bool = region rc {
         // P2: check the lower bound by using result in a choose
-        let star = choose* Expr.Cst(ref 2 @ r) {
+        let star = choose* Expr.Cst(ref 2 @ rc) {
             case Expr.Cst(_) => Expr.Var("tmp")
             case Expr.Not(_) => Expr.Var("tmp")
             case Expr.Xor(x, _) => Expr.Not(Some(x))

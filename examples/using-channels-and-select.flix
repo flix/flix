@@ -20,13 +20,13 @@ def hiss(tx: Sender[String, r], n: Int32): Unit \ IO =
     }
 
 /// Start the animal farm...
-def main(): Unit \ IO = region r {
-    let (tx1, rx1) = Channel.buffered(r, 10);
-    let (tx2, rx2) = Channel.buffered(r, 10);
-    let (tx3, rx3) = Channel.buffered(r, 10);
-    spawn mooo(tx1, 0) @ r;
-    spawn meow(tx2, 3) @ r;
-    spawn hiss(tx3, 7) @ r;
+def main(): Unit \ IO = region rc {
+    let (tx1, rx1) = Channel.buffered(rc, 10);
+    let (tx2, rx2) = Channel.buffered(rc, 10);
+    let (tx3, rx3) = Channel.buffered(rc, 10);
+    spawn mooo(tx1, 0) @ rc;
+    spawn meow(tx2, 3) @ rc;
+    spawn hiss(tx3, 7) @ rc;
     select {
         case m <- recv(rx1) => m |> println
         case m <- recv(rx2) => m |> println

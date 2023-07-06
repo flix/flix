@@ -428,8 +428,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def mapFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(x -> { l := "a" :: deref l; x }) |>
         DelayList.map(x -> { l := "b" :: deref l; x });
@@ -437,8 +437,8 @@ mod TestDelayList {
     }
 
     @test
-    def mapFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def mapFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(x -> unchecked_cast({ l := "a" :: deref l; x } as _ \ {})) |>
         DelayList.map(x -> unchecked_cast({ l := "b" :: deref l; x } as _ \ {})) |>
@@ -546,8 +546,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterFusion01(): Bool= region r {
-        let l = ref Nil @ r;
+    def filterFusion01(): Bool= region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList     |>
         DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
         DelayList.filter(_ -> { l := "b" :: deref l; true });
@@ -555,8 +555,8 @@ mod TestDelayList {
     }
 
     @test
-    def filterFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def filterFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
         DelayList.filter(_x -> unchecked_cast({ l := "a" :: deref l; true } as _ \ {})) |>
         DelayList.filter(_x -> unchecked_cast({ l := "b" :: deref l; true } as _ \ {})) |>
@@ -569,8 +569,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFilterFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def mapFilterFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(   x -> { l := "a" :: deref l; x }) |>
         DelayList.filter(_ -> { l := "b" :: deref l; true });
@@ -578,8 +578,8 @@ mod TestDelayList {
     }
 
     @test
-    def mapFilterFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def mapFilterFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(   x -> unchecked_cast({ l := "a" :: deref l; x }    as _ \ {})) |>
         DelayList.filter(_ -> unchecked_cast({ l := "b" :: deref l; true } as _ \ {})) |>
@@ -592,8 +592,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterThenMapFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def filterThenMapFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
         DelayList.map(   x -> { l := "b" :: deref l; x    });
@@ -601,8 +601,8 @@ mod TestDelayList {
     }
 
     @test
-    def filterThenMapFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def filterThenMapFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> unchecked_cast({ l := "a" :: deref l; true } as _ \ {})) |>
         DelayList.map(   x -> unchecked_cast({ l := "b" :: deref l; x    } as _ \ {})) |>
@@ -729,45 +729,45 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool = region r {
+    def forEach01(): Bool = region rc {
         let l = ENil;
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
     }
 
     @test
-    def forEach02(): Bool = region r {
+    def forEach02(): Bool = region rc {
         let l = LList(lazy ENil);
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
     }
 
     @test
-    def forEach03(): Bool = region r {
+    def forEach03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
     }
 
     @test
-    def forEach04(): Bool = region r {
+    def forEach04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
     }
 
     @test
-    def forEach05(): Bool = region r {
+    def forEach05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
@@ -778,45 +778,45 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEachWithIndex01(): Bool = region r {
+    def forEachWithIndex01(): Bool = region rc {
         let l = ENil;
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
     }
 
     @test
-    def forEachWithIndex02(): Bool = region r {
+    def forEachWithIndex02(): Bool = region rc {
         let l = LList(lazy ENil);
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
     }
 
     @test
-    def forEachWithIndex03(): Bool = region r {
+    def forEachWithIndex03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
     }
 
     @test
-    def forEachWithIndex04(): Bool = region r {
+    def forEachWithIndex04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
     }
 
     @test
-    def forEachWithIndex05(): Bool = region r {
+    def forEachWithIndex05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = StringBuilder.new(r);
+        let sb = StringBuilder.new(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "FT"
@@ -827,28 +827,28 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
-    	DelayList.toArray(r, ENil: DelayList[Unit])`Array.sameElements` Array#{} @ r
+    def toArray01(): Bool = region rc {
+    	DelayList.toArray(rc, ENil: DelayList[Unit])`Array.sameElements` Array#{} @ rc
     }
 
     @test
-    def toArray02(): Bool = region r {
-    	DelayList.toArray(r, LList(lazy ENil): DelayList[Unit])`Array.sameElements` Array#{} @ r
+    def toArray02(): Bool = region rc {
+    	DelayList.toArray(rc, LList(lazy ENil): DelayList[Unit])`Array.sameElements` Array#{} @ rc
     }
 
     @test
-    def toArray03(): Bool = region r {
-        DelayList.toArray(r, DelayList.range(-100, 1000))`Array.sameElements` Array.range(r, -100, 1000)
+    def toArray03(): Bool = region rc {
+        DelayList.toArray(rc, DelayList.range(-100, 1000))`Array.sameElements` Array.range(rc, -100, 1000)
     }
 
     @test
-    def toArray04(): Bool = region r {
-    	DelayList.toArray(r, LCons(1, lazy ENil))`Array.sameElements` Array#{1} @ r
+    def toArray04(): Bool = region rc {
+    	DelayList.toArray(rc, LCons(1, lazy ENil))`Array.sameElements` Array#{1} @ rc
     }
 
     @test
-    def toArray05(): Bool = region r {
-    	DelayList.toArray(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))))`Array.sameElements` Array#{1, 2, 3} @ r
+    def toArray05(): Bool = region rc {
+    	DelayList.toArray(rc, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))))`Array.sameElements` Array#{1, 2, 3} @ rc
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -901,33 +901,33 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool = region r {
+    def toMutDeque01(): Bool = region rc {
     	let l = ENil: DelayList[Int32];
-        let d1 = DelayList.toMutDeque(r, l);
+        let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
 
         d1 `MutDeque.sameElements` d2
 
     }
 
     @test
-    def toMutDeque02(): Bool = region r {
+    def toMutDeque02(): Bool = region rc {
     	let l = LList(lazy ENil): DelayList[Int32];
-        let d1 = DelayList.toMutDeque(r, l);
+        let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
 
         d1 `MutDeque.sameElements` d2
 
     }
 
     @test
-    def toMutDeque03(): Bool = region r {
+    def toMutDeque03(): Bool = region rc {
     	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
-        let d1 = DelayList.toMutDeque(r, l);
+        let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushBack(3, d2);
@@ -1323,23 +1323,23 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIter01(): Bool = region r {
-    	DelayList.iterator(r, ENil: DelayList[Unit]) |> Iterator.toList == Nil
+    def toIter01(): Bool = region rc {
+    	DelayList.iterator(rc, ENil: DelayList[Unit]) |> Iterator.toList == Nil
     }
 
     @test
-    def toIter02(): Bool = region r {
-    	DelayList.iterator(r, LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
+    def toIter02(): Bool = region rc {
+    	DelayList.iterator(rc, LList(lazy ENil): DelayList[Unit]) |> Iterator.toList == Nil
     }
 
     @test
-    def toIter06(): Bool = region r {
-    	DelayList.iterator(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def toIter06(): Bool = region rc {
+    	DelayList.iterator(rc, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
-    def toIter09(): Bool = region r {
-    	DelayList.range(-100, 100) |> DelayList.iterator(r) |> Iterator.toList == List.range(-100, 100)
+    def toIter09(): Bool = region rc {
+    	DelayList.range(-100, 100) |> DelayList.iterator(rc) |> Iterator.toList == List.range(-100, 100)
     }
 
 
@@ -1484,8 +1484,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def zipWithFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil))));
@@ -1493,8 +1493,8 @@ mod TestDelayList {
     }
 
     @test
-    def zipWithFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def zipWithFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.zipWith((x, y) -> unchecked_cast({ l := "a" :: deref l; (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.zipWith((x, y) -> unchecked_cast({ l := "b" :: deref l; (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
@@ -1790,8 +1790,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def flatMapFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) }) |>
         DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) });
@@ -1799,8 +1799,8 @@ mod TestDelayList {
     }
 
     @test
-    def flatMapFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def flatMapFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> unchecked_cast({ l := "a" :: deref l; ECons(i, ENil) } as _ \ {})) |>
         DelayList.flatMap(i -> unchecked_cast({ l := "b" :: deref l; ECons(i, ENil) } as _ \ {})) |>
@@ -2048,8 +2048,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndexFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def mapWithIndexFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((_, x) -> { l := "a" :: deref l; x }) |>
         DelayList.mapWithIndex((_, x) -> { l := "b" :: deref l; x }) |>
@@ -2058,8 +2058,8 @@ mod TestDelayList {
     }
 
     @test
-    def mapWithIndexFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def mapWithIndexFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((_, x) -> unchecked_cast({ l := "a" :: deref l; x } as _ \ {})) |>
         DelayList.mapWithIndex((_, x) -> unchecked_cast({ l := "b" :: deref l; x } as _ \ {})) |>
@@ -2281,8 +2281,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhileFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def takeWhileFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
         DelayList.takeWhile(i -> { l := "b" :: deref l; i < 4 });
@@ -2290,8 +2290,8 @@ mod TestDelayList {
     }
 
     @test
-    def takeWhileFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def takeWhileFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 4 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 4 } as _ \ {})) |>
@@ -2300,8 +2300,8 @@ mod TestDelayList {
     }
 
     @test
-    def takeWhileFusion03(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def takeWhileFusion03(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 2 } as _ \ {})) |>
@@ -2310,8 +2310,8 @@ mod TestDelayList {
     }
 
     @test
-    def takeWhileFusion04(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def takeWhileFusion04(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
@@ -2435,8 +2435,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def dropWhileFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
         DelayList.dropWhile(i -> { l := "b" :: deref l; i < 4 });
@@ -2444,8 +2444,8 @@ mod TestDelayList {
     }
 
     @test
-    def dropWhileFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def dropWhileFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 4 } as _ \ {})) |>
@@ -2454,8 +2454,8 @@ mod TestDelayList {
     }
 
     @test
-    def dropWhileFusion03(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def dropWhileFusion03(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 1 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
@@ -2464,8 +2464,8 @@ mod TestDelayList {
     }
 
     @test
-    def dropWhileFusion04(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def dropWhileFusion04(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 2 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
@@ -2644,8 +2644,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def filterMapFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) }) |>
         DelayList.filterMap(x -> { l := "b" :: deref l; Some(x) });
@@ -2653,8 +2653,8 @@ mod TestDelayList {
     }
 
     @test
-    def filterMapFusion02(): Bool \ IO = region r {
-        let l = ref Nil @ r;
+    def filterMapFusion02(): Bool \ IO = region rc {
+        let l = ref Nil @ rc;
         discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> unchecked_cast({ l := "a" :: deref l; Some(x) } as _ \ {})) |>
         DelayList.filterMap(x -> unchecked_cast({ l := "b" :: deref l; Some(x) } as _ \ {})) |>
@@ -2769,8 +2769,8 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def spanSpanFusion01(): Bool = region r {
-        let l = ref Nil @ r;
+    def spanSpanFusion01(): Bool = region rc {
+        let l = ref Nil @ rc;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.span(x -> { l := "a" :: deref l; x < 3 }) |> fst |>
         DelayList.span(x -> { l := "b" :: deref l; x < 3 }); // The working list is `1 :: 2 :: Nil`
@@ -2778,8 +2778,8 @@ mod TestDelayList {
     }
 
     //@test
-    //def spanSpanFusion02(): Bool = region r {
-    //    let l = ref Nil @ r;
+    //def spanSpanFusion02(): Bool = region rc {
+    //    let l = ref Nil @ rc;
     //    let _ =
     //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
     //    DelayList.span(x -> unchecked_cast({ l := "a" :: deref l; x < 3 } as _ \ {})) |> fst |>
@@ -2994,32 +2994,32 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def traverse01(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse01(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = ENil;
         let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(ENil) and deref st == 0
     }
 
     @test
-    def traverse02(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse02(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = List.toDelayList(1 :: Nil);
         let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(List.toDelayList(1 :: Nil)) and deref st == 1
     }
 
     @test
-    def traverse03(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse03(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = List.toDelayList(1 :: 2 :: Nil);
         let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
     }
 
     @test
-    def traverse04(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse04(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
         let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3

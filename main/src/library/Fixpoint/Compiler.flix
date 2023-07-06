@@ -37,8 +37,8 @@ mod Fixpoint {
     /// A rule belongs to the same stratum as its head predicate.
     ///
     def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match d {
-        case Datalog(facts, rules) => region r {
-            let stmts = MutList.new(r);
+        case Datalog(facts, rules) => region rc {
+            let stmts = MutList.new(rc);
             Vector.forEach(compileRule(stmts), facts);
             Vector.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
@@ -69,12 +69,12 @@ mod Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v], r], stratum: List[Constraint[v]]): Unit \ r = region r {
+    def compileStratum(stmts: MutList[RamStmt[v], r], stratum: List[Constraint[v]]): Unit \ r = region rc {
         let idb = List.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = Vector.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = MutList.new(r);
+        let loopBody = MutList.new(rc);
         List.forEach(compileRule(stmts), stratum);
         Map.forEach(predSym -> match (arity, den) -> {
             let full = RamSym.Full(predSym, arity, den);

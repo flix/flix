@@ -30,23 +30,23 @@ mod TestRef {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def get01(): Bool = region rh {
-        Assert.eq(1, Ref.get(Ref.new(rh, 1)))
+    def get01(): Bool = region rc {
+        Assert.eq(1, Ref.get(Ref.new(rc, 1)))
     }
 
     @test
-    def get02(): Bool = region rh {
-        Assert.eq("a", Ref.get(Ref.new(rh, "a")))
+    def get02(): Bool = region rc {
+        Assert.eq("a", Ref.get(Ref.new(rc, "a")))
     }
 
     @test
-    def get03(): Bool = region rh {
-        Ref.get(Ref.new(rh, "A")) != "b"
+    def get03(): Bool = region rc {
+        Ref.get(Ref.new(rc, "A")) != "b"
     }
 
     @test
-    def get04(): Bool = region rh {
-        Assert.eq("A", Ref.get(Ref.get(Ref.new(rh, Ref.new(rh, "A")))))
+    def get04(): Bool = region rc {
+        Assert.eq("A", Ref.get(Ref.get(Ref.new(rc, Ref.new(rc, "A")))))
     }
 
 
@@ -55,23 +55,23 @@ mod TestRef {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def put01(): Bool = region rh {
-        let rf = Ref.new(rh, 1);
+    def put01(): Bool = region rc {
+        let rf = Ref.new(rc, 1);
         Ref.put(2, rf);
         Assert.eq(2, Ref.get(rf))
     }
 
     @test
-    def put02(): Bool = region rh {
-        let rf = Ref.new(rh, "a");
+    def put02(): Bool = region rc {
+        let rf = Ref.new(rc, "a");
         Ref.put("A", rf);
         Assert.eq("A", Ref.get(rf))
     }
 
     @test
-    def put03(): Bool = region rh {
-        let rf = Ref.new(rh, Ref.new(rh, "a"));
-        Ref.put(Ref.new(rh, "A"), rf);
+    def put03(): Bool = region rc {
+        let rf = Ref.new(rc, Ref.new(rc, "a"));
+        Ref.put(Ref.new(rc, "A"), rf);
         Assert.eq("A", Ref.get(Ref.get(rf)))
     }
 
@@ -81,22 +81,22 @@ mod TestRef {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def transform01(): Bool = region rh {
-        let rf = Ref.new(rh, 1);
+    def transform01(): Bool = region rc {
+        let rf = Ref.new(rc, 1);
         Ref.transform(x -> x + 1, rf);
         Assert.eq(2, Ref.get(rf))
     }
 
     @test
-    def transform02(): Bool = region rh {
-        let rf = Ref.new(rh, "a");
+    def transform02(): Bool = region rc {
+        let rf = Ref.new(rc, "a");
         Ref.transform(_ -> "A", rf);
         Assert.eq("A", Ref.get(rf))
     }
 
     @test
-    def transform03(): Bool = region rh {
-        let rf = Ref.new(rh, Ref.new(rh, "a"));
+    def transform03(): Bool = region rc {
+        let rf = Ref.new(rc, Ref.new(rc, "a"));
         Ref.transform(rf1 -> { Ref.transform(_ -> "A", rf1) ; rf1 }, rf);
         Assert.eq("A", Ref.get(Ref.get(rf)))
     }

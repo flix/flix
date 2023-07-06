@@ -41,10 +41,10 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
         valueOf(true)
 
     @test
-    def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path \ IO = region r {
-        import static java.nio.file.Path.of(String, Array[String, r]): ##java.nio.file.Path \ IO as of1;
+    def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path \ IO = region rc {
+        import static java.nio.file.Path.of(String, Array[String, rc]): ##java.nio.file.Path \ IO as of1;
         try {
-            of1("end", Array#{"p1", "p2", "p3"} @ r)
+            of1("end", Array#{"p1", "p2", "p3"} @ rc)
         } catch {
             case _: ##java.nio.file.InvalidPathException => checked_cast(null)
         }
@@ -56,10 +56,10 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
         staticMethod(1) == 2
 
     @test
-    def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region r {
-        import static java.util.Arrays.fill(Array[##java.lang.Object, r], ##java.lang.Object): Unit \ IO;
-        let a = Array#{"this", "that"} @ r;
-        fill(unchecked_cast(a as Array[##java.lang.Object, r]), checked_cast("foo"));
+    def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region rc {
+        import static java.util.Arrays.fill(Array[##java.lang.Object, rc], ##java.lang.Object): Unit \ IO;
+        let a = Array#{"this", "that"} @ rc;
+        fill(unchecked_cast(a as Array[##java.lang.Object, rc]), checked_cast("foo"));
         true
     }
 }

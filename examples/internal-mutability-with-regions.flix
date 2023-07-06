@@ -4,13 +4,13 @@
 /// Regions encapsulate mutability to its declared scope.
 ///
 def deduplicate(l: List[a]): List[a] with Order[a] =
-    /// Declare a new region `r`.
-    region r {
+    /// Declare a new region `rc`.
+    region rc {
 
-        /// Create a new `MutSet` at region `r`.
+        /// Create a new `MutSet` at region `rc`.
         /// This will be used to keep track of
         /// unique elements in `l`.
-        let s = MutSet.new(r);
+        let s = MutSet.new(rc);
 
         /// The lambda used in the call to `filter`
         /// would be impure without a region.
