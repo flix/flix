@@ -2545,17 +2545,18 @@ object Typer {
         val ps = traverseM(pats) {
           case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) => (tpe, pat1) match {
             case (Some(t), Some(p)) =>
-              // { x : Type = pattern ... }
-              val freshRowVar = Type.freshVar(Kind.RecordRow, loc1)
-              val recordRow = Type.mkRecordRowExtend(field, t, freshRowVar, loc1)
+              // { Field : Type = Pattern ... }
               for {
-                t1 <- visit(p)
-                _ <- unifyTypeM(recordRow, t1, loc1)
+                patType <- visit(p)
+                _ <- expectTypeM(t, patType, loc1)
                 resultTyp = t
               } yield resultTyp
 
+            case (None, Some(p)) => ???
+            // { Field = Pattern ... }
+
             case (Some(t), None) =>
-              // { x : Type ... }
+              // { Field : Type ... }
               val freshRowVar = Type.freshVar(Kind.RecordRow, loc1)
               val recordRow = Type.mkRecordRowExtend(field, t, freshRowVar, loc1)
               val patSym = Symbol.freshVarSym(field.name, Ast.BoundBy.Pattern, field.loc)
@@ -2566,10 +2567,8 @@ object Typer {
                 resultTyp = t
               } yield resultTyp
 
-            case (None, Some(p)) => ???
-            // { x = pat ... }
             case (None, None) => ???
-            // case { x }
+            // case { Field }
           }
         }
         val p = pat.map(visit)
