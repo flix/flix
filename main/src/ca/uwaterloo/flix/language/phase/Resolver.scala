@@ -1725,8 +1725,7 @@ object Resolver {
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
             case NamedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
-              // Unsure about Wildness
-              mapN(traverseOpt(tpe)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root)), traverseOpt(pat1)(visit)) {
+              mapN(traverseOpt(tpe)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root)), traverseOpt(pat1)(visit)) {
                 case (t, p) => ResolvedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
               }
           }
