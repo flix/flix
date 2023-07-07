@@ -17,37 +17,42 @@
 mod Test.Exp.Match.Record {
 
     @test
-    def testMatchEmptyRecord01(): Bool = match { } {
+    def testMatchRecord01(): Bool = match { } {
         case { } => true
     }
 
     @test
-    def testMatchEmptyRecord02(): Bool = match { } {
+    def testMatchRecord02(): Bool = match { } {
         case { } => true
         case _   => false
     }
 
     @test
-    def testMatchEmptyRecord03(): Bool = match { x = 1 } {
+    def testMatchRecord03: Bool = match { x = 1 } {
+        case { x } => x == 1
+    }
+
+    @test
+    def testMatchRecord04(): Bool = match { x = 1 } {
         case { x = 1 } => true
         case { x = 2 } => false
     }
 
     @test
-    def testMatchEmptyRecord04(): Bool = match { x = 1 } {
+    def testMatchRecord05(): Bool = match { x = 1 } {
         case { x = 2 } => false
         case { x = 1 } => true
     }
 
     @test
-    def testMatchEmptyRecord05(): Bool = match { x = 3 } {
+    def testMatchRecord06(): Bool = match { x = 3 } {
         case { x = 1 } => false
         case { x = 2 } => false
         case { x = 3 } => true
     }
 
     @test
-    def testMatchEmptyRecord06(): Bool = match { x = 3 } {
+    def testMatchRecord07(): Bool = match { x = 3 } {
         case { x = 1 } => false
         case { x = 2 } => false
         case { x = 3 } => true
