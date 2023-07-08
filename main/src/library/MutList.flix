@@ -52,20 +52,20 @@ mod MutList {
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(r: Region[r]): MutList[a, r] \ r =
-        MutList(r, ref Array.new(r, minCapacity()) @ r, ref 0 @ r)
+    pub def new(rc: Region[r]): MutList[a, r] \ r =
+        MutList(rc, ref Array.new(rc, minCapacity()) @ rc, ref 0 @ rc)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty mutable list if `b >= e`.
     ///
-    pub def range(r: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ r =
+    pub def range(rc: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ r =
         let minCap = minCapacity();
         let d = e - b;
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
-        MutList(r, ref Array.init(r, f, c) @ r, ref d @ r)
+        MutList(rc, ref Array.init(rc, f, c) @ rc, ref d @ rc)
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.
@@ -288,18 +288,18 @@ mod MutList {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(r1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
-        scanLeft(r1, f, s, v)
+    pub def scan(rc1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
+        scanLeft(rc1, f, s, v)
 
     ///
     /// Accumulates the result of applying `f` to `v` going left to right.
     ///
-    pub def scanLeft(r1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
+    pub def scanLeft(rc1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = Array.repeat(r1, n, s);
+        let b = Array.repeat(rc1, n, s);
         def loop(i, acc) = {
             if (i >= n)
                 ()
@@ -310,17 +310,17 @@ mod MutList {
             }
         };
         loop(1, s);
-        MutList(r1, ref b @ r1, ref n @ r1)
+        MutList(rc1, ref b @ rc1, ref n @ rc1)
 
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
     ///
-    pub def scanRight(r1: Region[r1], f: (a, b) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
+    pub def scanRight(rc1: Region[r1], f: (a, b) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = Array.repeat(r1, n, s);
+        let b = Array.repeat(rc1, n, s);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -331,22 +331,22 @@ mod MutList {
             }
         };
         loop(l - 1, s);
-        MutList(r1, ref b @ r1, ref n @ r1)
+        MutList(rc1, ref b @ rc1, ref n @ rc1)
 
     ///
     /// Apply `f` to every element in `v`.
     ///
     /// The result is a new mutable list.
     ///
-    pub def map(r1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
+    pub def map(rc1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new(r1)
+            MutList.new(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(Array.get(0, a));
-            let b = Array.repeat(r1, Array.length(a), x);
+            let b = Array.repeat(rc1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -356,21 +356,21 @@ mod MutList {
                 }
             };
             loop(1);
-            MutList(r1, ref b @ r1, ref l @ r1)
+            MutList(rc1, ref b @ rc1, ref l @ rc1)
         }
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
-    pub def mapWithIndex(r1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
+    pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new(r1)
+            MutList.new(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(0, Array.get(0, a));
-            let b = Array.repeat(r1, Array.length(a), x);
+            let b = Array.repeat(rc1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -380,7 +380,7 @@ mod MutList {
                 }
             };
             loop(1);
-            MutList(r1, ref b @ r1, ref l @ r1)
+            MutList(rc1, ref b @ rc1, ref l @ rc1)
         }
 
     ///
@@ -516,13 +516,13 @@ mod MutList {
     /// Returns a shallow copy of the given mutable list `v`.
     /// The capacity of the copy is equal to the length of the list.
     ///
-    pub def copy(r1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
+    pub def copy(rc1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
         let MutList(_, a, l) = v;
         let len = deref l;
         if (len > minCapacity())
-            MutList(r1, ref Array.copyOfRange(r1, 0, len, deref a) @ r1, ref len @ r1)
+            MutList(rc1, ref Array.copyOfRange(rc1, 0, len, deref a) @ rc1, ref len @ rc1)
         else
-            MutList(r1, ref Array.copyOfRange(r1, 0, capacity(v), deref a) @ r1, ref len @ r1)
+            MutList(rc1, ref Array.copyOfRange(rc1, 0, capacity(v), deref a) @ rc1, ref len @ rc1)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -714,9 +714,9 @@ mod MutList {
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(r1: Region[r1], v: MutList[a, r2]): Array[a, r1] \ { r2, r1 } =
+    pub def toArray(rc1: Region[r1], v: MutList[a, r2]): Array[a, r1] \ { r2, r1 } =
         let MutList(_, a, l) = v;
-        Array.copyOfRange(r1, 0, deref l, deref a)
+        Array.copyOfRange(rc1, 0, deref l, deref a)
 
     ///
     /// Returns `xs` as a vector.
@@ -736,8 +736,8 @@ mod MutList {
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(r1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.new(r1);
+    pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
+        let d = MutDeque.new(rc1);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -873,8 +873,8 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(r1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[a] =
-        sortWith(r1, Order.compare, v)
+    pub def sort(rc1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[a] =
+        sortWith(rc1, Order.compare, v)
 
     ///
     /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
@@ -884,8 +884,8 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(r1: Region[r1], f: a -> b, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[b] =
-        sortWith(r1, Order.compare `on` f, v)
+    pub def sortBy(rc1: Region[r1], f: a -> b, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[b] =
+        sortWith(rc1, Order.compare `on` f, v)
 
     ///
     /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
@@ -895,8 +895,8 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(r1: Region[r1], cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
-        let vCopy = copy(r1, v);
+    pub def sortWith(rc1: Region[r1], cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
+        let vCopy = copy(rc1, v);
         sortWith!(cmp, vCopy);
         vCopy
 
@@ -937,8 +937,8 @@ mod MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { r1, NonDet } = region rc2 {
-        toArray(rc2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
+    pub def shuffle(rc1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { r1, NonDet } = region rc2 {
+        toArray(rc2, v) !> Array.shuffle(rnd) |> Array.toMutList(rc1)
     }
 
 }

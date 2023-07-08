@@ -23,8 +23,8 @@ mod Bench.Fusion {
     ///
     /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
     ///
-    pub def input(r: Region[r], n: Int32): Array[Int32, r] \ r =
-        Array.range(r, 1, n) |>
+    pub def input(rc: Region[r], n: Int32): Array[Int32, r] \ r =
+        Array.range(rc, 1, n) |>
         Array.flatMap(_ -> Array.range(r, 1, 1_000))
 
     ////////////////////////////////////////////////////////////////////////////

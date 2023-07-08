@@ -198,10 +198,10 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ r = region rc2 {
+    pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ r = region rc2 {
         let l = MutList.new(rc2);
         Foldable.forEach(a -> MutList.push!(a, l), t);
-        MutList.toArray(r, l)
+        MutList.toArray(rc, l)
     }
 
     ///
@@ -216,16 +216,16 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as a `MutDeque`.
     ///
-    pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], t: t[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         Foldable.forEach(x -> MutDeque.pushBack(x, d), t);
         d
 
     ///
     /// Returns `t` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], t: t[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(r, Foldable.toArray(rc2, t))
+    pub def toMutList(rc: Region[r], t: t[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(rc, Foldable.toArray(rc2, t))
     }
 
     ///
@@ -237,8 +237,8 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(r: Region[r], t: t[a]): MutSet[a, r] \ r with Order[a] =
-        let s = MutSet.new(r);
+    pub def toMutSet(rc: Region[r], t: t[a]): MutSet[a, r] \ r with Order[a] =
+        let s = MutSet.new(rc);
         Foldable.forEach(x -> MutSet.add!(x, s), t);
         s
 
@@ -263,8 +263,8 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as a `MutMap`.
     ///
-    pub def toMutMap(r: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ r with Order[k] =
-        let m = MutMap.new(r);
+    pub def toMutMap(rc: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ r with Order[k] =
+        let m = MutMap.new(rc);
         Foldable.forEach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
         m
 

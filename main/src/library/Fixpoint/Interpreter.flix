@@ -22,63 +22,63 @@ mod Fixpoint {
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Vector[v], v, r], r]
     type alias SearchEnv[v: Type, r: Region] = (Array[Vector[v], r], Array[v, r])
 
-    def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
-        interpretWithDatabase(r, MutMap.new(r), stmt)
+    def interpret(rc: Region[r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
+        interpretWithDatabase(rc, MutMap.new(rc), stmt)
 
-    def interpretWithDatabase(r: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
+    def interpretWithDatabase(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
         masked_cast(notifyPreInterpret(stmt));
-        evalStmt(r, db, stmt);
+        evalStmt(rc, db, stmt);
         db
 
-    def evalStmt(r: Region[r], db: Database[v, r], stmt: RamStmt[v]): Unit \ r with Order[v] =
+    def evalStmt(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Unit \ r with Order[v] =
         match stmt {
-            case RamStmt.Insert(relOp) => evalOp(r, db, allocEnv(r, 0, relOp), relOp)
+            case RamStmt.Insert(relOp) => evalOp(rc, db, allocEnv(rc, 0, relOp), relOp)
             case RamStmt.Merge(srcSym, dstSym) =>
-                let dst = MutMap.getOrElsePut!(dstSym, MutMap.new(r), db);
+                let dst = MutMap.getOrElsePut!(dstSym, MutMap.new(rc), db);
                 match toDenotation(srcSym) {
                     case Denotation.Relational =>
-                        MutMap.merge!(MutMap.getWithDefault(srcSym, MutMap.new(r), db), dst)
+                        MutMap.merge!(MutMap.getWithDefault(srcSym, MutMap.new(rc), db), dst)
                     case Denotation.Latticenal(_, _, lub, _) =>
-                        MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, MutMap.new(r), db), dst)
+                        MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, MutMap.new(rc), db), dst)
                 }
             case RamStmt.Assign(lhs, rhs) =>
-                MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.new(r), db), db)
+                MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.new(rc), db), db)
             case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
-            case RamStmt.Seq(stmts) => Vector.forEach(evalStmt(r, db), stmts)
+            case RamStmt.Seq(stmts) => Vector.forEach(evalStmt(rc, db), stmts)
             case RamStmt.Until(test, body) =>
-                if (evalBoolExp(r, db, (Array#{} @ r, Array#{} @ r), test)) {
+                if (evalBoolExp(rc, db, (Array#{} @ rc, Array#{} @ rc), test)) {
                     ()
                 } else {
-                    evalStmt(r, db, body);
-                    evalStmt(r, db, stmt)
+                    evalStmt(rc, db, body);
+                    evalStmt(rc, db, stmt)
                 }
             case RamStmt.Comment(_) => ()
         }
 
-    def allocEnv(r: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ r = match relOp {
-        case RelOp.Search(_, _, body)           => allocEnv(r, depth + 1, body)
-        case RelOp.Query(_, _, _, body)         => allocEnv(r, depth + 1, body)
-        case RelOp.Functional(_, _, _, body)    => allocEnv(r, depth + 1, body)
-        case RelOp.Project(_)                   => (Array.repeat(r, depth, Vector.empty()), Array.new(r, depth))
-        case RelOp.If(_, then)                  => allocEnv(r, depth, then)
+    def allocEnv(rc: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ r = match relOp {
+        case RelOp.Search(_, _, body)           => allocEnv(rc, depth + 1, body)
+        case RelOp.Query(_, _, _, body)         => allocEnv(rc, depth + 1, body)
+        case RelOp.Functional(_, _, _, body)    => allocEnv(rc, depth + 1, body)
+        case RelOp.Project(_)                   => (Array.repeat(rc, depth, Vector.empty()), Array.new(rc, depth))
+        case RelOp.If(_, then)                  => allocEnv(rc, depth, then)
     }
 
-    def evalOp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { r1, r2 } with Order[v] =
+    def evalOp(rc1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { r1, r2 } with Order[v] =
         match op {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
                 let (tupleEnv, latEnv) = env;
                 MutMap.forEach(t -> l -> {
                     Array.put(t, i, tupleEnv);
                     Array.put(l, i, latEnv);
-                    evalOp(r1, db, env, body)
-                }, MutMap.getWithDefault(ramSym, MutMap.new(r1), db))
+                    evalOp(rc1, db, env, body)
+                }, MutMap.getWithDefault(ramSym, MutMap.new(rc1), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
                 MutMap.queryWith(evalQuery(env, Vector.toList(query)), t -> l -> {
                     Array.put(t, i, tupleEnv);
                     Array.put(l, i, latEnv);
-                    evalOp(r1, db, env, body)
-                }, MutMap.getWithDefault(ramSym, MutMap.new(r1), db))
+                    evalOp(rc1, db, env, body)
+                }, MutMap.getWithDefault(ramSym, MutMap.new(rc1), db))
             case RelOp.Functional(RowVar.Index(i), f, terms, body) =>
                 let args = terms |> Vector.map(evalTerm(env));
                 let result = f(args): Vector[Vector[v]];
@@ -86,10 +86,10 @@ mod Fixpoint {
                 let (tupleEnv, _latEnv) = env; // TODO: Do we ever need to use latEnv?
                 foreach (t <- result) {
                     Array.put(t, i, tupleEnv);
-                    evalOp(r1, db, env, body)
+                    evalOp(rc1, db, env, body)
                 }
             case RelOp.Project(terms, ramSym) =>
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r1), db);
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(rc1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Vector.map(evalTerm(env), terms);
@@ -107,8 +107,8 @@ mod Fixpoint {
                         else MutMap.putWith!(lub, key, latVal, rel)
                 }
             case RelOp.If(test, then) =>
-                if (evalBoolExp(r1, db, env, test)) {
-                    evalOp(r1, db, env, then)
+                if (evalBoolExp(rc1, db, env, test)) {
+                    evalOp(rc1, db, env, then)
                 } else {
                     ()
                 }
@@ -124,12 +124,12 @@ mod Fixpoint {
             }
         }
 
-    def evalBoolExp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], es: Vector[BoolExp[v]]): Bool \ { r1, r2 } with Order[v] =
+    def evalBoolExp(rc1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], es: Vector[BoolExp[v]]): Bool \ { r1, r2 } with Order[v] =
         Vector.forAll(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
-                MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.new(r1), db))
+                MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.new(rc1), db))
             case BoolExp.NotMemberOf(terms, ramSym) =>
-                let rel = MutMap.getWithDefault(ramSym, MutMap.new(r1), db);
+                let rel = MutMap.getWithDefault(ramSym, MutMap.new(rc1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Vector.map(evalTerm(env), terms);

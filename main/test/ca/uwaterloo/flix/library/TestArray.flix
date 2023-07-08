@@ -3952,10 +3952,10 @@ mod TestArray {
         unzip05Aux(rc1, Array#{(1, "1"), (2, "2"), (3, "3")} @ rc2) `Array.sameElements` (Array#{1, 2, 3} @ rc2)
     }}
 
-    def unzip05Aux(r1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { r1, r2 } =
+    def unzip05Aux(rc1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { r1, r2 } =
         region rc3 {
             // snd is local, fst is for caller
-            Array.unzip(r1, rc3, a) |> fst
+            Array.unzip(rc1, rc3, a) |> fst
         }
 
     /////////////////////////////////////////////////////////////////////////////

@@ -15,9 +15,9 @@ def recvWithDefault(rx: Receiver[Int32, r]): Int32 \ r =
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `2` if after a timeout.
-def recvWithTimeout(r: Region[r], c: Receiver[Int32, r]): Int32 \ { r, IO } =
+def recvWithTimeout(rc: Region[r], c: Receiver[Int32, r]): Int32 \ { r, IO } =
     use Time.Duration.fromSeconds;
-    let t = Channel.timeout(r, fromSeconds(1));
+    let t = Channel.timeout(rc, fromSeconds(1));
     select {
         case x <- recv(c) => x
         case _ <- recv(t) => 2

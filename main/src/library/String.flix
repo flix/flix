@@ -132,8 +132,8 @@ mod String {
     ///
     /// Returns the given string `s` as an array of characters.
     ///
-    pub def toArray(r: Region[r], s: String): Array[Char, r] \ r =
-        Array.init(r, i -> charAt(i, s), length(s))
+    pub def toArray(rc: Region[r], s: String): Array[Char, r] \ r =
+        Array.init(rc, i -> charAt(i, s), length(s))
 
     ///
     /// Returns the given string `s` as a vector of characters.

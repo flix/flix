@@ -24,6 +24,6 @@ mod Region {
   /// * `Closeable`s are guaranteed to be closed in the reverse order in
   ///   which they're added (most recently added first).
   ///
-  pub def closeOnExit(x: a, r: Region[r]): Unit \ {r, IO} with Closeable[a] =
-      $SCOPE_EXIT$(() -> Closeable.close(x), r)
+  pub def closeOnExit(x: a, rc: Region[r]): Unit \ {r, IO} with Closeable[a] =
+      $SCOPE_EXIT$(() -> Closeable.close(x), rc)
 }

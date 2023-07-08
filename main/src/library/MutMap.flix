@@ -347,8 +347,8 @@ mod MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    pub def map(r1: Region[r1], f: v1 -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, r, r1 } =
-        mapWithKey(r1, _ -> f, m)
+    pub def map(rc1: Region[r1], f: v1 -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, r, r1 } =
+        mapWithKey(rc1, _ -> f, m)
 
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
@@ -530,9 +530,9 @@ mod MutMap {
     ///
     /// Returns `m` as a MutDeque.
     ///
-    pub def toMutDeque(r1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r1] \ { r2, r1 } =
+    pub def toMutDeque(rc1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r1] \ { r2, r1 } =
         let MutMap(_, mm) = m;
-        Map.toMutDeque(r1, deref mm)
+        Map.toMutDeque(rc1, deref mm)
 
     ///
     /// Returns the mutable map `m` as a list of key-value pairs.

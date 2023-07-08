@@ -116,8 +116,8 @@ mod StringBuilder {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 + r2, r1] \ { r1, r2 } =
-        iterator(r1, sb) |> Iterator.zipWithIndex
+    pub def enumerator(rc1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 + r2, r1] \ { r1, r2 } =
+        iterator(rc1, sb) |> Iterator.zipWithIndex
 
     ///
     /// Return the length of the StringBuilder `sb`.
