@@ -324,9 +324,9 @@ mod MutSet {
     ///
     /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def copy(r1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { r, r1 } =
+    pub def copy(rc1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { r, r1 } =
         let MutSet(_, ms) = s;
-        MutSet(r1, ref (deref ms) @ r1)
+        MutSet(rc1, ref (deref ms) @ rc1)
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
@@ -336,10 +336,10 @@ mod MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(r1: Region[r1], r2: Region[r2], f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r1], MutSet[a, r2]) \ { r, r1, r2 } with Order[a] =
+    pub def partition(rc1: Region[r1], rc2: Region[r2], f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r1], MutSet[a, r2]) \ { r, r1, r2 } with Order[a] =
         let MutSet(_, ms) = s;
         let (ys, zs) = Set.partition(f, deref ms);
-        (MutSet(r1, ref ys @ r1), MutSet(r2, ref zs @ r2))
+        (MutSet(rc1, ref ys @ rc1), MutSet(rc2, ref zs @ rc2))
 
     ///
     /// Returns the mutable set `s` as an immutable set.
@@ -368,9 +368,9 @@ mod MutSet {
     ///
     /// Returns the mutable set `s` as a MutDeque.
     ///
-    pub def toMutDeque(r1: Region[r1], s: MutSet[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
+    pub def toMutDeque(rc1: Region[r1], s: MutSet[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
         let MutSet(_, ms) = s;
-        Set.toMutDeque(r1, deref ms)
+        Set.toMutDeque(rc1, deref ms)
 
     ///
     /// Applies `f` to every element of the mutable set `s`.

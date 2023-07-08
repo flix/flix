@@ -747,16 +747,16 @@ mod Chain {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], c: Chain[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(r, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(rc: Region[r], c: Chain[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(rc, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -777,10 +777,10 @@ mod Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
-        case None    => Array#{} @ r
+    pub def toArray(rc: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
+        case None    => Array#{} @ rc
         case Some(_) =>
-            let arr = Array.new(r, length(c));
+            let arr = Array.new(rc, length(c));
             forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
             arr
         }

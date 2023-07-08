@@ -525,8 +525,8 @@ mod Set {
     ///
     /// Returns `s` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), s);
         d
 
@@ -595,8 +595,8 @@ mod Set {
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(r, s) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ r =
+        iterator(rc, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns the concatenation of the string representation

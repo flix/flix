@@ -546,8 +546,8 @@ mod Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(r: Region[r], l: Nel[a]): Array[a, r] \ r =
-        l |> toList |> List.toArray(r)
+    pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ r =
+        l |> toList |> List.toArray(rc)
 
     ///
     /// Returns `l` as a vector.
@@ -561,8 +561,8 @@ mod Nel {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -638,8 +638,8 @@ mod Nel {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(r, l) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
+        iterator(rc, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the

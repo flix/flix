@@ -87,9 +87,9 @@ mod Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(r1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ IO = {
+    def warmupAndEstimate(rc1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ IO = {
         Console.print("Warmup: ");
-        bs |> Array.map(r1, b -> {
+        bs |> Array.map(rc1, b -> {
             let time = runBenchmarkOnce(b);
             Console.print(".");
             (b, time)
