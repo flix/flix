@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expr._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -52,7 +52,7 @@ object SimplifiedAstPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: SimplifiedAst.Expression): DocAst.Expression = e match {
+  def print(e: SimplifiedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case Def(sym, _, _) => DocAst.Expression.Def(sym)
