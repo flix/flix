@@ -134,26 +134,28 @@ object TypeError {
   }
 
   /**
-    * Effect polymorphic function declared as pure.
+    * Effectful function declared as pure.
     *
     * @param inferred the inferred effect.
     * @param loc      the location where the error occurred.
     */
-  case class EffectPolymorphicDeclaredAsPure(inferred: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = "Effect polymorphic function declared as pure."
+  case class EffectfulDeclaredAsPure(inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = "Effectful function declared as pure."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> ${red("Effect polymorphic")} function declared as ${green("pure")}.
+         |>> ${red("Effectful")} function declared as ${green("pure")}.
          |
-         |${code(loc, "effect polymorphic function.")}
+         |${code(loc, "effectful function.")}
+         |
+         |The function has the effect: ${FormatEff.formatEff(inferred)}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """A function whose body is effect polymorphic must be declared as so.
+      """A function must declare all the effects used in its body.
         |
         |For example:
         |
@@ -308,7 +310,63 @@ object TypeError {
       s"""${line(kind, source.name)}
          |>> Unable to unify the Boolean formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
          |
-         |${code(loc, "mismatched boolean formulas.")}
+         |${code(loc, "mismatched Boolean formulas.")}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Mismatched Effect Formulas.
+    *
+    * @param baseType1 the first effect formula.
+    * @param baseType2 the second effect formula.
+    * @param fullType1 the first full type in which the first effect formula occurs.
+    * @param fullType2 the second full type in which the second effect formula occurs.
+    * @param renv      the rigidity environment.
+    * @param loc       the location where the error occurred.
+    */
+  case class MismatchedEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Unable to unify the effect formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unable to unify the effect formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+         |
+         |${code(loc, "mismatched effect formulas.")}
+         |
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Mismatched Case Set Formulas.
+    *
+    * @param baseType1 the first case set formula.
+    * @param baseType2 the second case set formula.
+    * @param fullType1 the first full type in which the first case set formula occurs.
+    * @param fullType2 the second full type in which the second case set formula occurs.
+    * @param renv      the rigidity environment.
+    * @param loc       the location where the error occurred.
+    */
+  case class MismatchedCaseSets(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Unable to unify the case set formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unable to unify the case set formulas: '${red(formatType(baseType1, Some(renv)))}' and '${red(formatType(baseType2, Some(renv)))}'.
+         |
+         |${code(loc, "mismatched case set formulas.")}
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv)))}
          |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
@@ -328,7 +386,7 @@ object TypeError {
     * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedArrowBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedArrowEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Mismatched Pure and Effectful Functions."
 
     def message(formatter: Formatter): String = {

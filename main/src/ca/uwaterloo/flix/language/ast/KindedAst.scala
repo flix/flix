@@ -88,9 +88,9 @@ object KindedAst {
 
     case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Unary(sop: SemanticOperator, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Unary(sop: SemanticOp, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Binary(sop: SemanticOperator, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Binary(sop: SemanticOp, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class IfThenElse(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
@@ -168,7 +168,7 @@ object KindedAst {
 
     case class TryWith(exp: KindedAst.Expression, eff: Ast.EffectSymUse, rules: List[KindedAst.HandlerRule], tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Do(op: Ast.OpSymUse, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class Do(op: Ast.OpSymUse, args: List[KindedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Resume(exp: KindedAst.Expression, argTvar: Type.Var, retTvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 

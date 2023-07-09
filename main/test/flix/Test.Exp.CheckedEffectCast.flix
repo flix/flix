@@ -85,14 +85,14 @@
     def testCheckedEffectCast22(): String \ IO = checked_ecast("ABC")
 
     @test
-    def testCheckedEffectCast23(): Unit \ IO = region rh {
-        discard checked_ecast($ARRAY_NEW$(rh, 'A', 8));
+    def testCheckedEffectCast23(): Unit \ IO = region rc {
+        discard checked_ecast($ARRAY_NEW$(rc, 'A', 8));
         ()
     }
 
     @test
-    def testCheckedEffectCast24(): Unit \ IO = region rh {
-        discard checked_ecast($ARRAY_NEW$(rh, Some(42), 8));
+    def testCheckedEffectCast24(): Unit \ IO = region rc {
+        discard checked_ecast($ARRAY_NEW$(rc, Some(42), 8));
         ()
     }
 

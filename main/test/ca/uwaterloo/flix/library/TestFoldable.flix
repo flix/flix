@@ -207,6 +207,99 @@ mod TestFoldable {
         Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil) == 4
 
     /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool =
+        let f = x -> x == "a";
+        Foldable.count(f, Nil) == 0
+
+    @test
+    def count02(): Bool =
+        let xs = "a" :: "b" :: "a" :: "c" :: "a" :: Nil;
+        let f = x -> x == "a";
+        Foldable.count(f, xs) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Foldable.sum(None) == 0
+
+    @test
+    def sum02(): Bool =
+        let num = Some(8);
+        Foldable.sum(num) == 8
+
+    @test
+    def sum03(): Bool =
+        let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
+        Foldable.sum(xs) == 15
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        let f = x -> x + 1;
+        Foldable.sumWith(f, Nil) == 0
+
+    @test
+    def sumWith02(): Bool =
+        let f = x -> x + 1;
+        Foldable.sumWith(f, 1 :: 2 :: 3 :: 4 :: Nil) == 14
+
+    @test
+    def sumWith03(): Bool =
+        let f = x -> match x {
+            case None    => 0
+            case Some(v) => 2 * v
+        };
+        Foldable.sumWith(f, Some(Some(5))) == 10
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool =
+        let f = x -> x == 3;
+        Foldable.exists(f, Nil) == false
+
+    @test
+    def exists02(): Bool =
+        let f = x -> x == "d";
+        Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == true
+
+    @test
+    def exists03(): Bool =
+        let f = x -> x == "f";
+        Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == false
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forAll01(): Bool =
+        let f = x -> x == 3;
+        Foldable.forAll(f, Nil) == true
+
+    @test
+    def forAll02(): Bool =
+        let f = x -> x == "a";
+        Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "a" :: Nil) == true
+
+    @test
+    def forAll03(): Bool =
+        let f = x -> x == "a";
+        Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "b" :: Nil) == false
+
+    /////////////////////////////////////////////////////////////////////////////
     // forEachM                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -262,18 +355,18 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, Nil)), Array#{1} @ r)
+    def toArray01(): Bool = region rc {
+        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc)
     }
 
     @test
-    def toArray02(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ r)
+    def toArray02(): Bool = region rc {
+        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc)
     }
 
     @test
-    def toArray03(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ r)
+    def toArray03(): Bool = region rc {
+        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -297,33 +390,33 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool = region r {
+    def toMutDeque01(): Bool = region rc {
         let l = Nil: List[Unit];
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
 
     @test
-    def toMutDeque02(): Bool = region r {
+    def toMutDeque02(): Bool = region rc {
         let l = 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
 
     @test
-    def toMutDeque03(): Bool = region r {
+    def toMutDeque03(): Bool = region rc {
         let l = 3 :: 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
 
     @test
-    def toMutDeque04(): Bool = region r {
+    def toMutDeque04(): Bool = region rc {
         let l = 'a' :: 'b' :: 'c' :: Nil;
-        let d = Foldable.toMutDeque(r, l);
+        let d = Foldable.toMutDeque(rc, l);
 
         l == MutDeque.toList(d)
     }
@@ -333,33 +426,33 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutSet01(): Bool = region r {
+    def toMutSet01(): Bool = region rc {
         let s1 = Set#{}: Set[Int32];
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
 
     @test
-    def toMutSet02(): Bool = region r {
+    def toMutSet02(): Bool = region rc {
         let s1 = Set#{1, 2};
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
 
     @test
-    def toMutSet03(): Bool = region r {
+    def toMutSet03(): Bool = region rc {
         let s1 = Set#{1, 2, 3};
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
 
     @test
-    def toMutSet04(): Bool = region r {
+    def toMutSet04(): Bool = region rc {
         let s1 = Set#{'a', 'b', 'c'};
-        let s2 = Foldable.toMutSet(r, s1);
+        let s2 = Foldable.toMutSet(rc, s1);
 
         s1 == MutSet.toSet(s2)
     }
@@ -415,33 +508,33 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutMap01(): Bool = region r {
+    def toMutMap01(): Bool = region rc {
         let l = Nil: List[(Unit, Unit)];
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }
 
     @test
-    def toMutMap02(): Bool = region r {
+    def toMutMap02(): Bool = region rc {
         let l = (1, 2) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }
 
     @test
-    def toMutMap03(): Bool = region r {
+    def toMutMap03(): Bool = region rc {
         let l = (1, 4) :: (2, 3) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }
 
     @test
-    def toMutMap04(): Bool = region r {
+    def toMutMap04(): Bool = region rc {
         let l = (1, 'a') :: (2, 'b') :: (3, 'c') :: Nil;
-        let m = Foldable.toMutMap(r, l);
+        let m = Foldable.toMutMap(rc, l);
 
         l == MutMap.toList(m)
     }

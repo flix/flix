@@ -1082,16 +1082,16 @@ mod List {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], l: List[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(r, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(rc: Region[r], l: List[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -1139,10 +1139,10 @@ mod List {
     ///
     /// Returns the list `l` as an array.
     ///
-    pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ r = match head(l) {
-        case None    => Array#{} @ r
+    pub def toArray(rc: Region[r], l: List[a]): Array[a, r] \ r = match head(l) {
+        case None    => Array#{} @ rc
         case Some(_) =>
-            let a = Array.new(r, length(l));
+            let a = Array.new(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
@@ -1319,8 +1319,8 @@ mod List {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(r, l) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ r =
+        iterator(rc, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns the association list `l` as a `DelayMap`.

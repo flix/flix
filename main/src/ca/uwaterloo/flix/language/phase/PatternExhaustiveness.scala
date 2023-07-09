@@ -209,7 +209,7 @@ object PatternExhaustiveness {
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp(_, root))
 
-      case Expression.Do(_, exps, _, _) => exps.flatMap(visitExp(_, root))
+      case Expression.Do(_, exps, _, _, _) => exps.flatMap(visitExp(_, root))
       case Expression.Resume(exp, _, _) => visitExp(exp, root)
       case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(visitExp(_, root))
       case Expression.InvokeMethod(_, exp, args, _, _, _) => (exp :: args).flatMap(visitExp(_, root))

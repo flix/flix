@@ -77,8 +77,8 @@ mod MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def new(r: Region[r]): MutDeque[a, r] \ r =
-        MutDeque(r, ref Array.new(r, minCapacity()) @ r, ref 0 @ r, ref 0 @ r)
+    pub def new(rc: Region[r]): MutDeque[a, r] \ r =
+        MutDeque(rc, ref Array.new(rc, minCapacity()) @ rc, ref 0 @ rc, ref 0 @ rc)
 
     ///
     /// Returns the number of elements in `d`.
@@ -314,16 +314,17 @@ mod MutDeque {
             ()
         }
 
+
     ///
     /// Copies the elements from `a` to `a1`. Mutates the array `a1`.
     ///
-    def copyElements!(r2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { r1, r2 } =
+    def copyElements!(rc2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { r1, r2 } =
         let c = Array.length(a);
         if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
-            Array.updateSequence!(0,     Array.slice(r2, start = f, end = b, a), a1)
+            Array.updateSequence!(0,     Array.slice(rc2, start = f, end = b, a), a1)
         } else {
-            Array.updateSequence!(0,     Array.slice(r2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
-            Array.updateSequence!(c - f, Array.slice(r2, start = 0, end = b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
+            Array.updateSequence!(0,     Array.slice(rc2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
+            Array.updateSequence!(c - f, Array.slice(rc2, start = 0, end = b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
         }
 
     ///
@@ -366,17 +367,17 @@ mod MutDeque {
     ///
     /// Returns `d` as an array.
     ///
-    pub def toArray(r1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { r2, r1 } =
+    pub def toArray(rc1: Region[r1], d: MutDeque[a, r2]): Array[a, r1] \ { r2, r1 } =
         let MutDeque(_, a, f, b) = d;
         let len = MutDeque.capacity(d);
         let i = deref f;
         let j = deref b;
         if (i == j)
-            Array#{} @ r1
+            Array#{} @ rc1
         else if (i  < j)
-            Array.copyOfRange(r1, i, j, deref a)
+            Array.copyOfRange(rc1, i, j, deref a)
         else
-            Array.append(r1, Array.copyOfRange(r1, i, len, deref a), Array.copyOfRange(r1, 0, j, deref a))
+            Array.append(rc1, Array.copyOfRange(rc1, i, len, deref a), Array.copyOfRange(rc1, 0, j, deref a))
 
     ///
     /// Returns `d` as a vector.
@@ -457,8 +458,8 @@ mod MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, NonDet } = region rc3 {
-        toArray(rc3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
+    pub def shuffle(rc1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, NonDet } = region rc3 {
+        toArray(rc3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(rc1)
     }
 
 }

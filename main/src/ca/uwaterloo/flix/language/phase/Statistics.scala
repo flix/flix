@@ -130,7 +130,7 @@ object Statistics {
       case Expression.Without(exp, _, _, _, _) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
       case Expression.TryWith(exp, sym, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitHandlerRule))
-      case Expression.Do(sym, exps, eff, loc) => Counter.merge(exps.map(visitExp))
+      case Expression.Do(sym, exps, tpe, eff, loc) => Counter.merge(exps.map(visitExp))
       case Expression.Resume(exp, tpe, loc) => visitExp(exp)
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => Counter.merge(args.map(visitExp))
       case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(args.map(visitExp))

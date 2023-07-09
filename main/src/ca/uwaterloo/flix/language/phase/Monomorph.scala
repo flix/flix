@@ -318,93 +318,74 @@ object Monomorph {
     * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
     * definition and substitution is enqueued.
     */
-  private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): Expression = exp0 match {
-    case Expression.Var(sym, tpe, loc) =>
-      Expression.Var(env0(sym), subst(tpe), loc)
+  private def visitExp(exp0: Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): Expr = exp0 match {
+    case Expr.Var(sym, tpe, loc) =>
+      Expr.Var(env0(sym), subst(tpe), loc)
 
-    case Expression.Def(sym, tpe, loc) =>
+    case Expr.Def(sym, tpe, loc) =>
       /*
        * !! This is where all the magic happens !!
        */
       val newSym = specializeDefSym(sym, subst(tpe))
-      Expression.Def(newSym, subst(tpe), loc)
+      Expr.Def(newSym, subst(tpe), loc)
 
-    case Expression.Sig(sym, tpe, loc) =>
+    case Expr.Sig(sym, tpe, loc) =>
       val newSym = specializeSigSym(sym, subst(tpe))
-      Expression.Def(newSym, subst(tpe), loc)
+      Expr.Def(newSym, subst(tpe), loc)
 
-    case Expression.Hole(sym, tpe, loc) =>
-      Expression.Hole(sym, subst(tpe), loc)
+    case Expr.Cst(cst, tpe, loc) =>
+      Expr.Cst(cst, subst(tpe), loc)
 
-    case Expression.Cst(cst, tpe, loc) =>
-      Expression.Cst(cst, subst(tpe), loc)
-
-    case Expression.Lambda(fparam, exp, tpe, loc) =>
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
       val e = visitExp(exp, env0 ++ env1, subst)
-      Expression.Lambda(p, e, subst(tpe), loc)
+      Expr.Lambda(p, e, subst(tpe), loc)
 
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+    case Expr.Apply(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val es = exps.map(visitExp(_, env0, subst))
-      Expression.Apply(e, es, subst(tpe), subst(eff), loc)
+      Expr.Apply(e, es, subst(tpe), subst(eff), loc)
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
-      val e1 = visitExp(exp, env0, subst)
-      Expression.Unary(sop, e1, subst(tpe), subst(eff), loc)
+    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
 
-    /*
-     * Other Binary Expression.
-     */
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.Binary(sop, e1, e2, subst(tpe), subst(eff), loc)
-
-    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      Expression.Let(freshSym, mod, visitExp(exp1, env0, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+      Expr.Let(freshSym, mod, visitExp(exp1, env0, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
 
-    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
       // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      Expression.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+      Expr.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
 
-    case Expression.Region(tpe, loc) =>
-      Expression.Region(subst(tpe), loc)
-
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       // forcedly mark the region variable as Impure inside the region
       val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
       val subst2 = subst1 + (regionVar.sym -> Type.Impure)
-      Expression.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
+      Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
 
-    case Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.ScopeExit(e1, e2, subst(tpe), subst(eff), loc)
-
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
       val e2 = visitExp(exp2, env0, subst)
       val e3 = visitExp(exp3, env0, subst)
-      Expression.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
+      Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
       val e2 = visitExp(exp2, env0, subst)
-      Expression.Stm(e1, e2, subst(tpe), subst(eff), loc)
+      Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
 
-    case Expression.Discard(exp, eff, loc) =>
+    case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp, env0, subst)
-      Expression.Discard(e, subst(eff), loc)
+      Expr.Discard(e, subst(eff), loc)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) =>
+    case Expr.Match(exp, rules, tpe, eff, loc) =>
       val rs = rules map {
         case MatchRule(pat, guard, body) =>
           val (p, env1) = visitPat(pat, subst)
@@ -413,9 +394,9 @@ object Monomorph {
           val b = visitExp(body, extendedEnv, subst)
           MatchRule(p, g, b)
       }
-      Expression.Match(visitExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
+      Expr.Match(visitExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
 
-    case Expression.TypeMatch(exp, rules, tpe, _, loc) =>
+    case Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // use the non-strict substitution
       // to allow free type variables to match with anything
       val expTpe = subst.nonStrict(exp.tpe)
@@ -441,11 +422,11 @@ object Monomorph {
               // visit the body under the extended environment
               val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
               val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
-              Some(Expression.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
+              Some(Expr.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
           }
       }.next() // We are safe to get next() because the last case will always match
 
-    case Expression.RelationalChoose(exps, rules, tpe, eff, loc) =>
+    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       val rs = rules.map {
         case RelationalChooseRule(pat, exp) =>
@@ -463,103 +444,31 @@ object Monomorph {
           val e = visitExp(exp, env0 ++ env1, subst)
           RelationalChooseRule(p, e)
       }
-      Expression.RelationalChoose(es, rs, subst(tpe), subst(eff), loc)
+      Expr.RelationalChoose(es, rs, subst(tpe), subst(eff), loc)
 
-    case Expression.Tag(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.Tag(sym, e, subst(tpe), subst(eff), loc)
-
-    case Expression.Tuple(elms, tpe, eff, loc) =>
-      val es = elms.map(e => visitExp(e, env0, subst))
-      Expression.Tuple(es, subst(tpe), subst(eff), loc)
-
-    case Expression.RecordEmpty(tpe, loc) =>
-      Expression.RecordEmpty(subst(tpe), loc)
-
-    case Expression.RecordSelect(base, field, tpe, eff, loc) =>
-      val b = visitExp(base, env0, subst)
-      Expression.RecordSelect(b, field, subst(tpe), subst(eff), loc)
-
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
-      val v = visitExp(value, env0, subst)
-      val r = visitExp(rest, env0, subst)
-      Expression.RecordExtend(field, v, r, subst(tpe), subst(eff), loc)
-
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
-      val r = visitExp(rest, env0, subst)
-      Expression.RecordRestrict(field, r, subst(tpe), subst(eff), loc)
-
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
-      val e = visitExp(exp, env0, subst)
-      Expression.ArrayLit(es, e, subst(tpe), subst(eff), loc)
+      Expr.VectorLit(es, subst(tpe), subst(eff), loc)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
       val e2 = visitExp(exp2, env0, subst)
-      val e3 = visitExp(exp3, env0, subst)
-      Expression.ArrayNew(e1, e2, e3, subst(tpe), subst(eff), loc)
+      Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      val b = visitExp(base, env0, subst)
-      val i = visitExp(index, env0, subst)
-      Expression.ArrayLoad(b, i, subst(tpe), subst(eff), loc)
-
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
-      val b = visitExp(base, env0, subst)
-      val i = visitExp(index, env0, subst)
-      val e = visitExp(elm, env0, subst)
-      Expression.ArrayStore(b, i, e, subst(eff), loc)
-
-    case Expression.ArrayLength(base, eff, loc) =>
-      val b = visitExp(base, env0, subst)
-      Expression.ArrayLength(b, subst(eff), loc)
-
-    case Expression.VectorLit(exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, env0, subst))
-      Expression.VectorLit(es, subst(tpe), subst(eff), loc)
-
-    case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
-
-    case Expression.VectorLength(exp, loc) =>
+    case Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp, env0, subst)
-      Expression.VectorLength(e, loc)
+      Expr.VectorLength(e, loc)
 
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.Ref(e1, e2, subst(tpe), subst(eff), loc)
-
-    case Expression.Deref(exp, tpe, eff, loc) =>
+    case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
-      Expression.Deref(e, subst(tpe), subst(eff), loc)
+      Expr.Ascribe(e, subst(tpe), subst(eff), loc)
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.Assign(e1, e2, subst(tpe), subst(eff), loc)
-
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.Ascribe(e, subst(tpe), subst(eff), loc)
-
-    case Expression.InstanceOf(exp, clazz, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.InstanceOf(e, clazz, loc)
-
-    case Expression.Cast(exp, _, _, tpe, eff, loc) =>
+    case Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // We drop the declaredType and declaredEff here.
       val e = visitExp(exp, env0, subst)
-      Expression.Cast(e, None, None, subst(tpe), subst(eff), loc)
+      Expr.Cast(e, None, None, subst(tpe), subst(eff), loc)
 
-    case Expression.Without(exp, _, _, _, _) =>
-      // Erase the Without
-      visitExp(exp, env0, subst)
-
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
       val rs = rules map {
         case CatchRule(sym, clazz, body) =>
@@ -569,65 +478,31 @@ object Monomorph {
           val b = visitExp(body, env1, subst)
           CatchRule(freshSym, clazz, b)
       }
-      Expression.TryCatch(e, rs, subst(tpe), subst(eff), loc)
+      Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
 
-    case Expression.TryWith(exp, _, _, _, _, _) =>
-      // Erase the handlers
-      visitExp(exp, env0, subst)
-
-    case Expression.Do(_, _, _, loc) =>
-      // Erase down to unit
-      Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
-
-    case Expression.Resume(_, _, loc) =>
-      // Erase down to unit
-      Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
-
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      val as = args.map(visitExp(_, env0, subst))
-      Expression.InvokeConstructor(constructor, as, subst(tpe), subst(eff), loc)
-
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+    case Expr.TryWith(exp, effect, rules, tpe, eff, loc) =>
       val e = visitExp(exp, env0, subst)
-      val as = args.map(visitExp(_, env0, subst))
-      Expression.InvokeMethod(method, e, as, subst(tpe), subst(eff), loc)
+      val rs = rules map {
+        case HandlerRule(op, fparams0, body0) =>
+          val (fparams, fparamEnv) = specializeFormalParams(fparams0, subst)
+          val env1 = env0 ++ fparamEnv
+          val body = visitExp(body0, env1, subst)
+          HandlerRule(op, fparams, body)
+      }
+      Expr.TryWith(e, effect, rs, subst(tpe), subst(eff), loc)
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
-      val as = args.map(visitExp(_, env0, subst))
-      Expression.InvokeStaticMethod(method, as, subst(tpe), subst(eff), loc)
+    case Expr.Do(op, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, env0, subst))
+      Expr.Do(op, es, subst(tpe), subst(eff), loc)
 
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
+    case Expr.Resume(exp, tpe, loc) =>
       val e = visitExp(exp, env0, subst)
-      Expression.GetField(field, e, subst(tpe), subst(eff), loc)
+      Expr.Resume(e, subst(tpe), loc)
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.PutField(field, e1, e2, subst(tpe), subst(eff), loc)
-
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
-      Expression.GetStaticField(field, subst(tpe), subst(eff), loc)
-
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.PutStaticField(field, e, subst(tpe), subst(eff), loc)
-
-    case Expression.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, env0, subst))
-      Expression.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
-    case Expression.Spawn(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1, env0, subst)
-      val e2 = visitExp(exp2, env0, subst)
-      Expression.Spawn(e1, e2, subst(tpe), subst(eff), loc)
-
-    case Expression.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.Lazy(e, subst(tpe), loc)
-
-    case Expression.Force(exp, tpe, eff, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expression.Force(e, subst(tpe), subst(eff), loc)
   }
 
   /**

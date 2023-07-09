@@ -17,23 +17,23 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
+import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
 
 import java.lang.reflect.Method
 
 object ErasedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
+  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty, Set.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  closures: Set[ClosureInfo],
                   anonClasses: Set[AnonClassInfo])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
+    val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
   }
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: MonoType, loc: SourceLocation)

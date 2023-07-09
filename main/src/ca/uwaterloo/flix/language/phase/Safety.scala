@@ -281,7 +281,7 @@ object Safety {
         visit(exp) ++
           rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
 
-      case Expression.Do(_, exps, _, _) =>
+      case Expression.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
       case Expression.Resume(exp, _, _) =>

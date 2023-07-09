@@ -10,9 +10,9 @@ mod Bench.Fusion {
     /// https://github.com/biboudis/streamalg/blob/master/src/main/java/benchmarks/
     ///
 
-    pub def runBenchmarks(): Unit \ IO = region r {
+    pub def runBenchmarks(): Unit \ IO = region rc {
         let s1 = biboudisSuite(100);
-        discard Benchmark.runWithBudget(s1 |> List.toArray(r), 250_000_000_000i64);
+        discard Benchmark.runWithBudget(s1 |> List.toArray(rc), 250_000_000_000i64);
         ()
     }
 
@@ -23,15 +23,15 @@ mod Bench.Fusion {
     ///
     /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
     ///
-    pub def input(r: Region[r], n: Int32): Array[Int32, r] \ r =
-        Array.range(r, 1, n) |>
+    pub def input(rc: Region[r], n: Int32): Array[Int32, r] \ r =
+        Array.range(rc, 1, n) |>
         Array.flatMap(_ -> Array.range(r, 1, 1_000))
 
     ////////////////////////////////////////////////////////////////////////////
     /// Biboudis Suite                                                       ///
     ////////////////////////////////////////////////////////////////////////////
-    pub def biboudisSuite(n: Int32): List[Benchmark] = region r {
-        let l = input(r, n);
+    pub def biboudisSuite(n: Int32): List[Benchmark] = region rc {
+        let l = input(rc, n);
         // List
         listLength(l) ::
         listFilterLength(l) ::

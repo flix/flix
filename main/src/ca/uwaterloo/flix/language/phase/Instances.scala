@@ -126,7 +126,7 @@ object Instances {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
-      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty) match {
+      Unification.unifyTypes(inst1.tpe, inst2.tpe, RigidityEnv.empty) match {
         case Ok(_) =>
           List(
             InstanceError.OverlappingInstances(inst1.clazz.loc, inst2.clazz.loc),
@@ -134,19 +134,6 @@ object Instances {
           )
         case Err(_) => Nil
       }
-    }
-
-    /**
-      * Converts `true` and `false` in the given type into type variables.
-      */
-    def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-      case Type.Cst(TypeConstructor.Pure, loc) => Type.freshVar(Kind.Eff, loc)
-      case Type.Cst(TypeConstructor.EffUniv, loc) => Type.freshVar(Kind.Eff, loc)
-      case t: Type.Var => t
-      case t: Type.Cst => t
-      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
-      case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
-      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(generifyBools), kind, loc)
     }
 
     /**

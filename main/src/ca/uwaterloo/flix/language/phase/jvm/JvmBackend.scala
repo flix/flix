@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
 
 import java.lang.reflect.InvocationTargetException
@@ -38,11 +38,6 @@ object JvmBackend {
 
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
-
-      //
-      // Compute the set of closures in the program.
-      //
-      val closures = root.closures
 
       //
       // Compute the set of namespaces in the program.
@@ -99,7 +94,7 @@ object JvmBackend {
       //
       // Generate closure classes for each closure in the program.
       //
-      val closureClasses = GenClosureClasses.gen(closures)
+      val closureClasses = GenClosureClasses.gen(root.defs)
 
       //
       // Generate enum interfaces for each enum type in the program.
@@ -274,7 +269,6 @@ object JvmBackend {
       /// Retrieve the definition and its type.
       ///
       val defn = root.defs(sym)
-      val MonoType.Arrow(_, _) = defn.tpe
 
       ///
       /// Construct the arguments array.

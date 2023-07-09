@@ -16,13 +16,13 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression
 import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
 
-object OperatorPrinter {
+object OpPrinter {
 
   private val and = "and"
   private val div = "/"
@@ -47,7 +47,7 @@ object OperatorPrinter {
   /**
     * Returns the string representation of `so`.
     */
-  def print(so: SemanticOperator): String = so match {
+  def print(so: SemanticOp): String = so match {
     case BoolOp.Not |
          Int8Op.Not |
          Int16Op.Not |
@@ -69,8 +69,7 @@ object OperatorPrinter {
          Int8Op.Eq |
          Int16Op.Eq |
          Int32Op.Eq |
-         Int64Op.Eq |
-         StringOp.Eq => eq
+         Int64Op.Eq => eq
     case BoolOp.Neq |
          CharOp.Neq |
          Float32Op.Neq |
@@ -78,8 +77,7 @@ object OperatorPrinter {
          Int8Op.Neq |
          Int16Op.Neq |
          Int32Op.Neq |
-         Int64Op.Neq |
-         StringOp.Neq => neq
+         Int64Op.Neq => neq
     case CharOp.Lt |
          Float32Op.Lt |
          Float64Op.Lt |
@@ -173,12 +171,12 @@ object OperatorPrinter {
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError
-
-    case (AtomicOp.Unary(sop), List(d)) => Unary(OperatorPrinter.print(sop), d)
+    case (AtomicOp.Unary(sop), List(d)) => Unary(OpPrinter.print(sop), d)
+    case (AtomicOp.Binary(sop), List(d1, d2)) => Binary(d1, OpPrinter.print(sop), d2)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
     case (AtomicOp.Tag(sym), List(d)) => Tag(sym, List(d))
     case (AtomicOp.Untag(sym), List(d)) => Untag(sym, d)
-    case (AtomicOp.InstanceOf(_), List(d)) => Unknown
+    case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
     case (AtomicOp.Cast, List(d)) => Cast(d, tpe)
     case (AtomicOp.Index(idx), List(d)) => Index(idx, d)
     case (AtomicOp.RecordSelect(field), List(d)) => RecordSelect(field, d)
@@ -206,25 +204,20 @@ object OperatorPrinter {
     case (AtomicOp.UnboxChar, List(d)) => Unbox(d)
     case (AtomicOp.UnboxFloat32, List(d)) => Unbox(d)
     case (AtomicOp.UnboxFloat64, List(d)) => Unbox(d)
-
     case (AtomicOp.Closure(sym), _) => ClosureLifted(sym, ds)
     case (AtomicOp.Tuple, _) => Tuple(ds)
     case (AtomicOp.ArrayLit, _) => ArrayLit(ds)
     case (AtomicOp.InvokeConstructor(constructor), _) => JavaInvokeConstructor(constructor, ds)
     case (AtomicOp.InvokeStaticMethod(method), _) => JavaInvokeStaticMethod(method, ds)
-
-    case (AtomicOp.RecordExtend(field), d1 :: d2 :: Nil) => RecordExtend(field, d1, d2)
-    case (AtomicOp.Assign, d1 :: d2 :: Nil) => Assign(d1, d2)
-    case (AtomicOp.ArrayNew, d1 :: d2 :: Nil) => ArrayNew(d1, d2)
-    case (AtomicOp.ArrayLoad, d1 :: d2 :: Nil) => ArrayLoad(d1, d2)
-    case (AtomicOp.Spawn, d1 :: d2 :: Nil) => Spawn(d1, d2)
-    case (AtomicOp.ScopeExit, d1 :: d2 :: Nil) => ScopeExit(d1, d2)
-    case (AtomicOp.PutField(field), d1 :: d2 :: Nil) => JavaPutField(field, d1, d2)
-
-    case (AtomicOp.ArrayStore, d1 :: d2 :: d3 :: Nil) => ArrayStore(d1, d2, d3)
-
+    case (AtomicOp.RecordExtend(field), List(d1, d2)) => RecordExtend(field, d1, d2)
+    case (AtomicOp.Assign, List(d1, d2)) => Assign(d1, d2)
+    case (AtomicOp.ArrayNew, List(d1, d2)) => ArrayNew(d1, d2)
+    case (AtomicOp.ArrayLoad, List(d1, d2)) => ArrayLoad(d1, d2)
+    case (AtomicOp.Spawn, List(d1, d2)) => Spawn(d1, d2)
+    case (AtomicOp.ScopeExit, List(d1, d2)) => ScopeExit(d1, d2)
+    case (AtomicOp.PutField(field), List(d1, d2)) => JavaPutField(field, d1, d2)
+    case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
-
     // fall back if non other applies
     case (op, ds) => App(Meta(op.toString), ds)
   }

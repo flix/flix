@@ -82,7 +82,4 @@ object MonoType {
 
   case class Native(clazz: Class[_]) extends MonoType
 
-  // TODO: Should be removed.
-  case class Var(id: Int) extends MonoType
-
 }

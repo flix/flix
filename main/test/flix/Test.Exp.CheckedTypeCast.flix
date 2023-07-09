@@ -29,16 +29,16 @@
     def testCheckedTypeCast04(): ##java.io.Serializable = checked_cast(null)
 
     @test
-    def testCheckedTypeCast05(): ##java.io.Serializable = region rh {
-        let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rh as mkSb;
+    def testCheckedTypeCast05(): ##java.io.Serializable = region rc {
+        let _ = rc;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
         checked_cast(mkSb())
     }
 
     @test
-    def testCheckedTypeCast06(): ##java.lang.Object = region rh {
-        let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rh as mkSb;
+    def testCheckedTypeCast06(): ##java.lang.Object = region rc {
+        let _ = rc;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
         checked_cast(mkSb())
     }
 

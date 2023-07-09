@@ -20,14 +20,14 @@ mod Channel {
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
-    pub def buffered(r: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ r =
+    pub def buffered(rc: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ r =
         let m = if (n < 0) 0 else n;
-        $CHANNEL_NEW$(r, m)
+        $CHANNEL_NEW$(rc, m)
 
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///
-    pub def unbuffered(r: Region[r]): (Sender[t, r], Receiver[t, r]) \ r = buffered(r, 0)
+    pub def unbuffered(rc: Region[r]): (Sender[t, r], Receiver[t, r]) \ r = buffered(rc, 0)
 
     ///
     /// Receives a message from the given channel `r`.
@@ -56,9 +56,9 @@ mod Channel {
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
     ///
-    pub def timeout(r: Region[r], d: Duration): Receiver[Unit, r] \ { r, IO } =
-        let (tx, rx) = Channel.unbuffered(r);
-        spawn { Thread.sleep(d); send((), tx) } @ r;
+    pub def timeout(rc: Region[r], d: Duration): Receiver[Unit, r] \ { r, IO } =
+        let (tx, rx) = Channel.unbuffered(rc);
+        spawn { Thread.sleep(d); send((), tx) } @ rc;
         rx
 
 }
