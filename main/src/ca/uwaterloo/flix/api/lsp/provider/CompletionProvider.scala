@@ -110,7 +110,7 @@ object CompletionProvider {
     if (root.isEmpty) return Nil
     val entity = index.query(uri, pos)
     entity match {
-      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, loc))) =>
+      case Some(Entity.Exp(TypedAst.Expr.HoleWithExp(TypedAst.Expr.Var(sym, sourceType, _), targetType, _, loc))) =>
         HoleCompletion.candidates(sourceType, targetType, root.get)
           .map(root.get.defs(_))
           .filter(_.spec.mod.isPublic)
