@@ -94,6 +94,6 @@ object ErasedAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
 
 }
