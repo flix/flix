@@ -76,86 +76,86 @@ object Statistics {
   /**
     * Counts AST nodes in the given expression.
     */
-  private def visitExp(exp0: Expression): Counter = {
+  private def visitExp(exp0: Expr): Counter = {
     val base = Counter.of(getName(exp0))
 
     val subExprs = exp0 match {
-      case Expression.Cst(_, _, _) => Counter.empty
-      case Expression.Var(sym, tpe, loc) => Counter.empty
-      case Expression.Def(sym, tpe, loc) => Counter.empty
-      case Expression.Sig(sym, tpe, loc) => Counter.empty
-      case Expression.Hole(sym, tpe, loc) => Counter.empty
-      case Expression.HoleWithExp(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
-      case Expression.Use(_, _, exp, _) => visitExp(exp)
-      case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
-      case Expression.Apply(exp, exps, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
-      case Expression.Unary(sop, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Region(tpe, loc) => Counter.empty
-      case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.ScopeExit(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-      case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Discard(exp, eff, loc) => visitExp(exp)
-      case Expression.Match(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
-      case Expression.TypeMatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
-      case Expression.RelationalChoose(exps, rules, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChooseRule))
-      case Expression.RestrictableChoose(star, exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitRestrictableChooseRule))
-      case Expression.Tag(sym, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.RestrictableTag(sym, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.Tuple(elms, tpe, eff, loc) => Counter.merge(elms.map(visitExp))
-      case Expression.RecordEmpty(tpe, loc) => Counter.empty
-      case Expression.RecordSelect(exp, field, tpe, eff, loc) => visitExp(exp)
-      case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => visitExp(value) ++ visitExp(rest)
-      case Expression.RecordRestrict(field, rest, tpe, eff, loc) => visitExp(rest)
-      case Expression.ArrayLit(exps, exp, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ visitExp(exp)
-      case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-      case Expression.ArrayLoad(base, index, tpe, eff, loc) => visitExp(base) ++ visitExp(index)
-      case Expression.ArrayLength(base, eff, loc) => visitExp(base)
-      case Expression.ArrayStore(base, index, elm, _, _) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-      case Expression.VectorLit(exps, _, _, _) => Counter.merge(exps.map(visitExp))
-      case Expression.VectorLoad(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.VectorLength(exp, _) => visitExp(exp)
-      case Expression.Ref(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.InstanceOf(exp, _, _) => visitExp(exp)
-      case Expression.CheckedCast(_, exp, _, _, _) => visitExp(exp)
-      case Expression.UncheckedCast(exp, _, _, tpe, eff, loc) => visitExp(exp)
-      case Expression.UncheckedMaskingCast(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.Without(exp, _, _, _, _) => visitExp(exp)
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
-      case Expression.TryWith(exp, sym, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitHandlerRule))
-      case Expression.Do(sym, exps, tpe, eff, loc) => Counter.merge(exps.map(visitExp))
-      case Expression.Resume(exp, tpe, loc) => visitExp(exp)
-      case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => Counter.merge(args.map(visitExp))
-      case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(args.map(visitExp))
-      case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => Counter.merge(args.map(visitExp))
-      case Expression.GetField(field, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.GetStaticField(field, tpe, eff, loc) => Counter.empty
-      case Expression.PutStaticField(field, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.NewObject(name, clazz, tpe, eff, methods, loc) => Counter.merge(methods.map(visitJvmMethod))
-      case Expression.NewChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.SelectChannel(rules, default, tpe, eff, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))
-      case Expression.Spawn(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.ParYield(frags, exp, tpe, eff, loc) => Counter.merge(frags.map(f => visitExp(f.exp))) ++ visitExp(exp)
-      case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
-      case Expression.Force(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => Counter.merge(cs.map(visitConstraint))
-      case Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) => visitExp(exp)
-      case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
-      case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.FixpointInject(exp, pred, tpe, eff, loc) => visitExp(exp)
-      case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.Error(_, _, _) => Counter.empty
+      case Expr.Cst(_, _, _) => Counter.empty
+      case Expr.Var(sym, tpe, loc) => Counter.empty
+      case Expr.Def(sym, tpe, loc) => Counter.empty
+      case Expr.Sig(sym, tpe, loc) => Counter.empty
+      case Expr.Hole(sym, tpe, loc) => Counter.empty
+      case Expr.HoleWithExp(exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
+      case Expr.Use(_, _, exp, _) => visitExp(exp)
+      case Expr.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
+      case Expr.Apply(exp, exps, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
+      case Expr.Unary(sop, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Region(tpe, loc) => Counter.empty
+      case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.ScopeExit(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expr.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Discard(exp, eff, loc) => visitExp(exp)
+      case Expr.Match(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
+      case Expr.TypeMatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
+      case Expr.RelationalChoose(exps, rules, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChooseRule))
+      case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitRestrictableChooseRule))
+      case Expr.Tag(sym, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.Tuple(elms, tpe, eff, loc) => Counter.merge(elms.map(visitExp))
+      case Expr.RecordEmpty(tpe, loc) => Counter.empty
+      case Expr.RecordSelect(exp, field, tpe, eff, loc) => visitExp(exp)
+      case Expr.RecordExtend(field, value, rest, tpe, eff, loc) => visitExp(value) ++ visitExp(rest)
+      case Expr.RecordRestrict(field, rest, tpe, eff, loc) => visitExp(rest)
+      case Expr.ArrayLit(exps, exp, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ visitExp(exp)
+      case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expr.ArrayLoad(base, index, tpe, eff, loc) => visitExp(base) ++ visitExp(index)
+      case Expr.ArrayLength(base, eff, loc) => visitExp(base)
+      case Expr.ArrayStore(base, index, elm, _, _) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
+      case Expr.VectorLit(exps, _, _, _) => Counter.merge(exps.map(visitExp))
+      case Expr.VectorLoad(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.VectorLength(exp, _) => visitExp(exp)
+      case Expr.Ref(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Deref(exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.InstanceOf(exp, _, _) => visitExp(exp)
+      case Expr.CheckedCast(_, exp, _, _, _) => visitExp(exp)
+      case Expr.UncheckedCast(exp, _, _, tpe, eff, loc) => visitExp(exp)
+      case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.Without(exp, _, _, _, _) => visitExp(exp)
+      case Expr.TryCatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
+      case Expr.TryWith(exp, sym, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitHandlerRule))
+      case Expr.Do(sym, exps, tpe, eff, loc) => Counter.merge(exps.map(visitExp))
+      case Expr.Resume(exp, tpe, loc) => visitExp(exp)
+      case Expr.InvokeConstructor(constructor, args, tpe, eff, loc) => Counter.merge(args.map(visitExp))
+      case Expr.InvokeMethod(method, exp, args, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(args.map(visitExp))
+      case Expr.InvokeStaticMethod(method, args, tpe, eff, loc) => Counter.merge(args.map(visitExp))
+      case Expr.GetField(field, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.GetStaticField(field, tpe, eff, loc) => Counter.empty
+      case Expr.PutStaticField(field, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => Counter.merge(methods.map(visitJvmMethod))
+      case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.SelectChannel(rules, default, tpe, eff, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))
+      case Expr.Spawn(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.ParYield(frags, exp, tpe, eff, loc) => Counter.merge(frags.map(f => visitExp(f.exp))) ++ visitExp(exp)
+      case Expr.Lazy(exp, tpe, loc) => visitExp(exp)
+      case Expr.Force(exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.FixpointConstraintSet(cs, stf, tpe, loc) => Counter.merge(cs.map(visitConstraint))
+      case Expr.FixpointLambda(pparams, exp, stf, tpe, eff, loc) => visitExp(exp)
+      case Expr.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
+      case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.FixpointInject(exp, pred, tpe, eff, loc) => visitExp(exp)
+      case Expr.FixpointProject(pred, exp, tpe, eff, loc) => visitExp(exp)
+      case Expr.Error(_, _, _) => Counter.empty
     }
 
     base ++ subExprs
@@ -244,7 +244,7 @@ object Statistics {
   /**
     * Returns the name of the given expression.
     */
-  private def getName(expression: Expression): String = expression.productPrefix
+  private def getName(expression: Expr): String = expression.productPrefix
 
   /**
     * Maintains a count of the
