@@ -60,10 +60,6 @@ object CallByValueAst {
       def purity: Purity = Pure
     }
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[Expr], tpe: Type, loc: SourceLocation) extends Expr {
-      def purity: Purity = Pure
-    }
-
     /**
       * This is not algebraic effect try, but java exception try.
       *

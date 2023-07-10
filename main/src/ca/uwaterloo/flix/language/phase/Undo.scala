@@ -29,10 +29,6 @@ object Undo {
       ReducedAst.Expr.Cst(cst, tpe, loc)
     case Expr.Var(sym, tpe, loc) =>
       ReducedAst.Expr.Var(sym, tpe, loc)
-    case Expr.Closure(sym, closureArgs0, tpe, loc) =>
-      val closureArgs = closureArgs0.map(visitExp)
-      ??? // TODO CLOSURE?
-//      ReducedAst.Expr.Closure(sym, closureArgs, tpe, loc)
     case Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
       val e = visitStmt(exp)
       val rules = rules0.map(visitCatchRule)

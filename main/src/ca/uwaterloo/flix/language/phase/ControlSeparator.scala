@@ -60,11 +60,6 @@ object ControlSeparator {
       insertBindings(_ => ret(CallByValueAst.Expr.Cst(cst, tpe, loc)))
     case Expr.Var(sym, tpe, loc) =>
       ret(CallByValueAst.Expr.Var(sym, tpe, loc))
-//    case Expr.Closure(sym, closureArgs0, tpe, loc) => // TODO ???
-//      insertBindings(_ => {
-//        val closureArgs = closureArgs0.map(visitExpAsExpr)
-//        ret(CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc))
-//      })
     case Expr.ApplyAtomic(op, exps0, tpe, purity, loc) =>
       insertBindings { _ =>
         val exps = exps0.map(visitExpAsExpr)

@@ -40,7 +40,6 @@ object CallByValueAstPrinter {
   def print(e: CallByValueAst.Expr): DocAst.Expression = e match {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVarSym(sym)
-    case Expr.Closure(sym, closureArgs, _, _) => DocAst.Expression.ClosureLifted(sym, closureArgs.map(print))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case CallByValueAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
