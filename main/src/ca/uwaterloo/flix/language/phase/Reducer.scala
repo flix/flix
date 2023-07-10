@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Reducer {
 
-  def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("CallByValue") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Reducer") {
 
     val newDefs = root.defs.map {
       case (sym, d) => sym -> visitDef(d)
