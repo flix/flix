@@ -182,11 +182,8 @@ object ControlSeparator {
       CallByValueAst.Expr.Cst(cst, tpe, loc)
     case ReducedAst.Expr.Var(sym, tpe, loc) =>
       CallByValueAst.Expr.Var(sym, tpe, loc)
-//    case ReducedAst.Expr.Closure(sym, closureArgs0, tpe, loc) => // TODO ???
-//      // TODO FIX: this might break evaluation order (also problem in atomic ops)
-//      val closureArgs = closureArgs0.map(visitExpAsExpr)
-//      CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc)
     case ReducedAst.Expr.ApplyAtomic(op, exps0, tpe, purity, loc) =>
+      // TODO FIX: this might break evaluation order
       val exps = exps0.map(visitExpAsExpr)
       CallByValueAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc)
     case ReducedAst.Expr.ApplyClo(exp, exps0, ct, tpe, purity, loc) =>
