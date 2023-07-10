@@ -57,10 +57,10 @@ object LambdaLift {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = liftExp(exp, sym, m)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, e.purity, loc)
   }
 
   /**
@@ -108,7 +108,7 @@ object LambdaLift {
         // Construct a new definition.
         val defTpe = tpe.arrowResultType
         val purity = tpe.arrowEffectType
-        val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, purity, loc)
+        val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
 
         // Add the new definition to the map of lifted definitions.
         m += (freshSymbol -> defn)

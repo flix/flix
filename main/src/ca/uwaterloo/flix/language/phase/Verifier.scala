@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
-import ca.uwaterloo.flix.language.ast.MonoTypedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, MonoTypedAst, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -55,7 +55,7 @@ object Verifier {
   }
 
 
-  private def visitExpr(expr: MonoTypedAst.Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
+  private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
@@ -80,7 +80,7 @@ object Verifier {
         checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, loc) =>
+    case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
 
       op match {
@@ -126,27 +126,27 @@ object Verifier {
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, loc) =>
+    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
       val lamType1 = visitExpr(exp)
       val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
       checkEq(lamType1, lamType2, loc)
       tpe
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, loc) =>
+    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
       val elseType = visitExpr(exp3)
@@ -154,7 +154,7 @@ object Verifier {
       checkEq(tpe, thenType, loc)
       checkEq(tpe, elseType, loc)
 
-    case Expr.Branch(exp, branches, tpe, loc) =>
+    case Expr.Branch(exp, branches, tpe, _, loc) =>
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)
       }
@@ -164,43 +164,39 @@ object Verifier {
       }
       tpe
 
-    case Expr.JumpTo(sym, tpe1, loc) => lenv.get(sym) match {
+    case Expr.JumpTo(sym, tpe1, _, loc) => lenv.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown label sym: '$sym'.", loc)
       case Some(tpe2) => checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.Let(sym, exp1, exp2, tpe, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
       val letBoundType = visitExpr(exp1)
       val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
       checkEq(bodyType, tpe, loc)
 
-    case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, loc) =>
+    case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, _, loc) =>
       val env1 = env + (varSym -> exp1.tpe)
       val letBoundType = visitExpr(exp1)(root, env1, lenv)
       val bodyType = visitExpr(exp2)(root, env1, lenv)
       checkEq(bodyType, tpe, loc)
 
-    case Expr.Scope(sym, exp, tpe, loc) =>
+    case Expr.Scope(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
 
-    case Expr.TryCatch(exp, rules, tpe, loc) =>
+    case Expr.TryCatch(exp, rules, tpe, _, loc) =>
       for (CatchRule(sym, clazz, exp) <- rules) {
         checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), loc)
       }
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.NewObject(name, clazz, tpe, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
       // TODO: VERIFIER: Add support for NewObject.
       tpe
 
-    case Expr.Spawn(exp1, exp2, tpe1, loc) =>
-      visitExpr(exp1)
-      val tpe2 = visitExpr(exp2)
-      checkEq(tpe1, tpe2, loc)
   }
 
-  private def visitStmt(stmt: MonoTypedAst.Stmt)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = stmt match {
+  private def visitStmt(stmt: ReducedAst.Stmt)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = stmt match {
     case Stmt.Ret(expr, tpe, loc) =>
       visitExpr(expr)
   }
