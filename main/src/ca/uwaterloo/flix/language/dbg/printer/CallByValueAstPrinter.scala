@@ -48,7 +48,7 @@ object CallByValueAstPrinter {
       case CallByValueAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), TypePrinter.print(retTpe))
     })
-    case Expr.ApplyAtomic(op, exps, tpe, _, _) => OperatorPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
+    case Expr.ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
   }
 
   /**

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.CallByValueAst.{Expr, Stmt}
-import ca.uwaterloo.flix.language.ast.{CallByValueAst, ReducedAst}
+import ca.uwaterloo.flix.language.ast.{CallByValueAst, ReducedAst, Type}
 import ca.uwaterloo.flix.util.collection.MapOps
 
 
@@ -20,7 +20,8 @@ object Undo {
     val fparams = fparams0.map(visitFormalParam)
     val body = visitStmt(exp)
     val e = ReducedAst.Stmt.Ret(body, body.tpe, body.loc)
-    ReducedAst.Def(ann, mod, sym, cparams, fparams, e, tpe, loc)
+    val purity = Type.Pure // TODO PURITY
+    ReducedAst.Def(ann, mod, sym, cparams, fparams, e, tpe, purity, loc)
   }
 
   private def visitExp(expr: CallByValueAst.Expr): ReducedAst.Expr = expr match {
@@ -30,7 +31,8 @@ object Undo {
       ReducedAst.Expr.Var(sym, tpe, loc)
     case Expr.Closure(sym, closureArgs0, tpe, loc) =>
       val closureArgs = closureArgs0.map(visitExp)
-      ReducedAst.Expr.Closure(sym, closureArgs, tpe, loc)
+      ??? // TODO CLOSURE?
+//      ReducedAst.Expr.Closure(sym, closureArgs, tpe, loc)
     case Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
       val e = visitStmt(exp)
       val rules = rules0.map(visitCatchRule)

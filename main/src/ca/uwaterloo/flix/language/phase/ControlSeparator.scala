@@ -34,7 +34,7 @@ object ControlSeparator {
   }
 
   def visitDef(defn: ReducedAst.Def)(implicit flix: Flix): CallByValueAst.Def = {
-    val ReducedAst.Def(ann, mod, sym, cparams0, fparams0, ReducedAst.Stmt.Ret(exp, _, _), tpe, loc) = defn
+    val ReducedAst.Def(ann, mod, sym, cparams0, fparams0, ReducedAst.Stmt.Ret(exp, _, _), tpe, purity, loc) = defn // TODO PURITY
     val cparams = cparams0.map(visitFormalParam)
     val fparams = fparams0.map(visitFormalParam)
     // important! reify bindings
@@ -60,11 +60,11 @@ object ControlSeparator {
       insertBindings(_ => ret(CallByValueAst.Expr.Cst(cst, tpe, loc)))
     case Expr.Var(sym, tpe, loc) =>
       ret(CallByValueAst.Expr.Var(sym, tpe, loc))
-    case Expr.Closure(sym, closureArgs0, tpe, loc) =>
-      insertBindings(_ => {
-        val closureArgs = closureArgs0.map(visitExpAsExpr)
-        ret(CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc))
-      })
+//    case Expr.Closure(sym, closureArgs0, tpe, loc) => // TODO ???
+//      insertBindings(_ => {
+//        val closureArgs = closureArgs0.map(visitExpAsExpr)
+//        ret(CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc))
+//      })
     case Expr.ApplyAtomic(op, exps0, tpe, purity, loc) =>
       insertBindings { _ =>
         val exps = exps0.map(visitExpAsExpr)
@@ -187,10 +187,10 @@ object ControlSeparator {
       CallByValueAst.Expr.Cst(cst, tpe, loc)
     case ReducedAst.Expr.Var(sym, tpe, loc) =>
       CallByValueAst.Expr.Var(sym, tpe, loc)
-    case ReducedAst.Expr.Closure(sym, closureArgs0, tpe, loc) =>
-      // TODO FIX: this might break evaluation order (also problem in atomic ops)
-      val closureArgs = closureArgs0.map(visitExpAsExpr)
-      CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc)
+//    case ReducedAst.Expr.Closure(sym, closureArgs0, tpe, loc) => // TODO ???
+//      // TODO FIX: this might break evaluation order (also problem in atomic ops)
+//      val closureArgs = closureArgs0.map(visitExpAsExpr)
+//      CallByValueAst.Expr.Closure(sym, closureArgs, tpe, loc)
     case ReducedAst.Expr.ApplyAtomic(op, exps0, tpe, purity, loc) =>
       val exps = exps0.map(visitExpAsExpr)
       CallByValueAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc)
