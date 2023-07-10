@@ -26,6 +26,33 @@ class TestSafety extends AnyFunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
 
+  test("NonTailRecError.01") {
+    val input =
+      """
+        |@tailrec
+        |def factorial(i: Int): Int =
+        |  if (i == 1)
+        |    1
+        |  else
+        |    i * fact(i - 1)
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[SafetyError.NonTailRecError](result)
+  }
+
+  test("NonTailRecError.02") {
+    val input =
+      """
+        |@tailrec
+        |def factorial(i: Int, acc: Int): Int =
+        |  if (i == 1)
+        |    acc
+        |  else
+        |    fact(i - 1, acc * i)
+  """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+  }
+
   test("UnexpectedBodyAtomPattern.01") {
     val input =
       """

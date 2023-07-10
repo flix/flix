@@ -246,6 +246,16 @@ object Ast {
       override def toString: String = "@Test"
     }
 
+    /**
+     * An AST node that represents a `@tailrec` annotation.
+     *
+     * A function marked with `tailrec` is verified and optimized if it is tail recursive.
+     *
+     * @param loc the source location of the annotation.
+     */
+    case class TailRec(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@tailrec"
+    }
   }
 
   /**
@@ -317,6 +327,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+
+    /**
+     * Returns `true` if `this` sequence contains the `@tailrec` annotation.
+     */
+    def isTailRec: Boolean = annotations exists (_.isInstanceOf[Annotation.TailRec])
   }
 
   /**
