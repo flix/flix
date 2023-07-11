@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
 
 import java.lang.reflect.Method
 
@@ -87,6 +86,8 @@ object ErasedAst {
     case class Ret(expr: Expr, tpe: MonoType, loc: SourceLocation) extends Stmt
 
   }
+
+  case class AnonClassInfo(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 
   case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 

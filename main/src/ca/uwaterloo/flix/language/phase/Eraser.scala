@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst
 import ca.uwaterloo.flix.language.ast.ReducedAst
-import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
 
 import scala.collection.mutable
 
@@ -114,7 +113,7 @@ object Eraser {
           val f = fparams.map(visitFormalParam)
           ErasedAst.JvmMethod(ident, f, retTpe, loc)
       }
-      ctx.anonClasses += AnonClassInfo(name, clazz, tpe, anonClassMethods, loc)
+      ctx.anonClasses += ErasedAst.AnonClassInfo(name, clazz, tpe, anonClassMethods, loc)
       ErasedAst.Expr.NewObject(name, clazz, tpe, methods, loc)
   }
 
@@ -131,6 +130,7 @@ object Eraser {
   private def visitFormalParam(p: ReducedAst.FormalParam): ErasedAst.FormalParam =
     ErasedAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
 
-  private case class Context(anonClasses: mutable.Set[AnonClassInfo])
+  private case class Context(anonClasses: mutable.Set[ErasedAst.AnonClassInfo])
+
 
 }
