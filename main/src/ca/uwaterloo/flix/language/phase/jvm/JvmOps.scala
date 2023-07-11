@@ -556,31 +556,31 @@ object JvmOps {
 
       case Expr.Var(_, tpe, _) => Set(tpe)
 
-      case Expr.ApplyClo(exp, exps, _, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyClo(exp, exps, _, tpe, _, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplyDef(_, exps, _, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyDef(_, exps, _, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplySelfTail(_, _, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplySelfTail(_, _, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expr.Branch(exp, branches, _, _) =>
+      case Expr.Branch(exp, branches, _, _, _) =>
         val exps = branches.map {
           case (_, e) => e
         }
         visitExp(exp) ++ visitExps(exps)
 
-      case Expr.JumpTo(_, _, _) => Set.empty
+      case Expr.JumpTo(_, _, _, _) => Set.empty
 
-      case Expr.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Let(_, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expr.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expr.Scope(_, exp, _, _) => visitExp(exp)
+      case Expr.Scope(_, exp, _, _, _) => visitExp(exp)
 
-      case Expr.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+      case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expr.NewObject(_, _, _, methods, _) =>
+      case Expr.NewObject(_, _, _, methods, _, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethodImpl(_, fparams, clo, tpe, _, _)) =>
             val fs = fparams.foldLeft(Set(tpe)) {
@@ -589,7 +589,7 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
         }
 
-      case Expr.ApplyAtomic(_, exps, tpe, _) => visitExps(exps) + tpe
+      case Expr.ApplyAtomic(_, exps, tpe, _, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
 
