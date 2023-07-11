@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.CallByValueAst.{Expr, Stmt}
-import ca.uwaterloo.flix.language.ast.{CallByValueAst, ReducedAst, Type}
+import ca.uwaterloo.flix.language.ast.{CallByValueAst, Purity, ReducedAst}
 import ca.uwaterloo.flix.util.collection.MapOps
 
 
@@ -11,7 +11,8 @@ object Undo {
   def run(root: CallByValueAst.Root)(implicit flix: Flix): ReducedAst.Root = {
     val defs = MapOps.mapValues(root.defs)(visitDef)
     val enums = MapOps.mapValues(root.enums)(visitEnum)
-    ReducedAst.Root(defs, enums, root.entryPoint, root.sources)
+    val anonClasses = root.anonClasses.map(visitAnonClass)
+    ReducedAst.Root(defs, enums, anonClasses, root.entryPoint, root.sources)
   }
 
   private def visitDef(d: CallByValueAst.Def): ReducedAst.Def = {
@@ -20,7 +21,7 @@ object Undo {
     val fparams = fparams0.map(visitFormalParam)
     val body = visitStmt(exp)
     val e = ReducedAst.Stmt.Ret(body, body.tpe, body.loc)
-    val purity = Type.Pure // TODO PURITY
+    val purity = Purity.Pure // TODO ???
     ReducedAst.Def(ann, mod, sym, cparams, fparams, e, tpe, purity, loc)
   }
 
@@ -34,7 +35,7 @@ object Undo {
       val rules = rules0.map(visitCatchRule)
       ReducedAst.Expr.TryCatch(e, rules, tpe, purity, loc)
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
-      val methods = methods0.map(visitJvmMethod)
+      val methods = methods0.map(visitJvmMethodImpl)
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
     case Expr.ApplyAtomic(op, exps0, tpe, purity, loc) =>
       val exps = exps0.map(visitExp)
@@ -90,13 +91,6 @@ object Undo {
       ReducedAst.CatchRule(sym, clazz, e)
   }
 
-  private def visitJvmMethod(m: CallByValueAst.JvmMethod): ReducedAst.JvmMethod = {
-    val CallByValueAst.JvmMethod(ident, fparams0, clo0, retTpe, purity, loc) = m
-    val fparams = fparams0.map(visitFormalParam)
-    val clo = visitExp(clo0)
-    ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc)
-  }
-
   private def visitEnum(e: CallByValueAst.Enum): ReducedAst.Enum = {
     val CallByValueAst.Enum(ann, mod, sym, cases0, tpeDeprecated, loc) = e
     val cases = MapOps.mapValues(cases0)(visitEnumCase)
@@ -106,6 +100,25 @@ object Undo {
   private def visitEnumCase(c: CallByValueAst.Case): ReducedAst.Case = {
     val CallByValueAst.Case(sym, tpeDeprecated, loc) = c
     ReducedAst.Case(sym, tpeDeprecated, loc)
+  }
+
+  private def visitAnonClass(c: CallByValueAst.AnonClass): ReducedAst.AnonClass = c match {
+    case CallByValueAst.AnonClass(name, clazz, tpe, methods0, loc) =>
+      val methods = methods0.map(visitJvmMethodSpec)
+      ReducedAst.AnonClass(name, clazz, tpe, methods, loc)
+  }
+
+  private def visitJvmMethodSpec(ms: CallByValueAst.JvmMethodSpec): ReducedAst.JvmMethodSpec = ms match {
+    case CallByValueAst.JvmMethodSpec(ident, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      ReducedAst.JvmMethodSpec(ident, fparams, tpe, purity, loc)
+  }
+
+  private def visitJvmMethodImpl(mi: CallByValueAst.JvmMethodImpl): ReducedAst.JvmMethodImpl = mi match {
+    case CallByValueAst.JvmMethodImpl(ident, fparams0, clo0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      val clo = visitExp(clo0)
+      ReducedAst.JvmMethodImpl(ident, fparams, clo, tpe, purity, loc)
   }
 
 }

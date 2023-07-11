@@ -27,10 +27,11 @@ import ca.uwaterloo.flix.util.collection.MapOps
 object ControlSeparator {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): CallByValueAst.Root = flix.phase("ControlSeparator") {
-    val ReducedAst.Root(defs0, enums0, entryPoint, sources) = root
+    val ReducedAst.Root(defs0, enums0, anonClasses0, entryPoint, sources) = root
     val defs = MapOps.mapValues(defs0)(visitDef)
     val enums = MapOps.mapValues(enums0)(visitEnum)
-    CallByValueAst.Root(defs, enums, entryPoint, sources)
+    val anonClasses = anonClasses0.map(visitAnonClass(_)(new Context(), implicitly)) // TODO WHAT TO DO ABOUT CONTEXT?
+    CallByValueAst.Root(defs, enums, anonClasses, entryPoint, sources)
   }
 
   def visitDef(defn: ReducedAst.Def)(implicit flix: Flix): CallByValueAst.Def = {
@@ -52,6 +53,12 @@ object ControlSeparator {
   def visitEnumCase(c: ReducedAst.Case): CallByValueAst.Case = {
     val ReducedAst.Case(sym, tpeDeprecated, loc) = c
     CallByValueAst.Case(sym, tpeDeprecated, loc)
+  }
+
+  def visitAnonClass(c: ReducedAst.AnonClass)(implicit ctx: Context, flix: Flix): CallByValueAst.AnonClass = c match {
+    case ReducedAst.AnonClass(name, clazz, tpe, methods0, loc) =>
+      val methods = methods0.map(visitJvmMethodSpec)
+      CallByValueAst.AnonClass(name, clazz, tpe, methods, loc)
   }
 
   // invariant: context will be unchanged
@@ -111,7 +118,7 @@ object ControlSeparator {
       ret(CallByValueAst.Expr.TryCatch(e, rules, tpe, purity, loc))
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       insertBindings { _ =>
-        val methods = methods0.map(visitJvmMethod)
+        val methods = methods0.map(visitJvmMethodImpl)
         ret(CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc))
       }
   }
@@ -121,10 +128,16 @@ object ControlSeparator {
       CallByValueAst.CatchRule(sym, clazz, visitExpAsStmt(exp))
   }
 
-  private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: Context, flix: Flix): CallByValueAst.JvmMethod = method match {
-    case ReducedAst.JvmMethod(ident, fparams, clo0, retTpe, purity, loc) =>
+  private def visitJvmMethodImpl(method: ReducedAst.JvmMethodImpl)(implicit ctx: Context, flix: Flix): CallByValueAst.JvmMethodImpl = method match {
+    case ReducedAst.JvmMethodImpl(ident, fparams, clo0, retTpe, purity, loc) =>
       val clo = visitExpAsExpr(clo0)
-      CallByValueAst.JvmMethod(ident, fparams.map(visitFormalParam), clo, retTpe, purity, loc)
+      CallByValueAst.JvmMethodImpl(ident, fparams.map(visitFormalParam), clo, retTpe, purity, loc)
+  }
+
+  private def visitJvmMethodSpec(spec: ReducedAst.JvmMethodSpec)(implicit ctx: Context, flix: Flix): CallByValueAst.JvmMethodSpec = spec match {
+    case ReducedAst.JvmMethodSpec(ident, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      CallByValueAst.JvmMethodSpec(ident, fparams, tpe, purity, loc)
   }
 
   sealed trait Binding
@@ -224,7 +237,7 @@ object ControlSeparator {
       val rules = rules0.map(visitCatchRule)
       CallByValueAst.Expr.TryCatch(e, rules, tpe, purity, loc)
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-      CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods.map(visitJvmMethod), loc)
+      CallByValueAst.Expr.NewObject(name, clazz, tpe, purity, methods.map(visitJvmMethodImpl), loc)
   }
 
   private def visitFormalParam(p: ReducedAst.FormalParam): CallByValueAst.FormalParam = p match {

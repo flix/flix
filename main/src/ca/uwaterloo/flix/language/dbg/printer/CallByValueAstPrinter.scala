@@ -16,7 +16,7 @@ object CallByValueAstPrinter {
       case CallByValueAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
           case CallByValueAst.Case(sym, tpe, _) =>
-            DocAst.Case(sym, TypePrinter.print(tpe))
+            DocAst.Case(sym, MonoTypePrinter.print(tpe))
         }.toList
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
@@ -27,7 +27,7 @@ object CallByValueAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          TypePrinter.print(tpe),
+          MonoTypePrinter.print(tpe),
           print(stmt)
         )
     }.toList
@@ -43,11 +43,11 @@ object CallByValueAstPrinter {
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case CallByValueAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
-    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methods.map {
-      case CallByValueAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), TypePrinter.print(retTpe))
+    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
+      case CallByValueAst.JvmMethodImpl(ident, fparams, clo, retTpe, _, _) =>
+        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
     })
-    case Expr.ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
+    case Expr.ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
   }
 
   /**
@@ -58,8 +58,8 @@ object CallByValueAstPrinter {
     case Stmt.IfThenElse(exp, stmt1, stmt2, _, _, _) => DocAst.Expression.IfThenElse(print(exp), print(stmt1), print(stmt2))
     case Stmt.Branch(stmt, branches, _, _, _) => DocAst.Expression.Branch(print(stmt), MapOps.mapValues(branches)(print))
     case Stmt.JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
-    case Stmt.LetVal(sym, stmt1, stmt2, _, _, _) => DocAst.Expression.LetVal(printVarSym(sym), Some(TypePrinter.print(stmt1.tpe)), print(stmt1), print(stmt2))
-    case Stmt.LetRec(varSym, _, _, exp, stmt, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp.tpe)), print(exp), print(stmt))
+    case Stmt.LetVal(sym, stmt1, stmt2, _, _, _) => DocAst.Expression.LetVal(printVarSym(sym), Some(MonoTypePrinter.print(stmt1.tpe)), print(stmt1), print(stmt2))
+    case Stmt.LetRec(varSym, _, _, exp, stmt, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp.tpe)), print(exp), print(stmt))
     case Stmt.Scope(sym, stmt, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(stmt))
     case Stmt.ApplyClo(exp, exps, CallType.NonTailCall, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
     case Stmt.ApplyClo(exp, exps, CallType.TailCall, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
@@ -73,7 +73,7 @@ object CallByValueAstPrinter {
     */
   private def printFormalParam(fp: CallByValueAst.FormalParam): DocAst.Expression.Ascription = {
     val CallByValueAst.FormalParam(sym, _, tpe, _) = fp
-    DocAst.Expression.Ascription(printVarSym(sym), TypePrinter.print(tpe))
+    DocAst.Expression.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
   /**

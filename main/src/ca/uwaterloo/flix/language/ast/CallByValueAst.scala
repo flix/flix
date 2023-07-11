@@ -31,19 +31,20 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
   */
 object CallByValueAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, List.empty, None, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, CallByValueAst.Def],
                   enums: Map[Symbol.EnumSym, CallByValueAst.Enum],
+                  anonClasses: List[AnonClass],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[CallByValueAst.FormalParam], fparams: List[CallByValueAst.FormalParam], stmt: CallByValueAst.Stmt, tpe: Type, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[CallByValueAst.FormalParam], fparams: List[CallByValueAst.FormalParam], stmt: CallByValueAst.Stmt, tpe: MonoType, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, CallByValueAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, CallByValueAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
 
   sealed trait Expr {
-    def tpe: Type
+    def tpe: MonoType
 
     def purity: Purity
 
@@ -52,11 +53,11 @@ object CallByValueAst {
 
   object Expr {
 
-    case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
@@ -76,17 +77,17 @@ object CallByValueAst {
       *
       * and likewise in the catch case body
       */
-    case class TryCatch(exp: Stmt, rules: List[CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Stmt, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, /* no control effects */ methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, /* no control effects */ methods: List[JvmMethodImpl], loc: SourceLocation) extends Expr
 
     // TODO: Minus all the applies stuff in Intrinsic.
-    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
 
     // `stmt` must be control pure. There must not be algebraic effects "across" run.
     // `run` could be omited but is used to limit the time spent in the cps monad.
-//    case class Run(stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Expr
+//    case class Run(stmt: Stmt, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
 
     // TODO: force/lazy (using run)
@@ -96,7 +97,7 @@ object CallByValueAst {
   }
 
   sealed trait Stmt {
-    def tpe: Type
+    def tpe: MonoType
 
     def purity: Purity
 
@@ -105,37 +106,40 @@ object CallByValueAst {
 
   object Stmt {
 
-    case class Ret(exp: Expr, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class Ret(exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class IfThenElse(exp: Expr, stmt1: Stmt, stmt2: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class IfThenElse(exp: Expr, stmt1: Stmt, stmt2: Stmt, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Branch(stmt: Stmt, branches: Map[Symbol.LabelSym, Stmt], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class Branch(stmt: Stmt, branches: Map[Symbol.LabelSym, Stmt], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class LetVal(sym: Symbol.VarSym, stmt1: Stmt, stmt2: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class LetVal(sym: Symbol.VarSym, stmt1: Stmt, stmt2: Stmt, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp: Expr, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp: Expr, stmt: Stmt, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class Scope(sym: Symbol.VarSym, stmt: Stmt, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class Scope(sym: Symbol.VarSym, stmt: Stmt, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class ApplyClo(exp: Expr, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[CallByValueAst.FormalParam], actuals: List[Expr], tpe: Type, purity: Purity, loc: SourceLocation) extends Stmt
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[CallByValueAst.FormalParam], actuals: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Stmt
 
     // TODO: add DO and Try-With
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpeDeprecated: Type, loc: SourceLocation)
+  case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethodSpec], loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[CallByValueAst.FormalParam], clo: CallByValueAst.Expr, retTpe: Type, purity: Purity, loc: SourceLocation)
+  case class JvmMethodSpec(ident: Name.Ident, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+
+  case class JvmMethodImpl(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: CallByValueAst.Stmt)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
 
 }
 
