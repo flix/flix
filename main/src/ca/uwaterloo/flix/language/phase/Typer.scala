@@ -263,7 +263,7 @@ object Typer {
           //
           val tpe = spec0.tpe
           val eff = spec0.eff
-          val exp = TypedAst.Expression.Error(err, tpe, eff)
+          val exp = TypedAst.Expr.Error(err, tpe, eff)
           val spec = visitSpec(spec0, root, Substitution.empty)
           val impl = TypedAst.Impl(exp, spec.declaredScheme)
           TypedAst.Def(sym, spec, impl)
@@ -329,7 +329,7 @@ object Typer {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expr, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
     case KindedAst.Spec(_, _, _, _, fparams0, sc, tpe, eff, _, _) =>
 
       ///
@@ -531,17 +531,17 @@ object Typer {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  def inferExp(exp0: KindedAst.Expr, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: KindedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
+    def visitExp(e0: KindedAst.Expr): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
-      case KindedAst.Expression.Var(sym, loc) =>
+      case KindedAst.Expr.Var(sym, loc) =>
         liftM(List.empty, sym.tvar, Type.Pure)
 
-      case KindedAst.Expression.Def(sym, tvar, loc) =>
+      case KindedAst.Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
         val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         for {
@@ -549,7 +549,7 @@ object Typer {
           tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Sig(sym, tvar, loc) =>
+      case KindedAst.Expr.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
         val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
@@ -558,10 +558,10 @@ object Typer {
           tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Hole(_, tvar, _) =>
+      case KindedAst.Expr.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
-      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.HoleWithExp(exp, tvar, pvar, loc) =>
         for {
           (tconstrs, tpe, eff) <- visitExp(exp)
           // result type is whatever is needed for the hole
@@ -571,53 +571,53 @@ object Typer {
           resultEff <- unifyTypeM(atLeastEff, pvar, loc)
         } yield (tconstrs, resultTpe, resultEff)
 
-      case e: KindedAst.Expression.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
+      case e: KindedAst.Expr.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
 
-      case KindedAst.Expression.Use(_, alias, exp, _) => visitExp(exp)
+      case KindedAst.Expr.Use(_, alias, exp, _) => visitExp(exp)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Unit, loc) =>
         liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Null, loc) =>
         liftM(List.empty, Type.mkNull(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Bool(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Bool(_), loc) =>
         liftM(List.empty, Type.mkBool(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Char(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Char(_), loc) =>
         liftM(List.empty, Type.mkChar(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Float32(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Float32(_), loc) =>
         liftM(List.empty, Type.mkFloat32(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Float64(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Float64(_), loc) =>
         liftM(List.empty, Type.mkFloat64(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.BigDecimal(_), loc) =>
         liftM(List.empty, Type.mkBigDecimal(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int8(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Int8(_), loc) =>
         liftM(List.empty, Type.mkInt8(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int16(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Int16(_), loc) =>
         liftM(List.empty, Type.mkInt16(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int32(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Int32(_), loc) =>
         liftM(List.empty, Type.mkInt32(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Int64(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Int64(_), loc) =>
         liftM(List.empty, Type.mkInt64(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.BigInt(_), loc) =>
         liftM(List.empty, Type.mkBigInt(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Str(_), loc) =>
         liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Regex(_), loc) =>
+      case KindedAst.Expr.Cst(Ast.Constant.Regex(_), loc) =>
         liftM(List.empty, Type.mkRegex(loc.asSynthetic), Type.Pure)
 
-      case KindedAst.Expression.Lambda(fparam, exp, loc) =>
+      case KindedAst.Expr.Lambda(fparam, exp, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
         for {
@@ -626,19 +626,19 @@ object Typer {
           resultTyp = Type.mkArrowWithEffect(argType, bodyEff, bodyType, loc)
         } yield (constrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Apply(exp, exps, tvar, pvar, loc) =>
+      case KindedAst.Expr.Apply(exp, exps, tvar, pvar, loc) =>
         //
         // Determine if there is a direct call to a Def or Sig.
         //
         val knownTarget = exp match {
-          case KindedAst.Expression.Def(sym, tvar2, loc2) =>
+          case KindedAst.Expr.Def(sym, tvar2, loc2) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
             val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar2, constrs1, declaredType))
 
-          case KindedAst.Expression.Sig(sym, tvar2, loc2) =>
+          case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.clazz).sigs(sym)
             val (tconstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
@@ -684,7 +684,7 @@ object Typer {
             } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
         }
 
-      case KindedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
+      case KindedAst.Expr.Unary(sop, exp, tvar, loc) => sop match {
         case SemanticOp.BoolOp.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
@@ -737,7 +737,7 @@ object Typer {
         case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
-      case KindedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) => sop match {
+      case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
 
         case SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or =>
           for {
@@ -875,7 +875,7 @@ object Typer {
         case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
-      case KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
+      case KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -885,7 +885,7 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, eff3, loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
-      case KindedAst.Expression.Stm(exp1, exp2, loc) =>
+      case KindedAst.Expr.Stm(exp1, exp2, loc) =>
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -893,13 +893,13 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Discard(exp, loc) =>
+      case KindedAst.Expr.Discard(exp, loc) =>
         for {
           (constrs, _, eff) <- visitExp(exp)
           resultTyp = Type.Unit
         } yield (constrs, resultTyp, eff)
 
-      case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
+      case KindedAst.Expr.Let(sym, mod, exp1, exp2, loc) =>
         // Note: The call to unify on sym.tvar occurs immediately after we have inferred the type of exp1.
         // This ensures that uses of sym inside exp2 are type checked according to this type.
         for {
@@ -910,7 +910,7 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+      case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
         // Ensure that `exp1` is a lambda.
         val a = Type.freshVar(Kind.Star, loc)
         val b = Type.freshVar(Kind.Star, loc)
@@ -925,10 +925,10 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Region(tpe, _) =>
+      case KindedAst.Expr.Region(tpe, _) =>
         liftM(Nil, tpe, Type.Pure)
 
-      case KindedAst.Expression.Scope(sym, regionVar, exp, pvar, loc) =>
+      case KindedAst.Expr.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
           // don't make the region var rigid if the --Xflexible-regions flag is set
           _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
@@ -940,7 +940,7 @@ object Typer {
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.ScopeExit(exp1, exp2, loc) =>
+      case KindedAst.Expr.ScopeExit(exp1, exp2, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val p = Type.freshVar(Kind.Eff, loc)
@@ -953,7 +953,7 @@ object Typer {
           resultEff = Type.mkUnion(Type.Impure, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Match(exp, rules, loc) =>
+      case KindedAst.Expr.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.flatMap(_.guard)
         val bodies = rules.map(_.exp)
@@ -970,7 +970,7 @@ object Typer {
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expression.TypeMatch(exp, rules, loc) =>
+      case KindedAst.Expr.TypeMatch(exp, rules, loc) =>
         val bodies = rules.map(_.exp)
 
         for {
@@ -984,15 +984,15 @@ object Typer {
           resultEff = Type.mkUnion(eff :: bodyEffs, loc)
         } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expression.RelationalChoose(star, exps0, rules0, tvar, loc) =>
+      case KindedAst.Expr.RelationalChoose(star, exps0, rules0, tvar, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
           *
           * Returns a pair of lists of the types and purects of the match expressions.
           */
-        def visitMatchExps(exps: List[KindedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
-          def visitMatchExp(exp: KindedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+        def visitMatchExps(exps: List[KindedAst.Expr], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
+          def visitMatchExp(exp: KindedAst.Expr, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star, loc)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
@@ -1161,9 +1161,9 @@ object Typer {
           resultEff = Type.mkUnion(matchEff ::: ruleBodyEff, loc)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
-      case exp@KindedAst.Expression.RestrictableChoose(_, _, _, _, _) => RestrictableChooseInference.infer(exp, root)
+      case exp@KindedAst.Expr.RestrictableChoose(_, _, _, _, _) => RestrictableChooseInference.infer(exp, root)
 
-      case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
+      case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
         if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
           //
           // Special Case 1: Absent or Present Tag
@@ -1216,19 +1216,19 @@ object Typer {
           } yield (constrs, resultTyp, resultEff)
         }
 
-      case exp@KindedAst.Expression.RestrictableTag(_, _, _, _, _) =>
+      case exp@KindedAst.Expr.RestrictableTag(_, _, _, _, _) =>
         RestrictableChooseInference.inferRestrictableTag(exp, root)
 
-      case KindedAst.Expression.Tuple(elms, loc) =>
+      case KindedAst.Expr.Tuple(elms, loc) =>
         for {
           (elementConstrs, elementTypes, elementEffs) <- traverseM(elms)(visitExp).map(_.unzip3)
           resultEff = Type.mkUnion(elementEffs, loc)
         } yield (elementConstrs.flatten, Type.mkTuple(elementTypes, loc), resultEff)
 
-      case KindedAst.Expression.RecordEmpty(loc) =>
+      case KindedAst.Expr.RecordEmpty(loc) =>
         liftM(List.empty, Type.mkRecord(Type.RecordRowEmpty, loc), Type.Pure)
 
-      case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
+      case KindedAst.Expr.RecordSelect(exp, field, tvar, loc) =>
         //
         // r : { field = tpe | row }
         // -------------------------
@@ -1243,7 +1243,7 @@ object Typer {
           resultEff = eff
         } yield (constrs, tvar, resultEff)
 
-      case KindedAst.Expression.RecordExtend(field, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.RecordExtend(field, exp1, exp2, tvar, loc) =>
         //
         //       exp1 : tpe        exp2 : {| r }
         // ---------------------------------------------
@@ -1258,7 +1258,7 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.RecordRestrict(field, exp, tvar, loc) =>
+      case KindedAst.Expr.RecordRestrict(field, exp, tvar, loc) =>
         //
         //  exp : { field  :: t | r }
         // -------------------------
@@ -1273,7 +1273,7 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayLit(exps, exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.ArrayLit(exps, exp, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
@@ -1285,7 +1285,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(Type.mkUnion(eff1, loc), eff2, regionVar, loc), loc)
         } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, pvar, loc) =>
+      case KindedAst.Expr.ArrayNew(exp1, exp2, exp3, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
@@ -1298,7 +1298,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff1, eff2, eff3, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayLength(exp, loc) =>
+      case KindedAst.Expr.ArrayLength(exp, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         for {
@@ -1310,7 +1310,7 @@ object Typer {
           _ <- unbindVar(regionVar)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, pvar, loc) =>
+      case KindedAst.Expr.ArrayLoad(exp1, exp2, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -1320,7 +1320,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(regionVar, eff1, eff2, loc), loc)
         } yield (constrs1 ++ constrs2, tvar, resultEff)
 
-      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, pvar, loc) =>
+      case KindedAst.Expr.ArrayStore(exp1, exp2, exp3, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
@@ -1335,7 +1335,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(List(regionVar, eff1, eff2, eff3), loc), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
-      case KindedAst.Expression.VectorLit(exps, tvar, pvar, loc) =>
+      case KindedAst.Expr.VectorLit(exps, tvar, pvar, loc) =>
         for {
           (constrs, elmTypes, eff) <- traverseM(exps)(visitExp).map(_.unzip3)
           elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
@@ -1343,7 +1343,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff, loc), loc)
         } yield (constrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expression.VectorLoad(exp1, exp2, tvar, pvar, loc) =>
+      case KindedAst.Expr.VectorLoad(exp1, exp2, tvar, pvar, loc) =>
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1352,7 +1352,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff1, eff2, loc), loc)
         } yield (constrs1 ++ constrs2, tvar, resultEff)
 
-      case KindedAst.Expression.VectorLength(exp, loc) =>
+      case KindedAst.Expr.VectorLength(exp, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
@@ -1362,7 +1362,7 @@ object Typer {
           _ <- unbindVar(elmVar)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
+      case KindedAst.Expr.Ref(exp1, exp2, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
@@ -1373,7 +1373,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Deref(exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.Deref(exp, tvar, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val refType = Type.mkRef(elmVar, regionVar, loc)
@@ -1385,7 +1385,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff, regionVar, loc), loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.Assign(exp1, exp2, pvar, loc) =>
+      case KindedAst.Expr.Assign(exp1, exp2, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val refType = Type.mkRef(elmVar, regionVar, loc)
@@ -1399,7 +1399,7 @@ object Typer {
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
+      case KindedAst.Expr.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (constrs, actualTyp, actualPur) <- visitExp(exp)
@@ -1407,14 +1407,14 @@ object Typer {
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Eff, loc)), actual = actualPur, loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.InstanceOf(exp, className, loc) =>
+      case KindedAst.Expr.InstanceOf(exp, className, loc) =>
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.Bool
           resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.CheckedCast(cast, exp, tvar, pvar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             for {
@@ -1430,7 +1430,7 @@ object Typer {
             } yield (constrs, tpe, resultEff)
         }
 
-      case KindedAst.Expression.UncheckedCast(exp, declaredTyp, declaredEff, tvar, loc) =>
+      case KindedAst.Expr.UncheckedCast(exp, declaredTyp, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
         for {
           (constrs, actualTyp, actualEff) <- visitExp(exp)
@@ -1438,13 +1438,13 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.UncheckedMaskingCast(exp, _) =>
+      case KindedAst.Expr.UncheckedMaskingCast(exp, _) =>
         // A mask expression is unsound; the type system assumes the expression is pure.
         for {
           (constrs, tpe, eff) <- visitExp(exp)
         } yield (constrs, tpe, Type.Pure)
 
-      case KindedAst.Expression.Without(exp, effUse, loc) =>
+      case KindedAst.Expr.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         //        val expected = Type.mkDifference(Type.freshVar(Kind.Bool, loc), effType, loc)
         // TODO EFF-MIGRATION use expected
@@ -1452,7 +1452,7 @@ object Typer {
           (tconstrs, tpe, eff) <- visitExp(exp)
         } yield (tconstrs, tpe, eff)
 
-      case KindedAst.Expression.TryCatch(exp, rules, loc) =>
+      case KindedAst.Expr.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
           case KindedAst.CatchRule(sym, clazz, body) =>
             visitExp(body)
@@ -1466,7 +1466,7 @@ object Typer {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expression.TryWith(exp, effUse, rules, tvar, loc) =>
+      case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val effect = root.effects(effUse.sym)
         val ops = effect.ops.map(op => op.sym -> op).toMap
 
@@ -1512,13 +1512,13 @@ object Typer {
           resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
         } yield (resultTconstrs, resultTpe, resultEff)
 
-      case KindedAst.Expression.Do(op, args, tvar, loc) =>
+      case KindedAst.Expr.Do(op, args, tvar, loc) =>
         val effect = root.effects(op.sym.eff)
         val operation = effect.ops.find(_.sym == op.sym)
           .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}", loc))
         val effTpe = Type.Cst(TypeConstructor.Effect(op.sym.eff), loc)
 
-        def visitArg(arg: KindedAst.Expression, fparam: KindedAst.FormalParam): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+        def visitArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
           for {
             (tconstrs, tpe, eff) <- visitExp(arg)
             _ <- expectTypeM(expected = fparam.tpe, tpe, arg.loc)
@@ -1539,7 +1539,7 @@ object Typer {
           } yield (resultTconstrs, resultTpe, resultEff)
         }
 
-      case KindedAst.Expression.Resume(exp, argTvar, retTvar, loc) =>
+      case KindedAst.Expr.Resume(exp, argTvar, retTvar, loc) =>
         for {
           (tconstrs, tpe, eff) <- visitExp(exp)
           resultTconstrs = tconstrs
@@ -1548,7 +1548,7 @@ object Typer {
           resultEff = eff
         } yield (resultTconstrs, resultTpe, resultEff)
 
-      case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
+      case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
         for {
           (constrs, _, _) <- traverseM(args)(visitExp).map(_.unzip3)
@@ -1556,7 +1556,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expression.InvokeMethod(method, clazz, exp, args, loc) =>
+      case KindedAst.Expr.InvokeMethod(method, clazz, exp, args, loc) =>
         val classType = getFlixType(clazz)
         val returnType = getFlixType(method.getReturnType)
         for {
@@ -1567,7 +1567,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (baseConstrs ++ constrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expression.InvokeStaticMethod(method, args, loc) =>
+      case KindedAst.Expr.InvokeStaticMethod(method, args, loc) =>
         val returnType = getFlixType(method.getReturnType)
         for {
           (constrs, tpes, effs) <- traverseM(args)(visitExp).map(_.unzip3)
@@ -1575,7 +1575,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expression.GetField(field, clazz, exp, loc) =>
+      case KindedAst.Expr.GetField(field, clazz, exp, loc) =>
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(clazz)
         for {
@@ -1585,7 +1585,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.PutField(field, clazz, exp1, exp2, loc) =>
+      case KindedAst.Expr.PutField(field, clazz, exp1, exp2, loc) =>
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(clazz)
         for {
@@ -1597,13 +1597,13 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.GetStaticField(field, loc) =>
+      case KindedAst.Expr.GetStaticField(field, loc) =>
         val fieldType = getFlixType(field.getType)
         val resultTyp = fieldType
         val resultEff = Type.Impure
         liftM(List.empty, resultTyp, resultEff)
 
-      case KindedAst.Expression.PutStaticField(field, exp, loc) =>
+      case KindedAst.Expr.PutStaticField(field, exp, loc) =>
         for {
           (valueConstrs, valueTyp, _) <- visitExp(exp)
           fieldTyp <- expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
@@ -1611,7 +1611,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (valueConstrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.NewObject(_, clazz, methods, loc) =>
+      case KindedAst.Expr.NewObject(_, clazz, methods, loc) =>
 
         /**
           * Performs type inference on the given JVM `method`.
@@ -1641,7 +1641,7 @@ object Typer {
         } yield (constrs.flatten, resultTyp, resultEff)
 
 
-      case KindedAst.Expression.NewChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.NewChannel(exp1, exp2, tvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
@@ -1653,7 +1653,7 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
+      case KindedAst.Expr.GetChannel(exp, tvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val elmVar = Type.freshVar(Kind.Star, loc)
         val channelType = Type.mkReceiver(elmVar, regionVar, loc)
@@ -1665,7 +1665,7 @@ object Typer {
           resultEff = Type.mkUnion(eff, regionVar, loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
+      case KindedAst.Expr.PutChannel(exp1, exp2, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val elmVar = Type.freshVar(Kind.Star, loc)
         val channelType = Type.mkSender(elmVar, regionVar, loc)
@@ -1679,7 +1679,7 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
+      case KindedAst.Expr.SelectChannel(rules, default, tvar, loc) =>
 
         val regionVar = Type.freshVar(Kind.Eff, loc)
 
@@ -1701,7 +1701,7 @@ object Typer {
         /**
           * Performs type inference on the given optional default expression `exp0`.
           */
-        def inferDefaultRule(exp0: Option[KindedAst.Expression]): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
+        def inferDefaultRule(exp0: Option[KindedAst.Expr]): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
           exp0 match {
             case None => liftM(Nil, Type.freshVar(Kind.Star, loc), Type.Pure)
             case Some(exp) => visitExp(exp)
@@ -1715,7 +1715,7 @@ object Typer {
           resultEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
         } yield (resultCon, resultTyp, resultEff)
 
-      case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
+      case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
@@ -1726,7 +1726,7 @@ object Typer {
           resultEff = Type.mkUnion(Type.Impure, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.ParYield(frags, exp, loc) =>
+      case KindedAst.Expr.ParYield(frags, exp, loc) =>
         val patterns = frags.map(_.pat)
         val parExps = frags.map(_.exp)
         val patLocs = frags.map(_.loc)
@@ -1738,14 +1738,14 @@ object Typer {
           _ <- seqM(fragEffs.zip(patLocs) map { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) })
         } yield (constrs ++ fragConstrs.flatten, tpe, eff)
 
-      case KindedAst.Expression.Lazy(exp, loc) =>
+      case KindedAst.Expr.Lazy(exp, loc) =>
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.mkLazy(tpe, loc)
           resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.Force(exp, tvar, loc) =>
+      case KindedAst.Expr.Force(exp, tvar, loc) =>
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           lazyTyp <- expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, exp.loc)
@@ -1753,14 +1753,14 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
+      case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         for {
           (constrs, constraintTypes) <- traverseM(cs)(visitConstraint).map(_.unzip)
           schemaRow <- unifyTypeAllowEmptyM(constraintTypes, Kind.SchemaRow, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkSchema(schemaRow, loc), loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.FixpointLambda(pparams, exp, tvar, loc) =>
+      case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
         def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
           case KindedAst.PredicateParam(pred, tpe, loc) => Type.mkSchemaRowExtend(pred, tpe, restRow, tpe.loc)
@@ -1778,7 +1778,7 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
+      case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}
         //  ------------------------------
@@ -1791,7 +1791,7 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointSolve(exp, loc) =>
+      case KindedAst.Expr.FixpointSolve(exp, loc) =>
         //
         //  exp : #{...}
         //  ---------------
@@ -1803,7 +1803,7 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
+      case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
         //  -------------------------------------------
@@ -1820,7 +1820,7 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointInject(exp, pred, tvar, loc) =>
+      case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
         //
         //  exp : F[freshElmType] where F is Foldable
         //  -------------------------------------------
@@ -1843,7 +1843,7 @@ object Typer {
           resultEff = eff
         } yield (order :: foldable :: constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.FixpointProject(pred, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         //
         //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
         //  exp2: freshRestSchemaVar
@@ -1863,7 +1863,7 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Error(m, tvar, pvar) =>
+      case KindedAst.Expr.Error(m, tvar, pvar) =>
         InferMonad.point((Nil, tvar, pvar))
 
     }
@@ -1892,7 +1892,7 @@ object Typer {
   /**
     * Infers the type and effect of the expression, and checks that they match the expected type and effect.
     */
-  private def inferExpectedExp(exp: KindedAst.Expression, tpe0: Type, eff0: Type, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  private def inferExpectedExp(exp: KindedAst.Expr, tpe0: Type, eff0: Type, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
     for {
       (tconstrs, tpe, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
@@ -1904,113 +1904,113 @@ object Typer {
   /**
     * Applies the given substitution `subst0` to the given expression `exp0`.
     */
-  private def reassembleExp(exp0: KindedAst.Expression, root: KindedAst.Root, subst0: Substitution): TypedAst.Expression = {
+  private def reassembleExp(exp0: KindedAst.Expr, root: KindedAst.Root, subst0: Substitution): TypedAst.Expr = {
     /**
       * Applies the given substitution `subst0` to the given expression `exp0`.
       */
-    def visitExp(exp0: KindedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
+    def visitExp(exp0: KindedAst.Expr, subst0: Substitution): TypedAst.Expr = exp0 match {
 
-      case KindedAst.Expression.Var(sym, loc) =>
-        TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
+      case KindedAst.Expr.Var(sym, loc) =>
+        TypedAst.Expr.Var(sym, subst0(sym.tvar), loc)
 
-      case KindedAst.Expression.Def(sym, tvar, loc) =>
-        TypedAst.Expression.Def(sym, subst0(tvar), loc)
+      case KindedAst.Expr.Def(sym, tvar, loc) =>
+        TypedAst.Expr.Def(sym, subst0(tvar), loc)
 
-      case KindedAst.Expression.Sig(sym, tvar, loc) =>
-        TypedAst.Expression.Sig(sym, subst0(tvar), loc)
+      case KindedAst.Expr.Sig(sym, tvar, loc) =>
+        TypedAst.Expr.Sig(sym, subst0(tvar), loc)
 
-      case KindedAst.Expression.Hole(sym, tpe, loc) =>
-        TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+      case KindedAst.Expr.Hole(sym, tpe, loc) =>
+        TypedAst.Expr.Hole(sym, subst0(tpe), loc)
 
-      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.HoleWithExp(exp, tvar, pvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.HoleWithExp(e, subst0(tvar), subst0(pvar), loc)
+        TypedAst.Expr.HoleWithExp(e, subst0(tvar), subst0(pvar), loc)
 
-      case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
+      case KindedAst.Expr.OpenAs(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.OpenAs(sym, e, subst0(tvar), loc)
+        TypedAst.Expr.OpenAs(sym, e, subst0(tvar), loc)
 
-      case KindedAst.Expression.Use(sym, alias, exp, loc) =>
+      case KindedAst.Expr.Use(sym, alias, exp, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Use(sym, alias, e, loc)
+        TypedAst.Expr.Use(sym, alias, e, loc)
 
-      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
-        TypedAst.Expression.Cst(Ast.Constant.Null, Type.Null, loc)
+      case KindedAst.Expr.Cst(Ast.Constant.Null, loc) =>
+        TypedAst.Expr.Cst(Ast.Constant.Null, Type.Null, loc)
 
-      case KindedAst.Expression.Cst(cst, loc) => TypedAst.Expression.Cst(cst, constantType(cst), loc)
+      case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, constantType(cst), loc)
 
-      case KindedAst.Expression.Apply(exp, exps, tvar, pvar, loc) =>
+      case KindedAst.Expr.Apply(exp, exps, tvar, pvar, loc) =>
         val e = visitExp(exp, subst0)
         val es = exps.map(visitExp(_, subst0))
-        TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(pvar), loc)
+        TypedAst.Expr.Apply(e, es, subst0(tvar), subst0(pvar), loc)
 
-      case KindedAst.Expression.Lambda(fparam, exp, loc) =>
+      case KindedAst.Expr.Lambda(fparam, exp, loc) =>
         val p = visitFormalParam(fparam)
         val e = visitExp(exp, subst0)
         val t = Type.mkArrowWithEffect(p.tpe, e.eff, e.tpe, loc)
-        TypedAst.Expression.Lambda(p, e, t, loc)
+        TypedAst.Expr.Lambda(p, e, t, loc)
 
-      case KindedAst.Expression.Unary(sop, exp, tvar, loc) =>
+      case KindedAst.Expr.Unary(sop, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.Unary(sop, e, subst0(tvar), eff, loc)
+        TypedAst.Expr.Unary(sop, e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-        TypedAst.Expression.Binary(sop, e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expr.Binary(sop, e1, e2, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
+      case KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = e2.tpe
         val eff = Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
-        TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+        TypedAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-      case KindedAst.Expression.Stm(exp1, exp2, loc) =>
+      case KindedAst.Expr.Stm(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
         val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-        TypedAst.Expression.Stm(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.Stm(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.Discard(exp, loc) =>
+      case KindedAst.Expr.Discard(exp, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Discard(e, e.eff, loc)
+        TypedAst.Expr.Discard(e, e.eff, loc)
 
-      case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
+      case KindedAst.Expr.Let(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
         val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-        TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
+        TypedAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+      case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
         val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-        TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+        TypedAst.Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.Region(tpe, loc) =>
-        TypedAst.Expression.Region(tpe, loc)
+      case KindedAst.Expr.Region(tpe, loc) =>
+        TypedAst.Expr.Region(tpe, loc)
 
-      case KindedAst.Expression.Scope(sym, regionVar, exp, pvar, loc) =>
+      case KindedAst.Expr.Scope(sym, regionVar, exp, pvar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = subst0(pvar)
-        TypedAst.Expression.Scope(sym, regionVar, e, tpe, eff, loc)
+        TypedAst.Expr.Scope(sym, regionVar, e, tpe, eff, loc)
 
-      case KindedAst.Expression.ScopeExit(exp1, exp2, loc) =>
+      case KindedAst.Expr.ScopeExit(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
         val eff = Type.Impure
-        TypedAst.Expression.ScopeExit(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.ScopeExit(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.Match(matchExp, rules, loc) =>
+      case KindedAst.Expr.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
           case KindedAst.MatchRule(pat, guard, exp) =>
@@ -2023,9 +2023,9 @@ object Typer {
         val eff = rs.foldLeft(e1.eff) {
           case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
         }
-        TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
+        TypedAst.Expr.Match(e1, rs, tpe, eff, loc)
 
-      case KindedAst.Expression.TypeMatch(matchExp, rules, loc) =>
+      case KindedAst.Expr.TypeMatch(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
           case KindedAst.TypeMatchRule(sym, tpe0, exp) =>
@@ -2037,9 +2037,9 @@ object Typer {
         val eff = rs.foldLeft(e1.eff) {
           case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.eff, acc, loc)
         }
-        TypedAst.Expression.TypeMatch(e1, rs, tpe, eff, loc)
+        TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
 
-      case KindedAst.Expression.RelationalChoose(_, exps, rules, tvar, loc) =>
+      case KindedAst.Expr.RelationalChoose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
           case KindedAst.RelationalChooseRule(pat0, exp) =>
@@ -2052,9 +2052,9 @@ object Typer {
         }
         val tpe = subst0(tvar)
         val eff = Type.mkAnd(rs.map(_.exp.eff), loc)
-        TypedAst.Expression.RelationalChoose(es, rs, tpe, eff, loc)
+        TypedAst.Expr.RelationalChoose(es, rs, tpe, eff, loc)
 
-      case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
+      case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules.map {
           case KindedAst.RestrictableChooseRule(pat0, body0) =>
@@ -2070,162 +2070,162 @@ object Typer {
             TypedAst.RestrictableChooseRule(pat, body)
         }
         val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
-        TypedAst.Expression.RestrictableChoose(star, e, rs, subst0(tvar), eff, loc)
+        TypedAst.Expr.RestrictableChoose(star, e, rs, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
+      case KindedAst.Expr.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.Tag(sym, e, subst0(tvar), eff, loc)
+        TypedAst.Expr.Tag(sym, e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.RestrictableTag(sym, exp, _, tvar, loc) =>
+      case KindedAst.Expr.RestrictableTag(sym, exp, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.RestrictableTag(sym, e, subst0(tvar), eff, loc)
+        TypedAst.Expr.RestrictableTag(sym, e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.Tuple(elms, loc) =>
+      case KindedAst.Expr.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))
         val tpe = Type.mkTuple(es.map(_.tpe), loc)
         val eff = Type.mkUnion(es.map(_.eff), loc)
-        TypedAst.Expression.Tuple(es, tpe, eff, loc)
+        TypedAst.Expr.Tuple(es, tpe, eff, loc)
 
-      case KindedAst.Expression.RecordEmpty(loc) =>
-        TypedAst.Expression.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
+      case KindedAst.Expr.RecordEmpty(loc) =>
+        TypedAst.Expr.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
 
-      case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
+      case KindedAst.Expr.RecordSelect(exp, field, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.RecordSelect(e, field, subst0(tvar), eff, loc)
+        TypedAst.Expr.RecordSelect(e, field, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.RecordExtend(field, value, rest, tvar, loc) =>
+      case KindedAst.Expr.RecordExtend(field, value, rest, tvar, loc) =>
         val v = visitExp(value, subst0)
         val r = visitExp(rest, subst0)
         val eff = Type.mkUnion(v.eff, r.eff, loc)
-        TypedAst.Expression.RecordExtend(field, v, r, subst0(tvar), eff, loc)
+        TypedAst.Expr.RecordExtend(field, v, r, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.RecordRestrict(field, rest, tvar, loc) =>
+      case KindedAst.Expr.RecordRestrict(field, rest, tvar, loc) =>
         val r = visitExp(rest, subst0)
         val eff = r.eff
-        TypedAst.Expression.RecordRestrict(field, r, subst0(tvar), eff, loc)
+        TypedAst.Expr.RecordRestrict(field, r, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.ArrayLit(exps, exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.ArrayLit(exps, exp, tvar, pvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val e = visitExp(exp, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.ArrayLit(es, e, tpe, eff, loc)
+        TypedAst.Expr.ArrayLit(es, e, tpe, eff, loc)
 
-      case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, pvar, loc) =>
+      case KindedAst.Expr.ArrayNew(exp1, exp2, exp3, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
+        TypedAst.Expr.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
-      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, pvar, loc) =>
+      case KindedAst.Expr.ArrayLoad(exp1, exp2, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.ArrayLoad(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.ArrayLoad(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, pvar, loc) =>
+      case KindedAst.Expr.ArrayStore(exp1, exp2, exp3, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val eff = subst0(pvar)
-        TypedAst.Expression.ArrayStore(e1, e2, e3, eff, loc)
+        TypedAst.Expr.ArrayStore(e1, e2, e3, eff, loc)
 
-      case KindedAst.Expression.ArrayLength(exp, loc) =>
+      case KindedAst.Expr.ArrayLength(exp, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.ArrayLength(e, eff, loc)
+        TypedAst.Expr.ArrayLength(e, eff, loc)
 
-      case KindedAst.Expression.VectorLit(exps, tvar, pvar, loc) =>
+      case KindedAst.Expr.VectorLit(exps, tvar, pvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.VectorLit(es, tpe, eff, loc)
+        TypedAst.Expr.VectorLit(es, tpe, eff, loc)
 
-      case KindedAst.Expression.VectorLoad(exp1, exp2, tvar, pvar, loc) =>
+      case KindedAst.Expr.VectorLoad(exp1, exp2, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.VectorLoad(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.VectorLoad(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.VectorLength(exp, loc) =>
+      case KindedAst.Expr.VectorLength(exp, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.VectorLength(e, loc)
+        TypedAst.Expr.VectorLength(e, loc)
 
-      case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
+      case KindedAst.Expr.Ref(exp1, exp2, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.Ref(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.Ref(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.Deref(exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.Deref(exp, tvar, pvar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.Deref(e, tpe, eff, loc)
+        TypedAst.Expr.Deref(e, tpe, eff, loc)
 
-      case KindedAst.Expression.Assign(exp1, exp2, pvar, loc) =>
+      case KindedAst.Expr.Assign(exp1, exp2, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
         val eff = subst0(pvar)
-        TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.Assign(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
+      case KindedAst.Expr.Ascribe(exp, _, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.Ascribe(e, subst0(tvar), eff, loc)
+        TypedAst.Expr.Ascribe(e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.InstanceOf(exp, clazz, loc) =>
+      case KindedAst.Expr.InstanceOf(exp, clazz, loc) =>
         val e1 = visitExp(exp, subst0)
-        TypedAst.Expression.InstanceOf(e1, clazz, loc)
+        TypedAst.Expr.InstanceOf(e1, clazz, loc)
 
-      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, loc) =>
+      case KindedAst.Expr.CheckedCast(cast, exp, tvar, pvar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             val e = visitExp(exp, subst0)
             val tpe = subst0(tvar)
-            TypedAst.Expression.CheckedCast(cast, e, tpe, e.eff, loc)
+            TypedAst.Expr.CheckedCast(cast, e, tpe, e.eff, loc)
           case CheckedCastType.EffectCast =>
             val e = visitExp(exp, subst0)
             val eff = Type.mkUnion(e.eff, subst0(pvar), loc)
-            TypedAst.Expression.CheckedCast(cast, e, e.tpe, eff, loc)
+            TypedAst.Expr.CheckedCast(cast, e, e.tpe, eff, loc)
         }
 
-      case KindedAst.Expression.UncheckedCast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, tvar, loc) =>
+      case KindedAst.Expr.UncheckedCast(KindedAst.Expr.Cst(Ast.Constant.Null, _), _, _, tvar, loc) =>
         val t = subst0(tvar)
-        TypedAst.Expression.Cst(Ast.Constant.Null, t, loc)
+        TypedAst.Expr.Cst(Ast.Constant.Null, t, loc)
 
-      case KindedAst.Expression.UncheckedCast(exp, declaredType, declaredEff, tvar, loc) =>
+      case KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val dt = declaredType.map(tpe => subst0(tpe))
         val dp = declaredEff.map(eff => subst0(eff))
         val tpe = subst0(tvar)
         val eff = declaredEff.getOrElse(e.eff)
-        TypedAst.Expression.UncheckedCast(e, dt, dp, tpe, eff, loc)
+        TypedAst.Expr.UncheckedCast(e, dt, dp, tpe, eff, loc)
 
-      case KindedAst.Expression.UncheckedMaskingCast(exp, loc) =>
+      case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
         // We explicitly mark a `Mask` expression as Impure.
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = Type.Impure
-        TypedAst.Expression.UncheckedMaskingCast(e, tpe, eff, loc)
+        TypedAst.Expr.UncheckedMaskingCast(e, tpe, eff, loc)
 
-      case KindedAst.Expression.Without(exp, effUse, loc) =>
+      case KindedAst.Expr.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = e.eff
-        TypedAst.Expression.Without(e, effUse, tpe, eff, loc)
+        TypedAst.Expr.Without(e, effUse, tpe, eff, loc)
 
-      case KindedAst.Expression.TryCatch(exp, rules, loc) =>
+      case KindedAst.Expr.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules map {
           case KindedAst.CatchRule(sym, clazz, body) =>
@@ -2234,9 +2234,9 @@ object Typer {
         }
         val tpe = rs.head.exp.tpe
         val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
-        TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+        TypedAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
-      case KindedAst.Expression.TryWith(exp, effUse, rules, tvar, loc) =>
+      case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules map {
           case KindedAst.HandlerRule(op, fparams, hexp, htvar) =>
@@ -2246,88 +2246,88 @@ object Typer {
         }
         val tpe = subst0(tvar)
         val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
-        TypedAst.Expression.TryWith(e, effUse, rs, tpe, eff, loc)
+        TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
-      case KindedAst.Expression.Do(op, exps, tvar, loc) =>
+      case KindedAst.Expr.Do(op, exps, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val tpe = subst0(tvar)
         val eff1 = Type.Cst(TypeConstructor.Effect(op.sym.eff), op.loc.asSynthetic)
         val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
-        TypedAst.Expression.Do(op, es, tpe, eff, loc)
+        TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
-      case KindedAst.Expression.Resume(exp, _, retTvar, loc) =>
+      case KindedAst.Expr.Resume(exp, _, retTvar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = subst0(retTvar)
-        TypedAst.Expression.Resume(e, tpe, loc)
+        TypedAst.Expr.Resume(e, tpe, loc)
 
-      case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
+      case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
         val as = args.map(visitExp(_, subst0))
         val tpe = getFlixType(constructor.getDeclaringClass)
         val eff = Type.Impure
-        TypedAst.Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
+        TypedAst.Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
 
-      case KindedAst.Expression.InvokeMethod(method, _, exp, args, loc) =>
+      case KindedAst.Expr.InvokeMethod(method, _, exp, args, loc) =>
         val e = visitExp(exp, subst0)
         val as = args.map(visitExp(_, subst0))
         val tpe = getFlixType(method.getReturnType)
         val eff = Type.Impure
-        TypedAst.Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+        TypedAst.Expr.InvokeMethod(method, e, as, tpe, eff, loc)
 
-      case KindedAst.Expression.InvokeStaticMethod(method, args, loc) =>
+      case KindedAst.Expr.InvokeStaticMethod(method, args, loc) =>
         val as = args.map(visitExp(_, subst0))
         val tpe = getFlixType(method.getReturnType)
         val eff = Type.Impure
-        TypedAst.Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+        TypedAst.Expr.InvokeStaticMethod(method, as, tpe, eff, loc)
 
-      case KindedAst.Expression.GetField(field, _, exp, loc) =>
+      case KindedAst.Expr.GetField(field, _, exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = getFlixType(field.getType)
         val eff = Type.Impure
-        TypedAst.Expression.GetField(field, e, tpe, eff, loc)
+        TypedAst.Expr.GetField(field, e, tpe, eff, loc)
 
-      case KindedAst.Expression.PutField(field, _, exp1, exp2, loc) =>
+      case KindedAst.Expr.PutField(field, _, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
         val eff = Type.Impure
-        TypedAst.Expression.PutField(field, e1, e2, tpe, eff, loc)
+        TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.GetStaticField(field, loc) =>
+      case KindedAst.Expr.GetStaticField(field, loc) =>
         val tpe = getFlixType(field.getType)
         val eff = Type.Impure
-        TypedAst.Expression.GetStaticField(field, tpe, eff, loc)
+        TypedAst.Expr.GetStaticField(field, tpe, eff, loc)
 
-      case KindedAst.Expression.PutStaticField(field, exp, loc) =>
+      case KindedAst.Expr.PutStaticField(field, exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = Type.Unit
         val eff = Type.Impure
-        TypedAst.Expression.PutStaticField(field, e, tpe, eff, loc)
+        TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
-      case KindedAst.Expression.NewObject(name, clazz, methods, loc) =>
+      case KindedAst.Expr.NewObject(name, clazz, methods, loc) =>
         val tpe = getFlixType(clazz)
         val eff = Type.Impure
         val ms = methods map visitJvmMethod
-        TypedAst.Expression.NewObject(name, clazz, tpe, eff, ms, loc)
+        TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
-      case KindedAst.Expression.NewChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.NewChannel(exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val eff = Type.Impure
-        TypedAst.Expression.NewChannel(e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expr.NewChannel(e1, e2, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
+      case KindedAst.Expr.GetChannel(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = Type.Impure
-        TypedAst.Expression.GetChannel(e, subst0(tvar), eff, loc)
+        TypedAst.Expr.GetChannel(e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
+      case KindedAst.Expr.PutChannel(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.mkUnit(loc)
         val eff = Type.Impure
-        TypedAst.Expression.PutChannel(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.PutChannel(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
+      case KindedAst.Expr.SelectChannel(rules, default, tvar, loc) =>
         val rs = rules map {
           case KindedAst.SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan, subst0)
@@ -2336,16 +2336,16 @@ object Typer {
         }
         val d = default.map(visitExp(_, subst0))
         val eff = Type.Impure
-        TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), eff, loc)
+        TypedAst.Expr.SelectChannel(rs, d, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
+      case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
         val eff = Type.Impure
-        TypedAst.Expression.Spawn(e1, e2, tpe, eff, loc)
+        TypedAst.Expr.Spawn(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.ParYield(frags, exp, loc) =>
+      case KindedAst.Expr.ParYield(frags, exp, loc) =>
         val e = visitExp(exp, subst0)
         val fs = frags map {
           case KindedAst.ParYieldFragment(pat, e0, l0) =>
@@ -2357,54 +2357,54 @@ object Typer {
         val eff = fs.foldLeft(e.eff) {
           case (acc, TypedAst.ParYieldFragment(_, e1, _)) => Type.mkUnion(acc, e1.eff, loc)
         }
-        TypedAst.Expression.ParYield(fs, e, tpe, eff, loc)
+        TypedAst.Expr.ParYield(fs, e, tpe, eff, loc)
 
-      case KindedAst.Expression.Lazy(exp, loc) =>
+      case KindedAst.Expr.Lazy(exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = Type.mkLazy(e.tpe, loc)
-        TypedAst.Expression.Lazy(e, tpe, loc)
+        TypedAst.Expr.Lazy(e, tpe, loc)
 
-      case KindedAst.Expression.Force(exp, tvar, loc) =>
+      case KindedAst.Expr.Force(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = subst0(tvar)
         val eff = e.eff
-        TypedAst.Expression.Force(e, tpe, eff, loc)
+        TypedAst.Expr.Force(e, tpe, eff, loc)
 
-      case KindedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
+      case KindedAst.Expr.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)
-        TypedAst.Expression.FixpointConstraintSet(cs, Stratification.empty, subst0(tvar), loc)
+        TypedAst.Expr.FixpointConstraintSet(cs, Stratification.empty, subst0(tvar), loc)
 
-      case KindedAst.Expression.FixpointLambda(pparams, exp, tvar, loc) =>
+      case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
         val ps = pparams.map(visitPredicateParam)
         val e = visitExp(exp, subst0)
         val tpe = subst0(tvar)
         val eff = e.eff
-        TypedAst.Expression.FixpointLambda(ps, e, Stratification.empty, tpe, eff, loc)
+        TypedAst.Expr.FixpointLambda(ps, e, Stratification.empty, tpe, eff, loc)
 
-      case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
+      case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
         val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-        TypedAst.Expression.FixpointMerge(e1, e2, Stratification.empty, tpe, eff, loc)
+        TypedAst.Expr.FixpointMerge(e1, e2, Stratification.empty, tpe, eff, loc)
 
-      case KindedAst.Expression.FixpointSolve(exp, loc) =>
+      case KindedAst.Expr.FixpointSolve(exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = e.eff
-        TypedAst.Expression.FixpointSolve(e, Stratification.empty, tpe, eff, loc)
+        TypedAst.Expr.FixpointSolve(e, Stratification.empty, tpe, eff, loc)
 
-      case KindedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
+      case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.FixpointFilter(pred, e, subst0(tvar), eff, loc)
+        TypedAst.Expr.FixpointFilter(pred, e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.FixpointInject(exp, pred, tvar, loc) =>
+      case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.FixpointInject(e, pred, subst0(tvar), eff, loc)
+        TypedAst.Expr.FixpointInject(e, pred, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.FixpointProject(pred, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val stf = Stratification.empty
@@ -2414,14 +2414,14 @@ object Typer {
         // Note: This transformation should happen in the Weeder but it is here because
         // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
         // See Weeder for more details.
-        val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, eff, loc)
-        val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, eff, loc)
-        TypedAst.Expression.FixpointProject(pred, solveExp, tpe, eff, loc)
+        val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, stf, e1.tpe, eff, loc)
+        val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, stf, e1.tpe, eff, loc)
+        TypedAst.Expr.FixpointProject(pred, solveExp, tpe, eff, loc)
 
-      case KindedAst.Expression.Error(m, tvar, pvar) =>
+      case KindedAst.Expr.Error(m, tvar, pvar) =>
         val tpe = subst0(tvar)
         val eff = subst0(pvar)
-        TypedAst.Expression.Error(m, tpe, eff)
+        TypedAst.Expr.Error(m, tpe, eff)
 
     }
 

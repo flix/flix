@@ -94,8 +94,8 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
 @test
-def map04(): Bool = region r {
-    let n = ref 2 @ r;
+def map04(): Bool = region rc {
+    let n = ref 2 @ rc;
     discard Option.map(i -> n := i, Some(4));
     4 == deref n
 }
@@ -507,15 +507,15 @@ def unzip02(): Bool = Option.unzip(Some((1, true))) == (Some(1), Some(true))
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forEach01(): Bool = region r {
-    let ri = ref 21 @ r;
+def forEach01(): Bool = region rc {
+    let ri = ref 21 @ rc;
     Option.forEach(x -> ri := x, None);
     21 == deref ri
 }
 
 @test
-def forEach02(): Bool = region r {
-    let ri = ref 21 @ r;
+def forEach02(): Bool = region rc {
+    let ri = ref 21 @ rc;
     Option.forEach(x -> ri := x, Some(42));
     42 == deref ri
 }
@@ -851,18 +851,18 @@ def map1012(): Bool = Option.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 +
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        None: Option[Int32] |> Option.iterator(r) |> Iterator.toList == Nil
+    def iterator01(): Bool = region rc {
+        None: Option[Int32] |> Option.iterator(rc) |> Iterator.toList == Nil
     }
 
     @test
-    def iterator02(): Bool = region r {
-        Some(1) |> Option.iterator(r) |> Iterator.toList == 1 :: Nil
+    def iterator02(): Bool = region rc {
+        Some(1) |> Option.iterator(rc) |> Iterator.toList == 1 :: Nil
     }
 
     @test
-    def iterator03(): Bool = region r {
-        Some(1 :: 2 :: 3 :: Nil) |> Option.iterator(r) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
+    def iterator03(): Bool = region rc {
+        Some(1 :: 2 :: 3 :: Nil) |> Option.iterator(rc) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
     }
 
 }

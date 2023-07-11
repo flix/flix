@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, FormalParam, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -137,7 +137,7 @@ object GenClosureClasses {
     }
 
     // Saving parameters on variable stack
-    for ((FormalParam(sym, tpe), ind) <- defn.fparams.zipWithIndex) {
+    for ((FormalParam(sym, _, tpe, _), ind) <- defn.fparams.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 

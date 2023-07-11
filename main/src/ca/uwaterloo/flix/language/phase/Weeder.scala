@@ -1489,8 +1489,8 @@ object Weeder {
         case ParsedAst.RecordField(_, ident, exp, _) =>
           val expVal = visitExp(exp, senv)
 
-          mapN(expVal) {
-            case e => ident -> e
+          mapN(expVal, visitName(ident)) {
+            case (e, _) => ident -> e
           }
       }
 
@@ -1505,25 +1505,27 @@ object Weeder {
 
     case ParsedAst.Expression.RecordSelect(exp, ident, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
+      mapN(visitExp(exp, senv), visitName(ident)) {
+        case (e, _) => WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordOperation(_, ops, rest, _) =>
       // We translate the sequence of record operations into a nested tree using a fold right.
       foldRight(ops)(visitExp(rest, senv)) {
         case (ParsedAst.RecordOp.Extend(sp1, ident, exp, sp2), acc) =>
-          mapN(visitExp(exp, senv)) {
-            case e =>
+          mapN(visitExp(exp, senv), visitName(ident)) {
+            case (e, _) =>
               WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2))
           }
 
         case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) =>
-          WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2)).toSuccess
+          mapN(visitName(ident)) {
+            case _ => WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
+          }
 
         case (ParsedAst.RecordOp.Update(sp1, ident, exp, sp2), acc) =>
-          mapN(visitExp(exp, senv)) {
-            case e =>
+          mapN(visitExp(exp, senv), visitName(ident)) {
+            case (e, _) =>
               // An update is a restrict followed by an extension.
               val inner = WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
               WeededAst.Expression.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2))

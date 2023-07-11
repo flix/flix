@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{ErasedAst, MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root, FormalParam}
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
@@ -48,7 +48,7 @@ object GenMainClass {
     * Throws `InternalCompilerException` if the type  of `defn` is not `Unit -> Unit`.
     */
   private def checkMainType(defn: Def): Unit = (defn.cparams, defn.fparams, defn.tpe) match {
-    case (Nil, List(ErasedAst.FormalParam(_, MonoType.Unit)), MonoType.Unit) => ()
+    case (Nil, List(FormalParam(_, _, MonoType.Unit, _)), MonoType.Unit) => ()
     case (cs @ _ :: _, _, _) =>
       val tupleType = MonoType.Tuple(cs.map(_.tpe))
       throw InternalCompilerException(s"Entrypoint function has unexpected captured parameters '$tupleType'", defn.loc)

@@ -113,8 +113,8 @@ mod Test.Exp.IfThenElse {
             (if (true) true else false)
 
     @test
-    def testIfThenElseBooleanFolding01(): Bool = region rh {
-        let y = ref 1 @ rh;
+    def testIfThenElseBooleanFolding01(): Bool = region rc {
+        let y = ref 1 @ rc;
         let r =
             if ({y := 2; true} or true)
                 deref y
@@ -124,8 +124,8 @@ mod Test.Exp.IfThenElse {
     }
 
     @test
-    def testIfThenElseBooleanFolding02(): Bool = region rh {
-        let y = ref 1 @ rh;
+    def testIfThenElseBooleanFolding02(): Bool = region rc {
+        let y = ref 1 @ rc;
         let r =
             if ({y := 2; true} and false)
                 3

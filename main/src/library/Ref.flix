@@ -17,10 +17,10 @@
 mod Ref {
 
     ///
-    /// Returns a new reference to `x` in the region `rh`.
+    /// Returns a new reference to `x` in the region `rc`.
     ///
-    pub def new(rh: Region[r], x: a): Ref[a, r] \ r =
-        ref x @ rh
+    pub def new(rc: Region[r], x: a): Ref[a, r] \ r =
+        ref x @ rc
 
     ///
     /// Returns the element referenced by `rf`.

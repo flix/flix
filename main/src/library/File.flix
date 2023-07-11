@@ -406,7 +406,7 @@ mod File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], IO, r] \ { r, IO } =
+    pub def readLinesIter(rc: Region[r], f: String): Iterator[Result[String, String], IO, r] \ { r, IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -416,7 +416,7 @@ mod File {
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
-            let line = ref readLine(reader) @ r;
+            let line = ref readLine(reader) @ rc;
             let next = () -> {
                 if (not Object.isNull(deref line)) {
                     try {
@@ -434,11 +434,11 @@ mod File {
                     None
                 }
             };
-            Iterator.iterate(r, next)
+            Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
+                Iterator.iterate(rc, constant(Some(Err(getMessage(ex)))))
         }
 
     ///
@@ -446,7 +446,7 @@ mod File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], IO, r] \ { r, IO } =
+    pub def readLinesIterWith(rc: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], IO, r] \ { r, IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -457,7 +457,7 @@ mod File {
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
-            let line = ref readLine(reader) @ r;
+            let line = ref readLine(reader) @ rc;
             let next = () -> {
                 if (not Object.isNull(deref line)) {
                     try {
@@ -475,17 +475,17 @@ mod File {
                     None
                 }
             };
-            Iterator.iterate(r, next)
+            Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
+                Iterator.iterate(rc, constant(Some(Err(getMessage(ex)))))
         }
 
     ///
     /// Returns an array of all the bytes in the given file `f`.
     ///
-    pub def readBytes(_r: Region[r], f: String): Result[String, Array[Int8, r]] \ { r, IO } =
+    pub def readBytes(_rc: Region[r], f: String): Result[String, Array[Int8, r]] \ { r, IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -508,7 +508,7 @@ mod File {
     /// `offset` - the start offset in the given file `f`.
     /// `count` - the number of bytes read.
     ///
-    pub def readBytesWith(r: Region[r], opts: {offset = Int64, count = Int32}, f: String): Result[String, Array[Int8, r]] \ { r, IO } =
+    pub def readBytesWith(rc: Region[r], opts: {offset = Int64, count = Int32}, f: String): Result[String, Array[Int8, r]] \ { r, IO } =
         if (0 < opts.count) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -519,9 +519,9 @@ mod File {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.new(r, opts.count);
+                        let bytes = Array.new(rc, opts.count);
                         let numberRead = read(stream, bytes, 0, opts.count);
-                        let res = readBytesWithHelper(r, bytes, numberRead, opts.count);
+                        let res = readBytesWithHelper(rc, bytes, numberRead, opts.count);
                         Ok(res)
                     }
                     case Err(msg) => Err(msg)
@@ -532,7 +532,7 @@ mod File {
                     Err(getMessage(ex))
             }
         } else if (opts.count == 0) {
-            Ok(Array#{} @ r)
+            Ok(Array#{} @ rc)
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
@@ -541,14 +541,14 @@ mod File {
     /// Helper function for `readBytesWith`.
     /// Returns an array that corresponds to the bytes actually read from the stream.
     ///
-    def readBytesWithHelper(r: Region[r], bytes: Array[Int8, r], numberRead: Int32, count: Int32): Array[Int8, r] \ r =
+    def readBytesWithHelper(rc: Region[r], bytes: Array[Int8, r], numberRead: Int32, count: Int32): Array[Int8, r] \ r =
         let nothingRead = (numberRead == -1);
         if (nothingRead) {
-            Array#{} @ r
+            Array#{} @ rc
         } else {
             let countBiggest = numberRead < count;
             if (countBiggest) {
-                Array.slice(r, start = 0, end = numberRead, bytes)
+                Array.slice(rc, start = 0, end = numberRead, bytes)
             } else {
                 bytes
             }
@@ -557,7 +557,7 @@ mod File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], IO, r] \ IO =
+    pub def readChunks(rc: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], IO, r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -566,16 +566,16 @@ mod File {
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                let bytes = ref Array.new(r, chunkSize) @ r;
-                let numberRead = ref read(stream, deref bytes) @ r;
+                let bytes = ref Array.new(rc, chunkSize) @ rc;
+                let numberRead = ref read(stream, deref bytes) @ rc;
                 let next = () -> {
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
-                            bytes := Array.new(r, chunkSize);
+                            bytes := Array.new(rc, chunkSize);
                             let accRead = deref numberRead;
                             numberRead := read(stream, deref bytes);
-                            Some(Ok(readBytesWithHelper(r, chunk, accRead, chunkSize)))
+                            Some(Ok(readBytesWithHelper(rc, chunk, accRead, chunkSize)))
                         } catch {
                             case ex: ##java.io.IOException => {
                                 numberRead := -1;
@@ -587,14 +587,14 @@ mod File {
                         None
                     }
                 };
-                Iterator.iterate(r, next)
+                Iterator.iterate(rc, next)
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ {};
-                    Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
+                    Iterator.iterate(rc, constant(Some(Err(getMessage(ex)))))
             }
         } else {
-            Iterator.iterate(r, constant(Some(Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))))
+            Iterator.iterate(rc, constant(Some(Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))))
         }
 
     ///
@@ -920,7 +920,7 @@ mod File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def listWithIter(r: Region[r], f: String): Result[String, Iterator[String, r, r]] \ IO =
+    pub def listWithIter(rc: Region[r], f: String): Result[String, Iterator[String, r, r]] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -933,7 +933,7 @@ mod File {
             let javaStream = newDirectoryStream(javaPath);
             let javaIter = iterator(javaStream);
 
-            let iter = fromJavaIter(r, javaIter);
+            let iter = fromJavaIter(rc, javaIter);
             Ok(Iterator.map(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
@@ -947,7 +947,7 @@ mod File {
     ///
     /// Recursively traverses the directory.
     ///
-    pub def walk(r: Region[r], f: String): Result[String, Iterator[String, r, r]] \ IO =
+    pub def walk(rc: Region[r], f: String): Result[String, Iterator[String, r, r]] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -957,10 +957,10 @@ mod File {
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let javaStream = walk(javaPath, Array#{} @ r);
+            let javaStream = walk(javaPath, Array#{} @ rc);
             let javaIter = iterator(checked_cast(javaStream));
 
-            let iter = fromJavaIter(r, javaIter);
+            let iter = fromJavaIter(rc, javaIter);
             Ok(Iterator.map(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
@@ -971,7 +971,7 @@ mod File {
     ///
     /// Converts a Java iterator to a Flix Iterator.
     ///
-    def fromJavaIter(r: Region[r], iter: ##java.util.Iterator): Iterator[a, r, r] =
+    def fromJavaIter(rc: Region[r], iter: ##java.util.Iterator): Iterator[a, r, r] =
         import java.util.Iterator.hasNext(): Bool \ r;
         import java.util.Iterator.next(): a \ r as getNext;
         let next = () -> {
@@ -981,7 +981,7 @@ mod File {
                 None
             }
         };
-        Iterator.iterate(r, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Moves a file or directory from path `src` to path `dst`.

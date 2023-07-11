@@ -178,9 +178,9 @@ mod Test.Exp.LetRec {
     /// Nested definitions with type ascription
     ///
     @test
-    def testLetRecAscribed03(): Bool = region rh {
-        def incr(x): Unit \ rh = x := deref x + 1;
-        let r = ref 1 @ rh;
+    def testLetRecAscribed03(): Bool = region rc {
+        def incr(x): Unit \ rc = x := deref x + 1;
+        let r = ref 1 @ rc;
         incr(r);
         deref r == 2
     }

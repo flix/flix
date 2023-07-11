@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 
 object GenRecordExtendClasses {
   def gen(ts: Iterable[BackendObjType.RecordExtend])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
