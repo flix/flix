@@ -1,7 +1,11 @@
 package dev.flix.runtime;
 
 public class Def_g implements Cont {
-    public int result;
+    private int result;
+
+    public int getResult() {
+        return this.result;
+    }
 
     public Action apply() {
         // TailCall, construct continuation, and simply return it.

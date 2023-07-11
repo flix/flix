@@ -2,7 +2,11 @@ package dev.flix.runtime;
 
 public class Def_f {
 
-    public int result;
+    private int result;
+
+    public int getResult() {
+        return this.result;
+    }
 
     public Action apply() {
         // Non-tail call. Must unwind the continuations.
