@@ -77,7 +77,7 @@ object GenAnonymousClasses {
   /**
     * Constructor of the class
     */
-  private def compileConstructor(currentClass: JvmType.Reference, superClass: String, methods: List[JvmMethodSpec], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileConstructor(currentClass: JvmType.Reference, superClass: String, methods: List[JvmMethod], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     // Invoke the superclass constructor
@@ -116,8 +116,8 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethodSpec, cloName: String, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
-    case JvmMethodSpec(ident, fparams, tpe, _, _) =>
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
+    case JvmMethod(ident, fparams, tpe, _, _) =>
       val methodType = MonoType.Arrow(fparams.map(_.tpe), tpe)
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(methodType)
       val functionInterface = JvmOps.getFunctionInterfaceType(methodType)

@@ -1477,17 +1477,17 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.NewObject(name, _, tpe, _, methods, loc) =>
+    case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
       mv.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
       // For each method, compile the closure which implements the body of that method and store it in a field
-      methods.zipWithIndex.foreach { case (m, i) =>
+      exps.zipWithIndex.foreach { case (e, i) =>
         mv.visitInsn(DUP)
-        compileExpr(m.clo)
-        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
+        compileExpr(e)
+        mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
   }

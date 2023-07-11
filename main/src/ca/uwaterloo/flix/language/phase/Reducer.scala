@@ -146,17 +146,17 @@ object Reducer {
       ReducedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
 
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-      val ms = methods.map(visitJvmMethod)
+      val es = methods.map(m => visitExpr(m.clo))
       val t = visitType(tpe)
-      val sigs = methods.map {
+      val specs = methods.map {
         case LiftedAst.JvmMethod(ident, fparams, _, retTpe, purity, loc) =>
           val f = fparams.map(visitFormalParam)
           val rt = visitType(retTpe)
-          ReducedAst.JvmMethodSpec(ident, f, rt, purity, loc)
+          ReducedAst.JvmMethod(ident, f, rt, purity, loc)
       }
-      ctx.anonClasses += ReducedAst.AnonClass(name, clazz, t, sigs, loc)
+      ctx.anonClasses += ReducedAst.AnonClass(name, clazz, t, specs, loc)
 
-      ReducedAst.Expr.NewObject(name, clazz, t, purity, ms, loc)
+      ReducedAst.Expr.NewObject(name, clazz, t, purity, specs, es, loc)
 
   }
 
@@ -276,14 +276,6 @@ object Reducer {
     case LiftedAst.FormalParam(sym, mod, tpe, loc) =>
       val t = visitType(tpe)
       ReducedAst.FormalParam(sym, mod, t, loc)
-  }
-
-  private def visitJvmMethod(m: LiftedAst.JvmMethod)(implicit ctx: Context): ReducedAst.JvmMethodImpl = m match {
-    case LiftedAst.JvmMethod(ident, fparams, clo, tpe, purity, loc) =>
-      val c = visitExpr(clo)
-      val fs = fparams.map(visitFormalParam)
-      val t = visitType(tpe)
-      ReducedAst.JvmMethodImpl(ident, fs, c, t, purity, loc)
   }
 
   private case class Context(anonClasses: mutable.ListBuffer[ReducedAst.AnonClass])

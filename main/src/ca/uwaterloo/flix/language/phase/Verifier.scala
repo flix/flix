@@ -190,7 +190,7 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
+    case Expr.NewObject(name, clazz, tpe, methods, _, _, loc) =>
       // TODO: VERIFIER: Add support for NewObject.
       tpe
 
