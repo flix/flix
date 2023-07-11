@@ -58,7 +58,6 @@ object AstPrinter {
       if (asts.contains("LateTreeShaker")) writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
       if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
       if (asts.contains("VarNumbering")) writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
-      if (asts.contains("MonoTyper")) writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
       if (asts.contains("Eraser")) writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
     }
   }
@@ -85,7 +84,6 @@ object AstPrinter {
     writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
     writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
     writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
-    writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
     writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
   }
 
@@ -122,13 +120,6 @@ object AstPrinter {
     */
   def formatErasedAst(root: ErasedAst.Root): String = {
     formatDocProgram(ErasedAstPrinter.print(root))
-  }
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatMonoTypedAst(root: MonoTypedAst.Root): String = {
-    formatDocProgram(MonoTypedAstPrinter.print(root))
   }
 
   /**

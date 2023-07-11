@@ -530,7 +530,7 @@ object JvmOps {
     def visitDefn(defn: Def): Set[MonoType] = {
       // Compute the types in the captured formal parameters.
       val cParamTypes = defn.cparams.foldLeft(Set.empty[MonoType]) {
-        case (sacc, FormalParam(_, tpe)) => sacc + tpe
+        case (sacc, FormalParam(_, _, tpe, _)) => sacc + tpe
       }
 
       // Compute the types in the expression.
@@ -584,7 +584,7 @@ object JvmOps {
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
             val fs = fparams.foldLeft(Set(retTpe)) {
-              case (acc, FormalParam(_, tpe)) => acc + tpe
+              case (acc, FormalParam(_, _, tpe, _)) => acc + tpe
             }
             sacc ++ fs ++ visitExp(clo)
         }

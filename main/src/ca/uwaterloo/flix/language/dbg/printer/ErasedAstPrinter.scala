@@ -90,7 +90,7 @@ object ErasedAstPrinter {
     * Returns the [[DocAst.Expression.Ascription]] representation of `fp`.
     */
   private def printFormalParam(fp: ErasedAst.FormalParam): DocAst.Expression.Ascription = {
-    val ErasedAst.FormalParam(sym, tpe) = fp
+    val ErasedAst.FormalParam(sym, _, tpe, _) = fp
     DocAst.Expression.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
