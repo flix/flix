@@ -117,7 +117,7 @@ object GenAnonymousClasses {
     * Method
     */
   private def compileMethod(currentClass: JvmType.Reference, method: JvmMethodSpec, cloName: String, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
-    case JvmMethodSpec(ident, fparams, tpe, loc) =>
+    case JvmMethodSpec(ident, fparams, tpe, _, _) =>
       val methodType = MonoType.Arrow(fparams.map(_.tpe), tpe)
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(methodType)
       val functionInterface = JvmOps.getFunctionInterfaceType(methodType)

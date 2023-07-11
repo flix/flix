@@ -74,8 +74,8 @@ object ErasedAstPrinter {
     })
     case NewObject(name, clazz, tpe, methods, _) =>
       DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
-        case JvmMethodImpl(ident, fparams, clo, retTpe, _) =>
-          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
+        case JvmMethodImpl(ident, fparams, clo, tpe, _, _) =>
+          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(tpe))
       })
   }
 

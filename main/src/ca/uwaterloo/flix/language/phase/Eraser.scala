@@ -30,9 +30,9 @@ object Eraser {
     val anonClasses = root.anonClasses.map {
       case ReducedAst.AnonClass(name, clazz, tpe, methods, loc) =>
         val ms = methods.map {
-          case ReducedAst.JvmMethodSpec(ident, fparams, retTpe, _, loc) =>
+          case ReducedAst.JvmMethodSpec(ident, fparams, tpe, purity, loc) =>
             val fs = fparams.map(visitFormalParam)
-            ErasedAst.JvmMethodSpec(ident, fs, retTpe, loc)
+            ErasedAst.JvmMethodSpec(ident, fs, tpe, purity, loc)
         }
         ErasedAst.AnonClass(name, clazz, tpe, ms, loc)
     }
@@ -107,9 +107,9 @@ object Eraser {
 
     case ReducedAst.Expr.NewObject(name, clazz, tpe, _, methods0, loc) =>
       val methods = methods0.map {
-        case ReducedAst.JvmMethodImpl(ident, fparams, clo, retTpe, _, loc) =>
+        case ReducedAst.JvmMethodImpl(ident, fparams, clo, tpe, purity, loc) =>
           val f = fparams.map(visitFormalParam)
-          ErasedAst.JvmMethodImpl(ident, f, visitExpr(clo), retTpe, loc)
+          ErasedAst.JvmMethodImpl(ident, f, visitExpr(clo), tpe, purity, loc)
       }
       ErasedAst.Expr.NewObject(name, clazz, tpe, methods, loc)
   }

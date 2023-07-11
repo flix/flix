@@ -91,9 +91,9 @@ object ErasedAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 
-  case class JvmMethodSpec(ident: Name.Ident, fparams: List[FormalParam], tpe: MonoType, loc: SourceLocation)
+  case class JvmMethodSpec(ident: Name.Ident, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class JvmMethodImpl(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, loc: SourceLocation)
+  case class JvmMethodImpl(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
