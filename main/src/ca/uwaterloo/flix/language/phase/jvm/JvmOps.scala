@@ -580,14 +580,8 @@ object JvmOps {
 
       case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expr.NewObject(_, _, _, _, methods, _) =>
-        methods.foldLeft(Set.empty[MonoType]) {
-          case (sacc, JvmMethodImpl(_, fparams, clo, tpe, _, _)) =>
-            val fs = fparams.foldLeft(Set(tpe)) {
-              case (acc, FormalParam(_, _, tpe, _)) => acc + tpe
-            }
-            sacc ++ fs ++ visitExp(clo)
-        }
+      case Expr.NewObject(_, _, _, _, _, exps, _) =>
+        visitExps(exps)
 
       case Expr.ApplyAtomic(_, exps, tpe, _, _) => visitExps(exps) + tpe
 

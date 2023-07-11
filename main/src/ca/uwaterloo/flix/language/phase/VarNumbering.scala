@@ -109,7 +109,7 @@ object VarNumbering {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expr.NewObject(_, _, _, _, _, _) =>
+      case Expr.NewObject(_, _, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
 
