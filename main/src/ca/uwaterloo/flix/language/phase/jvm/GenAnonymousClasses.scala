@@ -33,7 +33,7 @@ object GenAnonymousClasses {
   /**
     * Returns the set of anonymous classes for the given set of objects
     */
-  def gen(objs: Set[AnonClass])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate an anonymous class for each object and collect the results in a map.
     //

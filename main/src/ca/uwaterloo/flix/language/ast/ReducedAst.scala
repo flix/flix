@@ -21,11 +21,11 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Set.empty, None, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, List.empty, None, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
-                  anonClasses: Set[AnonClass],
+                  anonClasses: List[AnonClass],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
