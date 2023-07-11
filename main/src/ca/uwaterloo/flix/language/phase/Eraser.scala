@@ -107,9 +107,14 @@ object Eraser {
       val methods = methods0.map {
         case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, _, loc) =>
           val f = fparams.map(visitFormalParam)
-          ErasedAst.JvmMethod(ident, f, visitExpr(clo), retTpe, loc)
+          ErasedAst.JvmMethodWithExpr(ident, f, visitExpr(clo), retTpe, loc)
       }
-      ctx.anonClasses += AnonClassInfo(name, clazz, tpe, methods, loc)
+      val anonClassMethods = methods0.map {
+        case ReducedAst.JvmMethod(ident, fparams, _, retTpe, _, loc) =>
+          val f = fparams.map(visitFormalParam)
+          ErasedAst.JvmMethod(ident, f, retTpe, loc)
+      }
+      ctx.anonClasses += AnonClassInfo(name, clazz, tpe, anonClassMethods, loc)
       ErasedAst.Expr.NewObject(name, clazz, tpe, methods, loc)
   }
 
