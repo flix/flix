@@ -72,8 +72,8 @@ object ReducedAstPrinter {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map{
-      case ReducedAst.JvmMethodImpl(ident, fparams, clo, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
+      case ReducedAst.JvmMethodImpl(ident, fparams, clo, tpe, _, _) =>
+        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(tpe))
     })
   }
 
