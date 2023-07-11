@@ -25,7 +25,7 @@ object Reducer {
 
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Reducer") {
 
-    implicit val ctx: Context = Context(mutable.Set.empty)
+    implicit val ctx: Context = Context(mutable.ListBuffer.empty)
 
     val newDefs = root.defs.map {
       case (sym, d) => sym -> visitDef(d)
@@ -34,7 +34,7 @@ object Reducer {
       case (sym, d) => sym -> visitEnum(d)
     }
 
-    ReducedAst.Root(newDefs, newEnums, ctx.anonClasses.toSet, root.entryPoint, root.sources)
+    ReducedAst.Root(newDefs, newEnums, ctx.anonClasses.toList, root.entryPoint, root.sources)
   }
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: Context): ReducedAst.Def = d match {
@@ -286,6 +286,6 @@ object Reducer {
       ReducedAst.JvmMethodImpl(ident, fs, c, t, purity, loc)
   }
 
-  private case class Context(anonClasses: mutable.Set[ReducedAst.AnonClass])
+  private case class Context(anonClasses: mutable.ListBuffer[ReducedAst.AnonClass])
 
 }

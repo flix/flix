@@ -23,13 +23,13 @@ import java.lang.reflect.Method
 
 object ErasedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty, Set.empty)
+  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty, List.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  anonClasses: Set[AnonClass])
+                  anonClasses: List[AnonClass])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
