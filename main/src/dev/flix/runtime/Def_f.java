@@ -4,23 +4,25 @@ public class Def_f {
 
     public int result;
 
-    public Cont apply() {
+    public Action apply() {
         // Non-tail call. Must unwind the continuations.
         Def_g g = new Def_g();
 
-        Cont prev = null;
-        Cont curr = g;
+        Action prev = null;
+        Action curr = g;
 
         do {
-            if (curr instanceof TailCall) {
-                TailCall c = (TailCall) curr;
+            if (curr instanceof Cont) {
+                Cont c = (Cont) curr;
                 prev = curr;
                 curr = c.apply();
             }
 
         } while (curr != null);
 
-        return null; // TODO: Update the result.
+        result = prev.getResult();
+
+        return null; // We are done.
     }
 
 }
