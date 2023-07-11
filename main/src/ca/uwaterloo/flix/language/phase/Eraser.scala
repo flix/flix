@@ -59,59 +59,59 @@ object Eraser {
     case ReducedAst.Expr.Var(sym, tpe, loc) =>
       ErasedAst.Expr.Var(sym, tpe, loc)
 
-    case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
+    case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      ErasedAst.Expr.ApplyAtomic(op, es, tpe, loc)
+      ErasedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case ReducedAst.Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
-      ErasedAst.Expr.ApplyClo(visitExpr(exp), exps.map(visitExpr), ct, tpe, loc)
+    case ReducedAst.Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+      ErasedAst.Expr.ApplyClo(visitExpr(exp), exps.map(visitExpr), ct, tpe, purity, loc)
 
-    case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
-      ErasedAst.Expr.ApplyDef(sym, exps.map(visitExpr), ct, tpe, loc)
+    case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      ErasedAst.Expr.ApplyDef(sym, exps.map(visitExpr), ct, tpe, purity, loc)
 
-    case ReducedAst.Expr.ApplySelfTail(sym, formals0, exps, tpe, _, loc) =>
+    case ReducedAst.Expr.ApplySelfTail(sym, formals0, exps, tpe, purity, loc) =>
       val formals = formals0.map(visitFormalParam)
-      ErasedAst.Expr.ApplySelfTail(sym, formals, exps.map(visitExpr), tpe, loc)
+      ErasedAst.Expr.ApplySelfTail(sym, formals, exps.map(visitExpr), tpe, purity, loc)
 
-    case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
-      ErasedAst.Expr.IfThenElse(visitExpr(exp1), visitExpr(exp2), visitExpr(exp3), tpe, loc)
+    case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      ErasedAst.Expr.IfThenElse(visitExpr(exp1), visitExpr(exp2), visitExpr(exp3), tpe, purity, loc)
 
-    case ReducedAst.Expr.Branch(exp, branches0, tpe, _, loc) =>
+    case ReducedAst.Expr.Branch(exp, branches0, tpe, purity, loc) =>
       val branches = branches0.map {
         case (branchLabel, branchExp) => (branchLabel, visitExpr(branchExp))
       }
-      ErasedAst.Expr.Branch(visitExpr(exp), branches, tpe, loc)
+      ErasedAst.Expr.Branch(visitExpr(exp), branches, tpe, purity, loc)
 
-    case ReducedAst.Expr.JumpTo(sym, tpe, _, loc) =>
-      ErasedAst.Expr.JumpTo(sym, tpe, loc)
+    case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
+      ErasedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
-    case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
+    case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
-      ErasedAst.Expr.Let(sym, e1, e2, tpe, loc)
+      ErasedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
-    case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, _, loc) =>
+    case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
-      ErasedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
+      ErasedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-    case ReducedAst.Expr.Scope(sym, exp, tpe, _, loc) =>
-      ErasedAst.Expr.Scope(sym, visitExpr(exp), tpe, loc)
+    case ReducedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+      ErasedAst.Expr.Scope(sym, visitExpr(exp), tpe, purity, loc)
 
-    case ReducedAst.Expr.TryCatch(exp, rules0, tpe, _, loc) =>
+    case ReducedAst.Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
       val rules = rules0.map {
         case ReducedAst.CatchRule(catchSym, catchClazz, catchExp) =>
           ErasedAst.CatchRule(catchSym, catchClazz, visitExpr(catchExp))
       }
-      ErasedAst.Expr.TryCatch(visitExpr(exp), rules, tpe, loc)
+      ErasedAst.Expr.TryCatch(visitExpr(exp), rules, tpe, purity, loc)
 
-    case ReducedAst.Expr.NewObject(name, clazz, tpe, _, methods0, loc) =>
+    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
         case ReducedAst.JvmMethodImpl(ident, fparams, clo, tpe, purity, loc) =>
           val f = fparams.map(visitFormalParam)
           ErasedAst.JvmMethodImpl(ident, f, visitExpr(clo), tpe, purity, loc)
       }
-      ErasedAst.Expr.NewObject(name, clazz, tpe, methods, loc)
+      ErasedAst.Expr.NewObject(name, clazz, tpe, methods, purity, loc)
   }
 
   private def visitStmt(stmt: ReducedAst.Stmt): ErasedAst.Stmt = stmt match {
