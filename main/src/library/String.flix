@@ -1324,6 +1324,12 @@ mod String {
             Some(dropRight(length(substr.substr), s))
 
     ///
+    /// Unwrap the string, replacing every newline with a space
+    ///
+    pub def unwrap(s: String): String =
+        replaceChar({from = '\n'}, {to = ' '}, s)
+
+    ///
     /// Returns an iterator over `s`.
     ///
     pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ r =
