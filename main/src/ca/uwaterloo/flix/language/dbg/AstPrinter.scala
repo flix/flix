@@ -60,7 +60,6 @@ object AstPrinter {
       if (asts.contains("ControlSeparator")) writeToDisk("ControlSeparator", formatCallByValueAst(flix.getControlSeparatorAst))
       if (asts.contains("Undo")) writeToDisk("Undo", formatReducedAst(flix.getUndoAst))
       if (asts.contains("VarNumbering")) writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
-      if (asts.contains("MonoTyper")) writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
       if (asts.contains("Eraser")) writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
     }
   }
@@ -89,7 +88,6 @@ object AstPrinter {
     writeToDisk("ControlSeparator", formatCallByValueAst(flix.getControlSeparatorAst))
     writeToDisk("Undo", formatReducedAst(flix.getUndoAst))
     writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
-    writeToDisk("MonoTyper", formatMonoTypedAst(flix.getMonoTyperAst))
     writeToDisk("Eraser", formatErasedAst(flix.getEraserAst))
   }
 
@@ -133,13 +131,6 @@ object AstPrinter {
     */
   def formatErasedAst(root: ErasedAst.Root): String = {
     formatDocProgram(ErasedAstPrinter.print(root))
-  }
-
-  /**
-    * Formats `root` for display.
-    */
-  def formatMonoTypedAst(root: MonoTypedAst.Root): String = {
-    formatDocProgram(MonoTypedAstPrinter.print(root))
   }
 
   /**

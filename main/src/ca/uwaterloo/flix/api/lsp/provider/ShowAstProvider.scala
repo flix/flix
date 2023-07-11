@@ -66,7 +66,6 @@ object ShowAstProvider {
         case "ControlSeparator" => astObject(phase, AstPrinter.formatCallByValueAst(flix.getControlSeparatorAst))
         case "Undo" => astObject(phase, AstPrinter.formatReducedAst(flix.getUndoAst))
         case "VarNumbering" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarNumberingAst))
-        case "MonoTyper" => astObject(phase, AstPrinter.formatMonoTypedAst(flix.getMonoTyperAst))
         case "Eraser" => astObject(phase, AstPrinter.formatErasedAst(flix.getEraserAst))
         case _ =>
           astObject(phase, s"Unknown phase: '$phase'. Try one of these ${phases.map(s => s"'$s'").mkString(", ")}")

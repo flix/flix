@@ -33,7 +33,7 @@ object GenAnonymousClasses {
   /**
     * Returns the set of anonymous classes for the given set of objects
     */
-  def gen(objs: Set[AnonClassInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(objs: List[AnonClass])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate an anonymous class for each object and collect the results in a map.
     //
@@ -49,7 +49,7 @@ object GenAnonymousClasses {
   /**
     * Returns the bytecode for the anonoymous class
     */
-  private def genByteCode(className: JvmName, obj: AnonClassInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, obj: AnonClass)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = if (obj.clazz.isInterface())
@@ -77,7 +77,7 @@ object GenAnonymousClasses {
   /**
     * Constructor of the class
     */
-  private def compileConstructor(currentClass: JvmType.Reference, superClass: String, methods: List[JvmMethod], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileConstructor(currentClass: JvmType.Reference, superClass: String, methods: List[JvmMethodSpec], visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     // Invoke the superclass constructor
@@ -116,11 +116,12 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
-    case JvmMethod(ident, fparams, clo, tpe, loc) =>
-      val closureAbstractClass = JvmOps.getClosureAbstractClassType(method.clo.tpe)
-      val functionInterface = JvmOps.getFunctionInterfaceType(method.clo.tpe)
-      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(method.retTpe))
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethodSpec, cloName: String, classVisitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = method match {
+    case JvmMethodSpec(ident, fparams, tpe, _, _) =>
+      val methodType = MonoType.Arrow(fparams.map(_.tpe), tpe)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(methodType)
+      val functionInterface = JvmOps.getFunctionInterfaceType(methodType)
+      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(method.tpe))
 
       // Create the field that will store the closure implementing the body of the method
       AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false, isVolatile = false)

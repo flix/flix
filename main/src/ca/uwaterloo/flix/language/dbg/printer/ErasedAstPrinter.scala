@@ -57,25 +57,25 @@ object ErasedAstPrinter {
   def print(e: ErasedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyClo(exp, exps, NonTailCall, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
-    case ApplyClo(exp, exps, TailCall, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
-    case ApplyDef(sym, args, NonTailCall, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
-    case ApplyDef(sym, args, TailCall, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
-    case ApplySelfTail(sym, _, exps, _, _) => DocAst.Expression.ApplySelfTail(sym, exps.map(print))
-    case ApplyAtomic(op, exps, tpe, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
-    case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
-    case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
-    case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Scope(sym, exp, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map { case ErasedAst.CatchRule(sym, clazz, rexp) =>
+    case ApplyClo(exp, exps, NonTailCall, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
+    case ApplyClo(exp, exps, TailCall, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
+    case ApplyDef(sym, args, NonTailCall, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
+    case ApplyDef(sym, args, TailCall, _, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
+    case ApplySelfTail(sym, _, exps, _, _, _) => DocAst.Expression.ApplySelfTail(sym, exps.map(print))
+    case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
+    case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
+    case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
+    case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
+    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
+    case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map { case ErasedAst.CatchRule(sym, clazz, rexp) =>
       (sym, clazz, print(rexp))
     })
-    case NewObject(name, clazz, tpe, methods, _) =>
+    case NewObject(name, clazz, tpe, methods, _, _) =>
       DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
-        case JvmMethod(ident, fparams, clo, retTpe, _) =>
-          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
+        case JvmMethodImpl(ident, fparams, clo, tpe, _, _) =>
+          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(tpe))
       })
   }
 
@@ -90,7 +90,7 @@ object ErasedAstPrinter {
     * Returns the [[DocAst.Expression.Ascription]] representation of `fp`.
     */
   private def printFormalParam(fp: ErasedAst.FormalParam): DocAst.Expression.Ascription = {
-    val ErasedAst.FormalParam(sym, tpe) = fp
+    val ErasedAst.FormalParam(sym, _, tpe, _) = fp
     DocAst.Expression.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 

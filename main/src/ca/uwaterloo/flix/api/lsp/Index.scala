@@ -67,7 +67,7 @@ object Index {
   /**
     * Returns an index for the given `exp0`.
     */
-  def occurrenceOf(exp0: Expression): Index = empty + Entity.Exp(exp0)
+  def occurrenceOf(exp0: Expr): Index = empty + Entity.Exp(exp0)
 
   /**
     * Returns an index for the given `fparam0`.

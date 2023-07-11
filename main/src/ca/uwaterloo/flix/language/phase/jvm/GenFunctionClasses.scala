@@ -122,7 +122,7 @@ object GenFunctionClasses {
 
     // Saving parameters on variable stack
     // note that cparams is assumed to be empty
-    for ((FormalParam(sym, tpe), ind) <- defn.fparams.zipWithIndex) {
+    for ((FormalParam(sym, _, tpe, _), ind) <- defn.fparams.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 

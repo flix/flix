@@ -121,7 +121,7 @@ object GenExpression {
       mv.visitVarInsn(iLOAD, sym.getStackOffset + 1)
       AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
-    case Expr.ApplyAtomic(op, exps, tpe, loc) => op match {
+    case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
       case AtomicOp.Closure(sym) =>
         // JvmType of the closure
@@ -1016,7 +1016,7 @@ object GenExpression {
 
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expr.ApplyAtomic(AtomicOp.Region, _, tpe, loc) =>
+          case Expr.ApplyAtomic(AtomicOp.Region, _, tpe, _, loc) =>
 
             // Compile the expression, putting a function implementing the Runnable interface on the stack
             compileExpr(exp1)
@@ -1202,7 +1202,7 @@ object GenExpression {
         AsmOps.compileThrowFlixError(mv, BackendObjType.MatchError.jvmName, loc)
     }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, loc) =>
+    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
       ct match {
         case CallType.TailCall =>
           // Type of the function abstract class
@@ -1254,7 +1254,7 @@ object GenExpression {
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, loc) => ct match {
+    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) => ct match {
       case CallType.TailCall =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
@@ -1297,7 +1297,7 @@ object GenExpression {
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
-    case Expr.ApplySelfTail(sym, formals, exps, tpe, loc) =>
+    case Expr.ApplySelfTail(sym, formals, exps, tpe, _, loc) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
@@ -1311,7 +1311,7 @@ object GenExpression {
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
       val ifElse = new Label()
       val ifEnd = new Label()
       compileExpr(exp1)
@@ -1322,7 +1322,7 @@ object GenExpression {
       compileExpr(exp3)
       mv.visitLabel(ifEnd)
 
-    case Expr.Branch(exp, branches, _, loc) =>
+    case Expr.Branch(exp, branches, _, _, loc) =>
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
       val ctx1 = ctx.copy(lenv = updatedJumpLabels)
@@ -1344,11 +1344,11 @@ object GenExpression {
       // label for the end of branches
       mv.visitLabel(endLabel)
 
-    case Expr.JumpTo(sym, _, loc) =>
+    case Expr.JumpTo(sym, _, _, loc) =>
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _, loc) =>
+    case Expr.Let(sym, exp1, exp2, _, _, loc) =>
       compileExpr(exp1)
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
@@ -1357,7 +1357,7 @@ object GenExpression {
       mv.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpr(exp2)
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, loc) =>
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
@@ -1378,7 +1378,7 @@ object GenExpression {
       mv.visitVarInsn(iStore, varSym.getStackOffset + 1)
       compileExpr(exp2)
 
-    case Expr.Scope(sym, exp, _, loc) =>
+    case Expr.Scope(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(mv, loc)
 
@@ -1431,7 +1431,7 @@ object GenExpression {
       mv.visitInsn(ATHROW)
       mv.visitLabel(afterFinally)
 
-    case Expr.TryCatch(exp, rules, _, loc) =>
+    case Expr.TryCatch(exp, rules, _, _, loc) =>
       // Add source line number for debugging.
       addSourceLine(mv, loc)
 
@@ -1477,7 +1477,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.NewObject(name, _, tpe, methods, loc) =>
+    case Expr.NewObject(name, _, tpe, methods, _, loc) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)

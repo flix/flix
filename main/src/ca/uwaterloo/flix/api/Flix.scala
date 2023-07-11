@@ -107,7 +107,6 @@ class Flix {
   private var cachedControlSeparatorAst: CallByValueAst.Root = CallByValueAst.empty
   private var cachedUndoAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedMonoTyperAst: MonoTypedAst.Root = MonoTypedAst.empty
   private var cachedEraserAst: ErasedAst.Root = ErasedAst.empty
 
   def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
@@ -139,9 +138,6 @@ class Flix {
   def getUndoAst: ReducedAst.Root = cachedUndoAst
 
   def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
-
-  def getMonoTyperAst: MonoTypedAst.Root = cachedMonoTyperAst
-
   def getEraserAst: ErasedAst.Root = cachedEraserAst
 
   /**
@@ -626,8 +622,7 @@ class Flix {
     cachedControlSeparatorAst = ControlSeparator.run(cachedReducerAst)
     cachedUndoAst = Undo.run(cachedControlSeparatorAst)
     cachedVarNumberingAst = VarNumbering.run(cachedUndoAst)
-    cachedMonoTyperAst = MonoTyper.run(cachedVarNumberingAst)
-    cachedEraserAst = Eraser.run(cachedMonoTyperAst)
+    cachedEraserAst = Eraser.run(cachedVarNumberingAst)
     val afterJvmBackend = JvmBackend.run(cachedEraserAst)
     val result = Finish.run(afterJvmBackend)
 
