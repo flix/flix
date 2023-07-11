@@ -19,23 +19,25 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst
 import ca.uwaterloo.flix.language.ast.ReducedAst
-import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
-
-import scala.collection.mutable
 
 object Eraser {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): ErasedAst.Root = flix.phase("Eraser") {
 
-    //
-    // A mutable set to hold all type information about all closures in the AST.
-    //
-    implicit val ctx: Context = Context(mutable.Set.empty)
-
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, ctx.anonClasses.toSet)
+    val anonClasses = root.anonClasses.map {
+      case ReducedAst.AnonClass(name, clazz, tpe, methods, loc) =>
+        val ms = methods.map {
+          case ReducedAst.JvmMethodSpec(ident, fparams, tpe, purity, loc) =>
+            val fs = fparams.map(visitFormalParam)
+            ErasedAst.JvmMethodSpec(ident, fs, tpe, purity, loc)
+        }
+        ErasedAst.AnonClass(name, clazz, tpe, ms, loc)
+    }
+
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, anonClasses)
   }
 
   private def visitEnum(enum0: ReducedAst.Enum): ErasedAst.Enum = {
@@ -43,14 +45,14 @@ object Eraser {
     ErasedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
   }
 
-  private def visitDef(def0: ReducedAst.Def)(implicit ctx: Context): ErasedAst.Def = {
+  private def visitDef(def0: ReducedAst.Def): ErasedAst.Def = {
     val cs = def0.cparams.map(visitFormalParam)
     val fs = def0.fparams.map(visitFormalParam)
     val stmt = visitStmt(def0.stmt)
     ErasedAst.Def(def0.ann, def0.mod, def0.sym, cs, fs, stmt, def0.tpe, def0.loc)
   }
 
-  private def visitExpr(exp0: ReducedAst.Expr)(implicit ctx: Context): ErasedAst.Expr = exp0 match {
+  private def visitExpr(exp0: ReducedAst.Expr): ErasedAst.Expr = exp0 match {
     case ReducedAst.Expr.Cst(cst, tpe, loc) =>
       ErasedAst.Expr.Cst(cst, tpe, loc)
 
@@ -105,15 +107,14 @@ object Eraser {
 
     case ReducedAst.Expr.NewObject(name, clazz, tpe, _, methods0, loc) =>
       val methods = methods0.map {
-        case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, _, loc) =>
+        case ReducedAst.JvmMethodImpl(ident, fparams, clo, tpe, purity, loc) =>
           val f = fparams.map(visitFormalParam)
-          ErasedAst.JvmMethod(ident, f, visitExpr(clo), retTpe, loc)
+          ErasedAst.JvmMethodImpl(ident, f, visitExpr(clo), tpe, purity, loc)
       }
-      ctx.anonClasses += AnonClassInfo(name, clazz, tpe, methods, loc)
       ErasedAst.Expr.NewObject(name, clazz, tpe, methods, loc)
   }
 
-  private def visitStmt(stmt: ReducedAst.Stmt)(implicit ctx: Context): ErasedAst.Stmt = stmt match {
+  private def visitStmt(stmt: ReducedAst.Stmt): ErasedAst.Stmt = stmt match {
     case ReducedAst.Stmt.Ret(expr, tpe, loc) =>
       val e = visitExpr(expr)
       ErasedAst.Stmt.Ret(e, tpe, loc)
@@ -125,7 +126,5 @@ object Eraser {
 
   private def visitFormalParam(p: ReducedAst.FormalParam): ErasedAst.FormalParam =
     ErasedAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
-
-  private case class Context(anonClasses: mutable.Set[AnonClassInfo])
 
 }

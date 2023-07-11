@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.phase.jvm.AnonClassInfo
 
 import java.lang.reflect.Method
 
@@ -29,7 +28,7 @@ object ErasedAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  anonClasses: Set[AnonClassInfo])
+                  anonClasses: Set[AnonClass])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], stmt: Stmt, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
@@ -72,7 +71,7 @@ object ErasedAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethodImpl], loc: SourceLocation) extends Expr
 
   }
 
@@ -88,9 +87,13 @@ object ErasedAst {
 
   }
 
+  case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethodSpec], loc: SourceLocation)
+
   case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, loc: SourceLocation)
+  case class JvmMethodSpec(ident: Name.Ident, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+
+  case class JvmMethodImpl(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
