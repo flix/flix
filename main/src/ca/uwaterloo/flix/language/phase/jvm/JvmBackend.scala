@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
 

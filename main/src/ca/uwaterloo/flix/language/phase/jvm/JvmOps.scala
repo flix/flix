@@ -18,8 +18,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{ErasedAst, MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
@@ -483,7 +483,7 @@ object JvmOps {
   /**
     * Returns true if the value of the given `tag` is the unit value.
     */
-  def isUnitTag(tag: ErasedAst.Case): Boolean = {
+  def isUnitTag(tag: Case): Boolean = {
     tag.tpe == MonoType.Unit
   }
 
@@ -580,7 +580,7 @@ object JvmOps {
 
       case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expr.NewObject(_, _, _, methods, _, _) =>
+      case Expr.NewObject(_, _, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethodImpl(_, fparams, clo, tpe, _, _)) =>
             val fs = fparams.foldLeft(Set(tpe)) {

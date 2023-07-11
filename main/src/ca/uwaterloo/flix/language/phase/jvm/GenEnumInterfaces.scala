@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Enum, Root}
 import org.objectweb.asm.Opcodes._
 
 /**
@@ -29,7 +28,7 @@ object GenEnumInterfaces {
   /**
     * Returns the set of enum interfaces for the given enums.
     */
-  def gen(enums: Iterable[ErasedAst.Enum])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(enums: Iterable[Enum])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     enums.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, e) =>
         // Construct enum interface.

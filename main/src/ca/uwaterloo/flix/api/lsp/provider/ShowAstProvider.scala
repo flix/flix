@@ -64,7 +64,6 @@ object ShowAstProvider {
         case "LateTreeShaker" => astObject(phase, AstPrinter.formatLiftedAst(flix.getLateTreeShakerAst))
         case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
         case "VarNumbering" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarNumberingAst))
-        case "Eraser" => astObject(phase, AstPrinter.formatErasedAst(flix.getEraserAst))
         case _ =>
           astObject(phase, s"Unknown phase: '$phase'. Try one of these ${phases.map(s => s"'$s'").mkString(", ")}")
       }
