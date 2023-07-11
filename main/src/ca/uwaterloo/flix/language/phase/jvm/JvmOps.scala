@@ -582,7 +582,7 @@ object JvmOps {
 
       case Expr.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
-          case (sacc, JvmMethodWithExpr(_, fparams, clo, retTpe, _)) =>
+          case (sacc, JvmMethodImpl(_, fparams, clo, retTpe, _)) =>
             val fs = fparams.foldLeft(Set(retTpe)) {
               case (acc, FormalParam(_, _, tpe, _)) => acc + tpe
             }

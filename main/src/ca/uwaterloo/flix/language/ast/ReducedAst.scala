@@ -21,10 +21,11 @@ import ca.uwaterloo.flix.language.ast.Purity.Pure
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, None, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Set.empty, None, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
+                  anonClasses: Set[AnonClass],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -72,7 +73,7 @@ object ReducedAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethodImpl], loc: SourceLocation) extends Expr
 
   }
 
@@ -88,11 +89,13 @@ object ReducedAst {
 
   }
 
-  case class AnonClassInfo(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
+  case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethodSpec], loc: SourceLocation)
 
   case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class JvmMethodSpec(ident: Name.Ident, fparams: List[FormalParam], retTpe: MonoType, purity: Purity, loc: SourceLocation)
+
+  case class JvmMethodImpl(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 

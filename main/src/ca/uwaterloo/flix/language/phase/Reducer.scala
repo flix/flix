@@ -19,9 +19,13 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.mutable
+
 object Reducer {
 
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Reducer") {
+
+    implicit val ctx: Context = Context(mutable.Set.empty)
 
     val newDefs = root.defs.map {
       case (sym, d) => sym -> visitDef(d)
@@ -30,10 +34,10 @@ object Reducer {
       case (sym, d) => sym -> visitEnum(d)
     }
 
-    ReducedAst.Root(newDefs, newEnums, root.entryPoint, root.sources)
+    ReducedAst.Root(newDefs, newEnums, ctx.anonClasses.toSet, root.entryPoint, root.sources)
   }
 
-  private def visitDef(d: LiftedAst.Def): ReducedAst.Def = d match {
+  private def visitDef(d: LiftedAst.Def)(implicit ctx: Context): ReducedAst.Def = d match {
     case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, loc) =>
       val cs = cparams.map(visitFormalParam)
       val fs = fparams.map(visitFormalParam)
@@ -52,7 +56,7 @@ object Reducer {
       ReducedAst.Enum(ann, mod, sym, cases, t, loc)
   }
 
-  private def visitExpr(exp0: LiftedAst.Expr): ReducedAst.Expr = exp0 match {
+  private def visitExpr(exp0: LiftedAst.Expr)(implicit ctx: Context): ReducedAst.Expr = exp0 match {
     case LiftedAst.Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       ReducedAst.Expr.Cst(cst, t, loc)
@@ -144,6 +148,14 @@ object Reducer {
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
       val t = visitType(tpe)
+      val sigs = methods.map {
+        case LiftedAst.JvmMethod(ident, fparams, _, retTpe, purity, loc) =>
+          val f = fparams.map(visitFormalParam)
+          val rt = visitType(retTpe)
+          ReducedAst.JvmMethodSpec(ident, f, rt, purity, loc)
+      }
+      ctx.anonClasses += ReducedAst.AnonClass(name, clazz, t, sigs, loc)
+
       ReducedAst.Expr.NewObject(name, clazz, t, purity, ms, loc)
 
   }
@@ -266,12 +278,14 @@ object Reducer {
       ReducedAst.FormalParam(sym, mod, t, loc)
   }
 
-  private def visitJvmMethod(m: LiftedAst.JvmMethod): ReducedAst.JvmMethod = m match {
+  private def visitJvmMethod(m: LiftedAst.JvmMethod)(implicit ctx: Context): ReducedAst.JvmMethodImpl = m match {
     case LiftedAst.JvmMethod(ident, fparams, clo, tpe, purity, loc) =>
       val c = visitExpr(clo)
       val fs = fparams.map(visitFormalParam)
       val t = visitType(tpe)
-      ReducedAst.JvmMethod(ident, fs, c, t, purity, loc)
+      ReducedAst.JvmMethodImpl(ident, fs, c, t, purity, loc)
   }
+
+  private case class Context(anonClasses: mutable.Set[ReducedAst.AnonClass])
 
 }
