@@ -16,8 +16,8 @@ public class Def_f {
         Action curr = g;
 
         do {
-            if (curr instanceof Cont) {
-                Cont c = (Cont) curr;
+            if (curr instanceof Thunk) {
+                Thunk c = (Thunk) curr;
                 prev = curr;
                 curr = c.apply();
             }

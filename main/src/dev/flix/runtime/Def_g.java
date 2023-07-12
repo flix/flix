@@ -1,6 +1,6 @@
 package dev.flix.runtime;
 
-public class Def_g implements Cont {
+public class Def_g implements Thunk {
     private int result;
 
     public int getResult() {

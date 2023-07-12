@@ -1,5 +1,5 @@
 package dev.flix.runtime;
 
-public interface Cont extends Action {
+public interface Thunk extends Action {
     Action apply();
 }
