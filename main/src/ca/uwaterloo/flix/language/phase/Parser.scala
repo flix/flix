@@ -721,12 +721,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("!=" | ".." | "::" | ":=" | "<-" | "<=" | "==" | "=>" | ">=" | "or")
+        capture("!=" | "::" | ":=" | "<-" | "<=" | "==" | "=>" | ">=" | "or")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture(":::" | "<+>" | "<=>" | "???" | "and" | "mod" | "not" | "rem")
+        capture(":::" | "<+>" | "<=>" | "???" | "and" | "not")
       }
 
       // Match any two character operator which is not reserved.
