@@ -204,7 +204,7 @@ object ParsedAst {
       * @param tpe   the type of the type.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition)
+    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Type]], tpe: ParsedAst.Type, sp2: SourcePosition)
 
     /**
       * Typeclass Declaration.

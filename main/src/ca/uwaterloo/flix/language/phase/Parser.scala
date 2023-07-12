@@ -320,7 +320,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def AssocTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ optional("[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]") ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
