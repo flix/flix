@@ -160,15 +160,14 @@ object Weeder {
 
       val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Lawful, Ast.Modifier.Public, Ast.Modifier.Sealed))
-      val assocsVal = traverse(assocs0)(visitAssocTypeSig)
+      val tparam = visitTypeParam(tparam0)
+      val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
+      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, tparam))
       val sigsVal = traverse(sigs0)(visitSig)
       val lawsVal = traverse(laws0)(visitLaw)
-      val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
 
-      val tparam = visitTypeParam(tparam0)
-
-      mapN(annVal, modsVal, assocsVal, sigsVal, lawsVal, superClassesVal) {
-        case (ann, mods, assocs, sigs, laws, superClasses) =>
+      mapN(annVal, modsVal, superClassesVal, assocsVal, sigsVal, lawsVal) {
+        case (ann, mods, superClasses, assocs, sigs, laws) =>
           List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, assocs.flatten, sigs.flatten, laws.flatten, loc))
       }
   }
@@ -209,11 +208,13 @@ object Weeder {
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val defsVal = traverse(defs0)(visitInstanceDef)
-      val assocsVal = traverse(assocs0)(visitAssocTypeDef)
 
-      mapN(annVal, modsVal, tpeVal, assocsVal, defsVal, tconstrsVal) {
-        case (ann, mods, tpe, assocs, defs, tconstrs) =>
-          List(WeededAst.Declaration.Instance(doc, ann, mods, clazz, tpe, tconstrs, assocs.flatten, defs.flatten, mkSL(sp1, sp2)))
+      flatMapN(annVal, modsVal, tpeVal, defsVal, tconstrsVal) {
+        case (ann, mods, tpe, defs, tconstrs) =>
+          val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, tpe))
+          mapN(assocsVal) {
+            case assocs => List(WeededAst.Declaration.Instance(doc, ann, mods, clazz, tpe, tconstrs, assocs.flatten, defs.flatten, mkSL(sp1, sp2)))
+          }
       }
 
   }
@@ -477,21 +478,29 @@ object Weeder {
   /**
     * Performs weeding on the given associated type signature `d0`.
     */
-  private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
+  private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig, clazzTparam: WeededAst.TypeParam): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
     case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, sp2) =>
 
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
-      val kind = visitKind(kind0)
+      val kind = kind0 match {
+        case Some(k) => visitKind(k)
+        case None => WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
+      }
       val loc = mkSL(sp1, sp2)
 
       flatMapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val tparamVal = tparams match {
+            // Case 1: Singleton parameter.
             case WeededAst.TypeParams.Kinded(hd :: Nil) => hd.toSuccess
             case WeededAst.TypeParams.Unkinded(hd :: Nil) => hd.toSuccess
-            case WeededAst.TypeParams.Elided => NonUnaryAssocType(0, ident.loc).toFailure
+
+            // Case 2: Elided. Use the class tparam.
+            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
+
+            // Case 3: Multiple params. Error.
             case WeededAst.TypeParams.Kinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
             case WeededAst.TypeParams.Unkinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
           }
@@ -504,16 +513,18 @@ object Weeder {
   /**
     * Performs weeding on the given associated type definition `d0`.
     */
-  private def visitAssocTypeDef(d0: ParsedAst.Declaration.AssocTypeDef): Validation[List[WeededAst.Declaration.AssocTypeDef], WeederError] = d0 match {
+  private def visitAssocTypeDef(d0: ParsedAst.Declaration.AssocTypeDef, instTpe: WeededAst.Type): Validation[List[WeededAst.Declaration.AssocTypeDef], WeederError] = d0 match {
     case ParsedAst.Declaration.AssocTypeDef(doc0, mod0, sp1, ident, args0, tpe0, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val argVal0 = args0.toList match {
-        case hd :: Nil => hd.toSuccess
-        case ts => (NonUnaryAssocType(ts.length, ident.loc): WeederError).toFailure
+      val argVal = args0.map(_.toList) match {
+        // Case 1: Elided type. Use the type from the instance
+        case None => instTpe.toSuccess
+        // Case 2: One argument. Visit it.
+        case Some(hd :: Nil) => visitType(hd)
+        // Case 3: Multiple arguments. Error.
+        case Some(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
       }
-      // TODO avoid short-circuiting with flatMap
-      val argVal = flatMapN(argVal0)(visitType)
       val tpeVal = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
 
