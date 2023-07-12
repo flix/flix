@@ -54,9 +54,7 @@ public class Def_u implements Result {
                     return new Suspend("Con", "print", greetings, prefix, new ResumptionNil());
 
                 case 2:
-                    var d = new Done();
-                    d.result = name.length();
-                    return d;
+                    return Done.mkInt32(name.length());
             }
         }
 
