@@ -2,8 +2,6 @@ package dev.flix.runtime;
 
 public class Def_u implements Result {
 
-    int result;
-
     //    def u(): Int32 \ Con =
     //      let name = v();
     //      let greetings = "Hello ${name}";
@@ -54,11 +52,11 @@ public class Def_u implements Result {
                     var prefix0 = new FramesNil();
                     var prefix = prefix0.push(new Def_u_Frame( new FrameData_u(2, name, greetings)));
                     return new Suspend("Con", "print", greetings, prefix, new ResumptionNil());
-                    break;
 
                 case 2:
-                    this.result = name.length();
-                    return null;
+                    var d = new Done();
+                    d.result = name.length();
+                    return d;
             }
         }
 
