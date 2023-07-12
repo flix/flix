@@ -4,10 +4,6 @@ public class Def_u implements Result {
 
     int result;
 
-    public int getResult() {
-        return result;
-    }
-
     //    def u(): Int32 \ Con =
     //      let name = v();
     //      let greetings = "Hello ${name}";
@@ -30,29 +26,25 @@ public class Def_u implements Result {
 
                     Result vResult = v.apply();
                     // -- below can be put into Unwind which returns only Null + Suspend
+                    // "forceTrampoline" -- to reduce down to either Done or Suspend.
                     if (vResult instanceof Thunk) {
-
-                        // TODO: Simplify and use Done!
-                        Result curr = vResult;
-                        Result prev = curr;
-                        do {
-                            prev = curr;
-                            curr = ((Thunk) curr).apply();
-                        } while (curr != null && curr instanceof Thunk);
-                        vResult = prev;
+                        while (vResult instanceof Thunk) {
+                            vResult = ((Thunk) vResult).apply();
+                        }
                     }
                     // --
 
-                    // Now vResult cannot be Thunk, it can only be: Null or Suspend.
+                    // Now vResult cannot be Thunk, it must be Done or Suspend.
 
-                    if (vResult == null) { // TODO: Not right
-                        name = vResult.getResult(); // Thunk for String
+                    if (vResult instanceof Done) {
+                        name = (String) (((Done) vResult).result);
                         pc = 1;
                         continue jump;
                     } else if (vResult instanceof Suspend) {
                         // Build frame, and then return new suspension.
                         Suspend s = (Suspend) vResult;
-                        return s.push(this, new FrameData_u(1, name, greetings));
+                        var t = new Def_u_Frame( new FrameData_u(1, name, greetings));
+                        return new Suspend(s.effName, s.op, s.opArgument, s.prefix.push(t), s.resumption);
                     } else { /* impossible: we have already dealt with all the thunks. */ }
 
                     break;
@@ -79,10 +71,6 @@ class Def_u_Frame implements Thunk {
 
     public Def_u_Frame(FrameData_u frameData) {
         this.frameData = frameData;
-    }
-
-    public int getResult() {
-        return defu.result;
     }
 
     public Result apply() {
@@ -135,10 +123,6 @@ class Suspend implements Result {
         this.opArgument = opArgument;
         this.prefix = prefix;
         this.resumption = resumption;
-    }
-
-    public int getResult() {
-       throw null;
     }
 
 }
