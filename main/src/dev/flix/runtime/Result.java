@@ -1,9 +1,6 @@
 package dev.flix.runtime;
 
 /**
- * A Cont is either: Done (null) | Thunk | Suspend
+ * Result = Done | Thunk | Suspend
  */
-public interface Result {
-    public int getResult();
-}
-
+public interface Result {}
