@@ -1,18 +1,13 @@
 package dev.flix.runtime;
 
-public class Def_u implements Action {
-
-    @Override
-    public int getResult() {
-        return 0;
-    }
+public class Def_u {
 
     //    def u(): Int32 \ Con =
     //      let name = do Con.read();
     //      let greetings = "Hello ${name}";
     //      do Con.print(greetings);
     //      String.length(name)
-    public Action apply(DefUFrame frame) {
+    public DefUFrame apply(DefUFrame frame) {
         // locals
         String name;
         String greetings;
@@ -20,18 +15,20 @@ public class Def_u implements Action {
         while (true) {
             if (frame.pc == 0) {
                 // no local variables to restore.
-                // return some kind of suspension
+                return new DefUFrame(1, "Con.read", null, null);
             } else if (frame.pc == 1) {
                 // must restore name
                 name = frame.name;
-                // return suspension for
+                greetings = "Hello " + name;
+                return new DefUFrame(2, "Con.print", name, greetings);
             } else if (frame.pc == 2) {
                 // restore name and greetings
                 name = frame.name;
                 greetings = frame.greetings;
-                // Invoke String.length(name)
-            } else {
-                throw null;
+                var tmp = greetings.length();
+                var f = new DefUFrame(0, null, null, null);
+                f.result = tmp;
+                return f;
             }
         }
 
@@ -41,6 +38,15 @@ public class Def_u implements Action {
 
 class DefUFrame {
     public int pc;
+    public String op;
     public String name;
     public String greetings;
+    public int result;
+
+    public DefUFrame(int pc, String op, String name, String greetings) {
+        this.pc = pc;
+        this.op = op;
+        this.name = name;
+        this.greetings = greetings;
+    }
 }
