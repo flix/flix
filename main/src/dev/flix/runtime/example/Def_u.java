@@ -43,7 +43,7 @@ public class Def_u {
                     } else if (vResult instanceof Suspension) {
                         // Build frame, and then return new suspension.
                         Suspension s = (Suspension) vResult;
-                        var t = new Def_u_Frame( new FrameData_u(1, name, greetings));
+                        var t = new Thunk_u( new FrameData_u(1, name, greetings));
                         return new Suspension(s.effSym, s.effOp, s.effArg, s.prefix.push(t), s.resumption);
                     } else { /* impossible: we have already dealt with all the thunks. */ }
 
@@ -52,7 +52,7 @@ public class Def_u {
                 case 1:
                     greetings = "Hello " + name;
                     var prefix0 = new FramesNil();
-                    var prefix = prefix0.push(new Def_u_Frame( new FrameData_u(2, name, greetings)));
+                    var prefix = prefix0.push(new Thunk_u( new FrameData_u(2, name, greetings)));
                     return new Suspension("Con", "print", greetings, prefix, new ResumptionNil());
 
                 case 2:
@@ -63,15 +63,18 @@ public class Def_u {
     }
 }
 
-class Def_u_Frame implements Thunk {
-    FrameData_u frameData;
+/**
+ * A thunk for `def u`. Simply holds a reference to the locals and implements `Thunk`.
+ */
+class Thunk_u implements Thunk {
+    FrameData_u locals;
 
-    public Def_u_Frame(FrameData_u frameData) {
-        this.frameData = frameData;
+    public Thunk_u(FrameData_u locals) {
+        this.locals = locals;
     }
 
     public Result apply() {
-        return Def_u.apply(frameData);
+        return Def_u.apply(locals);
     }
 }
 
