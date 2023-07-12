@@ -73,15 +73,6 @@ class Def_u_Frame implements Thunk {
     }
 }
 
-
-
-interface Resumption {}
-class ResumptionNil implements Resumption {}
-
-record ResumptionCons(String effSym, Frames frames, Resumption tail) implements Resumption {}
-
-record Suspension(String effSym, String effOp, Object effArg, Frames prefix, Resumption resumption) implements Result {}
-
 // An object holding local variables.
 // Generated for each function.
 class FrameData_u { // TODO: Rename to locals.
