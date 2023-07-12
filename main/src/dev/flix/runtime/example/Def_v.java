@@ -4,7 +4,8 @@ import dev.flix.runtime.Result;
 
 public class Def_v {
 
-    public Result apply() {
+    public static Result apply() {
+        // TODO
         return null;
     }
 
