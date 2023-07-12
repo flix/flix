@@ -85,17 +85,8 @@ record FramesCons(Thunk head, Frames tail) implements Frames {}
 
 interface Resumption {}
 class ResumptionNil implements Resumption {}
-class ResumptionCons implements Resumption {
-    final String effSym;
-    final Frames frames;
-    final Resumption tail;
 
-    public ResumptionCons(String effSym, Frames frames, Resumption tail) {
-        this.effSym = effSym;
-        this.frames = frames;
-        this.tail = tail;
-    }
-}
+record ResumptionCons(String effSym, Frames frames, Resumption tail) implements Resumption {}
 
 record Suspension(String effSym, String effOp, Object effArg, Frames prefix, Resumption resumption) implements Result {}
 
