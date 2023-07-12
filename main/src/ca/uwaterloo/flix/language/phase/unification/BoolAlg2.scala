@@ -85,27 +85,8 @@ trait BoolAlg2[F, V] {
   def map(f: F)(fn: V => F): F
 
   /**
-    * Returns `true` if formula is satisfiable and `false` otherwise.
-    */
-  def satisfiable(f: F): Boolean
-
-  /**
-    * Returns a representation equivalent to `f` (but potentially smaller).
-    */
-  def minimize(f: F): F
-
-  /**
     * Converts the given formula f into another Boolean formula.
     */
-  def convert[G, W](f: BoolFormula, env: Bimap[Int, W])(implicit otherAlg: BoolAlg2[G, W]): G
+  def convert[G, W](f: F, env: Bimap[V, W])(implicit otherAlg: BoolAlg2[G, W]): G
 }
 
-object BoolAlg2 {
-  trait VarOrConst[V, C]
-
-  object VarOrConst {
-    case class Const[V, C](id: C) extends VarOrConst[V, C]
-
-    case class Var[V, C](id: V) extends VarOrConst[V, C]
-  }
-}
