@@ -1,4 +1,6 @@
-package dev.flix.runtime;
+package dev.flix.runtime.example;
+
+import dev.flix.runtime.*;
 
 public class Def_u {
 
@@ -42,7 +44,7 @@ public class Def_u {
                         // Build frame, and then return new suspension.
                         Suspension s = (Suspension) vResult;
                         var t = new Def_u_Frame( new FrameData_u(1, name, greetings));
-                        return new Suspension(s.effSym(), s.effOp(), s.effArg(), s.prefix().push(t), s.resumption());
+                        return new Suspension(s.effSym, s.effOp, s.effArg, s.prefix.push(t), s.resumption);
                     } else { /* impossible: we have already dealt with all the thunks. */ }
 
                     break;

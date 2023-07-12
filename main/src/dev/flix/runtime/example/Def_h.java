@@ -1,4 +1,6 @@
-package dev.flix.runtime;
+package dev.flix.runtime.example;
+
+import dev.flix.runtime.Result;
 
 public class Def_h implements Result {
 
