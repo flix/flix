@@ -7,7 +7,7 @@ public class Def_u {
     //      let greetings = "Hello ${name}";
     //      do Con.print(greetings);
     //      String.length(name)
-    public FrameOrDone apply(Def_u_Suspend frame) {
+    public static FrameOrDone apply(Def_u_Suspend frame) {
         // locals
         String name;
         String greetings;
@@ -55,5 +55,9 @@ class Def_u_Suspend implements FrameOrDone {
         this.op = op;
         this.name = name;
         this.greetings = greetings;
+    }
+
+    public void resume() {
+        Def_u.apply(this);
     }
 }
