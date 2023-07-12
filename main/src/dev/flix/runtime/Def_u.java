@@ -13,18 +13,22 @@ public class Def_u implements Action {
     //      do Con.print(greetings);
     //      String.length(name)
     public Action apply(DefUFrame frame) {
+        // locals
+        String name;
+        String greetings;
+
         while (true) {
             if (frame.pc == 0) {
                 // no local variables to restore.
                 // return some kind of suspension
             } else if (frame.pc == 1) {
                 // must restore name
-                String name = frame.name;
+                name = frame.name;
                 // return suspension for
             } else if (frame.pc == 2) {
                 // restore name and greetings
-                String name = frame.name;
-                String greetings = frame.greetings;
+                name = frame.name;
+                greetings = frame.greetings;
                 // Invoke String.length(name)
             } else {
                 throw null;
