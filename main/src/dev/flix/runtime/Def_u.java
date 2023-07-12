@@ -1,6 +1,6 @@
 package dev.flix.runtime;
 
-public class Def_u implements Result {
+public class Def_u {
 
     //    def u(): Int32 \ Con =
     //      let name = v();
@@ -8,7 +8,7 @@ public class Def_u implements Result {
     //      do Con.print(greetings);
     //       String.length("${name}")
 
-    public Result apply(FrameData_u fd) {
+    public static Result apply(FrameData_u fd) {
 
         int pc = fd.pc;
         String name = fd.name;
@@ -63,14 +63,13 @@ public class Def_u implements Result {
 
 class Def_u_Frame implements Thunk {
     FrameData_u frameData;
-    Def_u defu = new Def_u();
 
     public Def_u_Frame(FrameData_u frameData) {
         this.frameData = frameData;
     }
 
     public Result apply() {
-        return defu.apply(frameData);
+        return Def_u.apply(frameData);
     }
 }
 
