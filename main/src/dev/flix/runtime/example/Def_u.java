@@ -4,20 +4,30 @@ import dev.flix.runtime.*;
 
 public class Def_u {
 
-    //    def u(): Int32 \ Con =
-    //      let name = v();
-    //      let greetings = "Hello ${name}";
-    //      do Con.print(greetings);
-    //       String.length("${name}")
+    // def u(): Int32 \ Con =
+    //     let name = v();
+    //     let greetings = "Hello ${name}";
+    //     do Con.print(greetings);
+    //     String.length("${name}")
 
     public static Result apply(Locals_u fd) {
 
+        // Our first task is to restore the program counter and the local variables.
+        // We restore all local variables, but of course not every variable may have been initialized.
+        // A smarter implementation would only restore local variables which (1) have been initialized and (2) are used.
         int pc = fd.pc;
         String name = fd.name;
         String greetings = fd.greetings;
-        // actually the PC is mapped to a switch that jumps to the appropriate label,
-        // i.e. we have a mapping from PCs to labels.
-        // The PCs and labels come from Stmt.LetVal... (?)
+
+        // We should think if the pc as pointing to one of N labels, e.g. label_i.
+        // In bytecode, we simply jump to this label.
+        // But in Java code we instead use an infinite loop and a switch to illustrate the same effect.
+
+        // Q: Where do the entries in the table come from?
+        // Answer: They come from each LetVal etc.
+
+        // TODO: Q: How do we handle if-then-else and branch/jumpto? Not sure.
+
         jump:
         while (true) {
             switch (pc) {
