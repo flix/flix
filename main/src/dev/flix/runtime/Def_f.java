@@ -8,12 +8,12 @@ public class Def_f {
         return this.result;
     }
 
-    public Action apply() {
+    public Result apply() {
         // Non-tail call. Must unwind the continuations.
         Def_g g = new Def_g();
 
-        Action prev = null;
-        Action curr = g;
+        Result prev = null;
+        Result curr = g;
 
         do {
             if (curr instanceof Thunk) {

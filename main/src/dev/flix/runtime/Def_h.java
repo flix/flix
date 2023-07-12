@@ -1,6 +1,6 @@
 package dev.flix.runtime;
 
-public class Def_h implements Action {
+public class Def_h implements Result {
 
     public int arg0;
     private int result;
@@ -9,7 +9,7 @@ public class Def_h implements Action {
         return this.result;
     }
 
-    public Action apply() {
+    public Result apply() {
         result = this.arg0 + 1; // Compute the result.
         return null;            // We are done, return null.
     }

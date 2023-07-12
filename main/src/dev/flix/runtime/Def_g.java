@@ -7,7 +7,7 @@ public class Def_g implements Thunk {
         return this.result;
     }
 
-    public Action apply() {
+    public Result apply() {
         // TailCall, construct continuation, and simply return it.
         Def_h h = new Def_h();
         h.arg0 = 1;

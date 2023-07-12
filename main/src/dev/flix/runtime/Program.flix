@@ -20,7 +20,9 @@ def g(): Int32 = h(1)
 def h(x: Int32): Int32 = x + 1
 
 def u(): Int32 \ Con =
-    let name = do Con.read();
+    let name = v();
     let greetings = "Hello ${name}";
     do Con.print(greetings);
     String.length("${name}")
+
+def v(): String \ Con = do Con.read()
