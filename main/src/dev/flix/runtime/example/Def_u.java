@@ -32,15 +32,19 @@ public class Def_u {
         while (true) {
             switch (pc) {
                 case 0:
+                    // We begin by calling `v`. This can result in one of three outcomes:
+                    // A Done value, a thunk, or a suspension.
+                    // If we get a thunk, we continue to evaluate it until we are left with either a value or suspension.
+
                     Result vResult = Def_v.apply();
-                    // -- below can be put into Unwind which returns only Null + Suspend
-                    // "forceTrampoline" -- to reduce down to either Done or Suspend.
-                    while (vResult instanceof Thunk) {
+
+                    // -- below can be put into an unwind function on Result.
+                    while (vResult instanceof Thunk) { // aka. "ForceTailCall".
                         vResult = ((Thunk) vResult).apply();
                     }
                     // --
 
-                    // Now vResult cannot be Thunk, it must be Done or Suspend.
+                    // Invariant: We know that vResult must now be Done(v) or a Suspension.
 
                     if (vResult instanceof Done) {
                         name = (String) (((Done) vResult).result);
