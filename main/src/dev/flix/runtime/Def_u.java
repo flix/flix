@@ -82,15 +82,8 @@ interface Frames {
     }
 }
 class FramesNil implements Frames {}
-class FramesCons implements Frames {
-    final Thunk head;
-    final Frames tail;
-    public FramesCons(Thunk head, Frames tail) {
-        this.head = head;
-        this.tail = tail;
-    }
-}
 
+record FramesCons(Thunk head, Frames tail) implements Frames {}
 
 interface Resumption {}
 class ResumptionNil implements Resumption {}
@@ -122,7 +115,6 @@ class Suspend implements Result {
         this.prefix = prefix;
         this.resumption = resumption;
     }
-
 }
 
 class FrameData_u {
