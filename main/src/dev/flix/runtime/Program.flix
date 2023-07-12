@@ -23,4 +23,4 @@ def u(): Int32 \ Con =
     let name = do Con.read();
     let greetings = "Hello ${name}";
     do Con.print(greetings);
-    String.length(greetings)
+    String.length("${name}")

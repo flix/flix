@@ -7,30 +7,36 @@ public class Def_u implements Action {
         return 0;
     }
 
-//    def u(): Int32 \ Con =
-//      let name = do Con.read();
-//      let greetings = "Hello ${name}";
-//      do Con.print(greetings);
-//      String.length(greetings)
-    public Action apply() {
-        // Switch on PC.
-        int pc = 0;
-
-        if (pc == 0) {
-            Def_u_suspend action = new Def_u_suspend();
-            return action
+    //    def u(): Int32 \ Con =
+    //      let name = do Con.read();
+    //      let greetings = "Hello ${name}";
+    //      do Con.print(greetings);
+    //      String.length(name)
+    public Action apply(DefUFrame frame) {
+        while (true) {
+            if (frame.pc == 0) {
+                // no local variables to restore.
+                // return some kind of suspension
+            } else if (frame.pc == 1) {
+                // must restore name
+                String name = frame.name;
+                // return suspension for
+            } else if (frame.pc == 2) {
+                // restore name and greetings
+                String name = frame.name;
+                String greetings = frame.greetings;
+                // Invoke String.length(name)
+            } else {
+                throw null;
+            }
         }
 
-        return null;
     }
 
 }
 
-class Def_u_suspend implements Action {
-    public String op() {
-        return "Con.read"
-    }
-    public int getResult() {
-        return 0;
-    }
+class DefUFrame {
+    public int pc;
+    public String name;
+    public String greetings;
 }
