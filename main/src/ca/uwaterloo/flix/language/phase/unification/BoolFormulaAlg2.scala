@@ -15,12 +15,8 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
-import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
-
-import scala.collection.immutable.{IntMap, SortedSet}
 
 /**
   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
@@ -123,16 +119,6 @@ class BoolFormulaAlg2 extends BoolAlg2[BoolFormula, Int] {
     case _ => BoolFormula.Or(f1, f2)
   }
 
-  override def map(f: BoolFormula)(fn: Int => BoolFormula): BoolFormula = f match {
-    case True => True
-    case False => False
-    case And(f1, f2) => mkAnd(map(f1)(fn), map(f2)(fn))
-    case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
-    case Not(f1) => mkNot(map(f1)(fn))
-    case Var(sym) => fn(sym)
-  }
-
-
   /**
     * Converts the given formula f into another Boolean formula.
     */
@@ -144,6 +130,4 @@ class BoolFormulaAlg2 extends BoolAlg2[BoolFormula, Int] {
     case Not(f1) => otherAlg.mkNot(convert(f1, env))
     case Var(id) => otherAlg.mkVar(env.getForward(id).get)
   }
-
-  override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 }

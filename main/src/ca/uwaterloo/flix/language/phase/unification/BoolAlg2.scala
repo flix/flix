@@ -17,8 +17,6 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.util.collection.Bimap
 
-import scala.collection.immutable.SortedSet
-
 /**
   * A type class for Boolean Formulas.
   */
@@ -73,16 +71,6 @@ trait BoolAlg2[F, V] {
     * Returns a representation of the formula `f1 xor f2`.
     */
   def mkXor(f1: F, f2: F): F = mkOr(mkAnd(f1, mkNot(f2)), mkAnd(mkNot(f1), f2))
-
-  /**
-    * Returns the set of free variables in `f`.
-    */
-  def freeVars(f: F): SortedSet[V]
-
-  /**
-    * Applies the function `fn` to every variable in `f`.
-    */
-  def map(f: F)(fn: V => F): F
 
   /**
     * Converts the given formula f into another Boolean formula.

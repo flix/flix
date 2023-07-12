@@ -4,8 +4,6 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstru
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
-import scala.collection.immutable.SortedSet
-
 class EffTypeAlg extends BoolAlg2[Type, EffTypeAlg.VarOrEff] {
   /**
     * Returns `true` if `f` represents TRUE.
@@ -59,18 +57,6 @@ class EffTypeAlg extends BoolAlg2[Type, EffTypeAlg.VarOrEff] {
   override def mkAnd(f1: Type, f2: Type): Type = Type.mkAnd(f1, f2, SourceLocation.Unknown)
 
   /**
-    * Returns the set of free variables in `f`.
-    */
-  override def freeVars(f: Type): SortedSet[EffTypeAlg.VarOrEff] = ??? // f.typeVars.map(_.sym).map(EffTypeAlg.VarOrEff.Var)
-
-  /**
-    * Applies the function `fn` to every variable in `f`.
-    */
-  override def map(f: Type)(fn: EffTypeAlg.VarOrEff => Type): Type = f.map { // TODO consts need to move to interface
-    case Type.Var(sym, _) => ??? // fn(sym)
-  }
-
-  /**
     * Converts the given formula f into another Boolean formula.
     */
   override def convert[G, W](f: Type, env: Bimap[EffTypeAlg.VarOrEff, W])(implicit otherAlg: BoolAlg2[G, W]): G = f match {
@@ -84,11 +70,19 @@ class EffTypeAlg extends BoolAlg2[Type, EffTypeAlg.VarOrEff] {
 }
 
 object EffTypeAlg {
-  trait VarOrEff
+  trait VarOrEff extends Ordered[VarOrEff] {
+    override def compare(that: VarOrEff): Int = (this, that) match {
+      case (VarOrEff.Var(_), VarOrEff.Eff(_)) => -1
+      case (VarOrEff.Eff(_), VarOrEff.Var(_)) => 1
+      case (VarOrEff.Eff(eff1), VarOrEff.Eff(eff2)) => eff1.compare(eff2)
+      case (VarOrEff.Var(var1), VarOrEff.Var(var2)) => var1.compare(var2)
+    }
+  }
 
   object VarOrEff {
+    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrEff
+
     case class Eff(sym: Symbol.EffectSym) extends VarOrEff
 
-    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrEff
   }
 }

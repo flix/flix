@@ -15,10 +15,20 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import scala.collection.immutable.SortedSet
+
 trait Sat[F, V] {
 
   /**
     * Returns true if the given Boolean formula is satisfiable.
     */
   def satisfiable(f: F)(implicit alg: BoolAlg2[F, V]): Boolean
+
+  /**
+    * Returns the set of free variables in `f`.
+    */
+  def freeVars(f: F)(implicit alg: BoolAlg2[F, V]): SortedSet[V]
+
+  // MATT docs
+  def map(f: F)(gn: V => F)(implicit alg: BoolAlg2[F, V]): F
 }
