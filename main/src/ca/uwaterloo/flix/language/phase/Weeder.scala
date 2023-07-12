@@ -484,7 +484,10 @@ object Weeder {
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
-      val kind = visitKind(kind0)
+      val kind = kind0 match {
+        case Some(k) => visitKind(k)
+        case None => WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
+      }
       val loc = mkSL(sp1, sp2)
 
       flatMapN(modVal, tparamsVal) {

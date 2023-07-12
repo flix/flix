@@ -17,7 +17,7 @@ mod Test.Assoc.Type {
     }
 
     class Collection2[t] {
-        type Elm: Type
+        type Elm
 
         pub def isEmpty(x: t): Bool
         pub def contains(x: t, e: Collection2.Elm[t]): Bool
