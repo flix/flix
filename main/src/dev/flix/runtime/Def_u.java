@@ -7,20 +7,20 @@ public class Def_u {
     //      let greetings = "Hello ${name}";
     //      do Con.print(greetings);
     //      String.length(name)
-    public FrameOrDone apply(Def_u_Frame frame) {
+    public FrameOrDone apply(Def_u_Suspend frame) {
         // locals
         String name;
         String greetings;
 
         while (true) {
-            if (frame.pc == 0) {
+            if (frame.pc == 0) { // invariant: frame is null.
                 // no local variables to restore.
-                return new Def_u_Frame(1, "Con.read", null, null);
+                return new Def_u_Suspend(1, "Con.read", null, null);
             } else if (frame.pc == 1) {
                 // must restore name
                 name = frame.name;
                 greetings = "Hello " + name;
-                return new Def_u_Frame(2, "Con.print", name, greetings);
+                return new Def_u_Suspend(2, "Con.print", name, greetings);
             } else if (frame.pc == 2) {
                 // restore name and greetings
                 name = frame.name;
@@ -44,13 +44,13 @@ class Def_u_Done implements FrameOrDone {
     }
 }
 
-class Def_u_Frame implements FrameOrDone {
+class Def_u_Suspend implements FrameOrDone {
     public int pc;
     public String op;
     public String name;
     public String greetings;
 
-    public Def_u_Frame(int pc, String op, String name, String greetings) {
+    public Def_u_Suspend(int pc, String op, String name, String greetings) {
         this.pc = pc;
         this.op = op;
         this.name = name;
