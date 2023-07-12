@@ -73,14 +73,7 @@ class Def_u_Frame implements Thunk {
     }
 }
 
-interface Frames {
-    default Frames push(Thunk t) {
-        return new FramesCons(t, this);
-    }
-}
-class FramesNil implements Frames {}
 
-record FramesCons(Thunk head, Frames tail) implements Frames {}
 
 interface Resumption {}
 class ResumptionNil implements Resumption {}
@@ -89,7 +82,9 @@ record ResumptionCons(String effSym, Frames frames, Resumption tail) implements 
 
 record Suspension(String effSym, String effOp, Object effArg, Frames prefix, Resumption resumption) implements Result {}
 
-class FrameData_u {
+// An object holding local variables.
+// Generated for each function.
+class FrameData_u { // TODO: Rename to locals.
     public int pc;
 
     public String name;
