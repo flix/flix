@@ -42,7 +42,7 @@ public class Def_u implements Result {
                         // Build frame, and then return new suspension.
                         Suspend s = (Suspend) vResult;
                         var t = new Def_u_Frame( new FrameData_u(1, name, greetings));
-                        return new Suspend(s.effName, s.op, s.opArgument, s.prefix.push(t), s.resumption);
+                        return new Suspend(s.effSym, s.effOp, s.effArg, s.prefix.push(t), s.resumption);
                     } else { /* impossible: we have already dealt with all the thunks. */ }
 
                     break;
@@ -86,30 +86,29 @@ record FramesCons(Thunk head, Frames tail) implements Frames {}
 interface Resumption {}
 class ResumptionNil implements Resumption {}
 class ResumptionCons implements Resumption {
-    final String effName;
+    final String effSym;
     final Frames frames;
     final Resumption tail;
 
-    public ResumptionCons(String effName, Frames frames, Resumption tail) {
-        this.effName = effName;
+    public ResumptionCons(String effSym, Frames frames, Resumption tail) {
+        this.effSym = effSym;
         this.frames = frames;
         this.tail = tail;
     }
 }
 
 class Suspend implements Result {
-    final String effName;
-    final String op;
-    final Object opArgument;
-
+    final String effSym;
+    final String effOp;
+    final Object effArg;
 
     final Frames prefix;
     final Resumption resumption;
 
-    public Suspend(String effName, String op, Object opArgument, Frames prefix, Resumption resumption) {
-        this.effName = effName;
-        this.op = op;
-        this.opArgument = opArgument;
+    public Suspend(String effSym, String effOp, Object effArg, Frames prefix, Resumption resumption) {
+        this.effSym = effSym;
+        this.effOp = effOp;
+        this.effArg = effArg;
         this.prefix = prefix;
         this.resumption = resumption;
     }
