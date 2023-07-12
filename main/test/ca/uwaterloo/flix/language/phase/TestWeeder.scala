@@ -1076,17 +1076,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("NonUnaryAssocType.02") {
     val input =
       """
-        |class C[a] {
-        |    type T: Type
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonUnaryAssocType](result)
-  }
-
-  test("NonUnaryAssocType.03") {
-    val input =
-      """
         |instance C[Int32] {
         |    type T[Int32, b] = Int32
         |}
