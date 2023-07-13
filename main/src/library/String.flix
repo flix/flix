@@ -1350,7 +1350,7 @@ mod String {
     /// Unwrap the string, replacing every newline with a space
     ///
     pub def unwrap(s: String): String =
-        replaceChar({from = '\n'}, {to = ' '}, s)
+        Regex.replace({from = regex"[\r\n]+"}, {to = " "}, s)
 
     ///
     /// Returns an iterator over `s`.

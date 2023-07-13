@@ -3621,6 +3621,24 @@ def unwrap03(): Bool = String.unwrap("a\nb\nc") == "a b c"
 @test
 def unwrap04(): Bool = String.unwrap("ab\nc\nd") == "ab c d"
 
+@test
+def unwrap05(): Bool = String.unwrap("a\rb") == "a b"
+
+@test
+def unwrap06(): Bool = String.unwrap("a\rb\rc") == "a b c"
+
+@test
+def unwrap07(): Bool = String.unwrap("ab\rc\rd") == "ab c d"
+
+@test
+def unwrap08(): Bool = String.unwrap("a\r\nb") == "a b"
+
+@test
+def unwrap09(): Bool = String.unwrap("a\r\nb\r\nc") == "a b c"
+
+@test
+def unwrap10(): Bool = String.unwrap("ab\r\nc\r\nd") == "ab c d"
+
 /////////////////////////////////////////////////////////////////////////////
 // escapeInterpolation                                                     //
 /////////////////////////////////////////////////////////////////////////////
