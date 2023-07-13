@@ -1,7 +1,5 @@
 package dev.flix.runtime;
 
-import dev.flix.runtime.example.EffectCall;
-
 public interface Handler {
     static Result installHandler(String effSym, Handler handler, Frames frames, Thunk thunk) {
         Result vResult = thunk.apply();
