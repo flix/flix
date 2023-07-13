@@ -9,7 +9,7 @@ def main(): Int32 =
         u()
     } with Con {
         def read() = resume(())
-        def print(_) = resume(())
+        def print(_) = 42
     }
 
 def f(): Int32 = g() + 1

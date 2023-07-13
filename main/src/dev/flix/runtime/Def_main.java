@@ -1,8 +1,21 @@
 package dev.flix.runtime;
 
 import dev.flix.runtime.example.Def_u;
+import dev.flix.runtime.example.UseOfConsole;
 
 public class Def_main {
+
+    public static void main(String[] args) {
+        Result vResult = apply(null);
+        while (vResult instanceof Thunk) {
+            vResult = ((Thunk) vResult).apply();
+        }
+        if (vResult instanceof Suspension) {
+            throw new RuntimeException("Unhandled effect");
+        }
+
+        System.out.println(vResult);
+    }
 
     public static Result apply(Locals_main locals) {
         // restore locals
@@ -21,8 +34,9 @@ public class Def_main {
         // Now vResult is a suspension? Do we have a handler for this specific effect
         if (vResult instanceof Suspension) {
             Suspension s = (Suspension) vResult;
-            if (s.effSym.equals("Con")) {
-
+            if (s.effSym.equals("Con")) { // TODO: Should be a check that uses a Class object.
+                UseOfConsole use = (UseOfConsole) s.effOp;
+                return use.apply(handler); // TODO: Need to use suspensions.
             } else {
                 // This is not the right handler.
                 // We need to capture this frame... and then

@@ -1,12 +1,21 @@
 package dev.flix.runtime.example;
 
-import dev.flix.runtime.Result;
+import dev.flix.runtime.*;
 
 public class Def_v {
 
     public static Result apply() {
-        // TODO
-        return null;
+        return new Suspension(
+                "Con",
+                new UseOfConsole() {
+                    @Override
+                    public Result apply(Console c) {
+                        return c.read();
+                    }
+                },
+                new FramesNil(),
+                new ResumptionNil()
+        );
     }
 
 }

@@ -19,4 +19,14 @@ public class Done implements Result {
     public static Done mkObj(Object o) {
         return new Done((byte) 0, (short) 0, 0, o);
     }
+
+    @Override
+    public String toString() {
+        return "Done{" +
+                "int8=" + int8 +
+                ", int16=" + int16 +
+                ", int32=" + int32 +
+                ", result=" + result +
+                '}';
+    }
 }
