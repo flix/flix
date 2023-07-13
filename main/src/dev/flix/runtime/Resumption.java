@@ -7,11 +7,15 @@ public interface Resumption {
             return Done.mkInt32(v);
         } else if (k instanceof ResumptionCons) {
             ResumptionCons cons = (ResumptionCons) k;
-            return Handler.installHandler(cons.effSym, cons.handler, cons.frames, new Thunk() {
+            return new Thunk() { // Return thunk to avoid increase the stack.
                 public Result apply() {
-                    return rewind(((ResumptionCons) k).tail, v);
+                    return Handler.installHandler(cons.effSym, cons.handler, cons.frames, new Thunk() {
+                        public Result apply() {
+                            return rewind(((ResumptionCons) k).tail, v);
+                        }
+                    });
                 }
-            });
+            };
         } else {
             throw new RuntimeException("Impossible");
         }
