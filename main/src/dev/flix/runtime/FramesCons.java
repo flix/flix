@@ -8,4 +8,9 @@ public class FramesCons implements Frames {
         this.head = head;
         this.tail = tail;
     }
+
+    public Frames reverseOnto(Frames rest) {
+        return tail.reverseOnto(new FramesCons(head, rest));
+    }
+
 }

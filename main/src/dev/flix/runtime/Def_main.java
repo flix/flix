@@ -36,7 +36,7 @@ public class Def_main {
         if (vResult instanceof Suspension) {
             Suspension s = (Suspension) vResult;
             // Package the effect handler up with the prefix.
-            Resumption r = new ResumptionCons("Con", handler, s.prefix, s.resumption);
+            Resumption r = new ResumptionCons("Con", handler, s.prefix.reverse(), s.resumption);
 
             if (s.effSym.equals("Con")) { // TODO: Should be a check that uses a Class object.
                 UseOfConsole use = (UseOfConsole) s.effOp;
