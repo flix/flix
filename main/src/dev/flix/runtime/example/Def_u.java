@@ -65,7 +65,6 @@ public class Def_u {
 
                 case 1:
                     greetings = "Hello " + name;
-                    // System.out.println(greetings);
                     var prefix0 = new FramesNil();
                     var prefix = prefix0.push(new Frame_u(new Locals_u(21, name, greetings)));
 

@@ -4,3 +4,9 @@ package dev.flix.runtime;
 public interface Thunk extends Result {
     Result apply();
 }
+
+// TODO:
+// Calling conventions how to pass arguments
+// Marker interface: EffectSym/Class (no strngs)
+// Recursion to while.
+// Closures

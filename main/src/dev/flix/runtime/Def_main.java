@@ -19,7 +19,7 @@ public class Def_main {
 
     public static Result apply(Locals_main locals) {
         ConsoleHandler17 handler = new ConsoleHandler17();
-        return ConsoleHandler17.installHandler("Con", handler, new FramesNil(), new Thunk() {
+        return Handler.installHandler("Con", handler, new FramesNil(), new Thunk() {
             @Override
             public Result apply() {
                 return Def_u.apply(new Locals_u(0, null, null), null);
