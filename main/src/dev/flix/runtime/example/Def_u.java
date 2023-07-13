@@ -10,7 +10,7 @@ public class Def_u {
     //     do Con.print(greetings);
     //     String.length("${name}")
 
-    public static Result apply(Locals_u fd) {
+    public static Result apply(Locals_u fd, Done resumeArg) {
 
         // Our first task is to restore the program counter and the local variables.
         // We restore all local variables, but of course not every variable may have been initialized.
@@ -53,16 +53,20 @@ public class Def_u {
                     } else if (vResult instanceof Suspension) {
                         // Build frame, and then return new suspension.
                         Suspension s = (Suspension) vResult;
-                        var t = new Thunk_u(new Locals_u(1, name, greetings));
+                        var t = new Frame_u(new Locals_u(11, name, greetings));
                         return new Suspension(s.effSym, s.effOp, s.prefix.push(t), s.resumption);
                     } else { /* impossible: we have already dealt with all the thunks. */ }
 
                     break;
 
+                case 11:
+                    name = (String) resumeArg.result;
+                    pc = 1; // (fallthrough is OK).
+
                 case 1:
                     greetings = "Hello " + name;
                     var prefix0 = new FramesNil();
-                    var prefix = prefix0.push(new Thunk_u(new Locals_u(2, name, greetings)));
+                    var prefix = prefix0.push(new Frame_u(new Locals_u(21, name, greetings)));
 
                     final String greetings1 = greetings;
                     UseOfConsole op = new UseOfConsole() {
@@ -75,6 +79,9 @@ public class Def_u {
 
                     return new Suspension("Con", op, prefix, new ResumptionNil());
 
+                case 21:
+                    // NOP
+
                 case 2:
                     return Done.mkInt32(name.length());
             }
@@ -86,15 +93,15 @@ public class Def_u {
 /**
  * A thunk for `def u`. Simply holds a reference to the locals and implements `Thunk`.
  */
-class Thunk_u implements Thunk {
+class Frame_u implements Frame {
     Locals_u locals;
 
-    public Thunk_u(Locals_u locals) {
+    public Frame_u(Locals_u locals) {
         this.locals = locals;
     }
 
-    public Result apply() {
-        return Def_u.apply(locals);
+    public Result apply(Done resumeArg) {
+        return Def_u.apply(locals, resumeArg);
     }
 }
 

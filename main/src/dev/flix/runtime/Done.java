@@ -4,7 +4,7 @@ public class Done implements Result {
     public final byte int8;
     public final short int16;
     public final int int32;
-    public final Object result;
+    public final Object result; // TODO: rename to obj
     // TODO: Add rest
 
     private Done(byte int8, short int16, int int32, Object result) {

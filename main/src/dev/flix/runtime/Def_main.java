@@ -20,7 +20,7 @@ public class Def_main {
 
     public static Result apply(Locals_main locals) {
         // restore locals
-        Result vResult = Def_u.apply(new Locals_u(0, null, null));
+        Result vResult = Def_u.apply(new Locals_u(0, null, null), null);
         while (vResult instanceof Thunk) {
             vResult = ((Thunk) vResult).apply();
         }

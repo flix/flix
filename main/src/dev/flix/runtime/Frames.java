@@ -5,7 +5,7 @@ public interface Frames {
         return reverseOnto(new FramesNil());
     }
     Frames reverseOnto(Frames rest);
-    default Frames push(Thunk t) {
+    default Frames push(Frame t) {
         return new FramesCons(t, this);
     }
 }
