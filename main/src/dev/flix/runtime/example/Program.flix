@@ -8,7 +8,7 @@ def main(): Int32 =
     try {
         u()
     } with Con {
-        def read() = resume(())
+        def read() = resume(21)
         def print(_) = 42
     }
 

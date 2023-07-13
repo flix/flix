@@ -8,8 +8,31 @@ public interface Console {
 }
 
 class ConsoleHandler17 implements Console {
+
+    // TODO: Move somewhere else.
+    public static Result rewind(Resumption k, /* type? */ int v) {
+        if (k instanceof ResumptionNil) {
+            return Done.mkInt32(v);
+        } else if (k instanceof ResumptionCons) {
+            ResumptionCons cons = (ResumptionCons) k;
+            return installHandler(cons.effSym, cons.handler, new Thunk() {
+                public Result apply() {
+                    return rewind(((ResumptionCons) k).tail, v);
+                }
+            });
+        } else {
+            throw new RuntimeException("Impossible");
+        }
+    }
+
+    // TODO: Move somewhere else.
+    public static Result installHandler(String effSym, Object handler, Thunk thunk) {
+
+        return null;
+    }
+
     public Result read(Resumption k) {
-        return Done.mkInt32(21);
+        return rewind(k, 42);
     }
 
     public Result print(String s, Resumption k) {
