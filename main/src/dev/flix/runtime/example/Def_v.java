@@ -9,8 +9,8 @@ public class Def_v {
                 "Con",
                 new UseOfConsole() {
                     @Override
-                    public Result apply(Console c) {
-                        return c.read();
+                    public Result apply(Console c, Resumption r) {
+                        return c.read(r);
                     }
                 },
                 new FramesNil(),

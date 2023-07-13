@@ -68,8 +68,8 @@ public class Def_u {
                     UseOfConsole op = new UseOfConsole() {
                         private String arg0 = greetings1; /* closure captured, but would be argument */
                         @Override
-                        public Result apply(Console c) {
-                            return c.print(arg0);
+                        public Result apply(Console c, Resumption r) {
+                            return c.print(arg0, r);
                         }
                     };
 

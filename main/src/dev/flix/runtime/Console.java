@@ -1,20 +1,18 @@
 package dev.flix.runtime;
 
 public interface Console {
-    // Result read(Locals_?, Kont?);
-    Result read();
+    Result read(Resumption k);
 
-    Result print(String s);
+    Result print(String s, Resumption k);
 
 }
 
 class ConsoleHandler17 implements Console {
-    public Result read() {
-        // TODO: Much later, resume with say 21.
+    public Result read(Resumption k) {
         return Done.mkInt32(21);
     }
 
-    public Result print(String s) {
+    public Result print(String s, Resumption k) {
         return Done.mkInt32(42);
     }
 
