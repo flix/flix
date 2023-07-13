@@ -436,9 +436,10 @@ object Resolver {
           // ignore the parameter of the super class; we don't use it
           val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
           val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
-          val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, env, taenv, ns0, root))
-          val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
-          val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
+          val ns = Name.mkUnlocatedNName(ns0.parts :+ sym.name)
+          val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, env, taenv, ns, root))
+          val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns, root))
+          val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns, root))
           mapN(superClassesVal, assocsVal, sigsListVal, lawsVal) {
             case (superClasses, assocs, sigsList, laws) =>
               val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
@@ -2737,6 +2738,13 @@ object Resolver {
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
+      }
+    }.orElse {
+      // Then see if the name matches the namespace we are currently in
+      if (ns0.idents.last.name == name) {
+        Some(ns0.parts)
+      } else {
+        None
       }
     }.orElse {
       // Then see if there's a module with this name declared in the root namespace

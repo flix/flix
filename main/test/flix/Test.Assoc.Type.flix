@@ -48,4 +48,19 @@ mod Test.Assoc.Type {
         pub def head(x: String): Option[Char] = if (String.isEmpty(x)) None else Some(String.charAt(0, x))
     }
 
+    class Collection4[t] {
+        type Elm
+
+        pub def isEmpty(x: t): Bool
+        pub def contains(x: t, e: Elm[t]): Bool
+        pub def head(x: t): Option[Elm[t]]
+    }
+
+    instance Collection4[String] {
+        type Elm = Char
+
+        pub def isEmpty(x: String): Bool = ???
+        pub def contains(x: String, e: Char): Bool = ???
+        pub def head(x: String): Option[Char] = if (String.isEmpty(x)) None else Some(String.charAt(0, x))
+    }
 }
