@@ -1,5 +1,7 @@
 package dev.flix.runtime;
 
+import dev.flix.runtime.example.EffectCall;
+
 public interface Console {
     Result read(Resumption k);
 
@@ -7,7 +9,7 @@ public interface Console {
 
 }
 
-class ConsoleHandler17 implements Console {
+class ConsoleHandler17 implements Console, Handler {
 
     // TODO: Move somewhere else.
     public static Result rewind(Resumption k, /* type? */ int v) {
@@ -26,15 +28,23 @@ class ConsoleHandler17 implements Console {
     }
 
     // TODO: Move somewhere else.
-    public static Result installHandler(String effSym, Object handler, Frames frames, Thunk thunk) {
+    public static Result installHandler(String effSym, Handler handler, Frames frames, Thunk thunk) {
         Result vResult = thunk.apply();
         while (vResult instanceof Thunk) {
             vResult = ((Thunk) vResult).apply();
         }
         // Now two cases:
         if (vResult instanceof Suspension) {
-            // TODO: Crazy
-            throw null;
+            Suspension s = (Suspension) vResult;
+            Frames newFrames = s.prefix.reverseOnto(frames);
+            Resumption r = new ResumptionCons(effSym, handler, newFrames, s.resumption);
+
+            if (s.effSym.equals(effSym)) {
+                EffectCall use = (EffectCall) s.effOp;
+                return use.apply(handler, r);
+            } else {
+                return new Suspension(s.effSym, s.effOp, new FramesNil(), r);
+            }
         } else if (vResult instanceof Done) {
             Done res = (Done) vResult;
 

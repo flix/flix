@@ -7,9 +7,10 @@ public class Def_v {
     public static Result apply() {
         return new Suspension(
                 "Con",
-                new UseOfConsole() {
+                new EffectCall() {
                     @Override
-                    public Result apply(Console c, Resumption r) {
+                    public Result apply(Handler h, Resumption r) {
+                        Console c = (Console) h;
                         return c.read(r);
                     }
                 },

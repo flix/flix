@@ -2,7 +2,7 @@ package dev.flix.runtime;
 
 import dev.flix.runtime.example.Def_u;
 import dev.flix.runtime.example.Locals_u;
-import dev.flix.runtime.example.UseOfConsole;
+import dev.flix.runtime.example.EffectCall;
 
 public class Def_main {
 
@@ -39,7 +39,7 @@ public class Def_main {
             Resumption r = new ResumptionCons("Con", handler, s.prefix.reverse(), s.resumption);
 
             if (s.effSym.equals("Con")) { // TODO: Should be a check that uses a Class object.
-                UseOfConsole use = (UseOfConsole) s.effOp;
+                EffectCall use = (EffectCall) s.effOp;
                 return use.apply(handler, r);
             } else {
                 // This is not the right handler.

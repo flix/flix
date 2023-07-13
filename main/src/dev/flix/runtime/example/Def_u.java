@@ -60,7 +60,7 @@ public class Def_u {
                     break;
 
                 case 11:
-                    name = (String) resumeArg.result;
+                    name = (String) Integer.toString(resumeArg.int32);
                     pc = 1; // (fallthrough is OK).
 
                 case 1:
@@ -69,10 +69,11 @@ public class Def_u {
                     var prefix = prefix0.push(new Frame_u(new Locals_u(21, name, greetings)));
 
                     final String greetings1 = greetings;
-                    UseOfConsole op = new UseOfConsole() {
+                    EffectCall op = new EffectCall() {
                         private String arg0 = greetings1; /* closure captured, but would be argument */
                         @Override
-                        public Result apply(Console c, Resumption r) {
+                        public Result apply(Handler h, Resumption r) {
+                            Console c = (Console) h;
                             return c.print(arg0, r);
                         }
                     };
