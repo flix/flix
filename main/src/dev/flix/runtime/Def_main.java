@@ -1,5 +1,6 @@
 package dev.flix.runtime;
 
+import dev.flix.runtime.example.ConsoleHandler17;
 import dev.flix.runtime.example.Def_u;
 import dev.flix.runtime.example.Locals_u;
 
