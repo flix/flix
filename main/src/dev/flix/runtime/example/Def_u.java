@@ -54,7 +54,7 @@ public class Def_u {
                         // Build frame, and then return new suspension.
                         Suspension s = (Suspension) vResult;
                         var t = new Thunk_u(new Locals_u(1, name, greetings));
-                        return new Suspension(s.effSym, s.effOp, s.effArg, s.prefix.push(t), s.resumption);
+                        return new Suspension(s.effSym, s.effOp, s.prefix.push(t), s.resumption);
                     } else { /* impossible: we have already dealt with all the thunks. */ }
 
                     break;
@@ -63,7 +63,17 @@ public class Def_u {
                     greetings = "Hello " + name;
                     var prefix0 = new FramesNil();
                     var prefix = prefix0.push(new Thunk_u(new Locals_u(2, name, greetings)));
-                    return new Suspension("Con", "print", greetings, prefix, new ResumptionNil());
+
+                    final String greetings1 = greetings;
+                    UseOfConsole op = new UseOfConsole() {
+                        private String arg0 = greetings1; /* closure captured, but would be argument */
+                        @Override
+                        public Result apply(Console c) {
+                            return c.print(arg0);
+                        }
+                    };
+
+                    return new Suspension("Con", op, prefix, new ResumptionNil());
 
                 case 2:
                     return Done.mkInt32(name.length());

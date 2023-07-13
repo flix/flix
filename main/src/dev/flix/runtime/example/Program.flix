@@ -3,15 +3,14 @@ eff Con {
     pub def print(s: String): Unit
 }
 
-def main(): Unit =
-    let _ = f();
+def main(): Int32 =
+    //let _ = f();
     try {
         u()
     } with Con {
         def read() = resume(())
         def print(_) = resume(())
-    };
-    ()
+    }
 
 def f(): Int32 = g() + 1
 
