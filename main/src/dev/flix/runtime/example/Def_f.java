@@ -12,24 +12,8 @@ public class Def_f {
     }
 
     public Result apply() {
-        // Non-tail call. Must unwind the continuations.
-        Def_g g = new Def_g();
-
-        Result prev = null;
-        Result curr = g;
-
-        do {
-            if (curr instanceof Thunk) {
-                Thunk c = (Thunk) curr;
-                prev = curr;
-                curr = c.apply();
-            }
-
-        } while (curr != null);
-
-        result = prev.getResult();
-
-        return null; // We are done.
+      // TODO: Rewrite
+        return null;
     }
 
 }

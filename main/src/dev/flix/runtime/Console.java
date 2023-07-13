@@ -11,7 +11,7 @@ public interface Console {
 class ConsoleHandler17 implements Console {
     public Result read() {
         // TODO: Much later, resume with say 21.
-        return Done.mkInt32(42);
+        return Done.mkInt32(21);
     }
 
     public Result print(String s) {
