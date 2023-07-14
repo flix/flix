@@ -13,7 +13,7 @@ public interface Handler {
             Resumption r = new ResumptionCons(effSym, handler, newFrames, s.resumption);
 
             if (s.effSym.equals(effSym)) {
-                EffectCall use = (EffectCall) s.effOp;
+                EffectCall use = s.effOp;
                 return use.apply(handler, r);
             } else {
                 return new Suspension(s.effSym, s.effOp, new FramesNil(), r);
