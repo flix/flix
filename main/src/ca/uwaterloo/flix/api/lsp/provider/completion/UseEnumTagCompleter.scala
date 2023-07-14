@@ -62,10 +62,6 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
-  private def matches(sym: EnumSym, suffix: String): Boolean = {
-    sym.name.startsWith(suffix)
-  }
-
  private def getUseEnumTagCompletion(cse: CaseSym): UseEnumTagCompletion = {
 
  }
