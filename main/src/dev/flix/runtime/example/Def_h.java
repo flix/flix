@@ -1,19 +1,12 @@
 package dev.flix.runtime.example;
 
 import dev.flix.runtime.Result;
+import dev.flix.runtime.Value;
 
 public class Def_h implements Result {
 
-    public int arg0;
-    private int result;
-
-    public int getResult() {
-        return this.result;
-    }
-
-    public Result apply() {
-        result = this.arg0 + 1; // Compute the result.
-        return null;            // We are done, return null.
+    public static Result invoke() {
+        return Value.mkInt32(1); // TODO: Should be x + 1, need locals as argument.
     }
 
 }
