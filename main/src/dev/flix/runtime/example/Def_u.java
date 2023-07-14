@@ -70,11 +70,10 @@ public class Def_u {
 
                     final String greetings1 = greetings;
                     EffectCall op = new EffectCall() {
-                        private String arg0 = greetings1; /* closure captured, but would be argument */
                         @Override
                         public Result apply(Handler h, Resumption r) {
                             Console c = (Console) h;
-                            return c.print(arg0, r);
+                            return c.print(greetings1, r); // Closure captured.
                         }
                     };
 
