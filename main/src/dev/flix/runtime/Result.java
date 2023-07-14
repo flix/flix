@@ -1,6 +1,6 @@
 package dev.flix.runtime;
 
 /**
- * Result = Done | Thunk | Suspend
+ * Result = Value | Thunk | Suspend
  */
 public interface Result {}
