@@ -2740,13 +2740,6 @@ object Resolver {
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
       }
     }.orElse {
-      // Then see if the name matches the namespace we are currently in
-      if (ns0.idents.last.name == name) {
-        Some(ns0.parts)
-      } else {
-        None
-      }
-    }.orElse {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns

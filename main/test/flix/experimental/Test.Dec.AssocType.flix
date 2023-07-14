@@ -3,9 +3,9 @@ mod Test.Dec.AssocType {
     class Coll[a] {
         type Elem[a]: Type
 
-        pub def contains(x: Coll.Elem[a], c: a): Bool
+        pub def contains(x: Elem[a], c: a): Bool
 
-        pub def head(x: a): Option[Coll.Elem[a]]
+        pub def head(x: a): Option[Elem[a]]
     }
 
     instance Coll[String] {
@@ -44,7 +44,7 @@ mod Test.Dec.AssocType {
         type Eff[a]: Eff
         type Elem[a]: Type
 
-        pub def iterator(rc: Region[r], x: a): Iterator[Iterable2.Elem[a], Iterable2.Eff[a] + r, r] \ Iterable2.Eff[a] + r
+        pub def iterator(rc: Region[r], x: a): Iterator[Elem[a], Eff[a] + r, r] \ Eff[a] + r
     }
 
     instance Iterable2[String] {
@@ -63,7 +63,7 @@ mod Test.Dec.AssocType {
 
     class C[a] {
         type T[a]: Type
-        pub def f(x: a): C.T[a]
+        pub def f(x: a): T[a]
     }
 
     instance C[Unit] {
