@@ -13,9 +13,11 @@ public interface Handler {
             Resumption r = new ResumptionCons(effSym, handler, newFrames, s.resumption);
 
             if (s.effSym.equals(effSym)) {
+                // found the right handler, apply the effect operation.
                 EffectCall use = s.effOp;
                 return use.apply(handler, r);
             } else {
+                // forward, not right handler.
                 return new Suspension(s.effSym, s.effOp, new FramesNil(), r);
             }
         } else if (vResult instanceof Value) {
