@@ -11,7 +11,7 @@ public interface Resumption {
                 public Result apply() {
                     return Handler.installHandler(cons.effSym, cons.handler, cons.frames, new Thunk() {
                         public Result apply() {
-                            return rewind(((ResumptionCons) k).tail, v);
+                            return rewind(cons.tail, v);
                         }
                     });
                 }
