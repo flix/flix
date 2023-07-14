@@ -18,8 +18,8 @@ public interface Handler {
             } else {
                 return new Suspension(s.effSym, s.effOp, new FramesNil(), r);
             }
-        } else if (vResult instanceof Done) {
-            Done res = (Done) vResult;
+        } else if (vResult instanceof Value) {
+            Value res = (Value) vResult;
 
             if (frames instanceof FramesNil) {
                 return vResult; // We are completely done!

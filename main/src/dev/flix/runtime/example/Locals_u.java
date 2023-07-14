@@ -1,7 +1,5 @@
 package dev.flix.runtime.example;
 
-import dev.flix.runtime.Done;
-
 /**
  * An object which holds the PC + local variables of `def u`.
  */

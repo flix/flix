@@ -4,7 +4,7 @@ public interface Resumption {
 
     static Result rewind(Resumption k, /* type? */ int v) { // TODO: instance method.
         if (k instanceof ResumptionNil) {
-            return Done.mkInt32(v);
+            return Value.mkInt32(v);
         } else if (k instanceof ResumptionCons) {
             ResumptionCons cons = (ResumptionCons) k;
             return new Thunk() { // Return thunk to avoid increase the stack.

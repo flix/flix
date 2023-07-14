@@ -10,7 +10,7 @@ public class Def_u {
     //     do Con.print(greetings);
     //     String.length("${name}")
 
-    public static Result apply(Locals_u fd, Done resumeArg) {
+    public static Result apply(Locals_u fd, Value resumeArg) {
 
         // Our first task is to restore the program counter and the local variables.
         // We restore all local variables, but of course not every variable may have been initialized.
@@ -46,8 +46,8 @@ public class Def_u {
 
                     // Invariant: We know that vResult must now be Done(v) or a Suspension.
 
-                    if (vResult instanceof Done) {
-                        name = (String) (((Done) vResult).result);
+                    if (vResult instanceof Value) {
+                        name = (String) (((Value) vResult).obj);
                         pc = 1;
                         continue jump;
                     } else if (vResult instanceof Suspension) {
@@ -84,7 +84,7 @@ public class Def_u {
                     // NOP
 
                 case 2:
-                    return Done.mkInt32(name.length());
+                    return Value.mkInt32(name.length());
             }
         }
 
@@ -101,7 +101,7 @@ class Frame_u implements Frame {
         this.locals = locals;
     }
 
-    public Result apply(Done resumeArg) {
+    public Result apply(Value resumeArg) {
         return Def_u.apply(locals, resumeArg);
     }
 }
