@@ -3606,6 +3606,72 @@ def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == So
 def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 /////////////////////////////////////////////////////////////////////////////
+// wrap                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def wrap01(): Bool = String.wrap(0, false, "a") == ""
+
+@test
+def wrap02(): Bool = String.wrap(1, false, "") == ""
+
+@test
+def wrap03(): Bool = String.wrap(1, false, "a b") == "a" + String.lineSeparator() + "b"
+
+@test
+def wrap04(): Bool = String.wrap(1, false, "a  b") == "a" + String.lineSeparator() + "b"
+
+@test
+def wrap05(): Bool = String.wrap(1, false, "a   b") == "a" + String.lineSeparator() + "b"
+
+@test
+def wrap06(): Bool = String.wrap(2, false, "a bc") == "a" + String.lineSeparator() + "bc"
+
+@test
+def wrap07(): Bool = String.wrap(2, false, " a b") == " a" + String.lineSeparator() + "b"
+
+@test
+def wrap08(): Bool = String.wrap(2, false, "a b ") == "a" + String.lineSeparator() + "b "
+
+@test
+def wrap09(): Bool = String.wrap(2, false, " a b ") == " a" + String.lineSeparator() + "b "
+
+@test
+def wrap10(): Bool = String.wrap(3, false, "a bc def") == "a" + String.lineSeparator() + "bc" + String.lineSeparator() + "def"
+
+@test
+def wrap11(): Bool = String.wrap(1, false, "ab") == "ab"
+
+@test
+def wrap12(): Bool = String.wrap(1, true, "ab") == "a" + String.lineSeparator() + "b"
+
+@test
+def wrap13(): Bool =
+    String.wrap(5, false, "Lorem ipsum dolor sitamet")
+        == "Lorem" + String.lineSeparator()
+        + "ipsum" + String.lineSeparator()
+        + "dolor" + String.lineSeparator()
+        + "sitamet"
+
+@test
+def wrap14(): Bool =
+    String.wrap(5, true, "Lorem ipsum dolor sitamet")
+        == "Lorem" + String.lineSeparator()
+        + "ipsum" + String.lineSeparator()
+        + "dolor" + String.lineSeparator()
+        + "sitam" + String.lineSeparator()
+        + "et"
+
+@test
+def wrap15(): Bool =
+    String.wrap(5, true, "Loremipsumdolorsitamet")
+        == "Lorem" + String.lineSeparator()
+        + "ipsum" + String.lineSeparator()
+        + "dolor" + String.lineSeparator()
+        + "sitam" + String.lineSeparator()
+        + "et"
+
+/////////////////////////////////////////////////////////////////////////////
 // escapeInterpolation                                                     //
 /////////////////////////////////////////////////////////////////////////////
 

@@ -1347,6 +1347,79 @@ mod String {
             Some(dropRight(length(substr.substr), s))
 
     ///
+    /// Wrap the string, `s`, breaking it into lines at whitespace boundaries, such that no line is longer than `l`.
+    /// If a word is longer than `l`, the `bw` parameter (break words) determines what should happen:
+    /// - `false`: The word is left untouched.
+    /// - `true`: The word will be broken into multiple lines.
+    ///
+    /// If `l` is less than or equal to zero, the empty string is returned.
+    ///
+    pub def wrap(l: Int32, bw: Bool, s: String): String =
+        if (l <= 0) ""
+        else region rc {
+            debug(s);
+            let sb = StringBuilder.new(rc);
+
+            def loop(lnstart) = {
+                let ml = lnstart + l;
+
+                if (ml < String.length(s)) {
+                    let notWhiteSpace = c -> not Char.isWhiteSpace(c);
+                    let ws = findPrevious(ml, Char.isWhiteSpace, s);
+
+                    let (lnend, lnstart2) = {
+                        if (ws <= lnstart) {
+                            // Word is too long to fit in one line
+                            if (bw)
+                                (ml, ml)
+                            else {
+                                let wend = findNext(ws, Char.isWhiteSpace, s);
+                                (wend, findNext(wend, notWhiteSpace, s))
+                            }
+                        } else
+                            (findPrevious(ws, notWhiteSpace, s), findNext(ws, notWhiteSpace, s))
+                    };
+
+
+                    let ln = slice({ start = lnstart }, { end = lnend + 1 }, s);
+                    StringBuilder.appendLine!(ln, sb);
+                    loop(lnstart2)
+                } else {
+                    let rest = sliceRight({ start = lnstart }, s);
+                    StringBuilder.appendString!(rest, sb);
+                    debug(StringBuilder.toString(sb));
+                    StringBuilder.toString(sb)
+                }
+            };
+
+            loop(0)
+        }
+
+    ///
+    /// Helper function for wrap.
+    /// Find the previous character satisfying `f`, starting at `i` (inclusive).
+    /// If no such character is found the function will return 0.
+    ///
+    def findPrevious(i: Int32, f: Char -> Bool \ ef, s: String): Int32 \ ef =
+        let c = charAt(i, s);
+        if (f(c) or i <= 0)
+            i
+        else
+            findPrevious(i - 1, f, s)
+
+    ///
+    /// Helper function for wrap.
+    /// Find the next character satisfying `f`, starting at `i` (inclusive).
+    /// If no such character is found the function will return the index of the last element.
+    ///
+    def findNext(i: Int32, f: Char -> Bool \ ef, s: String): Int32 \ ef =
+        let c = charAt(i, s);
+        if (f(c) or i >= length(s) - 1)
+            i
+        else
+            findNext(i + 1, f, s)
+
+    ///
     /// Returns an iterator over `s`.
     ///
     pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ r =
