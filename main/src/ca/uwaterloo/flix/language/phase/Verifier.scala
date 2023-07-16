@@ -83,22 +83,32 @@ object Verifier {
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
 
+      def opType(sop: SemanticOp) = sop match {
+        case _: SemanticOp.BoolOp => MonoType.Bool
+        case _: SemanticOp.CharOp => MonoType.Char
+        case _: SemanticOp.Float32Op => MonoType.Float32
+        case _: SemanticOp.Float64Op => MonoType.Float64
+        case _: SemanticOp.Int8Op => MonoType.Int8
+        case _: SemanticOp.Int16Op => MonoType.Int16
+        case _: SemanticOp.Int32Op => MonoType.Int32
+        case _: SemanticOp.Int64Op => MonoType.Int64
+        case _: SemanticOp.StringOp => MonoType.Str
+      }
+
       op match {
-        case AtomicOp.Unary(sop) => sop match {
-          case op: SemanticOp.BoolOp =>
-            val List(t) = ts
-            check(expected = MonoType.Bool)(actual = t, loc)
-          case _ => tpe // TODO: VERIFIER: Add rest
-        }
-        case AtomicOp.Binary(sop) => sop match {
-          case SemanticOp.Int32Op.Add =>
-            val List(t1, t2) = ts
-            check(expected = MonoType.Int32)(t1, loc)
-            check(expected = MonoType.Int32)(t2, loc)
+        case AtomicOp.Unary(sop) =>
+          val List(t) = ts
+          val opTpe = opType(sop)
+          check(expected = opTpe)(actual = t, loc)
+          check(expected = tpe)(actual = opTpe, loc)
 
-          case _ => tpe // TODO: VERIFIER: Add rest
+        case AtomicOp.Binary(sop) =>
+          val List(t1, t2) = ts
+          val opTpe = opType(sop)
+          check(expected = opTpe)(t1, loc)
+          check(expected = opTpe)(t2, loc)
+          check(expected = tpe)(actual = opTpe, loc)
 
-        }
         case AtomicOp.Tag(sym) =>
           root.enums.get(sym.enumSym) match {
             case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
