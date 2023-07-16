@@ -223,11 +223,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     case Request.AddUri(id, uri, src) =>
       addSourceCode(uri, src)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok)
 
     case Request.RemUri(id, uri) =>
       remSourceCode(uri)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok)
 
     case Request.AddPkg(id, uri, data) =>
       // TODO: Possibly move into Input class?
@@ -244,7 +244,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       }
       inputStream.close()
 
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok)
 
     case Request.RemPkg(id, uri) =>
       // clone is necessary because `remSourceCode` modifies `sources`
@@ -252,16 +252,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
            if file.startsWith(uri)) {
         remSourceCode(file)
       }
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok)
 
     case Request.AddJar(id, uri) =>
       val path = Path.of(new URI(uri))
       flix.addJar(path)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok)
 
     case Request.RemJar(id, uri) =>
       // No-op (there is no easy way to remove a Jar from the JVM)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok)
 
     case Request.Version(id) => processVersion(id)
 
@@ -285,16 +285,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
     case Request.Implementation(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root.orNull)
 
     case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
 
     case Request.WorkspaceSymbols(id, query) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root.orNull)
@@ -303,26 +303,26 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       if (current)
         ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
       else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> ("data" -> Nil))
 
     case Request.InlayHint(id, uri, range) =>
       if (current)
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
       else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+        ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> Nil)
 
     case Request.ShowAst(id, phase) =>
       if (current)
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
       else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+        ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> Nil)
 
     case Request.CodeAction(id, uri, range, context) =>
       root match {
         case None =>
-          ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+          ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> Nil)
         case Some(r) =>
-          ("id" -> id) ~ ("status" -> "success") ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, r, flix).map(_.toJSON))
+          ("id" -> id) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, r, flix).map(_.toJSON))
       }
 
   }
@@ -354,14 +354,14 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
           // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> results.map(_.toJSON))
+          ("id" -> requestId) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
       case ex: Throwable =>
         // Mark the AST as outdated.
         this.current = false
         CrashHandler.handleCrash(ex)(flix)
-        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> Nil)
+        ("id" -> requestId) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> Nil)
     }
   }
 
@@ -387,7 +387,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(errors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
+    ("id" -> requestId) ~ ("status" -> ResponseStatus.Ok) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
   /**
@@ -406,7 +406,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> version)
+    ("id" -> requestId) ~ ("status" -> ResponseStatus.Ok) ~ ("result" -> version)
   }
 
   /**

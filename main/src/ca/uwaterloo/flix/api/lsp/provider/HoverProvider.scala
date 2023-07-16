@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
@@ -90,7 +90,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
     }
   }
 
@@ -109,7 +109,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
     }
   }
 
@@ -128,7 +128,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
     }
   }
 
@@ -147,7 +147,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
     }
   }
 
@@ -166,7 +166,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
     }
   }
 
@@ -198,14 +198,14 @@ object HoverProvider {
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(t.loc)
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> "success") ~ ("result" -> result)
+    ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
   }
 
   /**
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
   private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   private def mkCurrentMsg(current: Boolean): String =
     if (!current) "(Information may not be current)" else ""

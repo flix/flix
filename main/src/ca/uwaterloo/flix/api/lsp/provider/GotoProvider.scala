@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, LocationLink, Position}
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, LocationLink, Position, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
@@ -35,41 +35,41 @@ object GotoProvider {
         case Some(entity) => entity match {
 
           case Entity.DefUse(sym, loc, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(someRoot).toJSON)
+            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromDefSym(sym, loc)(someRoot).toJSON)
 
           case Entity.SigUse(sym, loc, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(someRoot).toJSON)
+            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromSigSym(sym, loc)(someRoot).toJSON)
 
           case Entity.VarUse(sym, loc, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
           case Entity.CaseUse(sym, loc, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
+            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
 
           case Entity.Exp(_) => mkNotFound(uri, pos)
 
           case Entity.Pattern(pat) => pat match {
             case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
-              ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
+              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
 
             case _ => mkNotFound(uri, pos)
           }
 
           case Entity.Type(t) => t match {
             case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-              ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(someRoot).toJSON)
+              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(someRoot).toJSON)
 
             case Type.Cst(TypeConstructor.Effect(sym), loc) =>
-              ("status" -> "success") ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
+              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
 
             case Type.Var(sym, loc) =>
-              ("status" -> "success") ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
+              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
 
             case _ => mkNotFound(uri, pos)
           }
 
           case Entity.OpUse(sym, loc, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
+            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
           case Entity.Case(_) => mkNotFound(uri, pos)
           case Entity.Class(_) => mkNotFound(uri, pos)
@@ -93,6 +93,6 @@ object GotoProvider {
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
   private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
 }
