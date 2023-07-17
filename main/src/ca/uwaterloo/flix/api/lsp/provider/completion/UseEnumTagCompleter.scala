@@ -28,7 +28,7 @@ object UseEnumTagCompleter extends Completer {
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseEnumTagCompletion] = {
     stripWord(context) match {
       case Some(word) =>
-        getLocalEnumSyms(word).headOption match { //there should only be one possible enum symbol (I think)
+        getLocalEnumSyms(word).headOption match {
           case Some(enumSym) =>
             root.enums.get(enumSym) match {
               case Some(enm) => enm.cases.map {
@@ -49,7 +49,7 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
-  // mostly reused from a different file I made
+
   private def getLocalEnumSyms(parsedWord: String)(implicit root: TypedAst.Root): List[Symbol.EnumSym] = {
     val modFragment = ModuleSymFragment.parseModuleSym(parsedWord)
     modFragment match {
