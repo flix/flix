@@ -20,7 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumTagCompletion
+import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 
 
 object UseEnumTagCompleter extends Completer {
@@ -29,19 +30,16 @@ object UseEnumTagCompleter extends Completer {
       case Some(word) =>
         getLocalEnumSyms(word).headOption match { //there should only be one possible enum symbol (I think)
           case Some(enumSym) =>
-            val cases = getCases(enumSym)
-            cases.map(cse => getUseEnumTagCompletion(cse)) //return each case as a completion
+            root.enums.get(enumSym) match {
+              case Some(enm) => enm.cases.map {
+                case (_, cas) => UseEnumTagCompletion(enumSym, cas)
+              }
+            }
           case None => Nil
         }
       case None => Nil
     }
   }
-
-  private def getCases(sym: EnumSym)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): List[CaseSym] = {
-    Nil
-  }
-
-  private def matchesTag(caseSym: CaseSym, tag: String): Boolean = caseSym.name.startsWith(tag)
 
   private def stripWord(ctx: CompletionContext): Option[String] = {
     val regex = raw"\s*use\s+(.*)".r
@@ -61,9 +59,5 @@ object UseEnumTagCompleter extends Completer {
       case _ => Nil
     }
   }
-
- private def getUseEnumTagCompletion(cse: CaseSym): UseEnumTagCompletion = {
-
- }
 
 }

@@ -222,6 +222,17 @@ sealed trait Completion {
         documentation = None,
         kind = CompletionItemKind.Method
       )
+    case Completion.UseEnumTagCompletion(sym, cas) =>
+      val name = s"${sym.toString}.${cas.sym.name}
+      CompletionItem(
+        label = name,
+        sortText = Priority.normal(name),
+        textEdit = TextEdit(context.range, name),
+        documentation = None,
+        kind = CompletionItemKind.Enum
+      )
+
+      CompletionItem()
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.high(name),
@@ -449,7 +460,15 @@ object Completion {
    *
    * @param decl the decl.
    */
-   case class UseDefCompletion(name: String) extends Completion
+  case class UseDefCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Enum Tag completion
+   *
+   * @param enumSym the sym of the enum.
+   * @param cas     the case of the enum.
+   */
+  case class UseEnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case) extends Completion
   /**
     * Represents a FromErrors completion
     *
