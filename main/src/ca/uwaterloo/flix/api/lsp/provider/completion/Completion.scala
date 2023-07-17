@@ -223,7 +223,7 @@ sealed trait Completion {
         kind = CompletionItemKind.Method
       )
     case Completion.UseEnumTagCompletion(sym, cas) =>
-      val name = s"${sym.toString}.${cas.sym.name}
+      val name = s"${sym.toString}.${cas.sym.name}"
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),
@@ -231,8 +231,6 @@ sealed trait Completion {
         documentation = None,
         kind = CompletionItemKind.Enum
       )
-
-      CompletionItem()
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.high(name),

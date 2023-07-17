@@ -28,12 +28,17 @@ object UseEnumTagCompleter extends Completer {
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseEnumTagCompletion] = {
     stripWord(context) match {
       case Some(word) =>
+        println("got word")
         getLocalEnumSyms(word).headOption match {
           case Some(enumSym) =>
+            println("got enumsym")
             root.enums.get(enumSym) match {
               case Some(enm) => enm.cases.map {
-                case (_, cas) => UseEnumTagCompletion(enumSym, cas)
+                case (_, cas) =>
+                  println("got completion")
+                  UseEnumTagCompletion(enumSym, cas)
               }
+              case None => Nil
             }
           case None => Nil
         }
