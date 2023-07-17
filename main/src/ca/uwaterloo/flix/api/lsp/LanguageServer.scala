@@ -360,8 +360,10 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case ex: Throwable =>
         // Mark the AST as outdated.
         this.current = false
-        CrashHandler.handleCrash(ex)(flix)
-        ("id" -> requestId) ~ ("status" -> ResponseStatus.InvalidRequest) ~ ("result" -> Nil)
+        val reportPath = CrashHandler.handleCrash(ex)(flix)
+        ("id" -> requestId) ~
+          ("status" -> ResponseStatus.CompilerError) ~
+          ("result" -> ("reportPath" -> reportPath.map(_.toString)))
     }
   }
 
