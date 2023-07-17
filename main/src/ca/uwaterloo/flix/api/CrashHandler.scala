@@ -50,7 +50,7 @@ object CrashHandler {
     // Print asts.
     AstPrinter.printAllAsts()
 
-    optPath.map(_.toAbsolutePath)
+    optPath.map(_.toAbsolutePath.normalize)
   }
 
   /**
