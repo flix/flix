@@ -97,8 +97,8 @@ instance Eq[Int16] {
 }
 
 instance Eq[Int32] {
-    pub def eq(x: Int32, y: Int32): Bool = $INT16_EQ$(x, y)
-    pub override def neq(x: Int32, y: Int32): Bool = $INT16_NEQ$(x, y)
+    pub def eq(x: Int32, y: Int32): Bool = $INT32_EQ$(x, y)
+    pub override def neq(x: Int32, y: Int32): Bool = $INT32_NEQ$(x, y)
 }
 
 instance Eq[Int64] {
