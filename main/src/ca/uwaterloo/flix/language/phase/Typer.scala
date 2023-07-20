@@ -1279,7 +1279,7 @@ object Typer {
         for {
           (constrs1, elmTypes, eff1) <- traverseM(exps)(visitExp).map(_.unzip3)
           (constrs2, tpe2, eff2) <- visitExp(exp)
-          _ <- expectTypeM(expected = regionType, actual = tpe2, loc)
+          _ <- expectTypeM(expected = regionType, actual = tpe2, exp.loc)
           elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTyp, regionVar, loc), loc)
           resultEff <- unifyTypeM(pvar, Type.mkUnion(Type.mkUnion(eff1, loc), eff2, regionVar, loc), loc)
@@ -1368,7 +1368,7 @@ object Typer {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          _ <- unifyTypeM(tpe2, regionType, loc)
+          _ <- expectTypeM(tpe2, regionType, exp2.loc)
           resultTyp <- unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
