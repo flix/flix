@@ -3606,6 +3606,40 @@ def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == So
 def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 /////////////////////////////////////////////////////////////////////////////
+// unwrap                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unwrap01(): Bool = String.unwrap("") == ""
+
+@test
+def unwrap02(): Bool = String.unwrap("a\nb") == "a b"
+
+@test
+def unwrap03(): Bool = String.unwrap("a\nb\nc") == "a b c"
+
+@test
+def unwrap04(): Bool = String.unwrap("ab\nc\nd") == "ab c d"
+
+@test
+def unwrap05(): Bool = String.unwrap("a\rb") == "a b"
+
+@test
+def unwrap06(): Bool = String.unwrap("a\rb\rc") == "a b c"
+
+@test
+def unwrap07(): Bool = String.unwrap("ab\rc\rd") == "ab c d"
+
+@test
+def unwrap08(): Bool = String.unwrap("a\r\nb") == "a b"
+
+@test
+def unwrap09(): Bool = String.unwrap("a\r\nb\r\nc") == "a b c"
+
+@test
+def unwrap10(): Bool = String.unwrap("ab\r\nc\r\nd") == "ab c d"
+
+/////////////////////////////////////////////////////////////////////////////
 // escapeInterpolation                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
