@@ -18,8 +18,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{ErasedAst, MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
@@ -483,7 +483,7 @@ object JvmOps {
   /**
     * Returns true if the value of the given `tag` is the unit value.
     */
-  def isUnitTag(tag: ErasedAst.Case): Boolean = {
+  def isUnitTag(tag: Case): Boolean = {
     tag.tpe == MonoType.Unit
   }
 
@@ -556,40 +556,34 @@ object JvmOps {
 
       case Expr.Var(_, tpe, _) => Set(tpe)
 
-      case Expr.ApplyClo(exp, exps, _, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyClo(exp, exps, _, tpe, _, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplyDef(_, exps, _, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyDef(_, exps, _, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplySelfTail(_, _, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplySelfTail(_, _, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expr.Branch(exp, branches, _, _) =>
+      case Expr.Branch(exp, branches, _, _, _) =>
         val exps = branches.map {
           case (_, e) => e
         }
         visitExp(exp) ++ visitExps(exps)
 
-      case Expr.JumpTo(_, _, _) => Set.empty
+      case Expr.JumpTo(_, _, _, _) => Set.empty
 
-      case Expr.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Let(_, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expr.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expr.Scope(_, exp, _, _) => visitExp(exp)
+      case Expr.Scope(_, exp, _, _, _) => visitExp(exp)
 
-      case Expr.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+      case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expr.NewObject(_, _, _, methods, _) =>
-        methods.foldLeft(Set.empty[MonoType]) {
-          case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
-            val fs = fparams.foldLeft(Set(retTpe)) {
-              case (acc, FormalParam(_, _, tpe, _)) => acc + tpe
-            }
-            sacc ++ fs ++ visitExp(clo)
-        }
+      case Expr.NewObject(_, _, _, _, _, exps, _) =>
+        visitExps(exps)
 
-      case Expr.ApplyAtomic(_, exps, tpe, _) => visitExps(exps) + tpe
+      case Expr.ApplyAtomic(_, exps, tpe, _, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
 

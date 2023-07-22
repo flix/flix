@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
@@ -55,7 +55,7 @@ object GenLazyClasses {
     * The specific lazy class has an associated value type (tpe) which
     * is either a jvm primitive or object.
     *
-    * The lazy class has three fields - expression: () -> tpe, value: tpe, 
+    * The lazy class has three fields - expression: () -> tpe, value: tpe,
     * and lock. The first two are public. force(context) is a public
     * method, which returns a value of type tpe given a context to call the
     * expression closure in. It will set expression = null, which can be checked in
@@ -97,7 +97,7 @@ object GenLazyClasses {
     *
     * If lazy has associated type of Obj, the returned object needs to be casted
     * to whatever expected type.
-    * 
+    *
     * The generated code is of the form (assuming that the valueType is String)
     *
     * public String force() {

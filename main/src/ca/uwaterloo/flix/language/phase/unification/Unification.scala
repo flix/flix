@@ -248,7 +248,7 @@ object Unification {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
             TypeError.PossibleCheckedTypeCast(expected, actual, renv, loc)
           case _ =>
-            TypeError.UnexpectedType(baseType1, baseType2, renv, baseType2.loc)
+            TypeError.UnexpectedType(baseType1, baseType2, renv, loc)
         }
       case e => e
     }
