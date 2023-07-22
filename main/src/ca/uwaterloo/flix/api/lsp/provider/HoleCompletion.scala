@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
 
@@ -45,7 +45,7 @@ object HoleCompletion {
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
-        Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty) match {
+        Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty, LevelEnv.Unleveled) match {
           case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
             // Track the size of all the types in the substitution.
             // A smaller substitution means a more precise unification match.

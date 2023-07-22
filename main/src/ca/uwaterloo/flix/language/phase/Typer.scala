@@ -357,9 +357,10 @@ object Typer {
           ///
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromParams(fparams0)
+          val initialLenv = LevelEnv.Top
 
-          run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
-            case Ok((subst, partialEconstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
+          run(initialSubst, Nil, initialRenv, initialLenv) match { // TODO ASSOC-TYPES initial econstrs?
+            case Ok((subst, partialEconstrs, renv0, _, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -932,10 +933,11 @@ object Typer {
         for {
           // don't make the region var rigid if the --Xflexible-regions flag is set
           _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
+          _ <- enterScopeM(regionVar.sym)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
-          purifiedEff <- purifyEffM(regionVar, eff)
-          resultEff <- unifyTypeM(pvar, purifiedEff, loc)
+          _ <- exitScopeM(regionVar.sym)
+          resultEff <- unifyTypeM(pvar, eff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
@@ -1896,8 +1898,7 @@ object Typer {
     for {
       (tconstrs, tpe, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
-      // TODO Currently disabled due to region issues. See issue #5603
-      //      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
+      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, eff)
   }
 
