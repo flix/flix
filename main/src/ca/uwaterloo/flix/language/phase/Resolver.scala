@@ -1767,7 +1767,9 @@ object Resolver {
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
             case NamedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
-              mapN(traverseOpt(tpe)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root)), visit(pat1)) {
+              val tVal = traverseOpt(tpe)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
+              val pVal = visit(pat1)
+              mapN(tVal, pVal) {
                 case (t, p) => ResolvedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
               }
           }
@@ -1775,7 +1777,6 @@ object Resolver {
           mapN(psVal, pVal) {
             case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
           }
-
       }
 
       visit(pat0)
@@ -3515,8 +3516,7 @@ object Resolver {
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
     case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
-    case ResolvedAst.Pattern.Record(pats, pat, loc) =>
-      mkPatternsEnv(pats.map(_.pat) ++ pat.map(List(_)).getOrElse(Nil))
+    case ResolvedAst.Pattern.Record(pats, pat, loc) => mkPatternsEnv(pats.map(_.pat) ++ pat.toList)
   }
 
   /**
