@@ -2542,23 +2542,29 @@ object Typer {
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val ps = traverseM(pats) {
-          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
+          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, tvar1, pat1, loc1) =>
             tpe match {
               case Some(t) =>
                 // { Field : Type = Pattern ... }
                 for {
                   patType <- visit(pat1)
                   _ <- expectTypeM(t, patType, loc1)
-                  resultTyp = t
-                } yield resultTyp
+                } yield (field, t, loc1)
 
               case None =>
                 // { Field = Pattern ... }
-                visit(pat1)
+                for {
+                  patType <- visit(pat1)
+                } yield (field, patType, loc1)
             }
         }
-        val p = pat.map(visit)
-        ???
+        for {
+          ps1 <- ps
+          patTypes = ps1.foldRight(Type.mkRecordRowEmpty(loc.asSynthetic)) {
+            case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
+          }
+          _ <- traverseM(pat.toList)(visit)
+        } yield Type.mkRecord(patTypes, loc)
 
     }
 
@@ -2591,7 +2597,12 @@ object Typer {
         val tpe = Type.mkTuple(es.map(_.tpe), loc)
         TypedAst.Pattern.Tuple(es, tpe, loc)
 
-      case KindedAst.Pattern.Record(pats, pat, tvar, loc) => ???
+      case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
+        val ps = pats map {
+          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, tvar1, pat, loc) =>
+            TypedAst.Pattern.Record.RecordFieldPattern(field, subst0(tvar1), visit(pat), loc)
+        }
+        TypedAst.Pattern.Record(ps, pat.map(visit), subst0(tvar), loc)
 
     }
 

@@ -243,7 +243,7 @@ object KindedAst {
     case class Record(pats: List[Record.RecordFieldPattern], pat: Option[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
 
     object Record {
-      case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], pat: Pattern, loc: SourceLocation)
+      case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)
     }
   }
 
