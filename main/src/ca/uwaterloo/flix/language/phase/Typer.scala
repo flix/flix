@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, Denotation, Stratification}
-import ca.uwaterloo.flix.language.ast.Type.getFlixType
+import ca.uwaterloo.flix.language.ast.Type.{freshVar, getFlixType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
@@ -2563,8 +2563,15 @@ object Typer {
           patTypes = ps1.foldRight(Type.mkRecordRowEmpty(loc.asSynthetic)) {
             case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
           }
-          _ <- traverseM(pat.toList)(visit)
-        } yield Type.mkRecord(patTypes, loc)
+          p <- traverseM(pat.toList)(visit)
+          t = p map {
+            case r =>
+              val freshRowVar = Type.freshVar(Kind.RecordRow, r.loc.asSynthetic)
+              Type.mkRecord(freshRowVar, r.loc.asSynthetic)
+          }
+          resultTpe <- unifyTypeM(patTypes :: t, loc)
+
+        } yield Type.mkRecord(resultTpe, loc)
 
     }
 
