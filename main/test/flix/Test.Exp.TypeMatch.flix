@@ -738,4 +738,32 @@ mod Test.Exp.ReifyType {
 
     @Test
     def testCookie04(): Bool = not hasCookie({blah = 'h'})
+
+    //////////////////////////////////////
+    // Regression tests                 //
+    //////////////////////////////////////
+
+    // see https://github.com/flix/flix/issues/6004
+    def reg1(x: a): String =
+        typematch x {
+            case _: Array[_, _] =>
+                "Array"
+            case _: _ =>
+                "Not Array"
+        }
+
+    def reg2(x: a): String \ Impure =
+        typematch x {
+            case y: Array[_, _] =>
+                checked_ecast(Array.get(0, y));
+                "Array"
+            case _: _ =>
+                "Not Array"
+        }
+
+    @Test
+     def testReg1(): Bool = reg1(Array#{1, 2, 3} @ Static) == "Array"
+
+    @Test
+     def testReg2(): Bool = reg2(Array#{1, 2, 3} @ Static) == "Array"
 }
