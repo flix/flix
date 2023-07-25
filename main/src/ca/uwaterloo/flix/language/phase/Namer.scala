@@ -1109,7 +1109,8 @@ object Namer {
       val psVal = traverse(pats) {
         case WeededAst.Pattern.Record.RecordFieldPattern(field, tpe, None, loc1) =>
           // Introduce new symbols if there is no pattern
-          val ident = ???
+          // TODO: Use better source positions. Maybe move to Weeder?
+          val ident = Name.Ident(SourcePosition.Unknown, "RecordFieldPattern" + Flix.Delimiter + flix.genSym.freshId(), SourcePosition.Unknown)
           val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
           val p = NamedAst.Pattern.Var(sym, loc)
           mapN(traverseOpt(tpe)(visitType)) {

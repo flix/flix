@@ -2542,33 +2542,20 @@ object Typer {
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val ps = traverseM(pats) {
-          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) => (tpe, pat1) match {
-            case (Some(t), Some(p)) =>
-              // { Field : Type = Pattern ... }
-              for {
-                patType <- visit(p)
-                _ <- expectTypeM(t, patType, loc1)
-                resultTyp = t
-              } yield resultTyp
+          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
+            tpe match {
+              case Some(t) =>
+                // { Field : Type = Pattern ... }
+                for {
+                  patType <- visit(pat1)
+                  _ <- expectTypeM(t, patType, loc1)
+                  resultTyp = t
+                } yield resultTyp
 
-            case (None, Some(p)) => ???
-            // { Field = Pattern ... }
-
-            case (Some(t), None) =>
-              // { Field : Type ... }
-              val freshRowVar = Type.freshVar(Kind.RecordRow, loc1)
-              val recordRow = Type.mkRecordRowExtend(field, t, freshRowVar, loc1)
-              val patSym = Symbol.freshVarSym(field.name, Ast.BoundBy.Pattern, field.loc)
-              val freshPattern = KindedAst.Pattern.Var(patSym, tvar, loc)
-              for {
-                t1 <- visit(freshPattern)
-                _ <- unifyTypeM(recordRow, t1, loc1)
-                resultTyp = t
-              } yield resultTyp
-
-            case (None, None) => ???
-            // case { Field }
-          }
+              case None =>
+                // { Field = Pattern ... }
+                visit(pat1)
+            }
         }
         val p = pat.map(visit)
         ???
@@ -2603,6 +2590,8 @@ object Typer {
         val es = elms.map(visit)
         val tpe = Type.mkTuple(es.map(_.tpe), loc)
         TypedAst.Pattern.Tuple(es, tpe, loc)
+
+      case KindedAst.Pattern.Record(pats, pat, tvar, loc) => ???
 
     }
 
