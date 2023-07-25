@@ -28,7 +28,7 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testMatchRecord03: Bool = match { x = 1 } {
+    def testMatchRecord03(): Bool = match { x = 1 } {
         case { x } => x == 1
     }
 
