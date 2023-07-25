@@ -60,8 +60,8 @@ mod Array {
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def new(r: Region[r], l: Int32): Array[a, r] \ r =
-        $ARRAY_NEW$(r, Reflect.default(), l)
+    pub def new(rc: Region[r], l: Int32): Array[a, r] \ r =
+        $ARRAY_NEW$(rc, Reflect.default(), l)
 
     ///
     /// Retrieves the value at position `i` in the array `a`.
@@ -97,8 +97,8 @@ mod Array {
     ///
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
-    pub def slice(r1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
-        copyOfRange(r1, start.start, end.end, a)
+    pub def slice(rc1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+        copyOfRange(rc1, start.start, end.end, a)
 
     ///
     /// Returns the array `a` as a list.
@@ -185,8 +185,8 @@ mod Array {
     ///
     /// Returns `a` as a MutDeque.
     ///
-    pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.new(r1);
+    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
+        let d = MutDeque.new(rc1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
@@ -218,13 +218,13 @@ mod Array {
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
-    pub def append(r3: Region[r3], a: Array[a, r1], b: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
+    pub def append(rc3: Region[r3], a: Array[a, r1], b: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            copyOfRange(r3, 0, len2, b)
+            copyOfRange(rc3, 0, len2, b)
         else {
-            let out = copyOfRange(r3, 0, len1 + len2, a);
+            let out = copyOfRange(rc3, 0, len1 + len2, a);
             updateSequence!(len1, b, out);
             out
         }
@@ -308,8 +308,8 @@ mod Array {
     ///
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    pub def indices(r: Region[r], a: a, arr: Array[a, r]): Array[Int32, r] \ r with Eq[a] =
-        findIndices(r, b -> a == b, arr)
+    pub def indices(rc: Region[r], a: a, arr: Array[a, r]): Array[Int32, r] \ r with Eq[a] =
+        findIndices(rc, b -> a == b, arr)
 
     ///
     /// Alias for `findLeft`.
@@ -340,12 +340,12 @@ mod Array {
     ///
     /// Returns `[]` if `b >= e`.
     ///
-    pub def range(r: Region[r], b: Int32, e: Int32): Array[Int32, r] \ r =
+    pub def range(rc: Region[r], b: Int32, e: Int32): Array[Int32, r] \ r =
         if (b >= e)
-            Array#{} @ r
+            Array#{} @ rc
         else {
             let f = x -> x + b;
-            init(r, f, e - b)
+            init(rc, f, e - b)
         }
 
     ///
@@ -353,26 +353,26 @@ mod Array {
     ///
     /// Returns the empty array if `n <= 0`.
     ///
-    pub def repeat(r: Region[r], n: Int32, x: a): Array[a, r] \ r =
+    pub def repeat(rc: Region[r], n: Int32, x: a): Array[a, r] \ r =
         if (n <= 0)
-            Array#{} @ r
+            Array#{} @ rc
         else
-            $ARRAY_NEW$(r, x, n)
+            $ARRAY_NEW$(rc, x, n)
 
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, r } =
-        scanLeft(r, f, s, arr)
+    pub def scan(rc: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, r } =
+        scanLeft(rc, f, s, arr)
 
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, r } =
+    pub def scanLeft(rc: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, r } =
         let len = length(arr) + 1;
-        let b = repeat(r, len, s);
+        let b = repeat(rc, len, s);
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -390,9 +390,9 @@ mod Array {
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(r: Region[r], f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, r } =
+    pub def scanRight(rc: Region[r], f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, r } =
         let len = length(a);
-        let b = repeat(r, len + 1, s);
+        let b = repeat(rc, len + 1, s);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -410,9 +410,9 @@ mod Array {
     ///
     /// The result is a new array.
     ///
-    pub def map(r1: Region[r1], f: a -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
+    pub def map(rc1: Region[r1], f: a -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
-        init(r1, i -> f(get(i, a)), len)
+        init(rc1, i -> f(get(i, a)), len)
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
@@ -434,9 +434,9 @@ mod Array {
     ///
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
-    pub def mapWithIndex(r1: Region[r1], f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
+    pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
-        init(r1, i -> f(i, get(i, a)), len)
+        init(rc1, i -> f(i, get(i, a)), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
@@ -456,17 +456,17 @@ mod Array {
     ///
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
     ///
-    pub def flatMap(r1: Region[r1], f: a -> Array[b, r1] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
+    pub def flatMap(rc1: Region[r1], f: a -> Array[b, r1] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
-        init(r1, i -> f(get(i, a)), len) |> flatten(r1)
+        init(rc1, i -> f(get(i, a)), len) |> flatten(rc1)
 
     ///
     /// Returns the reverse of `a`.
     ///
-    pub def reverse(r1: Region[r1], a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def reverse(rc1: Region[r1], a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len = length(a);
         let end = len - 1;
-        init(r1, i -> get(end - i, a), len)
+        init(rc1, i -> get(end - i, a), len)
 
     ///
     /// Reverse the array `arr`, mutating it in place.
@@ -490,15 +490,15 @@ mod Array {
     ///
     /// Rotate the contents of array `arr` by `n` steps to the left.
     ///
-    pub def rotateLeft(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+    pub def rotateLeft(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(arr);
         if (len < 1)
-            Array#{} @ r2
+            Array#{} @ rc2
         else
             if (n < 0)
-                rotateRightHelper(r2, Int32.abs(n), arr)
+                rotateRightHelper(rc2, Int32.abs(n), arr)
             else
-                rotateLeftHelper(r2, n, arr)
+                rotateLeftHelper(rc2, n, arr)
 
     ///
     /// Helper function for `rotateLeft` and `rotateRight`.
@@ -507,22 +507,22 @@ mod Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+    def rotateLeftHelper(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(arr);
         let f = i -> { let i1 = n + i; get(i1 `Int32.rem` len, arr) };
-        init(r2, f, len)
+        init(rc2, f, len)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
     ///
-    pub def rotateRight(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+    pub def rotateRight(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         if (length(arr) < 1)
-            Array#{} @ r2
+            Array#{} @ rc2
         else
             if (n < 0)
-                rotateLeftHelper(r2, Int32.abs(n), arr)
+                rotateLeftHelper(rc2, Int32.abs(n), arr)
             else
-                rotateRightHelper(r2, n, arr)
+                rotateRightHelper(rc2, n, arr)
 
     ///
     /// Helper function for `rotateRight` and `rotateLeft`.
@@ -531,28 +531,28 @@ mod Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateRightHelper(r2: Region[r2], n: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+    def rotateRightHelper(rc2: Region[r2], n: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(a);
         let n1 = n `Int32.rem` len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; get(i1 `Int32.rem` len, a)};
-        init(r2, f, len)
+        init(rc2, f, len)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
     ///
     /// Returns a shallow copy of `a` if `i < 0` or `i > length(xs)-1`.
     ///
-    pub def update(r1: Region[r1], i: Int32, x: a, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def update(rc1: Region[r1], i: Int32, x: a, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len = length(a);
         let f = ix -> if (ix == i) x else get(ix, a);
-        init(r1, f, len)
+        init(rc1, f, len)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(r1: Region[r1], from: {from = a}, to: {to = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
-        map(r1, e -> if (e == from.from) to.to else e, a)
+    pub def replace(rc1: Region[r1], from: {from = a}, to: {to = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
+        map(rc1, e -> if (e == from.from) to.to else e, a)
 
     ///
     /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
@@ -567,11 +567,11 @@ mod Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patch(r3: Region[r3], i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
+    pub def patch(rc3: Region[r3], i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(r3, 0, size, a);
-        updateSequence(r3, i, sub, b)
+        let sub = copyOfRange(rc3, 0, size, a);
+        updateSequence(rc3, i, sub, b)
 
     ///
     /// Update the mutable array `b` replacing `n` elements starting at index `i` with the corresponding elements of array `a`.
@@ -590,13 +590,13 @@ mod Array {
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
     ///
-    pub def intersperse(r1: Region[r1], x: a, a: Array[a, r]): Array[a, r1] \ { r, r1 }=
+    pub def intersperse(rc1: Region[r1], x: a, a: Array[a, r]): Array[a, r1] \ { r, r1 }=
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
         if (len2 <= 0)
-            Array#{} @ r1
+            Array#{} @ rc1
         else {
-            let b = repeat(r1, len2, x);
+            let b = repeat(rc1, len2, x);
             let f = { (i, v) -> let j = i + i; Array.put(v, j, b) };
             forEachWithIndex(f, a);
             b
@@ -605,15 +605,15 @@ mod Array {
     ///
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
-    pub def intercalate(r1: Region[r1], sep: Array[a, r], arrs: Array[Array[a, r], r]): Array[a, r1] \ { r, r1 } =
+    pub def intercalate(rc1: Region[r1], sep: Array[a, r], arrs: Array[Array[a, r], r]): Array[a, r1] \ { r, r1 } =
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs) {
-            case None    => Array#{} @ r1
+            case None    => Array#{} @ rc1
             case Some(x) =>
-                let out = repeat(r1, len, x);
+                let out = repeat(rc1, len, x);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -670,17 +670,17 @@ mod Array {
     ///
     /// Returns `a` if the dimensions of the elements of `a` are mismatched.
     ///
-    pub def transpose(r3: Region[r3], a: Array[Array[a, r1], r2]): Array[Array[a, r3], r3] \ { r1, r2, r3 } =
+    pub def transpose(rc3: Region[r3], a: Array[Array[a, r1], r2]): Array[Array[a, r3], r3] \ { r1, r2, r3 } =
         let ilen = length(a);
         if (ilen == 0)
-            Array#{} @ r3
+            Array#{} @ rc3
         else {
             let jlen = length(get(0, a));
             if (jlen == 0 or uniformHelper(a, jlen))
                 // Non-transposing nested copy
-                init(r3, i -> copyOfRange(r3, 0, length(get(i, a)), get(i, a)), ilen)
+                init(rc3, i -> copyOfRange(rc3, 0, length(get(i, a)), get(i, a)), ilen)
             else
-                init(r3, i -> init(r3, j -> a |> get(j) |> get(i), ilen), jlen)
+                init(rc3, i -> init(rc3, j -> a |> get(j) |> get(i), ilen), jlen)
         }
 
     ///
@@ -879,12 +879,12 @@ mod Array {
     ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
-    pub def flatten(r1: Region[r1], arrs: Array[Array[a, r], r]) : Array[a, r1] \ { r, r1 } =
+    pub def flatten(rc1: Region[r1], arrs: Array[Array[a, r], r]) : Array[a, r1] \ { r, r1 } =
         let len = sumLengths(arrs);
         match headArrays(arrs) {
-            case None => Array#{} @ r1
+            case None => Array#{} @ rc1
             case Some(x) => {
-                let out = repeat(r1, len, x);
+                let out = repeat(rc1, len, x);
                 discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -927,12 +927,12 @@ mod Array {
     ///
     /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
-    pub def filter(r1: Region[r1], f: a -> Bool \ ef, arr: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
+    pub def filter(rc1: Region[r1], f: a -> Bool \ ef, arr: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
         let len = length(arr);
         if (len < 1) {
-            Array#{} @ r1
+            Array#{} @ rc1
         } else {
-            let out = new(r1, len);
+            let out = new(rc1, len);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -947,7 +947,7 @@ mod Array {
                 }
             };
             let endPos = loop(0, 0);
-            copyOfRange(r1, 0, endPos, out)
+            copyOfRange(rc1, 0, endPos, out)
         }
 
     ///
@@ -956,13 +956,13 @@ mod Array {
     /// `a1` contains all elements of `a` that satisfy the predicate `f`.
     /// `a2` contains all elements of `a` that do not satisfy the predicate `f`.
     ///
-    pub def partition(r1: Region[r1], r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } =
+    pub def partition(rc1: Region[r1], rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } =
         let step = { (x, acc) ->
             let (a1, a2) = acc;
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
-        (List.toArray(r1, xs), List.toArray(r2, ys))
+        (List.toArray(rc1, xs), List.toArray(rc2, ys))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -970,30 +970,30 @@ mod Array {
     /// `a1` is the longest prefix of `a` that satisfies the predicate `f`.
     /// `a2` is the remainder of `a`.
     ///
-    pub def span(r1: Region[r1], r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } =
+    pub def span(rc1: Region[r1], rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, r, r1, r2 } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => (takeLeft(r1, length(a), a), Array#{} @ r2)
-            case Some(i) => (takeLeft(r1, i, a), dropLeft(r2, i, a))
+            case None    => (takeLeft(rc1, length(a), a), Array#{} @ rc2)
+            case Some(i) => (takeLeft(rc1, i, a), dropLeft(rc2, i, a))
         }
 
     ///
     /// Alias for `dropLeft`.
     ///
-    pub def drop(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
-        dropLeft(r1, n, a)
+    pub def drop(rc1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+        dropLeft(rc1, n, a)
 
     ///
     /// Returns a copy of array `a`, dropping the first `n` elements.
     ///
     /// Returns `[]` if `n > length(a)`.
     ///
-    pub def dropLeft(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def dropLeft(rc1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len = length(a);
         if (n > len)
-            Array#{} @ r1
+            Array#{} @ rc1
         else {
             let start = if (n < 0) 0 else n;
-            copyOfRange(r1, start, len, a)
+            copyOfRange(rc1, start, len, a)
         }
 
     ///
@@ -1001,57 +1001,57 @@ mod Array {
     ///
     /// Returns `[]` if `n > length(a)`.
     ///
-    pub def dropRight(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def dropRight(rc1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len = length(a);
         if (n >= len)
-            Array#{} @ r1
+            Array#{} @ rc1
         else {
             let end = if (n < 0) len else len - n;
-            copyOfRange(r1, 0, end, a)
+            copyOfRange(rc1, 0, end, a)
         }
 
     ///
     /// Alias for `dropWhileLeft`.
     ///
-    pub def dropWhile(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
-        dropWhileLeft(r1, f, a)
+    pub def dropWhile(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
+        dropWhileLeft(rc1, f, a)
 
     ///
     /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhileLeft(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
+    pub def dropWhileLeft(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => Array#{} @ r1
-            case Some(i) => dropLeft(r1, i, a)
+            case None    => Array#{} @ rc1
+            case Some(i) => dropLeft(rc1, i, a)
         }
 
     ///
     /// Returns copy of array `a` without the longest suffix that satisfies the predicate `f`.
     ///
-    pub def dropWhileRight(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
+    pub def dropWhileRight(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None    => Array#{} @ r1
-            case Some(i) => copyOfRange(r1, 0, i + 1, a)
+            case None    => Array#{} @ rc1
+            case Some(i) => copyOfRange(rc1, 0, i + 1, a)
         }
 
     ///
     /// Alias for `takeLeft`.
     ///
-    pub def take(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
-        takeLeft(r1, n, a)
+    pub def take(rc1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+        takeLeft(rc1, n, a)
 
     ///
     /// Returns a fresh array taking first `n` elements of `a`.
     ///
     /// Returns `a` if `n > length(xs)`.
     ///
-    pub def takeLeft(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def takeLeft(rc1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         if (n <= 0)
-            Array#{} @ r1
+            Array#{} @ rc1
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            copyOfRange(r1, 0, end, a)
+            copyOfRange(rc1, 0, end, a)
         }
 
     ///
@@ -1059,37 +1059,37 @@ mod Array {
     ///
     /// Returns `a` if `n > length(xs)`.
     ///
-    pub def takeRight(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def takeRight(rc1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         if (n <= 0)
-            Array#{} @ r1
+            Array#{} @ rc1
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            copyOfRange(r1, start, len, a)
+            copyOfRange(rc1, start, len, a)
         }
 
     ///
     /// Alias for `takeWhileLeft`.
     ///
-    pub def takeWhile(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
-        takeWhileLeft(r1, f, a)
+    pub def takeWhile(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
+        takeWhileLeft(rc1, f, a)
 
     ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
     ///
-    pub def takeWhileLeft(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
+    pub def takeWhileLeft(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => copyOfRange(r1, 0, length(a), a)
-            case Some(i) => takeLeft(r1, i, a)
+            case None    => copyOfRange(rc1, 0, length(a), a)
+            case Some(i) => takeLeft(rc1, i, a)
         }
 
     ///
     /// Returns the longest suffix of `a` that satisfies the predicate `f`.
     ///
-    pub def takeWhileRight(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
+    pub def takeWhileRight(rc1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, r, r1 } =
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None    => copyOfRange(r1, 0, length(a), a)
-            case Some(i) => copyOfRange(r1, i + 1, length(a), a)
+            case None    => copyOfRange(rc1, 0, length(a), a)
+            case Some(i) => copyOfRange(rc1, i + 1, length(a), a)
         }
 
     ///
@@ -1100,33 +1100,33 @@ mod Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def groupBy(r1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { r2, r1 } =
+    pub def groupBy(rc1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { r2, r1 } =
         let xs = toList(a);
-        groupByHelper(r1, f, xs, Nil) |> List.toArray(r1)
+        groupByHelper(rc1, f, xs, Nil) |> List.toArray(rc1)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(r: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r = match xs {
+    def groupByHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r = match xs {
         case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(r, f, rs, x :: Nil, Nil);
-            groupByHelper(r, f, r2, r1 :: ac)
+            let (rc1, rc2) = extractHelper(rc, f, rs, x :: Nil, Nil);
+            groupByHelper(rc, f, rc2, rc1 :: ac)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(r: Region[r], f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
+    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
         case Nil => {
             let a = List.reverse(ps);
-            (List.toArray(r, a), List.reverse(ns))
+            (List.toArray(rc, a), List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
-                extractHelper(r, f, rs, x :: ps, ns)
+                extractHelper(rc, f, rs, x :: ps, ns)
             else
-                extractHelper(r, f, rs, ps, x :: ns)
+                extractHelper(rc, f, rs, ps, x :: ns)
     }
 
     ///
@@ -1147,9 +1147,9 @@ mod Array {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
-    pub def zip(r3: Region[r3], a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r3] \ { r1, r2, r3 } =
+    pub def zip(rc3: Region[r3], a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r3] \ { r1, r2, r3 } =
         let len = Int32.min(length(a), length(b));
-        init(r3, i -> (get(i, a), get(i, b)), len)
+        init(rc3, i -> (get(i, a), get(i, b)), len)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1157,22 +1157,22 @@ mod Array {
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
-    pub def zipWith(r3: Region[r3], f: (a, b) -> c \ ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r3] \ { ef, r1, r2, r3 } =
+    pub def zipWith(rc3: Region[r3], f: (a, b) -> c \ ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r3] \ { ef, r1, r2, r3 } =
         let len = Int32.min(length(a), length(b));
-        init(r3, i -> f(get(i, a), get(i, b)), len)
+        init(rc3, i -> f(get(i, a), get(i, b)), len)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
     /// and the second containing all second components in `a`.
     ///
-    pub def unzip(r1: Region[r1], r2: Region[r2], a: Array[(a, b), r3]): (Array[a, r1], Array[b, r2]) \ { r1, r2, r3 } =
+    pub def unzip(rc1: Region[r1], rc2: Region[r2], a: Array[(a, b), r3]): (Array[a, r1], Array[b, r2]) \ { r1, r2, r3 } =
         let len = length(a);
         if (len <= 0)
-            (Array#{} @ r1, Array#{} @ r2)
+            (Array#{} @ rc1, Array#{} @ rc2)
         else {
             let (x, y) = get(0, a);
-            let arr = repeat(r1, len, x);
-            let brr = repeat(r2, len, y);
+            let arr = repeat(rc1, len, x);
+            let brr = repeat(rc2, len, y);
             def loop(i) = {
                 if (i < len) {
                     let (l, r) = get(i, a);
@@ -1225,10 +1225,10 @@ mod Array {
     ///
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
-    pub def filterMap(r1: Region[r1], f: a -> Option[b] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
+    pub def filterMap(rc1: Region[r1], f: a -> Option[b] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         foldRight((x, xs) -> match f(x) {
             case None    => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray(r1)
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray(rc1)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1267,12 +1267,12 @@ mod Array {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(r1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
+    pub def toMutList(rc1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        let copy = copyOfRange(r1, 0, c, a);
-        MutList.MutList(r1, ref copy @ r1, ref len @ r1)
+        let copy = copyOfRange(rc1, 0, c, a);
+        MutList.MutList(rc1, ref copy @ rc1, ref len @ rc1)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1320,9 +1320,9 @@ mod Array {
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    pub def findIndices(r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, r1, r2 } =
+    pub def findIndices(rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, r1, r2 } =
         let len = length(a);
-        let l = MutList.new(r2);
+        let l = MutList.new(rc2);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1332,17 +1332,17 @@ mod Array {
             }
         };
         loop(0);
-        MutList.toArray(r2, l)
+        MutList.toArray(rc2, l)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
-    pub def init(r: Region[r], f: Int32 -> a \ ef, len: Int32): Array[a, r] \ { ef, r } =
+    pub def init(rc: Region[r], f: Int32 -> a \ ef, len: Int32): Array[a, r] \ { ef, r } =
         if (len <= 0)
-            Array#{} @ r
+            Array#{} @ rc
         else {
             let x = f(0);
-            let a = Array.repeat(r, len, x);
+            let a = Array.repeat(rc, len, x);
             def loop(i) = {
                 if (i < len) {
                     Array.put(f(i), i, a);
@@ -1422,11 +1422,11 @@ mod Array {
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
     ///
-    pub def updateSequence(r3: Region[r3], i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
+    pub def updateSequence(rc3: Region[r3], i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) get(ix - i, sub) else get(ix, a);
         let len = length(a);
-        init(r3, f, len)
+        init(rc3, f, len)
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
@@ -1468,8 +1468,8 @@ mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(r1: Region[r1], a: Array[a, r]): Array[a, r1] \ { r, r1 } with Order[a] =
-        sortWith(r1, Order.compare, a)
+    pub def sort(rc1: Region[r1], a: Array[a, r]): Array[a, r1] \ { r, r1 } with Order[a] =
+        sortWith(rc1, Order.compare, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1479,8 +1479,8 @@ mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(r1: Region[r1], f: a -> b, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Order[b] =
-        sortWith(r1, Order.compare `on` f, a)
+    pub def sortBy(rc1: Region[r1], f: a -> b, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Order[b] =
+        sortWith(rc1, Order.compare `on` f, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1490,9 +1490,9 @@ mod Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(r1: Region[r1], cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
+    pub def sortWith(rc1: Region[r1], cmp: (a,a) -> Comparison, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len = length(a);
-        let b = copyOfRange(r1, 0, len, a);
+        let b = copyOfRange(rc1, 0, len, a);
         sortWith!(cmp, b);
         b
 

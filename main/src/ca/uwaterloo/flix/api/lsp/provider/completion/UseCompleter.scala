@@ -24,7 +24,6 @@ object UseCompleter extends Completer {
     * Returns a List of Completion for completer.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    UseModuleCompleter.getCompletions(context)
-
+    UseModuleCompleter.getCompletions(context) ++ UseEnumCompleter.getCompletions(context) ++ UseEffCompleter.getCompletions(context) ++ UseDefCompleter.getCompletions(context)
   }
 }

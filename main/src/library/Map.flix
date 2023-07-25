@@ -804,8 +804,8 @@ mod Map {
     ///
     /// Returns `m` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
+        let d = MutDeque.new(rc);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 
@@ -885,14 +885,14 @@ mod Map {
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r, r] \ r =
-        iterator(r, m) |> Iterator.map(fst)
+    pub def iteratorKeys(rc: Region[r], m: Map[k, v]): Iterator[k, r, r] \ r =
+        iterator(rc, m) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
-        iterator(r, m) |> Iterator.map(snd)
+    pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
+        iterator(rc, m) |> Iterator.map(snd)
 
     ///
     /// Returns `m` as a `DelayMap`.

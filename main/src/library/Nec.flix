@@ -116,7 +116,7 @@ instance Reducible[Nec] {
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(r, l)
+    override pub def toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
     override pub def toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
@@ -137,7 +137,7 @@ instance ToString[Nec[a]] with ToString[a] {
 }
 
 instance Iterable[Nec] {
-    pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(r, l)
+    pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
 }
 
 mod Nec {
@@ -746,16 +746,16 @@ mod Nec {
     ///
     /// Returns `c` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], c: Nec[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(r, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(rc1: Region[r], c: Nec[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(rc1, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -783,9 +783,9 @@ mod Nec {
     ///
     /// Returns the Nec `c` as an array.
     ///
-    pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ r =
+    pub def toArray(rc: Region[r], c: Nec[a]): Array[a, r] \ r =
         let x = head(c);
-        let arr = Array.repeat(r, length(c), x);
+        let arr = Array.repeat(rc, length(c), x);
         forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
         arr
 

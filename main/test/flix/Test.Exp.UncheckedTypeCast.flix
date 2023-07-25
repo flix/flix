@@ -29,16 +29,16 @@
     def testUncheckedTypeCast04(): ##java.io.Serializable = unchecked_cast(null as ##java.io.Serializable)
 
     @test
-    def testUncheckedTypeCast05(): ##java.io.Serializable = region rh {
-        let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rh as mkSb;
+    def testUncheckedTypeCast05(): ##java.io.Serializable = region rc {
+        let _ = rc;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
         unchecked_cast(mkSb() as ##java.io.Serializable)
     }
 
     @test
-    def testUncheckedTypeCast06(): ##java.lang.Object = region rh {
-        let _ = rh;
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rh as mkSb;
+    def testUncheckedTypeCast06(): ##java.lang.Object = region rc {
+        let _ = rc;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
         unchecked_cast(mkSb() as ##java.lang.Object)
     }
 

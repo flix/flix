@@ -1154,7 +1154,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.ImpureDeclaredAsPure](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.ImpureDeclaredAsPure.02") {
@@ -1164,7 +1164,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.ImpureDeclaredAsPure](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.ImpureDeclaredAsPure.03") {
@@ -1176,7 +1176,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def zero(): Int32 \ {} = $ARRAY_LENGTH$(mkArray())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.ImpureDeclaredAsPure](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.EffectfulDeclaredAsPure.01") {
@@ -1186,7 +1186,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectfulDeclaredAsPure](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.EffectfulDeclaredAsPure.02") {
@@ -1196,7 +1196,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectfulDeclaredAsPure](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.EffectfulDeclaredAsPure.03") {
@@ -1215,7 +1215,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    do Throw.throw()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectfulDeclaredAsPure](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.EffectGeneralizationError.01") {
@@ -1225,7 +1225,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.EffectGeneralizationError.02") {
@@ -1235,7 +1235,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    expectError[TypeError.MismatchedEffects](result)
   }
 
   test("Test.RegionVarEscapes.01") {
@@ -1243,8 +1243,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            x
         |        }
         |    };
@@ -1260,8 +1260,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            (123, x)
         |        }
         |    };
@@ -1277,8 +1277,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            _w -> x
         |        }
         |    };
@@ -1294,8 +1294,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        region r {
-        |            let x = ref 123 @ r;
+        |        region rc {
+        |            let x = ref 123 @ rc;
         |            w -> {
         |                discard deref x;
         |                w

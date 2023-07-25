@@ -132,8 +132,8 @@ mod String {
     ///
     /// Returns the given string `s` as an array of characters.
     ///
-    pub def toArray(r: Region[r], s: String): Array[Char, r] \ r =
-        Array.init(r, i -> charAt(i, s), length(s))
+    pub def toArray(rc: Region[r], s: String): Array[Char, r] \ r =
+        Array.init(rc, i -> charAt(i, s), length(s))
 
     ///
     /// Returns the given string `s` as a vector of characters.
@@ -795,6 +795,29 @@ mod String {
             s + repeat(w - len, Char.toString(c))
 
     ///
+    /// Center the string `s` by padding with the supplied char `c` on both sides to fit the width `w`.
+    ///
+    /// If the length of the string exceeds the given width, the string will be returned unchanged.
+    ///
+    /// Requiring an uneven number of spaces, the string will be left biased,
+    /// e.g `String.center(4, '_', "a") -> "_a__"`.
+    ///
+    pub def center(w: Int32, c: Char, s: String): String = region rc {
+        let space = w - length(s);
+        let floor = space / 2;
+        let ceil = space / 2 + Int32.rem(space, 2);
+
+        let prefix = repeat(floor, Char.toString(c));
+        let postfix = repeat(ceil, Char.toString(c));
+
+        let sb = StringBuilder.new(rc);
+        StringBuilder.appendString!(prefix, sb);
+        StringBuilder.appendString!(s, sb);
+        StringBuilder.appendString!(postfix, sb);
+        StringBuilder.toString(sb)
+    }
+
+    ///
     /// Returns `s` with every match of the substring `from` replaced by the string `to`.
     ///
     pub def replace(from: {from = String}, to: {to = String}, s: String): String =
@@ -1322,6 +1345,12 @@ mod String {
             None
         else
             Some(dropRight(length(substr.substr), s))
+
+    ///
+    /// Unwrap the string, replacing every newline with a space
+    ///
+    pub def unwrap(s: String): String =
+        Regex.replace({from = regex"[\r\n]+"}, {to = " "}, s)
 
     ///
     /// Returns an iterator over `s`.

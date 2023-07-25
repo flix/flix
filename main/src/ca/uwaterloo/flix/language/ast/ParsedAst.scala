@@ -191,7 +191,7 @@ object ParsedAst {
       * @param kind    the kind of the type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: ParsedAst.Kind, sp2: SourcePosition)
+    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
 
     /**
       * Associated Type Declaration.
@@ -204,7 +204,7 @@ object ParsedAst {
       * @param tpe   the type of the type.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition)
+    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Type]], tpe: ParsedAst.Type, sp2: SourcePosition)
 
     /**
       * Typeclass Declaration.

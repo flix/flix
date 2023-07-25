@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol, Type, TypeConstructor}
 
 import scala.annotation.tailrec
 
@@ -97,7 +97,7 @@ object VarNumbering {
         visitExp(exp2, i2)
 
       case Expr.Scope(sym, exp, _, _, _) =>
-        val i1 = visitSymbolAssignment(sym, Type.Unit, i0)
+        val i1 = visitSymbolAssignment(sym, MonoType.Unit, i0)
         visitExp(exp, i1)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -109,7 +109,7 @@ object VarNumbering {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expr.NewObject(_, _, _, _, _, _) =>
+      case Expr.NewObject(_, _, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
 
@@ -143,7 +143,7 @@ object VarNumbering {
   /**
     * assigns `sym` its offset and returns the next available stack offset.
     */
-  private def visitSymbolAssignment(sym: Symbol.VarSym, tpe: Type, i0: Int): Int = {
+  private def visitSymbolAssignment(sym: Symbol.VarSym, tpe: MonoType, i0: Int): Int = {
     // Set the stack offset for the symbol.
     sym.setStackOffset(i0)
 
@@ -157,8 +157,8 @@ object VarNumbering {
     * A double or float uses two slots on the stack.
     * Everything else uses one slot.
     */
-  private def getStackSize(tpe: Type): Int = tpe.typeConstructor match {
-    case Some(TypeConstructor.Int64) | Some(TypeConstructor.Float64) => 2
+  private def getStackSize(tpe: MonoType): Int = tpe match {
+    case MonoType.Float64 | MonoType.Int64 => 2
     case _ => 1
   }
 

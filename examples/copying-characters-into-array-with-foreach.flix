@@ -1,11 +1,11 @@
 // Easily iterate over arrays with foreach-loops.
-def main(): Unit \ IO = region r {
+def main(): Unit \ IO = region rc {
 
         // Create a string to separate characters of.
         let s = "Flix is cool!";
 
         // Array to store 8 chars in.
-        let xs = Array.repeat(r, 8, 'a');
+        let xs = Array.repeat(rc, 8, 'a');
 
         // Print contents of `xs`.
         Array.forEach(println, xs);
@@ -22,7 +22,7 @@ def main(): Unit \ IO = region r {
         // out of bounds errors.
         // It also matches the pattern of the
         // value returned by `enumerator.`~~~
-        /// foreach ((x, i) <- String.enumerator(r, s);
+        /// foreach ((x, i) <- String.enumerator(rc, s);
         ///          if i < Array.length(xs))
         ///             xs[i] = x;
 
@@ -33,7 +33,7 @@ def main(): Unit \ IO = region r {
                 Array.put(x, i, xs)
             else
                 ()
-            }, String.enumerator(r, s));
+            }, String.enumerator(rc, s));
         println(Array.toString(xs));
 
         Iterator.forEachWithIndex((i, x) -> {
@@ -41,7 +41,7 @@ def main(): Unit \ IO = region r {
                 Array.put(x, i, xs)
             else
                 ()
-            }, String.iterator(r, s));
+            }, String.iterator(rc, s));
         println(Array.toString(xs))
 
 

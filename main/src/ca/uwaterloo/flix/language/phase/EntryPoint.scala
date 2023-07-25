@@ -203,10 +203,10 @@ object EntryPoint {
 
     // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
     // This is a valid assumption with the limitations we set on the entry point.
-    val func = TypedAst.Expression.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
+    val func = TypedAst.Expr.Def(oldEntryPoint.sym, oldEntryPoint.spec.declaredScheme.base, SourceLocation.Unknown)
 
     // func()
-    val call = TypedAst.Expression.Apply(func, List(TypedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
+    val call = TypedAst.Expr.Apply(func, List(TypedAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, SourceLocation.Unknown)), oldEntryPoint.spec.declaredScheme.base.arrowResultType, oldEntryPoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
 
     // one of:
     // printUnlessUnit(func(args))
@@ -214,8 +214,8 @@ object EntryPoint {
     val ioSym = root.effects(new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)).sym
     val ioTpe = Type.Cst(TypeConstructor.Effect(ioSym), SourceLocation.Unknown)
     val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Impure, Type.Unit, SourceLocation.Unknown)
-    val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
-    val print = TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
+    val printFunc = TypedAst.Expr.Def(printSym, printTpe, SourceLocation.Unknown)
+    val print = TypedAst.Expr.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
 
     val impl = TypedAst.Impl(
       exp = print,

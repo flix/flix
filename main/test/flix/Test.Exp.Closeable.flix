@@ -18,24 +18,24 @@ mod Test.Exp.Closeable {
     }
 
     @Test
-    def testCloseOnExit01(): Bool \ IO = region r1 {
-        let closed1 = ref false @ r1;
+    def testCloseOnExit01(): Bool \ IO = region rc1 {
+        let closed1 = ref false @ rc1;
         let closeable1 = MyCloseable(closed1);
-        region r2 {
-            Region.closeOnExit(closeable1, r2)
+        region rc2 {
+            Region.closeOnExit(closeable1, rc2)
         };
         deref closed1
     }
 
     @Test
-    def testCloseOnExit02(): Bool \ IO = region r1 {
-        let closed1 = ref false @ r1;
+    def testCloseOnExit02(): Bool \ IO = region rc1 {
+        let closed1 = ref false @ rc1;
         let closeable1 = MyCloseable(closed1);
-        let closed2 = ref false @ r1;
+        let closed2 = ref false @ rc1;
         let closeable2 = MyCloseable2(closed1, closed2);
-        region r2 {
-            Region.closeOnExit(closeable2, r2);
-            Region.closeOnExit(closeable1, r2)
+        region rc2 {
+            Region.closeOnExit(closeable2, rc2);
+            Region.closeOnExit(closeable1, rc2)
         };
         deref closed1 and deref closed2
     }

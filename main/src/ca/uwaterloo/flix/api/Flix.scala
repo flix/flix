@@ -101,8 +101,6 @@ class Flix {
   private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedMonoTyperAst: MonoTypedAst.Root = MonoTypedAst.empty
-  private var cachedEraserAst: ErasedAst.Root = ErasedAst.empty
 
   def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
@@ -117,8 +115,6 @@ class Flix {
   def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
   def getReducerAst: ReducedAst.Root = cachedReducerAst
   def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
-  def getMonoTyperAst: MonoTypedAst.Root = cachedMonoTyperAst
-  def getEraserAst: ErasedAst.Root = cachedEraserAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -600,9 +596,7 @@ class Flix {
     cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
     cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
-    cachedMonoTyperAst = MonoTyper.run(cachedVarNumberingAst)
-    cachedEraserAst = Eraser.run(cachedMonoTyperAst)
-    val afterJvmBackend = JvmBackend.run(cachedEraserAst)
+    val afterJvmBackend = JvmBackend.run(cachedVarNumberingAst)
     val result = Finish.run(afterJvmBackend)
 
     // Write formatted asts to disk based on options.

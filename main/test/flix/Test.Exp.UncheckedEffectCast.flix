@@ -91,14 +91,14 @@
     def testUncheckedEffectCast22(): String \ IO = unchecked_cast("ABC" as _ \ IO)
 
     @test
-    def testUncheckedEffectCast23(): Unit \ IO = region rh {
-        discard unchecked_cast($ARRAY_NEW$(rh, 'A', 8) as _ \ IO);
+    def testUncheckedEffectCast23(): Unit \ IO = region rc {
+        discard unchecked_cast($ARRAY_NEW$(rc, 'A', 8) as _ \ IO);
         ()
     }
 
     @test
-    def testUncheckedEffectCast24(): Unit \ IO = region rh {
-        discard unchecked_cast($ARRAY_NEW$(rh, Some(42), 8) as _ \ IO);
+    def testUncheckedEffectCast24(): Unit \ IO = region rc {
+        discard unchecked_cast($ARRAY_NEW$(rc, Some(42), 8) as _ \ IO);
         ()
     }
 
@@ -171,14 +171,14 @@
         unchecked_cast(f("ABC") as _ \ {})
 
     @test
-    def testUncheckedEffectCast43(): Unit = region rh {
-        let _ = unchecked_cast(f($ARRAY_NEW$(rh, 'A', 8)) as _ \ {});
+    def testUncheckedEffectCast43(): Unit = region rc {
+        let _ = unchecked_cast(f($ARRAY_NEW$(rc, 'A', 8)) as _ \ {});
         ()
     }
 
     @test
-    def testUncheckedEffectCast44(): Unit = region rh {
-        let _ = unchecked_cast(f($ARRAY_NEW$(rh, Some(42), 8)) as _ \ {});
+    def testUncheckedEffectCast44(): Unit = region rc {
+        let _ = unchecked_cast(f($ARRAY_NEW$(rc, Some(42), 8)) as _ \ {});
         ()
     }
 
