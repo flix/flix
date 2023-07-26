@@ -599,6 +599,13 @@ object SemanticTokensProvider {
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val patsVal = pats.flatMap {
+        case Pattern.Record.RecordFieldPattern(field, tpe, pat, loc) =>
+          visitPat(pat)
+      }.iterator
+      val patVal = pat.map(visitPat).getOrElse(Iterator.empty)
+      patsVal ++ patVal
   }
 
   /**
