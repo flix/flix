@@ -474,12 +474,21 @@ object Indexer {
       val parent = Entity.Pattern(pat0)
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.Record(pats, pat, _, _) =>
+      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordFieldPattern) ++ traverse(pat)(visitPat)
   }
 
   /**
     * Returns a reverse index for the given patterns `pats0`.
     */
   private def visitPats(pats0: List[Pattern]): Index = traverse(pats0)(visitPat)
+
+  /**
+    * Returns a reverse index for the given [[Pattern.Record.RecordFieldPattern]] `rfp`.
+    */
+  private def visitRecordFieldPattern(rfp: Pattern.Record.RecordFieldPattern): Index = {
+    Index.useOf(rfp.field) ++ visitPat(rfp.pat)
+  }
 
   /**
     * Returns a reverse index for the given constraint `c0`.
