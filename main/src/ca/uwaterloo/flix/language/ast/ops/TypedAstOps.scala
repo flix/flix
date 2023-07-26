@@ -22,6 +22,12 @@ object TypedAstOps {
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }
+    case Pattern.Record(pats, pat, _, _) =>
+      val patsVal = pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, rfp) => macc ++ binds(rfp.pat)
+      }
+      val patVal = pat.map(binds).getOrElse(Map.empty[Symbol.VarSym, Type])
+      patsVal ++ patVal
   }
 
   /**
@@ -400,6 +406,12 @@ object TypedAstOps {
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)
       }
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val patsVal = pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, rfp) => acc ++ freeVars(rfp.pat)
+      }
+      val patVal = pat.map(freeVars).getOrElse(Map.empty[Symbol.VarSym, Type])
+      patsVal ++ patVal
   }
 
   /**
