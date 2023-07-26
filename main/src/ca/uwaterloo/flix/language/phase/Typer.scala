@@ -2567,7 +2567,7 @@ object Typer {
 
         for {
           optRecordTail <- traverseOptM(pat)(visit)
-          recordTail = optRecordTail.getOrElse(Type.mkRecordRowEmpty(loc.asSynthetic))
+          recordTail = optRecordTail.getOrElse(Type.mkRecord(Type.mkRecordRowEmpty(loc.asSynthetic), loc.asSynthetic))
           _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
           ps1 <- ps
           patTypes = ps1.foldRight(freshRowVar: Type) {
