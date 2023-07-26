@@ -37,7 +37,7 @@ object Scheme {
       val newTconstrs = tconstrs.map(subst.apply)
       val newEconstrs = econstrs.map(subst.apply)
       val newBase = subst(base)
-      generalize(newTconstrs, newEconstrs, newBase)
+      generalize(newTconstrs, newEconstrs, newBase, RigidityEnv.empty)
   }
 
   /**
@@ -83,9 +83,10 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type): Scheme = {
-    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
-    Scheme(quantifiers.toList.map(_.sym), tconstrs, econstrs, tpe0)
+  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv): Scheme = {
+    val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
+    val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
+    Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
   }
 
   /**
@@ -131,7 +132,7 @@ object Scheme {
     val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
-    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv, LevelEnv.Unleveled).toValidation) {
+    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv, LevelEnv.Top).toValidation) {
       case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
         val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
         val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)
