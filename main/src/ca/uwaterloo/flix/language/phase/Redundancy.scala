@@ -889,6 +889,8 @@ object Redundancy {
     case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
+    case Pattern.Record(pats, pat, _, _) =>
+      visitPats(pats map (_.pat)) ++ pat.map(visitPat).getOrElse(Used.empty)
   }
 
   /**
