@@ -1045,6 +1045,12 @@ object Redundancy {
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
+    case Pattern.Record(pats, pat, _, _) =>
+      val patsVal = pats.foldLeft(Set.empty[Symbol.VarSym]) {
+        case (acc, rfp) => acc ++ freeVars(rfp.pat)
+      }
+      val patVal = pat.map(freeVars).getOrElse(Set.empty[Symbol.VarSym])
+      patsVal ++ patVal
   }
 
   /**
