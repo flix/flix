@@ -2541,30 +2541,9 @@ object Typer {
 
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
-        // TODO: use visitRecordFieldPattern
-        val ps = traverseM(pats) {
-          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, tvar1, pat1, loc1) =>
-            tpe match {
-              case Some(t) =>
-                // { Field : Type = Pattern ... }
-                for {
-                  patType <- visit(pat1)
-                  _ <- expectTypeM(t, patType, loc1)
-                  _ <- unifyTypeM(patType, tvar1, loc1)
-                } yield (field, t, loc1)
-
-              case None =>
-                // { Field = Pattern ... }
-                for {
-                  patType <- visit(pat1)
-                  _ <- unifyTypeM(patType, tvar1, loc1)
-                } yield (field, patType, loc1)
-            }
-        }
-
+        val ps = traverseM(pats)(visitRecordFieldPattern(_, root))
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
-
         for {
           optRecordTail <- traverseOptM(pat)(visit)
           recordTail = optRecordTail.getOrElse(Type.mkRecord(Type.mkRecordRowEmpty(loc.asSynthetic), loc.asSynthetic))
@@ -2587,7 +2566,27 @@ object Typer {
     traverseM(pats0)(inferPattern(_, root))
   }
 
-  private def visitRecordFieldPattern() = ???
+  /**
+    * Infers the type of the given [[KindedAst.Pattern.Record.RecordFieldPattern]] `pat`.
+    */
+  private def visitRecordFieldPattern(pat: KindedAst.Pattern.Record.RecordFieldPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Field, Type, SourceLocation)] = pat match {
+    case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, tvar1, pat1, loc1) => tpe match {
+      case Some(t) =>
+        // { Field : Type = Pattern ... }
+        for {
+          patType <- inferPattern(pat1, root)
+          _ <- expectTypeM(t, patType, loc1)
+          _ <- unifyTypeM(patType, tvar1, loc1)
+        } yield (field, t, loc1)
+
+      case None =>
+        // { Field = Pattern ... }
+        for {
+          patType <- inferPattern(pat1, root)
+          _ <- unifyTypeM(patType, tvar1, loc1)
+        } yield (field, patType, loc1)
+    }
+  }
 
   /**
     * Applies the substitution `subst0` to the given pattern `pat0`.
