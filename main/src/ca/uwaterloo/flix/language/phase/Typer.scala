@@ -374,7 +374,7 @@ object Typer {
               ///
               /// NB: Because the inferredType is always a function type, the purect is always implicitly accounted for.
               ///
-              val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType)
+              val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType, renv0)
               Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv) match {
                 // Case 1: no errors, continue
                 case Validation.Success(_) => // noop
