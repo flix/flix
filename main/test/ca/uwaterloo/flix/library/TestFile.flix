@@ -202,8 +202,8 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIter01(): Bool \ IO = region r {
-        let iter = readLinesIter(r, "./LICENSE.md");
+    def testReadLinesIter01(): Bool \ IO = region rc {
+        let iter = readLinesIter(rc, "./LICENSE.md");
         match Iterator.next(iter) {
             case Some(Ok(_)) => true
             case _           => false
@@ -212,8 +212,8 @@ mod TestFile {
 
 
     @test
-    def testReadLinesIter02(): Bool \ IO = region r {
-        let iter = readLinesIter(r, "./LICENSE.md");
+    def testReadLinesIter02(): Bool \ IO = region rc {
+        let iter = readLinesIter(rc, "./LICENSE.md");
         discard Iterator.next(iter);
         match Iterator.next(iter) {
             case Some(Ok(_)) => true
@@ -226,8 +226,8 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIterWithWith01(): Bool \ IO = region r {
-        let iter = readLinesIterWith(r, {charSet = "utf8"}, "./LICENSE.md");
+    def testReadLinesIterWithWith01(): Bool \ IO = region rc {
+        let iter = readLinesIterWith(rc, {charSet = "utf8"}, "./LICENSE.md");
         match Iterator.next(iter) {
             case Some(Ok(_)) => true
             case _           => false
@@ -239,8 +239,8 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytes01(): Bool \ IO = region r {
-        Result.isOk(readBytes(r, "./LICENSE.md"))
+    def testReadBytes01(): Bool \ IO = region rc {
+        Result.isOk(readBytes(rc, "./LICENSE.md"))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -248,50 +248,50 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytesWith01(): Bool \ IO = region r {
-        Result.isOk(readBytesWith(r, {offset = 2i64, count = 2}, "./LICENSE.md"))
+    def testReadBytesWith01(): Bool \ IO = region rc {
+        Result.isOk(readBytesWith(rc, {offset = 2i64, count = 2}, "./LICENSE.md"))
     }
 
     @test
-    def testReadBytesWith02(): Bool \ IO = region r {
-        match readBytesWith(r, {offset = 2i64, count = 2}, "./LICENSE.md") {
+    def testReadBytesWith02(): Bool \ IO = region rc {
+        match readBytesWith(rc, {offset = 2i64, count = 2}, "./LICENSE.md") {
             case Ok(v) => Array.length(v) == 2
             case _     => false
         }
     }
 
     @test
-    def testReadBytesWith03(): Bool \ IO = region r {
-        match readBytesWith(r, {offset = 10i64, count = 4}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` Array#{101i8, 110i8, 115i8, 101i8} @ r
+    def testReadBytesWith03(): Bool \ IO = region rc {
+        match readBytesWith(rc, {offset = 10i64, count = 4}, "./LICENSE.md") {
+            case Ok(v) => v `Array.sameElements` Array#{101i8, 110i8, 115i8, 101i8} @ rc
             case _     => false
         }
     }
 
     @test
-    def testReadBytesWith04(): Bool \ IO = region r {
-        match readBytesWith(r, {offset = 0i64, count = 0}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` Array#{} @ r
+    def testReadBytesWith04(): Bool \ IO = region rc {
+        match readBytesWith(rc, {offset = 0i64, count = 0}, "./LICENSE.md") {
+            case Ok(v) => v `Array.sameElements` Array#{} @ rc
             case _     => false
         }
     }
 
     @test
-    def testReadBytesWith05(): Bool \ IO = region r {
-        match readBytesWith(r, {offset = -10i64, count = 0}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` Array#{} @ r
+    def testReadBytesWith05(): Bool \ IO = region rc {
+        match readBytesWith(rc, {offset = -10i64, count = 0}, "./LICENSE.md") {
+            case Ok(v) => v `Array.sameElements` Array#{} @ rc
             case _     => false
         }
     }
 
     @test
-    def testReadBytesWith06(): Bool \ IO = region r {
-        Result.isErr(readBytesWith(r, {offset = 0i64, count = -10}, "./LICENSE.md"))
+    def testReadBytesWith06(): Bool \ IO = region rc {
+        Result.isErr(readBytesWith(rc, {offset = 0i64, count = -10}, "./LICENSE.md"))
     }
 
     @test
-    def testReadBytesWith07(): Bool \ IO = region r {
-        Result.isErr(readBytesWith(r, {offset = -10i64, count = 10}, "./LICENSE.md"))
+    def testReadBytesWith07(): Bool \ IO = region rc {
+        Result.isErr(readBytesWith(rc, {offset = -10i64, count = 10}, "./LICENSE.md"))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -299,8 +299,8 @@ mod TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadChunks01(): Bool \ IO = region r {
-        let iter = readChunks(r, 2, "./LICENSE.md");
+    def testReadChunks01(): Bool \ IO = region rc {
+        let iter = readChunks(rc, 2, "./LICENSE.md");
         match Iterator.next(iter) {
             case Some(Ok(_)) => true
             case _           => false
@@ -308,8 +308,8 @@ mod TestFile {
     }
 
     @test
-    def testReadChunks02(): Bool \ IO = region r {
-        let iter = readChunks(r, 2, "./LICENSE.md");
+    def testReadChunks02(): Bool \ IO = region rc {
+        let iter = readChunks(rc, 2, "./LICENSE.md");
         discard  Iterator.next(iter);
         match Iterator.next(iter) {
             case Some(Ok(_)) => true
@@ -318,8 +318,8 @@ mod TestFile {
     }
 
     @test
-    def testReadChunks03(): Bool \ IO = region r {
-        let iter = readChunks(r, 0, "./LICENSE.md");
+    def testReadChunks03(): Bool \ IO = region rc {
+        let iter = readChunks(rc, 0, "./LICENSE.md");
         match Iterator.next(iter) {
             case Some(Err(_)) => true
             case _            => false
@@ -327,8 +327,8 @@ mod TestFile {
     }
 
     @test
-    def testReadChunks04(): Bool \ IO = region r {
-        let iter = readChunks(r, -10, "./LICENSE.md");
+    def testReadChunks04(): Bool \ IO = region rc {
+        let iter = readChunks(rc, -10, "./LICENSE.md");
         match Iterator.next(iter) {
             case Some(Err(_)) => true
             case _            => false

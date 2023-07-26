@@ -97,8 +97,8 @@ instance Eq[Int16] {
 }
 
 instance Eq[Int32] {
-    pub def eq(x: Int32, y: Int32): Bool = $INT16_EQ$(x, y)
-    pub override def neq(x: Int32, y: Int32): Bool = $INT16_NEQ$(x, y)
+    pub def eq(x: Int32, y: Int32): Bool = $INT32_EQ$(x, y)
+    pub override def neq(x: Int32, y: Int32): Bool = $INT32_NEQ$(x, y)
 }
 
 instance Eq[Int64] {
@@ -117,8 +117,10 @@ instance Eq[BigInt] {
 }
 
 instance Eq[String] {
-    pub def eq(x: String, y: String): Bool = $STRING_EQ$(x, y)
-    pub override def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
+    pub def eq(x: String, y: String): Bool =
+        import java.lang.String.equals(##java.lang.Object): Bool \ {};
+        equals(x, checked_cast(y))
+
 }
 
 instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {

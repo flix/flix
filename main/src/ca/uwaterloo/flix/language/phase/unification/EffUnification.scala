@@ -31,7 +31,9 @@ object EffUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unify(tpe10: Type, tpe20: Type, renv0: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+    val tpe1 = lenv.purify(tpe10)
+    val tpe2 = lenv.purify(tpe20)
 
     //
     // NOTE: ALWAYS UNSOUND. USE ONLY FOR EXPERIMENTS.
@@ -54,7 +56,7 @@ object EffUnification {
           macc + (tvar.sym -> newTvar)
       }
       val subst = Substitution(alpha)
-      println(s"$loc: ${subst(tpe1)} =?= ${subst(tpe2)}")
+      println(s"${loc.formatWithLine}: ${subst(tpe1)} =?= ${subst(tpe2)}")
     }
 
     if (!flix.options.xnoboolspecialcases) {
@@ -162,7 +164,7 @@ object EffUnification {
     // Run the expensive Boolean unification algorithm.
     //
     booleanUnification(f1, f2, renv) match {
-      case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
+      case None => UnificationError.MismatchedEffects(tpe1, tpe2).toErr
       case Some(subst) =>
         if (!flix.options.xnoboolcache) {
           cache.put(f1, f2, renv, subst)

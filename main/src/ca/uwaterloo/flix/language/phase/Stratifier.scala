@@ -95,91 +95,91 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
-    case Expression.Cst(_, _, _) => exp0.toSuccess
+  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
+    case Expr.Cst(_, _, _) => exp0.toSuccess
 
-    case Expression.Var(_, _, _) => exp0.toSuccess
+    case Expr.Var(_, _, _) => exp0.toSuccess
 
-    case Expression.Def(_, _, _) => exp0.toSuccess
+    case Expr.Def(_, _, _) => exp0.toSuccess
 
-    case Expression.Sig(_, _, _) => exp0.toSuccess
+    case Expr.Sig(_, _, _) => exp0.toSuccess
 
-    case Expression.Hole(_, _, _) => exp0.toSuccess
+    case Expr.Hole(_, _, _) => exp0.toSuccess
 
-    case Expression.HoleWithExp(exp, tpe, eff, loc) =>
+    case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.HoleWithExp(e, tpe, eff, loc)
+        case e => Expr.HoleWithExp(e, tpe, eff, loc)
       }
 
-    case Expression.OpenAs(sym, exp, tpe, loc) =>
+    case Expr.OpenAs(sym, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.OpenAs(sym, e, tpe, loc)
+        case e => Expr.OpenAs(sym, e, tpe, loc)
       }
 
-    case Expression.Use(sym, alias, exp, loc) =>
+    case Expr.Use(sym, alias, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Use(sym, alias, e, loc)
+        case e => Expr.Use(sym, alias, e, loc)
       }
 
-    case Expression.Lambda(fparam, exp, tpe, loc) =>
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lambda(fparam, e, tpe, loc)
+        case e => Expr.Lambda(fparam, e, tpe, loc)
       }
 
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+    case Expr.Apply(exp, exps, tpe, eff, loc) =>
       mapN(visitExp(exp), traverse(exps)(visitExp)) {
-        case (e, es) => Expression.Apply(e, es, tpe, eff, loc)
+        case (e, es) => Expr.Apply(e, es, tpe, eff, loc)
       }
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+    case Expr.Unary(sop, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Unary(sop, e, tpe, eff, loc)
+        case e => Expr.Unary(sop, e, tpe, eff, loc)
       }
 
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Binary(sop, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.Binary(sop, e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
       }
 
-    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Region(_, _) =>
+    case Expr.Region(_, _) =>
       exp0.toSuccess
 
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Scope(sym, regionVar, e, tpe, eff, loc)
+        case e => Expr.Scope(sym, regionVar, e, tpe, eff, loc)
       }
 
-    case Expression.ScopeExit(exp1, exp2, tpe, eff, loc) =>
+    case Expr.ScopeExit(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.ScopeExit(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.ScopeExit(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Stm(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.Stm(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Discard(exp, eff, loc) =>
+    case Expr.Discard(exp, eff, loc) =>
       visitExp(exp) map {
-        case e => Expression.Discard(e, eff, loc)
+        case e => Expr.Discard(e, eff, loc)
       }
 
-    case Expression.Match(exp, rules, tpe, eff, loc) =>
+    case Expr.Match(exp, rules, tpe, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case MatchRule(pat, guard, body) => mapN(traverseOpt(guard)(visitExp), visitExp(body)) {
@@ -187,10 +187,10 @@ object Stratifier {
         }
       }
       mapN(matchVal, rulesVal) {
-        case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
+        case (m, rs) => Expr.Match(m, rs, tpe, eff, loc)
       }
 
-    case Expression.TypeMatch(exp, rules, tpe, eff, loc) =>
+    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case TypeMatchRule(sym, t, body) => mapN(visitExp(body)) {
@@ -198,223 +198,223 @@ object Stratifier {
         }
       }
       mapN(matchVal, rulesVal) {
-        case (m, rs) => Expression.TypeMatch(m, rs, tpe, eff, loc)
+        case (m, rs) => Expr.TypeMatch(m, rs, tpe, eff, loc)
       }
 
-    case Expression.RelationalChoose(exps, rules, tpe, eff, loc) =>
+    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
         case RelationalChooseRule(pat, exp) => mapN(visitExp(exp))(RelationalChooseRule(pat, _))
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => Expression.RelationalChoose(es, rs, tpe, eff, loc)
+        case (es, rs) => Expr.RelationalChoose(es, rs, tpe, eff, loc)
       }
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
+    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case RestrictableChooseRule(pat, body) => mapN(visitExp(body))(RestrictableChooseRule(pat, _))
       }
       mapN(expVal, rulesVal) {
-        case (e, rs) => Expression.RestrictableChoose(star, e, rs, tpe, eff, loc)
+        case (e, rs) => Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
       }
 
-    case Expression.Tag(sym, exp, tpe, eff, loc) =>
+    case Expr.Tag(sym, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Tag(sym, e, tpe, eff, loc)
+        case e => Expr.Tag(sym, e, tpe, eff, loc)
       }
 
-    case Expression.RestrictableTag(sym, exp, tpe, eff, loc) =>
+    case Expr.RestrictableTag(sym, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.RestrictableTag(sym, e, tpe, eff, loc)
+        case e => Expr.RestrictableTag(sym, e, tpe, eff, loc)
       }
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
+    case Expr.Tuple(elms, tpe, eff, loc) =>
       mapN(traverse(elms)(visitExp)) {
-        case es => Expression.Tuple(es, tpe, eff, loc)
+        case es => Expr.Tuple(es, tpe, eff, loc)
       }
 
-    case Expression.RecordEmpty(tpe, loc) =>
-      Expression.RecordEmpty(tpe, loc).toSuccess
+    case Expr.RecordEmpty(tpe, loc) =>
+      Expr.RecordEmpty(tpe, loc).toSuccess
 
-    case Expression.RecordSelect(base, field, tpe, eff, loc) =>
+    case Expr.RecordSelect(base, field, tpe, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.RecordSelect(b, field, tpe, eff, loc)
+        case b => Expr.RecordSelect(b, field, tpe, eff, loc)
       }
 
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
+    case Expr.RecordExtend(field, value, rest, tpe, eff, loc) =>
       mapN(visitExp(value), visitExp(rest)) {
-        case (v, r) => Expression.RecordExtend(field, v, r, tpe, eff, loc)
+        case (v, r) => Expr.RecordExtend(field, v, r, tpe, eff, loc)
       }
 
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
+    case Expr.RecordRestrict(field, rest, tpe, eff, loc) =>
       mapN(visitExp(rest)) {
-        case r => Expression.RecordRestrict(field, r, tpe, eff, loc)
+        case r => Expr.RecordRestrict(field, r, tpe, eff, loc)
       }
 
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp), visitExp(exp)) {
-        case (es, e) => Expression.ArrayLit(es, e, tpe, eff, loc)
+        case (es, e) => Expr.ArrayLit(es, e, tpe, eff, loc)
       }
 
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => Expr.ArrayNew(e1, e2, e3, tpe, eff, loc)
       }
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+    case Expr.ArrayLoad(base, index, tpe, eff, loc) =>
       mapN(visitExp(base), visitExp(index)) {
-        case (b, i) => Expression.ArrayLoad(b, i, tpe, eff, loc)
+        case (b, i) => Expr.ArrayLoad(b, i, tpe, eff, loc)
       }
 
-    case Expression.ArrayLength(base, eff, loc) =>
+    case Expr.ArrayLength(base, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.ArrayLength(b, eff, loc)
+        case b => Expr.ArrayLength(b, eff, loc)
       }
 
-    case Expression.ArrayStore(base, index, elm, eff, loc) =>
+    case Expr.ArrayStore(base, index, elm, eff, loc) =>
       mapN(visitExp(base), visitExp(index), visitExp(elm)) {
-        case (b, i, e) => Expression.ArrayStore(b, i, e, eff, loc)
+        case (b, i, e) => Expr.ArrayStore(b, i, e, eff, loc)
       }
 
-    case Expression.VectorLit(exps, tpe, eff, loc) =>
+    case Expr.VectorLit(exps, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp)) {
-        case es => Expression.VectorLit(es, tpe, eff, loc)
+        case es => Expr.VectorLit(es, tpe, eff, loc)
       }
 
-    case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.VectorLoad(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.VectorLoad(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.VectorLength(exp, loc) =>
+    case Expr.VectorLength(exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.VectorLength(e, loc)
+        case e => Expr.VectorLength(e, loc)
       }
 
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Ref(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Ref(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.Ref(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Deref(exp, tpe, eff, loc) =>
+    case Expr.Deref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Deref(e, tpe, eff, loc)
+        case e => Expr.Deref(e, tpe, eff, loc)
       }
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Assign(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.Assign(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
+    case Expr.Ascribe(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Ascribe(e, tpe, eff, loc)
+        case e => Expr.Ascribe(e, tpe, eff, loc)
       }
 
-    case Expression.InstanceOf(exp, clazz, loc) =>
+    case Expr.InstanceOf(exp, clazz, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.InstanceOf(e, clazz, loc)
+        case e => Expr.InstanceOf(e, clazz, loc)
       }
 
-    case Expression.CheckedCast(cast, exp, tpe, eff, loc) =>
-      mapN(visitExp(exp))(Expression.CheckedCast(cast, _, tpe, eff, loc))
+    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp))(Expr.CheckedCast(cast, _, tpe, eff, loc))
 
-    case Expression.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
+        case e => Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
       }
 
-    case Expression.UncheckedMaskingCast(exp, tpe, eff, loc) =>
+    case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.UncheckedMaskingCast(e, tpe, eff, loc)
+        case e => Expr.UncheckedMaskingCast(e, tpe, eff, loc)
       }
 
-    case Expression.Without(exp, sym, tpe, eff, loc) =>
+    case Expr.Without(exp, sym, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Without(e, sym, tpe, eff, loc)
+        case e => Expr.Without(e, sym, tpe, eff, loc)
       }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
         case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
       }
       mapN(visitExp(exp), rulesVal) {
-        case (e, rs) => Expression.TryCatch(e, rs, tpe, eff, loc)
+        case (e, rs) => Expr.TryCatch(e, rs, tpe, eff, loc)
       }
 
-    case Expression.TryWith(exp, sym, rules, tpe, eff, loc) =>
+    case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
         case HandlerRule(op, fparams, e) => visitExp(e).map(HandlerRule(op, fparams, _))
       }
       mapN(visitExp(exp), rulesVal) {
-        case (e, rs) => Expression.TryWith(e, sym, rs, tpe, eff, loc)
+        case (e, rs) => Expr.TryWith(e, sym, rs, tpe, eff, loc)
       }
 
-    case Expression.Do(sym, exps, tpe, eff, loc) =>
+    case Expr.Do(sym, exps, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp)) {
-        case es => Expression.Do(sym, es, tpe, eff, loc)
+        case es => Expr.Do(sym, es, tpe, eff, loc)
       }
 
-    case Expression.Resume(exp, tpe, loc) =>
+    case Expr.Resume(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Resume(e, tpe, loc)
+        case e => Expr.Resume(e, tpe, loc)
       }
 
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+    case Expr.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
+        case as => Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
       }
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+    case Expr.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       mapN(visitExp(exp), traverse(args)(visitExp)) {
-        case (e, as) => Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+        case (e, as) => Expr.InvokeMethod(method, e, as, tpe, eff, loc)
       }
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+    case Expr.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+        case as => Expr.InvokeStaticMethod(method, as, tpe, eff, loc)
       }
 
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
+    case Expr.GetField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.GetField(field, e, tpe, eff, loc)
+        case e => Expr.GetField(field, e, tpe, eff, loc)
       }
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.PutField(field, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.PutField(field, e1, e2, tpe, eff, loc)
       }
 
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
-      Expression.GetStaticField(field, tpe, eff, loc).toSuccess
+    case Expr.GetStaticField(field, tpe, eff, loc) =>
+      Expr.GetStaticField(field, tpe, eff, loc).toSuccess
 
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.PutStaticField(field, e, tpe, eff, loc)
+        case e => Expr.PutStaticField(field, e, tpe, eff, loc)
       }
 
-    case Expression.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       mapN(traverse(methods)(visitJvmMethod)) {
-        case ms => Expression.NewObject(name, clazz, tpe, eff, ms, loc)
+        case ms => Expr.NewObject(name, clazz, tpe, eff, ms, loc)
       }
 
-    case Expression.NewChannel(exp1, exp2, tpe, eff, loc) =>
+    case Expr.NewChannel(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (r, e) => Expression.NewChannel(r, e, tpe, eff, loc)
+        case (r, e) => Expr.NewChannel(r, e, tpe, eff, loc)
       }
 
-    case Expression.GetChannel(exp, tpe, eff, loc) =>
+    case Expr.GetChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.GetChannel(e, tpe, eff, loc)
+        case e => Expr.GetChannel(e, tpe, eff, loc)
       }
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.PutChannel(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.PutChannel(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+    case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
         case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
           case (c, e) => SelectChannelRule(sym, c, e)
@@ -429,86 +429,86 @@ object Stratifier {
       }
 
       mapN(rulesVal, defaultVal) {
-        case (rs, d) => Expression.SelectChannel(rs, d, tpe, eff, loc)
+        case (rs, d) => Expr.SelectChannel(rs, d, tpe, eff, loc)
       }
 
-    case Expression.Spawn(exp1, exp2, tpe, eff, loc) =>
+    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (r, e) => Expression.Spawn(r, e, tpe, eff, loc)
+        case (r, e) => Expr.Spawn(r, e, tpe, eff, loc)
       }
 
-    case Expression.ParYield(frags, exp, tpe, eff, loc) =>
+    case Expr.ParYield(frags, exp, tpe, eff, loc) =>
       val fragsVal = traverse(frags) {
         case ParYieldFragment(p, e, l) => mapN(visitExp(e)) {
           case e1 => ParYieldFragment(p, e1, l)
         }
       }
       mapN(fragsVal, visitExp(exp)) {
-        case (fs, e) => Expression.ParYield(fs, e, tpe, eff, loc)
+        case (fs, e) => Expr.ParYield(fs, e, tpe, eff, loc)
       }
 
-    case Expression.Lazy(exp, tpe, loc) =>
+    case Expr.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lazy(e, tpe, loc)
+        case e => Expr.Lazy(e, tpe, loc)
       }
 
-    case Expression.Force(exp, tpe, eff, loc) =>
+    case Expr.Force(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Force(e, tpe, eff, loc)
+        case e => Expr.Force(e, tpe, eff, loc)
       }
 
-    case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
+    case Expr.FixpointConstraintSet(cs0, _, tpe, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(stf) {
         case s =>
           val cs = cs0.map(reorder)
-          Expression.FixpointConstraintSet(cs, s, tpe, loc)
+          Expr.FixpointConstraintSet(cs, s, tpe, loc)
       }
 
-    case Expression.FixpointLambda(pparams, exp, _, tpe, eff, loc) =>
+    case Expr.FixpointLambda(pparams, exp, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
       mapN(stf) {
-        case s => Expression.FixpointLambda(pparams, exp, s, tpe, eff, loc)
+        case s => Expr.FixpointLambda(pparams, exp, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
+    case Expr.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, s) => Expression.FixpointMerge(e1, e2, s, tpe, eff, loc)
+        case (e1, e2, s) => Expr.FixpointMerge(e1, e2, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
+    case Expr.FixpointSolve(exp, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp), stf) {
-        case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
+        case (e, s) => Expr.FixpointSolve(e, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
+    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
+        case e => Expr.FixpointFilter(pred, e, tpe, eff, loc)
       }
 
-    case Expression.FixpointInject(exp, pred, tpe, eff, loc) =>
+    case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointInject(e, pred, tpe, eff, loc)
+        case e => Expr.FixpointInject(e, pred, tpe, eff, loc)
       }
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+    case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProject(pred, e, tpe, eff, loc)
+        case e => Expr.FixpointProject(pred, e, tpe, eff, loc)
       }
 
-    case Expression.Error(m, tpe, eff) =>
+    case Expr.Error(m, tpe, eff) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(Expression.Error(m, tpe, eff), LazyList.empty)
+      Validation.SoftFailure(Expr.Error(m, tpe, eff), LazyList.empty)
 
   }
 
@@ -549,78 +549,78 @@ object Stratifier {
   /**
     * Returns the labelled graph of the given expression `exp0`.
     */
-  private def labelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
-    case Expression.Cst(_, _, _) => LabelledGraph.empty
+  private def labelledGraphOfExp(exp0: Expr): LabelledGraph = exp0 match {
+    case Expr.Cst(_, _, _) => LabelledGraph.empty
 
-    case Expression.Var(_, _, _) => LabelledGraph.empty
+    case Expr.Var(_, _, _) => LabelledGraph.empty
 
-    case Expression.Def(_, _, _) => LabelledGraph.empty
+    case Expr.Def(_, _, _) => LabelledGraph.empty
 
-    case Expression.Sig(_, _, _) => LabelledGraph.empty
+    case Expr.Sig(_, _, _) => LabelledGraph.empty
 
-    case Expression.Hole(_, _, _) => LabelledGraph.empty
+    case Expr.Hole(_, _, _) => LabelledGraph.empty
 
-    case Expression.HoleWithExp(exp, _, _, _) =>
+    case Expr.HoleWithExp(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.OpenAs(_, exp, _, _) =>
+    case Expr.OpenAs(_, exp, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Use(_, _, exp, _) =>
+    case Expr.Use(_, _, exp, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Lambda(_, exp, _, _) =>
+    case Expr.Lambda(_, exp, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Apply(exp, exps, _, _, _) =>
+    case Expr.Apply(exp, exps, _, _, _) =>
       val init = labelledGraphOfExp(exp)
       exps.foldLeft(init) {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
 
-    case Expression.Unary(_, exp, _, _, _) =>
+    case Expr.Unary(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+    case Expr.Binary(_, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.Region(_, _) =>
+    case Expr.Region(_, _) =>
       LabelledGraph.empty
 
-    case Expression.Scope(_, _, exp, _, _, _) =>
+    case Expr.Scope(_, _, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
+    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, _, _) =>
+    case Expr.Stm(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.Discard(exp, _, _) =>
+    case Expr.Discard(exp, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Match(exp, rules, _, _, _) =>
+    case Expr.Match(exp, rules, _, _, _) =>
       val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
         case (acc, MatchRule(_, g, b)) => acc + g.map(labelledGraphOfExp).getOrElse(LabelledGraph.empty) + labelledGraphOfExp(b)
       }
 
-    case Expression.TypeMatch(exp, rules, _, _, _) =>
+    case Expr.TypeMatch(exp, rules, _, _, _) =>
       val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
         case (acc, TypeMatchRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
 
-    case Expression.RelationalChoose(exps, rules, _, _, _) =>
+    case Expr.RelationalChoose(exps, rules, _, _, _) =>
       val dg1 = exps.foldLeft(LabelledGraph.empty) {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
@@ -629,149 +629,149 @@ object Stratifier {
       }
       dg1 + dg2
 
-    case Expression.RestrictableChoose(_, exp, rules, _, _, _) =>
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val dg1 = labelledGraphOfExp(exp)
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
         case (acc, RestrictableChooseRule(_, body)) => acc + labelledGraphOfExp(body)
       }
       dg1 + dg2
 
-    case Expression.Tag(_, exp, _, _, _) =>
+    case Expr.Tag(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.RestrictableTag(_, exp, _, _, _) =>
+    case Expr.RestrictableTag(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Tuple(elms, _, _, _) =>
+    case Expr.Tuple(elms, _, _, _) =>
       elms.foldLeft(LabelledGraph.empty) {
         case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.RecordEmpty(_, _) =>
+    case Expr.RecordEmpty(_, _) =>
       LabelledGraph.empty
 
-    case Expression.RecordSelect(base, _, _, _, _) =>
+    case Expr.RecordSelect(base, _, _, _, _) =>
       labelledGraphOfExp(base)
 
-    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+    case Expr.RecordExtend(_, value, rest, _, _, _) =>
       labelledGraphOfExp(value) + labelledGraphOfExp(rest)
 
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
+    case Expr.RecordRestrict(_, rest, _, _, _) =>
       labelledGraphOfExp(rest)
 
-    case Expression.ArrayLit(elms, exp, _, _, _) =>
+    case Expr.ArrayLit(elms, exp, _, _, _) =>
       elms.foldLeft(labelledGraphOfExp(exp)) {
         case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
 
-    case Expression.ArrayLoad(base, index, _, _, _) =>
+    case Expr.ArrayLoad(base, index, _, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(index)
 
-    case Expression.ArrayLength(base, _, _) =>
+    case Expr.ArrayLength(base, _, _) =>
       labelledGraphOfExp(base)
 
-    case Expression.ArrayStore(base, index, elm, _, _) =>
+    case Expr.ArrayStore(base, index, elm, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
 
-    case Expression.VectorLit(exps, _, _, _) =>
+    case Expr.VectorLit(exps, _, _, _) =>
       exps.foldLeft(LabelledGraph.empty) {
         case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.VectorLoad(exp1, exp2, _, _, _) =>
+    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.VectorLength(exp, _) =>
+    case Expr.VectorLength(exp, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Ref(exp1, exp2, _, _, _) =>
+    case Expr.Ref(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.Deref(exp, _, _, _) =>
+    case Expr.Deref(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _) =>
+    case Expr.Assign(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.Ascribe(exp, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.InstanceOf(exp, _, _) =>
+    case Expr.InstanceOf(exp, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.CheckedCast(_, exp, _, _, _) =>
+    case Expr.CheckedCast(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.UncheckedCast(exp, _, _, _, _, _) =>
+    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.UncheckedMaskingCast(exp, _, _, _) =>
+    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Without(exp, _, _, _, _) =>
+    case Expr.Without(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _) =>
+    case Expr.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(labelledGraphOfExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.TryWith(exp, _, rules, _, _, _) =>
+    case Expr.TryWith(exp, _, rules, _, _, _) =>
       rules.foldLeft(labelledGraphOfExp(exp)) {
         case (acc, HandlerRule(_, _, e)) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.Do(_, exps, _, _, _) =>
+    case Expr.Do(_, exps, _, _, _) =>
       exps.foldLeft(LabelledGraph.empty) {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
 
-    case Expression.Resume(exp, _, _) =>
+    case Expr.Resume(exp, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
+    case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(LabelledGraph.empty) {
         case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+    case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       args.foldLeft(labelledGraphOfExp(exp)) {
         case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+    case Expr.InvokeStaticMethod(_, args, _, _, _) =>
       args.foldLeft(LabelledGraph.empty) {
         case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.GetField(_, exp, _, _, _) =>
+    case Expr.GetField(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+    case Expr.PutField(_, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.GetStaticField(_, _, _, _) =>
+    case Expr.GetStaticField(_, _, _, _) =>
       LabelledGraph.empty
 
-    case Expression.PutStaticField(_, exp, _, _, _) =>
+    case Expr.PutStaticField(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _, _) =>
+    case Expr.NewObject(_, _, _, _, _, _) =>
       LabelledGraph.empty
 
-    case Expression.NewChannel(exp1, exp2, _, _, _) =>
+    case Expr.NewChannel(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.GetChannel(exp, _, _, _) =>
+    case Expr.GetChannel(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _, _) =>
+    case Expr.SelectChannel(rules, default, _, _, _) =>
       val dg = default match {
         case None => LabelledGraph.empty
         case Some(d) => labelledGraphOfExp(d)
@@ -781,44 +781,44 @@ object Stratifier {
         case (acc, SelectChannelRule(_, exp1, exp2)) => acc + labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
       }
 
-    case Expression.Spawn(exp1, exp2, _, _, _) =>
+    case Expr.Spawn(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.ParYield(frags, exp, _, _, _) =>
+    case Expr.ParYield(frags, exp, _, _, _) =>
       frags.foldLeft(labelledGraphOfExp(exp)) {
         case (acc, ParYieldFragment(_, e, _)) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.Lazy(exp, _, _) =>
+    case Expr.Lazy(exp, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Force(exp, _, _, _) =>
+    case Expr.Force(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(LabelledGraph.empty) {
         case (dg, c) => dg + labelledGraphOfConstraint(c)
       }
 
-    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointFilter(_, exp, _, _, _) =>
+    case Expr.FixpointFilter(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointInject(exp, _, _, _, _) =>
+    case Expr.FixpointInject(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expr.FixpointProject(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Error(_, _, _) =>
+    case Expr.Error(_, _, _) =>
       LabelledGraph.empty
 
   }
@@ -914,7 +914,7 @@ object Stratifier {
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, ListMap.empty) // TODO ASSOC-TYPES empty right?
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, LevelEnv.Unleveled, ListMap.empty) // TODO ASSOC-TYPES empty right?
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

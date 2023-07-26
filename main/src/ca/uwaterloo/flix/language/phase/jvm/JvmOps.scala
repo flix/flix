@@ -18,10 +18,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, ErasedAst, Kind, MonoType, Name, RigidityEnv, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.MonoTyper
-import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
@@ -46,9 +44,6 @@ object JvmOps {
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
   def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = tpe match {
-    // Polymorphic
-    case MonoType.Var(_) => JvmType.Unit
-
     // Primitives
     case MonoType.Unit => JvmType.Unit
     case MonoType.Bool => JvmType.PrimBool
@@ -488,7 +483,7 @@ object JvmOps {
   /**
     * Returns true if the value of the given `tag` is the unit value.
     */
-  def isUnitTag(tag: ErasedAst.Case): Boolean = {
+  def isUnitTag(tag: Case): Boolean = {
     tag.tpe == MonoType.Unit
   }
 
@@ -533,16 +528,18 @@ object JvmOps {
       * Returns the set of types which occur in the given definition `defn0`.
       */
     def visitDefn(defn: Def): Set[MonoType] = {
-      // Compute the types in the formal parameters.
-      val formalParamTypes = (defn.cparams ++ defn.fparams).foldLeft(Set.empty[MonoType]) {
-        case (sacc, FormalParam(_, tpe)) => sacc + tpe
+      // Compute the types in the captured formal parameters.
+      val cParamTypes = defn.cparams.foldLeft(Set.empty[MonoType]) {
+        case (sacc, FormalParam(_, _, tpe, _)) => sacc + tpe
       }
 
       // Compute the types in the expression.
       val expressionTypes = visitStmt(defn.stmt)
 
+      // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
+
       // Return the types in the defn.
-      formalParamTypes ++ expressionTypes + defn.tpe
+      cParamTypes ++ expressionTypes + defn.arrowType
     }
 
     def visitExps(exps: Iterable[Expr]): Set[MonoType] = {
@@ -559,40 +556,34 @@ object JvmOps {
 
       case Expr.Var(_, tpe, _) => Set(tpe)
 
-      case Expr.ApplyClo(exp, exps, _, tpe, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyClo(exp, exps, _, tpe, _, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplyDef(_, exps, _, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplyDef(_, exps, _, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplySelfTail(_, _, exps, tpe, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplySelfTail(_, _, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expr.Branch(exp, branches, _, _) =>
+      case Expr.Branch(exp, branches, _, _, _) =>
         val exps = branches.map {
           case (_, e) => e
         }
         visitExp(exp) ++ visitExps(exps)
 
-      case Expr.JumpTo(_, _, _) => Set.empty
+      case Expr.JumpTo(_, _, _, _) => Set.empty
 
-      case Expr.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Let(_, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expr.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expr.Scope(_, exp, _, _) => visitExp(exp)
+      case Expr.Scope(_, exp, _, _, _) => visitExp(exp)
 
-      case Expr.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+      case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expr.NewObject(_, _, _, methods, _) =>
-        methods.foldLeft(Set.empty[MonoType]) {
-          case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
-            val fs = fparams.foldLeft(Set(retTpe)) {
-              case (acc, FormalParam(_, tpe)) => acc + tpe
-            }
-            sacc ++ fs ++ visitExp(clo)
-        }
+      case Expr.NewObject(_, _, _, _, _, exps, _) =>
+        visitExps(exps)
 
-      case Expr.ApplyAtomic(_, exps, tpe, _) => visitExps(exps) + tpe
+      case Expr.ApplyAtomic(_, exps, tpe, _, _) => visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
 
@@ -661,7 +652,6 @@ object JvmOps {
       case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
       case MonoType.Native(_) => Set(tpe)
-      case MonoType.Var(_) => Set.empty
     }
   }
 

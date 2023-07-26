@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.{ErasedAst, MonoType}
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Case, Root}
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -30,7 +30,7 @@ object GenTagClasses {
   /**
     * Returns the set of tuple interfaces for the given cases (also called tags).
     */
-  def gen(tags: Iterable[ErasedAst.Case])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(tags: Iterable[Case])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     tags.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tag) =>
         val jvmType = JvmOps.getTagClassType(tag.sym)
@@ -91,7 +91,7 @@ object GenTagClasses {
     * throw new Exception("equals method shouldn't be called");
     * }
     */
-  private def genByteCode(tag: ErasedAst.Case)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(tag: Case)(implicit root: Root, flix: Flix): Array[Byte] = {
     // The JvmType of the interface for enum of `tag`.
     val superType = JvmOps.getEnumInterfaceType(tag.sym.enumSym)
 
@@ -217,7 +217,7 @@ object GenTagClasses {
     method.visitEnd()
   }
 
-  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: ErasedAst.Case)(implicit root: Root, flix: Flix): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: Case)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     tag.tpe match {
       case MonoType.Unit => // "$Tag"

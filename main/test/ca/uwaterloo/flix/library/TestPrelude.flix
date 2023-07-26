@@ -124,15 +124,15 @@ def doublePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: N
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def imperativePipe01(): Bool = region r {
-    let m: MutList[Int32, _] = MutList.new(r);
+def imperativePipe01(): Bool = region rc {
+    let m: MutList[Int32, _] = MutList.new(rc);
     let f = (x) -> MutList.push!(x, m);
     (4 !> f) == 4 and not MutList.isEmpty(m)
 }
 
 @test
-def imperativePipe02(): Bool = region r {
-    let m: MutList[Int32, _] = MutList.new(r);
+def imperativePipe02(): Bool = region rc {
+    let m: MutList[Int32, _] = MutList.new(rc);
     let f = (x) -> MutList.push!(x, m);
 
     let a = 4 !> f;
@@ -142,15 +142,15 @@ def imperativePipe02(): Bool = region r {
 }
 
 @test
-def imperativePipe03(): Bool = region r {
-    let a = ref 8 @ r;
+def imperativePipe03(): Bool = region rc {
+    let a = ref 8 @ rc;
     let f = (x) -> a := x;
     (2 !> f) == 2 and deref a == 2
 }
 
 @test
-def imperativePipe04(): Bool = region r {
-    let a = ref 8 @ r;
+def imperativePipe04(): Bool = region rc {
+    let a = ref 8 @ rc;
     let f = (x) -> a := x;
     (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4
 }

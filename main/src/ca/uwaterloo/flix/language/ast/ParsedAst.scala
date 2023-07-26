@@ -191,7 +191,7 @@ object ParsedAst {
       * @param kind    the kind of the type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: ParsedAst.Kind, sp2: SourcePosition)
+    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
 
     /**
       * Associated Type Declaration.
@@ -204,7 +204,7 @@ object ParsedAst {
       * @param tpe   the type of the type.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition)
+    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Type]], tpe: ParsedAst.Type, sp2: SourcePosition)
 
     /**
       * Typeclass Declaration.
@@ -1559,6 +1559,14 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+     * A type representing a logical negation.
+     *
+     * @param tpe the complemented type.
+     * @param sp2 the position of the last character in the type.
+     */
+    case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * A type representing a logical conjunction.
       *
       * @param tpe1 the 1st type.
@@ -1577,12 +1585,13 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * A type representing a logical negation.
-      *
-      * @param tpe the complemented type.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+     * A type representing a logical exclusive or.
+     *
+     * @param tpe1 the 1st type.
+     * @param tpe2 the 2nd type.
+     * @param sp2  the position of the last character in the type.
+     */
+    case class Xor(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * A type representing a case set.

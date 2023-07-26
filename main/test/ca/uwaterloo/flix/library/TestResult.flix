@@ -508,15 +508,15 @@ mod TestResult {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Result.forEach(x -> ri := x, Ok(42): Result[Int32, Int32]);
         42 == deref ri
     }
 
     @test
-    def forEach02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Result.forEach(x -> ri := x, Err(42): Result[Int32, Int32]);
         21 == deref ri
     }
@@ -819,18 +819,18 @@ mod TestResult {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        Err(1): Result[Int32, Int32] |> Result.iterator(r) |> Iterator.toList == Nil
+    def iterator01(): Bool = region rc {
+        Err(1): Result[Int32, Int32] |> Result.iterator(rc) |> Iterator.toList == Nil
     }
 
     @test
-    def iterator02(): Bool = region r {
-        Ok(1) |> Result.iterator(r) |> Iterator.toList == 1 :: Nil
+    def iterator02(): Bool = region rc {
+        Ok(1) |> Result.iterator(rc) |> Iterator.toList == 1 :: Nil
     }
 
     @test
-    def iterator03(): Bool = region r {
-        Ok(1 :: 2 :: 3 :: Nil) |> Result.iterator(r) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
+    def iterator03(): Bool = region rc {
+        Ok(1 :: 2 :: 3 :: Nil) |> Result.iterator(rc) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////

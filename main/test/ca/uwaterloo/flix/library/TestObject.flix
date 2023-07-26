@@ -65,9 +65,9 @@ mod TestObject {
     def isNullArray01(): Bool \ IO = not Object.isNull(Array#{} @ Static)
 
     @test
-    def isNullArray02(): Bool = region r {
-        let _ = r;
-        Object.isNull(unchecked_cast(null as Array[Int32, r]))
+    def isNullArray02(): Bool = region rc {
+        let _ = rc;
+        Object.isNull(unchecked_cast(null as Array[Int32, rc]))
     }
 
     @test

@@ -326,6 +326,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonSingleCharacter](result)
   }
 
+  test("NonSingleCharacter.Char.02") {
+    val input =
+      """
+        |def f(): Char = ''
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonSingleCharacter](result)
+  }
+
   test("NonSingleCharacter.Patten.Char.01") {
     val input =
       """
@@ -1074,17 +1083,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   }
 
   test("NonUnaryAssocType.02") {
-    val input =
-      """
-        |class C[a] {
-        |    type T: Type
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonUnaryAssocType](result)
-  }
-
-  test("NonUnaryAssocType.03") {
     val input =
       """
         |instance C[Int32] {

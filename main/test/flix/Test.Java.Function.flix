@@ -48,8 +48,8 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testPredicate(): Bool \ IO = region r {
-        import static java.util.stream.Stream.of(Array[Object, r]): Stream \ IO;
+    def testPredicate(): Bool \ IO = region rc {
+        import static java.util.stream.Stream.of(Array[Object, rc]): Stream \ IO;
         import java.util.stream.Stream.filter(Predicate): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
         import java.util.Optional.get(): Object;
@@ -57,7 +57,7 @@ mod Test.Java.Function {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
-        let stream0 = of(Array#{mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)} @ r);
+        let stream0 = of(Array#{mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)} @ rc);
         let stream1 = filter(stream0, obj -> toString(obj) == "5");
         toString(get(findFirst(stream1))) == "5"
     }
@@ -182,11 +182,11 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testDoublePredicate(): Bool \ IO = region r {
-        import static java.util.stream.DoubleStream.of(Array[Float64, r]): DoubleStream \ IO;
+    def testDoublePredicate(): Bool \ IO = region rc {
+        import static java.util.stream.DoubleStream.of(Array[Float64, rc]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.filter(DoublePredicate): DoubleStream \ IO;
         import java.util.stream.DoubleStream.sum(): Float64 \ IO;
-        let stream0 = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ r);
+        let stream0 = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ rc);
         let stream1 = filter(stream0, d -> checked_ecast(match Float64.tryToInt32(d) {
             case Some(i) => i `Int32.rem` 2 == 0
             case None    => false

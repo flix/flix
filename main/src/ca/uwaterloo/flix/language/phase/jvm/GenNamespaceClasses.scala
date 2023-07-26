@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -79,18 +78,17 @@ object GenNamespaceClasses {
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
 
     // Jvm type of method args
-    val MonoType.Arrow(targs, tresult) = defn.tpe
-    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tresult))
+    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
 
     // Erased argument and result type.
-    val erasedArgs = targs map JvmOps.getErasedJvmType
-    val erasedResult = JvmOps.getErasedJvmType(tresult)
+    val erasedArgs = defn.arrowType.args.map(JvmOps.getErasedJvmType)
+    val erasedResult = JvmOps.getErasedJvmType(defn.tpe)
 
     // Method header
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
     method.visitCode()
 
-    val functionType = JvmOps.getFunctionInterfaceType(defn.tpe)
+    val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType)
 
     // Offset for each parameter
     var offset: Int = 0
@@ -106,12 +104,12 @@ object GenNamespaceClasses {
       method.visitVarInsn(iLoad, offset)
 
       // put the arg field
-      method.visitFieldInsn(PUTFIELD, functionType.name.toInternalName, s"arg$index", arg.toDescriptor)
+      method.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName, s"arg$index", arg.toDescriptor)
 
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
+    method.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName, backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
     // no erasure here because the ns function works on erased values
 
     // Return

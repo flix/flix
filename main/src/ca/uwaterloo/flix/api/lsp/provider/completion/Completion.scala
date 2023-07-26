@@ -198,6 +198,30 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = kind)
+    case Completion.UseEnumCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Enum
+      )
+    case Completion.UseEffCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Enum
+      )
+    case Completion.UseDefCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Method
+      )
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.high(name),
@@ -405,6 +429,27 @@ object Completion {
     */
   case class UseCompletion(name: String, kind: CompletionItemKind) extends Completion
 
+
+  /**
+   * Represents a Use Enum completion.
+   *
+   * @param name the name of the use enum completion.
+   */
+  case class UseEnumCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Effect completion.
+   *
+   * @param name the name of the use effect completion.
+   */
+   case class UseEffCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Def completion.
+   *
+   * @param decl the decl.
+   */
+   case class UseDefCompletion(name: String) extends Completion
   /**
     * Represents a FromErrors completion
     *

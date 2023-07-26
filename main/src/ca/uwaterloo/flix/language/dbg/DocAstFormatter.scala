@@ -45,14 +45,8 @@ object DocAstFormatter {
         val d = text("enum") +: text(sym.toString) :: tparamsf +: casesf
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
-    // remember that the def type includes the arguments
-    // TODO EVIL afoot! change to expect result type directly
     val defs = defs0.map {
-      case Def(_, _, sym, parameters, resType0, body) =>
-        val resType = resType0 match {
-          case Type.Arrow(_, res) => res
-          case _ => Type.AsIs(meta("no return type"))
-        }
+      case Def(_, _, sym, parameters, resType, body) =>
         val name = sym.toString
         val args = parameters.map(aux(_, paren = false))
         val resTypef = formatType(resType, paren = false)

@@ -1174,8 +1174,8 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ r =
-        let a = Array.new(r, length(l));
+    pub def toArray(rc: Region[r], l: DelayList[a]): Array[a, r] \ r =
+        let a = Array.new(rc, length(l));
         forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
         a
 
@@ -1211,8 +1211,8 @@ mod DelayList {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(r, l) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ r =
+        iterator(rc, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns `l` as a `List`.
@@ -1235,15 +1235,15 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(r, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(rc: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

@@ -54,23 +54,14 @@ object MavenPackageManager {
         val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
         val resolution = res.withCache(cache).run()
 
-        val resList: collection.mutable.ListBuffer[Path] = collection.mutable.ListBuffer.empty
         val fetch = resolution.dependencies.foldLeft(Fetch())(
           (f, dep) => {
-            val moduleName = dep.module.toString()
-            val moduleNamePath = moduleName.replaceAll("[^a-zA-Z0-9-]", "/")
-            val versionString = dep.version
-            val fileName = s"${moduleNamePath.split('/').last}-$versionString.jar"
-            val filePrefix = "https/repo1.maven.org/maven2"
-            val depPath = libPath.resolve(filePrefix).resolve(moduleNamePath).resolve(versionString).resolve(fileName)
-            resList.addOne(depPath)
-
-            out.println(s"  Adding `$moduleName' ($versionString).")
+            out.println(s"  Adding `${dep.module}' (${dep.version}).")
             f.addDependencies(dep)
         })
         out.println("  Running Maven dependency resolver.")
-        fetch.withCache(cache).run()
-        resList.toList
+        val paths = fetch.withCache(cache).run()
+        paths.map(_.toPath).toList
       } catch {
         case e: Exception =>
           out.println(e.getMessage)
@@ -89,7 +80,7 @@ object MavenPackageManager {
   def getMavenDependencyStrings(manifest: Manifest): List[String] = {
     manifest.dependencies.collect {
       case dep: MavenDependency => dep
-    }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.version.toString}")
+    }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.versionTag}")
   }
 
   /**

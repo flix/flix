@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 
 /**
@@ -49,50 +50,50 @@ object Tailrec {
       *
       * Replaces every `ApplyRef`, which calls the same function and occurs in tail position, with `ApplyTail`.
       */
-    def visit(exp0: Expression): Expression = exp0 match {
+    def visit(exp0: Expr): Expr = exp0 match {
       /*
        * Let: The body expression is in tail position.
        * (The value expression is *not* in tail position).
        */
-      case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
+      case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val e2 = visit(exp2)
-        Expression.Let(sym, exp1, e2, tpe, purity, loc)
+        Expr.Let(sym, exp1, e2, tpe, purity, loc)
 
       /*
        * If-Then-Else: Consequent and alternative are both in tail position.
        * (The condition is *not* in tail position).
        */
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e2 = visit(exp2)
         val e3 = visit(exp3)
-        Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
+        Expr.IfThenElse(exp1, e2, e3, tpe, purity, loc)
 
       /*
        * Branch: Each branch is in tail position.
        */
-      case Expression.Branch(e0, br0, tpe, purity, loc) =>
+      case Expr.Branch(e0, br0, tpe, purity, loc) =>
         val br = br0 map {
           case (sym, exp) => sym -> visit(exp)
         }
-        Expression.Branch(e0, br, tpe, purity, loc)
+        Expr.Branch(e0, br, tpe, purity, loc)
 
       /*
        * ApplyClo.
        */
-      case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
-        Expression.ApplyCloTail(exp, args, tpe, purity, loc)
+      case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
+        Expr.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc)
 
       /*
        * ApplyDef.
        */
-      case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
+      case Expr.ApplyDef(sym, exps, _, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
           // Case 1: Tail recursive call.
-          Expression.ApplyDefTail(sym, args, tpe, purity, loc)
+          Expr.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc)
         } else {
           // Case 2: Self recursive call.
-          Expression.ApplySelfTail(sym, defn.cparams ++ defn.fparams, args, tpe, purity, loc)
+          Expr.ApplySelfTail(sym, defn.cparams ++ defn.fparams, exps, tpe, purity, loc)
         }
 
       /*

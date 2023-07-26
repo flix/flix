@@ -44,21 +44,21 @@ mod Test.Dec.AssocType {
         type Eff[a]: Eff
         type Elem[a]: Type
 
-        pub def iterator(rh: Region[r], x: a): Iterator[Iterable2.Elem[a], Iterable2.Eff[a] + r, r] \ Iterable2.Eff[a] + r
+        pub def iterator(rc: Region[r], x: a): Iterator[Iterable2.Elem[a], Iterable2.Eff[a] + r, r] \ Iterable2.Eff[a] + r
     }
 
     instance Iterable2[String] {
         type Eff[String] = Pure
         type Elem[String] = Char
 
-        pub def iterator(rh: Region[r], x: String): Iterator[Char, r, r] \ r = String.iterator(rh, x)
+        pub def iterator(rc: Region[r], x: String): Iterator[Char, r, r] \ r = String.iterator(rc, x)
     }
 
     instance Iterable2[MutList[a, r]] {
         type Eff[MutList[a, r]] = r
         type Elem[MutList[a, r]] = a
 
-        pub def iterator(rh: Region[r2], x: MutList[a, r]): Iterator[a, r + r2, r2] \ r + r2 = MutList.iterator(rh, x)
+        pub def iterator(rc: Region[r2], x: MutList[a, r]): Iterator[a, r + r2, r2] \ r + r2 = MutList.iterator(rc, x)
     }
 
     class C[a] {

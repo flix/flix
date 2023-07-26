@@ -316,11 +316,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def AssocTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ ":" ~ optWS ~ Kind ~ SP ~> ParsedAst.Declaration.AssocTypeSig
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ optional(":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
     }
 
     def AssocTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ optional("[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]") ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
@@ -508,7 +508,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Char: Rule1[ParsedAst.Literal.Char] = rule {
-      SP ~ "'" ~ oneOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+      SP ~ "'" ~ zeroOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
     }
 
     // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
@@ -721,12 +721,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("!=" | ".." | "::" | ":=" | "<-" | "<=" | "==" | "=>" | ">=" | "or")
+        capture("!=" | "::" | ":=" | "<-" | "<=" | "==" | "=>" | ">=" | "or")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture(":::" | "<+>" | "<=>" | "???" | "and" | "mod" | "not" | "rem")
+        capture(":::" | "<+>" | "<=>" | "???" | "and" | "not")
       }
 
       // Match any two character operator which is not reserved.
@@ -1461,7 +1461,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Intersection: Rule1[ParsedAst.Type] = rule {
-      Or ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+      Xor ~ zeroOrMore(WS ~ atomic("&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Intersection)
+    }
+
+    def Xor: Rule1[ParsedAst.Type] = rule {
+      Or ~ zeroOrMore(WS ~ atomic("xor") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Xor)
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
@@ -1692,10 +1696,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("lawful")) ~ SP ~> ParsedAst.Modifier
     }
 
-    def Opaque: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("opaque")) ~ SP ~> ParsedAst.Modifier
-    }
-
     def Override: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("override")) ~ SP ~> ParsedAst.Modifier
     }
@@ -1709,7 +1709,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawful | Opaque | Override | Public | Sealed
+      Inline | Lawful | Override | Public | Sealed
     }
 
     rule {

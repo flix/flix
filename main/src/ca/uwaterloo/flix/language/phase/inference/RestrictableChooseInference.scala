@@ -73,10 +73,10 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable choose expression.
     */
-  def infer(exp: KindedAst.Expression.RestrictableChoose, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  def infer(exp: KindedAst.Expr.RestrictableChoose, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     exp match {
-      case KindedAst.Expression.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
+      case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
 
         // Get the enum symbols for the matched type
         val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
@@ -110,7 +110,7 @@ object RestrictableChooseInference {
           resultEff = Type.mkUnion(eff :: effs, loc)
         } yield (resultTconstrs, resultTpe, resultEff)
 
-      case KindedAst.Expression.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
+      case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
 
         // Get the enum symbols for the matched type
         val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
@@ -179,8 +179,8 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp match {
-    case KindedAst.Expression.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
+  def inferRestrictableTag(exp: KindedAst.Expr.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp match {
+    case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
 
       // Lookup the enum declaration.
       val enumSym = symUse.sym.enumSym
@@ -253,8 +253,8 @@ object RestrictableChooseInference {
     * -------------------------------------
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
-  def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
-    case KindedAst.Expression.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
+  def inferOpenAs(exp0: KindedAst.Expr.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
+    case KindedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
       val `enum` = root.restrictableEnums(sym)
 
       val (enumType, indexVar, targs) = instantiatedEnumType(sym, `enum`, loc.asSynthetic)
