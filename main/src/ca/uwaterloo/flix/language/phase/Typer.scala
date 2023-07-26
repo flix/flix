@@ -2606,7 +2606,7 @@ object Typer {
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val ps = pats map {
-          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, tvar1, pat, loc) =>
+          case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, tvar1, pat, loc) => // TODO: Pattern match on tpe
             TypedAst.Pattern.Record.RecordFieldPattern(field, subst0(tvar1), visit(pat), loc)
         }
         TypedAst.Pattern.Record(ps, pat.map(visit), subst0(tvar), loc)
