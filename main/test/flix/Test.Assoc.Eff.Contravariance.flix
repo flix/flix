@@ -11,7 +11,7 @@ mod Test.Assoc.Eff.Contravariance {
     ///
     class Countable[m: Type -> Type] {
         /// An associated effect which specifies an *upperbound* on the permitted effects.
-        type UpperBound[m]: Eff
+        type UpperBound: Eff
 
         /// We use intersection to restrict the effects of `f`.
         pub def count(f: a -> Bool \ (ef & Countable.UpperBound[m]), m: m[a]): Int32
@@ -19,19 +19,19 @@ mod Test.Assoc.Eff.Contravariance {
 
     instance Countable[ParSet] {
         /// A parallel set permits no effects: the upper bound is pure (i.e. empty set of effects).
-        type UpperBound[ParSet] = Pure
+        type UpperBound = Pure
         pub def count(f: a -> Bool \ {}, m: ParSet[a]): Int32 = ???
     }
 
     instance Countable[SeqSet] {
         /// A sequential set permits any effects: the upper bound is the universe.
-        type UpperBound[SeqSet] = ~Pure
+        type UpperBound = ~Pure
         pub def count(f: a -> Bool \ ef, m: SeqSet[a]): Int32 = ???
     }
 
     instance Countable[SecSet] {
         /// A secret set permits any effects, except the `Network` effect.
-        type UpperBound[SecSet] = ~Network
+        type UpperBound = ~Network
         pub def count(f: a -> Bool \ ef & (~Network), m: SecSet[a]): Int32 = ???
     }
 
