@@ -31,6 +31,11 @@ object InferMonad {
   val PointNil: InferMonad[Nil.type] = point(Nil)
 
   /**
+    * A constant for the InferMonad over None.
+    */
+  val PointNone: InferMonad[None.type] = point(None)
+
+  /**
     * Lifts the given value `x` into the type inference monad.
     */
   def point[A](x: A): InferMonad[A] = InferMonad { case (s, econstrs, renv, lenv) => Ok((s, econstrs, renv, lenv, x)) }
@@ -64,7 +69,13 @@ object InferMonad {
     }
   }
 
-  def traverseOptM[A, B](xs: Option[A])(f: A => InferMonad[B]): InferMonad[Option[B]] = ???
+  /**
+    * Applies the function `f` to the element in `o` if it is present.
+    */
+  def traverseOptM[A, B](o: Option[A])(f: A => InferMonad[B]): InferMonad[Option[B]] = o match {
+    case None => PointNone
+    case Some(x) => f(x) map (Some(_))
+  }
 
 }
 
