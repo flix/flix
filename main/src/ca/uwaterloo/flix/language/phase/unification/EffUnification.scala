@@ -31,7 +31,9 @@ object EffUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+  def unify(tpe10: Type, tpe20: Type, renv0: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+    val tpe1 = lenv.purify(tpe10)
+    val tpe2 = lenv.purify(tpe20)
 
     //
     // NOTE: ALWAYS UNSOUND. USE ONLY FOR EXPERIMENTS.

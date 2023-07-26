@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation.{ToSoftFailure, ToSuccess, flatMapN, mapN}
@@ -129,7 +129,7 @@ object EntryPoint {
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, loc), _) =>
-      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
+      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
       val argVal = declaredScheme.base.arrowArgTypes match {
@@ -143,7 +143,7 @@ object EntryPoint {
 
       flatMapN(argVal: Validation[Option[Type], EntryPointError]) {
         // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg), classEnv, ListMap.empty) =>
+        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), classEnv, ListMap.empty) =>
           // TODO ASSOC-TYPES better eqEnv
           ().toSuccess
 
@@ -161,8 +161,8 @@ object EntryPoint {
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
-      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
-      val resultSc = Scheme.generalize(Nil, Nil, resultTpe)
+      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
+      val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
 
       if (Scheme.equal(unitSc, resultSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
