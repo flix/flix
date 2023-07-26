@@ -64,6 +64,8 @@ object InferMonad {
     }
   }
 
+  def traverseOptM[A, B](xs: Option[A])(f: A => InferMonad[B]): InferMonad[Option[B]] = ???
+
 }
 
 /**

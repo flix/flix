@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.{freshVar, getFlixType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
-import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
+import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM, traverseOptM}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
@@ -2541,6 +2541,7 @@ object Typer {
 
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
+        // TODO: use visitRecordFieldPattern
         val ps = traverseM(pats) {
           case KindedAst.Pattern.Record.RecordFieldPattern(field, tpe, tvar1, pat1, loc1) =>
             tpe match {
@@ -2558,20 +2559,19 @@ object Typer {
                 } yield (field, patType, loc1)
             }
         }
+
+        val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
+        val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
+
         for {
+          optRecordTail <- traverseOptM(pat)(visit)
+          recordTail = optRecordTail.getOrElse(Type.mkRecordRowEmpty(loc.asSynthetic))
+          _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
           ps1 <- ps
-          patTypes = ps1.foldRight(Type.mkRecordRowEmpty(loc.asSynthetic)) {
+          patTypes = ps1.foldRight(freshRowVar: Type) {
             case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
           }
-          p <- traverseM(pat.toList)(visit)
-          t = p map {
-            case r =>
-              val freshRowVar = Type.freshVar(Kind.RecordRow, r.loc.asSynthetic)
-              Type.mkRecord(freshRowVar, r.loc.asSynthetic)
-          }
-          resultTpe <- unifyTypeM(patTypes :: t, loc)
-
-        } yield Type.mkRecord(resultTpe, loc)
+        } yield Type.mkRecord(patTypes, loc)
 
     }
 
@@ -2584,6 +2584,8 @@ object Typer {
   private def inferPatterns(pats0: List[KindedAst.Pattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferPattern(_, root))
   }
+
+  private def visitRecordFieldPattern() = ???
 
   /**
     * Applies the substitution `subst0` to the given pattern `pat0`.
