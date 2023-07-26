@@ -20,16 +20,16 @@ object ResponseStatus {
   /**
     * Request was successfully processed.
     */
-  val Ok = "OK"
+  val Success = "success"
 
   /**
     * Request was invalid and could not be processed.
     */
-  val InvalidRequest = "INVALID_REQUEST"
+  val InvalidRequest = "invalid_request"
 
   /**
     * The compiler has crashed.
     */
-  val CompilerError = "COMPILER_ERROR"
+  val CompilerError = "compiler_error"
 
 }

@@ -112,7 +112,7 @@ object SemanticTokensProvider {
     //
     // Construct the JSON result.
     //
-    ("status" -> ResponseStatus.Ok) ~ ("result" -> ("data" -> encodedTokens))
+    ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> encodedTokens))
   }
 
   /**

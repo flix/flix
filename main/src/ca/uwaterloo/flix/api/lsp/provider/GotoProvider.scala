@@ -35,41 +35,41 @@ object GotoProvider {
         case Some(entity) => entity match {
 
           case Entity.DefUse(sym, loc, _) =>
-            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromDefSym(sym, loc)(someRoot).toJSON)
+            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromDefSym(sym, loc)(someRoot).toJSON)
 
           case Entity.SigUse(sym, loc, _) =>
-            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromSigSym(sym, loc)(someRoot).toJSON)
+            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromSigSym(sym, loc)(someRoot).toJSON)
 
           case Entity.VarUse(sym, loc, _) =>
-            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
           case Entity.CaseUse(sym, loc, _) =>
-            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
+            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
 
           case Entity.Exp(_) => mkNotFound(uri, pos)
 
           case Entity.Pattern(pat) => pat match {
             case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
-              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
+              ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
 
             case _ => mkNotFound(uri, pos)
           }
 
           case Entity.Type(t) => t match {
             case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(someRoot).toJSON)
+              ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(someRoot).toJSON)
 
             case Type.Cst(TypeConstructor.Effect(sym), loc) =>
-              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
+              ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
 
             case Type.Var(sym, loc) =>
-              ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
+              ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
 
             case _ => mkNotFound(uri, pos)
           }
 
           case Entity.OpUse(sym, loc, _) =>
-            ("status" -> ResponseStatus.Ok) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
+            ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
           case Entity.Case(_) => mkNotFound(uri, pos)
           case Entity.Class(_) => mkNotFound(uri, pos)

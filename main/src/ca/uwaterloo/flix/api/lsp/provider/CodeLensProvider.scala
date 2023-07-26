@@ -28,7 +28,7 @@ object CodeLensProvider {
     */
   def processCodeLens(uri: String)(implicit index: Index, root: Option[Root]): JObject = {
     val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
-    ("status" -> ResponseStatus.Ok) ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
 
   /**

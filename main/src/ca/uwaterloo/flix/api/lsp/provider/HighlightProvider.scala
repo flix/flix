@@ -95,7 +95,7 @@ object HighlightProvider {
     }
 
     // Construct the JSON result.
-    ("status" -> ResponseStatus.Ok) ~ ("result" -> JArray(highlights.map(_.toJSON)))
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(highlights.map(_.toJSON)))
   }
 
   private def highlightDef(sym: Symbol.DefnSym)(implicit index: Index, root: Option[Root]): JObject = {

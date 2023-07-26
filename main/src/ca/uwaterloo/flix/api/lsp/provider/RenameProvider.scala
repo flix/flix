@@ -105,7 +105,7 @@ object RenameProvider {
     val workspaceEdit = WorkspaceEdit(textEdits)
 
     // Construct the JSON result.
-    ("status" -> ResponseStatus.Ok) ~ ("result" -> workspaceEdit.toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> workspaceEdit.toJSON)
   }
 
   private def renameDef(sym: Symbol.DefnSym, newName: String)(implicit index: Index, root: Root): JObject = {

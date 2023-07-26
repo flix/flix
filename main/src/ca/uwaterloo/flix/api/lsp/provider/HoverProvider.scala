@@ -90,7 +90,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -109,7 +109,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -128,7 +128,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -147,7 +147,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -166,7 +166,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -198,7 +198,7 @@ object HoverProvider {
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(t.loc)
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> ResponseStatus.Ok) ~ ("result" -> result)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
   /**

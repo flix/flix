@@ -77,7 +77,7 @@ object CompletionProvider {
     val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
     // If we are currently on a hole the only useful completion is a hole completion.
     if (holeCompletions.nonEmpty) {
-      return ("status" -> ResponseStatus.Ok) ~ ("result" -> CompletionList(isIncomplete = false, holeCompletions).toJSON)
+      return ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = false, holeCompletions).toJSON)
     }
 
     //
@@ -100,7 +100,7 @@ object CompletionProvider {
         }
     }
 
-    ("status" -> ResponseStatus.Ok) ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
   /**
