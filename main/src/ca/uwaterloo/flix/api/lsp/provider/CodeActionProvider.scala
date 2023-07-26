@@ -33,17 +33,31 @@ object CodeActionProvider {
     * Returns code actions based on the current errors.
     */
   private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = currentErrors.flatMap {
-    case ResolutionError.UndefinedName(qn, ns, _, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedName(qn, _, _, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseDef(qn.ident, uri)
       else
         Nil
+    case ResolutionError.UndefinedClass(qn, _, loc) if onSameLine(range, loc) =>
+      if (qn.namespace.isRoot)
+        mkUseClass(qn.ident, uri)
+      else
+        Nil
+    case ResolutionError.UndefinedEffect(qn, _, loc) if onSameLine(range, loc) =>
+      if (qn.namespace.isRoot)
+        mkUseEffect(qn.ident, uri)
+      else
+        Nil
+    case ResolutionError.UndefinedType(qn, _, loc) if onSameLine(range, loc) =>
+      mkIntroduceNewEnum(qn.ident.name, uri) :: {
+        if (qn.namespace.isRoot)
+          mkUseType(qn.ident, uri)
+        else
+          Nil
+      }
 
     case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
       mkUnusedVarCodeAction(sym, uri) :: Nil
-
-    case ResolutionError.UndefinedType(qn, ns, loc) if onSameLine(range, loc) =>
-      mkIntroduceNewEnum(qn.ident.name, uri) :: Nil
 
     case _ => Nil
   }
@@ -80,8 +94,75 @@ object CodeActionProvider {
     * }}}
     */
   private def mkUseDef(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
-    root.defs.collect {
-      case (sym, _) if sym.name == ident.name =>
+    val syms = root.defs.map {
+      case (sym, _) => sym
+    }
+    mkUseSym(ident, syms.map(_.name), syms, uri)
+  }
+
+  /**
+    * Returns a code action that proposes to `use` a class.
+    */
+  private def mkUseClass(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+    val syms = root.classes.map {
+      case (sym, _) => sym
+    }
+    mkUseSym(ident, syms.map(_.name), syms, uri)
+  }
+
+  /**
+    * Returns a code action that proposes to `use` an effect.
+    */
+  private def mkUseEffect(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+    val syms = root.effects.map {
+      case (sym, _) => sym
+    }
+    mkUseSym(ident, syms.map(_.name), syms, uri)
+  }
+
+  /**
+    * Returns a code action that proposes to `use` a type.
+    */
+  private def mkUseType(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
+    val names = root.enums.map { case (sym, _) => sym.name } ++
+      root.restrictableEnums.map { case (sym, _) => sym.name } ++
+      root.classes.map { case (sym, _) => sym.name } ++
+      root.typeAliases.map { case (sym, _) => sym.name }
+
+    val syms = (root.enums ++ root.restrictableEnums ++ root.classes ++ root.typeAliases).map {
+      case (sym, _) => sym
+    }
+
+    mkUseSym(ident, names, syms, uri)
+  }
+
+  /**
+    * Internal helper function for all `mkUseX`.
+    * Returns a list of code action that proposes to `use` a symbol.
+    *
+    * For example, if we have:
+    *
+    * {{{
+    *   map(x -> x + 1, Nil)
+    * }}}
+    *
+    * and we pass in the list of defs in the root,
+    * then we propose to insert:
+    *
+    * {{{
+    *   use List.map;
+    * }}}
+    *
+    * @param ident The identifier we are searching for.
+    * @param syms  The symbols that are candidates for being used.
+    * @param names The names of the symbols given as `syms`.
+    *              These should include the same number and be in the same order.
+    * @param uri   URI of the document the change should be made in.
+    */
+  // Names have to be included seperately because symbols aren't guaranteed to have a name
+  private def mkUseSym(ident: Name.Ident, names: Iterable[String], syms: Iterable[Symbol], uri: String): List[CodeAction] = {
+    syms.zip(names).collect {
+      case (sym, name) if name == ident.name =>
         CodeAction(
           title = s"use $sym",
           kind = CodeActionKind.QuickFix,
