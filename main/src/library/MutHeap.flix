@@ -1,19 +1,3 @@
-/*
- * Copyright 2023 Xavier deSouza
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 pub enum MutHeap[a: Type, r: Region] {
     case MutHeap(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
@@ -81,11 +65,12 @@ mod MutHeap {
     ///
     /// Deletes an element from a MutHeap
     ///
-    pub def delete(h: MutHeap[a, r], _elem: a): Unit \ r with Order[a] = {
+    pub def delete(h: MutHeap[a, r], elem: a): Unit \ r with Order[a] = {
         let MutHeap(_, arr, s) = h;
-        match Array.findIndexOf(_ -> true, deref arr) {
+        match Array.findIndexOf(x -> x == elem, deref arr) {
             case Some(idx) =>
-                Array.put(Array.get(deref s, deref arr), idx, deref arr);
+                let lastElem = Array.get(deref s - 1, deref arr);
+                Array.put(lastElem, idx, deref arr);
                 heapifyDown(idx, h);
                 s := deref s - 1
             case None => ()
@@ -110,13 +95,37 @@ mod MutHeap {
         StringBuilder.toString(sb)
     }
 
+    ///
+    /// Returns an iterator over MutHeap `h`
+    ///
+    /// Modifying `h` during iteration is undefined
+    ///
+    pub def iterator(rc: Region[r1], h: MutHeap[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
+        let MutHeap(_, arr, s) = h;
+        let numElems = deref s;
+        let idx = ref 0 @ rc;
+        let next = () -> {
+            let i = deref idx;
+            if (i < numElems) {
+                let elem = Array.get(i, deref arr);
+                Some(elem)
+            }
+            else {
+                None
+            }
+        };
+        Iterator.iterate(rc, next)
+
+    ///
+    /// Reinforces the max heap invariant after an element is added
+    ///
     def heapifyUp(idx: Int32, h: MutHeap[a, r]): Unit \ r with Order[a] =
         let MutHeap(_, arr, _) = h;
         if (idx != 0) {
             let parentIdx = (idx - 1) / 2;
             let cur  = Array.get(idx, deref arr);
             let parent = Array.get(parentIdx, deref arr);
-            if (Order.greater(cur, parent)) {
+            if (cur > parent) {
                 Array.put(parent, idx, deref arr);
                 Array.put(cur, parentIdx, deref arr);
                 heapifyUp(parentIdx, h)
@@ -125,6 +134,9 @@ mod MutHeap {
         }
         else ()
 
+    ///
+    /// Reinforces the max heap invariant after an element is removed
+    ///
     def heapifyDown(idx: Int32, h: MutHeap[a, r]): Unit \ r with Order[a] =
         let MutHeap(_, arr, s) = h;
         let size = deref s;
@@ -143,8 +155,8 @@ mod MutHeap {
             else {
                 let lChild = Array.get(lChildIdx, deref arr);
                 let rChild = Array.get(rChildIdx, deref arr);
-                if (Order.greater(lChild, cur) or Order.greater(rChild, cur)) {
-                    if (Order.greater(lChild, rChild)) {
+                if ((lChild > cur) or (rChild > cur)) {
+                    if (lChild > rChild) {
                         Array.put(cur, lChildIdx, deref arr);
                         Array.put(lChild, idx, deref arr);
                         heapifyDown(lChildIdx, h)
@@ -160,8 +172,9 @@ mod MutHeap {
         }
         else ()
 
-
-
+    ///
+    /// Expands the internal array of MutHeap `h` if the array capacity is being approached
+    ///
     def expand!(h: MutHeap[a, r]): Unit \ r =
         let MutHeap(reg, arr, s) = h;
         let oldCapacity = Array.length(deref arr);
@@ -173,6 +186,9 @@ mod MutHeap {
         }
         else ()
 
+    ///
+    /// Inserts each element of a list into the MutHeap `h`
+    ///
     def readFromList(h: MutHeap[a, r], l: List[a]): Unit \ r with Order[a] =
         match l {
             case x::xs => {
@@ -241,5 +257,24 @@ mod MutHeap {
         MutHeap.pop(h);
         MutHeap.pop(h);
         MutHeap.toString(h) == "MutHeap {7, 6, 5, 3, 5, 4}"
+    }
+
+    @Test
+    def heap09(): Bool = region reg {
+        let h = MutHeap.new(reg);
+        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
+        MutHeap.delete(h, 14);
+        MutHeap.delete(h, 10);
+        MutHeap.toString(h) == "MutHeap {20, 6, 7, 3, 5, 4, 5}"
+    }
+
+    @Test
+    def heap10(): Bool = region reg {
+        let h = MutHeap.new(reg);
+        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
+        MutHeap.delete(h, 5);
+        MutHeap.delete(h, 5);
+        MutHeap.delete(h, 5);
+        MutHeap.toString(h) == "MutHeap {20, 14, 7, 10, 6, 4, 3}"
     }
 }
