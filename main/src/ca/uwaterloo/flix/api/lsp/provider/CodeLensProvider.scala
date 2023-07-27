@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
+import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
@@ -28,7 +28,7 @@ object CodeLensProvider {
     */
   def processCodeLens(uri: String)(implicit index: Index, root: Option[Root]): JObject = {
     val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
-    ("status" -> "success") ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
 
   /**
