@@ -226,22 +226,20 @@ mod MutHeap {
     }
 
     @Test
-    def heap07(): Bool \ IO = region reg {
+    def heap07(): Bool = region reg {
         let h = MutHeap.new(reg);
         MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
         MutHeap.pop(h);
-        println(MutHeap.toString(h));
         MutHeap.toString(h) == "MutHeap {14, 10, 7, 6, 5, 4, 5, 3}"
     }
 
     @Test
-    def heap08(): Bool \ IO = region reg {
+    def heap08(): Bool = region reg {
         let h = MutHeap.new(reg);
         MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
         MutHeap.pop(h);
         MutHeap.pop(h);
         MutHeap.pop(h);
-        println(MutHeap.toString(h));
         MutHeap.toString(h) == "MutHeap {7, 6, 5, 3, 5, 4}"
     }
 }
