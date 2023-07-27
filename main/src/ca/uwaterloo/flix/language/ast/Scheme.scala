@@ -142,11 +142,13 @@ object Scheme {
               case _ =>
                 val newEconstrs1 = sc1.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
                 val newEconstrs2 = sc2.econstrs.map(subst.apply).map(EqualityEnvironment.narrow) // TODO ASSOC-TYPES reduce, unsafe narrowing here
-                val entailmentVal = Validation.traverse(newEconstrs1) {
-                  case econstr => EqualityEnvironment.entail(newEconstrs2, econstr, eqEnv)
+                // ensure the eqenv entails the constraints and build up the substitution
+                val substVal = Validation.fold(newEconstrs1, Substitution.empty) {
+                  case (subst, econstr) => EqualityEnvironment.entail(newEconstrs2, subst(econstr), renv, eqEnv).map(_ @@ subst)
                 }
-                mapN(entailmentVal) {
-                  case _ => subst
+                mapN(substVal) {
+                  // combine the econstr substitution with the base type substitution
+                  case s => s @@ subst
                 }
             }
 
