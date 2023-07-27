@@ -192,6 +192,49 @@ mod Test.Dec.AssocType {
     }
 
     @test
-    pub def testCList(): Bool = C.f(1 :: 2 :: Nil) == Some(1)
+    pub def testCList01(): Bool = C.f(Nil: List[Int32]) == None
 
+    @test
+    pub def testCList02(): Bool = C.f(1 :: 2 :: Nil) == Some(1)
+
+    instance C[Option[a]] with C[a] {
+        type T[Option[a]] = Option[C.T[a]]
+
+        pub def f(x: Option[a]): Option[C.T[a]] = match x {
+            case Some(y) => Some(C.f(y))
+            case None => None
+        }
+    }
+
+    @test
+    pub def testCOptionList01(): Bool = C.f(Some(1 :: 2 :: Nil)) == Some(Some(1))
+
+    @test
+    pub def testCOptionList02(): Bool = C.f(Some(Nil: List[Int32])) == Some(None)
+
+    @test
+    pub def testCOptionList03(): Bool = C.f(None: Option[List[Int32]]) == None
+
+    enum Option2[a] {
+        case None2
+        case Some2(a)
+    }
+
+    instance C[Option2[a]] with C[a] {
+        type T[Option2[a]] = C.T[a]
+
+        pub def f(x: Option2[a]): C.T[a] = match x {
+            case Option2.Some2(y) => C.f(y)
+            case Option2.None2 => bug!("unexpected empty option")
+        }
+    }
+
+    @test
+    pub def testCOption2List01(): Bool = C.f(Option2.Some2(1 :: 2 :: Nil)) == Some(1)
+
+    @test
+    pub def testCOption2List02(): Bool = C.f(Option2.Some2(Option2.Some2(1 :: 2 :: Nil))) == Some(1)
+
+    @test
+    pub def testCOption2List03(): Bool = C.f(Option2.Some2(Option2.Some2(Option2.Some2(1 :: 2 :: Nil)))) == Some(1)
 }
