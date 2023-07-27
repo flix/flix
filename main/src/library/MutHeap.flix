@@ -190,14 +190,7 @@ mod MutHeap {
     /// Inserts each element of a list into the MutHeap `h`
     ///
     def readFromList(h: MutHeap[a, r], l: List[a]): Unit \ r with Order[a] =
-        match l {
-            case x::xs => {
-                MutHeap.insert(h, x);
-                readFromList(h, xs)
-            }
-            case Nil => ()
-        }
-
+        List.forEach(x -> MutHeap.insert(h, x), l)
 
     @Test
     def heap01(): Bool = region reg {
