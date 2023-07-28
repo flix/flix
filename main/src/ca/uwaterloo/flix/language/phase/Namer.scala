@@ -1374,7 +1374,6 @@ object Namer {
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.Record(pats, pat, _) =>
-      // pats.map(_.tpe.map(freeTypeVars)).filterNot(_.isEmpty).flatMap(_.get) ++ <---- include type vars?
       pats.map(_.pat.map(freeVars)).filterNot(_.isEmpty).flatMap(_.get) ++
         pat.map(freeVars).getOrElse(Nil)
   }
