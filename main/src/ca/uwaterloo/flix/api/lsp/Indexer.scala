@@ -487,7 +487,7 @@ object Indexer {
     * Returns a reverse index for the given [[Pattern.Record.RecordFieldPattern]] `rfp`.
     */
   private def visitRecordFieldPattern(rfp: Pattern.Record.RecordFieldPattern): Index = {
-    Index.useOf(rfp.field) ++ visitPat(rfp.pat)
+    Index.useOf(rfp.field) ++ visitType(rfp.tpe) ++ visitPat(rfp.pat)
   }
 
   /**
