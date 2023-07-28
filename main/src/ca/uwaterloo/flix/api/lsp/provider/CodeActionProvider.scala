@@ -58,6 +58,14 @@ object CodeActionProvider {
 
     case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
       mkUnusedVarCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedDefSym(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedDefCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedFormalParam(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedParamCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedTypeParam(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedTypeParamCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedEffectSym(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedEffectCodeAction(sym, uri) :: Nil
 
     case _ => Nil
   }
@@ -188,13 +196,64 @@ object CodeActionProvider {
     *
     * where `abc` is unused this code action proposes to replace it by `_abc`.
     */
-  private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
-    title = s"Prefix unused variable with underscore",
+  private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused variable with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused function by an underscore.
+    */
+  private def mkUnusedDefCodeAction(sym: Symbol.DefnSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused function with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused formal parameter by an underscore.
+    */
+  private def mkUnusedParamCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused parameter with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused type parameter by an underscore.
+    */
+  private def mkUnusedTypeParamCodeAction(sym: Name.Ident, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused type parameter with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused effect by an underscore.
+    */
+  private def mkUnusedEffectCodeAction(sym: Symbol.EffectSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused effect with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Internal helper function for all `mkUnusedXCodeAction`.
+    * Returns a code action that proposes to insert an underscore at `beginPos`.
+    */
+  private def mkPrefixWithUnderscore(title: String, beginPos: Position, uri: String): CodeAction = CodeAction(
+    title,
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(Position.fromBegin(sym.loc), Position.fromBegin(sym.loc)),
-        s"_"
+        Range(beginPos, beginPos),
+        "_"
       )))
     )),
     command = None
