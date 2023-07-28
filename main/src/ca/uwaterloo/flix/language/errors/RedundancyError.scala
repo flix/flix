@@ -240,7 +240,7 @@ object RedundancyError {
          |""".stripMargin
     })
 
-    def loc: SourceLocation = sym.loc
+    def loc: SourceLocation = tag.loc
   }
 
   /**
