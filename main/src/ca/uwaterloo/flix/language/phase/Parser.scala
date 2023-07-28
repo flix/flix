@@ -1331,7 +1331,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Record: Rule1[ParsedAst.Pattern] = {
       def RecordFieldPattern: Rule1[ParsedAst.Pattern.RecordFieldPattern] = rule {
-        // TODO: Use TypeAndEffect instead of Type
         SP ~ Names.Field ~ optWS ~ optional(":" ~ optWS ~ Type) ~ optWS ~ optional("=" ~ optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.RecordFieldPattern
       }
 
