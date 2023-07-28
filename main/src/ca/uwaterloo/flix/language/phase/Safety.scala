@@ -703,7 +703,14 @@ object Safety {
     case Pattern.Cst(_, _, _) => Nil
     case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
-    case Pattern.Record(pats, pat, _, _) => visitPats(pats.map(_.pat), loc) ++ pat.map(visitPat(_, loc)).getOrElse(Nil)
+    case Pattern.Record(pats, pat, _, _) => visitRecordPattern(pats, pat, loc)
+  }
+
+  /**
+    * Helper function for [[visitPat]].
+    */
+  private def visitRecordPattern(pats: List[Pattern.Record.RecordFieldPattern], pat: Option[Pattern], loc: SourceLocation): List[CompilationMessage] = {
+    visitPats(pats.map(_.pat), loc) ++ pat.map(visitPat(_, loc)).getOrElse(Nil)
   }
 
   /**
