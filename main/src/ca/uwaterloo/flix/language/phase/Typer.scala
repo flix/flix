@@ -2546,15 +2546,14 @@ object Typer {
 
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
-        val ps = traverseM(pats)(visitRecordFieldPattern(_, root))
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
         for {
           optRecordTail <- traverseOptM(pat)(visit)
           recordTail = optRecordTail.getOrElse(Type.mkRecord(Type.mkRecordRowEmpty(loc.asSynthetic), loc.asSynthetic))
           _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
-          ps1 <- ps
-          patTypes = ps1.foldRight(freshRowVar: Type) {
+          ps <- traverseM(pats)(visitRecordFieldPattern(_, root))
+          patTypes = ps.foldRight(freshRowVar: Type) {
             case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
           }
         } yield Type.mkRecord(patTypes, loc)
