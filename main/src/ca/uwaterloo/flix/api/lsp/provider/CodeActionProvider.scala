@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
 
@@ -68,6 +68,13 @@ object CodeActionProvider {
       mkUnusedEffectCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedEnumTag(_, caseSym) if onSameLine(range, caseSym.loc) =>
       mkUnusedEnumTagCodeAction(caseSym, uri) :: Nil
+
+    case TypeError.MissingEq(tpe, _, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingEq(tpe, uri)
+    case TypeError.MissingOrder(tpe, _, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingOrder(tpe, uri)
+    case TypeError.MissingToString(tpe, _, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingToString(tpe, uri)
 
     case _ => Nil
   }
@@ -300,6 +307,44 @@ object CodeActionProvider {
     )),
     command = None
   )
+
+  /**
+    * Returns a quickfix code action to derive the `Eq` type class for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissingEq(tpe: Type, uri: String): Option[CodeAction] =
+    mkDeriveMissing(tpe, "Eq", uri)
+
+  /**
+    * Returns a quickfix code action to derive the `Order` type class for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissingOrder(tpe: Type, uri: String): Option[CodeAction] =
+    mkDeriveMissing(tpe, "Order", uri)
+
+  /**
+    * Returns a quickfix code action to derive the `ToString` type class for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissingToString(tpe: Type, uri: String): Option[CodeAction] =
+    mkDeriveMissing(tpe, "ToString", uri)
+
+  /**
+    * Internal helper function for all `mkDeriveMissingX`.
+    * Returns a quickfix code action to derive the given type class `clazz` for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissing(tpe: Type, clazz: String, uri: String): Option[CodeAction] = tpe.typeConstructor match {
+    case Some(TypeConstructor.Enum(sym, _)) =>
+      Some(CodeAction(
+        title = s"Derive $clazz",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(
+          Map(uri -> List(TextEdit(
+            Range(Position.fromEnd(sym.loc), Position.fromEnd(sym.loc)),
+            s" with $clazz"
+          )))
+        )),
+        command = None
+      ))
+    case _ => None
+  }
 
   // TODO: We should only offer to derive type classes which have not already been derived.
 
