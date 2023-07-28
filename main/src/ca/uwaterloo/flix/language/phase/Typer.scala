@@ -1903,7 +1903,7 @@ object Typer {
     for {
       (tconstrs, tpe, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
-      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
+      _ <- expectEffectM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, eff)
   }
 

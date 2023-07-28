@@ -1147,27 +1147,27 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](result)
   }
 
-  test("Test.ImpureDeclaredAsPure.01") {
+  test("Test.UnexpectedEffect.01") {
     val input =
       """
         |pub def f(): Int32 = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
-  test("Test.ImpureDeclaredAsPure.02") {
+  test("Test.UnexpectedEffect.02") {
     val input =
       """
         |def f(): Int32 \ {} = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
-  test("Test.ImpureDeclaredAsPure.03") {
+  test("Test.UnexpectedEffect.03") {
     // Regression test. See https://github.com/flix/flix/issues/4062
     val input =
       """
@@ -1176,30 +1176,30 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def zero(): Int32 \ {} = $ARRAY_LENGTH$(mkArray())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
-  test("Test.EffectfulDeclaredAsPure.01") {
+  test("Test.UnexpectedEffect.04") {
     val input =
       """
         |def f(g: Int32 -> Int32 \ ef): Int32 = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
-  test("Test.EffectfulDeclaredAsPure.02") {
+  test("Test.UnexpectedEffect.05") {
     val input =
       """
         |def f(g: Int32 -> Int32 \ ef): Int32 \ {} = g(123)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
-  test("Test.EffectfulDeclaredAsPure.03") {
+  test("Test.UnexpectedEffect.06") {
     val input =
       """
         |eff Print {
@@ -1215,7 +1215,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    do Throw.throw()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
   test("Test.EffectGeneralizationError.01") {
@@ -1225,7 +1225,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.PossibleCheckedEffectCast](result)
   }
 
   test("Test.EffectGeneralizationError.02") {
@@ -1235,7 +1235,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedEffects](result)
+    expectError[TypeError.PossibleCheckedEffectCast](result)
   }
 
   test("Test.RegionVarEscapes.01") {

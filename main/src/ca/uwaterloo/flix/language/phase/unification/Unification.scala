@@ -263,13 +263,12 @@ object Unification {
   def expectEffectM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
-      case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-
-        (baseType1.typeConstructor, baseType2.typeConstructor) match {
-          case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
-            TypeError.PossibleCheckedTypeCast(expected, actual, renv, loc)
-          case _ =>
-            TypeError.UnexpectedType(baseType1, baseType2, renv, baseType2.loc)
+      case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
+        val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown), SourceLocation.Unknown)
+        if (unifiesWith(expected, upcast, renv, LevelEnv.Unleveled, ListMap.empty)) { // TODO level env in error // TODO eqenv?
+          TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
+        } else {
+          TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
         }
       case e => e
     }
