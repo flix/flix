@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
 
@@ -58,6 +58,23 @@ object CodeActionProvider {
 
     case RedundancyError.UnusedVarSym(sym) if onSameLine(range, sym.loc) =>
       mkUnusedVarCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedDefSym(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedDefCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedFormalParam(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedParamCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedTypeParam(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedTypeParamCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedEffectSym(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedEffectCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedEnumTag(_, caseSym) if onSameLine(range, caseSym.loc) =>
+      mkUnusedEnumTagCodeAction(caseSym, uri) :: Nil
+
+    case TypeError.MissingEq(tpe, _, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingEq(tpe, uri)
+    case TypeError.MissingOrder(tpe, _, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingOrder(tpe, uri)
+    case TypeError.MissingToString(tpe, _, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingToString(tpe, uri)
 
     case _ => Nil
   }
@@ -188,13 +205,74 @@ object CodeActionProvider {
     *
     * where `abc` is unused this code action proposes to replace it by `_abc`.
     */
-  private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction = CodeAction(
-    title = s"Prefix unused variable with underscore",
+  private def mkUnusedVarCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused variable with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused function by an underscore.
+    */
+  private def mkUnusedDefCodeAction(sym: Symbol.DefnSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused function with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused formal parameter by an underscore.
+    */
+  private def mkUnusedParamCodeAction(sym: Symbol.VarSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused parameter with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused type parameter by an underscore.
+    */
+  private def mkUnusedTypeParamCodeAction(sym: Name.Ident, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused type parameter with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused effect by an underscore.
+    */
+  private def mkUnusedEffectCodeAction(sym: Symbol.EffectSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      "Prefix unused effect with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused enum case by an underscore.
+    */
+  private def mkUnusedEnumTagCodeAction(sym: Symbol.CaseSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      s"Prefix unused case with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Internal helper function for all `mkUnusedXCodeAction`.
+    * Returns a code action that proposes to insert an underscore at `beginPos`.
+    */
+  private def mkPrefixWithUnderscore(title: String, beginPos: Position, uri: String): CodeAction = CodeAction(
+    title,
     kind = CodeActionKind.QuickFix,
     edit = Some(WorkspaceEdit(
       Map(uri -> List(TextEdit(
-        Range(Position.fromBegin(sym.loc), Position.fromBegin(sym.loc)),
-        s"_"
+        Range(beginPos, beginPos),
+        "_"
       )))
     )),
     command = None
@@ -229,6 +307,44 @@ object CodeActionProvider {
     )),
     command = None
   )
+
+  /**
+    * Returns a quickfix code action to derive the `Eq` type class for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissingEq(tpe: Type, uri: String): Option[CodeAction] =
+    mkDeriveMissing(tpe, "Eq", uri)
+
+  /**
+    * Returns a quickfix code action to derive the `Order` type class for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissingOrder(tpe: Type, uri: String): Option[CodeAction] =
+    mkDeriveMissing(tpe, "Order", uri)
+
+  /**
+    * Returns a quickfix code action to derive the `ToString` type class for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissingToString(tpe: Type, uri: String): Option[CodeAction] =
+    mkDeriveMissing(tpe, "ToString", uri)
+
+  /**
+    * Internal helper function for all `mkDeriveMissingX`.
+    * Returns a quickfix code action to derive the given type class `clazz` for the given type `tpe` if it is an enum.
+    */
+  private def mkDeriveMissing(tpe: Type, clazz: String, uri: String): Option[CodeAction] = tpe.typeConstructor match {
+    case Some(TypeConstructor.Enum(sym, _)) =>
+      Some(CodeAction(
+        title = s"Derive $clazz",
+        kind = CodeActionKind.QuickFix,
+        edit = Some(WorkspaceEdit(
+          Map(uri -> List(TextEdit(
+            Range(Position.fromEnd(sym.loc), Position.fromEnd(sym.loc)),
+            s" with $clazz"
+          )))
+        )),
+        command = None
+      ))
+    case _ => None
+  }
 
   // TODO: We should only offer to derive type classes which have not already been derived.
 
