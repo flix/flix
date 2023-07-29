@@ -581,7 +581,7 @@ object PatternExhaustiveness {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, _, numArgs, _) => numArgs
-    case TyCon.Record(fields, tail) => if (tail.isEmpty) fields.length else fields.length + 1
+    case TyCon.Record(fields, tail) => fields.length
   }
 
   /**
@@ -670,6 +670,7 @@ object PatternExhaustiveness {
     case (TyCon.Enum(n1, s1, _, _), TyCon.Enum(n2, s2, _, _)) => n1 == n2 && s1 == s2
     // Everything else is the same constructor if they are the same type
     case (a: TyCon.Tuple, b: TyCon.Tuple) => true
+    case (a: TyCon.Record, b: TyCon.Record) => true
     case (a, b) => a == b;
   }
 
