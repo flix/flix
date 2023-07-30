@@ -24,17 +24,18 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 object Parser2 {
 
-  def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, UnstructuredTree.Tree], CompilationMessage] = {
-    // Parse each source file in parallel.
-    val results = ParOps.parMap(root) {
-      case (src, tokens) => mapN(parse(tokens))({
-        case trees => src -> trees
-      })
-    }
+  def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, UnstructuredTree.Tree], CompilationMessage] =
+    flix.phase("Parser2") {
+      // Parse each source file in parallel.
+      val results = ParOps.parMap(root) {
+        case (src, tokens) => mapN(parse(tokens))({
+          case trees => src -> trees
+        })
+      }
 
-    // Construct a map from each source to its tokens.
-    mapN(sequence(results))(_.toMap)
-  }
+      // Construct a map from each source to its tokens.
+      mapN(sequence(results))(_.toMap)
+    }
 
   private def parse(ts: Array[Token]): Validation[UnstructuredTree.Tree, CompilationMessage] = {
     // TODO: PARSER2

@@ -25,17 +25,18 @@ import scala.collection.mutable
 
 object Lexer {
 
-  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
-    // Lex each source file in parallel.
-    val results = ParOps.parMap(root.sources) {
-      case (src, _) => mapN(lex(src))({
-        case tokens => src -> tokens
-      })
-    }
+  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] =
+    flix.phase("Lexer") {
+      // Lex each source file in parallel.
+      val results = ParOps.parMap(root.sources) {
+        case (src, _) => mapN(lex(src))({
+          case tokens => src -> tokens
+        })
+      }
 
-    // Construct a map from each source to its tokens.
-    mapN(sequence(results))(_.toMap)
-  }
+      // Construct a map from each source to its tokens.
+      mapN(sequence(results))(_.toMap)
+    }
 
   private def lex(s: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     // TODO: LEXER
