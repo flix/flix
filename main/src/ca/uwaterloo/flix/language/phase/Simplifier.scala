@@ -453,6 +453,27 @@ object Simplifier {
           elms.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
               val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
+              // TODO: Do not generate indexExp
+              val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), pat.tpe, Pure, loc)
+              SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
+          }
+
+        /**
+          * Matching a record may succeed or fail.
+          *
+          * We generate a fresh variable and let-binding for each component of the
+          * record (field or extension) and then we recurse on the nested patterns
+          * and freshly generated variables.
+          */
+        case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
+          val fieldPats = pats.map(_.pat)
+          val tailPat = pat.toList
+          val allPats = fieldPats ::: tailPat
+          val freshVars = allPats.map(_ => Symbol.freshVarSym("innerElm" + Flix.Delimiter, BoundBy.Let, loc))
+          val zero = patternMatchList(allPats ::: ps, freshVars ::: vs, guard, succ, fail)
+          allPats.zip(freshVars).zipWithIndex.foldRight(zero) {
+            case (((pat, name), idx), exp) =>
+              val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
               val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), pat.tpe, Pure, loc)
               SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
           }
