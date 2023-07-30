@@ -37,7 +37,7 @@ object Parser {
   def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
     flix.phase("Parser") {
 
-      if (flix.options.xlexer) {
+      if (flix.options.xparser) {
         // TODO: LEXER / PARSER2
         val res = flatMapN(Lexer.run(root))(tokens => Parser2.run(tokens))
         res match {

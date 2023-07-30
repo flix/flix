@@ -58,7 +58,7 @@ object Options {
     xnoqmc = false,
     xflexibleregions = false,
     xsummary = false,
-    xlexer = false,
+    xparser = false,
   )
 
   /**
@@ -110,7 +110,7 @@ object Options {
   * @param xstrictmono         enables strict monomorphization.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
-  * @param xlexer              enables new lexer.
+  * @param xparser             enables new lexer and parser.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -145,7 +145,7 @@ case class Options(lib: LibLevel,
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
                    xsummary: Boolean,
-                   xlexer: Boolean
+                   xparser: Boolean
                   )
 
 /**

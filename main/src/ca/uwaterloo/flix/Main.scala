@@ -116,7 +116,7 @@ object Main {
       xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary,
-      xlexer = cmdOpts.xlexer
+      xparser = cmdOpts.xparser
     )
 
     // Don't use progress bar if benchmarking.
@@ -312,7 +312,7 @@ object Main {
                      xprintboolunif: Boolean = false,
                      xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
-                     xlexer: Boolean = false,
+                     xparser: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -535,9 +535,9 @@ object Main {
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
-      // Xlexer
-      opt[Unit]("Xlexer").action((_, c) => c.copy(xlexer = true)).
-        text("[experimental] enables new experimental lexer.")
+      // Xparser
+      opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
+        text("[experimental] enables new experimental lexer and parser.")
 
       note("")
 
