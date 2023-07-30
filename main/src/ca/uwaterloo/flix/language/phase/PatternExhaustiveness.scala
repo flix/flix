@@ -541,7 +541,7 @@ object PatternExhaustiveness {
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other enums
       case TyCon.Enum(_, sym, _, _) => {
-        root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpe), List.empty[TyCon]))
+        root.enums(sym).cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpe), List.empty[TyCon]))
       }.toList ::: xs
 
       /* For numeric types, we consider them as "infinite" types union
