@@ -23,8 +23,10 @@ object TokenKind {
 
   case object RParen extends TokenKind
 
-  case object ErrorToken extends TokenKind
-
   // TODO: LEXER
+
+  case object Eof extends TokenKind
+
+  case object Err extends TokenKind
 
 }

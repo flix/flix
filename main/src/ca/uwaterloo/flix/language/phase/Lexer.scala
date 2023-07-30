@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, ReadAst, Token}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.collection.mutable
+
 object Lexer {
 
   def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
@@ -37,7 +39,29 @@ object Lexer {
 
   private def lex(s: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     // TODO: LEXER
+    //    implicit val s = new State()
+    //    while (!isAtEnd()) {
+    //      s.start = s.current
+    //      scanToken()
+    //    }
+    //    s.tokens += Token(TokenKind.EofToken, "<eof>")
+
     Array.empty[Token].toSuccess
+  }
+
+  private def advance()(implicit s: State): Char = ???
+
+  private def isAtEnd()(implicit s: State): Boolean = ???
+
+  private def scanToken()(implicit s: State): Unit = ???
+
+  private def addToken(token: Token)(implicit s: State): Unit = ???
+
+  private class State {
+    var start: Int = 0
+    var current: Int = 0
+    var line: Int = 0
+    var tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
   }
 
 }
