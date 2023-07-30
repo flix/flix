@@ -435,6 +435,10 @@ object PatternExhaustiveness {
         } else {
           acc
         }
+      case TypedAst.Pattern.Record(pats, optPat, _, _) => ctor match {
+        case TyCon.Record(_, _) => (pats.map(_.pat) ::: optPat.toList ::: pat.tail) :: acc
+        case _ => acc
+      }
       // Also handle the non tag constructors
       case p =>
         if (patToCtor(p) == ctor) {
@@ -532,6 +536,7 @@ object PatternExhaustiveness {
       case TyCon.True => TyCon.True :: TyCon.False :: xs
       case TyCon.False => TyCon.True :: TyCon.False :: xs
       case a: TyCon.Tuple => a :: xs
+      case a: TyCon.Record => a :: xs
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other enums
