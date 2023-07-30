@@ -36,6 +36,20 @@ object Parser {
     */
   def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
     flix.phase("Parser") {
+
+      if (flix.options.xlexer) {
+        // TODO: LEXER / PARSER2
+        val res = flatMapN(Lexer.run(root))(tokens => Parser2.run(tokens))
+        res match {
+          case Validation.Success(tree) =>
+            println(tree.values)
+          case Validation.SoftFailure(_, errors) =>
+            errors.foreach(e => println(e.message(flix.getFormatter)))
+          case Validation.Failure(errors) =>
+            errors.foreach(e => println(e.message(flix.getFormatter)))
+        }
+      }
+
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
 

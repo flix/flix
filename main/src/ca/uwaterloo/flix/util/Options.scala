@@ -57,7 +57,8 @@ object Options {
     xprintboolunif = false,
     xnoqmc = false,
     xflexibleregions = false,
-    xsummary = false
+    xsummary = false,
+    xlexer = false,
   )
 
   /**
@@ -107,8 +108,9 @@ object Options {
   * @param xstatistics         enables statistics collection.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono         enables strict monomorphization.
-  * @param xprintphase     prints the chosen phase ASTs to the build folder.
+  * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
+  * @param xlexer              enables new lexer.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -142,7 +144,8 @@ case class Options(lib: LibLevel,
                    xprintphase: Set[String],
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
-                   xsummary: Boolean
+                   xsummary: Boolean,
+                   xlexer: Boolean
                   )
 
 /**
