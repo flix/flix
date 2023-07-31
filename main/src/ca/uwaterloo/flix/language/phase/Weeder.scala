@@ -2418,29 +2418,28 @@ object Weeder {
 
       case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
         val loc = mkSL(sp1, sp2)
-        (fields, rest) match {
-          case (Nil, Some(r)) =>
+        val fsVal = traverse(fields) {
+          case ParsedAst.Pattern.RecordFieldPattern(sp11, field, tpe, pat, sp22) =>
+            mapN(visitName(field), traverseOpt(tpe)(visitType), traverseOpt(pat)(visit)) {
+              case (_, t, p) =>
+                val f = Name.mkField(field)
+                val patLoc = mkSL(sp11, sp22)
+                WeededAst.Pattern.Record.RecordFieldPattern(f, t, p, patLoc)
+            }
+        }
+        val rsVal = flatMapN(traverseOpt(rest)(visit)) {
+          case Some(r) if fields.isEmpty =>
             // Bad pattern { | r }
-            WeederError.EmptyRecordExtensionPattern(mkSL(r.sp1, r.sp2)).toFailure
-          case _ =>
-            val fsVal = traverse(fields) {
-              case ParsedAst.Pattern.RecordFieldPattern(sp11, field, tpe, pat, sp22) =>
-                mapN(visitName(field), traverseOpt(tpe)(visitType), traverseOpt(pat)(visit)) {
-                  case (_, t, p) =>
-                    val f = Name.mkField(field)
-                    val patLoc = mkSL(sp11, sp22)
-                    WeededAst.Pattern.Record.RecordFieldPattern(f, t, p, patLoc)
-                }
-            }
-            val rsVal = flatMapN(traverseOpt(rest)(visit)) {
-              case r@None => r.toSuccess
-              case r@Some(Pattern.Var(_, _)) => r.toSuccess
-              case r@Some(Pattern.Wild(_)) => r.toSuccess
-              case Some(ext) => WeederError.IllegalRecordExtensionPattern(ext.loc).toFailure
-            }
-            mapN(fsVal, rsVal) {
-              case (f, r) => WeededAst.Pattern.Record(f, r, loc)
-            }
+            WeederError.EmptyRecordExtensionPattern(r.loc).toFailure
+          case r@None => r.toSuccess
+          case r@Some(Pattern.Var(_, _)) => r.toSuccess
+          case r@Some(Pattern.Wild(_)) => r.toSuccess
+          case Some(ext) =>
+            // Bad pattern e.g., { fields... | (1, 2, 3) }
+            WeederError.IllegalRecordExtensionPattern(ext.loc).toFailure
+        }
+        mapN(fsVal, rsVal) {
+          case (f, r) => WeededAst.Pattern.Record(f, r, loc)
         }
     }
 

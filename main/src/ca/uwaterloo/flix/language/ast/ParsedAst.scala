@@ -1265,8 +1265,26 @@ object ParsedAst {
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
-    case class Record(sp1: SourcePosition, fields: Seq[RecordFieldPattern], rest: Option[ParsedAst.Pattern.Var], sp2: SourcePosition) extends ParsedAst.Pattern
+    /**
+      * Record Pattern
+      *
+      * @param sp1    the position of the first character in the pattern.
+      * @param fields list of [[RecordFieldPattern]].
+      * @param rest   optional record extension pattern `| r`.
+      * @param sp2    the position of the last character in the pattern.
+      */
+    case class Record(sp1: SourcePosition, fields: Seq[RecordFieldPattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
+    /**
+      * Represents a pattern for a field of a record.
+      * `field {: type} {= pattern}`
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param field the field the pattern refers to.
+      * @param tpe   optional type ascription of the field.
+      * @param pat   optional pattern.
+      * @param sp2   the position of the last character in the pattern.
+      */
     case class RecordFieldPattern(sp1: SourcePosition, field: Name.Ident, tpe: Option[Type], pat: Option[Pattern], sp2: SourcePosition)
 
   }
