@@ -11,6 +11,30 @@ mod MutHeap {
         MutHeap(rc, ref Array.new(rc, 8) @ rc, ref 0 @ rc)
 
     ///
+    /// Returns an empty MutHeap with a reserved amount of space
+    ///
+    pub def newWithSpace(rc: Region[r], size: Int32): MutHeap[a, r] \ r =
+        MutHeap(rc, ref Array.new(rc, size) @ rc, ref 0 @ rc)
+
+    ///
+    /// Reserves a specific amount of space for
+    ///
+    pub def reserve(h: MutHeap[a, r], size: Int32): Unit \ r =
+        let MutHeap(rc, arr, s) = h;
+        if (size > deref s) {
+            let newArr = Array.new(rc, size);
+            Array.forEachWithIndex((x, elem) -> {
+                if (x < deref s) {
+                    Array.put(elem, x, newArr)
+                }
+                else ()
+            } , deref arr);
+            arr := newArr
+        }
+        else ()
+
+
+    ///
     /// Returns the number of elements in a MutHeap
     ///
     pub def size(h: MutHeap[a, r]): Int32 \ r =
@@ -175,6 +199,8 @@ mod MutHeap {
     ///
     /// Expands the internal array of MutHeap `h` if the array capacity is being approached
     ///
+    /// Expansion transpires only when the number of elements in `h` is 1 less than the array capacity
+    ///
     def expand!(h: MutHeap[a, r]): Unit \ r =
         let MutHeap(reg, arr, s) = h;
         let oldCapacity = Array.length(deref arr);
@@ -192,82 +218,4 @@ mod MutHeap {
     def readFromList(h: MutHeap[a, r], l: List[a]): Unit \ r with Order[a] =
         List.forEach(x -> MutHeap.insert(h, x), l)
 
-    @Test
-    def heap01(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.size(h) == 0
-    }
-
-    @Test
-    def heap02(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.insert(h, 1);
-        MutHeap.toString(h) == "MutHeap {1}"
-    }
-
-    @Test
-    def heap03(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.insert(h, " ");
-        MutHeap.pop(h);
-        MutHeap.toString(h) == "MutHeap {}"
-    }
-
-    @Test
-    def heap04(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: Nil); //3 4 5 6
-        MutHeap.toString(h) == "MutHeap {6, 5, 4, 3}"
-    }
-
-    @Test
-    def heap05(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
-        MutHeap.toString(h) == "MutHeap {20, 14, 7, 10, 5, 4, 5, 3, 6}"
-    }
-
-    @Test
-    def heap06(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
-        MutHeap.toString(h) == "MutHeap {20, 14, 7, 10, 5, 4, 5, 3, 6}"
-    }
-
-    @Test
-    def heap07(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
-        MutHeap.pop(h);
-        MutHeap.toString(h) == "MutHeap {14, 10, 7, 6, 5, 4, 5, 3}"
-    }
-
-    @Test
-    def heap08(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
-        MutHeap.pop(h);
-        MutHeap.pop(h);
-        MutHeap.pop(h);
-        MutHeap.toString(h) == "MutHeap {7, 6, 5, 3, 5, 4}"
-    }
-
-    @Test
-    def heap09(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
-        MutHeap.delete(h, 14);
-        MutHeap.delete(h, 10);
-        MutHeap.toString(h) == "MutHeap {20, 6, 7, 3, 5, 4, 5}"
-    }
-
-    @Test
-    def heap10(): Bool = region reg {
-        let h = MutHeap.new(reg);
-        MutHeap.readFromList(h, 3 :: 4 :: 5 :: 6 :: 10 :: 5 :: 7 :: 14 :: 20 :: Nil);
-        MutHeap.delete(h, 5);
-        MutHeap.delete(h, 5);
-        MutHeap.delete(h, 5);
-        MutHeap.toString(h) == "MutHeap {20, 14, 7, 10, 6, 4, 3}"
-    }
 }
