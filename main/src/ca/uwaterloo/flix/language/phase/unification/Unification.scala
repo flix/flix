@@ -528,7 +528,7 @@ object Unification {
         // check that all econstrs hold under the environment
         econstrs.forall {
           econstr =>
-            EqualityEnvironment.entail(Nil, econstr, eqEnv) match {
+            EqualityEnvironment.entail(Nil, econstr, renv, eqEnv) match {
               case Validation.Success(_) => true
               case Validation.Failure(_) => false
               case Validation.SoftFailure(_, _) => false
