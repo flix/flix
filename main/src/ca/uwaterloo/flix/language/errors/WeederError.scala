@@ -1148,4 +1148,20 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = None
   }
+
+  case class IllegalRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "An extension can only be a variable or a wildcard."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid record extension pattern.
+         |
+         |${code(loc, s"An extension can only be a variable or a wildcard.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 }
