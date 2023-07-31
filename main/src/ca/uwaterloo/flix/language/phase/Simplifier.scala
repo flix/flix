@@ -436,7 +436,8 @@ object Simplifier {
           val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val purity1 = inner.purity
-          val consequent = SimplifiedAst.Expr.Let(freshVar, SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym), List(varExp), pat.tpe, purity1, loc), inner, succ.tpe, purity1, loc)
+          val untagExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym), List(varExp), pat.tpe, purity1, loc)
+          val consequent = SimplifiedAst.Expr.Let(freshVar, untagExp, inner, succ.tpe, purity1, loc)
           val purity2 = combine(cond.purity, consequent.purity, fail.purity)
           SimplifiedAst.Expr.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
@@ -464,19 +465,17 @@ object Simplifier {
           * record (field or extension) and then we recurse on the nested patterns
           * and freshly generated variables.
           */
-        case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
+        case (LoweredAst.Pattern.Record(pats, _, tpe, loc) :: ps, v :: vs) =>
+          // We drop the optional record extension pattern `pat` since
+          // the user should not have access to it as a variable
+          val freshVars = pats.map(_ => Symbol.freshVarSym("innerField" + Flix.Delimiter, BoundBy.Let, loc))
           val fieldPats = pats.map(_.pat)
-          val tailPat = pat.toList
-          val allPats = fieldPats ::: tailPat
-          val freshVars = allPats.map(_ => Symbol.freshVarSym("innerElm" + Flix.Delimiter, BoundBy.Let, loc))
-          val zero = patternMatchList(allPats ::: ps, freshVars ::: vs, guard, succ, fail)
-          allPats.zip(freshVars).zipWithIndex.foldRight(zero) {
-            case (((pat, name), idx), exp) =>
+          val zero = patternMatchList(fieldPats ::: ps, freshVars ::: vs, guard, succ, fail)
+          pats.zip(freshVars).foldRight(zero) {
+            case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), exp) =>
               val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
-              // TODO: Do not generate indexExp
-
-              val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), pat.tpe, Pure, loc)
-              SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
+              val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(varExp), pat.tpe, Pure, loc1)
+              SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc)
           }
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
