@@ -2418,20 +2418,25 @@ object Weeder {
 
       case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
         val loc = mkSL(sp1, sp2)
-        val fsVal = traverse(fields) {
-          case ParsedAst.Pattern.RecordFieldPattern(sp11, field, tpe, pat, sp22) =>
-            mapN(visitName(field), traverseOpt(tpe)(visitType), traverseOpt(pat)(visit)) {
-              case (_, t, p) =>
-                val f = Name.mkField(field)
-                val patLoc = mkSL(sp11, sp22)
-                WeededAst.Pattern.Record.RecordFieldPattern(f, t, p, patLoc)
+        (fields, rest) match {
+          case (Nil, Some(r)) =>
+            // Bad pattern { | r }
+            WeederError.EmptyRecordExtensionPattern(mkSL(r.sp1, r.sp2)).toFailure
+          case _ =>
+            val fsVal = traverse(fields) {
+              case ParsedAst.Pattern.RecordFieldPattern(sp11, field, tpe, pat, sp22) =>
+                mapN(visitName(field), traverseOpt(tpe)(visitType), traverseOpt(pat)(visit)) {
+                  case (_, t, p) =>
+                    val f = Name.mkField(field)
+                    val patLoc = mkSL(sp11, sp22)
+                    WeededAst.Pattern.Record.RecordFieldPattern(f, t, p, patLoc)
+                }
+            }
+            val rsVal = traverseOpt(rest)(visit)
+            mapN(fsVal, rsVal) {
+              case (f, r) => WeededAst.Pattern.Record(f, r, loc)
             }
         }
-        val rsVal = traverseOpt(rest)(visit)
-        mapN(fsVal, rsVal) {
-          case (f, r) => WeededAst.Pattern.Record(f, r, loc)
-        }
-
     }
 
     visit(pattern)
