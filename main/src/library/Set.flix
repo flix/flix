@@ -91,7 +91,9 @@ instance Collectable[Set] {
     pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] = Iterator.toSet(iter)
 }
 
-instance Iterable[Set] {
+instance Iterable[Set[a]] {
+    type Elem = a
+    type Effect = Pure
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 

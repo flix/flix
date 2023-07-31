@@ -149,7 +149,9 @@ instance Monoid[Option[a]] with Monoid[a] {
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
-instance Iterable[Option] {
+instance Iterable[Option[a]] {
+    type Elem = a
+    type Effect = Pure
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
 }
 

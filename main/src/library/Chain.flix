@@ -114,7 +114,9 @@ instance Collectable[Chain] {
     pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } with Order[a] = Iterator.toChain(iter)
 }
 
-instance Iterable[Chain] {
+instance Iterable[Chain[a]] {
+    type Elem = a
+    type Effect = Pure
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 

@@ -15,19 +15,22 @@
  */
 
 ///
-/// A type class for immutable data structures that can be iterated.
+/// A type class for data structures that can be iterated.
 ///
-pub class Iterable[t: Type -> Type] {
+pub class Iterable[t: Type] {
+
+    type Effect: Eff
+    type Elem: Type
 
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(rc: Region[r], t: t[a]): Iterator[a, r, r] \ r
+    pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elem[t], Iterable.Effect[t] + r, r] \ r
 
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], t: t[a]): Iterator[(Int32, a), r, r] \ r =
+    pub def enumerator(rc: Region[r], t: t): Iterator[(Int32, Iterable.Elem[t]), Iterable.Effect[t] + r, r] \ r =
         Iterable.iterator(rc, t) |> Iterator.zipWithIndex
 
 }

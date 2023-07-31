@@ -119,7 +119,9 @@ instance Monoid[DelayList[a]] {
     pub def empty(): DelayList[a] = DelayList.ENil
 }
 
-instance Iterable[DelayList] {
+instance Iterable[DelayList[a]] {
+    type Elem = a
+    type Effect = Pure
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 

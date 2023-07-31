@@ -97,7 +97,9 @@ instance Collectable[Vector] {
     pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ { r, ef } with Order[a] = Iterator.toVector(iter)
 }
 
-instance Iterable[Vector] {
+instance Iterable[Vector[a]] {
+    type Elem = a
+    type Effect = Pure
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r = Vector.iterator(rc, v)
 }
 
