@@ -243,5 +243,10 @@ class TestMain extends AnyFunSuite {
     assert(opts.xsummary)
   }
 
+  test("--Xparser") {
+    val args = Array("--Xparser")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xparser)
+  }
 
 }
