@@ -453,7 +453,6 @@ object Simplifier {
           elms.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
               val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
-              // TODO: Do not generate indexExp
               val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), pat.tpe, Pure, loc)
               SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
           }
@@ -474,6 +473,8 @@ object Simplifier {
           allPats.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
               val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
+              // TODO: Do not generate indexExp
+
               val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), pat.tpe, Pure, loc)
               SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
           }
