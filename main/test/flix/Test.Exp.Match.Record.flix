@@ -64,4 +64,9 @@ mod Test.Exp.Match.Record {
         case { x = _ } => false
     }
 
+    @test
+    def testMatchRecord08(): Bool = match { x = 1 } {
+        case { x | r } => x == 1
+    }
+
 }
