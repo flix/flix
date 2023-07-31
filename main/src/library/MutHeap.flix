@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Xavier deSouza
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 pub enum MutHeap[a: Type, r: Region] {
     case MutHeap(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
@@ -57,17 +73,20 @@ mod MutHeap {
         else Some(Array.get(0, deref arr))
 
     ///
-    /// Removes the top element of a MutHeap
+    /// Removes and returns the top element of a MutHeap
     ///
-    pub def pop(h: MutHeap[a, r]): Unit \ r with Order[a] =
+    pub def pop(h: MutHeap[a, r]): Option[a] \ r with Order[a] =
         let MutHeap(_, _, s) = h;
         if (deref s > 0) {
             match peek(h) {
-                case Some(elem) => delete(h, elem)
-                case _          => ()
+                case Some(elem) => {
+                    delete(h, elem);
+                    Some(elem)
+                }
+                case _          => None
             }
         }
-        else ()
+        else None
 
     ///
     /// Inserts an element into a MutHeap
@@ -215,7 +234,7 @@ mod MutHeap {
     ///
     /// Inserts each element of a list into the MutHeap `h`
     ///
-    def readFromList(h: MutHeap[a, r], l: List[a]): Unit \ r with Order[a] =
+    pub def readFromList(h: MutHeap[a, r], l: List[a]): Unit \ r with Order[a] =
         List.forEach(x -> MutHeap.insert(h, x), l)
 
 }

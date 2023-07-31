@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Magnus Madsen, Stephen Tetley
+ * Copyright 2023 Xavier deSouza
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ mod TestMutHeap {
 
     @Test
     def testNew01(): Bool = region rc {
-        let MutHeap(_, arr, _) = MutHeap.new(rc);
+        let MutHeap.MutHeap(_, arr, _) = MutHeap.new(rc);
         Array.length(deref arr) == 8
     }
 
     @Test
     def testNew02(): Bool = region rc {
-        let MutHeap(_, _, s) = MutHeap.new(rc);
+        let MutHeap.MutHeap(_, _, s) = MutHeap.new(rc);
         deref s == 0
     }
 
@@ -130,6 +130,12 @@ mod TestMutHeap {
 
     @Test
     def testPop02(): Bool = region rc {
+        let h = MutHeap.new(rc) : MutHeap[Int32, rc];
+        MutHeap.pop(h) == None
+    }
+
+    @Test
+    def testPop03(): Bool = region rc {
         let h = MutHeap.new(rc);
         MutHeap.readFromList(h, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
         MutHeap.pop(h);
@@ -138,7 +144,15 @@ mod TestMutHeap {
     }
 
     @Test
-    def testPop03(): Bool = region rc {
+    def testPop04(): Bool = region rc {
+        let h = MutHeap.new(rc);
+        MutHeap.readFromList(h, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
+        MutHeap.pop(h);
+        MutHeap.pop(h) == Some(4)
+    }
+
+    @Test
+    def testPop05(): Bool = region rc {
         let h = MutHeap.new(rc);
         MutHeap.readFromList(h, 1 :: 2 :: 3 :: Nil);
         MutHeap.pop(h);
