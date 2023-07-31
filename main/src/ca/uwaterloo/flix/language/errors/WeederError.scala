@@ -709,8 +709,8 @@ object WeederError {
   /**
     * An error raised to indicate that the case of an alias does not match the case of the original value.
     *
-    * @param patt     the invalid regular expression
-    * @param loc      the location where the error occurred
+    * @param patt the invalid regular expression
+    * @param loc  the location where the error occurred
     */
   case class InvalidRegularExpression(patt: String, err: String, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
@@ -1126,6 +1126,22 @@ object WeederError {
          |>> Illegal effect set member.
          |
          |${code(loc, s"Effect sets may only contain variables and constants.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "A record pattern must define at least one field if it is open for extension."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid record pattern.
+         |
+         |${code(loc, s"A record pattern must define at least one field if it is open for extension.")}
          |
          |""".stripMargin
     }
