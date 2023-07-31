@@ -2432,7 +2432,12 @@ object Weeder {
                     WeededAst.Pattern.Record.RecordFieldPattern(f, t, p, patLoc)
                 }
             }
-            val rsVal = traverseOpt(rest)(visit)
+            val rsVal = flatMapN(traverseOpt(rest)(visit)) {
+              case r@None => r.toSuccess
+              case r@Some(Pattern.Var(_, _)) => r.toSuccess
+              case r@Some(Pattern.Wild(_)) => r.toSuccess
+              case Some(ext) => WeederError.IllegalRecordExtensionPattern(ext.loc).toFailure
+            }
             mapN(fsVal, rsVal) {
               case (f, r) => WeededAst.Pattern.Record(f, r, loc)
             }
