@@ -398,6 +398,10 @@ object Typer {
                           else
                             TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                       }
+                    case UnificationError.UnsupportedEquality(tpe1, tpe2) =>
+                      TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(tpe1, tpe2), loc)
+                    case UnificationError.IrreducibleAssocType(sym, t) =>
+                      TypeError.IrreducibleAssocType(sym, t, loc)
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {

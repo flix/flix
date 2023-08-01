@@ -1823,4 +1823,32 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedType](result)
   }
+
+  test("TestAssocType.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |def g(x: a): String with C[a] = C.f(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.IrreducibleAssocType](result)
+  }
+
+  test("TestAssocType.02") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |    pub def f(x: a): C.T[a]
+        |}
+        |
+        |def g(x: a): String with C[a] where C.T[a] ~ Int32 = C.f(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnsupportedEquality](result)
+  }
 }
