@@ -57,4 +57,14 @@ case class MultiMap[K, V](m: Map[K, Set[V]]) {
     }
   }
 
+  /**
+    * Returns an iterator over the entries in the multimap.
+    */
+  def entries: List[(K, V)] = {
+    for {
+      (k, vs) <- m.toList
+      v <- vs
+    } yield (k, v)
+  }
+
 }

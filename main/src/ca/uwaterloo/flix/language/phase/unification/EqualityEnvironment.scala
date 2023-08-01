@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Bimap, ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object EqualityEnvironment {
@@ -40,10 +40,11 @@ object EqualityEnvironment {
     for {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
-      res <- Unification.unifyTypes(res1, res2, renv, LevelEnv.Top) match {
-        case Result.Ok((subst, Nil)) => Result.Ok(subst): Result[Substitution, UnificationError]
-        case Result.Ok((_, _ :: _)) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
-        case Result.Err(_) => Result.Err(UnificationError.UnsupportedEquality(res1, res2): UnificationError): Result[Substitution, UnificationError]
+      // after reduction, the only associated types that remain are over rigid variables T[α]
+      // (non-rigid variables would cause an instance error)
+      res <- unifyHard(res1, res2, renv, LevelEnv.Top) match {
+        case Result.Ok(subst) => Result.Ok(subst): Result[Substitution, UnificationError]
+        case Result.Err(_) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
       }
       // TODO ASSOC-TYPES weird typing hack
     } yield res
@@ -64,6 +65,44 @@ object EqualityEnvironment {
   def broaden(econstr: Ast.EqualityConstraint): Ast.BroadEqualityConstraint = econstr match {
     case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
       Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, Kind.Wild, loc), tpe2)
+  }
+
+  // MATT docs
+  // MATT inline docs
+  private def unifyHard(tpe1: Type, tpe2: Type, renv0: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    val allAssocs = assocs(tpe1) ++ assocs(tpe2)
+
+    val env = allAssocs.foldLeft(Bimap.empty[RigidAssoc, Symbol.KindedTypeVarSym]) {
+      (acc, assoc) => acc + (assoc -> Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Wild, isRegion = false, SourceLocation.Unknown))
+    }
+
+    val subst = env.m1.foldLeft(AssocTypeSubstitution.empty) {
+      case (acc, (RigidAssoc(assocSym, varSym, _), freshVar)) => acc ++ AssocTypeSubstitution.singleton(assocSym, varSym, Type.Var(freshVar, SourceLocation.Unknown))
+    }
+
+    val unsubst = env.m2.foldLeft(Substitution.empty) {
+      case (acc, (freshVar, RigidAssoc(assocSym, varSym, kind))) => acc ++ Substitution.singleton(freshVar, Type.AssocType(Ast.AssocTypeConstructor(assocSym, SourceLocation.Unknown), Type.Var(varSym, SourceLocation.Unknown), kind, SourceLocation.Unknown))
+    }
+
+    val renv = env.m1.values.foldLeft(renv0)(_.markRigid(_))
+
+    val res = Unification.unifyTypes(subst(tpe1), subst(tpe2), renv, lenv)
+
+    res.map {
+      case (s, Nil) => unsubst @@ s
+      case (_, _ :: _) => throw InternalCompilerException("unexpected associated type", SourceLocation.Unknown)
+    }
+  }
+
+  private case class RigidAssoc(assocSym: Symbol.AssocTypeSym, varSym: Symbol.KindedTypeVarSym, kind: Kind)
+
+  private def assocs(tpe: Type): Set[RigidAssoc] = tpe match {
+    case Type.Var(_, _) => Set.empty
+    case Type.Cst(_, _) => Set.empty
+    case Type.Apply(tpe1, tpe2, _) => assocs(tpe1) ++ assocs(tpe2)
+    case Type.Alias(_, _, tpe, _) => assocs(tpe)
+    case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), Type.Var(varSym, _), kind, _) => Set(RigidAssoc(assocSym, varSym, kind))
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException("unexpected non-variable associated type", SourceLocation.Unknown)
   }
 
   /**
@@ -128,8 +167,13 @@ object EqualityEnvironment {
       case Type.AssocType(cst, arg0, kind, loc) =>
         for {
           arg <- visit(arg0)
-          res0 <- reduceAssocTypeStep(cst, arg, eqEnv)
-          res <- visit(res0)
+          // MATT ugly hack for testing
+          res <- reduceAssocTypeStep(cst, arg, eqEnv) match {
+            case Result.Ok(res0) => visit(res0): Result[Type, UnificationError]
+            case Result.Err(_) => Result.Ok(Type.AssocType(cst, arg, kind, loc)): Result[Type, UnificationError]
+          }
+//          res0 <- reduceAssocTypeStep(cst, arg, kind, eqEnv)
+//          res <- visit(res0)
         } yield res
     }
 
