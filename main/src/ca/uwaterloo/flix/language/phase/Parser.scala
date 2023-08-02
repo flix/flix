@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
+import org.parboiled2.support.hlist.HNil
 
 import scala.annotation.tailrec
 
@@ -292,7 +293,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optional(Types.Tuple) ~ ((optWS ~ SP ~ Derivations ~ SP) | (SP ~ push(Seq.empty[Name.QName]) ~ SP)) ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -321,7 +322,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("restrictable") ~ WS ~ keyword("enum") ~ WS ~ Names.Type ~ RestrictionParameter ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.RestrictableEnum
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("restrictable") ~ WS ~ keyword("enum") ~ WS ~ Names.Type ~ RestrictionParameter ~ TypeParams ~ optional(Types.Tuple) ~ ((optWS ~ SP ~ Derivations ~ SP) | (SP ~ push(Seq.empty[Name.QName]) ~ SP)) ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.RestrictableEnum
       }
     }
 
@@ -421,7 +422,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Derivations: Rule1[Seq[Name.QName]] = rule {
-      optWS ~ optional(keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
+      keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)
     }
 
   }

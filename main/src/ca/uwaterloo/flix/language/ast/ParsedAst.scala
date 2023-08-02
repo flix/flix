@@ -145,11 +145,13 @@ object ParsedAst {
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the enum.
       * @param tparams the type parameters.
+      * @param derSp1  the position of the first character of the derivations, e.g. `[w]ith X, Y, Z`
       * @param derives the derivations of the enum.
+      * @param derSp2  the position of the last character of the derivations, e.g. `with X, Y, [Z]`
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Seq[Name.QName], cases: Option[Seq[ParsedAst.Case]], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derSp1: SourcePosition, derives: Seq[Name.QName], derSp2: SourcePosition, cases: Option[Seq[ParsedAst.Case]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Restrictable Enum Declaration.
@@ -161,11 +163,13 @@ object ParsedAst {
       * @param ident   the name of the enum.
       * @param index   the type parameter the describes the restriction of tags.
       * @param tparams the type parameters.
+      * @param derSp1  the position of the first character of the derivations, e.g. `[w]ith X, Y, Z`
       * @param derives the derivations of the enum.
+      * @param derSp2  the position of the last character of the derivations, e.g. `with X, Y, [Z]`
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class RestrictableEnum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, index: ParsedAst.TypeParam, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Seq[Name.QName], cases: Option[Seq[ParsedAst.RestrictableCase]], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class RestrictableEnum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, index: ParsedAst.TypeParam, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derSp1: SourcePosition, derives: Seq[Name.QName], derSp2: SourcePosition, cases: Option[Seq[ParsedAst.RestrictableCase]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Type Alias Declaration.
