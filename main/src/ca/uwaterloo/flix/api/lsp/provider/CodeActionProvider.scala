@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
 
@@ -310,38 +310,36 @@ object CodeActionProvider {
   /**
     * Returns a quickfix code action to derive the `Eq` type class for the given type `tpe` if it is an enum.
     */
-  private def mkDeriveMissingEq(tpe: Type, uri: String): Option[CodeAction] =
+  private def mkDeriveMissingEq(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "Eq", uri)
 
   /**
     * Returns a quickfix code action to derive the `Order` type class for the given type `tpe` if it is an enum.
     */
-  private def mkDeriveMissingOrder(tpe: Type, uri: String): Option[CodeAction] =
+  private def mkDeriveMissingOrder(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "Order", uri)
 
   /**
     * Returns a quickfix code action to derive the `ToString` type class for the given type `tpe` if it is an enum.
     */
-  private def mkDeriveMissingToString(tpe: Type, uri: String): Option[CodeAction] =
+  private def mkDeriveMissingToString(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "ToString", uri)
 
   /**
     * Internal helper function for all `mkDeriveMissingX`.
-    * Returns a quickfix code action to derive the given type class `clazz` for the given type `tpe` if it is an enum.
+    * Returns a quickfix code action to derive the given type class `clazz`
+    * for the given type `tpe` if it is an enum in the root.
     */
-  private def mkDeriveMissing(tpe: Type, clazz: String, uri: String): Option[CodeAction] = tpe.typeConstructor match {
+  private def mkDeriveMissing(tpe: Type, clazz: String, uri: String)(implicit root: Root): Option[CodeAction] = tpe.typeConstructor match {
     case Some(TypeConstructor.Enum(sym, _)) =>
-      Some(CodeAction(
-        title = s"Derive $clazz",
-        kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(
-          Map(uri -> List(TextEdit(
-            Range(Position.fromEnd(sym.loc), Position.fromEnd(sym.loc)),
-            s" with $clazz"
-          )))
-        )),
-        command = None
-      ))
+      root.enums.get(sym).map { e =>
+        CodeAction(
+          title = s"Derive $clazz",
+          kind = CodeActionKind.QuickFix,
+          edit = Some(addDerivation(e, clazz, uri)),
+          command = None
+        )
+      }
     case _ => None
   }
 
@@ -375,14 +373,47 @@ object CodeActionProvider {
       CodeAction(
         title = s"Derive $clazz",
         kind = CodeActionKind.Refactor,
-        edit = Some(WorkspaceEdit(
-          Map(uri -> List(TextEdit(
-            Range(Position.fromEnd(e.sym.loc), Position.fromEnd(e.sym.loc)),
-            s" with $clazz"
-          )))
-        )),
+        edit = Some(addDerivation(e, clazz, uri)),
         command = None
       )
+    )
+  }
+
+  /**
+    * Returns a workspace edit that properly derives the given type class, `clazz`, for the enum, `e`.
+    *
+    * For example, if we have:
+    * {{{
+    *   enum Abc {}
+    * }}}
+    * we could derive the type class 'Eq' like so:
+    * {{{
+    *   enum Abc with Eq { }
+    * }}}
+    *
+    * Or if there are already other derivations present:
+    * {{{
+    *   enum Abc with ToString {}
+    * }}}
+    * it will be appended at the end:
+    * {{{
+    *   enum Abc with ToString, Eq { }
+    * }}}
+    */
+  private def addDerivation(e: TypedAst.Enum, clazz: String, uri: String): WorkspaceEdit = {
+    val (end, text) =
+      if (e.derives.isEmpty)
+        (Position.fromEnd(e.sym.loc), s" with $clazz")
+      else {
+        val ends = e.derives.map(d => Position.fromEnd(d.loc))
+        val end = ends.max
+        (end, s", $clazz")
+      }
+    WorkspaceEdit(
+      Map(uri -> List(TextEdit(
+        Range(end, end),
+        text
+      )))
     )
   }
 

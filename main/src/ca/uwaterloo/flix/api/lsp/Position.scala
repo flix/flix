@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s.JsonDSL._
 import org.json4s._
+import scala.math.Ordered.orderingToOrdered
 
 /**
   * Companion object for [[Position]].
@@ -64,6 +65,9 @@ object Position {
   * @param line      Line position in a document (zero-based).
   * @param character Character offset on a line in a document (zero-based).
   */
-case class Position(line: Int, character: Int) {
+case class Position(line: Int, character: Int) extends Ordered[Position] {
   def toJSON: JValue = ("line" -> line) ~ ("character" -> character)
+
+  override def compare(that: Position): Int =
+    (this.line, this.character) compare (that.line, that.character)
 }
