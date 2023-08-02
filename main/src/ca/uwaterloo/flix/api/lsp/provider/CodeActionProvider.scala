@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
 
@@ -88,8 +88,7 @@ object CodeActionProvider {
 
       case Some(entity) => entity match {
         case Entity.Enum(e) =>
-          val sym = e.sym
-          List(mkDeriveEq(sym, uri), mkDeriveOrder(sym, uri), mkDeriveToString(sym, uri))
+          List(mkDeriveEq(e, uri), mkDeriveOrder(e, uri), mkDeriveToString(e, uri)).flatten
         case _ =>
           Nil // No code actions.
       }
@@ -351,34 +350,41 @@ object CodeActionProvider {
   /**
     * Returns a code action to derive the `Eq` type class.
     */
-  private def mkDeriveEq(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Eq", uri)
+  private def mkDeriveEq(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Eq", uri)
 
   /**
     * Returns a code action to derive the `Order` type class.
     */
-  private def mkDeriveOrder(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "Order", uri)
+  private def mkDeriveOrder(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "Order", uri)
 
   /**
     * Returns a code action to derive the `ToString` type class.
     */
-  private def mkDeriveToString(sym: Symbol.EnumSym, uri: String): CodeAction = mkDerive(sym, "ToString", uri)
+  private def mkDeriveToString(e: TypedAst.Enum, uri: String): Option[CodeAction] = mkDerive(e, "ToString", uri)
 
   // TODO: Add derivation for the Hash and Sendable type classes.
 
   /**
-    * Returns a code action to derive the given type class `clazz` for the given enum symbol `sym`.
+    * Returns a code action to derive the given type class `clazz` for the given enum `e` if it isn't already.
+    * `None` otherwise.
     */
-  private def mkDerive(sym: Symbol.EnumSym, clazz: String, uri: String): CodeAction = CodeAction(
-    title = s"Derive $clazz",
-    kind = CodeActionKind.Refactor,
-    edit = Some(WorkspaceEdit(
-      Map(uri -> List(TextEdit(
-        Range(Position.fromEnd(sym.loc), Position.fromEnd(sym.loc)),
-        s" with $clazz"
-      )))
-    )),
-    command = None
-  )
+  private def mkDerive(e: TypedAst.Enum, clazz: String, uri: String): Option[CodeAction] = {
+    val alreadyDerived = e.derives.exists(d => d.clazz.name == clazz)
+    if (alreadyDerived) None
+    else Some(
+      CodeAction(
+        title = s"Derive $clazz",
+        kind = CodeActionKind.Refactor,
+        edit = Some(WorkspaceEdit(
+          Map(uri -> List(TextEdit(
+            Range(Position.fromEnd(e.sym.loc), Position.fromEnd(e.sym.loc)),
+            s" with $clazz"
+          )))
+        )),
+        command = None
+      )
+    )
+  }
 
   /**
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
