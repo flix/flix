@@ -42,7 +42,7 @@ object EqualityEnvironment {
       res2 <- reduceType(newTpe2, eqEnv)
       // after reduction, the only associated types that remain are over rigid variables T[α]
       // (non-rigid variables would cause an instance error)
-      res <- unifyHard(res1, res2, renv, LevelEnv.Top) match {
+      res <- unifyHard(res1, res2, renv, LevelEnv.Unleveled) match {
         case Result.Ok(subst) => Result.Ok(subst): Result[Substitution, UnificationError]
         case Result.Err(_) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
       }
@@ -126,7 +126,7 @@ object EqualityEnvironment {
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
       inst =>
-        Unification.unifyTypes(arg, inst.arg, renv, LevelEnv.Top).toOption.map { // TODO level env?
+        Unification.unifyTypes(arg, inst.arg, renv, LevelEnv.Unleveled).toOption.map { // TODO level env?
           case (subst, econstrs) => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
         }
     }.nextOption() match {

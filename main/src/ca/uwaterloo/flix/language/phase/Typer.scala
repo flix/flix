@@ -252,6 +252,10 @@ object Typer {
     case KindedAst.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
+      if (sym.name == "testForeach01") {
+        println("debug")
+      }
+
       mapN(typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, eqEnv, sym.loc)) {
         case (spec, impl) => TypedAst.Def(sym, spec, impl)
       } recoverOne {

@@ -11,6 +11,16 @@ mod Test.Exp.Foreach {
         deref y == 2
     }
 
+//    @test
+//    def testForeach01(): Bool \ IO = {
+//        region rc {
+//            Iterator.forEach(impure, Iterable.iterator(rc, 1 :: Nil))
+//        };
+//        true
+//    }
+//
+//    def impure(x: Int32): Unit \ IO = checked_ecast(???)
+
     @test
     def testForeach02(): Bool = region rc {
         let y = ref 0 @ rc;
