@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
+import scala.collection.immutable.SortedSet
+
 object Scheme {
 
   /**
@@ -108,6 +110,24 @@ object Scheme {
   }
 
   /**
+    * Returns the set of free variable in the scheme.
+    */
+  def freeVars(sc: Scheme): SortedSet[Symbol.KindedTypeVarSym] = {
+    vars(sc) -- sc.quantifiers
+  }
+
+  /**
+    * Returns the set of variables in the scheme.
+    */
+  def vars(sc: Scheme): SortedSet[Symbol.KindedTypeVarSym] = {
+    val tvars = sc.base.typeVars ++
+      sc.econstrs.flatMap {
+        case Ast.BroadEqualityConstraint(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
+      }
+    tvars.map(_.sym)
+  }
+
+  /**
     * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
@@ -124,10 +144,10 @@ object Scheme {
     //
 
     // Mark every free variable in `sc1` as rigid.
-    val renv1 = RigidityEnv(sc1.base.typeVars.map(_.sym) -- sc1.quantifiers)
+    val renv1 = RigidityEnv(freeVars(sc1))
 
     // Mark every free and bound variable in `sc2` as rigid.
-    val renv2 = RigidityEnv(sc2.base.typeVars.map(_.sym))
+    val renv2 = RigidityEnv(vars(sc2))
 
     val renv = renv1 ++ renv2
 

@@ -544,9 +544,6 @@ object Monomorph {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
-    if (sym.name == "forEach") {
-      println("debug")
-    }
     // Compute the erased type.
     val erasedType = eraseType(tpe)
 

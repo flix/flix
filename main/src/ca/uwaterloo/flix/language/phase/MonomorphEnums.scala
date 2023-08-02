@@ -340,9 +340,6 @@ object MonomorphEnums {
         // args cannot be visited yet, because specialization works on
         // non-specialized enums.
         val args = tpe0.typeArguments
-        if (sym.name == "Iterator") {
-          println("debug")
-        }
         val freshSym = specializeEnum(sym, args, loc)
         Type.mkEnum(freshSym, Nil, loc)
       case _ => tpe0 match { // non-enum
