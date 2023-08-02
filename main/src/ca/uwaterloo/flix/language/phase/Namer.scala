@@ -577,28 +577,28 @@ object Namer {
     * Performs naming on the given expression `exp0`.
     */
   // TODO NS-REFACTOR can remove ns0 too?
-  private def visitExp(exp0: WeededAst.Expression, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expr, NameError] = exp0 match {
+  private def visitExp(exp0: WeededAst.Expr, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expr, NameError] = exp0 match {
 
-    case WeededAst.Expression.Ambiguous(name, loc) =>
+    case WeededAst.Expr.Ambiguous(name, loc) =>
       NamedAst.Expr.Ambiguous(name, loc).toSuccess
 
-    case WeededAst.Expression.OpenAs(name, exp, loc) =>
+    case WeededAst.Expr.OpenAs(name, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.OpenAs(name, e, loc)
       }
 
-    case WeededAst.Expression.Open(name, loc) =>
+    case WeededAst.Expr.Open(name, loc) =>
       NamedAst.Expr.Open(name, loc).toSuccess
 
-    case WeededAst.Expression.Hole(name, loc) =>
+    case WeededAst.Expr.Hole(name, loc) =>
       NamedAst.Expr.Hole(name, loc).toSuccess
 
-    case WeededAst.Expression.HoleWithExp(exp, loc) =>
+    case WeededAst.Expr.HoleWithExp(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.HoleWithExp(e, loc)
       }
 
-    case WeededAst.Expression.Use(uses0, exp, loc) =>
+    case WeededAst.Expr.Use(uses0, exp, loc) =>
       val uses = uses0.map(visitUseOrImport)
 
       mapN(visitExp(exp, ns0)) {
@@ -607,31 +607,31 @@ object Namer {
         }
       }
 
-    case WeededAst.Expression.Cst(cst, loc) => NamedAst.Expr.Cst(cst, loc).toSuccess
+    case WeededAst.Expr.Cst(cst, loc) => NamedAst.Expr.Cst(cst, loc).toSuccess
 
-    case WeededAst.Expression.Apply(exp, exps, loc) =>
+    case WeededAst.Expr.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
         case (e, es) => NamedAst.Expr.Apply(e, es, loc)
       }
 
-    case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
+    case WeededAst.Expr.Lambda(fparam0, exp, loc) =>
       mapN(visitFormalParam(fparam0): Validation[NamedAst.FormalParam, NameError], visitExp(exp, ns0)) {
         case (p, e) => NamedAst.Expr.Lambda(p, e, loc)
       }.recoverOne {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.Unary(sop, exp, loc) =>
+    case WeededAst.Expr.Unary(sop, exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.Unary(sop, e, loc)
       }
 
-    case WeededAst.Expression.Binary(sop, exp1, exp2, loc) =>
+    case WeededAst.Expr.Binary(sop, exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.Binary(sop, e1, e2, loc)
       }
 
-    case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
+    case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       val e3 = visitExp(exp3, ns0)
@@ -639,35 +639,35 @@ object Namer {
         NamedAst.Expr.IfThenElse(_, _, _, loc)
       }
 
-    case WeededAst.Expression.Stm(exp1, exp2, loc) =>
+    case WeededAst.Expr.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1, ns0)
       val e2 = visitExp(exp2, ns0)
       mapN(e1, e2) {
         NamedAst.Expr.Stm(_, _, loc)
       }
 
-    case WeededAst.Expression.Discard(exp, loc) =>
+    case WeededAst.Expr.Discard(exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.Discard(e, loc)
       }
 
-    case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
+    case WeededAst.Expr.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.Let(sym, mod, e1, e2, loc)
       }
 
-    case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) =>
+    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.LetRec(sym, mod, e1, e2, loc)
       }
 
-    case WeededAst.Expression.Region(tpe, loc) =>
+    case WeededAst.Expr.Region(tpe, loc) =>
       NamedAst.Expr.Region(tpe, loc).toSuccess
 
-    case WeededAst.Expression.Scope(ident, exp, loc) =>
+    case WeededAst.Expr.Scope(ident, exp, loc) =>
       // Introduce a fresh variable symbol for the region.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
 
@@ -678,12 +678,12 @@ object Namer {
         case e => NamedAst.Expr.Scope(sym, regionVar, e, loc)
       }
 
-    case WeededAst.Expression.ScopeExit(exp1, exp2, loc) =>
+    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.ScopeExit(e1, e2, loc)
       }
 
-    case WeededAst.Expression.Match(exp, rules, loc) =>
+    case WeededAst.Expr.Match(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
         case WeededAst.MatchRule(pat, exp1, exp2) =>
@@ -698,7 +698,7 @@ object Namer {
         case (e, rs) => NamedAst.Expr.Match(e, rs, loc)
       }
 
-    case WeededAst.Expression.TypeMatch(exp, rules, loc) =>
+    case WeededAst.Expr.TypeMatch(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
         case WeededAst.TypeMatchRule(ident, tpe, body) =>
@@ -713,7 +713,7 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
+    case WeededAst.Expr.RelationalChoose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, ns0))
       val rulesVal = traverse(rules) {
         case WeededAst.RelationalChooseRule(pat0, exp0) =>
@@ -732,7 +732,7 @@ object Namer {
         case (es, rs) => NamedAst.Expr.RelationalChoose(star, es, rs, loc)
       }
 
-    case WeededAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
+    case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
         case WeededAst.RestrictableChooseRule(pat0, exp0) =>
@@ -746,88 +746,88 @@ object Namer {
         case (es, rs) => NamedAst.Expr.RestrictableChoose(star, es, rs, loc)
       }
 
-    case WeededAst.Expression.Tuple(exps, loc) =>
+    case WeededAst.Expr.Tuple(exps, loc) =>
       traverse(exps)(e => visitExp(e, ns0)) map {
         case es => NamedAst.Expr.Tuple(es, loc)
       }
 
-    case WeededAst.Expression.RecordEmpty(loc) =>
+    case WeededAst.Expr.RecordEmpty(loc) =>
       NamedAst.Expr.RecordEmpty(loc).toSuccess
 
-    case WeededAst.Expression.RecordSelect(exp, field, loc) =>
+    case WeededAst.Expr.RecordSelect(exp, field, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.RecordSelect(e, field, loc)
       }
 
-    case WeededAst.Expression.RecordExtend(field, exp1, exp2, loc) =>
+    case WeededAst.Expr.RecordExtend(field, exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (v, r) => NamedAst.Expr.RecordExtend(field, v, r, loc)
       }
 
-    case WeededAst.Expression.RecordRestrict(field, exp, loc) =>
+    case WeededAst.Expr.RecordRestrict(field, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case r => NamedAst.Expr.RecordRestrict(field, r, loc)
       }
 
-    case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
+    case WeededAst.Expr.ArrayLit(exps, exp, loc) =>
       mapN(traverse(exps)(visitExp(_, ns0)), visitExp(exp, ns0)) {
         case (es, e) => NamedAst.Expr.ArrayLit(es, e, loc)
       }
 
-    case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
+    case WeededAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0), visitExp(exp3, ns0)) {
         case (e1, e2, e3) => NamedAst.Expr.ArrayNew(e1, e2, e3, loc)
       }
 
-    case WeededAst.Expression.ArrayLoad(exp1, exp2, loc) =>
+    case WeededAst.Expr.ArrayLoad(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.ArrayLoad(e1, e2, loc)
       }
 
-    case WeededAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
+    case WeededAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0), visitExp(exp3, ns0)) {
         case (e1, e2, e3) => NamedAst.Expr.ArrayStore(e1, e2, e3, loc)
       }
 
-    case WeededAst.Expression.ArrayLength(exp, loc) =>
+    case WeededAst.Expr.ArrayLength(exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.ArrayLength(e, loc)
       }
 
-    case WeededAst.Expression.VectorLit(exps, loc) =>
+    case WeededAst.Expr.VectorLit(exps, loc) =>
       mapN(traverse(exps)(visitExp(_, ns0))) {
         case es => NamedAst.Expr.VectorLit(es, loc)
       }
 
-    case WeededAst.Expression.VectorLoad(exp1, exp2, loc) =>
+    case WeededAst.Expr.VectorLoad(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.VectorLoad(e1, e2, loc)
       }
 
-    case WeededAst.Expression.VectorLength(exp, loc) =>
+    case WeededAst.Expr.VectorLength(exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.VectorLength(e, loc)
       }
 
-    case WeededAst.Expression.Ref(exp1, exp2, loc) =>
+    case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) =>
           NamedAst.Expr.Ref(e1, e2, loc)
       }
 
-    case WeededAst.Expression.Deref(exp, loc) =>
+    case WeededAst.Expr.Deref(exp, loc) =>
       visitExp(exp, ns0) map {
         case e =>
           NamedAst.Expr.Deref(e, loc)
       }
 
-    case WeededAst.Expression.Assign(exp1, exp2, loc) =>
+    case WeededAst.Expr.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) =>
           NamedAst.Expr.Assign(e1, e2, loc)
       }
 
-    case WeededAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
+    case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val expectedTypVal = traverseOpt(expectedType)(visitType)
       val expectedEffVal = traverseOpt(expectedEff)(visitType)
@@ -838,17 +838,17 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.InstanceOf(exp, className, loc) =>
+    case WeededAst.Expr.InstanceOf(exp, className, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.InstanceOf(e, className, loc)
       }
 
-    case WeededAst.Expression.CheckedCast(c, exp, loc) =>
+    case WeededAst.Expr.CheckedCast(c, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.CheckedCast(c, e, loc)
       }
 
-    case WeededAst.Expression.UncheckedCast(exp, declaredType, declaredEff, loc) =>
+    case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val declaredTypVal = traverseOpt(declaredType)(visitType)
       val declaredEffVal = traverseOpt(declaredEff)(visitType)
@@ -859,18 +859,18 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.UncheckedMaskingCast(exp, loc) =>
+    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.UncheckedMaskingCast(e, loc)
       }
 
-    case WeededAst.Expression.Without(exp, eff, loc) =>
+    case WeededAst.Expr.Without(exp, eff, loc) =>
       val expVal = visitExp(exp, ns0)
       mapN(expVal) {
         e => NamedAst.Expr.Without(e, eff, loc)
       }
 
-    case WeededAst.Expression.TryCatch(exp, rules, loc) =>
+    case WeededAst.Expr.TryCatch(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
         case WeededAst.CatchRule(ident, className, body) =>
@@ -885,7 +885,7 @@ object Namer {
         case (e, rs) => NamedAst.Expr.TryCatch(e, rs, loc)
       }
 
-    case WeededAst.Expression.TryWith(e0, eff, rules0, loc) =>
+    case WeededAst.Expr.TryWith(e0, eff, rules0, loc) =>
       val eVal = visitExp(e0, ns0)
       val rulesVal = traverse(rules0) {
         case WeededAst.HandlerRule(op, fparams0, body0) =>
@@ -901,19 +901,19 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.Do(op, exps0, loc) =>
+    case WeededAst.Expr.Do(op, exps0, loc) =>
       val expsVal = traverse(exps0)(visitExp(_, ns0))
       mapN(expsVal) {
         exps => NamedAst.Expr.Do(op, exps, loc)
       }
 
-    case WeededAst.Expression.Resume(exp, loc) =>
+    case WeededAst.Expr.Resume(exp, loc) =>
       val expVal = visitExp(exp, ns0)
       mapN(expVal) {
         e => NamedAst.Expr.Resume(e, loc)
       }
 
-    case WeededAst.Expression.InvokeConstructor(className, exps, sig, loc) =>
+    case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
       mapN(argsVal, sigVal) {
@@ -922,7 +922,7 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
+    case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
       val expVal = visitExp(exp, ns0)
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
@@ -933,7 +933,7 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
+    case WeededAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
       val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
@@ -944,25 +944,25 @@ object Namer {
       }
 
 
-    case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
+    case WeededAst.Expr.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.GetField(className, fieldName, e, loc)
       }
 
-    case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
+    case WeededAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.PutField(className, fieldName, e1, e2, loc)
       }
 
-    case WeededAst.Expression.GetStaticField(className, fieldName, loc) =>
+    case WeededAst.Expr.GetStaticField(className, fieldName, loc) =>
       NamedAst.Expr.GetStaticField(className, fieldName, loc).toSuccess
 
-    case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
+    case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.PutStaticField(className, fieldName, e, loc)
       }
 
-    case WeededAst.Expression.NewObject(tpe, methods, loc) =>
+    case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       mapN(visitType(tpe): Validation[NamedAst.Type, NameError], traverse(methods)(visitJvmMethod(_, ns0))) {
         case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
@@ -971,22 +971,22 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.NewChannel(exp1, exp2, loc) =>
+    case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.NewChannel(e1, e2, loc)
       }
 
-    case WeededAst.Expression.GetChannel(exp, loc) =>
+    case WeededAst.Expr.GetChannel(exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.GetChannel(e, loc)
       }
 
-    case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
+    case WeededAst.Expr.PutChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.PutChannel(e1, e2, loc)
       }
 
-    case WeededAst.Expression.SelectChannel(rules, exp, loc) =>
+    case WeededAst.Expr.SelectChannel(rules, exp, loc) =>
       val rulesVal = traverse(rules) {
         case WeededAst.SelectChannelRule(ident, exp1, exp2) =>
           // make a fresh variable symbol for the local recursive variable.
@@ -1007,13 +1007,13 @@ object Namer {
         case (rs, d) => NamedAst.Expr.SelectChannel(rs, d, loc)
       }
 
-    case WeededAst.Expression.Spawn(exp1, exp2, loc) =>
+    case WeededAst.Expr.Spawn(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) =>
           NamedAst.Expr.Spawn(e1, e2, loc)
       }
 
-    case WeededAst.Expression.ParYield(frags, exp, loc) =>
+    case WeededAst.Expr.ParYield(frags, exp, loc) =>
       val fragsVal = traverse(frags) {
         case WeededAst.ParYieldFragment(pat, e, l) =>
           val p = visitPattern(pat)
@@ -1027,23 +1027,23 @@ object Namer {
         case (fs, e) => NamedAst.Expr.ParYield(fs, e, loc)
       }
 
-    case WeededAst.Expression.Lazy(exp, loc) =>
+    case WeededAst.Expr.Lazy(exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.Lazy(e, loc)
       }
 
-    case WeededAst.Expression.Force(exp, loc) =>
+    case WeededAst.Expr.Force(exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.Force(e, loc)
       }
 
-    case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
+    case WeededAst.Expr.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, ns0))) {
         case cs =>
           NamedAst.Expr.FixpointConstraintSet(cs, loc)
       }
 
-    case WeededAst.Expression.FixpointLambda(pparams, exp, loc) =>
+    case WeededAst.Expr.FixpointLambda(pparams, exp, loc) =>
       val psVal = traverse(pparams)(visitPredicateParam): Validation[List[NamedAst.PredicateParam], NameError]
       val expVal = visitExp(exp, ns0)
       mapN(psVal, expVal) {
@@ -1052,32 +1052,32 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
+    case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.FixpointMerge(e1, e2, loc)
       }
 
-    case WeededAst.Expression.FixpointSolve(exp, loc) =>
+    case WeededAst.Expr.FixpointSolve(exp, loc) =>
       visitExp(exp, ns0) map {
         case e => NamedAst.Expr.FixpointSolve(e, loc)
       }
 
-    case WeededAst.Expression.FixpointFilter(ident, exp, loc) =>
+    case WeededAst.Expr.FixpointFilter(ident, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.FixpointFilter(ident, e, loc)
       }
 
-    case WeededAst.Expression.FixpointInject(exp, pred, loc) =>
+    case WeededAst.Expr.FixpointInject(exp, pred, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.FixpointInject(e, pred, loc)
       }
 
-    case WeededAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
+    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.FixpointProject(pred, e1, e2, loc)
       }
 
-    case WeededAst.Expression.Error(m) =>
+    case WeededAst.Expr.Error(m) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
       Validation.SoftFailure(NamedAst.Expr.Error(m), LazyList.empty)
