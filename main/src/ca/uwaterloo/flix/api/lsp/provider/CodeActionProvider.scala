@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind, Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
 
@@ -367,7 +367,7 @@ object CodeActionProvider {
     * `None` otherwise.
     */
   private def mkDerive(e: TypedAst.Enum, clazz: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.exists(d => d.clazz.name == clazz)
+    val alreadyDerived = e.derives.classes.exists(d => d.clazz.name == clazz)
     if (alreadyDerived) None
     else Some(
       CodeAction(
@@ -401,14 +401,14 @@ object CodeActionProvider {
     * }}}
     */
   private def addDerivation(e: TypedAst.Enum, clazz: String, uri: String): WorkspaceEdit = {
-    val (end, text) =
-      if (e.derives.isEmpty)
-        (Position.fromEnd(e.sym.loc), s" with $clazz")
-      else {
-        val ends = e.derives.map(d => Position.fromEnd(d.loc))
-        val end = ends.max
-        (end, s", $clazz")
-      }
+    val text =
+      if (e.derives.classes.isEmpty)
+        s" with $clazz"
+      else
+        s", $clazz"
+
+    val end = Position.fromEnd(e.derives.loc)
+
     WorkspaceEdit(
       Map(uri -> List(TextEdit(
         Range(end, end),
