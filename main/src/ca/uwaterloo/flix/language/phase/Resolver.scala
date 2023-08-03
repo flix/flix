@@ -541,7 +541,7 @@ object Resolver {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolveEnum(e0: NamedAst.Declaration.Enum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
-    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, NamedAst.Derivations(classes, loc1), cases0, loc2) =>
+    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, NamedAst.Derivations(classes, dloc), cases0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -550,7 +550,7 @@ object Resolver {
           val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
           mapN(derivesVal, casesVal) {
             case (derives, cases) =>
-              ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, Ast.Derivations(derives, loc1), cases, loc2)
+              ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, Ast.Derivations(derives, dloc), cases, loc)
           }
       }
   }
@@ -559,7 +559,7 @@ object Resolver {
     * Performs name resolution on the given restrictable enum `e0` in the given namespace `ns0`.
     */
   def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
-    case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, NamedAst.Derivations(classes, loc1), cases0, loc2) =>
+    case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, NamedAst.Derivations(classes, dloc), cases0, loc) =>
       val indexVal = Params.resolveTparam(index0, env0, ns0, root)
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(indexVal, tparamsVal) {
@@ -569,7 +569,7 @@ object Resolver {
           val casesVal = traverse(cases0)(resolveRestrictableCase(_, env, taenv, ns0, root))
           mapN(derivesVal, casesVal) {
             case (derives, cases) =>
-              ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, Ast.Derivations(derives, loc1), cases, loc2)
+              ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, Ast.Derivations(derives, dloc), cases, loc)
           }
       }
   }
