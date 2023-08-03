@@ -422,12 +422,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Derivations: Rule1[ParsedAst.Derivations] = {
-      def WithStatement: Rule1[Seq[Name.QName]] = rule {
+      def WithClause: Rule1[Seq[Name.QName]] = rule {
         keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)
       }
 
       rule {
-        ((optWS ~ SP ~ WithStatement ~ SP) | (SP ~ push(Seq.empty[Name.QName]) ~ SP)) ~> ParsedAst.Derivations
+        ((optWS ~ SP ~ WithClause ~ SP) | (SP ~ push(Seq.empty[Name.QName]) ~ SP)) ~> ParsedAst.Derivations
       }
     }
 
