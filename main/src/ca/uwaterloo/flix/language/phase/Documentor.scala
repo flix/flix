@@ -419,7 +419,7 @@ object Documentor {
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~
-        ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
+        ("derives" -> derives.classes.map { d => visitClassSym(d.clazz) }) ~
         ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.clazz.sym) }) ~
         ("loc" -> visitSourceLocation(loc))
   }
@@ -435,7 +435,7 @@ object Documentor {
         ("index" -> visitTypeParam(index)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitRestrictableCase)) ~
-        ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
+        ("derives" -> derives.classes.map { d => visitClassSym(d.clazz) }) ~
         ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.clazz.sym) }) ~
         ("loc" -> visitSourceLocation(loc))
   }
