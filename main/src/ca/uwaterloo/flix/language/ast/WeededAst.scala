@@ -45,9 +45,9 @@ object WeededAst {
 
     case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TypeConstraint], loc: SourceLocation) extends Declaration
 
-    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, derives: List[Name.QName], cases: List[Case], loc: SourceLocation) extends Declaration
+    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, derives: Derivations, cases: List[Case], loc: SourceLocation) extends Declaration
 
-    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: TypeParam, tparams: TypeParams, derives: List[Name.QName], cases: List[RestrictableCase], loc: SourceLocation) extends Declaration
+    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[RestrictableCase], loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
 
@@ -435,5 +435,7 @@ object WeededAst {
   }
 
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
+
+  case class Derivations(classes: List[Name.QName], loc: SourceLocation)
 
 }
