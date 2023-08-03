@@ -149,9 +149,9 @@ object Unification {
 
     case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 => Result.Ok(Substitution.empty, Nil)
 
-    case (_: Type.AssocType, _) => Result.Ok(Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
+    case (_: Type.AssocType, _) => Result.Ok(Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))) // TODO ASSOC-TYPES need to purify before?
 
-    case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
+    case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))) // TODO ASSOC-TYPES need to purify before?
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
