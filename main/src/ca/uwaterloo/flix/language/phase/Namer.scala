@@ -312,13 +312,14 @@ object Namer {
     * Performs naming on the given enum `enum0`.
     */
   private def visitEnum(enum0: WeededAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = enum0 match {
-    case WeededAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives, cases0, loc) =>
+    case WeededAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives0, cases0, loc) =>
       val sym = Symbol.mkEnumSym(ns0, ident)
 
       // Compute the type parameters.
       val tparams = getTypeParams(tparams0)
 
       val mod = visitModifiers(mod0, ns0)
+      val derives = visitDerivations(derives0)
       val casesVal = traverse(cases0)(visitCase(_, sym))
 
       mapN(casesVal) {
@@ -331,7 +332,7 @@ object Namer {
     * Performs naming on the given enum `enum0`.
     */
   private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
-    case WeededAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives, cases0, loc) =>
+    case WeededAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives0, cases0, loc) =>
       val caseIdents = cases0.map(_.ident)
       val sym = Symbol.mkRestrictableEnumSym(ns0, ident, caseIdents)
 
@@ -340,6 +341,7 @@ object Namer {
       val tparams = getTypeParams(tparams0)
 
       val mod = visitModifiers(mod0, ns0)
+      val derives = visitDerivations(derives0)
       val casesVal = traverse(cases0)(visitRestrictableCase(_, sym))
 
       mapN(casesVal) {
@@ -347,6 +349,12 @@ object Namer {
           NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
       }
   }
+
+  /**
+    * Performs naming on the given enum derivations.
+    */
+  private def visitDerivations(derives0: WeededAst.Derivations): NamedAst.Derivations =
+    NamedAst.Derivations(derives0.classes, derives0.loc)
 
   /**
     * Performs naming on the given enum case.
