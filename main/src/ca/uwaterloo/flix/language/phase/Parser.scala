@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
-import org.parboiled2.support.hlist.HNil
 
 import scala.annotation.tailrec
 
