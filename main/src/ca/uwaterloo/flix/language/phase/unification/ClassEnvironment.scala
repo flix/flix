@@ -89,13 +89,22 @@ object ClassEnvironment {
   /**
     * Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates.
     */
-  def reduce(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
+  def reduce(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val tconstrs1 = tconstrs0.map {
       case Ast.TypeConstraint(head, tpe, loc) => Ast.TypeConstraint(head, Type.eraseAliases(tpe), loc)
     }
-    for {
-      tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
-    } yield simplify(tconstrs.flatten, classEnv)
+
+    val tconstrs2Val = Validation.traverse(tconstrs1) {
+      case Ast.TypeConstraint(head, arg0, loc) => Validation.mapN(EqualityEnvironment.reduceType(arg0, eqEnv).toValidation) {
+        case arg => Ast.TypeConstraint(head, arg, loc)
+      }}
+    Validation.flatMapN(tconstrs2Val) {
+      case tconstrs2 =>
+        val tconstrsVal = Validation.sequence(tconstrs2.map(toHeadNormalForm(_, classEnv)))
+        Validation.mapN(tconstrsVal) {
+          case tconstrs => simplify(tconstrs.flatten, classEnv)
+        }
+    }
   }
 
   /**

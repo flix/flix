@@ -154,8 +154,8 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv, LevelEnv.Top).toValidation) {
       case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
-        val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
-        val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)
+        val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv, eqEnv)
+        val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv, eqEnv)
         flatMapN(newTconstrs1Val, newTconstrs2Val) {
           case (newTconstrs1, newTconstrs2) =>
             flatMapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
