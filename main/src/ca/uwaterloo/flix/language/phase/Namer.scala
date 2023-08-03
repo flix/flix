@@ -353,7 +353,7 @@ object Namer {
   /**
     * Performs naming on the given enum derivations.
     */
-  private def visitDerivations(derives0: WeededAst.Derivations) =
+  private def visitDerivations(derives0: WeededAst.Derivations): NamedAst.Derivations =
     NamedAst.Derivations(derives0.classes, derives0.loc)
 
   /**

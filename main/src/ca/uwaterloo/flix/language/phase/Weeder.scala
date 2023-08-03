@@ -438,7 +438,7 @@ object Weeder {
   /**
     * Performs weeding on the given enum derivations `derives0`.
     */
-  private def visitDerivations(derives0: ParsedAst.Derivations) = derives0 match {
+  private def visitDerivations(derives0: ParsedAst.Derivations): WeededAst.Derivations = derives0 match {
     case ParsedAst.Derivations(sp1, classes, sp2) =>
       WeededAst.Derivations(classes.toList, mkSL(sp1, sp2))
   }
