@@ -58,7 +58,7 @@ object Deriver {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
-      sequence(derives.map {
+      sequence(derives.classes.map {
         case Ast.Derivation(classSym, classLoc) if cases.isEmpty => DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, classLoc).toFailure
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)

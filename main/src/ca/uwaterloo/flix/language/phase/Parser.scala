@@ -420,8 +420,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Derivations: Rule1[Seq[Name.QName]] = rule {
-      optWS ~ optional(keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
+    def Derivations: Rule1[ParsedAst.Derivations] = {
+      def WithClause: Rule1[Seq[Name.QName]] = rule {
+        keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      rule {
+        ((optWS ~ SP ~ WithClause ~ SP) | (SP ~ push(Seq.empty[Name.QName]) ~ SP)) ~> ParsedAst.Derivations
+      }
     }
 
   }
