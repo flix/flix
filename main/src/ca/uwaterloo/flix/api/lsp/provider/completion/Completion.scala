@@ -222,6 +222,14 @@ sealed trait Completion {
         documentation = None,
         kind = CompletionItemKind.Method
       )
+    case Completion.UseSignatureCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Method
+      )
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.high(name),
@@ -447,9 +455,17 @@ object Completion {
   /**
    * Represents a Use Def completion.
    *
-   * @param decl the decl.
+   * @param name the name of the use def completion.
    */
    case class UseDefCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Signature completion.
+   *
+   * @param name the name of the use signature completion.
+   */
+   case class UseSignatureCompletion(name: String) extends Completion
+
   /**
     * Represents a FromErrors completion
     *
