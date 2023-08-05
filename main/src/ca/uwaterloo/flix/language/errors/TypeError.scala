@@ -18,7 +18,9 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
@@ -189,6 +191,29 @@ object TypeError {
   }
 
   /**
+    * Unexpected Effect.
+    *
+    * @param expected the expected type.
+    * @param inferred the inferred type.
+    * @param renv     the rigidity environment.
+    * @param loc      the location of the inferred type.
+    */
+  case class UnexpectedEffect(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
+         |
+         |${code(loc, "expression has unexpected type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * Unexpected type, but a checked type cast might work.
     *
     * @param expected the expected type.
@@ -214,10 +239,44 @@ object TypeError {
     def explain(formatter: Formatter): Option[String] = Some(
       s"""Flix does not support sub-typing nor sub-effecting.
          |
-         |Nevertheless, 'checked_cast' is way to use both in a safe manner, for example:
+         |Nevertheless, 'checked_cast' is way to use sub-typing in a safe manner, for example:
          |
          |    let s = "Hello World";
          |    let o: ##java.lang.Object = checked_cast(s);
+         |""".stripMargin
+    )
+  }
+
+  /**
+    * Unexpected effect, but a checked effect cast might work.
+    *
+    * @param expected the expected effect.
+    * @param inferred the inferred effect.
+    * @param renv     the rigidity environment.
+    * @param loc      the location of the inferred effect.
+    */
+  case class PossibleCheckedEffectCast(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Expected effect '${formatType(expected, Some(renv))}' but found effect: '${formatType(inferred, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""
+         |>> Expected effect: '${red(formatType(expected, Some(renv)))}' but found effect: '${red(formatType(inferred, Some(renv)))}'.
+         |
+         |${code(loc, "expression has unexpected effect.")}
+         |
+         |'${formatType(expected, Some(renv))}' appears to be a superset of '${formatType(inferred, Some(renv))}'.
+         |Consider using 'checked_ecast'?
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""Flix does not support sub-typing nor sub-effecting.
+         |
+         |Nevertheless, 'checked_ecast' is way to use sub-effecting in a safe manner, for example:
+         |
+         |    let s = "pure expression";
+         |    let o: Unit -> String \\ IO = () -> checked_ecast(s);
          |""".stripMargin
     )
   }
@@ -737,7 +796,7 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
+      s"""To mark '${formatType(tpe, Some(renv))}' as sendable, either:
          |
          |  (a) define an instance of Sendable for '${formatType(tpe, Some(renv))}', or
          |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe, Some(renv))}', for example:.
@@ -747,6 +806,54 @@ object TypeError {
          |  }
          |
          |""".stripMargin
+    })
+  }
+
+  /**
+    * Unsupported equality error.
+    *
+    * @param econstr the unsupported equality constraint.
+    * @param loc     the location where the error occurred.
+    */
+  case class UnsupportedEquality(econstr: BroadEqualityConstraint, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Unsupported type equality: ${formatEqualityConstraint(econstr)}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unsupported type equality: ${formatEqualityConstraint(econstr)}
+         |
+         |${code(loc, "unsupported type equality.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Tip: Add an equality constraint to the function."
+    })
+  }
+
+  /**
+    * Irreducible associated type error
+    *
+    * @param sym the associated type symbol.
+    * @param tpe the argument to the associated type
+    * @param loc the location where the error occurred.
+    */
+  case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private val assocType: Type = Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), tpe, Kind.Wild, SourceLocation.Unknown)
+    def summary: String = s"Irreducible associated type: ${formatType(assocType)}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Irreducible associated type: ${formatType(assocType)}
+         |
+         |${code(loc, "irreducible associated type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Tip: Add an equality constraint to the function."
     })
   }
 

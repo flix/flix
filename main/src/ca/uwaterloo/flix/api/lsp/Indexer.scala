@@ -86,7 +86,7 @@ object Indexer {
     case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
       val idx0 = Index.occurrenceOf(enum0)
       val idx1 = traverse(tparams)(visitTypeParam)
-      val idx2 = traverse(derives) {
+      val idx2 = traverse(derives.classes) {
         case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
       }
       val idx3 = traverse(cases.values)(visitCase)

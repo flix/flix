@@ -160,7 +160,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitTypeParams(tparams)
-      val st3 = Iterator(derives: _*).map {
+      val st3 = Iterator(derives.classes: _*).map {
         case Ast.Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
       }
       val st4 = cases.foldLeft(Iterator.empty[SemanticToken]) {
