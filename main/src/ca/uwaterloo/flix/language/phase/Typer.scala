@@ -2561,7 +2561,9 @@ object Typer {
           patTypes = ps.foldRight(freshRowVar: Type) {
             case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
           }
-        } yield Type.mkRecord(patTypes, loc)
+          resultType = Type.mkRecord(patTypes, loc)
+          _ <- unifyTypeM(resultType, tvar, loc)
+        } yield resultType
 
     }
 
