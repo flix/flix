@@ -71,6 +71,7 @@ mod Test.Exp.Match.Record {
    def testMatch09(): Bool = match { a = 1, b = "", c = 42 } {
        case { b = "" | r } => true
        case { b = _  | r } => false
+       case { b = _  , a = _ , c = _ } => false
    }
 
     @test
