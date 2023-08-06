@@ -1133,6 +1133,11 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate that a record pattern be `{ | r }`
+    *
+    * @param loc the location where the error occurred.
+    */
   case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
     override def summary: String = "A record pattern must define at least one field if it is open for extension."
 
