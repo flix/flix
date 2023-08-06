@@ -81,7 +81,19 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testMatchRecord11(): Bool = match { a = { b = A.B(1) } } {
+    def testMatchRecord11(): Bool = match { a = { b = 1 } } {
+        case { a = { b = 1 } | r } => true
+        case { a = { b = _ } | r } => false
+    }
+
+    @test
+    def testMatchRecord12(): Bool = match { a = { b = 1 }, c = false } {
+        case { a = { b = 1 } | r } => true
+        case { a = { b = _ } | r } => false
+    }
+
+    @test
+    def testMatchRecord13(): Bool = match { a = { b = A.B(1) } } {
         case { a = { b = A.B(1) } } => true
         case { a = { b = A.B(_) } } => false
         case { a = { b = A.C } }    => false
@@ -93,18 +105,18 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testMatchRecord12(): Bool = match { a = 1 } {
+    def testMatchRecord14(): Bool = match { a = 1 } {
         case { a : Int32 = 2 } => false
         case { a : Int32 = _ } => true
     }
 
     @test
-    def testMatchRecord13(): Bool = match { a = 100 } {
+    def testMatchRecord15(): Bool = match { a = 100 } {
         case { a : Int32 } => a == 100
     }
 
     @test
-    def testMatchRecord14(): Bool =
+    def testMatchRecord16(): Bool =
         let rec = { c = "hello" };
         let { c } = rec;
         c == "hello"
