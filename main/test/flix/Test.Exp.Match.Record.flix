@@ -126,6 +126,11 @@ mod Test.Exp.Match.Record {
         let { c } = rec;
         c == "hello"
 
+    @test
+    def testMatchRecord18(): Bool = match { a = { a = { a = true } } } {
+        case { a = { a = { a } } } => a
+    }
+
     /*
     @test
     def brokenPatternExhaustiveness01(): Bool = match { a = { b = 1 } } {
