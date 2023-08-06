@@ -87,6 +87,17 @@ mod Test.Exp.Match.Record {
         case { a = { b = A.C } }    => false
     }
 
+    enum A {
+        case B(Int32),
+        case C
+    }
+
+    @test
+    def testMatchRecord12(): Bool =
+        let rec = { c = "hello" };
+        let { c } = rec;
+        c == "hello"
+
     /*
     @test
     def brokenPatternExhaustiveness01(): Bool = match { a = { b = 1 } } {
@@ -100,16 +111,5 @@ mod Test.Exp.Match.Record {
         case { a = { b = _ } } => false
     }
     */
-
-    @test
-    def testMatchRecord1000000(): Bool =
-        let rec = { c = "hello" };
-        let { c } = rec;
-        c == "hello"
-
-    enum A {
-        case B(Int32),
-        case C
-    }
 
 }
