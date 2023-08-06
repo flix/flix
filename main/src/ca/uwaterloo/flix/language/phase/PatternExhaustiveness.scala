@@ -697,7 +697,7 @@ object PatternExhaustiveness {
       TyCon.Enum(sym.name, sym.enumSym, numArgs, args)
     }
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
-    case Pattern.Record(pats, pat, tpe, loc) => ???
+    case Pattern.Record(_, _, _, _) => TyCon.Wild
   }
 
   /**
