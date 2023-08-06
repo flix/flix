@@ -67,8 +67,14 @@ mod Test.Exp.Match.Record {
         case { x | r } => x == 1
     }
 
+   @test
+   def testMatch09(): Bool = match { a = 1, b = "", c = 42 } {
+       case { b = "" | r } => true
+       case { b = _  | r } => false
+   }
+
     @test
-    def testMatchRecord09(): Bool =
+    def testMatchRecord1000000(): Bool =
         let rec = { c = "hello" };
         let { c } = rec;
         c == "hello"
