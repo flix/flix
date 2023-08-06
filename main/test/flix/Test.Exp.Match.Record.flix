@@ -93,7 +93,18 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testMatchRecord12(): Bool =
+    def testMatchRecord12(): Bool = match { a = 1 } {
+        case { a : Int32 = 2 } => false
+        case { a : Int32 = _ } => true
+    }
+
+    @test
+    def testMatchRecord13(): Bool = match { a = 100 } {
+        case { a : Int32 } => a == 100
+    }
+
+    @test
+    def testMatchRecord1000(): Bool =
         let rec = { c = "hello" };
         let { c } = rec;
         c == "hello"
