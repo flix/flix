@@ -18,7 +18,7 @@ mod Test.Exp.Match.Record {
 
     @test
     def testMatchRecord01(): Bool = match { } {
-        case _ => true
+        case { } => true
     }
 
     @test
@@ -35,6 +35,7 @@ mod Test.Exp.Match.Record {
     @test
     def testMatchRecord04(): Bool = match { x = 1 } {
         case { x = 1 } => true
+        case { x = _ } => false
     }
 
     @test
@@ -49,6 +50,7 @@ mod Test.Exp.Match.Record {
         case { x = 1 } => false
         case { x = 2 } => false
         case { x = 3 } => true
+        case { x = _ } => false
     }
 
     @test
@@ -57,6 +59,7 @@ mod Test.Exp.Match.Record {
         case { x = 2 } => false
         case { x = 3 } => true
         case { x = 4 } => false
+        case { x = _ } => false
     }
 
     @test
