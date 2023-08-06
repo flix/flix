@@ -468,10 +468,10 @@ object PatternExhaustiveness {
     *
     */
   private def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
-    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.head match {
+    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.headOption match {
       // If it's a wild card, we take the rest of the pattern
-      case _: TypedAst.Pattern.Wild => pat.tail :: acc
-      case _: TypedAst.Pattern.Var => pat.tail :: acc
+      case Some(_: TypedAst.Pattern.Wild) => pat.tail :: acc
+      case Some(_: TypedAst.Pattern.Var) => pat.tail :: acc
 
       // If it's a constructor, we don't include a row
       case _ => acc
@@ -498,11 +498,11 @@ object PatternExhaustiveness {
     *
     */
   private def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
-    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.head match {
-      case _: Pattern.Wild => pats
-      case _: Pattern.Var => pats
-      case tg: Pattern.Tag => tg :: pats
-      case p => p :: pats
+    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.headOption match {
+      case Some(_: Pattern.Wild) => pats
+      case Some(_: Pattern.Var) => pats
+      case Some(p) => p :: pats
+      case None => pats
     }
 
     rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor).map(patToCtor)
