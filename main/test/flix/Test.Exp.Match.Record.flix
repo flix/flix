@@ -104,7 +104,7 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testMatchRecord1000(): Bool =
+    def testMatchRecord14(): Bool =
         let rec = { c = "hello" };
         let { c } = rec;
         c == "hello"
