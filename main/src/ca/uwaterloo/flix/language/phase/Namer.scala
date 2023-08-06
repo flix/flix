@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.WeededAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.WeededAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -1381,9 +1382,14 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-    case WeededAst.Pattern.Record(pats, pat, _) =>
-      pats.map(_.pat.map(freeVars)).filterNot(_.isEmpty).flatMap(_.get) ++
-        pat.map(freeVars).getOrElse(Nil)
+    case WeededAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats, pat)
+  }
+
+  /**
+    * Returns the free variables in the list of [[Record.RecordFieldPattern]] `pats` and `pat`.
+    */
+  private def recordPatternFreeVars(pats: List[Record.RecordFieldPattern], pat: Option[WeededAst.Pattern]): List[Name.Ident] = {
+    pats.map(_.pat.map(freeVars)).filter(_.isDefined).flatMap(_.get) ++ pat.map(freeVars).getOrElse(Nil)
   }
 
   /**
