@@ -67,17 +67,49 @@ mod Test.Exp.Match.Record {
         case { x | r } => x == 1
     }
 
-   @test
-   def testMatch09(): Bool = match { a = 1, b = "", c = 42 } {
-       case { b = "" | r } => true
-       case { b = _  | r } => false
-       case { b = _  , a = _ , c = _ } => false
-   }
+    @test
+    def testMatchRecord09(): Bool = match { a = 1, b = "", c = 42 } {
+        case { b = "" | r } => true
+        case { b = _  | r } => false
+        case { b = _  , a = _ , c = _ } => false
+    }
+
+    @test
+    def testMatchRecord10(): Bool = match { a = { b = 1 } } {
+        case { a = { b = 1 } } => true
+        case { a = { b = _ } } => false
+    }
+
+    @test
+    def testMatchRecord11(): Bool = match { a = { b = A.B(1) } } {
+        case { a = { b = A.B(1) } } => true
+        case { a = { b = A.B(_) } } => false
+        case { a = { b = A.C } }    => false
+    }
+
+    /*
+    @test
+    def brokenPatternExhaustiveness01(): Bool = match { a = { b = 1 } } {
+        case { a = { b = 1 } | r } => true
+        case { a = { b = _ } } => false
+    }
+
+    @test
+    def brokenPatternExhaustiveness02(): Bool = match { a = { b = 1 } } {
+        case { a = { b = 1 | r1 } | r } => true
+        case { a = { b = _ } } => false
+    }
+    */
 
     @test
     def testMatchRecord1000000(): Bool =
         let rec = { c = "hello" };
         let { c } = rec;
         c == "hello"
+
+    enum A {
+        case B(Int32),
+        case C
+    }
 
 }
