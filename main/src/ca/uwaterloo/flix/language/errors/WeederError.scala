@@ -1134,7 +1134,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a record pattern be `{ | r }`
+    * An error raised to indicate that a record pattern has shape `{ | r }`.
     *
     * @param loc the location where the error occurred.
     */
