@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -3515,7 +3516,14 @@ object Resolver {
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
     case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
-    case ResolvedAst.Pattern.Record(pats, pat, loc) => mkPatternsEnv(pats.map(_.pat) ++ pat.toList)
+    case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
+  }
+
+  /**
+    * Creates an environment from the given record pattern.
+    */
+  private def mkRecordPatternEnv(pats: List[Record.RecordFieldPattern], pat: Option[ResolvedAst.Pattern]): ListMap[String, Resolution] = {
+    mkPatternsEnv(pats.map(_.pat) ++ pat.toList)
   }
 
   /**
