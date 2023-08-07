@@ -139,9 +139,23 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testMatchRecord24(): Bool = match { a = { a = { a = { }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
+    def testMatchRecord24(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { x = A.A } } {
         case { a = { a = { a = { } | r0 } | r1 }, b = { x = A.A } } => true
         case { a = { a = { a = { } | r0 } | r1 }, b = { x = A.B } } => false
+    }
+
+    @test
+    def testMatchRecord25(): Bool = match { a = { a = { a = { }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
+        case { a = { a = { a = { } | r0 } | r1 }, b = { x = A.A } } => true
+        case { a = { a = { a = { } | r0 } | r1 }, b = { x = A.B } } => false
+    }
+
+    @test
+    def testMatchRecord26(): Bool = match { a = { a = { a = { a = A.B }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
+        case { a = { a = { a = { a = A.A } | r0 } | r1 }, b = { x = A.A } } => false
+        case { a = { a = { a = { a = A.A } | r0 } | r1 }, b = { x = A.B } } => false
+        case { a = { a = { a = { a = A.B } | r0 } | r1 }, b = { x = A.A } } => true
+        case { a = { a = { a = { a = A.B } | r0 } | r1 }, b = { x = A.B } } => false
     }
 
     /*
