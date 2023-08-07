@@ -235,13 +235,10 @@ object DocAst {
     def ApplyClo(d: Expression, ds: List[Expression], ct: Ast.CallType): Expression =
       App(d, ds)
 
-    def ApplyDefTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
-      App(AsIs(sym.toString), ds)
-
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
       App(AsIs(sym.toString), ds)
 
-    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression], ct: Ast.CallType): Expression =
       App(AsIs(sym.toString), ds)
 
     def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
