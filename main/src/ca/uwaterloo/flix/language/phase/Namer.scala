@@ -696,11 +696,11 @@ object Namer {
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
         case WeededAst.MatchRule(pat, exp1, exp2) =>
-          val pVal = visitPattern(pat)
+          val p = visitPattern(pat)
           val e1Val = traverseOpt(exp1)(visitExp(_, ns0))
           val e2Val = visitExp(exp2, ns0)
           mapN(e1Val, e2Val) {
-            case (e1, e2) => NamedAst.MatchRule(pVal, e1, e2)
+            case (e1, e2) => NamedAst.MatchRule(p, e1, e2)
           }
       }
       mapN(expVal, rulesVal) {
@@ -1025,8 +1025,9 @@ object Namer {
     case WeededAst.Expr.ParYield(frags, exp, loc) =>
       val fragsVal = traverse(frags) {
         case WeededAst.ParYieldFragment(pat, e, l) =>
+          val p = visitPattern(pat)
           mapN(visitExp(e, ns0)) {
-            case e1 => NamedAst.ParYieldFragment(visitPattern(pat), e1, l)
+            case e1 => NamedAst.ParYieldFragment(p, e1, l)
           }
       }
 
