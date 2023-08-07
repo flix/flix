@@ -95,6 +95,9 @@ object ReducedAstPrinter {
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
     DocAst.Expression.Var(sym)
 
+  /**
+    * Returns the [[DocAst.JvmMethod]] representation of `method`.
+    */
   private def printJvmMethod(method: (ReducedAst.JvmMethod, ReducedAst.Expr)): DocAst.JvmMethod = method match {
     case (m, clo) => DocAst.JvmMethod(m.ident, m.fparams map printFormalParam, print(clo), MonoTypePrinter.print(m.tpe))
   }
