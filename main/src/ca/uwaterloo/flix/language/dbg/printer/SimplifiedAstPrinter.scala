@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
+import ca.uwaterloo.flix.language.ast.Ast.CallType.NonTailCall
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expr._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -60,7 +61,7 @@ object SimplifiedAstPrinter {
     case Apply(exp, args, _, _, _) => DocAst.Expression.App(print(exp), args.map(print))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expression.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
     case ApplyAtomic(op, exps, tpe, _, loc) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
-    case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print))
+    case ApplyClo(exp, args, _, _, _) => DocAst.Expression.ApplyClo(print(exp), args.map(print), NonTailCall)
     case ApplyDef(sym, args, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
