@@ -1862,4 +1862,15 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
+
+  test("TestRecordPattern.02") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = false } {
+        |    case { x = _ } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedField](result)
+  }
 }
