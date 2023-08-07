@@ -1111,7 +1111,7 @@ object Resolver {
         case NamedAst.Expr.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
-              val pVal = Patterns.resolve(pat, env0, taenv, ns0, root)
+              val pVal = Patterns.resolve(pat, env0, ns0, root)
               flatMapN(pVal) {
                 case p =>
                   val env = env0 ++ mkPatternEnv(p)
@@ -1578,7 +1578,7 @@ object Resolver {
 
           val fragsVal = traverse(frags) {
             case NamedAst.ParYieldFragment(pat, e0, l0) =>
-              val pVal = Patterns.resolve(pat, env0, taenv, ns0, root)
+              val pVal = Patterns.resolve(pat, env0, ns0, root)
               flatMapN(pVal) {
                 case p =>
                   val patEnv = mkPatternEnv(p)
@@ -1741,7 +1741,7 @@ object Resolver {
     /**
       * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
       */
-    def resolve(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Pattern, ResolutionError] = {
+    def resolve(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
         case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
