@@ -1767,8 +1767,7 @@ object Resolver {
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
             case NamedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
-              val pVal = visit(pat1)
-              mapN(pVal) {
+              mapN(visit(pat1)) {
                 case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
               }
           }
