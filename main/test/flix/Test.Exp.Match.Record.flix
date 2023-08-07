@@ -166,4 +166,9 @@ mod Test.Exp.Match.Record {
         case { b = A.B, a = A.B } => false
     }
 
+    @test
+    def testMatchRecord28(): Bool = match { a = { a = { }, b = A.B }, b = A.A } {
+        case { a = { a = { } | r0 } | r1 } => true
+    }
+
 }
