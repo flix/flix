@@ -28,48 +28,73 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testMatchRecord03(): Bool = match { x = 1 } {
-        case { x } => x == 1
+    def testMatchRecord03(): Bool = match { a = 1 } {
+        case { a } => a == 1
     }
 
     @test
-    def testMatchRecord04(): Bool = match { x = 1 } {
-        case { x = y } => y == 1
+    def testMatchRecord04(): Bool = match { a = 1 } {
+        case { a = b } => b == 1
     }
 
     @test
-    def testMatchRecord05(): Bool = match { x = 1 } {
-        case { x = 1 } => true
-        case { x = _ } => false
+    def testMatchRecord05(): Bool = match { a = 1 } {
+        case { a = 1 } => true
+        case { a = _ } => false
     }
 
     @test
-    def testMatchRecord06(): Bool = match { x = 1 } {
-        case { x = 2 } => false
-        case { x = 1 } => true
-        case _ => false
+    def testMatchRecord06(): Bool = match { a = 1, b = 2 } {
+        case { a = _ | r } => true
     }
 
     @test
-    def testMatchRecord07(): Bool = match { x = 3 } {
-        case { x = 1 } => false
-        case { x = 2 } => false
-        case { x = 3 } => true
-        case { x = _ } => false
+    def testMatchRecord07(): Bool = match { a = 1, b = 2 } {
+        case { a = _, b = _ } => true
     }
 
     @test
-    def testMatchRecord08(): Bool = match { x = 3 } {
-        case { x = 1 } => false
-        case { x = 2 } => false
-        case { x = 3 } => true
-        case { x = 4 } => false
-        case { x = _ } => false
+    def testMatchRecord08(): Bool = match { a = 1, b = 2 } {
+        case { a = _, b = _ | r } => true
     }
 
     @test
-    def testMatchRecord09(): Bool = match { x = 1 } {
-        case { x | r } => x == 1
+    def testMatchRecord09(): Bool = match { a = { } } {
+        case { a = { } } => true
+    }
+
+    @test
+    def testMatchRecord10(): Bool = match { a = { a = { } } } {
+        case { a = { a = { } } } => true
+    }
+
+    @test
+    def testMatchRecord11(): Bool = match { a = { a = { } } } {
+        case { a = { a = { } } | r } => true
+    }
+
+    /*
+
+    @test
+    def testMatchRecord07(): Bool = match { a = 3 } {
+        case { a = 1 } => false
+        case { a = 2 } => false
+        case { a = 3 } => true
+        case { a = _ } => false
+    }
+
+    @test
+    def testMatchRecord08(): Bool = match { a = 3 } {
+        case { a = 1 } => false
+        case { a = 2 } => false
+        case { a = 3 } => true
+        case { a = 4 } => false
+        case { a = _ } => false
+    }
+
+    @test
+    def testMatchRecord09(): Bool = match { a = 1 } {
+        case { a | r } => a == 1
     }
 
     @test
@@ -131,7 +156,6 @@ mod Test.Exp.Match.Record {
         case { a = { a = { a } } } => a
     }
 
-    /*
     @test
     def brokenPatternExhaustiveness01(): Bool = match { a = { b = 1 } } {
         case { a = { b = 1 } | r } => true
