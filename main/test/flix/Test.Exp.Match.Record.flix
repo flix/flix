@@ -16,6 +16,11 @@
 
 mod Test.Exp.Match.Record {
 
+    enum A {
+        case A,
+        case B
+    }
+
     @test
     def testMatchRecord01(): Bool = match { } {
         case { } => true
@@ -113,6 +118,32 @@ mod Test.Exp.Match.Record {
         case { a = { a = { a = { } | r0 } | r1 } | r2 } => true
     }
 
+    @test
+    def testMatchRecord20(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { b = { } | r0 } | r1 } | r2 } => true
+    }
+
+    @test
+    def testMatchRecord21(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { }, b = { } | r0 } | r1 } | r2 } => true
+    }
+
+    @test
+    def testMatchRecord22(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { }, b = { } | r0 }, b = { } | r1 } | r2 } => true
+    }
+
+    @test
+    def testMatchRecord23(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { }, b = { } | r0 }, b = { } | r1 }, b = { } | r2 } => true
+    }
+
+    @test
+    def testMatchRecord24(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { x = A.A } } {
+        case { a = { a = { a = { } | r0 } | r1 }, b = { x = A.A } } => true
+        case { a = { a = { a = { } | r0 } | r1 }, b = { x = A.B } } => false
+    }
+
     /*
 
     @test
@@ -169,10 +200,7 @@ mod Test.Exp.Match.Record {
         case { a = { b = A.C } }    => false
     }
 
-    enum A {
-        case B(Int32),
-        case C
-    }
+
 
     @test
     def testMatchRecord15(): Bool = match { a = 1 } {
