@@ -77,4 +77,39 @@ mod Test.Exp.Let.Match {
         case Box(a)
     }
 
+    @test
+    def testLetMatch14(): Bool =
+        let { x } = { x = 1 };
+        x == 1
+
+    @test
+    def testLetMatch15(): Bool =
+        let { x = x } = { x = 1 };
+        x == 1
+
+    @test
+    def testLetMatch16(): Bool =
+        let { x | r } = { x = 1, y = "" };
+        x == 1
+
+    @test
+    def testLetMatch17(): Bool =
+        let { x, y } = { x = 1, y = "" };
+        x == 1 and y == ""
+
+    @test
+    def testLetMatch18(): Bool =
+        let { x = { x = { x } } | r } = { x = { x = { x = 42 } } };
+        x == 42
+
+    @test
+    def testLetMatch19(): Bool =
+        let { x = { x = { x } } | r } = { x = { x = { x = 42 } }, y = "" };
+        x == 42
+
+    @test
+    def testLetMatch20(): Bool =
+        let { x = { x = { x | r0 } } | r1 } = { x = { x = { x = 42, y = false } }, y = "" };
+        x == 42
+
 }
