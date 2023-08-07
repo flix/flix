@@ -273,7 +273,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |def f(): (Int32, Int32) =
         |    let x = 123;
         |    match { x = { x = 456 }, y = 789 } {
-        |        case { x = a, y = b } => (a.x, b)
+        |        case { x = { x = a }, y = b } => (a, b)
         |        case { x = { x }, y } => (x, y)
         |    }
         |
