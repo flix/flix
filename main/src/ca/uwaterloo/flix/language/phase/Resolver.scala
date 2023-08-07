@@ -1724,9 +1724,9 @@ object Resolver {
 
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
-              mapN(traverseOpt(tpe)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root)), visit(pat1)) {
-                case (t, p) => ResolvedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
+            case NamedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+              mapN(visit(pat1)) {
+                case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
               }
           }
           val pVal = traverseOpt(pat)(visit)
@@ -1766,11 +1766,10 @@ object Resolver {
 
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordFieldPattern(field, tpe, pat1, loc1) =>
-              val tVal = traverseOpt(tpe)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
+            case NamedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
               val pVal = visit(pat1)
-              mapN(tVal, pVal) {
-                case (t, p) => ResolvedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
+              mapN(pVal) {
+                case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
               }
           }
           val pVal = traverseOpt(pat)(visit)

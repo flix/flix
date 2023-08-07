@@ -1116,17 +1116,15 @@ object Namer {
 
     case WeededAst.Pattern.Record(pats, pat, loc) =>
       val psVal = traverse(pats) {
-        case WeededAst.Pattern.Record.RecordFieldPattern(field, tpe, None, loc1) =>
+        case WeededAst.Pattern.Record.RecordFieldPattern(field, None, loc1) =>
           // Introduce new symbols if there is no pattern
           val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
           val p = NamedAst.Pattern.Var(sym, field.loc)
-          mapN(traverseOpt(tpe)(visitType)) {
-            case t => NamedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
-          }
+          NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1).toSuccess
 
-        case WeededAst.Pattern.Record.RecordFieldPattern(field, tpe, Some(pat1), loc1) =>
-          mapN(traverseOpt(tpe)(visitType), visitPattern(pat1)) {
-            case (t, p) => NamedAst.Pattern.Record.RecordFieldPattern(field, t, p, loc1)
+        case WeededAst.Pattern.Record.RecordFieldPattern(field, Some(pat1), loc1) =>
+          mapN(visitPattern(pat1)) {
+            case p => NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
           }
       }
       val pVal = traverseOpt(pat)(visitPattern)

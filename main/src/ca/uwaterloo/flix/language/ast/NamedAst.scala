@@ -256,7 +256,7 @@ object NamedAst {
     case class Record(pats: List[Record.RecordFieldPattern], pat: Option[Pattern], loc: SourceLocation) extends NamedAst.Pattern
 
     object Record {
-      case class RecordFieldPattern(field: Name.Field, tpe: Option[Type], pat: Pattern, loc: SourceLocation)
+      case class RecordFieldPattern(field: Name.Field, pat: Pattern, loc: SourceLocation)
     }
 
   }

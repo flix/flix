@@ -1281,11 +1281,10 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character in the pattern.
       * @param field the field the pattern refers to.
-      * @param tpe   optional type ascription of the field.
       * @param pat   optional pattern.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class RecordFieldPattern(sp1: SourcePosition, field: Name.Ident, tpe: Option[Type], pat: Option[Pattern], sp2: SourcePosition)
+    case class RecordFieldPattern(sp1: SourcePosition, field: Name.Ident, pat: Option[Pattern], sp2: SourcePosition)
 
   }
 
