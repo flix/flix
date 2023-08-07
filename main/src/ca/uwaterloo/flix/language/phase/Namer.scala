@@ -699,8 +699,8 @@ object Namer {
           val pVal = visitPattern(pat)
           val e1Val = traverseOpt(exp1)(visitExp(_, ns0))
           val e2Val = visitExp(exp2, ns0)
-          mapN(pVal, e1Val, e2Val) {
-            case (p, e1, e2) => NamedAst.MatchRule(p, e1, e2)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => NamedAst.MatchRule(pVal, e1, e2)
           }
       }
       mapN(expVal, rulesVal) {
@@ -1025,8 +1025,8 @@ object Namer {
     case WeededAst.Expr.ParYield(frags, exp, loc) =>
       val fragsVal = traverse(frags) {
         case WeededAst.ParYieldFragment(pat, e, l) =>
-          mapN(visitPattern(pat), visitExp(e, ns0)) {
-            case (p, e1) => NamedAst.ParYieldFragment(p, e1, l)
+          mapN(visitExp(e, ns0)) {
+            case e1 => NamedAst.ParYieldFragment(visitPattern(pat), e1, l)
           }
       }
 
@@ -1095,42 +1095,35 @@ object Namer {
   /**
     * Names the given pattern `pat0`.
     */
-  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): Validation[NamedAst.Pattern, NameError] = pat0 match {
-    case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc).toSuccess
+  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): NamedAst.Pattern = pat0 match {
+    case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
     case WeededAst.Pattern.Var(ident, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-      NamedAst.Pattern.Var(sym, loc).toSuccess
+      NamedAst.Pattern.Var(sym, loc)
 
-    case WeededAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc).toSuccess
+    case WeededAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
 
     case WeededAst.Pattern.Tag(qname, pat, loc) =>
-      mapN(visitPattern(pat)) {
-        case p => NamedAst.Pattern.Tag(qname, p, loc)
-      }
+      NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
 
     case WeededAst.Pattern.Tuple(elms, loc) =>
-      mapN(traverse(elms)(visitPattern)) {
-        case es => NamedAst.Pattern.Tuple(es, loc)
-      }
+      NamedAst.Pattern.Tuple(elms map visitPattern, loc)
 
     case WeededAst.Pattern.Record(pats, pat, loc) =>
-      val psVal = traverse(pats) {
+      val psVal = pats map {
         case WeededAst.Pattern.Record.RecordFieldPattern(field, None, loc1) =>
           // Introduce new symbols if there is no pattern
           val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
           val p = NamedAst.Pattern.Var(sym, field.loc)
-          NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1).toSuccess
+          NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
 
         case WeededAst.Pattern.Record.RecordFieldPattern(field, Some(pat1), loc1) =>
-          mapN(visitPattern(pat1)) {
-            case p => NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
-          }
+          NamedAst.Pattern.Record.RecordFieldPattern(field, visitPattern(pat1), loc1)
+
       }
-      val pVal = traverseOpt(pat)(visitPattern)
-      mapN(psVal, pVal) {
-        case (ps, p) => NamedAst.Pattern.Record(ps, p, loc)
-      }
+      val pVal = pat map visitPattern
+      NamedAst.Pattern.Record(psVal, pVal, loc)
   }
 
   /**
@@ -1166,9 +1159,8 @@ object Namer {
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-      mapN(traverse(terms)(visitPattern)) {
-        case ts => NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
-      }
+      val ts = terms map visitPattern
+      NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
 
     case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
       for {
