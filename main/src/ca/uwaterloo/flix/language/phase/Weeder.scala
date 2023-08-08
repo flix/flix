@@ -2442,10 +2442,7 @@ object Weeder {
             // Bad pattern { | r }
             WeederError.EmptyRecordExtensionPattern(r.loc).toFailure
 
-          case Some(Pattern.Var(_, loc1)) =>
-            // Translate to Wild so it does not result in unused variable.
-            Some(Pattern.Wild(loc1.asSynthetic)).toSuccess
-
+          case r@Some(Pattern.Var(_, _)) => r.toSuccess
           case r@Some(Pattern.Wild(_)) => r.toSuccess
           case r@None => r.toSuccess
 
