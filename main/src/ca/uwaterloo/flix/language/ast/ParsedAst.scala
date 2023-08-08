@@ -149,7 +149,7 @@ object ParsedAst {
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Seq[Name.QName], cases: Option[Seq[ParsedAst.Case]], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Derivations, cases: Option[Seq[ParsedAst.Case]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Restrictable Enum Declaration.
@@ -165,7 +165,7 @@ object ParsedAst {
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class RestrictableEnum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, index: ParsedAst.TypeParam, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Seq[Name.QName], cases: Option[Seq[ParsedAst.RestrictableCase]], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class RestrictableEnum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, index: ParsedAst.TypeParam, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Derivations, cases: Option[Seq[ParsedAst.RestrictableCase]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Type Alias Declaration.
@@ -2219,4 +2219,24 @@ object ParsedAst {
     * @param sp2 the position of the last character in the fragment.
     */
   case class ParYieldFragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
+
+
+  /**
+    * The derivations of an enum. If length of `classes` is greater than zero, this represents:
+    * {{{
+    *   enum Abc with X, Y, Z {
+    *            ^^^^^^^^^^^^
+    * }}}
+    *
+    * If classes is empty, this represents the place where they would be inserted:
+    * {{{
+    *   enum Abc {
+    *           ^
+    * }}}
+    *
+    * @param sp1  the position of the first character of the derivations.
+    * @param classes the derived classes.
+    * @param sp2  the position of the last character of the derivations.
+    */
+  case class Derivations(sp1: SourcePosition, classes: Seq[Name.QName], sp2: SourcePosition)
 }
