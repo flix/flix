@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.Ast.CallType.{NonTailCall, TailCall}
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -57,10 +56,8 @@ object LiftedAstPrinter {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
-    case ApplyClo(exp, exps, NonTailCall, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
-    case ApplyClo(exp, exps, TailCall, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
-    case ApplyDef(sym, args, NonTailCall, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print))
-    case ApplyDef(sym, args, TailCall, _, _, _) => DocAst.Expression.ApplyDefTail(sym, args.map(print))
+    case ApplyClo(exp, exps, ct, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print), Some(ct))
+    case ApplyDef(sym, args, ct, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print), Some(ct))
     case ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
