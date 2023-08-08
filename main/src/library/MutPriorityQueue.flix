@@ -94,10 +94,10 @@ mod MutPriorityQueue {
     ///
     /// Enqueues each element in `l` into `pq`.
     ///
-    pub def enqueueAll(pq: MutPriorityQueue[a, r], m: m[a]): Unit \ r with Order[a], Iterable[m] = region rc {
-        let it = Iterable.iterator(rc, m);
-        Iterator.forEach(x -> enqueue(pq, x), it)
-    }
+    pub def enqueueAll(pq: MutPriorityQueue[a, r], m: m[a]): Unit \ r with Order[a], Iterable[m] =
+        foreach(x <- m) {
+            enqueue(pq, x)
+        }
 
     ///
     /// Returns an iterator over `pq`.
