@@ -139,12 +139,12 @@ object Simplifier {
       case LoweredAst.Expr.RelationalChoose(_, _, _, _, loc) =>
         throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
-      case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
+      case LoweredAst.Expr.VectorLit(exps, tpe, _, loc) =>
         // Note: We simplify Vectors to Arrays.
         val es = exps.map(visitExp)
         SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Pure, loc)
 
-      case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, _, loc) =>
         // Note: We simplify Vectors to Arrays.
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
