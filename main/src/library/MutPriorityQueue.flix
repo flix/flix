@@ -21,7 +21,12 @@ pub enum MutPriorityQueue[a: Type, r: Region] {
 mod MutPriorityQueue {
 
     ///
-    /// Returns a string representation of `pq`.
+    /// Represents a mutable priority queue.
+    /// Explanation of component types (left to right):
+    /// Component 2: A reference to the backing array.
+    /// Component 3: A reference to the number of elements in the mutable priority queue.
+    ///
+    /// The maximum element (if it exists) can always be accessed in constant time.
     ///
     pub def toString(pq: MutPriorityQueue[a, r]): String \ r with ToString[a] = region reg {
         let MutPriorityQueue(_, arr, s) = pq;
