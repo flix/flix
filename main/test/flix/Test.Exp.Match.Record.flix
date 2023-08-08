@@ -185,4 +185,9 @@ mod Test.Exp.Match.Record {
         case { a = x, a = y | r } => ((not x) and y) and r.a == 42
     }
 
+    @test
+    def testMatchRecord32(): Bool = match { a = true, a = 42} {
+        case { a = x, a = y } => x and y == 42
+    }
+
 }
