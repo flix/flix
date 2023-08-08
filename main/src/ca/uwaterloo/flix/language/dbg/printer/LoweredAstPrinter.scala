@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.Ast.CallType.NonTailCall
 import ca.uwaterloo.flix.language.ast.LoweredAst
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern, RelationalChoosePattern}
 import ca.uwaterloo.flix.language.dbg.DocAst

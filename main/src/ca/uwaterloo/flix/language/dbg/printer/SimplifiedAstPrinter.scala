@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.Ast.CallType.NonTailCall
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expr._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
