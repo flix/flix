@@ -757,7 +757,7 @@ object ParsedAst {
       * @param rules the rules of the pattern match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Match(sp1: SourcePosition, exp: ParsedAst.MatchExpression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Type Match Expression.
@@ -2239,4 +2239,23 @@ object ParsedAst {
     * @param sp2  the position of the last character of the derivations.
     */
   case class Derivations(sp1: SourcePosition, classes: Seq[Name.QName], sp2: SourcePosition)
+
+  sealed trait MatchExpression
+
+  object MatchExpression {
+
+    /**
+      *
+      * @param sp1 the position of the first character of the `Void` keyword.
+      * @param sp2 the position of the last character of the `Void` keyword.
+      */
+    case class Void(sp1: SourcePosition, sp2: SourcePosition) extends MatchExpression
+
+    /**
+      * A wrapper around [[Expression]].
+      *
+      * @param exp the [[Expression]] that was parsed.
+      */
+    case class Exp(exp: Expression) extends MatchExpression
+  }
 }

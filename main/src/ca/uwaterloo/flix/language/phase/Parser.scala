@@ -965,8 +965,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         keyword("case") ~ WS ~ Pattern ~ optWS ~ optional(keyword("if") ~ WS ~ Expression ~ optWS) ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchRule
       }
 
+      def ExpressionOrVoid: Rule1[ParsedAst.MatchExpression] = rule {
+        def Void: Rule1[ParsedAst.MatchExpression.Void] = rule {
+          SP ~ keyword("Void") ~ SP ~> ParsedAst.MatchExpression.Void
+        }
+
+        def Exp: Rule1[ParsedAst.MatchExpression.Exp] = rule {
+          Expression ~> ParsedAst.MatchExpression.Exp
+        }
+
+        Void | Exp
+      }
+
       rule {
-        SP ~ keyword("match") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+        SP ~ keyword("match") ~ WS ~ ExpressionOrVoid ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
       }
     }
 
