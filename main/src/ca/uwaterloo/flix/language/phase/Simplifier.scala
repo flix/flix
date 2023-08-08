@@ -470,10 +470,11 @@ object Simplifier {
           val fieldPats = pats.map(_.pat)
           val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
           val zero = patternMatchList(fieldPats ::: ps, freshVars ::: vs, guard, succ, fail)
+          // Note that we reverse pats and freshVars because we still want to fold right
+          // but we want to restrict the record / matchVar from left to right
           val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
             case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), (exp, matchVarExp)) =>
               val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(matchVarExp), pat.tpe, Pure, loc1)
-              // Type is wrong in restrictedMatchVarExp
               val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(matchVarExp), tpe, matchVarExp.purity, loc1)
               val fieldLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
               (fieldLetBinding, restrictedMatchVarExp)
