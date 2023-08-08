@@ -68,10 +68,10 @@ object ReducedAstPrinter {
     case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map{
+    case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
-    case Expr.NewObject(name, clazz, tpe, _, _, _, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), /* TODO */ Nil)
+    case Expr.NewObject(name, clazz, tpe, _, methods, exps, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.zip(exps).map(printJvmMethod))
   }
 
   /**
@@ -95,5 +95,10 @@ object ReducedAstPrinter {
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
     DocAst.Expression.Var(sym)
 
-
+  /**
+    * Returns the [[DocAst.JvmMethod]] representation of `method`.
+    */
+  private def printJvmMethod(method: (ReducedAst.JvmMethod, ReducedAst.Expr)): DocAst.JvmMethod = method match {
+    case (m, clo) => DocAst.JvmMethod(m.ident, m.fparams map printFormalParam, print(clo), MonoTypePrinter.print(m.tpe))
+  }
 }
