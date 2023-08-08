@@ -465,17 +465,23 @@ object Simplifier {
           * record (field or extension) and then we recurse on the nested patterns
           * and freshly generated variables.
           */
-        case (LoweredAst.Pattern.Record(pats, _, tpe, loc) :: ps, v :: vs) =>
-          // We drop the optional record extension pattern `pat` since
-          // the user should not have access to it as a variable
+        case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
           val freshVars = pats.map(_ => Symbol.freshVarSym("innerField" + Flix.Delimiter, BoundBy.Let, loc))
           val fieldPats = pats.map(_.pat)
           val zero = patternMatchList(fieldPats ::: ps, freshVars ::: vs, guard, succ, fail)
-          pats.zip(freshVars).foldRight(zero) {
+          val one = pats.zip(freshVars).foldRight(zero) {
             case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), exp) =>
               val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
               val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(varExp), pat.tpe, Pure, loc1)
-              SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc)
+              SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
+          }
+          pat match {
+            case Some(LoweredAst.Pattern.Var(sym, _, varLoc)) =>
+              // Extension is { ... | sym } so we generate a let-binding `let sym = matchVar`
+              SimplifiedAst.Expr.Let(sym, SimplifiedAst.Expr.Var(v, tpe, loc), one, succ.tpe, one.purity, varLoc)
+            case _ =>
+              // Extension is either wild or non-existent
+              one
           }
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)

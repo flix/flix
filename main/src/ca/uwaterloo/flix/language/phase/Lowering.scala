@@ -852,13 +852,13 @@ object Lowering {
       LoweredAst.Pattern.Tuple(es, t, loc)
 
     case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
-      val patsVal = pats.map {
+      val patsVal = pats map {
         case TypedAst.Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
           val p1 = visitPat(pat1)
           val t1 = visitType(tpe1)
           LoweredAst.Pattern.Record.RecordFieldPattern(field, t1, p1, loc1)
       }
-      val patVal = pat.map(visitPat)
+      val patVal = pat map visitPat
       val t = visitType(tpe)
       LoweredAst.Pattern.Record(patsVal, patVal, t, loc)
   }
