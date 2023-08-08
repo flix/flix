@@ -89,7 +89,7 @@ mod Test.Exp.Let.Match {
 
     @test
     def testLetMatch16(): Bool =
-        let { x | r } = { x = 1, y = "" };
+        let { x | _ } = { x = 1, y = "" };
         x == 1
 
     @test
@@ -99,17 +99,17 @@ mod Test.Exp.Let.Match {
 
     @test
     def testLetMatch18(): Bool =
-        let { x = { x = { x } } | r } = { x = { x = { x = 42 } } };
+        let { x = { x = { x } } | _ } = { x = { x = { x = 42 } } };
         x == 42
 
     @test
     def testLetMatch19(): Bool =
-        let { x = { x = { x } } | r } = { x = { x = { x = 42 } }, y = "" };
+        let { x = { x = { x } } | _ } = { x = { x = { x = 42 } }, y = "" };
         x == 42
 
     @test
     def testLetMatch20(): Bool =
-        let { x = { x = { x | r0 } } | r1 } = { x = { x = { x = 42, y = false } }, y = "" };
+        let { x = { x = { x | _ } } | _ } = { x = { x = { x = 42, y = false } }, y = "" };
         x == 42
 
 }
