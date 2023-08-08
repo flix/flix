@@ -468,17 +468,20 @@ object Simplifier {
         case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
           val freshVars = pats.map(_ => Symbol.freshVarSym("innerField" + Flix.Delimiter, BoundBy.Let, loc))
           val fieldPats = pats.map(_.pat)
+          val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
           val zero = patternMatchList(fieldPats ::: ps, freshVars ::: vs, guard, succ, fail)
-          val one = pats.zip(freshVars).foldRight(zero) {
-            case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), exp) =>
-              val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
-              val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(varExp), pat.tpe, Pure, loc1)
-              SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
+          val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
+            case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), (exp, matchVarExp)) =>
+              val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(matchVarExp), pat.tpe, Pure, loc1)
+              // Type is wrong in restrictedMatchVarExp
+              val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(matchVarExp), tpe, matchVarExp.purity, loc1)
+              val fieldLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
+              (fieldLetBinding, restrictedMatchVarExp)
           }
           pat match {
             case Some(LoweredAst.Pattern.Var(sym, _, varLoc)) =>
               // Extension is { ... | sym } so we generate a let-binding `let sym = matchVar`
-              SimplifiedAst.Expr.Let(sym, SimplifiedAst.Expr.Var(v, tpe, loc), one, succ.tpe, one.purity, varLoc)
+              SimplifiedAst.Expr.Let(sym, restrictedMatchVar, one, succ.tpe, restrictedMatchVar.purity, varLoc)
             case _ =>
               // Extension is either wild or non-existent
               one
