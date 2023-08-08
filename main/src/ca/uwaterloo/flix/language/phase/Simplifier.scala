@@ -142,13 +142,13 @@ object Simplifier {
       case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
         val es = exps.map(visitExp)
-        SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Impure, loc)
+        SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, tpe, Purity.Pure, loc)
 
       case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), tpe, Purity.Impure, loc)
+        SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), tpe, Purity.Pure, loc)
 
       case LoweredAst.Expr.VectorLength(exp, loc) =>
         // Note: We simplify Vectors to Arrays.
