@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.Ast.Input
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
-import org.codehaus.plexus.util.TypeFormat
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
@@ -48,11 +48,15 @@ object HtmlDocumentor {
       return root
     }
 
+    // TODO clear directory?
     val modules = splitModules(root)
     modules.par.foreach {
       mod =>
-        val out = documentModule(mod)
-        writeFile(mod, out)
+        val pub = filterPublic(mod)
+        if (!isEmpty(pub)) {
+          val out = documentModule(pub)
+          writeFile(mod, out)
+        }
     }
 
     root
@@ -93,6 +97,26 @@ object HtmlDocumentor {
         typeAliases,
         defs,
       )
+  }
+
+  private def filterPublic(mod: Module): Module = mod match {
+    case Module(namespace, uses, submodules, classes, enums, restrictableEnums, effects, typeAliases, defs) =>
+      Module(
+        namespace,
+        uses,
+        submodules,
+        classes.filter(_.mod.isPublic),
+        enums.filter(_.mod.isPublic),
+        restrictableEnums.filter(_.mod.isPublic),
+        effects.filter(_.mod.isPublic),
+        typeAliases.filter(_.mod.isPublic),
+        defs.filter(_.spec.mod.isPublic),
+      )
+  }
+
+  private def isEmpty(mod: HtmlDocumentor.Module): Boolean = mod match {
+    case Module(_, _, _, classes, enums, restrictableEnums, effects, typeAliases, defs) =>
+      classes.isEmpty && enums.isEmpty && restrictableEnums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
   }
 
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
