@@ -67,7 +67,6 @@ object HtmlDocumentor {
       val namespace = sym.ns
       val uses = root.uses.getOrElse(sym, Nil)
 
-      // TODO get these in the correct order
       var submodules: List[Symbol.ModuleSym] = Nil
       var classes: List[TypedAst.Class] = Nil
       var enums: List[TypedAst.Enum] = Nil
@@ -139,7 +138,7 @@ object HtmlDocumentor {
 
     sb.append("<div><h2>Definitions</h2>")
 
-    for (d <- defs) {
+    for (d <- defs.sortBy(_.sym.text)) {
       sb.append("<div class='box'><div>")
 
       sb.append("<span class='line'><span class='keyword def'>def</span> ")
@@ -165,7 +164,7 @@ object HtmlDocumentor {
 
   private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='tparams'>[")
-    for ((p, i) <- tparams.zipWithIndex) {
+    for ((p, i) <- tparams.sortBy(_.loc).zipWithIndex) {
       sb.append("<span class='tparam'><span class='type'>")
       sb.append(p.name)
       sb.append("</span></span>")
@@ -179,7 +178,7 @@ object HtmlDocumentor {
 
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
-    for ((p, i) <- fparams.zipWithIndex) {
+    for ((p, i) <- fparams.sortBy(_.loc).zipWithIndex) {
       sb.append("<span><span>")
       sb.append(p.sym.text)
       sb.append("</span><span>: </span>")
