@@ -49,6 +49,8 @@ object TokenKind {
 
   case object ColonColon extends TokenKind
 
+  case object ColonEqual extends TokenKind
+
   case object Arrow extends TokenKind
 
   case object Plus extends TokenKind
@@ -68,6 +70,8 @@ object TokenKind {
   case object LessEqual extends TokenKind
 
   case object GreaterEqual extends TokenKind
+
+  case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
 
@@ -203,7 +207,9 @@ object TokenKind {
 
   case object ObjectKeyword extends TokenKind
 
-  case object Name extends TokenKind
+  case object UppercaseName extends TokenKind
+
+  case object LowercaseName extends TokenKind
 
   case object Integer extends TokenKind
 
