@@ -22,7 +22,8 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
-// TODO: How do we handle multiline tokens? Stuff like strings with newlines and block comments.
+// TODO: How do we handle positions in multiline tokens? Stuff like strings with newlines and block comments.
+// the line field would be at the last line of the token not the first. We can back track by counting newlines though but that seems expensive.
 // Maybe we need a "ignore newline" mode? or maybe its better to make start and current into (line, column) tuples
 
 object Lexer {
@@ -153,26 +154,55 @@ object Lexer {
       case '}' => TokenKind.RCurly
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
-      case '.' => TokenKind.Dot
-      case ':' => TokenKind.Colon
       case '+' => TokenKind.Plus
       case '-' => TokenKind.Minus
       case '/' => TokenKind.Slash
-      case '*' => TokenKind.Star
-      case "<" => TokenKind.Less
-      case ">" => TokenKind.Greater
-      case "@" => TokenKind.At
-
-      // TODO: Implement these
-      //      case _ if keyword("**") => TokenKind.Keyword
-      //      case _ if keyword("..") => TokenKind.Keyword
-      //      case _ if keyword("::") => TokenKind.Keyword
-      //      case _ if keyword(":=") => TokenKind.Keyword
-      //      case _ if keyword("<-") => TokenKind.Keyword
-      //      case _ if keyword("<=") => TokenKind.Keyword
-      //      case _ if keyword("==") => TokenKind.Keyword
-      //      case _ if keyword("=>") => TokenKind.Keyword
-      //      case _ if keyword(">=") => TokenKind.Keyword
+      case '@' => TokenKind.At
+      case '=' => if (peek() == '=') {
+        advance()
+        TokenKind.EqualEqual
+      } else if (peek() == '>') {
+        advance()
+        TokenKind.Arrow
+      } else {
+        TokenKind.Equal
+      }
+      case '.' => if (peek() == '.') {
+        advance()
+        TokenKind.DotDot
+      } else {
+        TokenKind.Dot
+      }
+      case '<' => if (peek() == '-') {
+        advance()
+        TokenKind.BackArrow
+      } else if (peek() == '='){
+        advance()
+        TokenKind.LessEqual
+      } else {
+        TokenKind.Less
+      }
+      case '>' => if (peek() == '=') {
+        advance()
+        TokenKind.GreaterEqual
+      } else {
+        TokenKind.Greater
+      }
+      case ':' => if (peek() == ':') {
+        advance()
+        TokenKind.ColonColon
+      } else if (peek() == '=') {
+        advance()
+        TokenKind.ColonEqual
+      } else {
+        TokenKind.Colon
+      }
+      case '*' => if (peek() == '*') {
+        advance()
+        TokenKind.StarStar
+      } else {
+        TokenKind.Star
+      }
 
       // TODO: What to do with these?
       //      case _ if keyword("&&&") => TokenKind.Keyword
@@ -253,7 +283,7 @@ object Lexer {
 
       case c if c.isLetter => name()
       case c if c.isDigit => number()
-      case "\"" => string()
+      case '\"' => string()
 
       case _ => TokenKind.Err
     }
@@ -264,7 +294,7 @@ object Lexer {
   private def addToken(k: TokenKind)(implicit s: State): Unit = {
     val t = s.src.data.slice(s.start, s.current).mkString("")
     val c = s.column - t.length // get the starting column
-    s.tokens += Token(k, t, s.line, s.start)
+    s.tokens += Token(k, t, s.line, c)
     s.start = s.current
   }
 
