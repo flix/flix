@@ -586,7 +586,7 @@ class Flix {
 
     cachedDocumentorAst = Documentor.run(typedAst)
     cachedHtmlDocumentorAst = HtmlDocumentor.run(cachedDocumentorAst)
-    cachedLoweringAst = Lowering.run(cachedDocumentorAst)
+    cachedLoweringAst = Lowering.run(cachedHtmlDocumentorAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
     cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)

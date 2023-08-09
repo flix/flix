@@ -17,7 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
+import org.codehaus.plexus.util.TypeFormat
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
@@ -47,9 +49,10 @@ object HtmlDocumentor {
     }
 
     val modules = splitModules(root)
-    val outputs = modules.par.map(mod => (mod, documentModule(mod)))
-    outputs.foreach {
-      case (mod, out) => writeFile(mod, out)
+    modules.par.foreach {
+      mod =>
+        val out = documentModule(mod)
+        writeFile(mod, out)
     }
 
     root
@@ -58,23 +61,24 @@ object HtmlDocumentor {
   private def splitModules(root: TypedAst.Root): Iterable[Module] = root.modules.map {
     case (sym, mod) =>
       val namespace = sym.ns
-      val uses = root.uses.getOrElse(sym, List.empty)
+      val uses = root.uses.getOrElse(sym, Nil)
 
-      var submodules: List[Symbol.ModuleSym] = List.empty
-      var classes: Map[Symbol.ClassSym, TypedAst.Class] = Map.empty
-      var enums: Map[Symbol.EnumSym, TypedAst.Enum] = Map.empty
-      var restrictableEnums: Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] = Map.empty
-      var effects: Map[Symbol.EffectSym, TypedAst.Effect] = Map.empty
-      var typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = Map.empty
-      var defs: Map[Symbol.DefnSym, TypedAst.Def] = Map.empty
+      // TODO get these in the correct order
+      var submodules: List[Symbol.ModuleSym] = Nil
+      var classes: List[TypedAst.Class] = Nil
+      var enums: List[TypedAst.Enum] = Nil
+      var restrictableEnums: List[TypedAst.RestrictableEnum] = Nil
+      var effects: List[TypedAst.Effect] = Nil
+      var typeAliases: List[TypedAst.TypeAlias] = Nil
+      var defs: List[TypedAst.Def] = Nil
       mod.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
-        case sym: Symbol.ClassSym => classes += sym -> root.classes(sym)
-        case sym: Symbol.EnumSym => enums += sym -> root.enums(sym)
-        case sym: Symbol.RestrictableEnumSym => restrictableEnums += sym -> root.restrictableEnums(sym)
-        case sym: Symbol.EffectSym => effects += sym -> root.effects(sym)
-        case sym: Symbol.TypeAliasSym => typeAliases += sym -> root.typeAliases(sym)
-        case sym: Symbol.DefnSym => defs += sym -> root.defs(sym)
+        case sym: Symbol.ClassSym => classes = root.classes(sym) :: classes
+        case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
+        case sym: Symbol.RestrictableEnumSym => restrictableEnums = root.restrictableEnums(sym) :: restrictableEnums
+        case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
+        case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
+        case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
         case _ => // No op
       }
 
@@ -91,9 +95,84 @@ object HtmlDocumentor {
       )
   }
 
-  private def documentModule(mod: Module): String = {
-    // Generate content here
-    mod.namespace.mkString(".")
+  private def documentModule(mod: Module)(implicit flix: Flix): String = {
+    implicit val sb: StringBuilder = new StringBuilder()
+
+    val name = mod.namespace.mkString(".")
+    sb.append("<h1>")
+    sb.append(name)
+    sb.append("</h1><hr>")
+
+    docDefs(mod.defs)
+
+    sb.toString()
+  }
+
+  private def docDefs(defs: List[TypedAst.Def])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (defs.isEmpty) {
+      return
+    }
+
+    sb.append("<div><h2>Definitions</h2>")
+
+    for (d <- defs) {
+      sb.append("<div class='box'><div>")
+
+      sb.append("<span class='line'><span class='keyword def'>def</span> ")
+      sb.append(s"<span class='name'>${d.sym.name}</span>")
+      docTypeParams(d.spec.tparams)
+      docFormalParams(d.spec.fparams)
+      sb.append("<span><span class='result'>: ")
+      docType(d.spec.retTpe)
+      sb.append("</span><span class='seperator'> \\ </span><span>")
+      docType(d.spec.eff)
+      sb.append("</span></span></span>")
+
+      sb.append("</div><div>")
+
+      // TODO parse markdown / escape HTML?
+      sb.append(s"<p>${d.spec.doc.text}</p>")
+
+      sb.append("</div></div>")
+    }
+
+    sb.append("</div>")
+  }
+
+  private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='tparams'>[")
+    for ((p, i) <- tparams.zipWithIndex) {
+      sb.append("<span class='tparam'><span class='type'>")
+      sb.append(p.name)
+      sb.append("</span></span>")
+
+      if (i < tparams.length - 1) {
+        sb.append(", ")
+      }
+    }
+    sb.append("]</span>")
+  }
+
+  private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='fparams'>(")
+    for ((p, i) <- fparams.zipWithIndex) {
+      sb.append("<span><span>")
+      sb.append(p.sym.text)
+      sb.append("</span><span>: </span>")
+      docType(p.tpe)
+      sb.append("</span>")
+
+      if (i < fparams.length - 1) {
+        sb.append(", ")
+      }
+    }
+    sb.append(")</span>")
+  }
+
+  private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='type'>")
+    sb.append(FormatType.formatType(tpe))
+    sb.append("</span>")
   }
 
   private def writeFile(mod: Module, output: String): Unit = {
@@ -113,10 +192,10 @@ object HtmlDocumentor {
   private case class Module(namespace: List[String],
                             uses: List[Ast.UseOrImport],
                             submodules: List[Symbol.ModuleSym],
-                            classes: Map[Symbol.ClassSym, TypedAst.Class],
-                            enums: Map[Symbol.EnumSym, TypedAst.Enum],
-                            restrictableEnums: Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum],
-                            effects: Map[Symbol.EffectSym, TypedAst.Effect],
-                            typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
-                            defs: Map[Symbol.DefnSym, TypedAst.Def])
+                            classes: List[TypedAst.Class],
+                            enums: List[TypedAst.Enum],
+                            restrictableEnums: List[TypedAst.RestrictableEnum],
+                            effects: List[TypedAst.Effect],
+                            typeAliases: List[TypedAst.TypeAlias],
+                            defs: List[TypedAst.Def])
 }
