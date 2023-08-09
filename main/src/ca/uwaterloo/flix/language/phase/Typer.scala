@@ -2554,7 +2554,7 @@ object Typer {
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
         for {
           optRecordTail <- traverseOptM(pat)(visit)
-          emptyRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
+          emptyRecord = Type.mkRecord(Type.mkRecordRowEmpty(loc.asSynthetic), loc.asSynthetic)
           recordTail = optRecordTail.getOrElse(emptyRecord)
           _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
           ps <- traverseM(pats)(visitRecordFieldPattern(_, root))
