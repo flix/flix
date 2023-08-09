@@ -151,6 +151,8 @@ object HtmlDocumentor {
       docType(d.spec.eff)
       sb.append("</span></span></span>")
 
+      sb.append(s"<span><a target='_blank' href='${createLink(d.sym.loc)}'>Source</a></span>")
+
       sb.append("</div><div>")
 
       // TODO parse markdown / escape HTML?
@@ -210,6 +212,11 @@ object HtmlDocumentor {
     } catch {
       case ex: IOException => throw new RuntimeException(s"Unable to write to path '$path'.", ex)
     }
+  }
+
+  private def createLink(loc: SourceLocation): String = {
+    // TODO make it also work for local user code
+    s"https://github.com/flix/flix/blob/master/main/src/library/${loc.source.name}#L${loc.beginLine}-L${loc.beginLine}"
   }
 
   private case class Module(namespace: List[String],
