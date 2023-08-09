@@ -89,6 +89,7 @@ class Flix {
     * A cache of ASTs for debugging.
     */
   private var cachedDocumentorAst: TypedAst.Root = TypedAst.empty
+  private var cachedHtmlDocumentorAst: TypedAst.Root = TypedAst.empty
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
   private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
@@ -584,6 +585,7 @@ class Flix {
     initForkJoin()
 
     cachedDocumentorAst = Documentor.run(typedAst)
+    cachedHtmlDocumentorAst = HtmlDocumentor.run(cachedDocumentorAst)
     cachedLoweringAst = Lowering.run(cachedDocumentorAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)

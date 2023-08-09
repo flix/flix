@@ -27,7 +27,8 @@ object Options {
   val Default: Options = Options(
     lib = LibLevel.All,
     debug = false,
-    documentor = false,
+    documentorJson = false,
+    documentorHtml = false,
     entryPoint = None,
     explain = false,
     githubKey = None,
@@ -87,7 +88,8 @@ object Options {
   *
   * @param lib                 selects the level of libraries to include.
   * @param debug               enables the emission of debugging information.
-  * @param documentor          enables generation of flixdoc.
+  * @param documentorJson      enables generation of flixdoc in JSON format.
+  * @param documentorHtml      enables generation of flixdoc in HTML format.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
   * @param githubKey           the API key to use for GitHub dependency resolution.
@@ -114,7 +116,8 @@ object Options {
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
-                   documentor: Boolean,
+                   documentorJson: Boolean,
+                   documentorHtml: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    githubKey: Option[String],

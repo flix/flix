@@ -85,7 +85,8 @@ object Main {
     var options = Options(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
-      documentor = cmdOpts.documentor,
+      documentorJson = cmdOpts.documentorJson,
+      documentorHtml = cmdOpts.documentorHtml,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubKey = cmdOpts.githubKey,
@@ -278,7 +279,8 @@ object Main {
     */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
-                     documentor: Boolean = false,
+                     documentorJson: Boolean = false,
+                     documentorHtml: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
@@ -395,7 +397,10 @@ object Main {
         valueName("<a1, a2, ...>").
         text("arguments passed to main. Must be a single quoted string.")
 
-      opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
+      opt[Unit]("doc-json").action((_, c) => c.copy(documentorJson = true)).
+        text("generates JSON documentation.")
+
+      opt[Unit]("doc-html").action((_, c) => c.copy(documentorHtml = true)).
         text("generates HTML documentation.")
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
