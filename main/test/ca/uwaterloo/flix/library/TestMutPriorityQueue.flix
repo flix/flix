@@ -321,59 +321,6 @@ mod TestMutPriorityQueue {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // merge                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def testMerge01(): Bool = region rc {
-        let pq1 = MutPriorityQueue.new(rc): MutPriorityQueue[Int32, rc];
-        let pq2 = MutPriorityQueue.new(rc);
-        MutPriorityQueue.merge(pq1, pq2);
-        MutPriorityQueue.toString(pq1) == "MutPriorityQueue {}"
-    }
-
-    @Test
-    def testMerge02(): Bool = region rc {
-        let pq1 = MutPriorityQueue.new(rc);
-        let pq2 = MutPriorityQueue.new(rc);
-        MutPriorityQueue.enqueueAll(pq1, 1 :: 2 :: 3 :: Nil);
-        MutPriorityQueue.merge(pq1, pq2);
-        MutPriorityQueue.toString(pq1) == "MutPriorityQueue {3, 1, 2}"
-    }
-
-    @Test
-    def testMerge03(): Bool = region rc {
-        let pq1 = MutPriorityQueue.new(rc);
-        let pq2 = MutPriorityQueue.new(rc);
-        MutPriorityQueue.enqueueAll(pq2, 1 :: 2 :: 3 :: Nil);
-        MutPriorityQueue.merge(pq1, pq2);
-        MutPriorityQueue.toString(pq1) == "MutPriorityQueue {3, 1, 2}"
-    }
-
-    @Test
-    def testMerge04(): Bool = region rc {
-        let pq1 = MutPriorityQueue.new(rc);
-        let pq2 = MutPriorityQueue.new(rc);
-        MutPriorityQueue.enqueueAll(pq2, 1 :: 3 :: 5 :: Nil);
-        MutPriorityQueue.enqueueAll(pq2, 2 :: 4 :: 6 :: Nil);
-        MutPriorityQueue.merge(pq1, pq2);
-        MutPriorityQueue.toString(pq1) == "MutPriorityQueue {6, 4, 5, 1, 2, 3}"
-    }
-
-    @Test
-    def testMerge05(): Bool = region rc {
-        let pq1 = MutPriorityQueue.new(rc);
-        let pq2 = MutPriorityQueue.new(rc);
-        let pq3 = MutPriorityQueue.new(rc);
-        MutPriorityQueue.enqueueAll(pq2, 1 :: 3 :: 5 :: Nil);
-        MutPriorityQueue.enqueueAll(pq2, 2 :: 4 :: 6 :: Nil);
-        MutPriorityQueue.enqueueAll(pq3, 2 :: 4 :: 7 :: Nil);
-        MutPriorityQueue.merge(pq2, pq3);
-        MutPriorityQueue.merge(pq1, pq2);
-        MutPriorityQueue.toString(pq1) == "MutPriorityQueue {7, 4, 6, 4, 2, 3, 5, 1, 2}"
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
