@@ -17,22 +17,16 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
-import ca.uwaterloo.flix.language.errors.LexerError
+import ca.uwaterloo.flix.language.ast.{Ast, ReadAst, Token, TokenKind}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import org.parboiled2.ParserInput
 
 import scala.collection.mutable
 
-/**
- * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
- * This lexer is resilient, meaning that when an unrecognized character is encountered,
- * the lexer will simply produce a token of kind `TokenKind.Err` an move on instead of halting.
- * There are some unrecoverable errors though, for example unterminated block-comments or unclosed string literals.
- * In these cases a `TokenKind.Err` will still be produced but it will contain the rest of the source text.
- * See `LexerError` for all error states.
- */
+// TODO: How do we handle multiline tokens? Stuff like strings with newlines and block comments.
+// Maybe we need a "ignore newline" mode? or maybe its better to make start and current into (line, column) tuples
+
 object Lexer {
   /**
    * The maximal allowed nesting level of block-comments.
@@ -106,46 +100,208 @@ object Lexer {
     }
   }
 
-  /**
-   * A workaround to allow using the new lexer but avoid crashing the compiler on unforeseen bugs.
-   * This is not viable long term and should never be merged into a stable release,
-   * but it allows us to battle-test the lexer in nightly, without inconveniencing users too much.
-   */
-  private def tryLex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
-    try {
-      lex(src)
-    } catch {
-      case except: Throwable =>
-        except.printStackTrace()
-        Array.empty[Token].toSuccess
-    }
-  }
-
-  /**
-   * Lexes a single source (file) into an array of tokens.
-   */
   private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
-    while (!eof()) {
+    while (!isAtEnd()) {
       whitespace()
-      if (!eof()) {
-        s.start = new Position(s.current.line, s.current.column, s.current.offset)
-        val k = scanToken()
-        addToken(k)
+      if (!isAtEnd()) {
+        s.start = s.current
+        scanToken()
       }
     }
 
-    // Add a virtual eof token at the last position.
-    addToken(TokenKind.Eof)
+    s.tokens += Token(TokenKind.Eof, "<eof>", s.line, s.column)
 
-    val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _) => err
-    }
-    if (errors.isEmpty) {
-      s.tokens.toArray.toSuccess
+    println(f"> ${src.name}\n${src.data.mkString("")}\n${s.tokens}")
+    s.tokens.toArray.toSuccess
+  }
+
+  private def advance()(implicit s: State): Char = {
+    val c = s.src.data(s.current)
+    s.current += 1
+    if (c == '\n') {
+      s.line += 1
+      s.column = 0
     } else {
-      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
+      s.column += 1
     }
+
+    c
+  }
+
+  private def peek()(implicit s: State): Char = {
+    s.src.data(s.current)
+  }
+
+  private def isAtEnd()(implicit s: State): Boolean = {
+    s.current == s.src.data.length
+  }
+
+  private def scanToken()(implicit s: State): Unit = {
+    val c = advance()
+
+    val kind = c match {
+      case '(' => TokenKind.LParen
+      case ')' => TokenKind.RParen
+      case '{' => TokenKind.LCurly
+      case '}' => TokenKind.RCurly
+      case ';' => TokenKind.Semi
+      case ',' => TokenKind.Comma
+      case '.' => TokenKind.Dot
+      case ':' => TokenKind.Colon
+      case '+' => TokenKind.Plus
+      case '-' => TokenKind.Minus
+      case '/' => TokenKind.Slash
+      case '*' => TokenKind.Star
+      case "<" => TokenKind.Less
+      case ">" => TokenKind.Greater
+      case "@" => TokenKind.At
+
+      // TODO: Implement these
+      //      case _ if keyword("**") => TokenKind.Keyword
+      //      case _ if keyword("..") => TokenKind.Keyword
+      //      case _ if keyword("::") => TokenKind.Keyword
+      //      case _ if keyword(":=") => TokenKind.Keyword
+      //      case _ if keyword("<-") => TokenKind.Keyword
+      //      case _ if keyword("<=") => TokenKind.Keyword
+      //      case _ if keyword("==") => TokenKind.Keyword
+      //      case _ if keyword("=>") => TokenKind.Keyword
+      //      case _ if keyword(">=") => TokenKind.Keyword
+
+      // TODO: What to do with these?
+      //      case _ if keyword("&&&") => TokenKind.Keyword
+      //      case _ if keyword("<+>") => TokenKind.Keyword
+      //      case _ if keyword("<=>") => TokenKind.Keyword
+      //      case _ if keyword("<<<") => TokenKind.Keyword
+      //      case _ if keyword(">>>") => TokenKind.Keyword
+      //      case _ if keyword("???") => TokenKind.Keyword
+      //      case _ if keyword("^^^") => TokenKind.Keyword
+      //      case _ if keyword("|||") => TokenKind.Keyword
+      //      case _ if keyword("~~~") => TokenKind.Keyword
+      //      case _ if keyword("$DEFAULT$") => TokenKind.Keyword
+
+      case _ if matches("and") => TokenKind.AndKeyword
+      case _ if matches("or") => TokenKind.OrKeyword
+      case _ if matches("mod") => TokenKind.ModKeyword
+      case _ if matches("not") => TokenKind.NotKeyword
+      case _ if matches("rem") => TokenKind.RemKeyword
+      case _ if matches("Absent") => TokenKind.AbsentKeyword
+      case _ if matches("Bool") => TokenKind.BoolKeyword
+      case _ if matches("Impure") => TokenKind.ImpureKeyword
+      case _ if matches("Nil") => TokenKind.NilKeyword
+      case _ if matches("Predicate") => TokenKind.PredicateKeyword
+      case _ if matches("Present") => TokenKind.PresentKeyword
+      case _ if matches("Pure") => TokenKind.PureKeyword
+      case _ if matches("Read") => TokenKind.ReadKeyword
+      case _ if matches("RecordRow") => TokenKind.RecordRowKeyword
+      case _ if matches("Region") => TokenKind.UppercaseRegionKeyword
+      case _ if matches("SchemaRow") => TokenKind.SchemaRowKeyword
+      case _ if matches("Type") => TokenKind.UppercaseTypeKeyword
+      case _ if matches("Write") => TokenKind.WriteKeyword
+      case _ if matches("alias") => TokenKind.AliasKeyword
+      case _ if matches("case") => TokenKind.CaseKeyword
+      case _ if matches("catch") => TokenKind.CatchKeyword
+      case _ if matches("chan") => TokenKind.ChanKeyword
+      case _ if matches("class") => TokenKind.ClassKeyword
+      case _ if matches("def") => TokenKind.DefKeyword
+      case _ if matches("deref") => TokenKind.DerefKeyword
+      case _ if matches("else") => TokenKind.ElseKeyword
+      case _ if matches("enum") => TokenKind.EnumKeyword
+      case _ if matches("false") => TokenKind.FalseKeyword
+      case _ if matches("fix") => TokenKind.FixKeyword
+      case _ if matches("force") => TokenKind.ForceKeyword
+      case _ if matches("if") => TokenKind.IfKeyword
+      case _ if matches("import") => TokenKind.ImportKeyword
+      case _ if matches("inline") => TokenKind.InlineKeyword
+      case _ if matches("instance") => TokenKind.InstanceKeyword
+      case _ if matches("into") => TokenKind.IntoKeyword
+      case _ if matches("lat") => TokenKind.LatKeyword
+      case _ if matches("law") => TokenKind.LawKeyword
+      case _ if matches("lawful") => TokenKind.LawfulKeyword
+      case _ if matches("lazy") => TokenKind.LazyKeyword
+      case _ if matches("let") => TokenKind.LetKeyword
+      case _ if matches("match") => TokenKind.MatchKeyword
+      case _ if matches("namespace") => TokenKind.NamespaceKeyword
+      case _ if matches("null") => TokenKind.NullKeyword
+      case _ if matches("opaque") => TokenKind.OpaqueKeyword
+      case _ if matches("override") => TokenKind.OverrideKeyword
+      case _ if matches("pub") => TokenKind.PubKeyword
+      case _ if matches("ref") => TokenKind.RefKeyword
+      case _ if matches("region") => TokenKind.RegionKeyword
+      case _ if matches("reify") => TokenKind.ReifyKeyword
+      case _ if matches("reifyBool") => TokenKind.ReifyBoolKeyword
+      case _ if matches("reifyEff") => TokenKind.ReifyEffKeyword
+      case _ if matches("reifyType") => TokenKind.ReifyTypeKeyword
+      case _ if matches("rel") => TokenKind.RelKeyword
+      case _ if matches("sealed") => TokenKind.SealedKeyword
+      case _ if matches("set") => TokenKind.SetKeyword
+      case _ if matches("spawn") => TokenKind.SpawnKeyword
+      case _ if matches("Static") => TokenKind.StaticKeyword
+      case _ if matches("true") => TokenKind.TrueKeyword
+      case _ if matches("type") => TokenKind.TypeKeyword
+      case _ if matches("use") => TokenKind.UseKeyword
+      case _ if matches("where") => TokenKind.WhereKeyword
+      case _ if matches("with") => TokenKind.WithKeyword
+      case _ if matches("discard") => TokenKind.DiscardKeyword
+      case _ if matches("object") => TokenKind.ObjectKeyword
+
+      case c if c.isLetter => name()
+      case c if c.isDigit => number()
+      case "\"" => string()
+
+      case _ => TokenKind.Err
+    }
+
+    addToken(kind)
+  }
+
+  private def addToken(k: TokenKind)(implicit s: State): Unit = {
+    val t = s.src.data.slice(s.start, s.current).mkString("")
+    val c = s.column - t.length // get the starting column
+    s.tokens += Token(k, t, s.line, s.start)
+    s.start = s.current
+  }
+
+  private def matches(k: String)(implicit s: State): Boolean = {
+    // check if the keyword can appear before eof
+    if (s.current + k.length > s.src.data.length) {
+      return false
+    }
+
+    val matches = s.src.data.slice(s.current - 1, s.current + k.length - 1).sameElements(k.toCharArray)
+    if (matches) { // advance the lexer past the keyword
+      for (_ <- 1 until k.length) {
+        advance()
+      }
+    }
+    matches
+  }
+
+  private def whitespace()(implicit s: State): Unit = {
+    while (!isAtEnd()) {
+      if (!peek().isWhitespace) {
+        return
+      }
+      advance()
+    }
+  }
+
+  private def name()(implicit s: State): TokenKind = TokenKind.Name
+
+  private def string()(implicit s: State): TokenKind = TokenKind.String
+
+  private def number()(implicit s: State): TokenKind = TokenKind.Integer
+
+  private def blockComment()(implicit s: State): Unit = ???
+
+  private def comment()(implicit s: State): Unit = ???
+
+  private class State(val src: Ast.Source) {
+    var start: Int = 0
+    var current: Int = 0
+    var line: Int = 0
+    var column: Int = 0
+    var tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
   }
 
   /**
