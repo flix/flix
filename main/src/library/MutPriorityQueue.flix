@@ -119,18 +119,6 @@ mod MutPriorityQueue {
         Iterator.map(x -> Array.get(x, deref arr), it1)
 
     ///
-    /// Returns a MutPriorityQueue which contains the elements of both `pq1` and `pq2`.
-    ///
-    pub def merge(pq1: MutPriorityQueue[a, r1], pq2: MutPriorityQueue[a, r2]): Unit \ {r1, r2} with Order[a] =
-        let MutPriorityQueue(_, arr2, s) = pq2;
-        Array.forEachWithIndex((i, x) -> {
-            if (i < deref s) {
-                MutPriorityQueue.enqueue(pq1, x)
-            }
-            else ()
-        }, deref arr2)
-
-    ///
     /// Returns a List representation of `pq`.
     ///
     /// Note that a MutPriorityQueue's element order depends on the order in which the elements were enqueued.
