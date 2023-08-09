@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
+///
+/// Represents a mutable priority queue.
+/// Explanation of component types (left to right):
+/// Component 1: The region capability the queue is associated with.
+/// Component 2: A reference to the backing array.
+/// Component 3: A reference to the number of elements in the mutable priority queue.
+///
+/// The maximum element (if it exists) can always be accessed in constant time.
+///
 pub enum MutPriorityQueue[a: Type, r: Region] {
     case MutPriorityQueue(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
@@ -21,12 +30,7 @@ pub enum MutPriorityQueue[a: Type, r: Region] {
 mod MutPriorityQueue {
 
     ///
-    /// Represents a mutable priority queue.
-    /// Explanation of component types (left to right):
-    /// Component 2: A reference to the backing array.
-    /// Component 3: A reference to the number of elements in the mutable priority queue.
-    ///
-    /// The maximum element (if it exists) can always be accessed in constant time.
+    /// Returns a String representation of the mutable priority queue `pq`.
     ///
     pub def toString(pq: MutPriorityQueue[a, r]): String \ r with ToString[a] = region reg {
         let MutPriorityQueue(_, arr, s) = pq;
