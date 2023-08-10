@@ -104,12 +104,12 @@ object HtmlDocumentor {
         namespace,
         uses,
         submodules,
-        classes.filter(_.mod.isPublic),
-        enums.filter(_.mod.isPublic),
-        restrictableEnums.filter(_.mod.isPublic),
-        effects.filter(_.mod.isPublic),
-        typeAliases.filter(_.mod.isPublic),
-        defs.filter(_.spec.mod.isPublic),
+        classes.filter(c => c.mod.isPublic && c.ann.isInternal),
+        enums.filter(e => e.mod.isPublic && !e.ann.isInternal),
+        restrictableEnums.filter(e => e.mod.isPublic && !e.ann.isInternal),
+        effects.filter(e => e.mod.isPublic && !e.ann.isInternal),
+        typeAliases.filter(t => t.mod.isPublic),
+        defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
       )
   }
 
