@@ -129,6 +129,7 @@ object HtmlDocumentor {
     sb.append(name)
     sb.append("</h1><hr>")
 
+    docTypeAliases(mod.typeAliases)
     docDefs(mod.defs)
 
     sb.append("</body>")
@@ -147,6 +148,32 @@ object HtmlDocumentor {
       "<link href='https://api.flix.dev/static/css/main.019098b1.css' rel='stylesheet'>" +
       s"<title>Flix Doc | $name</title>" +
       "</head>"
+
+  private def docTypeAliases(typeAliases: List[TypedAst.TypeAlias])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (typeAliases.isEmpty) {
+      return
+    }
+
+    sb.append("<div><h2>Type Aliases</h2>")
+
+    for (t <- typeAliases.sortBy(_.sym.name)) {
+      sb.append("<div class='box'><div>")
+
+      sb.append("<span class='line'><span class='keyword'>type alias</span> ")
+      sb.append(s"<span class='name'>${t.sym.name}</span> = ")
+      docType(t.tpe)
+
+      sb.append(s"<span class='source'><a target='_blank' href='${createLink(t.loc)}'>Source</a></span>")
+
+      sb.append("</div>")
+
+      docDoc(t.doc)
+
+      sb.append("</div>")
+    }
+
+    sb.append("</div>")
+  }
 
   private def docDefs(defs: List[TypedAst.Def])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (defs.isEmpty) {
