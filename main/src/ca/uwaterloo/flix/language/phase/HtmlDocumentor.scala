@@ -164,7 +164,7 @@ object HtmlDocumentor {
       sb.append(s"<span class='name'>${t.sym.name}</span> = ")
       docType(t.tpe)
 
-      sb.append(s"<span class='source'><a target='_blank' href='${createLink(t.loc)}'>Source</a></span>")
+      docSourceLocation(t.loc)
 
       sb.append("</div>")
 
@@ -196,7 +196,7 @@ object HtmlDocumentor {
       docType(d.spec.eff)
       sb.append("</span></span></span>")
 
-      sb.append(s"<span class='source'><a target='_blank' href='${createLink(d.spec.loc)}'>Source</a></span>")
+      docSourceLocation(d.spec.loc)
 
       sb.append("</div>")
 
@@ -238,7 +238,11 @@ object HtmlDocumentor {
     sb.append(")</span>")
   }
 
-  private def docDoc(doc: Ast.Doc)(implicit sb: StringBuilder): Unit = {
+  private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<span class='source'><a target='_blank' href='${createLink(loc)}'>Source</a></span>")
+  }
+
+  private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
     // DEFAULT_SAFE escapes HTML
     val config = txtmark.Configuration.DEFAULT_SAFE
     val parsed = txtmark.Processor.process(doc.text, config);
