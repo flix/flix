@@ -35,6 +35,10 @@ object TokenKind {
 
   case object RCurly extends TokenKind
 
+  case object LBracket extends TokenKind
+
+  case object RBracket extends TokenKind
+
   case object Eq extends TokenKind
 
   case object Semi extends TokenKind
@@ -92,6 +96,28 @@ object TokenKind {
   case object AbsentKeyword extends TokenKind
 
   case object BoolKeyword extends TokenKind
+
+  case object UnitKeyword extends TokenKind
+
+  case object CharKeyword extends TokenKind
+
+  case object Float32Keyword extends TokenKind
+
+  case object Float64Keyword extends TokenKind
+
+  case object Int8Keyword extends TokenKind
+
+  case object Int16Keyword extends TokenKind
+
+  case object Int32Keyword extends TokenKind
+
+  case object Int64Keyword extends TokenKind
+
+  case object StringKeyword extends TokenKind
+
+  case object BigIntKeyword extends TokenKind
+
+  case object BigDecimalKeyword extends TokenKind
 
   case object ImpureKeyword extends TokenKind
 
@@ -211,20 +237,48 @@ object TokenKind {
 
   case object LowercaseName extends TokenKind
 
-  case object Integer extends TokenKind
+  case object Float32 extends TokenKind
 
-  case object Decimal extends TokenKind
+  case object Float64 extends TokenKind
+
+  case object Int8 extends TokenKind
+
+  case object Int16 extends TokenKind
+
+  case object Int32 extends TokenKind
+
+  case object Int64 extends TokenKind
+
+  case object BigInt extends TokenKind
+
+  case object BigDecimal extends TokenKind
 
   case object String extends TokenKind
+
+  case object Char extends TokenKind
 
   case object LineComment extends TokenKind
 
   case object BlockComment extends TokenKind
 
-  case object Int extends TokenKind
-
-  case object Err extends TokenKind
+  case class Err(kind: LexerErr) extends TokenKind
 
   case object Eof extends TokenKind
+
+}
+
+sealed trait LexerErr
+
+object LexerErr {
+
+  case object UnexpectedSymbol extends LexerErr
+
+  case object UnterminatedString extends LexerErr
+
+  case object UnterminatedChar extends LexerErr
+
+  case object MalformedNumber extends LexerErr
+
+  case object MalformedNumberType extends LexerErr
 
 }
