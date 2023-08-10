@@ -19,13 +19,12 @@ import ca.uwaterloo.flix.language.errors.LexerError
 
 sealed trait TokenKind
 
-/**
- * Tokens are named for 'what they are' rather than 'what they represent'.
- * So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
- *
- * Tokens belonging to some conceptual group should have the group name as prefix.
- * So 'LiteralInt32' is preferred over 'Int32Literal'
- */
+// NOTE: Tokens are named for 'what they are' rather than 'what they represent'.
+// So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
+
+// NOTE: Builtin type keywords like 'Float32' are lexed into 'Float32Keyword' whereas Float32 *literals* are lexed to 'Float32'
+// This aligns naming of literals with other types such as 'String' and 'Bool'
+
 object TokenKind {
   case object LParen extends TokenKind
 
@@ -276,6 +275,8 @@ object LexerErr {
   case object UnterminatedString extends LexerErr
 
   case object UnterminatedChar extends LexerErr
+
+  case object DoubleDottedNumber extends LexerErr
 
   case object MalformedNumber extends LexerErr
 
