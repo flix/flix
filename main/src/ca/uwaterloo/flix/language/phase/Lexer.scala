@@ -23,8 +23,7 @@ import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-// NOTES:
-
+// TODO: Should we lex '()' into a TokenKind.Unit instead of TokenKind.LParen, TokenKind.RParen?
 
 // TODO: How do we test if UTF-8 support works? just put emojis in strings?
 
@@ -56,19 +55,22 @@ object Lexer {
   private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
     while (!isAtEnd()) {
-      whitespace()
+      whitespace() // consume whitespace
       if (!isAtEnd()) {
         s.start = s.current
-        scanToken()
+        scanToken() // scan for the next token
       }
     }
 
+    // Add a virtual eof token at the last position
     s.tokens += Token(TokenKind.Eof, "<eof>", s.line, s.column)
 
     println(f"> ${src.name}\n${src.data.mkString("")}\n${s.tokens.mkString("\n")}")
     s.tokens.toArray.toSuccess
   }
 
+  // Advances state one forward returning the char it was previously sitting on
+  // keeps track of line and column numbers too
   private def advance()(implicit s: State): Char = {
     val c = s.src.data(s.current)
     s.current += 1
@@ -82,14 +84,17 @@ object Lexer {
     c
   }
 
+  // Peeks the character that state is currently sitting on without advancing
   private def peek()(implicit s: State): Char = {
     s.src.data(s.current)
   }
 
+  // Returns whether state is at the end of its input
   private def isAtEnd()(implicit s: State): Boolean = {
     s.current == s.src.data.length
   }
 
+  // Scans for the next token in input
   private def scanToken()(implicit s: State): Unit = {
     val c = advance()
 
@@ -104,7 +109,7 @@ object Lexer {
       case ',' => TokenKind.Comma
       case '+' => TokenKind.Plus
       case '-' => {
-        if (peek().isDigit) {
+        if (peek().isDigit) { // Negative numbers
           number()
         } else {
           TokenKind.Minus
@@ -255,6 +260,7 @@ object Lexer {
     addToken(kind)
   }
 
+  // Adds a token by consuming the characters between start and current
   private def addToken(k: TokenKind)(implicit s: State): Unit = {
     val t = s.src.data.slice(s.start, s.current).mkString("")
     val c = s.column - t.length // get the starting column
@@ -262,6 +268,7 @@ object Lexer {
     s.start = s.current
   }
 
+  // Checks whether the following substring matches a keyword. Note that *comparison includes current*
   private def keyword(k: String)(implicit s: State): Boolean = {
     // check if the keyword can appear before eof
     if (s.current + k.length > s.src.data.length) {
@@ -277,6 +284,7 @@ object Lexer {
     matches
   }
 
+  // Advances state past whitespace
   private def whitespace()(implicit s: State): Unit = {
     while (!isAtEnd()) {
       if (!peek().isWhitespace) {
@@ -286,6 +294,7 @@ object Lexer {
     }
   }
 
+  // Advances state past a name returning the name kind
   private def name(isUpper: Boolean)(implicit s: State): TokenKind = {
     val kind = if (isUpper) {
       TokenKind.UppercaseName
@@ -303,10 +312,12 @@ object Lexer {
     kind
   }
 
+  // Advances state past a string
   private def string()(implicit s: State): TokenKind = {
     var prev: Char = ' '
     while (!isAtEnd()) {
       val c = peek()
+      // Check for termination while handling escaped '\"'
       if (c == '\"' && prev != '\\') {
         advance()
         return TokenKind.String
@@ -317,8 +328,14 @@ object Lexer {
     TokenKind.Err(LexerErr.UnterminatedString)
   }
 
+  // Advances state past a char
   private def char()(implicit s: State): TokenKind = {
-    advance()
+    // Advance twice if character is escaped
+    if (advance() == '\\') {
+      advance()
+    }
+
+    // Check for termination
     if (advance() != '\'') {
       TokenKind.Err(LexerErr.UnterminatedChar)
     } else {
@@ -326,23 +343,31 @@ object Lexer {
     }
   }
 
+  // Advances state past a number of any type
   private def number()(implicit s: State): TokenKind = {
     var isDecimal = false
     while (!isAtEnd()) {
       peek() match {
+        // Digits and _ are just consumed
+        case c if c.isDigit || c == '_' => {
+          advance()
+        }
+        // Dots mark a decimal but are otherwise ignored
         case '.' => {
+          if (isDecimal) {
+            return TokenKind.Err(LexerErr.DoubleDottedNumber)
+          }
           isDecimal = true
           advance()
         }
-        case c if c.isDigit => {
-          advance()
-        }
+        // Whitespace indicates that the number has ended
         case c if c.isWhitespace =>
           return if (isDecimal) {
             TokenKind.Float64
           } else {
             TokenKind.Int32
           }
+        // If this is reached an explicit number type must occur next
         case _ => return advance() match {
           case _ if keyword("f32") => TokenKind.Float32
           case _ if keyword("f64") => TokenKind.Float64
@@ -369,7 +394,7 @@ object Lexer {
     var current: Int = 0
     var line: Int = 0
     var column: Int = 0
-    var tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
+    val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
   }
 
 }
