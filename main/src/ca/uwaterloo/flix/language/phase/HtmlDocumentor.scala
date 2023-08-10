@@ -70,7 +70,6 @@ object HtmlDocumentor {
       var submodules: List[Symbol.ModuleSym] = Nil
       var classes: List[TypedAst.Class] = Nil
       var enums: List[TypedAst.Enum] = Nil
-      var restrictableEnums: List[TypedAst.RestrictableEnum] = Nil
       var effects: List[TypedAst.Effect] = Nil
       var typeAliases: List[TypedAst.TypeAlias] = Nil
       var defs: List[TypedAst.Def] = Nil
@@ -78,7 +77,6 @@ object HtmlDocumentor {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.ClassSym => classes = root.classes(sym) :: classes
         case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
-        case sym: Symbol.RestrictableEnumSym => restrictableEnums = root.restrictableEnums(sym) :: restrictableEnums
         case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
         case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
         case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
@@ -91,7 +89,6 @@ object HtmlDocumentor {
         submodules,
         classes,
         enums,
-        restrictableEnums,
         effects,
         typeAliases,
         defs,
@@ -99,14 +96,13 @@ object HtmlDocumentor {
   }
 
   private def filterPublic(mod: Module): Module = mod match {
-    case Module(namespace, uses, submodules, classes, enums, restrictableEnums, effects, typeAliases, defs) =>
+    case Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs) =>
       Module(
         namespace,
         uses,
         submodules,
         classes.filter(c => c.mod.isPublic && c.ann.isInternal),
         enums.filter(e => e.mod.isPublic && !e.ann.isInternal),
-        restrictableEnums.filter(e => e.mod.isPublic && !e.ann.isInternal),
         effects.filter(e => e.mod.isPublic && !e.ann.isInternal),
         typeAliases.filter(t => t.mod.isPublic),
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
@@ -114,8 +110,8 @@ object HtmlDocumentor {
   }
 
   private def isEmpty(mod: HtmlDocumentor.Module): Boolean = mod match {
-    case Module(_, _, _, classes, enums, restrictableEnums, effects, typeAliases, defs) =>
-      classes.isEmpty && enums.isEmpty && restrictableEnums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
+    case Module(_, _, _, classes, enums, effects, typeAliases, defs) =>
+      classes.isEmpty && enums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
   }
 
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
@@ -335,7 +331,7 @@ object HtmlDocumentor {
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
     // DEFAULT_SAFE escapes HTML
     val config = txtmark.Configuration.DEFAULT_SAFE
-    val parsed = txtmark.Processor.process(doc.text, config);
+    val parsed = txtmark.Processor.process(doc.text, config)
 
     sb.append("<div class='doc'>")
     sb.append(parsed)
@@ -372,7 +368,6 @@ object HtmlDocumentor {
                             submodules: List[Symbol.ModuleSym],
                             classes: List[TypedAst.Class],
                             enums: List[TypedAst.Enum],
-                            restrictableEnums: List[TypedAst.RestrictableEnum],
                             effects: List[TypedAst.Effect],
                             typeAliases: List[TypedAst.TypeAlias],
                             defs: List[TypedAst.Def])
