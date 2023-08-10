@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
@@ -130,6 +130,7 @@ object HtmlDocumentor {
     sb.append(name)
     sb.append("</h1><hr>")
 
+    docEnums(mod.enums)
     docTypeAliases(mod.typeAliases)
     docDefs(mod.defs)
 
@@ -150,6 +151,35 @@ object HtmlDocumentor {
       s"<title>Flix Doc | $name</title>" +
       "</head>"
 
+  private def docEnums(enums: List[TypedAst.Enum])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (enums.isEmpty) {
+      return
+    }
+
+    sb.append("<div><h2>Enums</h2>")
+
+    for (e <- enums.sortBy(_.sym.name)) {
+      sb.append("<div class='box'><div>")
+
+      sb.append("<span class='line'><span class='keyword'>enum</span> ")
+      sb.append(s"<span class='name'>${e.sym.name}</span>")
+      docTypeParams(e.tparams, showKinds = true)
+      docDerivations(e.derives)
+
+      docSourceLocation(e.loc)
+
+      sb.append("</div>")
+
+      docCases(e.cases.values.toList)
+
+      docDoc(e.doc)
+
+      sb.append("</div>")
+    }
+
+    sb.append("</div>")
+  }
+
   private def docTypeAliases(typeAliases: List[TypedAst.TypeAlias])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (typeAliases.isEmpty) {
       return
@@ -161,7 +191,9 @@ object HtmlDocumentor {
       sb.append("<div class='box'><div>")
 
       sb.append("<span class='line'><span class='keyword'>type alias</span> ")
-      sb.append(s"<span class='name'>${t.sym.name}</span> = ")
+      sb.append(s"<span class='name'>${t.sym.name}</span>")
+      docTypeParams(t.tparams, showKinds = true)
+      sb.append(" = ")
       docType(t.tpe)
 
       docSourceLocation(t.loc)
@@ -188,7 +220,7 @@ object HtmlDocumentor {
 
       sb.append("<span class='line'><span class='keyword'>def</span> ")
       sb.append(s"<span class='name'>${d.sym.name}</span>")
-      docTypeParams(d.spec.tparams)
+      docTypeParams(d.spec.tparams, showKinds = false)
       docFormalParams(d.spec.fparams)
       sb.append("<span>: ")
       docType(d.spec.retTpe)
@@ -208,12 +240,70 @@ object HtmlDocumentor {
     sb.append("</div>")
   }
 
-  private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (derives.classes.isEmpty) {
+      return
+    }
+
+    sb.append("<span> <span class='keyword'>with</span> ")
+
+    for ((c, i) <- derives.classes.sortBy(_.loc).zipWithIndex) {
+      sb.append("<span class='tpe-constraint'>")
+      sb.append(c.clazz.name)
+      sb.append("</span>")
+
+      if (i < derives.classes.length - 1) {
+        sb.append(", ")
+      }
+    }
+
+    sb.append("</span>")
+  }
+
+  private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div>")
+
+    for (c <- cases.sortBy(_.loc)) {
+      sb.append("<div><span class='keyword'>case</span> <span>")
+      sb.append(c.sym.name)
+      sb.append("</span>(")
+
+      SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
+        case SimpleType.Tuple(fields) =>
+          for ((t, i) <- fields.zipWithIndex) {
+            sb.append("<span class='type'>")
+            sb.append(FormatType.formatSimpleType(t))
+            sb.append("</span>")
+
+            if (i < fields.length - 1) {
+              sb.append(", ")
+            }
+          }
+        case _ => docType(c.tpe)
+      }
+
+      sb.append(")</div>")
+    }
+
+    sb.append("</div>")
+  }
+
+  private def docTypeParams(tparams: List[TypedAst.TypeParam], showKinds: Boolean)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (tparams.isEmpty) {
+      return
+    }
+
     sb.append("<span class='tparams'>[")
     for ((p, i) <- tparams.sortBy(_.loc).zipWithIndex) {
       sb.append("<span class='tparam'><span class='type'>")
       sb.append(p.name)
-      sb.append("</span></span>")
+      sb.append("</span>")
+      if (showKinds) {
+        sb.append(": <span class='kind'>")
+        sb.append(p.sym.kind)
+        sb.append("</span>")
+      }
+      sb.append("</span>")
 
       if (i < tparams.length - 1) {
         sb.append(", ")
