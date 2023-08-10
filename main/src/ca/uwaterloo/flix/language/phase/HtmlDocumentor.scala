@@ -122,15 +122,14 @@ object HtmlDocumentor {
     sb.append(mkHead(name))
     sb.append("<body>")
 
-    sb.append("<h1>")
-    sb.append(name)
-    sb.append("</h1><hr>")
+    sb.append(s"<h1>$name</h1>")
+    sb.append("<hr/>")
 
-    docGroup("Classes", mod.classes.sortBy(_.sym.loc), docClass)
-    docGroup("Enums", mod.enums.sortBy(_.sym.loc), docEnum)
-    docGroup("Effects", mod.effects.sortBy(_.sym.loc), docEffect)
-    docGroup("Type Aliases", mod.typeAliases.sortBy(_.sym.loc), docTypeAlias)
-    docGroup("Definitions", mod.defs.sortBy(_.sym.loc), docDef)
+    docSection("Classes", mod.classes.sortBy(_.sym.loc), docClass)
+    docSection("Enums", mod.enums.sortBy(_.sym.loc), docEnum)
+    docSection("Effects", mod.effects.sortBy(_.sym.loc), docEffect)
+    docSection("Type Aliases", mod.typeAliases.sortBy(_.sym.loc), docTypeAlias)
+    docSection("Definitions", mod.defs.sortBy(_.sym.loc), docDef)
 
     sb.append("</body>")
 
@@ -150,7 +149,7 @@ object HtmlDocumentor {
       "</head>"
   }
 
-  private def docGroup[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -185,7 +184,9 @@ object HtmlDocumentor {
     docDerivations(enm.derives)
     sb.append("</span>")
     docSourceLocation(enm.loc)
+    sb.append("<hr/>")
     docCases(enm.cases.values.toList)
+    sb.append("<hr/>")
     docDoc(enm.doc)
   }
 
