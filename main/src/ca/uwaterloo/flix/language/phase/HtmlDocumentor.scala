@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.fmt.FormatType
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
+import com.github.rjeschke.txtmark
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -238,9 +239,9 @@ object HtmlDocumentor {
   }
 
   private def docDoc(doc: Ast.Doc)(implicit sb: StringBuilder): Unit = {
-    val escaped = xml.Utility.escape(doc.text)
-    // TODO parse markdown
-    val parsed = escaped
+    // DEFAULT_SAFE escapes HTML
+    val config = txtmark.Configuration.DEFAULT_SAFE
+    val parsed = txtmark.Processor.process(doc.text, config);
 
     sb.append("<div class='doc'>")
     sb.append(parsed)
