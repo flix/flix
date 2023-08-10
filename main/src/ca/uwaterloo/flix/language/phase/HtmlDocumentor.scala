@@ -120,15 +120,33 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val name = mod.namespace.mkString(".")
+    val name = if (mod.namespace.isEmpty) RootNS else mod.namespace.mkString(".")
+
+    sb.append(mkHead(name))
+    sb.append("<body>")
+
     sb.append("<h1>")
     sb.append(name)
     sb.append("</h1><hr>")
 
     docDefs(mod.defs)
 
+    sb.append("</body>")
+
     sb.toString()
   }
+
+  private def mkHead(name: String): String =
+    "<!doctype html><html lang='en'>" +
+      "<head>" +
+      "<meta charset='utf-8'/>" +
+      "<meta name='viewport' content='width=device-width,initial-scale=1'/>" +
+      // TODO remake stylesheet
+      "<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>" +
+      "<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>" +
+      "<link href='https://api.flix.dev/static/css/main.019098b1.css' rel='stylesheet'>" +
+      s"<title>Flix Doc | $name</title>" +
+      "</head>"
 
   private def docDefs(defs: List[TypedAst.Def])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (defs.isEmpty) {
