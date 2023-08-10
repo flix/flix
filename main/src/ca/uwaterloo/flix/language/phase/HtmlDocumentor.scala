@@ -126,11 +126,11 @@ object HtmlDocumentor {
     sb.append(name)
     sb.append("</h1><hr>")
 
-    docClasses(mod.classes)
-    docEnums(mod.enums)
-    docEffects(mod.effects)
-    docTypeAliases(mod.typeAliases)
-    docDefs(mod.defs)
+    docGroup("Classes", mod.classes.sortBy(_.sym.loc), docClass)
+    docGroup("Enums", mod.enums.sortBy(_.sym.loc), docEnum)
+    docGroup("Effects", mod.effects.sortBy(_.sym.loc), docEffect)
+    docGroup("Type Aliases", mod.typeAliases.sortBy(_.sym.loc), docTypeAlias)
+    docGroup("Definitions", mod.defs.sortBy(_.sym.loc), docDef)
 
     sb.append("</body>")
 
@@ -150,147 +150,80 @@ object HtmlDocumentor {
       "</head>"
   }
 
-  private def docClasses(classes: List[TypedAst.Class])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (classes.isEmpty) {
+  private def docGroup[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (group.isEmpty) {
       return
     }
 
-    sb.append("<div><h2>Classes</h2>")
-
-    for (c <- classes.sortBy(_.sym.name)) {
-      sb.append("<div class='box'><div>")
-
-      sb.append("<span class='line'><span class='keyword'>class</span> ")
-      sb.append(s"<span class='name'>${c.sym.name}</span>")
-      docTypeParams(List(c.tparam), showKinds = true)
-      docTypeConstraints(c.superClasses)
-
-      docSourceLocation(c.loc)
-
-      sb.append("</div>")
-
-      docDoc(c.doc)
-
+    sb.append("<div>")
+    sb.append(s"<h2>$name</h2>")
+    for (e <- group) {
+      sb.append("<div class='box'>")
+      docElt(e)
       sb.append("</div>")
     }
-
     sb.append("</div>")
   }
 
-  private def docEnums(enums: List[TypedAst.Enum])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (enums.isEmpty) {
-      return
-    }
-
-    sb.append("<div><h2>Enums</h2>")
-
-    for (e <- enums.sortBy(_.sym.name)) {
-      sb.append("<div class='box'><div>")
-
-      sb.append("<span class='line'><span class='keyword'>enum</span> ")
-      sb.append(s"<span class='name'>${e.sym.name}</span>")
-      docTypeParams(e.tparams, showKinds = true)
-      docDerivations(e.derives)
-
-      docSourceLocation(e.loc)
-
-      sb.append("</span></div>")
-
-      docCases(e.cases.values.toList)
-
-      docDoc(e.doc)
-
-      sb.append("</div>")
-    }
-
-    sb.append("</div>")
+  private def docClass(clazz: TypedAst.Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='line'>")
+    sb.append("<span class='keyword'>class</span> ")
+    sb.append(s"<span class='name'>${clazz.sym.name}</span>")
+    docTypeParams(List(clazz.tparam), showKinds = true)
+    docTypeConstraints(clazz.superClasses)
+    sb.append("</span>")
+    docSourceLocation(clazz.loc)
+    docDoc(clazz.doc)
+    // TODO add signatures, instances, definitions
   }
 
-  private def docEffects(effects: List[TypedAst.Effect])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (effects.isEmpty) {
-      return
-    }
-
-    sb.append("<div><h2>Effects</h2>")
-
-    for (e <- effects.sortBy(_.sym.name)) {
-      sb.append("<div class='box'><div>")
-
-      sb.append("<span class='line'><span class='keyword'>eff</span> ")
-      sb.append(s"<span class='name'>${e.sym.name}</span>")
-
-      docSourceLocation(e.loc)
-
-      sb.append("</div>")
-
-      // TODO document e.ops
-
-      docDoc(e.doc)
-
-      sb.append("</div>")
-    }
-
-    sb.append("</div>")
+  private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='line'>")
+    sb.append("<span class='keyword'>enum</span> ")
+    sb.append(s"<span class='name'>${enm.sym.name}</span>")
+    docTypeParams(enm.tparams, showKinds = true)
+    docDerivations(enm.derives)
+    sb.append("</span>")
+    docSourceLocation(enm.loc)
+    docCases(enm.cases.values.toList)
+    docDoc(enm.doc)
   }
 
-  private def docTypeAliases(typeAliases: List[TypedAst.TypeAlias])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (typeAliases.isEmpty) {
-      return
-    }
-
-    sb.append("<div><h2>Type Aliases</h2>")
-
-    for (t <- typeAliases.sortBy(_.sym.name)) {
-      sb.append("<div class='box'><div>")
-
-      sb.append("<span class='line'><span class='keyword'>type alias</span> ")
-      sb.append(s"<span class='name'>${t.sym.name}</span>")
-      docTypeParams(t.tparams, showKinds = true)
-      sb.append(" = ")
-      docType(t.tpe)
-
-      docSourceLocation(t.loc)
-
-      sb.append("</div>")
-
-      docDoc(t.doc)
-
-      sb.append("</div>")
-    }
-
-    sb.append("</div>")
+  private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='line'>")
+    sb.append("<span class='keyword'>eff</span> ")
+    sb.append(s"<span class='name'>${eff.sym.name}</span>")
+    sb.append("</span>")
+    docSourceLocation(eff.loc)
+    // TODO document e.ops
+    docDoc(eff.doc)
   }
 
-  private def docDefs(defs: List[TypedAst.Def])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (defs.isEmpty) {
-      return
-    }
+  private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='line'>")
+    sb.append("<span class='keyword'>type alias</span> ")
+    sb.append(s"<span class='name'>${ta.sym.name}</span>")
+    docTypeParams(ta.tparams, showKinds = true)
+    sb.append(" = ")
+    docType(ta.tpe)
+    sb.append("</span>")
+    docSourceLocation(ta.loc)
+    docDoc(ta.doc)
+  }
 
-    sb.append("<div><h2>Definitions</h2>")
-
-    for (d <- defs.sortBy(_.sym.text)) {
-      sb.append("<div class='box'><div>")
-
-      sb.append("<span class='line'><span class='keyword'>def</span> ")
-      sb.append(s"<span class='name'>${d.sym.name}</span>")
-      docTypeParams(d.spec.tparams, showKinds = false)
-      docFormalParams(d.spec.fparams)
-      sb.append("<span>: ")
-      docType(d.spec.retTpe)
-      sb.append(" \\ <span>")
-      docType(d.spec.eff)
-      sb.append("</span></span></span>")
-
-      docSourceLocation(d.spec.loc)
-
-      sb.append("</div>")
-
-      docDoc(d.spec.doc)
-
-      sb.append("</div>")
-    }
-
-    sb.append("</div>")
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='line'>")
+    sb.append("<span class='keyword'>def</span> ")
+    sb.append(s"<span class='name'>${defn.sym.name}</span>")
+    docTypeParams(defn.spec.tparams, showKinds = false)
+    docFormalParams(defn.spec.fparams)
+    sb.append(": ")
+    docType(defn.spec.retTpe)
+    sb.append(" \\ ")
+    docType(defn.spec.eff)
+    sb.append("</span>")
+    docSourceLocation(defn.spec.loc)
+    docDoc(defn.spec.doc)
   }
 
   private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -299,19 +232,15 @@ object HtmlDocumentor {
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
-
     for ((t, i) <- tconsts.sortBy(_.loc).zipWithIndex) {
-      sb.append("<span class='tpe-constraint'>")
-      sb.append(t.head.sym)
-      sb.append("</span>[")
+      sb.append(s"<span class='tpe-constraint'>${t.head.sym}</span>[")
       docType(t.arg)
-      sb.append("]</span>")
+      sb.append("]")
 
       if (i < tconsts.length - 1) {
         sb.append(", ")
       }
     }
-
     sb.append("</span>")
   }
 
@@ -321,34 +250,27 @@ object HtmlDocumentor {
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
-
     for ((c, i) <- derives.classes.sortBy(_.loc).zipWithIndex) {
-      sb.append("<span class='tpe-constraint'>")
-      sb.append(c.clazz.name)
-      sb.append("</span>")
+      sb.append(s"<span class='tpe-constraint'>${c.clazz.name}</span>")
 
       if (i < derives.classes.length - 1) {
         sb.append(", ")
       }
     }
-
     sb.append("</span>")
   }
 
   private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<div>")
-
     for (c <- cases.sortBy(_.loc)) {
-      sb.append("<div><span class='keyword'>case</span> <span>")
-      sb.append(c.sym.name)
-      sb.append("</span>(")
+      sb.append("<div>")
+      sb.append("<span class='keyword'>case</span> ")
+      sb.append(s"<span>${c.sym.name}</span>(")
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
         case SimpleType.Tuple(fields) =>
           for ((t, i) <- fields.zipWithIndex) {
-            sb.append("<span class='type'>")
-            sb.append(FormatType.formatSimpleType(t))
-            sb.append("</span>")
+            sb.append(s"<span class='type'>${FormatType.formatSimpleType(t)}</span>")
 
             if (i < fields.length - 1) {
               sb.append(", ")
@@ -359,7 +281,6 @@ object HtmlDocumentor {
 
       sb.append(")</div>")
     }
-
     sb.append("</div>")
   }
 
@@ -370,13 +291,10 @@ object HtmlDocumentor {
 
     sb.append("<span class='tparams'>[")
     for ((p, i) <- tparams.sortBy(_.loc).zipWithIndex) {
-      sb.append("<span class='tparam'><span class='type'>")
-      sb.append(p.name)
-      sb.append("</span>")
+      sb.append("<span class='tparam'>")
+      sb.append(s"<span class='type'>${p.name}</span>")
       if (showKinds) {
-        sb.append(": <span class='kind'>")
-        sb.append(p.sym.kind)
-        sb.append("</span>")
+        sb.append(s": <span class='kind'>${p.sym.kind}</span>")
       }
       sb.append("</span>")
 
@@ -390,9 +308,7 @@ object HtmlDocumentor {
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     for ((p, i) <- fparams.sortBy(_.loc).zipWithIndex) {
-      sb.append("<span><span>")
-      sb.append(p.sym.text)
-      sb.append("</span>: ")
+      sb.append(s"<span><span>${p.sym.text}</span>: ")
       docType(p.tpe)
       sb.append("</span>")
 
