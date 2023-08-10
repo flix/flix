@@ -158,24 +158,23 @@ object HtmlDocumentor {
     for (d <- defs.sortBy(_.sym.text)) {
       sb.append("<div class='box'><div>")
 
-      sb.append("<span class='line'><span class='keyword def'>def</span> ")
+      sb.append("<span class='line'><span class='keyword'>def</span> ")
       sb.append(s"<span class='name'>${d.sym.name}</span>")
       docTypeParams(d.spec.tparams)
       docFormalParams(d.spec.fparams)
-      sb.append("<span><span class='result'>: ")
+      sb.append("<span>: ")
       docType(d.spec.retTpe)
-      sb.append("</span><span class='seperator'> \\ </span><span>")
+      sb.append(" \\ <span>")
       docType(d.spec.eff)
       sb.append("</span></span></span>")
 
-      sb.append(s"<span><a target='_blank' href='${createLink(d.sym.loc)}'>Source</a></span>")
+      sb.append(s"<span class='source'><a target='_blank' href='${createLink(d.spec.loc)}'>Source</a></span>")
 
-      sb.append("</div><div>")
+      sb.append("</div>")
 
-      // TODO parse markdown / escape HTML?
-      sb.append(s"<p>${d.spec.doc.text}</p>")
+      docDoc(d.spec.doc)
 
-      sb.append("</div></div>")
+      sb.append("</div>")
     }
 
     sb.append("</div>")
@@ -200,7 +199,7 @@ object HtmlDocumentor {
     for ((p, i) <- fparams.sortBy(_.loc).zipWithIndex) {
       sb.append("<span><span>")
       sb.append(p.sym.text)
-      sb.append("</span><span>: </span>")
+      sb.append("</span>: ")
       docType(p.tpe)
       sb.append("</span>")
 
@@ -209,6 +208,16 @@ object HtmlDocumentor {
       }
     }
     sb.append(")</span>")
+  }
+
+  private def docDoc(doc: Ast.Doc)(implicit sb: StringBuilder): Unit = {
+    val escaped = xml.Utility.escape(doc.text)
+    // TODO parse markdown
+    val parsed = escaped
+
+    sb.append("<div class='doc'>")
+    sb.append(parsed)
+    sb.append("</div>")
   }
 
   private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
