@@ -127,6 +127,7 @@ object HtmlDocumentor {
     sb.append("</h1><hr>")
 
     docEnums(mod.enums)
+    docEffects(mod.effects)
     docTypeAliases(mod.typeAliases)
     docDefs(mod.defs)
 
@@ -167,6 +168,33 @@ object HtmlDocumentor {
       sb.append("</div>")
 
       docCases(e.cases.values.toList)
+
+      docDoc(e.doc)
+
+      sb.append("</div>")
+    }
+
+    sb.append("</div>")
+  }
+
+  private def docEffects(effects: List[TypedAst.Effect])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (effects.isEmpty) {
+      return
+    }
+
+    sb.append("<div><h2>Effects</h2>")
+
+    for (e <- effects.sortBy(_.sym.name)) {
+      sb.append("<div class='box'><div>")
+
+      sb.append("<span class='line'><span class='keyword'>eff</span> ")
+      sb.append(s"<span class='name'>${e.sym.name}</span>")
+
+      docSourceLocation(e.loc)
+
+      sb.append("</div>")
+
+      // TODO document e.ops
 
       docDoc(e.doc)
 
