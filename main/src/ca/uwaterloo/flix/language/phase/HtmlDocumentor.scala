@@ -48,7 +48,7 @@ object HtmlDocumentor {
       return root
     }
 
-    // TODO clear directory?
+    clearOutputDirectory()
     val modules = splitModules(root)
     modules.par.foreach {
       mod =>
@@ -329,6 +329,12 @@ object HtmlDocumentor {
       if (i < list.length - 1) {
         sb.append(", ")
       }
+    }
+  }
+
+  private def clearOutputDirectory(): Unit = {
+    Files.list(OutputDirectory).forEach {
+      f => Files.delete(f)
     }
   }
 
