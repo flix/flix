@@ -232,14 +232,10 @@ object HtmlDocumentor {
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
-    for ((t, i) <- tconsts.sortBy(_.loc).zipWithIndex) {
+    docList(tconsts.sortBy(_.loc)) { t =>
       sb.append(s"<span class='tpe-constraint'>${t.head.sym}</span>[")
       docType(t.arg)
       sb.append("]")
-
-      if (i < tconsts.length - 1) {
-        sb.append(", ")
-      }
     }
     sb.append("</span>")
   }
@@ -250,12 +246,8 @@ object HtmlDocumentor {
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
-    for ((c, i) <- derives.classes.sortBy(_.loc).zipWithIndex) {
+    docList(derives.classes.sortBy(_.loc)) { c =>
       sb.append(s"<span class='tpe-constraint'>${c.clazz.name}</span>")
-
-      if (i < derives.classes.length - 1) {
-        sb.append(", ")
-      }
     }
     sb.append("</span>")
   }
@@ -269,12 +261,8 @@ object HtmlDocumentor {
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
         case SimpleType.Tuple(fields) =>
-          for ((t, i) <- fields.zipWithIndex) {
+          docList(fields) { t =>
             sb.append(s"<span class='type'>${FormatType.formatSimpleType(t)}</span>")
-
-            if (i < fields.length - 1) {
-              sb.append(", ")
-            }
           }
         case _ => docType(c.tpe)
       }
@@ -290,31 +278,23 @@ object HtmlDocumentor {
     }
 
     sb.append("<span class='tparams'>[")
-    for ((p, i) <- tparams.sortBy(_.loc).zipWithIndex) {
+    docList(tparams.sortBy(_.loc)) { p =>
       sb.append("<span class='tparam'>")
       sb.append(s"<span class='type'>${p.name}</span>")
       if (showKinds) {
         sb.append(s": <span class='kind'>${p.sym.kind}</span>")
       }
       sb.append("</span>")
-
-      if (i < tparams.length - 1) {
-        sb.append(", ")
-      }
     }
     sb.append("]</span>")
   }
 
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
-    for ((p, i) <- fparams.sortBy(_.loc).zipWithIndex) {
+    docList(fparams.sortBy(_.loc)) { p =>
       sb.append(s"<span><span>${p.sym.text}</span>: ")
       docType(p.tpe)
       sb.append("</span>")
-
-      if (i < fparams.length - 1) {
-        sb.append(", ")
-      }
     }
     sb.append(")</span>")
   }
@@ -337,6 +317,18 @@ object HtmlDocumentor {
     sb.append("<span class='type'>")
     sb.append(FormatType.formatType(tpe))
     sb.append("</span>")
+  }
+
+  /**
+    * Runs the given `docElt` on each element of `list`, separated by the string: ", " (comma + space)
+    */
+  private def docList[T](list: List[T])(docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    for ((e, i) <- list.zipWithIndex) {
+      docElt(e)
+      if (i < list.length - 1) {
+        sb.append(", ")
+      }
+    }
   }
 
   private def writeFile(mod: Module, output: String): Unit = {
