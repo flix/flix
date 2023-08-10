@@ -101,7 +101,7 @@ object HtmlDocumentor {
         namespace,
         uses,
         submodules,
-        classes.filter(c => c.mod.isPublic && c.ann.isInternal),
+        classes.filter(c => c.mod.isPublic && !c.ann.isInternal),
         enums.filter(e => e.mod.isPublic && !e.ann.isInternal),
         effects.filter(e => e.mod.isPublic && !e.ann.isInternal),
         typeAliases.filter(t => t.mod.isPublic),
@@ -126,6 +126,7 @@ object HtmlDocumentor {
     sb.append(name)
     sb.append("</h1><hr>")
 
+    docClasses(mod.classes)
     docEnums(mod.enums)
     docEffects(mod.effects)
     docTypeAliases(mod.typeAliases)
@@ -136,7 +137,7 @@ object HtmlDocumentor {
     sb.toString()
   }
 
-  private def mkHead(name: String): String =
+  private def mkHead(name: String): String = {
     "<!doctype html><html lang='en'>" +
       "<head>" +
       "<meta charset='utf-8'/>" +
@@ -147,6 +148,34 @@ object HtmlDocumentor {
       "<link href='https://api.flix.dev/static/css/main.019098b1.css' rel='stylesheet'>" +
       s"<title>Flix Doc | $name</title>" +
       "</head>"
+  }
+
+  private def docClasses(classes: List[TypedAst.Class])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (classes.isEmpty) {
+      return
+    }
+
+    sb.append("<div><h2>Classes</h2>")
+
+    for (c <- classes.sortBy(_.sym.name)) {
+      sb.append("<div class='box'><div>")
+
+      sb.append("<span class='line'><span class='keyword'>class</span> ")
+      sb.append(s"<span class='name'>${c.sym.name}</span>")
+      docTypeParams(List(c.tparam), showKinds = true)
+      docTypeConstraints(c.superClasses)
+
+      docSourceLocation(c.loc)
+
+      sb.append("</div>")
+
+      docDoc(c.doc)
+
+      sb.append("</div>")
+    }
+
+    sb.append("</div>")
+  }
 
   private def docEnums(enums: List[TypedAst.Enum])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (enums.isEmpty) {
@@ -165,7 +194,7 @@ object HtmlDocumentor {
 
       docSourceLocation(e.loc)
 
-      sb.append("</div>")
+      sb.append("</span></div>")
 
       docCases(e.cases.values.toList)
 
@@ -262,6 +291,28 @@ object HtmlDocumentor {
     }
 
     sb.append("</div>")
+  }
+
+  private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (tconsts.isEmpty) {
+      return
+    }
+
+    sb.append("<span> <span class='keyword'>with</span> ")
+
+    for ((t, i) <- tconsts.sortBy(_.loc).zipWithIndex) {
+      sb.append("<span class='tpe-constraint'>")
+      sb.append(t.head.sym)
+      sb.append("</span>[")
+      docType(t.arg)
+      sb.append("]</span>")
+
+      if (i < tconsts.length - 1) {
+        sb.append(", ")
+      }
+    }
+
+    sb.append("</span>")
   }
 
   private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
