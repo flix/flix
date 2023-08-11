@@ -57,6 +57,10 @@ sourceSets {
         scala {
             srcDirs = ['main/src']
         }
+
+        resources {
+            srcDirs = ['main/src/resources']
+        }
     }
     test {
         scala {

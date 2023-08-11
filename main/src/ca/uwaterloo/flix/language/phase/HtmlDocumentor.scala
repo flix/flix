@@ -24,6 +24,7 @@ import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 import com.github.rjeschke.txtmark
+import scala.io.Source
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -41,10 +42,9 @@ object HtmlDocumentor {
   val OutputDirectory: Path = Paths.get("./build/doc")
 
   /**
-    * The path to the the stylesheet.
+    * The path to the the stylesheet, relative to the resources folder.
     */
-  // TODO make portable
-  val Stylesheet: Path = Paths.get("main/src/ca/uwaterloo/flix/api/doc/styles/styles.css")
+  val Stylesheet: String = "/doc/styles.css"
 
   def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("HtmlDocumentor") {
     //
@@ -155,10 +155,8 @@ object HtmlDocumentor {
   }
 
   private def mkStyle: String = {
-    val inline = s"<style>${Files.readString(Stylesheet)}</style>"
-    val loaded = s"<link href='/$Stylesheet' rel='stylesheet'>"
-
-    inline
+    val source = Source.fromURL(getClass.getResource("/doc/styles.css"))
+    s"<style>${source.mkString}</style>"
   }
 
   private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -280,7 +278,7 @@ object HtmlDocumentor {
 
       sb.append(")</code>")
     }
-    sb.append("</div class='cases'>")
+    sb.append("</div>")
   }
 
   private def docTypeParams(tparams: List[TypedAst.TypeParam], showKinds: Boolean)(implicit flix: Flix, sb: StringBuilder): Unit = {
