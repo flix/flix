@@ -196,9 +196,7 @@ object HtmlDocumentor {
     docDerivations(enm.derives)
     sb.append("</code>")
     docSourceLocation(enm.loc)
-    sb.append("<hr/>")
     docCases(enm.cases.values.toList)
-    sb.append("<hr/>")
     docDoc(enm.doc)
   }
 

@@ -71,10 +71,6 @@ section > * {
     box-sizing: border-box;
     overflow: auto;
 }
-.box hr {
-    margin-top: 0.35rem;
-    margin-bottom: 0.35rem;
-}
 .box > code {
     font-size: 0.85rem;
 }
@@ -92,6 +88,8 @@ section > * {
 
 .cases {
     margin-left: 1rem;
+    margin-top: 0.7rem;
+    margin-bottom: 0.7rem;
 }
 .cases > code {
     font-size: 0.85rem;
