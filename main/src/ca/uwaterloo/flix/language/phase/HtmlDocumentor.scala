@@ -55,13 +55,14 @@ object HtmlDocumentor {
     }
 
     clearOutputDirectory()
+    writeStyles()
     val modules = splitModules(root)
     modules.par.foreach {
       mod =>
         val pub = filterPublic(mod)
         if (!isEmpty(pub)) {
           val out = documentModule(pub)
-          writeFile(mod, out)
+          writeModule(mod, out)
         }
     }
 
@@ -126,7 +127,6 @@ object HtmlDocumentor {
     val name = if (mod.namespace.isEmpty) RootNS else mod.namespace.mkString(".")
 
     sb.append(mkHead(name))
-    sb.append(mkStyle)
     sb.append("<body>")
 
     sb.append(s"<h1>$name</h1>")
@@ -150,13 +150,9 @@ object HtmlDocumentor {
       "<meta name='viewport' content='width=device-width,initial-scale=1'/>" +
       "<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>" +
       "<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>" +
+      "<link href='styles.css' rel='stylesheet'>" +
       s"<title>Flix Doc | $name</title>" +
       "</head>"
-  }
-
-  private def mkStyle: String = {
-    val source = Source.fromURL(getClass.getResource("/doc/styles.css"))
-    s"<style>${source.mkString}</style>"
   }
 
   private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -352,10 +348,21 @@ object HtmlDocumentor {
     }
   }
 
-  private def writeFile(mod: Module, output: String): Unit = {
-    val name = if (mod.namespace.isEmpty) List(RootNS) else mod.namespace
-    val path = OutputDirectory.resolve(s"${name.mkString(".")}.html")
+  private def writeStyles(): Unit = {
+    val source = Source.fromURL(getClass.getResource(Stylesheet))
+    writeFile("styles.css", source.mkString)
+  }
 
+  private def writeModule(mod: Module, output: String): Unit = {
+    val name = if (mod.namespace.isEmpty) List(RootNS) else mod.namespace
+    writeFile(s"${name.mkString(".")}.html", output)
+  }
+
+  /**
+    * Write the file to the output directory with the given file name.
+    */
+  private def writeFile(name: String, output: String): Unit = {
+    val path = OutputDirectory.resolve(name)
     try {
       Files.createDirectories(OutputDirectory)
       Files.writeString(path, output)
