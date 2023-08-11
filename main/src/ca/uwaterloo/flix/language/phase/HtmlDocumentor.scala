@@ -40,6 +40,12 @@ object HtmlDocumentor {
     */
   val OutputDirectory: Path = Paths.get("./build/doc")
 
+  /**
+    * The path to the the stylesheet.
+    */
+  // TODO make portable
+  val Stylesheet: Path = Paths.get("main/src/ca/uwaterloo/flix/api/doc/styles/styles.css")
+
   def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("HtmlDocumentor") {
     //
     // Determine whether to generate documentation.
@@ -120,6 +126,7 @@ object HtmlDocumentor {
     val name = if (mod.namespace.isEmpty) RootNS else mod.namespace.mkString(".")
 
     sb.append(mkHead(name))
+    sb.append(mkStyle)
     sb.append("<body>")
 
     sb.append(s"<h1>$name</h1>")
@@ -141,12 +148,17 @@ object HtmlDocumentor {
       "<head>" +
       "<meta charset='utf-8'/>" +
       "<meta name='viewport' content='width=device-width,initial-scale=1'/>" +
-      // TODO remake stylesheet
       "<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>" +
       "<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>" +
-      "<link href='https://api.flix.dev/static/css/main.019098b1.css' rel='stylesheet'>" +
       s"<title>Flix Doc | $name</title>" +
       "</head>"
+  }
+
+  private def mkStyle: String = {
+    val inline = s"<style>${Files.readString(Stylesheet)}</style>"
+    val loaded = s"<link href='/$Stylesheet' rel='stylesheet'>"
+
+    inline
   }
 
   private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -154,35 +166,35 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append("<div>")
+    sb.append("<section>")
     sb.append(s"<h2>$name</h2>")
     for (e <- group) {
       sb.append("<div class='box'>")
       docElt(e)
       sb.append("</div>")
     }
-    sb.append("</div>")
+    sb.append("</section>")
   }
 
   private def docClass(clazz: TypedAst.Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<span class='line'>")
+    sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${clazz.sym.name}</span>")
     docTypeParams(List(clazz.tparam), showKinds = true)
     docTypeConstraints(clazz.superClasses)
-    sb.append("</span>")
+    sb.append("</code>")
     docSourceLocation(clazz.loc)
     docDoc(clazz.doc)
     // TODO add signatures, instances, definitions
   }
 
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<span class='line'>")
+    sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${enm.sym.name}</span>")
     docTypeParams(enm.tparams, showKinds = true)
     docDerivations(enm.derives)
-    sb.append("</span>")
+    sb.append("</code>")
     docSourceLocation(enm.loc)
     sb.append("<hr/>")
     docCases(enm.cases.values.toList)
@@ -191,29 +203,29 @@ object HtmlDocumentor {
   }
 
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<span class='line'>")
+    sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
     sb.append(s"<span class='name'>${eff.sym.name}</span>")
-    sb.append("</span>")
+    sb.append("</code>")
     docSourceLocation(eff.loc)
     // TODO document e.ops
     docDoc(eff.doc)
   }
 
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<span class='line'>")
+    sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${ta.sym.name}</span>")
     docTypeParams(ta.tparams, showKinds = true)
     sb.append(" = ")
     docType(ta.tpe)
-    sb.append("</span>")
+    sb.append("</code>")
     docSourceLocation(ta.loc)
     docDoc(ta.doc)
   }
 
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<span class='line'>")
+    sb.append("<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${defn.sym.name}</span>")
     docTypeParams(defn.spec.tparams, showKinds = false)
@@ -221,8 +233,8 @@ object HtmlDocumentor {
     sb.append(": ")
     docType(defn.spec.retTpe)
     sb.append(" \\ ")
-    docType(defn.spec.eff)
-    sb.append("</span>")
+    docEffectType(defn.spec.eff)
+    sb.append("</code>")
     docSourceLocation(defn.spec.loc)
     docDoc(defn.spec.doc)
   }
@@ -254,11 +266,11 @@ object HtmlDocumentor {
   }
 
   private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div>")
+    sb.append("<div class='cases'>")
     for (c <- cases.sortBy(_.loc)) {
-      sb.append("<div>")
+      sb.append("<code>")
       sb.append("<span class='keyword'>case</span> ")
-      sb.append(s"<span>${c.sym.name}</span>(")
+      sb.append(s"<span class='case-tag'>${c.sym.name}</span>(")
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
         case SimpleType.Tuple(fields) =>
@@ -268,9 +280,9 @@ object HtmlDocumentor {
         case _ => docType(c.tpe)
       }
 
-      sb.append(")</div>")
+      sb.append(")</code>")
     }
-    sb.append("</div>")
+    sb.append("</div class='cases'>")
   }
 
   private def docTypeParams(tparams: List[TypedAst.TypeParam], showKinds: Boolean)(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -301,7 +313,7 @@ object HtmlDocumentor {
   }
 
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<span class='source'><a target='_blank' href='${createLink(loc)}'>Source</a></span>")
+    sb.append(s"<a class='source' target='_blank' href='${createLink(loc)}'>Source</a>")
   }
 
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -317,6 +329,12 @@ object HtmlDocumentor {
   private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='type'>")
     sb.append(FormatType.formatType(tpe))
+    sb.append("</span>")
+  }
+
+  private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='effect'>")
+    sb.append(FormatType.formatType(eff))
     sb.append("</span>")
   }
 
@@ -344,9 +362,7 @@ object HtmlDocumentor {
 
     try {
       Files.createDirectories(OutputDirectory)
-      val writer = Files.newBufferedWriter(path)
-      writer.write(output)
-      writer.close()
+      Files.writeString(path, output)
     } catch {
       case ex: IOException => throw new RuntimeException(s"Unable to write to path '$path'.", ex)
     }
