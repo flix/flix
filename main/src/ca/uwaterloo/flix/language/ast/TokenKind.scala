@@ -58,19 +58,21 @@ object TokenKind {
 
   case object Minus extends TokenKind
 
+  case object Hash extends TokenKind
+
   case object Star extends TokenKind
 
   case object StarStar extends TokenKind
 
   case object Slash extends TokenKind
 
-  case object Less extends TokenKind
+  case object LAngle extends TokenKind
 
-  case object Greater extends TokenKind
+  case object RAngle extends TokenKind
 
-  case object LessEqual extends TokenKind
+  case object LAngleEqual extends TokenKind
 
-  case object GreaterEqual extends TokenKind
+  case object RAngleEqual extends TokenKind
 
   case object Equal extends TokenKind
 

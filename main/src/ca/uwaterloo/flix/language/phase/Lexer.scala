@@ -23,7 +23,8 @@ import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-// TODO: Should we lex '()' into a TokenKind.Unit instead of TokenKind.LParen, TokenKind.RParen?
+
+// TODO: Should there be a max nesting level of block comments? 256?
 
 // TODO: How do we test if UTF-8 support works? just put emojis in strings?
 
@@ -66,6 +67,9 @@ object Lexer {
     s.tokens += Token(TokenKind.Eof, "<eof>", s.line, s.column)
 
     println(f"> ${src.name}\n${src.data.mkString("")}\n${s.tokens.mkString("\n")}")
+
+    // TODO: Check if s.tokens contains an error
+
     s.tokens.toArray.toSuccess
   }
 
@@ -89,6 +93,15 @@ object Lexer {
     s.src.data(s.current)
   }
 
+  // Peeks the character after the one that state is sitting on if available
+  private def peekpeek()(implicit s: State): Option[Char] = {
+    if (s.current >= s.src.data.length) {
+      None
+    } else {
+      Some(s.src.data(s.current + 1))
+    }
+  }
+
   // Returns whether state is at the end of its input
   private def isAtEnd()(implicit s: State): Boolean = {
     s.current == s.src.data.length
@@ -108,6 +121,7 @@ object Lexer {
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
       case '+' => TokenKind.Plus
+      case '#' => TokenKind.Hash
       case '-' => {
         if (peek().isDigit) { // Negative numbers
           number()
@@ -115,7 +129,15 @@ object Lexer {
           TokenKind.Minus
         }
       }
-      case '/' => TokenKind.Slash
+      case '/' => if (peek() == '/') {
+        lineComment()
+        TokenKind.LineComment
+      } else if (peek() == '*') {
+        blockComment()
+        TokenKind.BlockComment
+      } else {
+        TokenKind.Slash
+      }
       case '@' => TokenKind.At
       case '=' => if (peek() == '=') {
         advance()
@@ -137,15 +159,15 @@ object Lexer {
         TokenKind.BackArrow
       } else if (peek() == '=') {
         advance()
-        TokenKind.LessEqual
+        TokenKind.LAngleEqual
       } else {
-        TokenKind.Less
+        TokenKind.LAngle
       }
       case '>' => if (peek() == '=') {
         advance()
-        TokenKind.GreaterEqual
+        TokenKind.RAngleEqual
       } else {
-        TokenKind.Greater
+        TokenKind.RAngle
       }
       case ':' => if (peek() == ':') {
         advance()
@@ -360,8 +382,8 @@ object Lexer {
           isDecimal = true
           advance()
         }
-        // Whitespace indicates that the number has ended
-        case c if c.isWhitespace =>
+        // Whitespace or ',' indicates that the number has ended
+        case c if c.isWhitespace || c == ',' =>
           return if (isDecimal) {
             TokenKind.Float64
           } else {
@@ -385,9 +407,38 @@ object Lexer {
     TokenKind.Err(LexerErr.MalformedNumber)
   }
 
-  private def blockComment()(implicit s: State): Unit = ???
+  // Advances state past a line comment by looking for the next newline
+  private def lineComment()(implicit s: State): Unit = {
+    while (!isAtEnd()) {
+      if (peek() == '\n') {
+        return
+      } else {
+        advance()
+      }
+    }
+  }
 
-  private def comment()(implicit s: State): Unit = ???
+  // Advances state past a block-comment. Supports nested block comments by maintaining a level counter.
+  private def blockComment()(implicit s: State): Unit = {
+    var l = 1
+    while (!isAtEnd()) {
+      (peek(), peekpeek()) match {
+        case ('/', Some('*')) => {
+          l += 1
+          advance()
+        }
+        case ('*', Some('/')) => {
+          l -= 1
+          advance()
+          advance()
+          if (l == 0) {
+            return
+          }
+        }
+        case _ => advance()
+      }
+    }
+  }
 
   private class State(val src: Ast.Source) {
     var start: Int = 0
