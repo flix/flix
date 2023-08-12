@@ -1,5 +1,15 @@
 # Changelog
 
+Version 0.39.0:
+
+- VSCode: Added support for code actions (thanks Magnus, Holger!)
+- VSCode: Added code actions to derive `Eq`, `Order`, and `ToString` (thanks Magnus!)
+- VSCode: Added code actions to `use` an undefined name (thanks Holger!)
+- VSCode: Added completion for `use` of enums, defs, modules, and types (thanks Xavier!)
+- VSCode: Improved communication between the Flix compiler and VSCode in case of errors (thanks Holger!)
+- Compiler: Improved source locations of several error messages (thanks Matthew, Ziyao!)
+- Compiler: Relaxed Maven version string requirements (thanks Stephen, Magnus!)
+
 Version 0.38.0:
 
 - VSCode: Added preliminary support for code actions (thanks Holger!)
@@ -423,4 +433,3 @@ HEAD (in progress, not released):
 - Datalog abstraction
 - Restrictable variants
 - Associated types
-- 

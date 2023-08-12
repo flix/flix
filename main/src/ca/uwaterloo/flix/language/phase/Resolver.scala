@@ -1967,9 +1967,10 @@ object Resolver {
   }
 
   /**
-    * Performs name resolution on the given list of derivations `derives0`.
+    * Performs name resolution on the given derivations `derives0`.
     */
-  def resolveDerivations(qnames: List[Name.QName], env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[Ast.Derivation], ResolutionError] = {
+  def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
+    val qnames = derives0.classes
     val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, env, ns0, root))
     flatMapN(derivesVal) {
       derives =>
@@ -1984,7 +1985,7 @@ object Resolver {
         } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
 
         Validation.sequenceX(failures) map {
-          _ => derives
+          _ => Ast.Derivations(derives, derives0.loc)
         }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast
 
-package ca.uwaterloo.flix.api
+object UnstructuredTree {
 
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 39, revision = 0)
-}
+  sealed trait TreeKind
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+  object TreeKind {
+
+    case object Def extends TreeKind
+
+    // TODO: PARSER2
+
+    case object ErrorTree extends TreeKind
+
+  }
+
+  case class Tree(kind: TreeKind, children: Array[Child]) {
+    override def toString: String = s"Tree($kind, [${children.mkString(", ")}])"
+  }
+
+  sealed trait Child
+
+  object Child {
+    case class TokenChild(token: Token) extends Child
+
+    case class TreeChild(tree: Tree) extends Child
+  }
+
 }
