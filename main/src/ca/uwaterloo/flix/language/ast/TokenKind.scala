@@ -36,7 +36,7 @@ object TokenKind {
 
   case object RBracket extends TokenKind
 
-  case object Eq extends TokenKind
+  case object Bang extends TokenKind
 
   case object Semi extends TokenKind
 
@@ -193,6 +193,10 @@ object TokenKind {
   case object OpaqueKeyword extends TokenKind
 
   case object OverrideKeyword extends TokenKind
+
+  case object ParKeyword extends TokenKind
+
+  case object YieldKeyword extends TokenKind
 
   case object PubKeyword extends TokenKind
 

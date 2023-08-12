@@ -52,13 +52,13 @@ object Lexer {
     while (!isAtEnd()) {
       whitespace() // consume whitespace
       if (!isAtEnd()) {
-        s.start = s.current
+        s.start = new Position(s.current.line, s.current.column, s.current.offset)
         scanToken() // scan for the next token
       }
     }
 
     // Add a virtual eof token at the last position
-    s.tokens += Token(TokenKind.Eof, "<eof>", s.line, s.column)
+    s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
     println(f"> ${src.name}\n${src.data.mkString("")}\n${s.tokens.mkString("\n")}")
 
@@ -70,13 +70,13 @@ object Lexer {
   // Advances state one forward returning the char it was previously sitting on
   // keeps track of line and column numbers too
   private def advance()(implicit s: State): Char = {
-    val c = s.src.data(s.current)
-    s.current += 1
+    val c = s.src.data(s.current.offset)
+    s.current.offset += 1
     if (c == '\n') {
-      s.line += 1
-      s.column = 0
+      s.current.line += 1
+      s.current.column = 0
     } else {
-      s.column += 1
+      s.current.column += 1
     }
 
     c
@@ -84,21 +84,21 @@ object Lexer {
 
   // Peeks the character that state is currently sitting on without advancing
   private def peek()(implicit s: State): Char = {
-    s.src.data(s.current)
+    s.src.data(s.current.offset)
   }
 
   // Peeks the character after the one that state is sitting on if available
   private def peekpeek()(implicit s: State): Option[Char] = {
-    if (s.current >= s.src.data.length) {
+    if (s.current.offset >= s.src.data.length) {
       None
     } else {
-      Some(s.src.data(s.current + 1))
+      Some(s.src.data(s.current.offset + 1))
     }
   }
 
   // Returns whether state is at the end of its input
   private def isAtEnd()(implicit s: State): Boolean = {
-    s.current == s.src.data.length
+    s.current.offset == s.src.data.length
   }
 
   // Scans for the next token in input
@@ -116,6 +116,7 @@ object Lexer {
       case ',' => TokenKind.Comma
       case '+' => TokenKind.Plus
       case '#' => TokenKind.Hash
+      case '!' => TokenKind.Bang
       case '-' => {
         if (peek().isDigit) { // Negative numbers
           number()
@@ -253,6 +254,8 @@ object Lexer {
       case _ if keyword("with") => TokenKind.WithKeyword
       case _ if keyword("discard") => TokenKind.DiscardKeyword
       case _ if keyword("object") => TokenKind.ObjectKeyword
+      case _ if keyword("par") => TokenKind.ParKeyword
+      case _ if keyword("Yield") => TokenKind.YieldKeyword
       case c if c.isLetter => name(c.isUpper)
       case c if c.isDigit => number()
       case '\"' => string()
@@ -278,20 +281,21 @@ object Lexer {
 
   // Adds a token by consuming the characters between start and current
   private def addToken(k: TokenKind)(implicit s: State): Unit = {
-    val t = s.src.data.slice(s.start, s.current).mkString("")
-    val c = s.column - t.length // get the starting column
-    s.tokens += Token(k, t, s.line, c)
-    s.start = s.current
+    println(f"${s.start} ${s.current}")
+    val t = s.src.data.slice(s.start.offset, s.current.offset).mkString("")
+    s.tokens += Token(k, t, s.start.line, s.start.column)
+    s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
   // Checks whether the following substring matches a keyword. Note that *comparison includes current*
   private def keyword(k: String)(implicit s: State): Boolean = {
     // check if the keyword can appear before eof
-    if (s.current + k.length > s.src.data.length) {
+    if (s.current.offset + k.length > s.src.data.length) {
       return false
     }
 
-    val matches = s.src.data.slice(s.current - 1, s.current + k.length - 1).sameElements(k.toCharArray)
+    val start = s.current.offset - 1
+    val matches = s.src.data.slice(start, start + k.length).sameElements(k.toCharArray)
     if (matches) { // advance the lexer past the keyword
       for (_ <- 1 until k.length) {
         advance()
@@ -434,11 +438,11 @@ object Lexer {
     }
   }
 
+  private class Position(var line: Int, var column: Int, var offset: Int)
+
   private class State(val src: Ast.Source) {
-    var start: Int = 0
-    var current: Int = 0
-    var line: Int = 0
-    var column: Int = 0
+    var start: Position = new Position(0, 0, 0)
+    var current: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
   }
 
