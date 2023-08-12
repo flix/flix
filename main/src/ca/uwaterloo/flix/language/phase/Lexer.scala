@@ -29,10 +29,6 @@ import scala.collection.mutable
 
 // TODO: How do we test if UTF-8 support works? just put emojis in strings?
 
-// TODO: How do we handle positions in multiline tokens? Stuff like strings with newlines and block comments.
-// the line field would be at the last line of the token not the first. We can back track by counting newlines though but that seems expensive.
-// Maybe we need a "ignore newline" mode? or maybe its better to make start and current into (line, column, offset) tuples
-
 object Lexer {
   /**
    * The maximal allowed nesting level of block-comments.
