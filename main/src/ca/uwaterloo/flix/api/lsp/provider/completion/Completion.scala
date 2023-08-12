@@ -229,7 +229,7 @@ sealed trait Completion {
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
-        kind = CompletionItemKind.Enum)
+        kind = CompletionItemKind.Method)
     case Completion.UseOpCompletion(name) =>
       CompletionItem(
         sortText = name,

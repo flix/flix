@@ -21,31 +21,54 @@ import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumTagCompletion
-import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, CaseSym, mkEnumSym}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
 
 
 object UseEnumTagCompleter extends Completer {
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseEnumTagCompletion] = {
     stripWord(context) match {
-      case Some(word) =>
-        println("got word")
-        getLocalEnumSyms(word).headOption match {
-          case Some(enumSym) =>
-            println("got enumsym")
-            root.enums.get(enumSym) match {
-              case Some(enm) => enm.cases.map {
-                case (_, cas) =>
-                  println("got completion")
-                  UseEnumTagCompletion(enumSym, cas)
-              }
-              case None => Nil
-            }
-          case None => Nil
+      case Some(word) => {
+        val segments = word.split('.').toList
+        getUseEnumTagCompletionsWithTag(segments) ++ getUseEnumTagCompletionsNoTag(segments)
+      }
+      case None => Nil
+    }
+  }
+
+  private def getUseEnumTagCompletionsNoTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
+    val sym = mkEnumSym(segments)
+    root.enums.get(sym) match {
+      case Some(enm) =>
+        enm.cases.map {
+          case (_, cas) => UseEnumTagCompletion(sym, cas)
         }
       case None => Nil
     }
   }
 
+  private def getUseEnumTagCompletionsWithTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
+    if (segments.isEmpty) {
+      Nil
+    }
+    val tag = segments.takeRight(1).mkString
+    val withoutTag = segments.dropRight(1)
+    val sym = mkEnumSym(withoutTag)
+
+    root.enums.get(sym) match {
+      case Some(enm) =>
+        enm.cases.flatMap {
+          case (cSym, cas) =>
+            if (matches(cSym, tag)) {
+              Some(UseEnumTagCompletion(sym, cas))
+            }
+            else {
+              None
+            }
+        }
+      case None => Nil
+    }
+  }
   private def stripWord(ctx: CompletionContext): Option[String] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
@@ -54,14 +77,15 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
+  private def matches(cSym: CaseSym, tag: String): Boolean = cSym.name.startsWith(tag)
 
-  private def getLocalEnumSyms(parsedWord: String)(implicit root: TypedAst.Root): List[Symbol.EnumSym] = {
-    val modFragment = ModuleSymFragment.parseModuleSym(parsedWord)
-    modFragment match {
-      case ModuleSymFragment.Complete(modSym) => root.modules.getOrElse(modSym, Nil).collect {
-        case sym: EnumSym => sym
-      }
-      case _ => Nil
+  private def mkEnumSym(segment: List[String]): EnumSym = {
+    if (segment.isEmpty) {
+      new EnumSym(None, Nil, "", SourceLocation.Unknown)
+    } else {
+      val ns = segment.dropRight(1)
+      val name = segment.takeRight(1).mkString
+      new EnumSym(None, ns, name, SourceLocation.Unknown)
     }
   }
 
