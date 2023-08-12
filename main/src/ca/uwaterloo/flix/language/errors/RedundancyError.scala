@@ -75,6 +75,34 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Shadowed name '${red(name)}'.
          |
+         |${code(shadowed, "shadowed name.")}
+         |
+         |The shadowing name was declared here:
+         |
+         |${code(shadowing, "shadowing name.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+
+    def loc: SourceLocation = shadowed
+  }
+
+  /**
+    * An error raised to indicate that a name is shadowing another name.
+    *
+    * @param shadowed the shadowed name.
+    * @param shadowing the shadowing name.
+    */
+  case class ShadowingName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+    def summary: String = "Shadowing name."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Shadowing name '${red(name)}'.
+         |
          |${code(shadowing, "shadowing name.")}
          |
          |The shadowed name was declared here:
@@ -86,7 +114,7 @@ object RedundancyError {
 
     def explain(formatter: Formatter): Option[String] = None
 
-    def loc: SourceLocation = shadowed min shadowing
+    def loc: SourceLocation = shadowing
   }
 
   /**
@@ -212,7 +240,7 @@ object RedundancyError {
          |""".stripMargin
     })
 
-    def loc: SourceLocation = sym.loc
+    def loc: SourceLocation = tag.loc
   }
 
   /**

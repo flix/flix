@@ -25,5 +25,11 @@ object UseCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     UseModuleCompleter.getCompletions(context) ++ UseEnumCompleter.getCompletions(context) ++ UseEffCompleter.getCompletions(context) ++ UseDefCompleter.getCompletions(context) ++ UseEnumTagCompleter.getCompletions(context)
+      UseModuleCompleter.getCompletions(context)      ++
+      UseEnumCompleter.getCompletions(context)        ++
+      UseEffCompleter.getCompletions(context)         ++
+      UseDefCompleter.getCompletions(context)         ++
+      UseSignatureCompleter.getCompletions(context)   ++
+      UseOpCompleter.getCompletions(context)
   }
 }

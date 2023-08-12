@@ -326,6 +326,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonSingleCharacter](result)
   }
 
+  test("NonSingleCharacter.Char.02") {
+    val input =
+      """
+        |def f(): Char = ''
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonSingleCharacter](result)
+  }
+
   test("NonSingleCharacter.Patten.Char.01") {
     val input =
       """

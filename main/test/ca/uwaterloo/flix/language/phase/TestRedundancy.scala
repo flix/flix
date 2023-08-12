@@ -97,6 +97,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Def.02") {
@@ -110,6 +111,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Let.01") {
@@ -123,6 +125,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Let.02") {
@@ -137,6 +140,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Lambda.01") {
@@ -150,6 +154,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Lambda.02") {
@@ -165,6 +170,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Lambda.03") {
@@ -180,6 +186,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.01") {
@@ -194,6 +201,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.02") {
@@ -208,6 +216,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.03") {
@@ -223,6 +232,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.04") {
@@ -238,6 +248,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Select.01") {
@@ -253,6 +264,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Select.02") {
@@ -271,6 +283,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Region.01") {
@@ -288,6 +301,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.NewObject.01") {
@@ -302,6 +316,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.01") {
@@ -319,6 +334,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.02") {
@@ -339,6 +355,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.03") {
@@ -359,6 +376,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -381,6 +399,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -403,6 +422,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.06") {
@@ -418,6 +438,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.07") {
@@ -440,6 +461,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -463,6 +485,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -481,6 +504,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -504,6 +528,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.11") {
@@ -528,6 +553,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -554,6 +580,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -581,6 +608,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.14") {
@@ -605,6 +633,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -630,6 +659,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -656,6 +686,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.17") {
@@ -675,6 +706,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -707,6 +739,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -734,6 +767,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -755,6 +789,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("UnusedEnumSym.01") {
@@ -1868,6 +1903,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.02") {
@@ -1878,6 +1914,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.03") {
@@ -1889,6 +1926,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.04") {
@@ -1899,6 +1937,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.05") {

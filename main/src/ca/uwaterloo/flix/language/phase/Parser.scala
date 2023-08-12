@@ -36,6 +36,20 @@ object Parser {
     */
   def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
     flix.phase("Parser") {
+
+      if (flix.options.xparser) {
+        // TODO: LEXER / PARSER2
+        val res = flatMapN(Lexer.run(root))(tokens => Parser2.run(tokens))
+        res match {
+          case Validation.Success(tree) =>
+            println(tree.values)
+          case Validation.SoftFailure(_, errors) =>
+            errors.foreach(e => println(e.message(flix.getFormatter)))
+          case Validation.Failure(errors) =>
+            errors.foreach(e => println(e.message(flix.getFormatter)))
+        }
+      }
+
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
 
@@ -406,8 +420,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Derivations: Rule1[Seq[Name.QName]] = rule {
-      optWS ~ optional(keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
+    def Derivations: Rule1[ParsedAst.Derivations] = {
+      def WithClause: Rule1[Seq[Name.QName]] = rule {
+        keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      rule {
+        ((optWS ~ SP ~ WithClause ~ SP) | (SP ~ push(Seq.empty[Name.QName]) ~ SP)) ~> ParsedAst.Derivations
+      }
     }
 
   }
@@ -508,7 +528,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Char: Rule1[ParsedAst.Literal.Char] = rule {
-      SP ~ "'" ~ oneOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+      SP ~ "'" ~ zeroOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
     }
 
     // Note that outside of patterns, Strings are parsed as [[Interpolation]]s

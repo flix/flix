@@ -86,7 +86,7 @@ object Indexer {
     case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
       val idx0 = Index.occurrenceOf(enum0)
       val idx1 = traverse(tparams)(visitTypeParam)
-      val idx2 = traverse(derives) {
+      val idx2 = traverse(derives.classes) {
         case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
       }
       val idx3 = traverse(cases.values)(visitCase)
@@ -258,7 +258,7 @@ object Indexer {
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(rules) {
-        case TypeMatchRule(sym, tpe, exp) => Index.occurrenceOf(sym, tpe) ++ visitExp(exp)
+        case TypeMatchRule(sym, tpe, exp) => Index.occurrenceOf(sym, tpe) ++ visitType(tpe) ++ visitExp(exp)
       }
       i0 ++ i1
 

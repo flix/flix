@@ -357,26 +357,29 @@ object Typer {
           ///
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromParams(fparams0)
+          val initialLenv = LevelEnv.Top
 
-          run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
-            case Ok((subst, partialEconstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
+          run(initialSubst, Nil, initialRenv, initialLenv) match { // TODO ASSOC-TYPES initial econstrs?
+            case Ok((subst0, partialEconstrs, renv0, _, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
               ///
-              val inferredTconstrs = partialTconstrs.map(subst.apply)
-              val inferredEconstrs = partialEconstrs.map(subst.apply)
-              val inferredType = subst(partialType)
+              val inferredTconstrs = partialTconstrs.map(subst0.apply)
+              val inferredEconstrs = partialEconstrs.map(subst0.apply)
+              val inferredType = subst0(partialType)
 
               ///
               /// Check that the inferred type is at least as general as the declared type.
               ///
               /// NB: Because the inferredType is always a function type, the purect is always implicitly accounted for.
               ///
-              val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType)
-              Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv) match {
+              val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType, renv0)
+
+              // get a substitution from the scheme comparison
+              val eqSubst = Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv) match {
                 // Case 1: no errors, continue
-                case Validation.Success(_) => // noop
+                case Validation.Success(s) => s
                 case failure =>
                   val instanceErrs = failure.errors.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
@@ -395,6 +398,10 @@ object Typer {
                           else
                             TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                       }
+                    case UnificationError.UnsupportedEquality(tpe1, tpe2) =>
+                      TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(tpe1, tpe2), loc)
+                    case UnificationError.IrreducibleAssocType(sym, t) =>
+                      TypeError.IrreducibleAssocType(sym, t, loc)
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
@@ -431,6 +438,9 @@ object Typer {
                     return Validation.Failure(instanceErrs)
                   }
               }
+
+              // create a new substitution combining the econstr substitution and the base type substitution
+              val subst = eqSubst @@ subst0
 
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
@@ -932,10 +942,11 @@ object Typer {
         for {
           // don't make the region var rigid if the --Xflexible-regions flag is set
           _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
+          _ <- enterScopeM(regionVar.sym)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
-          purifiedEff <- purifyEffM(regionVar, eff)
-          resultEff <- unifyTypeM(pvar, purifiedEff, loc)
+          _ <- exitScopeM(regionVar.sym)
+          resultEff <- unifyTypeM(pvar, eff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
@@ -1279,7 +1290,7 @@ object Typer {
         for {
           (constrs1, elmTypes, eff1) <- traverseM(exps)(visitExp).map(_.unzip3)
           (constrs2, tpe2, eff2) <- visitExp(exp)
-          _ <- expectTypeM(expected = regionType, actual = tpe2, loc)
+          _ <- expectTypeM(expected = regionType, actual = tpe2, exp.loc)
           elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTyp, regionVar, loc), loc)
           resultEff <- unifyTypeM(pvar, Type.mkUnion(Type.mkUnion(eff1, loc), eff2, regionVar, loc), loc)
@@ -1368,7 +1379,7 @@ object Typer {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          _ <- unifyTypeM(tpe2, regionType, loc)
+          _ <- expectTypeM(tpe2, regionType, exp2.loc)
           resultTyp <- unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(pvar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
@@ -1896,8 +1907,7 @@ object Typer {
     for {
       (tconstrs, tpe, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
-      // TODO Currently disabled due to region issues. See issue #5603
-      //      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
+      _ <- expectEffectM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, eff)
   }
 

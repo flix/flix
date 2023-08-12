@@ -229,7 +229,22 @@ sealed trait Completion {
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, name),
         documentation = None,
-        kind = CompletionItemKind.Enum
+        kind = CompletionItemKind.Enum)
+    case Completion.UseOpCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Method
+      )
+    case Completion.UseSignatureCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Method
       )
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
@@ -451,12 +466,12 @@ object Completion {
    *
    * @param name the name of the use effect completion.
    */
-   case class UseEffCompletion(name: String) extends Completion
+  case class UseEffCompletion(name: String) extends Completion
 
   /**
    * Represents a Use Def completion.
    *
-   * @param decl the decl.
+   * @param name the name of the use def completion.
    */
   case class UseDefCompletion(name: String) extends Completion
 
@@ -467,6 +482,20 @@ object Completion {
    * @param cas     the case of the enum.
    */
   case class UseEnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case) extends Completion
+  /**
+   * Represents a Use Op completion.
+   *
+   * @param name the name of the use op completion.
+   */
+  case class UseOpCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Signature completion.
+   *
+   * @param name the name of the use signature completion.
+   */
+  case class UseSignatureCompletion(name: String) extends Completion
+
   /**
     * Represents a FromErrors completion
     *
