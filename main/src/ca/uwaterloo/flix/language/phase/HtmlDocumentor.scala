@@ -179,11 +179,11 @@ object HtmlDocumentor {
     sb.append(s"<h1>$name</h1>")
     sb.append("<hr/>")
 
-    docSection("Classes", mod.classes.sortBy(_.sym.loc), docClass)
-    docSection("Enums", mod.enums.sortBy(_.sym.loc), docEnum)
-    docSection("Effects", mod.effects.sortBy(_.sym.loc), docEffect)
-    docSection("Type Aliases", mod.typeAliases.sortBy(_.sym.loc), docTypeAlias)
-    docSection("Definitions", mod.defs.sortBy(_.sym.loc), docDef)
+    docSection("Classes", mod.classes.sortBy(_.sym.name), docClass)
+    docSection("Enums", mod.enums.sortBy(_.sym.name), docEnum)
+    docSection("Effects", mod.effects.sortBy(_.sym.name), docEffect)
+    docSection("Type Aliases", mod.typeAliases.sortBy(_.sym.name), docTypeAlias)
+    docSection("Definitions", mod.defs.sortBy(_.sym.name), docDef)
 
     sb.append("</body>")
 
@@ -271,8 +271,8 @@ object HtmlDocumentor {
     sb.append("</code>")
     docSourceLocation(clazz.loc)
     docDoc(clazz.doc)
-    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.loc), docSignature)
-    docSubSection("Definitions", clazz.defs.sortBy(_.sym.loc), docSignature)
+    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature)
+    docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
   }
 
