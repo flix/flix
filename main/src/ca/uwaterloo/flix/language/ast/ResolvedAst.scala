@@ -255,7 +255,9 @@ object ResolvedAst {
 
     case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Record.RecordFieldPattern], pat: Option[Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Record(pats: List[Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation) extends Pattern
+
+    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     object Record {
       case class RecordFieldPattern(field: Name.Field, pat: Pattern, loc: SourceLocation)

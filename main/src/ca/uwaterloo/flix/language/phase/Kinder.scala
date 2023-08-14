@@ -1074,10 +1074,12 @@ object Kinder {
             case p => KindedAst.Pattern.Record.RecordFieldPattern(field, tvar, p, loc1)
           }
       }
-      val pVal = traverseOpt(pat)(visitPattern(_, kenv, root))
+      val pVal = visitPattern(pat, kenv, root)
       mapN(psVal, pVal) {
         case (ps, p) => KindedAst.Pattern.Record(ps, p, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
+
+    case ResolvedAst.Pattern.RecordEmpty(loc) => KindedAst.Pattern.RecordEmpty(loc).toSuccess
   }
 
   /**

@@ -1125,6 +1125,8 @@ object Namer {
       }
       val pVal = visitPattern(pat)
       NamedAst.Pattern.Record(psVal, pVal, loc)
+
+    case WeededAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(loc)
   }
 
   /**
@@ -1372,18 +1374,18 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Regex(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
-    case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-    case WeededAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats, pat)
+    case WeededAst.Pattern.Tuple(elms, loc) => elms.flatMap(freeVars)
+    case WeededAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
+    case WeededAst.Pattern.RecordEmpty(_) => Nil
   }
 
   /**
-    * Returns the free variables in the list of [[Record.RecordFieldPattern]] `pats` and `pat`.
+    * Returns the free variables in the list of [[Record.RecordFieldPattern]] `pats`.
     */
-  private def recordPatternFreeVars(pats: List[Record.RecordFieldPattern], pat: Option[WeededAst.Pattern]): List[Name.Ident] = {
+  private def recordPatternFreeVars(pats: List[Record.RecordFieldPattern]): List[Name.Ident] = {
     def optFreeVars(rfp: Record.RecordFieldPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
 
-    val patFreeVars = pat.map(freeVars).getOrElse(Nil)
-    pats.flatMap(optFreeVars) ++ patFreeVars
+    pats.flatMap(optFreeVars)
   }
 
   /**

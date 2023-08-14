@@ -240,7 +240,9 @@ object KindedAst {
 
     case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Record.RecordFieldPattern], pat: Option[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
+    case class Record(pats: List[Record.RecordFieldPattern], pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
+
+    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     object Record {
       case class RecordFieldPattern(field: Name.Field, tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)

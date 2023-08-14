@@ -858,9 +858,12 @@ object Lowering {
           val t1 = visitType(tpe1)
           LoweredAst.Pattern.Record.RecordFieldPattern(field, t1, p1, loc1)
       }
-      val patVal = pat.map(visitPat)
+      val patVal = visitPat(pat)
       val t = visitType(tpe)
       LoweredAst.Pattern.Record(patsVal, patVal, t, loc)
+
+    case TypedAst.Pattern.RecordEmpty(tpe, loc) =>
+      LoweredAst.Pattern.RecordEmpty(visitType(tpe), loc)
   }
 
   /**
@@ -1133,6 +1136,8 @@ object Lowering {
     case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
     case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.RecordEmpty(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
   }
 

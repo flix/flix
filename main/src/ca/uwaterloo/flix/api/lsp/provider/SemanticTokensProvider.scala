@@ -601,11 +601,14 @@ object SemanticTokensProvider {
 
     case Pattern.Record(pats, pat, tpe, loc) =>
       val patsVal = pats.flatMap {
-        case Pattern.Record.RecordFieldPattern(field, tpe, pat, loc) =>
-          visitType(tpe) ++ visitPat(pat)
+        case Pattern.Record.RecordFieldPattern(_, tpe1, pat1, _) =>
+          visitType(tpe1) ++ visitPat(pat1)
       }.iterator
-      val patVal = pat.map(visitPat).getOrElse(Iterator.empty)
-      patsVal ++ patVal
+      val patVal = visitPat(pat)
+      val tVal = visitType(tpe)
+      patsVal ++ patVal ++ tVal
+
+    case Pattern.RecordEmpty(tpe, _) => Iterator.empty
   }
 
   /**

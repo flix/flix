@@ -88,7 +88,7 @@ object PatternExhaustiveness {
 
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
-    case class Record(fields: List[(Name.Field, TyCon)], tail: Option[TyCon]) extends TyCon
+    case class Record(fields: List[(Name.Field, TyCon)], tail: TyCon) extends TyCon
 
   }
 
@@ -435,8 +435,13 @@ object PatternExhaustiveness {
         } else {
           acc
         }
-      case TypedAst.Pattern.Record(pats, optPat, _, _) => ctor match {
-        case TyCon.Record(_, _) => (pats.map(_.pat) ::: optPat.toList ::: pat.tail) :: acc
+      case TypedAst.Pattern.Record(pats, extPat, _, _) => ctor match {
+        case TyCon.Record(_, _) =>
+          val p: List[Pattern] = extPat match {
+            case TypedAst.Pattern.RecordEmpty(_, _) => Nil
+            case _ => List(extPat)
+          }
+          (pats.map(_.pat) ::: p ::: pat.tail) :: acc
         case _ => acc
       }
       // Also handle the non tag constructors
@@ -586,7 +591,7 @@ object PatternExhaustiveness {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, _, numArgs, _) => numArgs
-    case TyCon.Record(fields, tail) => if (tail.isEmpty) fields.length else fields.length + 1
+    case TyCon.Record(fields, tail) => fields.length // if (tail.isEmpty) fields.length else fields.length + 1
   }
 
   /**
@@ -658,7 +663,10 @@ object PatternExhaustiveness {
       val fieldsStr = fields.map {
         case (f, p) => s"$f = ${prettyPrintCtor(p)}"
       }.mkString(", ")
-      val tailStr = tail.map(r => s" | ${prettyPrintCtor(r)}").getOrElse("")
+      val tailStr = tail match {
+        // case RecordEmpty => ""
+        case r => s" | ${prettyPrintCtor(r)}"
+      }
       "{ " + fieldsStr + tailStr + " }"
   }
 
@@ -717,7 +725,7 @@ object PatternExhaustiveness {
         case TypedAst.Pattern.Record.RecordFieldPattern(field, _, pat1, _) =>
           (field, patToCtor(pat1))
       }
-      val pVal = pat.map(patToCtor)
+      val pVal = patToCtor(pat)
       TyCon.Record(patsVal, pVal)
   }
 
@@ -738,19 +746,22 @@ object PatternExhaustiveness {
       } else {
         lst.take(numArgs)
       }) :: lst.drop(numArgs)
-    case TyCon.Record(fields, Some(_)) =>
+    case TyCon.Record(fields, _) =>
       val all = lst.take(fields.length + 1)
       val fs = fields.map {
         case (f, _) => f
       }.zip(all.take(fields.length))
       val t = all.takeRight(1).head
-      TyCon.Record(fs, Some(t)) :: lst.drop(fields.length + 1)
+      TyCon.Record(fs, t) :: lst.drop(fields.length + 1)
+    /*
     case TyCon.Record(fields, None) =>
-      val all = lst.take(fields.length)
-      val fs = fields.map {
-        case (f, _) => f
-      }.zip(all.take(fields.length))
-      TyCon.Record(fs, None) :: lst.drop(fields.length)
+       val all = lst.take(fields.length)
+       val fs = fields.map {
+         case (f, _) => f
+       }.zip(all.take(fields.length))
+       TyCon.Record(fs, None) :: lst.drop(fields.length)
+
+     */
     case a => a :: lst
   }
 

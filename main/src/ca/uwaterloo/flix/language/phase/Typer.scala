@@ -2552,11 +2552,6 @@ object Typer {
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
-        val emptyRecord = Type.mkRecord(Type.mkRecordRowEmpty(loc.asSynthetic), loc.asSynthetic)
-        val recordTail = pat match {
-          case Some(p) => visit(p)
-          case None => liftM(emptyRecord)
-        }
 
         def mkRecordType(patTypes: List[(Name.Field, Type, SourceLocation)]): Type = {
           val ps = patTypes.foldRight(freshRowVar: Type) {
@@ -2566,12 +2561,14 @@ object Typer {
         }
 
         for {
-          rTail <- recordTail
-          _recordExtension <- unifyTypeM(freshRecord, rTail, loc.asSynthetic)
+          recordTail <- visit(pat)
+          _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
           patTypes <- traverseM(pats)(visitRecordFieldPattern(_, root))
           resultType = mkRecordType(patTypes)
           _ <- unifyTypeM(resultType, tvar, loc)
         } yield resultType
+
+      case KindedAst.Pattern.RecordEmpty(loc) => liftM(Type.mkRecord(Type.RecordRowEmpty, loc))
 
     }
 
@@ -2621,7 +2618,11 @@ object Typer {
           case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar1, pat1, loc1) =>
             TypedAst.Pattern.Record.RecordFieldPattern(field, subst0(tvar1), visit(pat1), loc1)
         }
-        TypedAst.Pattern.Record(ps, pat.map(visit), subst0(tvar), loc)
+        val p = visit(pat)
+        TypedAst.Pattern.Record(ps, p, subst0(tvar), loc)
+
+      case KindedAst.Pattern.RecordEmpty(loc) =>
+        TypedAst.Pattern.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
 
     }
 

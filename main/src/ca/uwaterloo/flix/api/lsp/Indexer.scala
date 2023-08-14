@@ -475,7 +475,8 @@ object Indexer {
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
-      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordFieldPattern) ++ traverse(pat)(visitPat)
+      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordFieldPattern) ++ visitPat(pat)
+    case Pattern.RecordEmpty(_, _) => Index.empty
   }
 
   /**

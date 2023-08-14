@@ -1730,10 +1730,12 @@ object Resolver {
                 case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
               }
           }
-          val pVal = traverseOpt(pat)(visit)
+          val pVal = visit(pat)
           mapN(psVal, pVal) {
             case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
           }
+
+        case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
       }
 
       visit(pat0)
@@ -1772,10 +1774,12 @@ object Resolver {
                 case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
               }
           }
-          val pVal = traverseOpt(pat)(visit)
+          val pVal = visit(pat)
           mapN(psVal, pVal) {
             case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
           }
+
+        case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
       }
 
       visit(pat0)
@@ -3517,13 +3521,14 @@ object Resolver {
     case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
     case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
+    case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty
   }
 
   /**
     * Creates an environment from the given record pattern.
     */
-  private def mkRecordPatternEnv(pats: List[Record.RecordFieldPattern], pat: Option[ResolvedAst.Pattern]): ListMap[String, Resolution] = {
-    mkPatternsEnv(pats.map(_.pat) ++ pat.toList)
+  private def mkRecordPatternEnv(pats: List[Record.RecordFieldPattern], pat: ResolvedAst.Pattern): ListMap[String, Resolution] = {
+    mkPatternsEnv(pats.map(_.pat)) ++ mkPatternEnv(pat)
   }
 
   /**
