@@ -1134,19 +1134,19 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a record pattern has shape `{ | r }`.
+    * An error raised to indicate that a record pattern has shape the illegal shape `{ | r }`.
     *
     * @param loc the location where the error occurred.
     */
   case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
-    override def summary: String = "A record pattern must define at least one field if it is open for extension."
+    override def summary: String = "A record pattern must specify at least one field."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Invalid record pattern.
+         |>> Unexpected record pattern.
          |
-         |${code(loc, s"A record pattern must define at least one field if it is open for extension.")}
+         |${code(loc, "A record pattern must specify at least one field.")}
          |
          |""".stripMargin
     }
