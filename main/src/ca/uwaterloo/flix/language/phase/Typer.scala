@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
-import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM, traverseOptM}
+import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
@@ -2552,16 +2552,24 @@ object Typer {
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
-        for {
-          optRecordTail <- traverseOptM(pat)(visit)
-          emptyRecord = Type.mkRecord(Type.mkRecordRowEmpty(loc.asSynthetic), loc.asSynthetic)
-          recordTail = optRecordTail.getOrElse(emptyRecord)
-          _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
-          ps <- traverseM(pats)(visitRecordFieldPattern(_, root))
-          patTypes = ps.foldRight(freshRowVar: Type) {
+        val emptyRecord = Type.mkRecord(Type.mkRecordRowEmpty(loc.asSynthetic), loc.asSynthetic)
+        val recordTail = pat match {
+          case Some(p) => visit(p)
+          case None => liftM(emptyRecord)
+        }
+
+        def mkRecordType(patTypes: List[(Name.Field, Type, SourceLocation)]): Type = {
+          val ps = patTypes.foldRight(freshRowVar: Type) {
             case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
           }
-          resultType = Type.mkRecord(patTypes, loc)
+          Type.mkRecord(ps, loc)
+        }
+
+        for {
+          rTail <- recordTail
+          _recordExtension <- unifyTypeM(freshRecord, rTail, loc.asSynthetic)
+          patTypes <- traverseM(pats)(visitRecordFieldPattern(_, root))
+          resultType = mkRecordType(patTypes)
           _ <- unifyTypeM(resultType, tvar, loc)
         } yield resultType
 
