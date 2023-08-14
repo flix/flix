@@ -654,7 +654,7 @@ object Resolver {
 
     // check that all associated types are covered
     val missingVal = Validation.traverseX(clazz.assocs) {
-      case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc) =>
+      case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) =>
         if (assocIdents.exists {ident => ident.name == sym.name}) {
           ().toSuccess
         } else {
