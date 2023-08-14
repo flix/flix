@@ -561,8 +561,10 @@ object HtmlDocumentor {
   }
 
   private def clearOutputDirectory(): Unit = {
-    Files.list(OutputDirectory).forEach {
-      f => Files.delete(f)
+    if (Files.exists(OutputDirectory)) {
+      Files.list(OutputDirectory).forEach {
+        f => Files.delete(f)
+      }
     }
   }
 
