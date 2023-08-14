@@ -69,6 +69,9 @@ object HtmlDocumentor {
     root
   }
 
+  /**
+    * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
+    */
   private def splitModules(root: TypedAst.Root): Iterable[Module] = root.modules.map {
     case (sym, mod) =>
       val namespace = sym.ns
@@ -102,6 +105,9 @@ object HtmlDocumentor {
       )
   }
 
+  /**
+    * Extracts all relevant information about the given `ClassSym` from the root, into a `HtmlDocumentor.Class`.
+    */
   private def mkClass(sym: Symbol.ClassSym, root: TypedAst.Root): Class = root.classes(sym) match {
     case TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs0, laws, loc) =>
 
@@ -111,6 +117,10 @@ object HtmlDocumentor {
       Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, defs, laws, instances, loc)
   }
 
+  /**
+    * Returns a `Module` corresponding to the given `mod`,
+    * but with all items that shouldn't appear in the documentation removed.
+    */
   private def filterModule(mod: Module): Module = mod match {
     case Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs) =>
       Module(
@@ -125,6 +135,10 @@ object HtmlDocumentor {
       )
   }
 
+  /**
+    * Returns a `Class` corresponding to the given `clazz`,
+    * but with all items that shouldn't appear in the documentation removed.
+    */
   private def filterClass(clazz: Class): Class = clazz match {
     case Class(doc, ann, mod, sym, tparam, superClasses, assoc, signatures, defs, laws, instances, loc) =>
       Class(
@@ -143,11 +157,17 @@ object HtmlDocumentor {
       )
   }
 
+  /**
+    * Checks whether the given `Module`, `mod`, contains anything or not.
+    */
   private def isEmpty(mod: HtmlDocumentor.Module): Boolean = mod match {
     case Module(_, _, _, classes, enums, effects, typeAliases, defs) =>
       classes.isEmpty && enums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
   }
 
+  /**
+    * Documents the given `Module`, `mod`, returning a string of HTML.
+    */
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
@@ -170,6 +190,9 @@ object HtmlDocumentor {
     sb.toString()
   }
 
+  /**
+    * Generates the string representing the head of the HTML document.
+    */
   private def mkHead(name: String): String = {
     "<!doctype html><html lang='en'>" +
       "<head>" +
@@ -182,6 +205,18 @@ object HtmlDocumentor {
       "</head>"
   }
 
+  /**
+    * Documents a section, (Classes, Enums, Effects, etc.), containing a `group` of items, each being placed in a box.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `group` is empty, nothing will be generated.
+    *
+    * @param name   The name of the section, e.g. "Classes".
+    * @param group  The list of items in the section, in the order that they should appear.
+    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    *               Note that this will be already be wrapped in a box.
+    */
   private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
@@ -197,6 +232,17 @@ object HtmlDocumentor {
     sb.append("</section>")
   }
 
+  /**
+    * Documents a collapsable subsection, (Signatures, Instances, etc.), containing a `group` of items.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `group` is empty, nothing will be generated.
+    *
+    * @param name   The name of the subsection, e.g. "Signatures".
+    * @param group  The list of items in the section, in the order that they should appear.
+    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    */
   private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
@@ -210,6 +256,11 @@ object HtmlDocumentor {
     sb.append("</details>")
   }
 
+  /**
+    * Documents the given `Class`, `clazz`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
@@ -224,6 +275,11 @@ object HtmlDocumentor {
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
   }
 
+  /**
+    * Documents the given `Enum`, `enm`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
@@ -236,6 +292,11 @@ object HtmlDocumentor {
     docDoc(enm.doc)
   }
 
+  /**
+    * Documents the given `Effect`, `eff`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
@@ -246,6 +307,11 @@ object HtmlDocumentor {
     docDoc(eff.doc)
   }
 
+  /**
+    * Documents the given `TypeAlias`, `ta`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
@@ -258,12 +324,28 @@ object HtmlDocumentor {
     docDoc(ta.doc)
   }
 
+  /**
+    * Documents the given `Def`, `defn`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit =
     docSpec(defn.sym.name, defn.spec)
 
+  /**
+    * Documents the given `Sig`, `sig`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit =
     docSpec(sig.sym.name, sig.spec)
 
+  /**
+    * Documents the given `Spec`, `spec`, with the given `name`.
+    * Shared by `Def` and `Sig`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>def</span> ")
@@ -279,6 +361,11 @@ object HtmlDocumentor {
     docDoc(spec.doc)
   }
 
+  /**
+    * Documents the given `instance` of a class.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>instance</span> ")
@@ -289,6 +376,14 @@ object HtmlDocumentor {
     docDoc(instance.doc)
   }
 
+  /**
+    * Documents the given list of `TypeConstraint`s, `tconsts`.
+    * E.g. "with Functor[m]".
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `tconsts` is empty, nothing will be generated.
+    */
   private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tconsts.isEmpty) {
       return
@@ -303,6 +398,14 @@ object HtmlDocumentor {
     sb.append("</span>")
   }
 
+  /**
+    * Documents the given `Derivations`s, `derives`.
+    * E.g. "with Sendable".
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `derives` contains no elements, nothing will be generated.
+    */
   private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (derives.classes.isEmpty) {
       return
@@ -315,6 +418,11 @@ object HtmlDocumentor {
     sb.append("</span>")
   }
 
+  /**
+    * Documents the given list of `Case`s of an enum.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docCases(cases: List[TypedAst.Case])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<div class='cases'>")
     for (c <- cases.sortBy(_.loc)) {
@@ -335,6 +443,17 @@ object HtmlDocumentor {
     sb.append("</div>")
   }
 
+  /**
+    * Documents the given list of `TypeParam`s wrapped in `[]`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * @param showKinds  Whether or not the kinds of the types should be included.
+    *                   Example: {{{
+    *                    docTypeParams(... showKinds = false) -> "[a, b, ef]"
+    *                    docTypeParams(... showKinds = true) -> "[a: Type, b: Type -> Type, ef: Eff]"
+    *                   }}}
+    */
   private def docTypeParams(tparams: List[TypedAst.TypeParam], showKinds: Boolean)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tparams.isEmpty) {
       return
@@ -352,6 +471,11 @@ object HtmlDocumentor {
     sb.append("]</span>")
   }
 
+  /**
+    * Document the given list of `FormalParam`s wrapped in `()`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     docList(fparams.sortBy(_.loc)) { p =>
@@ -362,10 +486,20 @@ object HtmlDocumentor {
     sb.append(")</span>")
   }
 
+  /**
+    * Document the given `SourceLocation`, `loc`, in the form of a link.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<a class='source' target='_blank' href='${createLink(loc)}'>Source</a>")
   }
 
+  /**
+    * Document the the given `doc`, while parsing any markdown.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
     // DEFAULT_SAFE escapes HTML
     val config = txtmark.Configuration.DEFAULT_SAFE
@@ -376,12 +510,22 @@ object HtmlDocumentor {
     sb.append("</div>")
   }
 
+  /**
+    * Document the the given `Type`, `tpe`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='type'>")
     sb.append(FormatType.formatType(tpe))
     sb.append("</span>")
   }
 
+  /**
+    * Document the the given `Type`, `eff`, when it is known to be in effect position.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='effect'>")
     sb.append(FormatType.formatType(eff))
@@ -406,11 +550,17 @@ object HtmlDocumentor {
     }
   }
 
+  /**
+    * Make a copy of the stylesheet into the output directory.
+    */
   private def writeStyles(): Unit = {
     val source = Source.fromURL(getClass.getResource(Stylesheet))
     writeFile("styles.css", source.mkString)
   }
 
+  /**
+    * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
+    */
   private def writeModule(mod: Module, output: String): Unit = {
     val name = if (mod.namespace.isEmpty) List(RootNS) else mod.namespace
     writeFile(s"${name.mkString(".")}.html", output)
@@ -429,11 +579,17 @@ object HtmlDocumentor {
     }
   }
 
+  /**
+    * Create a raw link to the given `SourceLocation`.
+    */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
     s"https://github.com/flix/flix/blob/master/main/src/library/${loc.source.name}#L${loc.beginLine}-L${loc.beginLine}"
   }
 
+  /**
+    * A represention of a module that's easier to work with while generating documention.
+    */
   private case class Module(namespace: List[String],
                             uses: List[Ast.UseOrImport],
                             submodules: List[Symbol.ModuleSym],
@@ -443,6 +599,9 @@ object HtmlDocumentor {
                             typeAliases: List[TypedAst.TypeAlias],
                             defs: List[TypedAst.Def])
 
+  /**
+    * A represention of a class that's easier to work with while generating documention.
+    */
   private case class Class(doc: Ast.Doc,
                            ann: Ast.Annotations,
                            mod: Ast.Modifiers,
