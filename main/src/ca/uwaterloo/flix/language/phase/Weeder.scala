@@ -2438,17 +2438,15 @@ object Weeder {
             }
         }
         val rsVal = flatMapN(traverseOpt(rest)(visit)) {
-          case Some(r) if fields.isEmpty =>
-            // Bad pattern { | r }
-            WeederError.EmptyRecordExtensionPattern(r.loc).toFailure
-
           case r@Some(Pattern.Var(_, _)) => r.toSuccess
           case r@Some(Pattern.Wild(_)) => r.toSuccess
           case r@None => r.toSuccess
-
-          case Some(ext) =>
+          case Some(r) if fields.isEmpty =>
+            // Bad pattern { | r }
+            WeederError.EmptyRecordExtensionPattern(r.loc).toFailure
+          case Some(r) =>
             // Bad pattern e.g., { fields... | (1, 2, 3) }
-            WeederError.IllegalRecordExtensionPattern(ext.loc).toFailure
+            WeederError.IllegalRecordExtensionPattern(r.loc).toFailure
         }
         mapN(fsVal, rsVal) {
           case (f, r) => WeededAst.Pattern.Record(f, r, loc)
