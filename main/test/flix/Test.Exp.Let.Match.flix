@@ -99,16 +99,36 @@ mod Test.Exp.Let.Match {
 
     @test
     def testLetMatch18(): Bool =
+        let { y, x } = { x = 1, y = "" };
+        x == 1 and y == ""
+
+    @test
+    def testLetMatch19(): Bool =
+        let { y, x = a, x} = { x = 1, y = "", x = false};
+        (a == 1 and y == "") and x == false
+
+    @test
+    def testLetMatch20(): Bool =
+        let { y, x = a, x = { x }} = { x = 1, y = "", x = { x = true }};
+        (a == 1 and y == "") and x
+
+    @test
+    def testLetMatch21(): Bool =
+        let { x = a, x = { x }, y } = { x = 1, y = "", x = { x = true }};
+        (a == 1 and y == "") and x
+
+    @test
+    def testLetMatch22(): Bool =
         let { x = { x = { x } } | _ } = { x = { x = { x = 42 } } };
         x == 42
 
     @test
-    def testLetMatch19(): Bool =
+    def testLetMatch23(): Bool =
         let { x = { x = { x } } | _ } = { x = { x = { x = 42 } }, y = "" };
         x == 42
 
     @test
-    def testLetMatch20(): Bool =
+    def testLetMatch24(): Bool =
         let { x = { x = { x | _ } } | _ } = { x = { x = { x = 42, y = false } }, y = "" };
         x == 42
 
