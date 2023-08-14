@@ -5,6 +5,8 @@
     --heading-color: rgb(33, 37, 41);
     --text-color: rgb(17, 17, 17);
 
+    --section-arrow-color: rgb(85, 91, 96);
+
     --keyword-color: #030303;
     --name-color: #b12250;
     --type-color: #3061c4;
@@ -12,6 +14,9 @@
     --effect-color: #d4671e;
 
     --doc-code-color: #d73a49;
+
+    --show-hide-color: #0d6efd;
+    --show-hide-hover-color: #0a58ca;
 }
 
 body {
@@ -40,6 +45,12 @@ h2 {
     font-size: 2rem;
     font-weight: 500;
     margin-bottom: 1.5rem;
+}
+h3 {
+    display: inline;
+    font-size: 1rem;
+    color: var(--heading-color);
+    font-weight: 500;
 }
 
 hr {
@@ -117,6 +128,34 @@ section > * {
 }
 .doc code {
     color: var(--doc-code-color);
+    display: inline;
+}
+
+details {
+    margin-top: 1rem;
+    padding-left: 1.5rem;
+}
+summary {
+    cursor: pointer;
+    list-style: none;
+    color: var(--section-arrow-color);
+    margin-left: -1.5rem;
+}
+summary::after {
+    content: "(show)";
+    font-size: 0.875em;
+    margin-left: 0.3rem;
+    color: var(--show-hide-color);
+}
+summary:hover::after {
+    text-decoration: underline;
+    color: var(--show-hide-hover-color);
+}
+details[open] > summary::after {
+    content: "(hide)";
+}
+details > code {
+    font-size: 0.8rem;
 }
 
 code {

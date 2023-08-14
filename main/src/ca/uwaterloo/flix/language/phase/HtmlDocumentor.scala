@@ -59,7 +59,7 @@ object HtmlDocumentor {
     val modules = splitModules(root)
     modules.par.foreach {
       mod =>
-        val pub = filterPublic(mod)
+        val pub = filterModule(mod)
         if (!isEmpty(pub)) {
           val out = documentModule(pub)
           writeModule(mod, out)
@@ -75,14 +75,14 @@ object HtmlDocumentor {
       val uses = root.uses.getOrElse(sym, Nil)
 
       var submodules: List[Symbol.ModuleSym] = Nil
-      var classes: List[TypedAst.Class] = Nil
+      var classes: List[Class] = Nil
       var enums: List[TypedAst.Enum] = Nil
       var effects: List[TypedAst.Effect] = Nil
       var typeAliases: List[TypedAst.TypeAlias] = Nil
       var defs: List[TypedAst.Def] = Nil
       mod.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
-        case sym: Symbol.ClassSym => classes = root.classes(sym) :: classes
+        case sym: Symbol.ClassSym => classes = mkClass(sym, root) :: classes
         case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
         case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
         case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
@@ -102,17 +102,44 @@ object HtmlDocumentor {
       )
   }
 
-  private def filterPublic(mod: Module): Module = mod match {
+  private def mkClass(sym: Symbol.ClassSym, root: TypedAst.Root): Class = root.classes(sym) match {
+    case TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs0, laws, loc) =>
+
+      val (sigs, defs) = sigs0.partition(_.impl.isEmpty)
+      val instances = root.instances.getOrElse(sym, Nil)
+
+      Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, defs, laws, instances, loc)
+  }
+
+  private def filterModule(mod: Module): Module = mod match {
     case Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs) =>
       Module(
         namespace,
         uses,
         submodules,
-        classes.filter(c => c.mod.isPublic && !c.ann.isInternal),
+        classes.filter(c => c.mod.isPublic && !c.ann.isInternal).map(filterClass),
         enums.filter(e => e.mod.isPublic && !e.ann.isInternal),
         effects.filter(e => e.mod.isPublic && !e.ann.isInternal),
         typeAliases.filter(t => t.mod.isPublic),
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
+      )
+  }
+
+  private def filterClass(clazz: Class): Class = clazz match {
+    case Class(doc, ann, mod, sym, tparam, superClasses, assoc, signatures, defs, laws, instances, loc) =>
+      Class(
+        doc,
+        ann,
+        mod,
+        sym,
+        tparam,
+        superClasses,
+        assoc.filter(a => a.mod.isPublic),
+        signatures.filter(s => s.spec.mod.isPublic && !s.spec.ann.isInternal),
+        defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
+        laws.filter(l => l.spec.mod.isPublic && !l.spec.ann.isInternal),
+        instances.filter(i => i.mod.isPublic && !i.ann.isInternal),
+        loc,
       )
   }
 
@@ -170,7 +197,20 @@ object HtmlDocumentor {
     sb.append("</section>")
   }
 
-  private def docClass(clazz: TypedAst.Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (group.isEmpty) {
+      return
+    }
+
+    sb.append("<details>")
+    sb.append(s"<summary><h3>$name</h3></summary>")
+    for (e <- group) {
+      docElt(e)
+    }
+    sb.append("</details>")
+  }
+
+  private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${clazz.sym.name}</span>")
@@ -179,7 +219,8 @@ object HtmlDocumentor {
     sb.append("</code>")
     docSourceLocation(clazz.loc)
     docDoc(clazz.doc)
-    // TODO add signatures, instances, definitions
+    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.loc), docSignature)
+    docSubSection("Definitions", clazz.defs.sortBy(_.sym.loc), docSignature)
   }
 
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -216,19 +257,25 @@ object HtmlDocumentor {
     docDoc(ta.doc)
   }
 
-  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit =
+    docSpec(defn.sym.name, defn.spec)
+
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit =
+    docSpec(sig.sym.name, sig.spec)
+
+  private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>def</span> ")
-    sb.append(s"<span class='name'>${defn.sym.name}</span>")
-    docTypeParams(defn.spec.tparams, showKinds = false)
-    docFormalParams(defn.spec.fparams)
+    sb.append(s"<span class='name'>${name}</span>")
+    docTypeParams(spec.tparams, showKinds = false)
+    docFormalParams(spec.fparams)
     sb.append(": ")
-    docType(defn.spec.retTpe)
+    docType(spec.retTpe)
     sb.append(" \\ ")
-    docEffectType(defn.spec.eff)
+    docEffectType(spec.eff)
     sb.append("</code>")
-    docSourceLocation(defn.spec.loc)
-    docDoc(defn.spec.doc)
+    docSourceLocation(spec.loc)
+    docDoc(spec.doc)
   }
 
   private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -379,9 +426,22 @@ object HtmlDocumentor {
   private case class Module(namespace: List[String],
                             uses: List[Ast.UseOrImport],
                             submodules: List[Symbol.ModuleSym],
-                            classes: List[TypedAst.Class],
+                            classes: List[Class],
                             enums: List[TypedAst.Enum],
                             effects: List[TypedAst.Effect],
                             typeAliases: List[TypedAst.TypeAlias],
                             defs: List[TypedAst.Def])
+
+  private case class Class(doc: Ast.Doc,
+                           ann: Ast.Annotations,
+                           mod: Ast.Modifiers,
+                           sym: Symbol.ClassSym,
+                           tparam: TypedAst.TypeParam,
+                           superClasses: List[Ast.TypeConstraint],
+                           assocs: List[TypedAst.AssocTypeSig],
+                           signatures: List[TypedAst.Sig],
+                           defs: List[TypedAst.Sig],
+                           laws: List[TypedAst.Def],
+                           instances: List[TypedAst.Instance],
+                           loc: SourceLocation)
 }
