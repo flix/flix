@@ -176,7 +176,7 @@ object HtmlDocumentor {
     sb.append(mkHead(name))
     sb.append("<body>")
 
-    sb.append(s"<h1>$name</h1>")
+    sb.append(s"<h1>${esc(name)}</h1>")
     sb.append("<hr/>")
 
     docSection("Classes", mod.classes.sortBy(_.sym.name), docClass)
@@ -201,7 +201,7 @@ object HtmlDocumentor {
       "<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>" +
       "<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>" +
       "<link href='styles.css' rel='stylesheet'>" +
-      s"<title>Flix Doc | $name</title>" +
+      s"<title>Flix Doc | ${esc(name)}</title>" +
       "</head>"
   }
 
@@ -223,7 +223,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<section>")
-    sb.append(s"<h2>$name</h2>")
+    sb.append(s"<h2>${esc(name)}</h2>")
     for (e <- group) {
       sb.append("<div class='box'>")
       docElt(e)
@@ -249,7 +249,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<details>")
-    sb.append(s"<summary><h3>$name</h3></summary>")
+    sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
     for (e <- group) {
       docElt(e)
     }
@@ -265,7 +265,7 @@ object HtmlDocumentor {
     docAnnotations(clazz.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
-    sb.append(s"<span class='name'>${clazz.sym.name}</span>")
+    sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
     docTypeParams(List(clazz.tparam), showKinds = true)
     docTypeConstraints(clazz.superClasses)
     sb.append("</code>")
@@ -285,7 +285,7 @@ object HtmlDocumentor {
     docAnnotations(enm.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
-    sb.append(s"<span class='name'>${enm.sym.name}</span>")
+    sb.append(s"<span class='name'>${esc(enm.sym.name)}</span>")
     docTypeParams(enm.tparams, showKinds = true)
     docDerivations(enm.derives)
     sb.append("</code>")
@@ -303,7 +303,7 @@ object HtmlDocumentor {
     docAnnotations(eff.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
-    sb.append(s"<span class='name'>${eff.sym.name}</span>")
+    sb.append(s"<span class='name'>${esc(eff.sym.name)}</span>")
     sb.append("</code>")
     docSourceLocation(eff.loc)
     docSubSection("Ops", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec))
@@ -318,7 +318,7 @@ object HtmlDocumentor {
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
-    sb.append(s"<span class='name'>${ta.sym.name}</span>")
+    sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
     docTypeParams(ta.tparams, showKinds = true)
     sb.append(" = ")
     docType(ta.tpe)
@@ -353,7 +353,7 @@ object HtmlDocumentor {
     docAnnotations(spec.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>def</span> ")
-    sb.append(s"<span class='name'>${name}</span>")
+    sb.append(s"<span class='name'>${esc(name)}</span>")
     docTypeParams(spec.tparams, showKinds = false)
     docFormalParams(spec.fparams)
     sb.append(": ")
@@ -396,7 +396,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      sb.append(s"<span class='tpe-constraint'>${t.head.sym}</span>[")
+      sb.append(s"<span class='tpe-constraint'>${esc(t.head.sym.name)}</span>[")
       docType(t.arg)
       sb.append("]")
     }
@@ -418,7 +418,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.classes.sortBy(_.loc)) { c =>
-      sb.append(s"<span class='tpe-constraint'>${c.clazz.name}</span>")
+      sb.append(s"<span class='tpe-constraint'>${esc(c.clazz.name)}</span>")
     }
     sb.append("</span>")
   }
@@ -433,12 +433,12 @@ object HtmlDocumentor {
     for (c <- cases.sortBy(_.loc)) {
       sb.append("<code>")
       sb.append("<span class='keyword'>case</span> ")
-      sb.append(s"<span class='case-tag'>${c.sym.name}</span>(")
+      sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>(")
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
         case SimpleType.Tuple(fields) =>
           docList(fields) { t =>
-            sb.append(s"<span class='type'>${FormatType.formatSimpleType(t)}</span>")
+            sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
           }
         case _ => docType(c.tpe)
       }
@@ -467,9 +467,9 @@ object HtmlDocumentor {
     sb.append("<span class='tparams'>[")
     docList(tparams.sortBy(_.loc)) { p =>
       sb.append("<span class='tparam'>")
-      sb.append(s"<span class='type'>${p.name}</span>")
+      sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
       if (showKinds) {
-        sb.append(s": <span class='kind'>${p.sym.kind}</span>")
+        sb.append(s": <span class='kind'>${esc(p.sym.kind.toString)}</span>")
       }
       sb.append("</span>")
     }
@@ -484,7 +484,7 @@ object HtmlDocumentor {
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     docList(fparams.sortBy(_.loc)) { p =>
-      sb.append(s"<span><span>${p.sym.text}</span>: ")
+      sb.append(s"<span><span>${esc(p.sym.text)}</span>: ")
       docType(p.tpe)
       sb.append("</span>")
     }
@@ -498,7 +498,7 @@ object HtmlDocumentor {
     */
   private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
     for (a <- anns.annotations) {
-      sb.append(s"<code class='annotation'>$a</code>")
+      sb.append(s"<code class='annotation'>${esc(a.toString)}</code>")
     }
   }
 
@@ -508,7 +508,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' href='${createLink(loc)}'>Source</a>")
+    sb.append(s"<a class='source' target='_blank' href='${esc(createLink(loc))}'>Source</a>")
   }
 
   /**
@@ -533,7 +533,7 @@ object HtmlDocumentor {
     */
   private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='type'>")
-    sb.append(FormatType.formatType(tpe))
+    sb.append(esc(FormatType.formatType(tpe)))
     sb.append("</span>")
   }
 
@@ -544,7 +544,7 @@ object HtmlDocumentor {
     */
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='effect'>")
-    sb.append(FormatType.formatType(eff))
+    sb.append(esc(FormatType.formatType(eff)))
     sb.append("</span>")
   }
 
@@ -602,6 +602,11 @@ object HtmlDocumentor {
     // TODO make it also work for local user code
     s"https://github.com/flix/flix/blob/master/main/src/library/${loc.source.name}#L${loc.beginLine}-L${loc.beginLine}"
   }
+
+  /**
+    * Escape any HTML in the string.
+    */
+  private def esc(s: String): String = xml.Utility.escape(s)
 
   /**
     * A represention of a module that's easier to work with while generating documention.
