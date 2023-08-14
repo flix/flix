@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, Purity, SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -99,15 +99,14 @@ object LambdaLift {
 
         // Construct the closure parameters
         val cs = if (cparams.isEmpty)
-          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc))
+          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc))
         else cparams.map(visitFormalParam)
 
         // Construct the formal parameters.
         val fs = fparams.map(visitFormalParam)
 
         // Construct a new definition.
-        val defTpe = tpe.arrowResultType
-        val purity = tpe.arrowEffectType
+        val defTpe = tpe.result
         val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
 
         // Add the new definition to the map of lifted definitions.
@@ -115,7 +114,7 @@ object LambdaLift {
 
         // Construct the closure args.
         val closureArgs = if (freeVars.isEmpty)
-          List(LiftedAst.Expr.Cst(Ast.Constant.Unit, Type.mkUnit(loc), loc))
+          List(LiftedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc))
         else freeVars.map {
           case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expr.Var(sym, tpe, sym.loc)
         }
