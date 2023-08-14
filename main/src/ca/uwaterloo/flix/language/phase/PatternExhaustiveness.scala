@@ -438,7 +438,7 @@ object PatternExhaustiveness {
         }
       case TypedAst.Pattern.Record(pats, extPat, _, _) => ctor match {
         case TyCon.Record(_, _) =>
-          val p: List[Pattern] = extPat match {
+          val p = extPat match {
             case TypedAst.Pattern.RecordEmpty(_, _) => Nil
             case _ => List(extPat)
           }
