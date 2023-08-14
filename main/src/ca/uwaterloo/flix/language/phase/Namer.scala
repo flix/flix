@@ -1123,7 +1123,7 @@ object Namer {
           }
           NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
       }
-      val pVal = pat.map(visitPattern)
+      val pVal = visitPattern(pat)
       NamedAst.Pattern.Record(psVal, pVal, loc)
   }
 

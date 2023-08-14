@@ -2440,13 +2440,13 @@ object Weeder {
         val rsVal = traverseOpt(rest)(visit)
         flatMapN(fsVal, rsVal) {
           // Pattern { ... }
-          case (fs, None) => WeededAst.Pattern.Record(fs, None, loc).toSuccess
+          case (fs, None) => WeededAst.Pattern.Record(fs, WeededAst.Pattern.EmptyRecord(loc.asSynthetic), loc).toSuccess
 
           // Pattern { x, ... | r }
-          case (x :: xs, Some(Pattern.Var(v, l))) => WeededAst.Pattern.Record(x :: xs, Some(Pattern.Var(v, l)), loc).toSuccess
+          case (x :: xs, Some(Pattern.Var(v, l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Var(v, l), loc).toSuccess
 
           // Pattern { x, ... | _ }
-          case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Some(Pattern.Wild(l)), loc).toSuccess
+          case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc).toSuccess
 
           // Bad Pattern { | r }
           case (Nil, Some(r)) => WeederError.EmptyRecordExtensionPattern(r.loc).toFailure
