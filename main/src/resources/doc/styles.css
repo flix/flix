@@ -7,6 +7,7 @@
 
     --section-arrow-color: rgb(85, 91, 96);
 
+    --annotation-color: #b15422;
     --keyword-color: #030303;
     --name-color: #b12250;
     --type-color: #3061c4;
@@ -155,6 +156,10 @@ details[open] > summary::after {
 
 code {
     font-family: Fira Code, monospace;
+}
+code.annotation {
+    color: var(--annotation-color);
+    display: block;
 }
 code .keyword {
     color: var(--keyword-color);
