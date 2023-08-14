@@ -1109,10 +1109,10 @@ object Namer {
       NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
 
     case WeededAst.Pattern.Tuple(elms, loc) =>
-      NamedAst.Pattern.Tuple(elms map visitPattern, loc)
+      NamedAst.Pattern.Tuple(elms.map(visitPattern), loc)
 
     case WeededAst.Pattern.Record(pats, pat, loc) =>
-      val psVal = pats map {
+      val psVal = pats.map {
         case WeededAst.Pattern.Record.RecordFieldPattern(field, None, loc1) =>
           // Introduce new symbols if there is no pattern
           val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
@@ -1123,7 +1123,7 @@ object Namer {
           NamedAst.Pattern.Record.RecordFieldPattern(field, visitPattern(pat1), loc1)
 
       }
-      val pVal = pat map visitPattern
+      val pVal = pat.map(visitPattern)
       NamedAst.Pattern.Record(psVal, pVal, loc)
   }
 
