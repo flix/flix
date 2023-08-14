@@ -70,12 +70,13 @@ object Indexer {
     * Returns a reverse index for the given `spec`.
     */
   private def visitSpec(spec: Spec): Index = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
       val idx1 = traverse(tparams)(visitTypeParam)
       val idx2 = traverse(fparams)(visitFormalParam)
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
-      val idx4 = visitType(retTpe)
-      val idx5 = visitType(eff)
+      val idx4 = traverse(econstrs)(visitEqualityConstraint)
+      val idx5 = visitType(retTpe)
+      val idx6 = visitType(eff)
       idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
@@ -562,6 +563,21 @@ object Indexer {
     */
   private def visitTypeConstraintHead(head0: Ast.TypeConstraint.Head): Index = head0 match {
     case Ast.TypeConstraint.Head(sym, loc) => Index.useOf(sym, loc)
+  }
+
+  /**
+    * Returns a reverse index for the given type constraint `tconstr0`.
+    */
+  private def visitEqualityConstraint(econstr0: Ast.EqualityConstraint): Index = econstr0 match {
+    case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
+      visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+  }
+
+  /**
+    * Returns a reverse index for the given associated type constructor `cst`.
+    */
+  private def visitAssocTypeConstructor(cst: Ast.AssocTypeConstructor): Index = cst match {
+    case Ast.AssocTypeConstructor(sym, loc) => Index.useOf(sym, loc)
   }
 
 }
