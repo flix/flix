@@ -262,6 +262,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    docAnnotations(clazz.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${clazz.sym.name}</span>")
@@ -281,6 +282,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    docAnnotations(enm.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${enm.sym.name}</span>")
@@ -298,6 +300,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    docAnnotations(eff.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
     sb.append(s"<span class='name'>${eff.sym.name}</span>")
@@ -347,6 +350,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    docAnnotations(spec.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${name}</span>")
@@ -367,6 +371,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    docAnnotations(instance.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>instance</span> ")
     docType(instance.tpe)
@@ -484,6 +489,17 @@ object HtmlDocumentor {
       sb.append("</span>")
     }
     sb.append(")</span>")
+  }
+
+  /**
+    * Document the given `Annotations`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    for (a <- anns.annotations) {
+      sb.append(s"<code class='annotation'>$a</code>")
+    }
   }
 
   /**
