@@ -529,9 +529,10 @@ object Monomorph {
           val (p1, env1) = visitPat(pat1, subst)
           (Pattern.Record.RecordFieldPattern(field, subst(tpe1), p1, loc1), env1)
       }.unzip
-      val (p, env1) = pat.map(visitPat(_, subst)).unzip
-      val finalEnv = env1.getOrElse(Map.empty) :: envs
+      val (p, env1) = visitPat(pat, subst)
+      val finalEnv = env1 :: envs
       (Pattern.Record(ps, p, subst(tpe), loc), finalEnv.reduce(_ ++ _))
+    case Pattern.RecordEmpty(tpe, loc) => (Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
   /**

@@ -334,9 +334,11 @@ object MonomorphEnums {
         case Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
           Pattern.Record.RecordFieldPattern(field, visitType(tpe1), visitPat(pat1), loc1)
       }
-      val p = pat.map(visitPat)
+      val p = visitPat(pat)
       val t = visitType(tpe)
       Pattern.Record(ps, p, t, loc)
+    case Pattern.RecordEmpty(tpe, loc) =>
+      Pattern.RecordEmpty(visitType(tpe), loc)
   }
 
   /**

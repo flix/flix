@@ -480,7 +480,7 @@ object Simplifier {
               (fieldLetBinding, restrictedMatchVarExp)
           }
           pat match {
-            case Some(LoweredAst.Pattern.Var(sym, _, varLoc)) =>
+            case LoweredAst.Pattern.Var(sym, _, varLoc) =>
               // Extension is { ... | sym } so we generate a let-binding `let sym = matchVar`
               SimplifiedAst.Expr.Let(sym, restrictedMatchVar, one, succ.tpe, restrictedMatchVar.purity, varLoc)
             case _ =>

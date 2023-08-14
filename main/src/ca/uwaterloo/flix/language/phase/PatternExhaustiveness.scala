@@ -90,6 +90,7 @@ object PatternExhaustiveness {
 
     case class Record(fields: List[(Name.Field, TyCon)], tail: TyCon) extends TyCon
 
+    case object RecordEmpty extends TyCon
   }
 
   /**
@@ -591,7 +592,11 @@ object PatternExhaustiveness {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, _, numArgs, _) => numArgs
-    case TyCon.Record(fields, tail) => fields.length // if (tail.isEmpty) fields.length else fields.length + 1
+    case TyCon.Record(fields, tail) => tail match {
+      case TyCon.RecordEmpty => fields.length
+      case _ => fields.length + 1
+    }
+    case TyCon.RecordEmpty => 0
   }
 
   /**
@@ -664,10 +669,11 @@ object PatternExhaustiveness {
         case (f, p) => s"$f = ${prettyPrintCtor(p)}"
       }.mkString(", ")
       val tailStr = tail match {
-        // case RecordEmpty => ""
+        case TyCon.RecordEmpty => ""
         case r => s" | ${prettyPrintCtor(r)}"
       }
       "{ " + fieldsStr + tailStr + " }"
+    case TyCon.RecordEmpty => ""
   }
 
 
@@ -727,6 +733,7 @@ object PatternExhaustiveness {
       }
       val pVal = patToCtor(pat)
       TyCon.Record(patsVal, pVal)
+    case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
   }
 
   /**
@@ -753,15 +760,6 @@ object PatternExhaustiveness {
       }.zip(all.take(fields.length))
       val t = all.takeRight(1).head
       TyCon.Record(fs, t) :: lst.drop(fields.length + 1)
-    /*
-    case TyCon.Record(fields, None) =>
-       val all = lst.take(fields.length)
-       val fs = fields.map {
-         case (f, _) => f
-       }.zip(all.take(fields.length))
-       TyCon.Record(fs, None) :: lst.drop(fields.length)
-
-     */
     case a => a :: lst
   }
 
