@@ -306,7 +306,7 @@ object HtmlDocumentor {
     sb.append(s"<span class='name'>${eff.sym.name}</span>")
     sb.append("</code>")
     docSourceLocation(eff.loc)
-    // TODO document e.ops
+    docSubSection("Ops", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec))
     docDoc(eff.doc)
   }
 
