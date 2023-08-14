@@ -1113,15 +1113,15 @@ object Namer {
 
     case WeededAst.Pattern.Record(pats, pat, loc) =>
       val psVal = pats.map {
-        case WeededAst.Pattern.Record.RecordFieldPattern(field, None, loc1) =>
-          // Introduce new symbols if there is no pattern
-          val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
-          val p = NamedAst.Pattern.Var(sym, field.loc)
+        case WeededAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+          val p = pat1 match {
+            case Some(p1) => visitPattern(p1)
+            case None =>
+              // Introduce new symbols if there is no pattern
+              val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
+              NamedAst.Pattern.Var(sym, field.loc)
+          }
           NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
-
-        case WeededAst.Pattern.Record.RecordFieldPattern(field, Some(pat1), loc1) =>
-          NamedAst.Pattern.Record.RecordFieldPattern(field, visitPattern(pat1), loc1)
-
       }
       val pVal = pat.map(visitPattern)
       NamedAst.Pattern.Record(psVal, pVal, loc)
