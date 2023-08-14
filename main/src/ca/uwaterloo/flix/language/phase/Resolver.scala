@@ -29,6 +29,7 @@ import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 /**
   * The Resolver phase performs name resolution on the program.
@@ -462,7 +463,7 @@ object Resolver {
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
           flatMapN(clazzVal, tpeVal, tconstrsVal) {
             case (clazz, tpe, tconstrs) =>
-              val assocsVal = traverse(assocs0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
+              val assocsVal = resolveAssocTypeDefs(assocs0, clazz, env, taenv, ns0, root, loc)
               val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
               mapN(defsVal, assocsVal) {
@@ -629,6 +630,45 @@ object Resolver {
       mapN(tparamVal, kindVal) {
         case (tparam, kind) => ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
+  }
+
+  /**
+    * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
+    * `loc` is the location of the instance symbol for reporting errors.
+    */
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
+    val assocIdents = d0.map {
+      case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => ident
+    }
+
+    // check that there are no repeated idents
+    val seenIdents = mutable.Map.empty[String, SourceLocation]
+    val dupErrs = mutable.ListBuffer.empty[ResolutionError.DuplicateAssocTypeDef]
+    assocIdents.foreach {
+      ident => seenIdents.get(ident.name) match {
+        case None => seenIdents.put(ident.name, ident.loc)
+        case Some(seenLoc) => dupErrs.append(ResolutionError.DuplicateAssocTypeDef(ident.name, seenLoc, ident.loc))
+      }
+    }
+    val dupVal = Validation.sequenceX(dupErrs.map(_.toFailure))
+
+    // check that all associated types are covered
+    val missingVal = Validation.traverseX(clazz.assocs) {
+      case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc) =>
+        if (assocIdents.exists {ident => ident.name == sym.name}) {
+          ().toSuccess
+        } else {
+          ResolutionError.MissingAssocTypeDef(sym.name, loc).toFailure
+        }
+    }
+
+
+    // check that the types are valid and that there are no extras
+    val assocsVal = Validation.traverse(d0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
+
+    mapN(dupVal, missingVal, assocsVal) {
+      case (_, _, assocs) => assocs
+    }
   }
 
   /**
