@@ -138,7 +138,7 @@ object HtmlDocumentor {
         signatures.filter(s => s.spec.mod.isPublic && !s.spec.ann.isInternal),
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         laws.filter(l => l.spec.mod.isPublic && !l.spec.ann.isInternal),
-        instances.filter(i => i.mod.isPublic && !i.ann.isInternal),
+        instances.filter(i => !i.ann.isInternal),
         loc,
       )
   }
@@ -221,6 +221,7 @@ object HtmlDocumentor {
     docDoc(clazz.doc)
     docSubSection("Signatures", clazz.signatures.sortBy(_.sym.loc), docSignature)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.loc), docSignature)
+    docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
   }
 
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
@@ -276,6 +277,16 @@ object HtmlDocumentor {
     sb.append("</code>")
     docSourceLocation(spec.loc)
     docDoc(spec.doc)
+  }
+
+  private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<code>")
+    sb.append("<span class='keyword'>instance</span> ")
+    docType(instance.tpe)
+    docTypeConstraints(instance.tconstrs)
+    sb.append("</code>")
+    docSourceLocation(instance.loc)
+    docDoc(instance.doc)
   }
 
   private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
