@@ -2609,7 +2609,7 @@ object Typer {
         TypedAst.Pattern.Tuple(es, tpe, loc)
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
-        val ps = pats map {
+        val ps = pats.map {
           case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar1, pat1, loc1) =>
             TypedAst.Pattern.Record.RecordFieldPattern(field, subst0(tvar1), visit(pat1), loc1)
         }

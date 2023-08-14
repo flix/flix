@@ -1160,7 +1160,7 @@ object Namer {
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-      val ts = terms map visitPattern
+      val ts = terms.map(visitPattern)
       NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
 
     case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
