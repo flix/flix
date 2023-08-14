@@ -128,7 +128,7 @@ object EntryPoint {
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, loc), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, loc), _) =>
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
       // First check that there's exactly one argument.
@@ -159,7 +159,7 @@ object EntryPoint {
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
@@ -198,6 +198,7 @@ object EntryPoint {
       retTpe = Type.Unit,
       eff = Type.Impure,
       tconstrs = Nil,
+      econstrs = Nil,
       loc = SourceLocation.Unknown
     )
 
