@@ -1277,7 +1277,7 @@ object ParsedAst {
 
     /**
       * Represents a pattern for a field of a record.
-      * `field {: type} {= pattern}`
+      * `field {= pattern}`
       *
       * @param sp1   the position of the first character in the pattern.
       * @param field the field the pattern refers to.
