@@ -1380,7 +1380,7 @@ object Namer {
     * Returns the free variables in the list of [[Record.RecordFieldPattern]] `pats` and `pat`.
     */
   private def recordPatternFreeVars(pats: List[Record.RecordFieldPattern], pat: Option[WeededAst.Pattern]): List[Name.Ident] = {
-    def optFreeVars(rfp: Record.RecordFieldPattern): List[Name.Ident] = freeVars(rfp.pat.getOrElse(Nil))
+    def optFreeVars(rfp: Record.RecordFieldPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
 
     val patFreeVars = pat.map(freeVars).getOrElse(Nil)
     pats.flatMap(optFreeVars) ++ patFreeVars
