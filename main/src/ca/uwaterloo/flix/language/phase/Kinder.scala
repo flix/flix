@@ -371,13 +371,57 @@ object Kinder {
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, taenv, root))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, taenv, root))
 
-      mapN(tparamsVal, fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
+      flatMapN(tparamsVal, fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
         case (tparams, fparams, tpe, eff, tconstrs, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
-          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+          val spec = KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
+          mapN(checkAssocTypes(spec)) {
+            case _ => spec
+          }
       }
+  }
+
+  /**
+    * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
+    */
+  private def checkAssocTypes(spec0: KindedAst.Spec)(implicit flix: Flix): Validation[Unit, KindError] = {
+    def getAssocTypes(t: Type): List[Type.AssocType] = t match {
+      case Type.Var(_, _) => Nil
+      case Type.Cst(_, _) => Nil
+      case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ::: getAssocTypes(tpe2)
+      case Type.Alias(_, args, _, _) => args.flatMap(getAssocTypes) // TODO ASSOC-TYPES what to do about alias
+      case assoc: Type.AssocType => List(assoc)
+    }
+
+    spec0 match {
+      case KindedAst.Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs, _) =>
+        // get all the associated types in the spec
+        val tpes = fparams.map(_.tpe) ::: tpe :: eff :: econstrs.flatMap {
+          case Ast.EqualityConstraint(cst, tpe1, tpe2, _) =>
+            // Kind is irrelevant for our purposes
+            List(Type.AssocType(cst, tpe1, Kind.Wild, tpe1.loc), tpe2) // TODO ASSOC-TYPES better location for left
+        }
+
+        // check that they are all covered by the type constraints
+        Validation.traverseX(tpes.flatMap(getAssocTypes)) {
+          case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
+            val clazzSym = assocSym.clazz
+            val matches = tconstrs.exists {
+              case Ast.TypeConstraint(Ast.TypeConstraint.Head(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
+                clazzSym == tconstrSym && tvarSym1 == tvarSym2
+              case _ => false
+            }
+            if (matches) {
+              ().toSuccess
+            } else {
+              val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+              KindError.MissingConstraint(clazzSym, arg, renv, loc).toFailure
+            }
+          case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
+        }
+    }
   }
 
   /**
@@ -1235,7 +1279,7 @@ object Kinder {
       val clazz = root.classes(cst.sym.clazz)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       clazz.assocs.find(_.sym == cst.sym).get match {
-        case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, k0, loc) =>
+        case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _) =>
           // TODO ASSOC-TYPES for now assuming just one type parameter
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
