@@ -108,7 +108,7 @@ object Simplifier {
           case AtomicOp.Spawn =>
             // Wrap the expression in a closure: () -> tpe \ ef
             val List(e1, e2) = es
-            val lambdaTyp = MonoType.Arrow(Nil, e1.tpe)
+            val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e1.tpe)
             val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
             val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
             val t = visitType(tpe)
@@ -117,7 +117,7 @@ object Simplifier {
           case AtomicOp.Lazy =>
             // Wrap the expression in a closure: () -> tpe \ Pure
             val e = es.head
-            val lambdaTyp = MonoType.Arrow(Nil, e.tpe)
+            val lambdaTyp = MonoType.Arrow(List(MonoType.Unit), e.tpe)
             val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
             val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
             val t = visitType(tpe)
