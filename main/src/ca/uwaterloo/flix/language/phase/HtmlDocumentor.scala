@@ -194,15 +194,16 @@ object HtmlDocumentor {
     * Generates the string representing the head of the HTML document.
     */
   private def mkHead(name: String): String = {
-    "<!doctype html><html lang='en'>" +
-      "<head>" +
-      "<meta charset='utf-8'/>" +
-      "<meta name='viewport' content='width=device-width,initial-scale=1'/>" +
-      "<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>" +
-      "<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>" +
-      "<link href='styles.css' rel='stylesheet'>" +
-      s"<title>Flix | ${esc(name)}</title>" +
-      "</head>"
+    s"""<!doctype html><html lang='en'>
+      |<head>
+      |<meta charset='utf-8'/>
+      |<meta name='viewport' content='width=device-width,initial-scale=1'/>
+      |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
+      |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
+      |<link href='styles.css' rel='stylesheet'>
+      |<title>Flix | ${esc(name)}</title>
+      |</head>
+    """.stripMargin
   }
 
   /**
