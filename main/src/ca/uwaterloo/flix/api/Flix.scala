@@ -88,8 +88,6 @@ class Flix {
   /**
     * A cache of ASTs for debugging.
     */
-  private var cachedDocumentorAst: TypedAst.Root = TypedAst.empty
-  private var cachedHtmlDocumentorAst: TypedAst.Root = TypedAst.empty
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
   private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
@@ -103,7 +101,6 @@ class Flix {
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
 
-  def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
   def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
   def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
