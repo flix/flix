@@ -583,7 +583,7 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
-    Documentor.run(typedAst)
+    JsonDocumentor.run(typedAst)
     HtmlDocumentor.run(typedAst)
     cachedLoweringAst = Lowering.run(typedAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
