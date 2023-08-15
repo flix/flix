@@ -3,9 +3,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{RedundancyError, TypeError}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestRedundancy extends FunSuite with TestUtils {
+class TestRedundancy extends AnyFunSuite with TestUtils {
 
   test("HiddenVarSym.Let.01") {
     val input =
@@ -47,8 +47,8 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 = region r {
-           |    let (_, rx) = Channel.buffered(r, 1);
+           |def f(): Int32 = region rc {
+           |    let (_, rx) = Channel.buffered(rc, 1);
            |    select {
            |        case _x <- recv(rx) => _x
            |    }
@@ -97,6 +97,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Def.02") {
@@ -110,6 +111,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Let.01") {
@@ -123,6 +125,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Let.02") {
@@ -137,6 +140,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Lambda.01") {
@@ -150,6 +154,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Lambda.02") {
@@ -165,6 +170,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Lambda.03") {
@@ -180,6 +186,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.01") {
@@ -194,6 +201,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.02") {
@@ -208,6 +216,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.03") {
@@ -223,6 +232,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Match.04") {
@@ -238,6 +248,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Select.01") {
@@ -253,14 +264,15 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Select.02") {
     val input =
       """
-        |def f(): Int32 = region r {
+        |def f(): Int32 = region rc {
         |    let x = 123;
-        |    let (tx, rx) = Channel.buffered(r, 1);
+        |    let (tx, rx) = Channel.buffered(rc, 1);
         |    Channel.send(456, tx);
         |    select {
         |        case y <- recv(rx) => y
@@ -271,16 +283,17 @@ class TestRedundancy extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Region.01") {
     val input =
       """
         |def f(): Unit = {
-        |   region r {
-        |       discard Array#{} @ r;
-        |       region r {
-        |           discard Array#{} @ r;
+        |   region rc {
+        |       discard Array#{} @ rc;
+        |       region rc {
+        |           discard Array#{} @ rc;
         |           ()
         |       }
         |   }
@@ -288,6 +301,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.NewObject.01") {
@@ -302,6 +316,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.01") {
@@ -319,6 +334,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.02") {
@@ -339,6 +355,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.03") {
@@ -359,6 +376,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -381,6 +399,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -403,6 +422,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.06") {
@@ -418,6 +438,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.07") {
@@ -440,6 +461,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -463,6 +485,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -481,6 +504,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -504,6 +528,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.11") {
@@ -528,6 +553,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -554,6 +580,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -581,6 +608,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.14") {
@@ -605,6 +633,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -630,6 +659,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -656,6 +686,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedName.Use.17") {
@@ -675,6 +706,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -707,6 +739,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -734,6 +767,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
@@ -755,6 +789,7 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("UnusedEnumSym.01") {
@@ -1195,8 +1230,8 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 = region r {
-           |    let (_, rx) = Channel.unbuffered(r);
+           |def f(): Int32 = region rc {
+           |    let (_, rx) = Channel.unbuffered(rc);
            |    select {
            |        case x <- recv(rx) => 123
            |    }
@@ -1210,8 +1245,8 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.02") {
     val input =
       raw"""
-           |def f(): Int32 = region r {
-           |    let (_, rx) = Channel.unbuffered(r);
+           |def f(): Int32 = region rc {
+           |    let (_, rx) = Channel.unbuffered(rc);
            |    select {
            |        case x <- recv(rx) => x
            |        case x <- recv(rx) => 123
@@ -1292,8 +1327,8 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   test("UselessExpression.03") {
     val input =
-      s"""
-         |def hof(f: a -> b & e, x: a): b & e = f(x)
+      """
+         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
          |
          |def f(): Unit =
          |    hof(x -> (x, 21), 42);
@@ -1328,8 +1363,8 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   test("UnderAppliedFunction.03") {
     val input =
-      s"""
-         |def hof(f: a -> b & e, x: a): b & e = f(x)
+      """
+         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
          |
          |def f(): Unit =
          |    hof(x -> (x, ref 21 @ Static));
@@ -1356,24 +1391,24 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   test("RedundantPurityCast.01") {
     val input =
-      s"""
-         |pub def f(): Int32 = unchecked_cast(123 as _ & Pure)
+      """
+         |pub def f(): Int32 = unchecked_cast(123 as _ \ Pure)
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantPurityCast](result)
+    expectError[RedundancyError.RedundantEffectCast](result)
   }
 
   test("RedundantPurityCast.02") {
     val input =
       raw"""
-           |pub def f(): Array[Int32, false] \ IO =
+           |pub def f(): Array[Int32, Static] \ IO =
            |  let x = Array#{1, 2, 3} @ Static;
-           |  unchecked_cast(x as _ & Pure)
+           |  unchecked_cast(x as _ \ Pure)
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantPurityCast](result)
+    expectError[RedundancyError.RedundantEffectCast](result)
   }
 
   test("RedundantEffectCast.01") {
@@ -1675,7 +1710,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantCheckedTypeCast.02") {
     val input =
       """
-        |def f(): Unit & Impure =
+        |def f(): Unit \ IO =
         |    let _ =
         |        if (true)
         |            checked_cast(x -> x + 1)
@@ -1698,8 +1733,8 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        if (true)
         |            checked_cast(())
         |        else
-        |            region r {
-        |                let _ = $ARRAY_NEW$(r, 8, 8);
+        |            region rc {
+        |                let _ = $ARRAY_NEW$(rc, 8, 8);
         |                ()
         |            };
         |    ()
@@ -1728,9 +1763,9 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantCheckedTypeCast.05") {
     val input =
       """
-        |def f(): Unit & Impure =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |def f(): Unit \ IO =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
@@ -1739,7 +1774,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    ()
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
@@ -1767,6 +1802,98 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
+  ignore("RedundantCheckedEffectCast.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_ecast(x -> x)
+        |        else
+        |            x -> x;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_ecast(())
+        |        else
+        |            region rc {
+        |                let _ = $ARRAY_NEW$(rc, 8, 8);
+        |                ()
+        |            };
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_ecast((1, "a"))
+        |        else
+        |            (1, "a");
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.04") {
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
+        |    let _ =
+        |        if (true)
+        |            checked_cast((newObject(), newObject()))
+        |        else
+        |            (newObject(), newObject());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.05") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> unchecked_cast(() as _ \ { A, B, C });
+        |    let g = () -> unchecked_cast(() as _ \ { A, B, C });
+        |    let _ =
+        |        if (true)
+        |            checked_ecast(f)
+        |        else
+        |            g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
   test("TestParYield.01") {
     val input =
       """
@@ -1776,6 +1903,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.02") {
@@ -1786,6 +1914,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.03") {
@@ -1797,6 +1926,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.04") {
@@ -1807,6 +1937,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("TestParYield.05") {

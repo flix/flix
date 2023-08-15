@@ -77,6 +77,8 @@ object Ast {
     }
 
     override def hashCode(): Int = input.hashCode()
+
+    override def toString: String = name
   }
 
   /**
@@ -246,15 +248,6 @@ object Ast {
       override def toString: String = "@Test"
     }
 
-    /**
-      * An annotation that marks a function definition as being inherently unsafe.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Unsafe(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Unsafe"
-    }
-
   }
 
   /**
@@ -326,11 +319,23 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+  }
+
+  /**
+    * A common super-type that represents a call type.
+    */
+  sealed trait CallType
+
+  object CallType {
+    /**
+      * Represents a call in tail position.
+      */
+    case object TailCall extends CallType
 
     /**
-      * Returns `true` if `this` sequence contains the `@Unsafe` annotation.
+      * Represents a call in non-tail position.
       */
-    def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
+    case object NonTailCall extends CallType
   }
 
   /**
@@ -372,11 +377,6 @@ object Ast {
     def isLawful: Boolean = mod contains Modifier.Lawful
 
     /**
-      * Returns `true` if these modifiers contain the opaque modifier.
-      */
-    def isOpaque: Boolean = mod contains Modifier.Opaque
-
-    /**
       * Returns `true` if these modifiers contain the override modifier.
       */
     def isOverride: Boolean = mod contains Modifier.Override
@@ -409,11 +409,6 @@ object Ast {
       * The lawful modifier.
       */
     case object Lawful extends Modifier
-
-    /**
-      * The opaque modifier.
-      */
-    case object Opaque extends Modifier
 
     /**
       * The override modifier.
@@ -626,9 +621,14 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
-    * Represents a use of an enum case sym.
+    * Represents a use of a restrictable enum case sym.
     */
   case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of a restrictable enum sym.
+    */
+  case class RestrictableEnumSymUse(sym: Symbol.RestrictableEnumSym, loc: SourceLocation)
 
   /**
     * Represents a use of a class sym.
@@ -661,6 +661,18 @@ object Ast {
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
   case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
+
+  /**
+    * Represents a list of derivations with a source location.
+    *
+    * The source location spans the entire `with X, Y, Z` clause.
+    *
+    * If there is no `with`-clause then the source location has zero
+    * length and is positioned right after the enum type. For example,
+    * if the enum is `enum Color {` then the source position would point
+    * to the position right after `r` and have zero width.
+    */
+  case class Derivations(classes: List[Derivation], loc: SourceLocation)
 
   /**
     * Represents the way a variable is bound.
@@ -779,4 +791,72 @@ object Ast {
       */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
+
+  /**
+    * A common super-type for syntactic contexts.
+    *
+    * A syntactic context is an estimate of the syntactic construct a specific source position is inside.
+    */
+  sealed trait SyntacticContext
+
+  object SyntacticContext {
+
+    sealed trait Decl extends SyntacticContext
+
+    object Decl {
+      case object Class extends Decl
+
+      case object Enum extends Decl
+
+      case object Instance extends Decl
+
+      case object OtherDecl extends Decl
+    }
+
+    sealed trait Expr extends SyntacticContext
+
+    object Expr {
+      case object Constraint extends Expr
+
+      case object Do extends Expr
+
+      case object OtherExpr extends Expr
+    }
+
+    case object Import extends SyntacticContext
+
+    sealed trait Pat extends SyntacticContext
+
+    object Pat {
+      case object OtherPat extends Pat
+    }
+
+    sealed trait Type extends SyntacticContext
+
+    object Type {
+      case object Eff extends Type
+
+      case object OtherType extends Type
+    }
+
+    case object Use extends SyntacticContext
+
+    case object WithClause extends SyntacticContext
+
+    case object Unknown extends SyntacticContext
+
+    def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
+      case (_, SyntacticContext.Expr.OtherExpr) => ctx1
+      case (SyntacticContext.Expr.OtherExpr, _) => ctx2
+
+      case (_, SyntacticContext.Unknown) => ctx1
+      case (SyntacticContext.Unknown, _) => ctx2
+
+      case (SyntacticContext.Type.OtherType, SyntacticContext.WithClause) => SyntacticContext.WithClause
+      case (SyntacticContext.WithClause, SyntacticContext.Type.OtherType) => SyntacticContext.WithClause
+
+      case _ => ctx1
+    }
+  }
+
 }

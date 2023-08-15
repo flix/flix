@@ -30,7 +30,7 @@ mod System {
         ///
         /// See also `Console.readLine` for reading from the console.
         ///
-        pub def readLines(r: Region[r]): Iterator[String, false, r] \ { Read(r), Write(r), IO } =
+        pub def readLines(rc: Region[r]): Iterator[String, IO, r] \ { r, IO } =
             import static get java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
             import new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader \ IO as newInputStream;
             import new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader \ IO as newBufferedReader;
@@ -38,7 +38,7 @@ mod System {
             import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
 
             let br = newBufferedReader(checked_cast(newInputStream(getSystemIn()))); // up-cast to superclass
-            let nextLine = ref None @ r;
+            let nextLine = ref None @ rc;
             let next = () -> {
                 let l = match deref nextLine {
                     case Some(line) => if (Object.isNull(line)) None else Some(line)
@@ -50,7 +50,7 @@ mod System {
                 nextLine := None;
                 l
             };
-            Iterator.iterate(r, next)
+            Iterator.iterate(rc, next)
 
     }
 

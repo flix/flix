@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
@@ -32,16 +32,18 @@ object GenClosureClasses {
   /**
     * Returns the set of closures classes for the given set of definitions `defs`.
     */
-  def gen(closures: Set[ClosureInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a closure class for each closure and collect the results in a map.
     //
-    ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
-      case (macc, closure) =>
+    ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
+      case (macc, closure) if closure.cparams.nonEmpty =>
         val jvmType = JvmOps.getClosureClassType(closure.sym)
         val jvmName = jvmType.name
-        val bytecode = genByteCode(closure)
+        val bytecode = genByteCode(jvmType, closure)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
+      case (macc, _) =>
+        macc
     }, _ ++ _)
   }
 
@@ -49,7 +51,7 @@ object GenClosureClasses {
     * Returns the byte code for the closure.
     *
     * For example, given the symbol `mkAdder` with type (Int32, Int32) -> Int32 and the free variable `x`, we create:
-    *
+    * {{{
     * public final class Clo$mkAdder implements Clo2$Int32$Int32$Int32 {
     * public int clo0;
     * public int arg0; // from Fn2$...
@@ -62,31 +64,28 @@ object GenClosureClasses {
     *   Clo$mkAdder res = new Clo$mkAdder();
     *   res.clo0 = this.clo0;
     *   return res;
-    *
+    * }
     * public Cont$Int32 invoke() {
     *   this.res = this.x + this.arg0;
     *   return null;
     * }
+    * }}}
     */
-  private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
-    // Args of the function
-    val MonoType.Arrow(_, tresult) = closure.tpe
-
     // `JvmType` of the interface for `closure.tpe`
-    val functionInterface = JvmOps.getClosureAbstractClassType(closure.tpe)
-
-    // `JvmType` of the class for `defn`
-    val classType = JvmOps.getClosureClassType(closure.sym)
+    val functionInterface = JvmOps.getClosureAbstractClassType(defn.arrowType)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
       functionInterface.name.toInternalName, null)
 
+    val closureArgTypes = defn.cparams.map(_.tpe)
+
     // Generate a field for each captured variable.
-    for ((argType, index) <- closure.closureArgTypes.zipWithIndex) {
+    for ((argType, index) <- closureArgTypes.zipWithIndex) {
       // `JvmType` of `arg`
       val erasedArgType = JvmOps.getErasedJvmType(argType)
 
@@ -94,13 +93,11 @@ object GenClosureClasses {
       AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false, isVolatile = false)
     }
 
-    val defn = root.defs(closure.sym)
-
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, closure.closureArgTypes, tresult)
+    compileInvokeMethod(visitor, classType, defn)
 
     // getUniqueThreadClosure method of the class
-    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closure.closureArgTypes)
+    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closureArgTypes)
 
     // Constructor of the class
     compileConstructor(visitor, functionInterface)
@@ -112,28 +109,21 @@ object GenClosureClasses {
   /**
     * Invoke method for the given `defn`, `classType`, and `resultType`.
     */
-  private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                  closureArgTypes: List[MonoType], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Continuation class
-    val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
-    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(resultType))
+    val continuationType = JvmOps.getContinuationInterfaceType(defn.arrowType)
+    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
 
     // Method header
     val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
     invokeMethod.visitCode()
 
-    // Free variables
-    val closureFormals = defn.formals.take(closureArgTypes.length)
-
-    // Function parameters
-    val params = defn.formals.takeRight(defn.formals.length - closureArgTypes.length)
-
     // Enter label
     val enterLabel = new Label()
 
     // Saving closure args variables on variable stack
-    for ((f, ind) <- closureFormals.zipWithIndex) {
+    for ((f, ind) <- defn.cparams.zipWithIndex) {
       // Erased type of the closure variable
       val erasedType = JvmOps.getErasedJvmType(f.tpe)
 
@@ -147,7 +137,7 @@ object GenClosureClasses {
     }
 
     // Saving parameters on variable stack
-    for ((FormalParam(sym, tpe), ind) <- params.zipWithIndex) {
+    for ((FormalParam(sym, _, tpe, _), ind) <- defn.fparams.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
@@ -161,13 +151,14 @@ object GenClosureClasses {
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, invokeMethod, classType, Map(), enterLabel)
+    val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
+    GenExpression.compileStmt(defn.stmt)(invokeMethod, ctx, root, flix)
 
     // Loading `this`
     invokeMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    val resultJvmType = JvmOps.getErasedJvmType(resultType)
+    val resultJvmType = JvmOps.getErasedJvmType(defn.tpe)
     if (AsmOps.getStackSize(resultJvmType) == 1) {
       invokeMethod.visitInsn(SWAP)
     } else {
@@ -188,7 +179,7 @@ object GenClosureClasses {
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
                                                   closureArgTypes: List[MonoType])(implicit root: Root, flix: Flix): Unit = {
 
-    val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.tpe)
+    val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
 
     val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
 

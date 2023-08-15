@@ -117,18 +117,22 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
       }
     }
 
-    BoolSubstitution(newBoolAlgebraMap.toMap) ++ this
+    BoolSubstitution(newBoolAlgebraMap.toMap)
   }
 
   /**
     * Converts this formula substitution into a type substitution
     */
-  def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): Substitution = {
+  def toTypeSubstitution(env: Bimap[BoolFormula.VarOrEff, Int])(implicit alg: BoolAlg[F]): Substitution = {
     val map = m.map {
       case (k0, v0) =>
         val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
+        val tvar = k match {
+          case BoolFormula.VarOrEff.Var(sym) => sym
+          case BoolFormula.VarOrEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
+        }
         val v = alg.toType(v0, env)
-        (k, v)
+        (tvar, v)
     }
     Substitution(map)
   }

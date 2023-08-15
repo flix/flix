@@ -15,15 +15,17 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.language.dbg.AstPrinter
+
 import java.io.{IOException, PrintWriter, StringWriter}
 import java.nio.file.{Files, Path}
 
 object CrashHandler {
 
   /**
-    * Creates a crash report for the given exception `ex`.
+    * Creates a crash report for the given exception `ex`, and returns its absolute path if successful.
     */
-  def handleCrash(ex: Throwable)(implicit flix: Flix): Unit = {
+  def handleCrash(ex: Throwable)(implicit flix: Flix): Option[Path] = {
     // Get the report.
     val report = getCrashReport(ex)
 
@@ -31,16 +33,24 @@ object CrashHandler {
     println(report)
 
     // Write it to a file.
-    getNextAvailableLogFile() match {
-      case None => // Nop
-      case Some(path) =>
-        try {
-          Files.writeString(path, report)
-        } catch {
-          case ex: IOException =>
-            println(s"Unable to write crash report to: '$path'.")
-        }
-    }
+    val optPath =
+      getNextAvailableLogFile() match {
+        case None => None
+        case Some(path) =>
+          try {
+            Files.writeString(path, report)
+            Some(path)
+          } catch {
+            case _: IOException =>
+              println(s"Unable to write crash report to: '$path'.")
+              None
+          }
+      }
+
+    // Print asts.
+    AstPrinter.printAllAsts()
+
+    optPath.map(_.toAbsolutePath.normalize)
   }
 
   /**

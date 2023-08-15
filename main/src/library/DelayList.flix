@@ -87,7 +87,7 @@ instance Functor[DelayList] {
 }
 
 instance Applicative[DelayList] {
-    pub def point(x: a): DelayList[a] = DelayList.point(x)
+    pub def point(x: a): DelayList[a] = DelayList.singleton(x)
     pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef = DelayList.ap(f, l)
 }
 
@@ -120,7 +120,7 @@ instance Monoid[DelayList[a]] {
 }
 
 instance Iterable[DelayList] {
-    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 
 mod DelayList {
@@ -131,8 +131,8 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toString(l: DelayList[a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -540,7 +540,7 @@ mod DelayList {
     /// Return the singleton list with element `x`.
     ///
     @Experimental
-    pub def point(x: a): DelayList[a] = ECons(x, ENil)
+    pub def singleton(x: a): DelayList[a] = ECons(x, ENil)
 
     ///
     /// Apply every function from `f` to every argument from `l` and return a list with all results.
@@ -658,8 +658,8 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region r {
-        let ix = ref 0 @ r;
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region rc {
+        let ix = ref 0 @ rc;
         let f1 = x -> {let i = deref ix; f(i, x); ix := i+1};
         forEach(f1, l)
     }
@@ -1174,8 +1174,8 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
-        let a = Array.new(r, length(l));
+    pub def toArray(rc: Region[r], l: DelayList[a]): Array[a, r] \ r =
+        let a = Array.new(rc, length(l));
         forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
         a
 
@@ -1197,7 +1197,7 @@ mod DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
         let cursor = ref l @ rc;
         let next = () -> match head(deref cursor) {
             case None    => None
@@ -1211,8 +1211,8 @@ mod DelayList {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ Write(r) =
-        iterator(r, l) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ r =
+        iterator(rc, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns `l` as a `List`.
@@ -1235,15 +1235,15 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(r: Region[r], l: DelayList[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(rc: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -1340,8 +1340,8 @@ mod DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: DelayList[a]): DelayList[a] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toDelayList
+    pub def shuffle(rnd: Random, l: DelayList[a]): DelayList[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toDelayList
     }
 
 }

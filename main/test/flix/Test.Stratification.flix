@@ -102,8 +102,8 @@ mod Test.Stratification {
                 A100(1). DiffB100(1).  P2Diff100(2).
                 B100(x) :- not A100(x), P2Diff100(x).
             };
-            (query p1 select x from A100(x) |> List.length) +
-            (query p2 select x from B100(x) |> List.length)
+            (query p1 select x from A100(x) |> Vector.length) +
+            (query p2 select x from B100(x) |> Vector.length)
             > 0
 
 
@@ -121,9 +121,9 @@ mod Test.Stratification {
                 B101(12). A101(101).
                 C101(x) :- A101(x), P3Diff101().
             };
-            (query p1 select x from A101(x) |> List.length) +
-            (query p2 select x from B101(x) |> List.length) +
-            (query p3 select x from C101(x) |> List.length)
+            (query p1 select x from A101(x) |> Vector.length) +
+            (query p2 select x from B101(x) |> Vector.length) +
+            (query p3 select x from C101(x) |> Vector.length)
             > 0
 
         //
@@ -142,8 +142,8 @@ mod Test.Stratification {
                 C700(12).
                 B700(x, 2) :- not A700(x), C700(x).
             };
-            (query p1 select x from A700(x) |> List.length) +
-            (query p2 select x from B700(x, _) |> List.length)
+            (query p1 select x from A700(x) |> Vector.length) +
+            (query p2 select x from B700(x, _) |> Vector.length)
             > 0
 
         @test
@@ -156,8 +156,8 @@ mod Test.Stratification {
                 C701(14, 12).
                 B701(x) :- not A701(x), C701(x, 12).
             };
-            (query p1 select x from A701(x) |> List.length) +
-            (query p2 select x from B701(x) |> List.length)
+            (query p1 select x from A701(x) |> Vector.length) +
+            (query p2 select x from B701(x) |> Vector.length)
             > 0
 
         @test
@@ -170,8 +170,8 @@ mod Test.Stratification {
                 C702("a").
                 B702(x) :- not A702(x), C702(x).
             };
-            (query p1 select x from A702(x) |> List.length) +
-            (query p2 select x from B702(x) |> List.length)
+            (query p1 select x from A702(x) |> Vector.length) +
+            (query p2 select x from B702(x) |> Vector.length)
             > 0
 
         // combined with rule based filtering
@@ -185,8 +185,8 @@ mod Test.Stratification {
                 C799(14).
                 B799(x) :- not A799(x), C799(x).
             };
-            (query p1 select x from A799(x) |> List.length) +
-            (query p2 select x from B799(x) |> List.length)
+            (query p1 select x from A799(x) |> Vector.length) +
+            (query p2 select x from B799(x) |> Vector.length)
             > 0
 
         //
@@ -206,8 +206,8 @@ mod Test.Stratification {
                 A800("hey"). C800("heyy").
                 B800(x) :- not A800(x), C800(x).
             };
-            (query p1 select x from A800(x) |> List.length) +
-            (query p2 select x from B800(x) |> List.length)
+            (query p1 select x from A800(x) |> Vector.length) +
+            (query p2 select x from B800(x) |> Vector.length)
             > 0
 
         @test
@@ -221,8 +221,8 @@ mod Test.Stratification {
                 A801(Some("hey")). C801(Some("heyy")).
                 B801(x) :- not A801(x), C801(x).
             };
-            (query p1 select x from A801(x) |> List.length) +
-            (query p2 select x from B801(x) |> List.length)
+            (query p1 select x from A801(x) |> Vector.length) +
+            (query p2 select x from B801(x) |> Vector.length)
             > 0
 
         @test
@@ -236,8 +236,8 @@ mod Test.Stratification {
                 A802(Ok(12)). C802(Err(12i64)).
                 B802(x) :- not A802(x), C802(x).
             };
-            (query p1 select x from A802(x) |> List.length) +
-            (query p2 select x from B802(x) |> List.length)
+            (query p1 select x from A802(x) |> Vector.length) +
+            (query p2 select x from B802(x) |> Vector.length)
             > 0
 
         @test
@@ -251,8 +251,8 @@ mod Test.Stratification {
                 A803(false :: Nil).
                 B803(x) :- not A803(x), C803(x).
             };
-            (query p1 select x from A803(x) |> List.length) +
-            (query p2 select x from B803(x) |> List.length)
+            (query p1 select x from A803(x) |> Vector.length) +
+            (query p2 select x from B803(x) |> Vector.length)
             > 0
 
         @test
@@ -266,8 +266,8 @@ mod Test.Stratification {
                 A804((1i8 :: Nil) :: Nil).
                 B804(x) :- not A804(x), C804(x).
             };
-            (query p1 select x from A804(x) |> List.length) +
-            (query p2 select x from B804(x) |> List.length)
+            (query p1 select x from A804(x) |> Vector.length) +
+            (query p2 select x from B804(x) |> Vector.length)
             > 0
 
         // combined with rule based filtering
@@ -281,8 +281,8 @@ mod Test.Stratification {
                 C899(13).
                 B899(x) :- not A899(x), C899(x).
             };
-            (query p1 select x from A899(x) |> List.length) +
-            (query p2 select x from B899(x) |> List.length)
+            (query p1 select x from A899(x) |> Vector.length) +
+            (query p2 select x from B899(x) |> Vector.length)
             > 0
 
         //
@@ -301,8 +301,8 @@ mod Test.Stratification {
                 A400(12i64, 12i64). C400(12i64).
                 B400(x) :- not A400(x, x), C400(x).
             };
-            (query p1 select x from A400(x; _) |> List.length) +
-            (query p2 select x from B400(x) |> List.length)
+            (query p1 select x from A400(x; _) |> Vector.length) +
+            (query p2 select x from B400(x) |> Vector.length)
             > 0
 
         // combined with rule based filtering
@@ -316,8 +316,8 @@ mod Test.Stratification {
                 C499(13). C499(13).
                 B499(x) :- not A499(x), C499(x).
             };
-            (query p1 select x from A499(x) |> List.length) +
-            (query p2 select x from B499(x) |> List.length)
+            (query p1 select x from A499(x) |> Vector.length) +
+            (query p2 select x from B499(x) |> Vector.length)
             > 0
     }
 
@@ -335,7 +335,7 @@ mod Test.Stratification {
             A500(1). A500(2). A500(3).
             B500(3).
             R500(x) :- A500(x), fix B500(x).
-        } select x from R500(x) |> List.toSet;
+        } select x from R500(x) |> Vector.toSet;
         res == Set#{3}
 
         @test
@@ -344,7 +344,7 @@ mod Test.Stratification {
             A501(1). A501(2). A501(3).
             B501(3).
             R501(x) :- fix A501(x), B501(x).
-        } select x from R501(x) |> List.toSet;
+        } select x from R501(x) |> Vector.toSet;
         res == Set#{3}
 
         @test
@@ -352,7 +352,7 @@ mod Test.Stratification {
         let res = query #{
             A502(1; 1). A502(1; 2). A502(1; 3).
             B502(x) :- fix A502(1; x).
-        } select x from B502(x) |> List.toSet;
+        } select x from B502(x) |> Vector.toSet;
         res == Set#{3}
 
         @test
@@ -362,7 +362,7 @@ mod Test.Stratification {
             B502(1; 4). B502(1; -1).
             R502(x) :- fix A502(1; x).
             R502(x) :- fix B502(1; x).
-        } select x from R502(x) |> List.toSet;
+        } select x from R502(x) |> Vector.toSet;
         res == Set#{3, 4}
 
         @test
@@ -371,7 +371,7 @@ mod Test.Stratification {
             A504(1). A504(2). A504(3).
             R504(x) :- fix A504(x).
             R504(x) :- A504(x).
-        } select x from R504(x) |> List.toSet;
+        } select x from R504(x) |> Vector.toSet;
         res == Set#{1, 2, 3}
 
         @test
@@ -380,7 +380,7 @@ mod Test.Stratification {
             A505("x"; 1). A505("x"; 2).
             B505("x"; 3). B505("x"; 4).
             R505(x, xv1 + xv2) :- fix A505(x; xv1), fix B505(x; xv2).
-        } select xv from R505("x", xv) |> List.toSet;
+        } select xv from R505("x", xv) |> Vector.toSet;
         res == Set#{6}
 
         @test
@@ -392,7 +392,7 @@ mod Test.Stratification {
             B506(x: Int32; y) :- A506(x, y).
             C506(;x) :- B506(_; x).
             R506(x) :- fix C506(;x).
-        } select x from R506(x) |> List.toSet;
+        } select x from R506(x) |> Vector.toSet;
         res == Set#{9}
 
         @test
@@ -404,7 +404,7 @@ mod Test.Stratification {
             D507(x+1) :- fix C507(x).
             E507(x+1) :- fix D507(x).
             R507(x) :- fix E507(x).
-        } select x from R507(x) |> List.toSet;
+        } select x from R507(x) |> Vector.toSet;
         res == Set#{5, 6, 7}
 
         //
@@ -423,8 +423,8 @@ mod Test.Stratification {
                 A600(1). DiffB600(1).  P2Diff600(2).
                 B600(x) :- fix A600(x), P2Diff600(x).
             };
-            (query p1 select x from A600(x) |> List.length) +
-            (query p2 select x from B600(x) |> List.length)
+            (query p1 select x from A600(x) |> Vector.length) +
+            (query p2 select x from B600(x) |> Vector.length)
             > 0
 
         @test
@@ -441,9 +441,9 @@ mod Test.Stratification {
                 B601(12). A601(601).
                 C601(x) :- A601(x), P3Diff601().
             };
-            (query p1 select x from A601(x) |> List.length) +
-            (query p2 select x from B601(x) |> List.length) +
-            (query p3 select x from C601(x) |> List.length)
+            (query p1 select x from A601(x) |> Vector.length) +
+            (query p2 select x from B601(x) |> Vector.length) +
+            (query p3 select x from C601(x) |> Vector.length)
             > 0
 
         //
@@ -462,8 +462,8 @@ mod Test.Stratification {
                 C700(12).
                 B700(x, 2) :- fix A700(x), C700(x).
             };
-            (query p1 select x from A700(x) |> List.length) +
-            (query p2 select x from B700(x, _) |> List.length)
+            (query p1 select x from A700(x) |> Vector.length) +
+            (query p2 select x from B700(x, _) |> Vector.length)
             > 0
 
         @test
@@ -476,8 +476,8 @@ mod Test.Stratification {
                 C701(14, 12).
                 B701(x) :- fix A701(x), C701(x, 12).
             };
-            (query p1 select x from A701(x) |> List.length) +
-            (query p2 select x from B701(x) |> List.length)
+            (query p1 select x from A701(x) |> Vector.length) +
+            (query p2 select x from B701(x) |> Vector.length)
             > 0
 
         @test
@@ -490,8 +490,8 @@ mod Test.Stratification {
                 A702("a"). C702("a").
                 B702(x) :- fix A702(x), C702(x).
             };
-            (query p1 select x from A702(x) |> List.length) +
-            (query p2 select x from B702(x) |> List.length)
+            (query p1 select x from A702(x) |> Vector.length) +
+            (query p2 select x from B702(x) |> Vector.length)
             > 0
 
         // combined with rule based filtering
@@ -505,8 +505,8 @@ mod Test.Stratification {
                 C799(13). C799(14).
                 B799(x) :- fix A799(x), C799(x).
             };
-            (query p1 select x from A799(x) |> List.length) +
-            (query p2 select x from B799(x) |> List.length)
+            (query p1 select x from A799(x) |> Vector.length) +
+            (query p2 select x from B799(x) |> Vector.length)
             > 0
 
         //
@@ -526,8 +526,8 @@ mod Test.Stratification {
                 A800("hey"). C800("heyy").
                 B800(x) :- fix A800(x), C800(x).
             };
-            (query p1 select x from A800(x) |> List.length) +
-            (query p2 select x from B800(x) |> List.length)
+            (query p1 select x from A800(x) |> Vector.length) +
+            (query p2 select x from B800(x) |> Vector.length)
             > 0
 
         @test
@@ -541,8 +541,8 @@ mod Test.Stratification {
                 A801(Some("hey")). C801(Some("heyy")).
                 B801(x) :- fix A801(x), C801(x).
             };
-            (query p1 select x from A801(x) |> List.length) +
-            (query p2 select x from B801(x) |> List.length)
+            (query p1 select x from A801(x) |> Vector.length) +
+            (query p2 select x from B801(x) |> Vector.length)
             > 0
 
         @test
@@ -556,8 +556,8 @@ mod Test.Stratification {
                 A802(Ok(12)). C802(Err(12i64)).
                 B802(x) :- fix A802(x), C802(x).
             };
-            (query p1 select x from A802(x) |> List.length) +
-            (query p2 select x from B802(x) |> List.length)
+            (query p1 select x from A802(x) |> Vector.length) +
+            (query p2 select x from B802(x) |> Vector.length)
             > 0
 
         @test
@@ -571,8 +571,8 @@ mod Test.Stratification {
                 A803(false :: Nil).
                 B803(x) :- fix A803(x), C803(x).
             };
-            (query p1 select x from A803(x) |> List.length) +
-            (query p2 select x from B803(x) |> List.length)
+            (query p1 select x from A803(x) |> Vector.length) +
+            (query p2 select x from B803(x) |> Vector.length)
             > 0
 
         @test
@@ -586,8 +586,8 @@ mod Test.Stratification {
                 A804((1i8 :: Nil) :: Nil).
                 B804(x) :- fix A804(x), C804(x).
             };
-            (query p1 select x from A804(x) |> List.length) +
-            (query p2 select x from B804(x) |> List.length)
+            (query p1 select x from A804(x) |> Vector.length) +
+            (query p2 select x from B804(x) |> Vector.length)
             > 0
 
         // combined with rule based filtering
@@ -601,8 +601,8 @@ mod Test.Stratification {
                 C899(13). C899(13).
                 B899(x) :- fix A899(x), C899(x).
             };
-            (query p1 select x from A899(x) |> List.length) +
-            (query p2 select x from B899(x) |> List.length)
+            (query p1 select x from A899(x) |> Vector.length) +
+            (query p2 select x from B899(x) |> Vector.length)
             > 0
 
         //
@@ -621,8 +621,8 @@ mod Test.Stratification {
                 A900(12i64, 12i64). C900(12i64).
                 B900(x) :- fix A900(x, x), C900(x).
             };
-            (query p1 select x from A900(x; _) |> List.length) +
-            (query p2 select x from B900(x) |> List.length)
+            (query p1 select x from A900(x; _) |> Vector.length) +
+            (query p2 select x from B900(x) |> Vector.length)
             > 0
 
         // combined with rule based filtering
@@ -636,8 +636,8 @@ mod Test.Stratification {
                 C999(13).
                 B999(x) :- fix A999(x), C999(x).
             };
-            (query p1 select x from A999(x) |> List.length) +
-            (query p2 select x from B999(x) |> List.length)
+            (query p1 select x from A999(x) |> Vector.length) +
+            (query p2 select x from B999(x) |> Vector.length)
             > 0
 
         @test
@@ -649,6 +649,6 @@ mod Test.Stratification {
                 B1000(12; 12). C1000("a"; 24).
             };
             let arr = query p select x from A1000(15; x);
-            List.length(arr) == 1
+            Vector.length(arr) == 1
     }
 }

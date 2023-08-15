@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, TypeAliasSym}
+import ca.uwaterloo.flix.language.ast.Symbol.{CaseSym, EnumSym, ModuleSym, TypeAliasSym}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -32,29 +32,47 @@ sealed trait Completion {
     * Returns a LSP completion item for `this`.
     */
   def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
+
+    case Completion.EffectCompletion(sym, doc) =>
+      val name = sym.toString
+      CompletionItem(label = name,
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        documentation = Some(doc),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Enum)
+
     case Completion.KeywordCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
-    case Completion.FieldCompletion(name) =>
+    case Completion.FieldCompletion(field, prefix) =>
+      val name = s"$prefix.${field.name}"
       CompletionItem(label = name,
         sortText = Priority.high(name),
-        textEdit = TextEdit(context.range, s"$name "),
+        textEdit = TextEdit(context.range, name),
         kind = CompletionItemKind.Variable)
-    case Completion.PredicateCompletion(name, priority) =>
-      CompletionItem(label = name,
-        sortText = priority,
-        textEdit = TextEdit(context.range, s"$name "),
-        kind = CompletionItemKind.Variable)
+
+    case Completion.PredicateCompletion(name, arity, detail) =>
+      val args = (1 until arity + 1).map(i => s"$${$i:x$i}").mkString(", ")
+      CompletionItem(
+        label = s"$name/$arity",
+        sortText = Priority.normal(name),
+        textEdit = TextEdit(context.range, s"$name($args)"),
+        detail = Some(detail),
+        kind = CompletionItemKind.Field,
+        insertTextFormat = InsertTextFormat.Snippet
+      )
+
     case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
       CompletionItem(label = name,
         sortText = priority,
         textEdit = textEdit,
         insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
-    case Completion.TypeEnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(label = s"${enumSym.name}$nameSuffix",
+    case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
+      CompletionItem(label = s"${enumSym.toString}$nameSuffix",
         sortText = priority,
         textEdit = textEdit,
         documentation = documentation,
@@ -67,13 +85,7 @@ sealed trait Completion {
         documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Enum)
-    case Completion.EffectCompletion(name, priority, documentation) =>
-      CompletionItem(label = name,
-        sortText = priority,
-        textEdit = TextEdit(context.range, name),
-        documentation = documentation,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Enum)
+
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(label = name,
         sortText = priority,
@@ -162,10 +174,10 @@ sealed trait Completion {
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Interface)
-    case Completion.MatchCompletion(sym, completion, priority) =>
-      val label = s"match $sym"
+    case Completion.MatchCompletion(enm, completion) =>
+      val label = s"match ${enm.sym.toString}"
       CompletionItem(label = label,
-        sortText = priority(label),
+        sortText = Priority.normal(label),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
@@ -186,16 +198,83 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = kind)
+    case Completion.UseEnumCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Enum
+      )
+    case Completion.UseEffCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Enum
+      )
+    case Completion.UseDefCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Method
+      )
+    case Completion.UseOpCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Method
+      )
+    case Completion.UseSignatureCompletion(name) =>
+      CompletionItem(
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        label = name,
+        documentation = None,
+        kind = CompletionItemKind.Method
+      )
     case Completion.FromErrorsCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.high(name),
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
+    case Completion.EnumTagCompletion(enumSym, cas, arity) =>
+      val name = s"${enumSym.toString}.${cas.sym.name}"
+      val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
+      val snippet = if (args.isEmpty) name else s"$name($args)"
+      CompletionItem(
+        label = CompletionUtils.getLabelForEnumTags(name, cas),
+        sortText = Priority.normal(name),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(enumSym.name),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.EnumMember)
+    case Completion.ModCompletion(modSym) =>
+      val name = modSym.toString
+      CompletionItem(
+        label = name,
+        sortText = Priority.low(name),
+        textEdit = TextEdit(context.range, name),
+        kind = CompletionItemKind.Module)
   }
 }
 
 object Completion {
+
+  /**
+    * Represents an effect symbol completion.
+    *
+    * @param sym the effect symbol.
+    * @param doc the documentation associated with the effect.
+    */
+  case class EffectCompletion(sym: Symbol.EffectSym, doc: String) extends Completion
 
   /**
     * Represents a keyword completion.
@@ -207,26 +286,27 @@ object Completion {
   /**
     * Represents a field completion.
     *
-    * @param name the name of the field.
+    * @param field  the field.
+    * @param prefix the prefix.
     */
-  case class FieldCompletion(name: String) extends Completion
-
+  case class FieldCompletion(field: Name.Field, prefix: String) extends Completion
 
   /**
     * Represents a predicate completion.
     *
-    * @param name     the name of the predicate.
-    * @param priority the priority of the predicate.
+    * @param name   the name of the predicate.
+    * @param arity  the arity of the predicate.
+    * @param detail the type of the predicate.
     */
-  case class PredicateCompletion(name: String, priority: String) extends Completion
+  case class PredicateCompletion(name: String, arity: Int, detail: String) extends Completion
 
   /**
     * Represents a type completion for builtin
     *
-    * @param name               the name of the BuiltinType.
-    * @param priority           the priority of the BuiltinType.
-    * @param textEdit           the edit which is applied to a document when selecting this completion.
-    * @param insertTextFormat   the format of the insert text.
+    * @param name             the name of the BuiltinType.
+    * @param priority         the priority of the BuiltinType.
+    * @param textEdit         the edit which is applied to a document when selecting this completion.
+    * @param insertTextFormat the format of the insert text.
     */
   case class TypeBuiltinCompletion(name: String, priority: String, textEdit: TextEdit,
                                    insertTextFormat: InsertTextFormat) extends Completion
@@ -235,13 +315,13 @@ object Completion {
     * Represents a type completion for enum
     *
     * @param enumSym       the enum symbol.
-    * @param nameSuffix    the suffix for the name of the EnumType.
-    * @param priority      the priority of the EnumType.
+    * @param nameSuffix    the suffix for the name of the Enum.
+    * @param priority      the priority of the Enum.
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class TypeEnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
-                                documentation: Option[String]) extends Completion
+  case class EnumCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
+                            documentation: Option[String]) extends Completion
 
   /**
     * Represents a type completion for alias
@@ -256,22 +336,13 @@ object Completion {
                                  documentation: Option[String]) extends Completion
 
   /**
-    * Represents a Effect completion
-    *
-    * @param name          the name of the effect.
-    * @param priority      the priority of the effect.
-    * @param documentation a human-readable string that represents a doc-comment.
-    */
-  case class EffectCompletion(name: String, priority: String, documentation: Option[String]) extends Completion
-
-  /**
     * Represents a With completion
     *
-    * @param name               the name of the completion.
-    * @param priority           the priority of the completion.
-    * @param textEdit           the edit which is applied to a document when selecting this completion.
-    * @param documentation      a human-readable string that represents a doc-comment.
-    * @param insertTextFormat   the format of the insert text.
+    * @param name             the name of the completion.
+    * @param priority         the priority of the completion.
+    * @param textEdit         the edit which is applied to a document when selecting this completion.
+    * @param documentation    a human-readable string that represents a doc-comment.
+    * @param insertTextFormat the format of the insert text.
     */
   case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
@@ -280,17 +351,17 @@ object Completion {
   /**
     * Represents an importNew completion (java constructors)
     *
-    * @param constructor      the constructor.
-    * @param clazz            clazz is the clazz in string form.
-    * @param aliasSuggestion  an alias for the function.
+    * @param constructor     the constructor.
+    * @param clazz           clazz is the clazz in string form.
+    * @param aliasSuggestion an alias for the function.
     */
   case class ImportNewCompletion(constructor: Constructor[_], clazz: String, aliasSuggestion: Option[String]) extends Completion
 
   /**
     * Represents an importMethod completion (java methods)
     *
-    * @param method  the method.
-    * @param clazz   clazz is the clazz in string form.
+    * @param method the method.
+    * @param clazz  clazz is the clazz in string form.
     */
   case class ImportMethodCompletion(method: Method, clazz: String) extends Completion
 
@@ -314,18 +385,18 @@ object Completion {
   /**
     * Represents a Snippet completion
     *
-    * @param name           the name of the snippet.
-    * @param snippet        the snippet for TextEdit.
-    * @param documentation  a human-readable string that represents a doc-comment.
+    * @param name          the name of the snippet.
+    * @param snippet       the snippet for TextEdit.
+    * @param documentation a human-readable string that represents a doc-comment.
     */
   case class SnippetCompletion(name: String, snippet: String, documentation: String) extends Completion
 
   /**
     * Represents a Var completion
     *
-    * @param sym      the Var symbol.
-    * @param tpe      the type for FormatType to provide a human-readable string with additional information
-    *                 about the symbol.
+    * @param sym the Var symbol.
+    * @param tpe the type for FormatType to provide a human-readable string with additional information
+    *            about the symbol.
     */
   case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
 
@@ -353,11 +424,10 @@ object Completion {
   /**
     * Represents an exhaustive Match completion
     *
-    * @param sym        the match sym (it's name).
+    * @param enm        the enum for the match.
     * @param completion the completion string (used as information for TextEdit).
-    * @param priority   the priority of the completion.
     */
-  case class MatchCompletion(sym: String, completion: String, priority: String => String) extends Completion
+  case class MatchCompletion(enm: TypedAst.Enum, completion: String) extends Completion
 
   /**
     * Represents an Instance completion (based on type classes)
@@ -375,10 +445,62 @@ object Completion {
     */
   case class UseCompletion(name: String, kind: CompletionItemKind) extends Completion
 
+
+  /**
+   * Represents a Use Enum completion.
+   *
+   * @param name the name of the use enum completion.
+   */
+  case class UseEnumCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Effect completion.
+   *
+   * @param name the name of the use effect completion.
+   */
+  case class UseEffCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Def completion.
+   *
+   * @param name the name of the use def completion.
+   */
+  case class UseDefCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Op completion.
+   *
+   * @param name the name of the use op completion.
+   */
+  case class UseOpCompletion(name: String) extends Completion
+
+  /**
+   * Represents a Use Signature completion.
+   *
+   * @param name the name of the use signature completion.
+   */
+  case class UseSignatureCompletion(name: String) extends Completion
+
   /**
     * Represents a FromErrors completion
     *
     * @param name the name of the fromError completion.
     */
   case class FromErrorsCompletion(name: String) extends Completion
+
+  /**
+    * Represents an EnumTag completion
+    *
+    * @param enumSym the sym of the enum.
+    * @param cas     the case (for that specific enum).
+    * @param arity   the arity of the enumTag.
+    */
+  case class EnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case, arity: Int) extends Completion
+
+  /**
+    * Represents a Module completion.
+    *
+    * @param modSym the module symbol.
+  */
+  case class ModCompletion(modSym: ModuleSym) extends Completion
 }

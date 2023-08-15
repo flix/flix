@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -39,9 +39,9 @@ object Loader {
       }
 
       //
-      // Decorate each defn in the ast with its method object.
+      // Decorate each defn in the ast with its method object unless its a closure.
       //
-      for ((sym, defn) <- root.defs) {
+      for ((sym, defn) <- root.defs if defn.cparams.isEmpty) {
         // Retrieve the namespace info of sym.
         val nsInfo = JvmOps.getNamespace(sym)
 

@@ -77,254 +77,251 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
-    case Expression.Wild(_, _) => Nil
+  private def visitExp(exp0: Expr)(implicit root: Root, flix: Flix): List[CodeHint] = exp0 match {
+    case Expr.Var(_, _, _) => Nil
 
-    case Expression.Var(_, _, _) => Nil
-
-    case Expression.Def(sym, _, loc) =>
+    case Expr.Def(sym, _, loc) =>
       checkDeprecated(sym, loc) ++
         checkExperimental(sym, loc) ++
         checkParallel(sym, loc) ++
-        checkUnsafe(sym, loc) ++
         checkLazy(sym, loc)
 
-    case Expression.Sig(_, _, _) => Nil
+    case Expr.Sig(_, _, _) => Nil
 
-    case Expression.Hole(_, _, _) => Nil
+    case Expr.Hole(_, _, _) => Nil
 
-    case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
+    case Expr.HoleWithExp(exp, _, _, _) => visitExp(exp)
 
-    case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
+    case Expr.OpenAs(_, exp, _, _) => visitExp(exp)
 
-    case Expression.Use(_, _, exp, _) => visitExp(exp)
+    case Expr.Use(_, _, exp, _) => visitExp(exp)
 
-    case Expression.Cst(_, _, _) => Nil
+    case Expr.Cst(_, _, _) => Nil
 
-    case Expression.Lambda(_, exp, _, _) =>
-      checkPurity(exp.pur, exp.loc) ++ visitExp(exp)
+    case Expr.Lambda(_, exp, _, _) =>
+      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, pur, _, loc) =>
+    case Expr.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
-        case (Expression.Def(sym, _, _), lambda :: _) =>
-          checkPurity(sym, lambda.tpe, loc)
+        case (Expr.Def(sym, _, _), lambda :: _) =>
+          checkEffect(sym, lambda.tpe, loc)
         case _ => Nil
       }
-      val hints1 = checkPurity(pur, loc)
+      val hints1 = checkEffect(eff, loc)
       hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
 
-    case Expression.Unary(_, exp, _, _, _, _) =>
+    case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
+    case Expr.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, pur, eff, loc) =>
-      checkPurity(pur, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Let(_, _, exp1, exp2, _, eff, loc) =>
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, _, _, loc) =>
+    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Region(_, _) => Nil
+    case Expr.Region(_, _) => Nil
 
-    case Expression.Scope(_, _, exp, _, _, _, _) =>
+    case Expr.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, pur, eff, loc) =>
-      checkPurity(pur, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expr.Stm(exp1, exp2, _, eff,  loc) =>
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Discard(exp, _, _, _) =>
+    case Expr.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Match(matchExp, rules, _, _, _, _) =>
+    case Expr.Match(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
         case MatchRule(_, guard, exp) => guard.toList.flatMap(visitExp) ::: visitExp(exp)
       }
 
-    case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
+    case Expr.TypeMatch(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
-        case MatchTypeRule(_, _, exp) => visitExp(exp)
+        case TypeMatchRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
+    case Expr.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ rules.flatMap {
-        case RelationalChoiceRule(_, exp) => visitExp(exp)
+        case RelationalChooseRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
-        case RestrictableChoiceRule(_, body) => visitExp(body)
+        case RestrictableChooseRule(_, body) => visitExp(body)
       }
 
-    case Expression.Tag(_, exp, _, _, _, _) =>
+    case Expr.Tag(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
+    case Expr.RestrictableTag(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Tuple(exps, _, _, _, _) =>
+    case Expr.Tuple(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expression.RecordEmpty(_, _) => Nil
+    case Expr.RecordEmpty(_, _) => Nil
 
-    case Expression.RecordSelect(exp, _, _, _, _, _) =>
+    case Expr.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RecordExtend(_, exp1, exp2, _, _, _, _) =>
+    case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
       visitExp(exp2) ++ visitExp(exp1)
 
-    case Expression.RecordRestrict(_, exp, _, _, _, _) =>
+    case Expr.RecordRestrict(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArrayLit(exps, exp, _, _, _, _) =>
+    case Expr.ArrayLit(exps, exp, _, _, _) =>
       visitExps(exps) ++ visitExp(exp)
 
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.ArrayLoad(exp1, exp2, _, _, _, _) =>
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.ArrayLength(exp, _, _, _) =>
+    case Expr.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.VectorLit(exps, exp, _, _, _) =>
+    case Expr.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.VectorLength(exp, _) =>
+    case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expression.Ref(exp1, exp2, _, _, _, _) =>
+    case Expr.Ref(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Deref(exp, _, _, _, _) =>
+    case Expr.Deref(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _, _) =>
+    case Expr.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Ascribe(exp, _, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.CheckedCast(_, exp, _, _, _, _) =>
+    case Expr.InstanceOf(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.UncheckedCast(exp, _, _, _, tpe, pur, _, loc) =>
+    case Expr.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
+    case Expr.UncheckedCast(exp, _, _, tpe, eff, loc) =>
       visitExp(exp)
 
-    case Expression.Without(exp, _, _, _, _, _) =>
+    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _, _, _) =>
+    case Expr.Without(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+    case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case HandlerRule(_, _, e) => visitExp(e)
       }
 
-    case Expression.Do(_, exps, _, _, _) =>
+    case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
-    case Expression.Resume(exp, _, _) =>
+    case Expr.Resume(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.InvokeConstructor(_, args, _, _, _, _) =>
+    case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
+    case Expr.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
 
-    case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
+    case Expr.InvokeStaticMethod(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.GetField(_, exp, _, _, _, _) =>
+    case Expr.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
+    case Expr.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetStaticField(_, _, _, _, _) =>
+    case Expr.GetStaticField(_, _, _, _) =>
       Nil
 
-    case Expression.PutStaticField(_, exp, _, _, _, _) =>
+    case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewObject(_, _, _, _, _, methods, _) =>
+    case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.flatMap {
-        case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
+        case JvmMethod(_, _, exp, _, _, _) => visitExp(exp)
       }
 
-    case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+    case Expr.NewChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetChannel(exp, _, _, _, _) =>
+    case Expr.GetChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _, _, _) =>
+    case Expr.SelectChannel(rules, default, _, _, _) =>
       rules.flatMap {
         case SelectChannelRule(_, chan, exp) => visitExp(chan) ++ visitExp(exp)
       } ++ default.map(visitExp).getOrElse(Nil)
 
-    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+    case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Par(exp, _) =>
-      visitExp(exp)
-
-    case Expression.ParYield(frags, exp, _, _, _, _) =>
+    case Expr.ParYield(frags, exp, _, _, _) =>
       frags.flatMap {
         case ParYieldFragment(_, e, _) => visitExp(e)
       } ++ visitExp(exp)
 
-    case Expression.Lazy(exp, _, _) =>
+    case Expr.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Force(exp, _, _, _, _) =>
+    case Expr.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _, _) =>
       cs.flatMap(visitConstraint)
 
-    case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, _, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointFilter(_, exp, _, _, _, _) =>
+    case Expr.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointInject(exp, _, _, _, _, _) =>
+    case Expr.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _, _) =>
+    case Expr.FixpointProject(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Error(_, _, _, _) =>
+    case Expr.Error(_, _, _) =>
       Nil
 
   }
@@ -332,7 +329,7 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given list of expressions `exps`.
     */
-  private def visitExps(exps: List[Expression])(implicit root: Root, flix: Flix): List[CodeHint] =
+  private def visitExps(exps: List[Expr])(implicit root: Root, flix: Flix): List[CodeHint] =
     exps.flatMap(visitExp)
 
   /**
@@ -353,14 +350,14 @@ object CodeHinter {
     */
   private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
+    case Body.Functional(_, exp, _) => visitExp(exp)
     case Body.Guard(exp, _) => visitExp(exp)
-    case Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
-  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+  private def checkEffect(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     if (lazyWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.LazyEvaluation(sym, loc) :: Nil
@@ -399,7 +396,7 @@ object CodeHinter {
     *
     * NB: Not currently checked for every expression.
     */
-  private def checkPurity(tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[CodeHint] = {
+  private def checkEffect(tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[CodeHint] = {
     if (numberOfVarOccurs(tpe) < 5) {
       // Case 1: Formula is small. Good.
       Nil
@@ -456,19 +453,6 @@ object CodeHinter {
   }
 
   /**
-    * Checks whether the given definition symbol `sym` is unsafe.
-    */
-  private def checkUnsafe(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    val defn = root.defs(sym)
-    val isUnsafe = defn.spec.ann.isUnsafe
-    if (isUnsafe) {
-      CodeHint.Unsafe(loc) :: Nil
-    } else {
-      Nil
-    }
-  }
-
-  /**
     * Checks whether the given definition symbol `sym` is lazy.
     */
   private def checkLazy(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
@@ -485,7 +469,7 @@ object CodeHinter {
     * Returns `true` if the given function type `tpe` is pure.
     */
   private def isPureFunction(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => tpe.arrowPurityType == Type.Pure
+    case Some(TypeConstructor.Arrow(_)) => tpe.arrowEffectType == Type.Pure
     case _ => false
   }
 

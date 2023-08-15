@@ -30,6 +30,7 @@ object Options {
     documentor = false,
     entryPoint = None,
     explain = false,
+    githubKey = None,
     installDeps = false,
     incremental = true,
     json = false,
@@ -39,7 +40,6 @@ object Options {
     target = JvmTarget.Version18,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
-    xallowredundancies = false,
     xbddthreshold = None,
     xboolclassic = false,
     xnoboolcache = false,
@@ -53,11 +53,12 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
-    xprintasts = Set.empty,
+    xprintphase = Set.empty,
     xprintboolunif = false,
     xnoqmc = false,
     xflexibleregions = false,
-    xsummary = false
+    xsummary = false,
+    xparser = false,
   )
 
   /**
@@ -89,6 +90,7 @@ object Options {
   * @param documentor          enables generation of flixdoc.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
+  * @param githubKey           the API key to use for GitHub dependency resolution.
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
@@ -98,7 +100,6 @@ object Options {
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
-  * @param xallowredundancies  disables the redundancy checker.
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
@@ -107,14 +108,16 @@ object Options {
   * @param xstatistics         enables statistics collection.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono         enables strict monomorphization.
-  * @param xprintasts          prints the chosen AST to a given path.
+  * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
+  * @param xparser             enables new lexer and parser.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
+                   githubKey: Option[String],
                    incremental: Boolean,
                    installDeps: Boolean,
                    json: Boolean,
@@ -124,7 +127,6 @@ case class Options(lib: LibLevel,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
-                   xallowredundancies: Boolean,
                    xbddthreshold: Option[Int],
                    xboolclassic: Boolean,
                    xnoboolcache: Boolean,
@@ -139,10 +141,11 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
-                   xprintasts: Set[String],
+                   xprintphase: Set[String],
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
-                   xsummary: Boolean
+                   xsummary: Boolean,
+                   xparser: Boolean
                   )
 
 /**

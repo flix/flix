@@ -143,9 +143,7 @@ object FormatType {
       case SimpleType.Difference(_, _) => false
       case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
-      case SimpleType.PolyEffArrow(_, _, _) => false
-      case SimpleType.PolyPurArrow(_, _, _) => false
-      case SimpleType.PolyPurAndEffArrow(_, _, _, _) => false
+      case SimpleType.PolyArrow(_, _, _) => false
 
       // delimited types
       case SimpleType.Hole => true
@@ -171,9 +169,9 @@ object FormatType {
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
-      case SimpleType.Region => true
       case SimpleType.Empty => true
       case SimpleType.All => true
+      case SimpleType.Region => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -189,7 +187,6 @@ object FormatType {
       case SimpleType.LatticeConstructor => true
       case SimpleType.Lattice(_, _) => true
       case SimpleType.TagConstructor(_) => true
-      case SimpleType.Tag(_, _, _) => true
       case SimpleType.Name(_) => true
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
@@ -233,17 +230,14 @@ object FormatType {
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
       case SimpleType.Lazy => "Lazy"
-      case SimpleType.True => mode match {
-        case Mode.Type => "true"
-        case Mode.Purity => "Pure"
+      case SimpleType.False => "false"
+      case SimpleType.True => "true"
+      case SimpleType.Empty => mode match {
+        case Mode.Type => "Pure"
+        case Mode.Purity => "{}"
       }
-      case SimpleType.False => mode match {
-        case Mode.Type => "false"
-        case Mode.Purity => "Impure"
-      }
+      case SimpleType.All => "IO"
       case SimpleType.Region => "Region"
-      case SimpleType.Empty => "Empty"
-      case SimpleType.All => "All"
       case SimpleType.Record(fields) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"{ $fieldString }"
@@ -305,28 +299,12 @@ object FormatType {
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString"
-      case SimpleType.PolyEffArrow(arg, eff, ret) =>
+      case SimpleType.PolyArrow(arg, eff, ret) =>
         val argString = delimitFunctionArg(arg)
-        val effString = visit(eff, Mode.Type)
+        val effString = visit(eff, Mode.Purity)
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $effString"
-      case SimpleType.PolyPurArrow(arg, pur, ret) =>
-        val argString = delimitFunctionArg(arg)
-        val purString = visit(pur, Mode.Purity)
-        val retString = delimit(ret, Mode.Type)
-        s"$argString -> $retString & $purString"
-      case SimpleType.PolyPurAndEffArrow(arg, pur, eff, ret) =>
-        val argString = delimitFunctionArg(arg)
-        val purString = visit(pur, Mode.Purity)
-        val effString = visit(eff, Mode.Type)
-        val retString = delimit(ret, Mode.Type)
-        s"$argString -> $retString & $purString \\ $effString"
       case SimpleType.TagConstructor(name) => name
-      case SimpleType.Tag(name, args, ret) =>
-        // NB: not putting too much care into tag formatting, as it should not show up
-        val argString = parenthesize(args.map(visit(_, mode)).mkString(", "))
-        val retString = visit(ret, mode)
-        s"$name($argString -> $retString)"
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>
         val string = visit(tpe, Mode.Type)
@@ -335,11 +313,10 @@ object FormatType {
       case SimpleType.Var(id, kind, isRegion, text) =>
         val prefix: String = kind match {
           case Kind.Wild => "_" + id.toString
-          case Kind.Beef => "_b" + id.toString
           case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
+          case Kind.Eff => "e" + id
           case Kind.Bool => "b" + id
-          case Kind.Effect => "e" + id
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString

@@ -17,12 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.ParOps
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
@@ -45,7 +42,7 @@ object EarlyTreeShaker {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("EarlyTreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("EarlyTreeShaker") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
@@ -58,7 +55,7 @@ object EarlyTreeShaker {
     }
 
     // Reassemble the AST.
-    root.copy(defs = reachableDefs).toSuccess
+    root.copy(defs = reachableDefs)
   }
 
   /**
@@ -124,180 +121,90 @@ object EarlyTreeShaker {
   /**
     * Returns the function and signature symbols reachable from the given expression `e0`.
     */
-  private def visitExp(e0: Expression): Set[ReachableSym] = e0 match {
-    case Expression.Cst(_, _, _) =>
+  private def visitExp(e0: Expr): Set[ReachableSym] = e0 match {
+    case Expr.Cst(_, _, _) =>
       Set.empty
 
-    case Expression.Wild(_, _) =>
+    case Expr.Var(_, _, _) =>
       Set.empty
 
-    case Expression.Var(_, _, _) =>
-      Set.empty
-
-    case Expression.Def(sym, _, _) =>
+    case Expr.Def(sym, _, _) =>
       Set(ReachableSym.DefnSym(sym))
 
-    case Expression.Sig(sym, _, _) =>
+    case Expr.Sig(sym, _, _) =>
       Set(ReachableSym.SigSym(sym))
 
-    case Expression.Hole(_, _, _) =>
-      Set.empty
-
-    case Expression.Lambda(_, exp, _, _) =>
+    case Expr.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, _, _, _) =>
+    case Expr.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expression.Unary(_, exp, _, _, _, _) =>
+    case Expr.ApplyAtomic(_, exps, _, _, _) =>
+      visitExps(exps)
+
+    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Region(_, _) =>
-      Set.empty
-
-    case Expression.Scope(_, _, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, _, _, _) =>
+    case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Discard(exp, _, _, _) =>
+    case Expr.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Match(exp, rules, _, _, _, _) =>
+    case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
-    case Expression.TypeMatch(exp, rules, _, _, _, _) =>
+    case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
+    case Expr.RelationalChoose(exps, rules, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
-    case Expression.Tag(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Tuple(elms, _, _, _, _) =>
-      visitExps(elms)
-
-    case Expression.RecordEmpty(_, _) =>
-      Set.empty
-
-    case Expression.RecordSelect(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
-      visitExp(value) ++ visitExp(rest)
-
-    case Expression.RecordRestrict(_, rest, _, _, _, _) =>
-      visitExp(rest)
-
-    case Expression.ArrayLit(exps, exp, _, _, _, _) =>
-      visitExps(exps) ++ visitExp(exp)
-
-    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-    case Expression.ArrayLoad(base, index, _, _, _, _) =>
-      visitExp(base) ++ visitExp(index)
-
-    case Expression.ArrayLength(base, _, _, _) =>
-      visitExp(base)
-
-    case Expression.ArrayStore(base, index, elm, _, _, _) =>
-      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-
-    case Expression.VectorLit(exps, exp, _, _, _) =>
+    case Expr.VectorLit(exps, exp, _, _) =>
       visitExps(exps)
 
-    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.VectorLength(exp, _) =>
+    case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expression.Ref(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Deref(exp, _, _, _, _) =>
+    case Expr.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Ascribe(exp, _, _, _, _) =>
+    case Expr.Cast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.TryCatch(exp, rules, _, _, _, _) =>
+    case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.InvokeConstructor(_, args, _, _, _, _) =>
-      visitExps(args)
-
-    case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
-      visitExp(exp) ++ visitExps(args)
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
-      visitExps(args)
-
-    case Expression.GetField(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.GetStaticField(_, _, _, _, _) =>
-      Set.empty
-
-    case Expression.PutStaticField(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.NewObject(_, _, _, _, _, methods, _) =>
+    case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Lazy(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Force(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Do(_, exps, _, _, _) =>
+    case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expression.Resume(exp, _, _) =>
+    case Expr.Resume(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.TryWith(exp, _, rules, _, _, _, _) =>
+    case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
-
-    case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp)
   }
 
   /**
     * Returns the function symbols reachable from `exps`.
     */
-  private def visitExps(exps: List[Expression]): Set[ReachableSym] = exps.map(visitExp).fold(Set())(_ ++ _)
+  private def visitExps(exps: List[Expr]): Set[ReachableSym] = exps.map(visitExp).fold(Set())(_ ++ _)
 
 
   /**

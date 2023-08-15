@@ -8,7 +8,7 @@ mod Test.Term.Lit.Set {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Set#{}, r)
+        Vector.memberOf(Set#{}, r)
 
     @test
     def testLitSet02(): Bool =
@@ -18,7 +18,7 @@ mod Test.Term.Lit.Set {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Set#{1}, r)
+        Vector.memberOf(Set#{1}, r)
 
     @test
     def testLitSet03(): Bool =
@@ -28,7 +28,7 @@ mod Test.Term.Lit.Set {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Set#{1, 2}, r)
+        Vector.memberOf(Set#{1, 2}, r)
 
     @test
     def testLitSet04(): Bool =
@@ -38,6 +38,6 @@ mod Test.Term.Lit.Set {
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
-        List.memberOf(Set#{1, 2, 3}, r)
+        Vector.memberOf(Set#{1, 2, 3}, r)
 
 }

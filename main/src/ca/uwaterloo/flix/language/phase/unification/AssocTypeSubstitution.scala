@@ -62,15 +62,11 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
           val y = visit(t2)
           visit(t1) match {
             // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
+            case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
 
             // Simplify set expressions
-            case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
-            case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
-            case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
-
             case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
             case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
@@ -177,6 +173,6 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
       }
     }
 
-    AssocTypeSubstitution(newTypeMap.toMap) ++ this
+    AssocTypeSubstitution(newTypeMap.toMap)
   }
 }

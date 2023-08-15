@@ -45,7 +45,7 @@ object FormatSignature {
     * Returns a markdown string for the given `name` and `spec`.
     */
   private def formatSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = {
-    s"def $name(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.pur)}"
+    s"def $name(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.eff)}"
 
   }
 
@@ -68,8 +68,8 @@ object FormatSignature {
     * Returns a formatted string of the result type and effect.
     */
   private def formatResultTypeAndEff(tpe: Type, eff: Type)(implicit flix: Flix): String = eff match {
-    case Type.Cst(TypeConstructor.True, _) => FormatType.formatType(tpe)
-    case Type.Cst(TypeConstructor.False, _) => s"${FormatType.formatType(tpe)} & Impure"
-    case eff => s"${FormatType.formatType(tpe)} & ${FormatType.formatType(eff)}"
+    case Type.Cst(TypeConstructor.Pure, _) => FormatType.formatType(tpe)
+    case Type.Cst(TypeConstructor.EffUniv, _) => s"${FormatType.formatType(tpe)} \\ IO"
+    case eff => s"${FormatType.formatType(tpe)} \\ ${FormatType.formatType(eff)}"
   }
 }

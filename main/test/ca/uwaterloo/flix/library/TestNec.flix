@@ -1001,15 +1001,15 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nec.forEach(x -> ri := x, singleton(1));
         1 == deref ri
     }
 
     @test
-    def forEach02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEach02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nec.forEach(x -> ri := x, necOf3(1, 2, 3));
         3 == deref ri
     }
@@ -1019,15 +1019,15 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEachWithIndex01(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEachWithIndex01(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nec.forEachWithIndex((i, _) -> ri := i, singleton(1));
         0 == deref ri
     }
 
     @test
-    def forEachWithIndex02(): Bool = region r {
-        let ri = ref 21 @ r;
+    def forEachWithIndex02(): Bool = region rc {
+        let ri = ref 21 @ rc;
         Nec.forEachWithIndex((i, _) -> ri := i, necOf3(1, 2, 3));
         2 == deref ri
     }
@@ -1051,22 +1051,22 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutDeque01(): Bool = region r {
+    def toMutDeque01(): Bool = region rc {
         let c = singleton(1);
-        let d1 = Nec.toMutDeque(r, c);
+        let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
     }
 
     @test
-    def toMutDeque02(): Bool = region r {
+    def toMutDeque02(): Bool = region rc {
         let c = necOf2(1, 2);
-        let d1 = Nec.toMutDeque(r, c);
+        let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -1074,11 +1074,11 @@ mod TestNec {
     }
 
     @test
-    def toMutDeque03(): Bool = region r {
+    def toMutDeque03(): Bool = region rc {
         let c = necOf3('a', 'b', 'c');
-        let d1 = Nec.toMutDeque(r, c);
+        let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(r);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront('b', d2);
         MutDeque.pushBack('c', d2);
         MutDeque.pushFront('a', d2);
@@ -1092,23 +1092,23 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutList01(): Bool = region r {
-        let m1 = Nec.toMutList(r, singleton(1));
-        let m2 = MutList.range(r, 1, 2);
+    def toMutList01(): Bool = region rc {
+        let m1 = Nec.toMutList(rc, singleton(1));
+        let m2 = MutList.range(rc, 1, 2);
         MutList.sameElements(m1, m2)
     }
 
     @test
-    def toMutList02(): Bool = region r {
-        let m1 = Nec.toMutList(r, necOf2(1, 2));
-        let m2 = MutList.range(r, 1, 3);
+    def toMutList02(): Bool = region rc {
+        let m1 = Nec.toMutList(rc, necOf2(1, 2));
+        let m2 = MutList.range(rc, 1, 3);
         MutList.sameElements(m1, m2)
     }
 
     @test
-    def toMutList03(): Bool = region r {
-        let m1 = Nec.toMutList(r, necOf3(1, 2, 3));
-        let m2 = MutList.range(r, 1, 4);
+    def toMutList03(): Bool = region rc {
+        let m1 = Nec.toMutList(rc, necOf3(1, 2, 3));
+        let m2 = MutList.range(rc, 1, 4);
         MutList.sameElements(m1, m2)
     }
 
@@ -1176,43 +1176,66 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool = region r {
-        let a = Nec.toArray(r, singleton(1));
-        Array.sameElements(a, Array#{1} @ r)
+    def toArray01(): Bool = region rc {
+        let a = Nec.toArray(rc, singleton(1));
+        Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
-    def toArray02(): Bool = region r {
-        let a = Nec.toArray(r, necOf2(1, 2));
-        Array.sameElements(a, Array#{1, 2} @ r)
+    def toArray02(): Bool = region rc {
+        let a = Nec.toArray(rc, necOf2(1, 2));
+        Array.sameElements(a, Array#{1, 2} @ rc)
     }
 
     @test
-    def toArray03(): Bool = region r {
-        let a = Nec.toArray(r, necOf3(1, 2, 3));
-        Array.sameElements(a, Array#{1, 2, 3} @ r)
+    def toArray03(): Bool = region rc {
+        let a = Nec.toArray(rc, necOf3(1, 2, 3));
+        Array.sameElements(a, Array#{1, 2, 3} @ rc)
     }
 
     @test
-    def toArray04(): Bool = region r {
-        let a = Nec.toArray(r, necOf3(3, 2, 3));
-        Array.sameElements(a, Array#{3, 2, 3} @ r)
+    def toArray04(): Bool = region rc {
+        let a = Nec.toArray(rc, necOf3(3, 2, 3));
+        Array.sameElements(a, Array#{3, 2, 3} @ rc)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool =
+        let c = singleton(1);
+        Nec.toVector(c) == Vector#{1}
+
+    @test
+    def toVector02(): Bool =
+        let c = necOf2(1, 2);
+        Nec.toVector(c) == Vector#{1, 2}
+
+    @test
+    def toVector03(): Bool =
+        let c = necOf3(1, 2, 3);
+        Nec.toVector(c) == Vector#{1, 2, 3}
+
+    @test
+    def toVector04(): Bool =
+        let c = necOf3(3, 2, 3);
+        Nec.toVector(c) == Vector#{3, 2, 3}
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        necOf3(1, 2, 3) |> Nec.iterator(r) |> Iterator.toNec == Some(necOf3(1, 2, 3))
+    def iterator01(): Bool = region rc {
+        necOf3(1, 2, 3) |> Nec.iterator(rc) |> Iterator.toNec == Some(necOf3(1, 2, 3))
     }
 
     @test
-    def iterator02(): Bool = region r {
+    def iterator02(): Bool = region rc {
         match Nec.range(-100, 100) {
-            case Some(nec) => nec |> Nec.iterator(r) |> Iterator.toList == List.range(-100, 100)
+            case Some(nec) => nec |> Nec.iterator(rc) |> Iterator.toList == List.range(-100, 100)
             case None      => unreachable!()
         }
     }
@@ -1222,14 +1245,14 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def enumerator01(): Bool = region r {
-        necOf3(1, 2, 3) |> Nec.enumerator(r) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+    def enumerator01(): Bool = region rc {
+        necOf3(1, 2, 3) |> Nec.enumerator(rc) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
     @test
-    def enumerator02(): Bool = region r {
+    def enumerator02(): Bool = region rc {
         match Nec.range(-100, 100) {
-            case Some(nec) => nec |> Nec.enumerator(r) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
+            case Some(nec) => nec |> Nec.enumerator(rc) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
             case None      => unreachable!()
         }
     }
@@ -1407,24 +1430,24 @@ mod TestNec {
     def traverse04(): Bool = Nec.traverse(_ -> None: Option[Int32], necOf2(1, 2)) == None
 
     @test
-    def traverse05(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse05(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = Nec.singleton(1);
         let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(Nec.singleton(1)) and deref st == 1
     }
 
     @test
-    def traverse06(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse06(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = necOf2(1, 2);
         let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(necOf2(1, 2)) and deref st == 2
     }
 
     @test
-    def traverse07(): Bool = region r {
-        let st = ref 0 @ r;
+    def traverse07(): Bool = region rc {
+        let st = ref 0 @ rc;
         let l = necOf3(1, 2, 3);
         let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
         ans == Identity.Identity(necOf3(1, 2, 3)) and deref st == 3

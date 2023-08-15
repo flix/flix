@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestInstances extends FunSuite with TestUtils {
+class TestInstances extends AnyFunSuite with TestUtils {
 
   test("Test.OverlappingInstance.01") {
     val input =
@@ -69,9 +69,9 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[a -> b & p \ ef1]
+        |instance C[a -> b \ ef1]
         |
-        |instance C[x -> y & q \ ef2]
+        |instance C[x -> y \ ef2]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
@@ -110,34 +110,6 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |def g(x: String): Bool = C.f(x, x)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.OverlappingInstances](result)
-  }
-
-  test("Test.OverlappingInstances.Bool.01") {
-    val input =
-      """
-        | class C[a]
-        |
-        |enum E[_: Bool]
-        |
-        |instance C[E[true]]
-        |instance C[E[false]]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.OverlappingInstances](result)
-  }
-
-  test("Test.OverlappingInstances.Bool.02") {
-    val input =
-      """
-        | class C[a]
-        |
-        |enum E[_: Bool, _: Type]
-        |
-        |instance C[E[true, a]]
-        |instance C[E[false, a]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.OverlappingInstances](result)
@@ -185,7 +157,7 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[Int32 -> b & e]
+        |instance C[Int32 -> b \ e]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)
@@ -200,7 +172,7 @@ class TestInstances extends FunSuite with TestUtils {
         |
         |class C[a]
         |
-        |instance C[Box[a] -> b & e]
+        |instance C[Box[a] -> b \ e]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)
@@ -233,7 +205,7 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[a -> a & p \ ef]
+        |instance C[a -> a \ ef]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
@@ -363,7 +335,7 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    pub def f(x: a, y: Int32): Int32 & e
+        |    pub def f(x: a, y: Int32): Int32 \ e
         |}
         |
         |instance C[Bool] {

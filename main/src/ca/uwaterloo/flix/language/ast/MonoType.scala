@@ -68,7 +68,7 @@ object MonoType {
 
   case class Tuple(elms: List[MonoType]) extends MonoType
 
-  case class Enum(sym: Symbol.EnumSym, args: List[MonoType]) extends MonoType
+  case class Enum(sym: Symbol.EnumSym) extends MonoType
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
@@ -81,8 +81,5 @@ object MonoType {
   case class SchemaExtend(name: String, tpe: MonoType, rest: MonoType) extends MonoType
 
   case class Native(clazz: Class[_]) extends MonoType
-
-  // TODO: Should be removed.
-  case class Var(id: Int) extends MonoType
 
 }

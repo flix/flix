@@ -171,16 +171,16 @@ mod TestMutSet {
     }
 
     @test
-    def addAll05(): Bool = region r1 {
-        let s1 = MutSet.new(r1);
+    def addAll05(): Bool = region rc1 {
+        let s1 = MutSet.new(rc1);
         MutSet.add!("a", s1);
         MutSet.add!("b", s1);
         MutSet.add!("c", s1);
 
-        region r2 {
-            let s2 = MutSet.new(r2);
+        region rc2 {
+            let s2 = MutSet.new(rc2);
             MutSet.addAll!(MutSet.toSet(s1), s2);
-            MutSet.toList(s2) == "c" :: "b" :: "a" :: Nil
+            MutSet.toList(s2) == "a" :: "b" :: "c" :: Nil
         }
     }
 
@@ -191,8 +191,8 @@ mod TestMutSet {
         MutSet.add!("b", s1);
         MutSet.add!("c", s1);
 
-        region r2 {
-            let s2 = MutSet.new(r2);
+        region rc2 {
+            let s2 = MutSet.new(rc2);
             MutSet.addAll!(MutSet.toSet(s1), s2);
             MutSet.isSubsetOf(s1, s2) and MutSet.isSubsetOf(s2, s1)
             }

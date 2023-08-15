@@ -24,201 +24,201 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object KindedAst {
 
-  case class Root(classes: Map[Symbol.ClassSym, KindedAst.Class],
-                  instances: Map[Symbol.ClassSym, List[KindedAst.Instance]],
-                  defs: Map[Symbol.DefnSym, KindedAst.Def],
-                  enums: Map[Symbol.EnumSym, KindedAst.Enum],
-                  restrictableEnums: Map[Symbol.RestrictableEnumSym, KindedAst.RestrictableEnum],
-                  effects: Map[Symbol.EffectSym, KindedAst.Effect],
-                  typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
+
+  case class Root(classes: Map[Symbol.ClassSym, Class],
+                  instances: Map[Symbol.ClassSym, List[Instance]],
+                  defs: Map[Symbol.DefnSym, Def],
+                  enums: Map[Symbol.EnumSym, Enum],
+                  restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
+                  effects: Map[Symbol.EffectSym, Effect],
+                  typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 
-  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[KindedAst.AssociatedTypeSig], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[KindedAst.AssociatedTypeDef], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
-  case class Sig(sym: Symbol.SigSym, spec: KindedAst.Spec, exp: Option[KindedAst.Expression])
+  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
-  case class Def(sym: Symbol.DefnSym, spec: KindedAst.Spec, exp: KindedAst.Expression)
+  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, tpe: Type, pur: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], sc: Scheme, tpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, KindedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
-  case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.RestrictableCaseSym, KindedAst.RestrictableCase], tpeDeprecated: Type, loc: SourceLocation)
+  case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.RestrictableCaseSym, RestrictableCase], tpe: Type, loc: SourceLocation)
 
-  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
 
-  case class AssociatedTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: KindedAst.TypeParam, kind: Kind, loc: SourceLocation)
+  case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, loc: SourceLocation)
 
-  case class AssociatedTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
+  case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[KindedAst.Op], loc: SourceLocation)
+  case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, spec: KindedAst.Spec)
+  case class Op(sym: Symbol.OpSym, spec: Spec)
 
-  sealed trait Expression {
+  sealed trait Expr {
     def loc: SourceLocation
   }
 
-  object Expression {
+  object Expr {
 
-    case class Wild(tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends Expr
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends KindedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Sig(sym: Symbol.SigSym, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Sig(sym: Symbol.SigSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class HoleWithExp(exp: Expr, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: KindedAst.Expression, tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class OpenAs(symUse: Ast.RestrictableEnumSymUse, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Use(sym: Symbol, alias: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Use(sym: Symbol, alias: Name.Ident, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Expression
+    case class Apply(exp: Expr, exps: List[Expr], tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Unary(sop: SemanticOp, exp: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Unary(sop: SemanticOperator, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Binary(sop: SemanticOp, exp1: Expr, exp2: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOperator, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class Stm(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Discard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Region(tpe: Type, loc: SourceLocation) extends Expr
 
-    case class Region(tpe: Type, loc: SourceLocation) extends KindedAst.Expression
+    case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp1: Expr, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp1: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ScopeExit(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
-    case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
+    case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
-    case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[Expr], rules: List[RelationalChooseRule], tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.RelationalChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RestrictableChoose(star: Boolean, exp: KindedAst.Expression, rules: List[KindedAst.RestrictableChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Tag(sym: Ast.CaseSymUse, exp: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Tag(sym: Ast.CaseSymUse, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: Expr, isOpen: Boolean, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: KindedAst.Expression, isOpen: Boolean, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Tuple(elms: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Tuple(elms: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordEmpty(loc: SourceLocation) extends KindedAst.Expression
+    case class RecordSelect(exp: Expr, field: Name.Field, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: KindedAst.Expression, field: Name.Field, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class RecordExtend(field: Name.Field, value: Expr, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, value: KindedAst.Expression, rest: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class RecordRestrict(field: Name.Field, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, rest: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayLit(exps: List[KindedAst.Expression], exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayNew(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayLoad(base: Expr, index: Expr, tpe: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayLoad(base: KindedAst.Expression, index: KindedAst.Expression, tpe: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayStore(base: Expr, index: Expr, elm: Expr, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ArrayStore(base: KindedAst.Expression, index: KindedAst.Expression, elm: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class VectorLit(exps: List[Expr], tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class VectorLit(exps: List[KindedAst.Expression], tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class VectorLoad(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class VectorLength(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Ref(exp1: Expr, exp2: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Ref(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Deref(exp: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Deref(exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Assign(exp1: Expr, exp2: Expr, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Assign(exp1: KindedAst.Expression, exp2: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Ascribe(exp: Expr, expectedType: Option[Type], expectedPur: Option[Type], tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Ascribe(exp: KindedAst.Expression, expectedType: Option[Type], expectedPur: Option[Type], expectedEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class InstanceOf(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr
 
-    case class CheckedCast(cast: Ast.CheckedCastType, exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class CheckedCast(cast: Ast.CheckedCastType, exp: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class UncheckedCast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class UncheckedMaskingCast(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class UncheckedMaskingCast(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
+    case class Without(exp: Expr, eff: Ast.EffectSymUse, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: KindedAst.Expression, rules: List[KindedAst.CatchRule], loc: SourceLocation) extends KindedAst.Expression
+    case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: KindedAst.Expression, eff: Ast.EffectSymUse, rules: List[KindedAst.HandlerRule], tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Do(op: Ast.OpSymUse, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class Do(op: Ast.OpSymUse, args: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Resume(exp: KindedAst.Expression, argTvar: Type.Var, retTvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Resume(exp: Expr, argTvar: Type.Var, retTvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class InvokeConstructor(constructor: Constructor[_], args: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: KindedAst.Expression, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: Expr, args: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(method: Method, args: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
+    case class InvokeStaticMethod(method: Method, args: List[Expr], loc: SourceLocation) extends Expr
 
-    case class GetField(field: Field, clazz: java.lang.Class[_], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class GetField(field: Field, clazz: java.lang.Class[_], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, clazz: java.lang.Class[_], exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class PutField(field: Field, clazz: java.lang.Class[_], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class GetStaticField(field: Field, loc: SourceLocation) extends KindedAst.Expression
+    case class GetStaticField(field: Field, loc: SourceLocation) extends Expr
 
-    case class PutStaticField(field: Field, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class PutStaticField(field: Field, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[KindedAst.JvmMethod], loc: SourceLocation) extends KindedAst.Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class NewChannel(exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class GetChannel(exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class GetChannel(exp: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class PutChannel(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class PutChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class SelectChannel(rules: List[KindedAst.SelectChannelRule], default: Option[KindedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Spawn(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Spawn(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class ParYield(frags: List[ParYieldFragment], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ParYield(frags: List[KindedAst.ParYieldFragment], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Lazy(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Lazy(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Force(exp: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Force(exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointConstraintSet(cs: List[Constraint], tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointConstraintSet(cs: List[KindedAst.Constraint], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointLambda(pparams: List[KindedAst.PredicateParam], exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointMerge(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointSolve(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointInject(exp: Expr, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointProject(pred: Name.Pred, exp1: Expr, exp2: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Error(m: CompilationMessage, tpe: Type.Var, pur: Type.Var, eff: Type.Var) extends KindedAst.Expression {
+    case class Error(m: CompilationMessage, tpe: Type.Var, eff: Type.Var) extends Expr {
       override def loc: SourceLocation = m.loc
     }
 
@@ -230,37 +230,37 @@ object KindedAst {
 
   object Pattern {
 
-    case class Wild(tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
+    case class Wild(tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
-    case class Var(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
+    case class Var(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
-    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Pattern
+    case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: Ast.CaseSymUse, pat: KindedAst.Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
+    case class Tag(sym: Ast.CaseSymUse, pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
-    case class Tuple(elms: List[KindedAst.Pattern], loc: SourceLocation) extends KindedAst.Pattern
+    case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 
   }
 
-  sealed trait RelationalChoicePattern {
+  sealed trait RelationalChoosePattern {
     def loc: SourceLocation
   }
 
-  object RelationalChoicePattern {
+  object RelationalChoosePattern {
 
-    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
 
-    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends RelationalChoicePattern
+    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends RelationalChoosePattern
 
   }
 
-  sealed trait RestrictableChoicePattern {
+  sealed trait RestrictableChoosePattern {
     def loc: SourceLocation
   }
 
-  object RestrictableChoicePattern {
+  object RestrictableChoosePattern {
 
     sealed trait VarOrWild
 
@@ -268,7 +268,7 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tvar: Type.Var, loc: SourceLocation) extends RestrictableChoicePattern
+    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tvar: Type.Var, loc: SourceLocation) extends RestrictableChoosePattern
 
   }
 
@@ -276,23 +276,23 @@ object KindedAst {
 
   object Predicate {
 
-    sealed trait Head extends KindedAst.Predicate
+    sealed trait Head extends Predicate
 
     object Head {
 
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[KindedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Predicate.Head
+      case class Atom(pred: Name.Pred, den: Denotation, terms: List[Expr], tvar: ast.Type.Var, loc: SourceLocation) extends Predicate.Head
 
     }
 
-    sealed trait Body extends KindedAst.Predicate
+    sealed trait Body extends Predicate
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[KindedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends Predicate.Body
 
-      case class Guard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
+      case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
+      case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body
 
     }
 
@@ -304,7 +304,7 @@ object KindedAst {
 
   case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
+  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
   case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
@@ -312,24 +312,24 @@ object KindedAst {
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: KindedAst.Expression)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
-  case class HandlerRule(op: Ast.OpSymUse, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tvar: Type.Var)
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var)
 
-  case class RelationalChoiceRule(pat: List[KindedAst.RelationalChoicePattern], exp: KindedAst.Expression)
+  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
-  case class RestrictableChoiceRule(pat: KindedAst.RestrictableChoicePattern, exp: KindedAst.Expression)
+  case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class MatchRule(pat: KindedAst.Pattern, guard: Option[KindedAst.Expression], exp: KindedAst.Expression)
+  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 
-  case class MatchTypeRule(sym: Symbol.VarSym, tpe: Type, exp: KindedAst.Expression)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
-  case class ParYieldFragment(pat: KindedAst.Pattern, exp: KindedAst.Expression, loc: SourceLocation)
+  case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
 }

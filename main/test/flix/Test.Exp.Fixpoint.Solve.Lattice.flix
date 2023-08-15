@@ -83,7 +83,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar((); Constant.Top). LocalVar((); Constant.Top). LocalVar((); Constant.Top). LocalVar((); Constant.Top).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Top)
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
     @test
     def testFixpointLattice02(): Bool =
@@ -91,7 +91,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar((); Constant.Bot). LocalVar((); Constant.Top). LocalVar((); Constant.Bot). LocalVar((); Constant.Top).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Top)
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
     @test
     def testFixpointLattice03(): Bool =
@@ -99,7 +99,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar((); Constant.Cst(39)).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Cst(39))
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
     @test
     def testFixpointLattice04(): Bool =
@@ -107,7 +107,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Bot).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Cst(39))
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
     @test
     def testFixpointLattice05(): Bool =
@@ -115,7 +115,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(39)).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Cst(39))
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
     @test
     def testFixpointLattice06(): Bool =
@@ -123,7 +123,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(12)).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Top)
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
     @test
     def testFixpointLattice07(): Bool =
@@ -131,7 +131,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(12)). LocalVar((); Constant.Bot).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Top)
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
     @test
     def testFixpointLattice08(): Bool =
@@ -140,7 +140,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar(x; Constant.Cst(c)) :- LitStm(x, c).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Cst(39))
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
     @test
     def testFixpointLattice09(): Bool =
@@ -149,7 +149,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar(x; Constant.Cst(c)) :- LitStm(x, c).
         };
         let ans = query m select t from LocalVar(_; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Top)
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
     @test
     def testFixpointLattice10(): Bool =
@@ -161,7 +161,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
 
         };
         let ans = query m select t from LocalVar("r"; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Cst(39+39))
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39+39))
 
     @test
     def testFixpointLattice11(): Bool =
@@ -173,6 +173,6 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y), LocalVar(x; v1), LocalVar(y; v2).
         };
         let ans = query m select t from LocalVar("r"; t);
-        List.length(ans) == 1 and List.head(ans) == Some(Constant.Cst(39+12))
+        Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39+12))
 
 }

@@ -37,6 +37,14 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh enum symbol based on the given symbol.
+    */
+  def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {
+    val id = Some(flix.genSym.freshId())
+    new EnumSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
@@ -112,7 +120,7 @@ object Symbol {
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
-    new EnumSym(ns.parts, ident.name, ident.loc)
+    new EnumSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -126,8 +134,8 @@ object Symbol {
     * Returns the enum symbol for the given fully qualified name.
     */
   def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
-    case None => new EnumSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new EnumSym(ns, name, SourceLocation.Unknown)
+    case None => new EnumSym(None, Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EnumSym(None, ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -143,6 +151,11 @@ object Symbol {
   def mkRestrictableCaseSym(sym: Symbol.RestrictableEnumSym, ident: Ident): RestrictableCaseSym = {
     new RestrictableCaseSym(sym, ident.name, ident.loc)
   }
+
+  /**
+    * Returns the module symbol for the given fully qualified name.
+    */
+  def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn)
 
   /**
     * Returns the class symbol for the given name `ident` in the given namespace `ns`.
@@ -392,30 +405,39 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override val toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+    override val toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
   }
 
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Symbol {
+  final class EnumSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Symbol {
+
+    /**
+      * Returns the name of `this` symbol.
+      */
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + Flix.Delimiter + i
+    }
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EnumSym => this.namespace == that.namespace && this.name == that.name
+      case that: EnumSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
 
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
   }
 
   /**
@@ -424,6 +446,7 @@ object Symbol {
   final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol {
 
     // NB: it is critical that this be either a lazy val or a def, since otherwise `this` is not fully instantiated
+
     /**
       * The universe of cases associated with this restrictable enum.
       */
@@ -445,7 +468,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
   }
 
   /**
@@ -530,7 +553,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
 
     /**
       * Returns the source of `this`.
@@ -609,7 +632,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = "?" + (if (namespace.isEmpty) name else namespace.mkString("/") + "." + name)
+    override def toString: String = "?" + (if (namespace.isEmpty) name else namespace.mkString(".") + "." + name)
   }
 
   /**
@@ -683,7 +706,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "." + name
 
     /**
       * Returns the source of `this`.
@@ -731,6 +754,11 @@ object Symbol {
     */
   final class ModuleSym(val ns: List[String]) extends Symbol {
     /**
+      * Returns `true` if this is the root module.
+      */
+    def isRoot: Boolean = ns.isEmpty
+
+    /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
@@ -746,7 +774,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = ns.mkString("/")
+    override def toString: String = ns.mkString(".")
   }
 
   /**

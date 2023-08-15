@@ -121,7 +121,7 @@ instance Collectable[List] {
 }
 
 instance Iterable[List] {
-    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
+    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
 }
 
 mod List {
@@ -129,8 +129,8 @@ mod List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(l: List[a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -1082,16 +1082,16 @@ mod List {
     ///
     /// Returns `l` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], l: List[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(r: Region[r], l: List[a]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutList(r, toArray(r2, l)) // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(rc: Region[r], l: List[a]): MutList[a, r] \ r = region rc2 {
+        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
     }
 
     ///
@@ -1139,10 +1139,10 @@ mod List {
     ///
     /// Returns the list `l` as an array.
     ///
-    pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
-        case None    => Array#{} @ r
+    pub def toArray(rc: Region[r], l: List[a]): Array[a, r] \ r = match head(l) {
+        case None    => Array#{} @ rc
         case Some(_) =>
-            let a = Array.new(r, length(l));
+            let a = Array.new(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
@@ -1183,8 +1183,8 @@ mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: List[a]): List[a] with Order[a] = region r {
-        toArray(r, l) !> Array.sort! |> Array.toList
+    pub def sort(l: List[a]): List[a] with Order[a] = region rc {
+        toArray(rc, l) !> Array.sort! |> Array.toList
     }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
@@ -1194,8 +1194,8 @@ mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
-        toArray(r, l) !> Array.sortBy!(f) |> Array.toList
+    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region rc {
+        toArray(rc, l) !> Array.sortBy!(f) |> Array.toList
     }
 
     ///
@@ -1205,8 +1205,8 @@ mod List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
-        toArray(r, l) !> Array.sortWith!(cmp) |> Array.toList
+    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region rc {
+        toArray(rc, l) !> Array.sortWith!(cmp) |> Array.toList
     }
 
     ///
@@ -1306,7 +1306,7 @@ mod List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
         let ls = ref xs @ rc;
         let next = () -> {
             match (deref ls) {
@@ -1319,8 +1319,8 @@ mod List {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ Write(r) =
-        iterator(r, l) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ r =
+        iterator(rc, l) |> Iterator.zipWithIndex
 
     ///
     /// Returns the association list `l` as a `DelayMap`.
@@ -1384,8 +1384,8 @@ mod List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, l: List[a]): List[a] \ NonDet = region r {
-        toArray(r, l) !> Array.shuffle(rnd) |> Array.toList
+    pub def shuffle(rnd: Random, l: List[a]): List[a] \ NonDet = region rc {
+        toArray(rc, l) !> Array.shuffle(rnd) |> Array.toList
     }
 
 }

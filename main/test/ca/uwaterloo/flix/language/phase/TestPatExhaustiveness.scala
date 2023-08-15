@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestPatExhaustiveness extends FunSuite with TestUtils {
+class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
 
   test("Pattern.Literal.Char.01") {
     val input =
@@ -349,6 +349,23 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
         |
         |def f(): E = par (E.E1 <- if (true) E.E1 else E.E2) yield E.E1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Guard.01") {
+    val input =
+      """
+        |enum E {
+        |    case E1
+        |    case E2
+        |}
+        |
+        |def f(): Int32 = match E.E1 {
+        |    case E.E1 if true => 123
+        |    case E.E2 => 456
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)

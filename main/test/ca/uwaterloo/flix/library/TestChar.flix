@@ -143,6 +143,31 @@ def isDigit14(): Bool = Char.isDigit('\u0966') == true          // Devanagari di
 def isDigit15(): Bool = Char.isDigit('\u096F') == true          // Devanagari digit nine
 
 /////////////////////////////////////////////////////////////////////////////
+// isLetterOrDigit                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isLetterOrDigit01(): Bool = Char.isLetterOrDigit('a') == true
+
+@test
+def isLetterOrDigit02(): Bool = Char.isLetterOrDigit('A') == true
+
+@test
+def isLetterOrDigit03(): Bool = Char.isLetterOrDigit(' ') == false
+
+@test
+def isLetterOrDigit04(): Bool = Char.isLetterOrDigit('+') == false
+
+@test
+def iisLetterOrDigit05(): Bool = Char.isLetterOrDigit('0') == true
+
+@test
+def iisLetterOrDigit06(): Bool = Char.isLetterOrDigit('9') == true
+
+@test
+def isLetterOrDigit07(): Bool = Char.isLetterOrDigit('†') == false
+
+/////////////////////////////////////////////////////////////////////////////
 // isAsciiDigit                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -364,6 +389,28 @@ def isUpperCase10(): Bool = Char.isUpperCase('â') == false
 def isUpperCase11(): Bool = Char.isUpperCase('Â') == true
 
 /////////////////////////////////////////////////////////////////////////////
+// isTitleCase                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isTitleCase01(): Bool = Char.isTitleCase('a') == false
+
+@test
+def isTitleCase02(): Bool = Char.isTitleCase('A') == false
+
+@test
+def isTitleCase03(): Bool = Char.isTitleCase(' ') == false
+
+@test
+def isTitleCase04(): Bool = Char.isTitleCase('\u01F2') == true      // Dz (single char, upper case)
+
+@test
+def isTitleCase05(): Bool = Char.isTitleCase('\u01F3') == false      // dz (single char, lower case)
+
+@test
+def isTitleCase06(): Bool = Char.isTitleCase('\u1F99') == true      // Greek Capital Letter Eta with Dasia and Prosgegrammeni
+
+/////////////////////////////////////////////////////////////////////////////
 // isWhiteSpace                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -417,6 +464,74 @@ def isWhiteSpace16(): Bool = Char.isWhiteSpace('\u000D') == true    // carriage-
 
 @test
 def isWhiteSpace17(): Bool = Char.isWhiteSpace('\r') == true        // carriage-return
+
+/////////////////////////////////////////////////////////////////////////////
+// isDefined                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isDefined01(): Bool = Char.isDefined('a') == true
+
+@test
+def isDefined02(): Bool = Char.isDefined('A') == true
+
+/////////////////////////////////////////////////////////////////////////////
+// isISOControl                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isISOControl01(): Bool = Char.isISOControl('a') == false
+
+@test
+def isISOControl02(): Bool = Char.isISOControl('A') == false
+
+@test
+def isISOControl03(): Bool = Char.isISOControl('\u0000') == true
+
+@test
+def isISOControl04(): Bool = Char.isISOControl('\u0015') == true        // NAK
+
+/////////////////////////////////////////////////////////////////////////////
+// isMirrored                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isMirrored01(): Bool = Char.isMirrored('a') == false
+
+@test
+def isMirrored02(): Bool = Char.isMirrored('A') == false
+
+@test
+def isMirrored03(): Bool = Char.isMirrored('[') == true
+
+@test
+def isMirrored04(): Bool = Char.isMirrored(']') == true
+
+/////////////////////////////////////////////////////////////////////////////
+// isSurrogate                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isSurrogate01(): Bool = Char.isSurrogate('a') == false
+
+@test
+def isSurrogate02(): Bool = Char.isSurrogate('A') == false
+
+@test
+def isSurrogate03(): Bool = Char.isSurrogate('\uD83C') == true
+
+@test
+def isSurrogate04(): Bool = Char.isSurrogate('\uDFDD') == true
+
+/////////////////////////////////////////////////////////////////////////////
+// isSurrogatePair                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isSurrogatePair01(): Bool = Char.isSurrogatePair(high = 'A', low = 'a') == false
+
+@test
+def isSurrogatePair02(): Bool = Char.isSurrogatePair(high = '\uD83C', low = '\uDFDD') == true
 
 /////////////////////////////////////////////////////////////////////////////
 // toLowerCase                                                             //
@@ -493,6 +608,53 @@ def toUpperCase10(): Bool = Char.toUpperCase('â') == 'Â'
 def toUpperCase11(): Bool = Char.toUpperCase('Â') == 'Â'
 
 /////////////////////////////////////////////////////////////////////////////
+// toTitleCase                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toTitleCase01(): Bool = Char.toTitleCase('a') == 'A'
+
+@test
+def toTitleCase02(): Bool = Char.toTitleCase('A') == 'A'
+
+@test
+def toTitleCase03(): Bool = Char.toTitleCase(' ') == ' '
+
+@test
+def toTitleCase04(): Bool = Char.toTitleCase('\u01F2') == '\u01F2'      // Dz (single char)
+
+@test
+def toTitleCase05(): Bool = Char.toTitleCase('\u01F3') == '\u01F2'      // dz (single char)
+
+/////////////////////////////////////////////////////////////////////////////
+// toBmpCodePoint                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toBmpCodePoint01(): Bool = Char.toBmpCodePoint('a') == 0x0061
+
+@test
+def toBmpCodePoint02(): Bool = Char.toBmpCodePoint('A') == 0x0041
+
+@test
+def toBmpCodePoint03(): Bool = Char.toBmpCodePoint(' ') == 0x0020
+
+@test
+def toBmpCodePoint04(): Bool = Char.toBmpCodePoint('\u01F2') == 0x01F2      // Dz (single char)
+
+@test
+def toBmpCodePoint05(): Bool = Char.toBmpCodePoint('\u01F3') == 0x01F3      // dz (single char)
+
+/////////////////////////////////////////////////////////////////////////////
+// toSupplementaryCodePoint                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toSupplementaryCodePoint01(): Bool =
+    Char.toSupplementaryCodePoint(high = '\uD83C', low = '\uDFDD') == 0x1f3dd      // Desert Island pictogram
+
+
+/////////////////////////////////////////////////////////////////////////////
 // toString                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -528,5 +690,131 @@ def toString10(): Bool = Char.toString('â') == "â"
 
 @test
 def toString11(): Bool = Char.toString('Â') == "Â"
+
+/////////////////////////////////////////////////////////////////////////////
+// getNumericValue                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def getNumericValue01(): Bool = Char.getNumericValue('0') == Some(0)
+
+@test
+def getNumericValue02(): Bool = Char.getNumericValue('1') == Some(1)
+
+@test
+def getNumericValue03(): Bool = Char.getNumericValue('9') == Some(9)
+
+@test
+def getNumericValue04(): Bool = Char.getNumericValue('A') == Some(10)
+
+@test
+def getNumericValue05(): Bool = Char.getNumericValue('a') == Some(10)
+
+@test
+def getNumericValue06(): Bool = Char.getNumericValue('F') == Some(15)
+
+@test
+def getNumericValue07(): Bool = Char.getNumericValue('f') == Some(15)
+
+@test
+def getNumericValue08(): Bool = Char.getNumericValue(' ') == None
+
+@test
+def getNumericValue09(): Bool = Char.getNumericValue('+') == None
+
+@test
+def getNumericValue10(): Bool = Char.getNumericValue('-') == None
+
+/////////////////////////////////////////////////////////////////////////////
+// digit                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def digit01(): Bool = Char.digit(radix = 10, '0') == Some(0)
+
+@test
+def digit02(): Bool = Char.digit(radix = 10, '1') == Some(1)
+
+@test
+def digit03(): Bool = Char.digit(radix = 10, '9') == Some(9)
+
+@test
+def digit04(): Bool = Char.digit(radix = 10, 'A') == None
+
+@test
+def digit05(): Bool = Char.digit(radix = 10, 'a') == None
+
+@test
+def digit06(): Bool = Char.digit(radix = 10, 'F') == None
+
+@test
+def digit07(): Bool = Char.digit(radix = 10, 'f') == None
+
+@test
+def digit08(): Bool = Char.digit(radix = 10, ' ') == None
+
+@test
+def digit09(): Bool = Char.digit(radix = 10, '+') == None
+
+@test
+def digit10(): Bool = Char.digit(radix = 10, '-') == None
+
+@test
+def digit11(): Bool = Char.digit(radix = 16, '0') == Some(0)
+
+@test
+def digit12(): Bool = Char.digit(radix = 16, '1') == Some(1)
+
+@test
+def digit13(): Bool = Char.digit(radix = 16, '9') == Some(9)
+
+@test
+def digit14(): Bool = Char.digit(radix = 16, 'A') == Some(10)
+
+@test
+def digit15(): Bool = Char.digit(radix = 16, 'a') == Some(10)
+
+@test
+def digit16(): Bool = Char.digit(radix = 16, 'F') == Some(15)
+
+@test
+def digit17(): Bool = Char.digit(radix = 16, 'f') == Some(15)
+
+/////////////////////////////////////////////////////////////////////////////
+// forDigit                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def forDigit01(): Bool = Char.forDigit(radix = 10, 0) == Some('0')
+
+@test
+def forDigit02(): Bool = Char.forDigit(radix = 10, 1) == Some('1')
+
+@test
+def forDigit03(): Bool = Char.forDigit(radix = 10, 9) == Some('9')
+
+@test
+def forDigit04(): Bool = Char.forDigit(radix = 10, 11) == None              // 'A'
+
+@test
+def forDigit05(): Bool = Char.forDigit(radix = 10, 15) == None              // 'F'
+
+@test
+def forDigit06(): Bool = Char.forDigit(radix = 10, 256) == None
+
+@test
+def forDigit07(): Bool = Char.forDigit(radix = 16, 0) == Some('0')
+
+@test
+def forDigit08(): Bool = Char.forDigit(radix = 16, 1) == Some('1')
+
+@test
+def forDigit09(): Bool = Char.forDigit(radix = 16, 9) == Some('9')
+
+@test
+def forDigit10(): Bool = Char.forDigit(radix = 16, 10) == Some('a')
+
+@test
+def forDigit11(): Bool = Char.forDigit(radix = 16, 15) == Some('f')
 
 }

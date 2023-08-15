@@ -61,8 +61,8 @@ mod Test.Exp.Jvm.InvokeConstructor {
         newBuilder()
 
     @test
-    def testInvokeConstructorWithArrayParam(): ##java.net.URLClassLoader \ IO = region r {
-        import new java.net.URLClassLoader(Array[##java.net.URL, r]): ##java.net.URLClassLoader \ IO as newClassLoader;
-        newClassLoader(Array#{} @ r)
+    def testInvokeConstructorWithArrayParam(): ##java.net.URLClassLoader \ IO = region rc {
+        import new java.net.URLClassLoader(Array[##java.net.URL, rc]): ##java.net.URLClassLoader \ IO as newClassLoader;
+        newClassLoader(Array#{} @ rc)
     }
 }

@@ -21,34 +21,25 @@ mod Test.Exp.Fixpoint {
             L(y; Set#{x}) :- Edge(y, x), Win(x).
             Win(x) :- A(x, n), L(x; s), if Set.size(s) >= n.
         };
-        let result = query db, pr select x from Win(x) |> List.toSet;
+        let result = query db, pr select x from Win(x) |> Vector.toSet;
         result == Set#{"x", "y", "w"}
 
-    @Test
-    def testOpenSchema01(p1: #{}): #{ | r} = p1
+    def _testOpenSchema01(p1: #{}): #{ | r} = p1
 
-    @Test
-    def testOpenSchema02(p1: #{A()}): #{A() | r} = p1
+    def _testOpenSchema02(p1: #{A()}): #{A() | r} = p1
 
-    @Test
-    def testOpenSchema03(p1: #{A(), B()}): #{A(), B() | r} = p1
+    def _testOpenSchema03(p1: #{A(), B()}): #{A(), B() | r} = p1
 
-    @Test
-    def testOpenSchema04(p1: #{}, p2: #{A()}): #{A() | r} = p1 <+> p2
+    def _testOpenSchema04(p1: #{}, p2: #{A()}): #{A() | r} = p1 <+> p2
 
-    @Test
-    def testOpenSchema05(p1: #{A()}, p2: #{}): #{A() | r} = p1 <+> p2
+    def _testOpenSchema05(p1: #{A()}, p2: #{}): #{A() | r} = p1 <+> p2
 
-    @Test
-    def testOpenSchema06(p1: #{A()}, p2: #{B()}): #{A(), B() | r} = p1 <+> p2
+    def _testOpenSchema06(p1: #{A()}, p2: #{B()}): #{A(), B() | r} = p1 <+> p2
 
-    @Test
-    def testOpenSchema07(p1: #{A()}, p2: #{B()}): #{B(), A() | r} = p1 <+> p2
+    def _testOpenSchema07(p1: #{A()}, p2: #{B()}): #{B(), A() | r} = p1 <+> p2
 
-    @Test
-    def testOpenSchema08(p1: #{A(), B()}, p2: #{B(), C()}): #{A(), B(), C() | r} = p1 <+> p2
+    def _testOpenSchema08(p1: #{A(), B()}, p2: #{B(), C()}): #{A(), B(), C() | r} = p1 <+> p2
 
-    @Test
-    def testOpenSchema09(p1: #{A(), B()}, p2: #{B(), C()}): #{C(), B(), A() | r} = p1 <+> p2
+    def _testOpenSchema09(p1: #{A(), B()}, p2: #{B(), C()}): #{C(), B(), A() | r} = p1 <+> p2
 
 }

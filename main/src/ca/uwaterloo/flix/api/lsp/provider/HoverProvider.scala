@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
@@ -50,7 +50,7 @@ object HoverProvider {
 
     case Entity.CaseUse(_, _, parent) => hoverEntity(parent, uri, pos, current)
 
-    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.pur, exp.eff, exp.loc, current).getOrElse(mkNotFound(uri, pos))
+    case Entity.Exp(exp) => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc, current).getOrElse(mkNotFound(uri, pos))
 
     case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc, current).getOrElse(mkNotFound(uri, pos))
 
@@ -90,27 +90,26 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
-  private def hoverTypeAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
+  private def hoverTypeAndEff(tpe: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Option[Root], flix: Flix): Option[JObject] = {
     root.map {
       case r =>
-        val minPur = minimizeType(pur)
         val minEff = minimizeType(eff)
         val minTpe = minimizeType(tpe)
         val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)(r)
         val markup =
           s"""${mkCurrentMsg(current)}
              |```flix
-             |${formatTypAndEff(minTpe, minPur, minEff)}$lowerAndUpperBounds
+             |${formatTypAndEff(minTpe, minEff)}$lowerAndUpperBounds
              |```
              |""".stripMargin
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -129,7 +128,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -148,7 +147,7 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
@@ -167,11 +166,11 @@ object HoverProvider {
         val contents = MarkupContent(MarkupKind.Markdown, markup)
         val range = Range.from(loc)
         val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-        ("status" -> "success") ~ ("result" -> result)
+        ("status" -> ResponseStatus.Success) ~ ("result" -> result)
     }
   }
 
-  private def formatTypAndEff(tpe0: Type, pur0: Type, eff0: Type)(implicit flix: Flix): String = {
+  private def formatTypAndEff(tpe0: Type, eff0: Type)(implicit flix: Flix): String = {
     // TODO deduplicate with CompletionProvider
     val t = FormatType.formatType(tpe0)
 
@@ -179,23 +178,14 @@ object HoverProvider {
     val p = if (flix.options.xnobooleffects) {
       ""
     } else {
-      pur0 match {
-        case Type.Cst(TypeConstructor.True, _) => ""
-        case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case pur => " & " + FormatType.formatType(pur)
+      eff0 match {
+        case Type.Cst(TypeConstructor.Pure, _) => ""
+        case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
+        case eff => raw" \ " + FormatType.formatType(eff)
       }
     }
 
-    // don't show effect if set effects are turned off
-    val e = if (flix.options.xnoseteffects) {
-      ""
-    } else {
-      eff0 match {
-        case Type.Cst(TypeConstructor.Empty, _) => ""
-        case eff => " \\ " + FormatType.formatType(eff)
-      }
-    }
-    s"$t$p$e"
+    s"$t$p"
   }
 
   private def hoverKind(t: Type, current: Boolean)(implicit index: Index, root: Option[Root]): JObject = {
@@ -208,14 +198,14 @@ object HoverProvider {
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(t.loc)
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> "success") ~ ("result" -> result)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> result)
   }
 
   /**
     * Returns a reply indicating that nothing was found at the `uri` and `pos`.
     */
   private def mkNotFound(uri: String, pos: Position): JObject =
-    ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
+    ("status" -> ResponseStatus.InvalidRequest) ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   private def mkCurrentMsg(current: Boolean): String =
     if (!current) "(Information may not be current)" else ""

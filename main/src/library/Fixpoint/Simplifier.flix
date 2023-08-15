@@ -34,7 +34,7 @@ mod Fixpoint {
     ///     end
     ///
     def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] =
-        Option.getWithDefault(RamStmt.Seq(Nil), simplifyHelper(Set#{}, stmt))
+        Option.getWithDefault(RamStmt.Seq(Vector#{}), simplifyHelper(Set#{}, stmt))
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
         case RamStmt.Insert(op) =>
@@ -52,10 +52,10 @@ mod Fixpoint {
                     case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
                         use Fixpoint.Ram.arityOf;
                         let isCopy =
-                            List.map(t -> match t {
+                            Vector.map(t -> match t {
                                 case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
                                 case _ => -1
-                            }, tuple) == List.range(0, arityOf(relB));
+                            }, tuple) == Vector.range(0, arityOf(relB));
                         if (isCopy)
                             RamStmt.Merge(relB, relA)
                         else
@@ -67,9 +67,9 @@ mod Fixpoint {
         case RamStmt.Assign(_, _) => Some(stmt)
         case RamStmt.Purge(_) => Some(stmt)
         case RamStmt.Seq(xs) =>
-            Some(RamStmt.Seq(List.filterMap(simplifyHelper(stratum), xs)))
+            Some(RamStmt.Seq(Vector.filterMap(simplifyHelper(stratum), xs)))
         case RamStmt.Until(test, body) =>
-            let newStratum = List.foldLeft(acc -> e -> match e {
+            let newStratum = Vector.foldLeft(acc -> e -> match e {
                 case BoolExp.Empty(ramSym) => Set.insert(ramSym, acc)
                 case _ => acc
             }, Set#{}, test);
@@ -82,7 +82,7 @@ mod Fixpoint {
         case RelOp.If(test, then) =>
             let (memberOf, rest) =
                 // Delete checks of the form `x[i] == x[i]` and `x ≤ x` and `x ⊓ y ≤ x`.
-                List.filter(e -> match e {
+                Vector.filter(e -> match e {
                     case BoolExp.Eq(RowLoad(lhs), RowLoad(rhs)) => lhs != rhs
                     case BoolExp.Leq(_, lhs, LoadLatVar(rhsVar)) =>
                         let lhsVars = ramTermVars(lhs);
@@ -90,13 +90,13 @@ mod Fixpoint {
                     case _ => true
                 }, test) |>
                 // Partition into membership tests and rest.
-                List.partition(e -> match e {
+                Vector.partition(e -> match e {
                     case BoolExp.NotMemberOf(_) => true
                     case _ => false
                 });
-            let newTest = rest ::: memberOf;
+            let newTest = Vector.append(rest, memberOf);
             // Simplify `if () then body` to `body`.
-            if (List.isEmpty(newTest))
+            if (Vector.isEmpty(newTest))
                 Some(then)
             else
                 Some(RelOp.If(newTest, then))
@@ -126,8 +126,11 @@ mod Fixpoint {
                 newBody <- simplifyOp(stratum, body);
                 res <- f(newBody)
             ) yield res
-        case RelOp.Project(_) => Some(op)
-        case RelOp.Loop(_) => ??? // TODO
+        case RelOp.Functional(rowVar, f, terms, body) =>
+            forM(
+                newBody <- simplifyOp(stratum, body)
+            ) yield RelOp.Functional(rowVar, f, terms, newBody)
+        case RelOp.Project(_)    => Some(op)
     }
 
     ///

@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.util
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class Ignore(name: String, paths: String*)(implicit options: Options = Options.TestWithLibMin) extends FunSuite {
+class Ignore(name: String, paths: String*)(implicit options: Options = Options.TestWithLibMin) extends AnyFunSuite {
 
   /**
     * Returns the name of the test suite.

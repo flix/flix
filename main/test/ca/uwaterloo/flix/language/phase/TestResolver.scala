@@ -19,45 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestResolver extends FunSuite with TestUtils {
-
-  // TODO NS-REFACTOR impossible after refactor
-  ignore("AmbiguousTag.01") {
-    val input =
-      s"""
-         |enum A {
-         |  case Foo
-         |}
-         |
-         |enum B {
-         |  case Foo
-         |}
-         |
-         |def f(): A = Foo
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.AmbiguousTag](result)
-  }
-
-  // TODO NS-REFACTOR impossible after refactor
-  ignore("AmbiguousTag.02") {
-    val input =
-      s"""
-         |enum A {
-         |  case Foo(Int32)
-         |}
-         |
-         |enum B {
-         |  case Foo(Int32)
-         |}
-         |
-         |def f(): A = Foo(42)
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.AmbiguousTag](result)
-  }
+class TestResolver extends AnyFunSuite with TestUtils {
 
   test("InaccessibleDef.01") {
     val input =
@@ -123,44 +87,6 @@ class TestResolver extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleEnum](result)
-  }
-
-  // TODO NS-REFACTOR re-enable this check
-  ignore("OpaqueEnum.01") {
-    val input =
-      s"""
-         |mod A {
-         |  pub opaque enum Color {
-         |    case Blu,
-         |    case Red
-         |  }
-         |}
-         |
-         |mod B {
-         |  def g(): A.Color = A.Color.Red
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.OpaqueEnum](result)
-  }
-
-  // TODO NS-REFACTOR re-enable this check
-  ignore("OpaqueEnum.02") {
-    val input =
-      s"""
-         |mod A {
-         |  def f(): A.B.C.Color = A.B.C.Color.Blu
-         |
-         |  mod B.C {
-         |    pub opaque enum Color {
-         |      case Blu,
-         |      case Red
-         |    }
-         |  }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.OpaqueEnum](result)
   }
 
   test("InaccessibleType.01") {
@@ -1061,7 +987,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |def isThisThingNull(x: a): Bool =
-        |    import static java.util.Objects.isNull(a): Bool & Pure;
+        |    import static java.util.Objects.isNull(a): Bool \ Pure;
         |    isNull(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1362,6 +1288,19 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalSignature](result)
   }
 
+  test("IllegalSignature.06") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |
+        |    pub def f(x: C.T[a]): String
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
   test("IllegalWildType.01") {
     val input =
       """
@@ -1394,7 +1333,8 @@ class TestResolver extends FunSuite with TestUtils {
   test("IllegalWildType.04") {
     val input =
       """
-        |def foo(): String = unchecked_cast(123 as _)
+        |enum E[_]
+        |def foo(): String = unchecked_cast(123 as E[_])
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
@@ -1482,5 +1422,73 @@ class TestResolver extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedInstanceOf.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    1000ii instanceof ##org.undefined.BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("DuplicateAssocTypeDef.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = String
+        |    type T = Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateAssocTypeDef](result)
+  }
+
+  test("MissingAssocTypeDef.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
+  test("IllegalAssocTypeApplication.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T
+        |}
+        |
+        |def foo(): C.T[String] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeApplication](result)
+  }
+
+  test("IllegalAssocTypeApplication.02") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String] = C.T[String]
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 }

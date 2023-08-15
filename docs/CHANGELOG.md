@@ -1,5 +1,46 @@
 # Changelog
 
+Version 0.39.0:
+
+- VSCode: Added support for code actions (thanks Magnus, Holger!)
+- VSCode: Added code actions to derive `Eq`, `Order`, and `ToString` (thanks Magnus!)
+- VSCode: Added code actions to `use` an undefined name (thanks Holger!)
+- VSCode: Added completion for `use` of enums, defs, modules, and types (thanks Xavier!)
+- VSCode: Improved communication between the Flix compiler and VSCode in case of errors (thanks Holger!)
+- Compiler: Improved source locations of several error messages (thanks Matthew, Ziyao!)
+- Compiler: Relaxed Maven version string requirements (thanks Stephen, Magnus!)
+
+Version 0.38.0:
+
+- VSCode: Added preliminary support for code actions (thanks Holger!)
+  - Added quickfix for unused local variable (thanks Magnus!)
+  - Added quickfix to introduce new type (thanks Magnus!)
+- Library: Added `toVector` functions (thanks Stephen!)
+- Library: Use `Vector` in Datalog engine (thanks Holger!)
+- Compiler: Significantly improved performance of compiler backend (thanks Jonathan, Matt!)
+
+Version 0.37.0:
+
+- Language: Uniform effect syntax (thanks Matthew!)
+- Library: Added `CodePoint` module (thanks Stephen!)
+- Library: Expanded `Regex` module (thanks Stephen!)
+- Library: Added `String.stripMargin` (thanks Ziyao!)
+- VSCode: Improved auto-completion for tags (thanks Lukas!)
+- VSCode: Added support for auto-completion of modules (thanks Lukas!)
+- VSCode: Use parser for auto-completion (thanks Magnus!)
+- Compiler: Allow inclusion of external JARs (thanks Anna!)
+- Compiler: Lots of internal improvements (thanks everyone!)
+
+Version 0.36.0:
+
+- Language: Added support for regular expressions literals (thanks Stephen!)
+- Language: Added support for `functional` predicates (thanks Magnus!)
+- Language: Reworked and removed the need for `Boxable` (thanks Magnus!)
+- VSCode: Added support for parser-guided auto-completion (thanks Magnus)
+- VSCode: Improved auto-completion of predicates (thanks Magnus!)
+- VSCode: Improved "best pick" algorithm (thanks Lukas!)
+- Compiler: Enabled package management command in repl (thanks Magnus!)
+
 Version 0.35.0:
 
 - Language: Added region capabilities (thanks Jonathan, Magnus)
@@ -391,3 +432,4 @@ HEAD (in progress, not released):
 - Inliner
 - Datalog abstraction
 - Restrictable variants
+- Associated types

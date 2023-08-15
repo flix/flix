@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
+import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -189,6 +190,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
       case JString("lsp/showAst") => Request.parseShowAst(json)
+      case JString("lsp/codeAction") => Request.parseCodeAction(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -221,11 +223,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     case Request.AddUri(id, uri, src) =>
       addSourceCode(uri, src)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemUri(id, uri) =>
       remSourceCode(uri)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.AddPkg(id, uri, data) =>
       // TODO: Possibly move into Input class?
@@ -242,7 +244,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       }
       inputStream.close()
 
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemPkg(id, uri) =>
       // clone is necessary because `remSourceCode` modifies `sources`
@@ -250,16 +252,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
            if file.startsWith(uri)) {
         remSourceCode(file)
       }
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.AddJar(id, uri) =>
       val path = Path.of(new URI(uri))
       flix.addJar(path)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemJar(id, uri) =>
       // No-op (there is no easy way to remove a Jar from the JVM)
-      ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.Version(id) => processVersion(id)
 
@@ -268,10 +270,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) =>
-      if (current)
-        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
-      else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
 
     case Request.Complete(id, uri, pos) =>
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
@@ -286,16 +285,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
     case Request.Implementation(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root.orNull)
 
     case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
 
     case Request.WorkspaceSymbols(id, query) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root.orNull)
@@ -304,19 +303,27 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       if (current)
         ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
       else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> Nil))
 
     case Request.InlayHint(id, uri, range) =>
       if (current)
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
       else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
     case Request.ShowAst(id, phase) =>
       if (current)
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
       else
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+
+    case Request.CodeAction(id, uri, range, context) =>
+      root match {
+        case None =>
+          ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
+        case Some(r) =>
+          ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, context, currentErrors)(index, r, flix).map(_.toJSON))
+      }
 
   }
 
@@ -347,14 +354,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
           // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
-          ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+          ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
       case ex: Throwable =>
         // Mark the AST as outdated.
         this.current = false
-        CrashHandler.handleCrash(ex)(flix)
-        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> Nil)
+        val reportPath = CrashHandler.handleCrash(ex)(flix)
+        ("id" -> requestId) ~
+          ("status" -> ResponseStatus.CompilerError) ~
+          ("result" -> ("reportPath" -> reportPath.map(_.toString)))
     }
   }
 
@@ -379,9 +388,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
 
     // Determine the status based on whether there are errors.
-    val status = if (errors.isEmpty) "success" else "failure"
     val results = PublishDiagnosticsParams.fromMessages(errors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
-    ("id" -> requestId) ~ ("status" -> status) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
+    ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
   /**
@@ -400,19 +408,13 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val minor = Version.CurrentVersion.minor
     val revision = Version.CurrentVersion.revision
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> version)
+    ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
   }
 
   /**
     * Returns `true` if the given source location `loc` matches the given `uri`.
     */
   private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
-
-  /**
-    * Returns a reply indicating that nothing was found at the `uri` and `pos`.
-    */
-  private def mkNotFound(requestId: String, uri: String, pos: Position): JValue =
-    ("id" -> requestId) ~ ("status" -> "failure") ~ ("message" -> s"Nothing found in '$uri' at '$pos'.")
 
   /**
     * Logs the given message `msg` along with information about the connection `ws`.

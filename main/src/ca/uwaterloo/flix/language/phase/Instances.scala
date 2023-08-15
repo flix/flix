@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Kind, LevelEnv, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -97,7 +97,7 @@ object Instances {
     /**
       * Checks that the instance type is simple:
       * * all type variables are unique
-      * * all type arguments are variables or booleans
+      * * all type arguments are variables
       */
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _, _) => tpe match {
@@ -113,11 +113,7 @@ object Instances {
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen, errs)
-            // Case 2: True. Continue.
-            case (acc, Type.Cst(TypeConstructor.True, _)) => acc
-            // Case 3: False. Continue.
-            case (acc, Type.Cst(TypeConstructor.False, _)) => acc
-            // Case 4: Some other type. Error.
+            // Case 2: Non-variable. Error.
             case ((seen, errs), _) => (seen, InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc) :: errs)
           }
           errs0
@@ -130,7 +126,7 @@ object Instances {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
-      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty) match {
+      Unification.unifyTypes(inst1.tpe, inst2.tpe, RigidityEnv.empty, LevelEnv.Unleveled) match {
         case Ok(_) =>
           List(
             InstanceError.OverlappingInstances(inst1.clazz.loc, inst2.clazz.loc),
@@ -138,19 +134,6 @@ object Instances {
           )
         case Err(_) => Nil
       }
-    }
-
-    /**
-      * Converts `true` and `false` in the given type into type variables.
-      */
-    def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-      case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Bool, loc)
-      case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Bool, loc)
-      case t: Type.Var => t
-      case t: Type.Cst => t
-      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
-      case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
-      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(generifyBools), kind, loc)
     }
 
     /**
@@ -202,7 +185,7 @@ object Instances {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
-        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
+        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty, LevelEnv.Unleveled).toOption.map {
           case (subst, econstrs) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
         }
       }.nextOption()

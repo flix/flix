@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable, UnexpectedPatternInBodyAtom}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestSafety extends FunSuite with TestUtils {
+class TestSafety extends AnyFunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
 
@@ -312,26 +312,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.NonPublicClass](result)
   }
 
-  test("TestIllegalParExpression.01") {
-    val input =
-      """
-        |def f(): Int32 =
-        |    par 1
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalParExpression](result)
-  }
-
-  test("TestIllegalParExpression.02") {
-    val input =
-      """
-        |def f(): Int32 =
-        |    par par f()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalParExpression](result)
-  }
-
   test("TestMissingDefaultMatchTypeCase.01") {
     val input =
       """
@@ -448,6 +428,290 @@ class TestSafety extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.09") {
+    val input =
+      """
+        |def f(): ##java.lang.String =
+        |    unchecked_cast(('a', 'b', false) as ##java.lang.String)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("IllegalCheckedTypeCast.01") {
+    val input =
+      """
+        |def f(): ##java.io.Serializable \ IO =
+        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    checked_cast(mkObj())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
+  test("IllegalCheckedTypeCast.02") {
+    val input =
+      """
+        |def f(): ##java.lang.Boolean \ IO =
+        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    checked_cast(mkObj())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
+  test("IllegalCheckedTypeCast.03") {
+    val input =
+      """
+        |def f(): ##java.lang.Double \ IO =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    checked_cast(valueOf(true))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
+  test("IllegalCheckedTypeCast.04") {
+    val input =
+      """
+        |def f(): (Bool -> Bool) =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    checked_cast(valueOf)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
+  test("IllegalCheckedTypeCast.05") {
+    val input =
+      """
+        |def f(): String -> String =
+        |    checked_cast(x -> x)
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
+  test("IllegalCastFromNonJava.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Object =
+        |    checked_cast(10i64)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
+  test("IllegalCastFromNonJava.02") {
+    val input =
+      """
+        |def f(): ##java.lang.Boolean =
+        |    checked_cast(true)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
+  test("IllegalCastFromNonJava.03") {
+    val input =
+      """
+        |def f(): ##java.lang.StringBuilder =
+        |    checked_cast(false)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
+  test("IllegalCastFromNonJava.04") {
+    val input =
+      """
+        |enum Boolean(Bool)
+        |def f(): ##java.lang.Boolean =
+        |    checked_cast(Boolean.Boolean(true))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.01") {
+    // java.lang.String is equal to String in Flix.
+    val input =
+      """
+        |def f(): ##java.lang.String \ IO =
+        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    checked_cast(mkObj())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.02") {
+    val input =
+      """
+        |def f(): String \ IO =
+        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    checked_cast(mkObj())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.03") {
+    val input =
+      """
+        |def f(): Bool \ IO =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    checked_cast(valueOf(true))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.04") {
+    val input =
+      """
+        |def f(): Bool \ IO =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    checked_cast(newSb())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.05") {
+    val input =
+      """
+        |enum Boolean(Bool)
+        |def f(): Boolean \ IO =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    checked_cast(newSb())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.06") {
+    val input =
+      """
+        |enum Boolean(Bool)
+        |def f(): Boolean \ IO =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    Boolean.Boolean(checked_cast(valueOf(true)))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.07") {
+    val input =
+      """
+        |def f(): String \ IO =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    checked_cast(newSb())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastFromVar.01") {
+    val input =
+      """
+        |def f(): String =
+        |    g("ABC")
+        |
+        |def g(x: a): a = checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromVar](result)
+  }
+
+  test("IllegalCastFromVar.02") {
+    val input =
+      """
+        |def f(x: a): String =
+        |    checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromVar](result)
+  }
+
+  test("IllegalCastToVar.01") {
+    val input =
+      """
+        |def f(): b =
+        |    g("ABC")
+        |
+        |def g(x: String): a = checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
+  test("IllegalCastToVar.02") {
+    val input =
+      """
+        |def f(x: Int32): b =
+        |    checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
+  test("IllegalCastToVar.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_cast("abc")
+        |        else
+        |            checked_cast("def");
+        |    ()
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
+  test("IllegalParametersToTestEntryPoint.01") {
+    val input =
+      """
+        |@test
+        |def f(x: Int32): Int32 = x
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalTestParameters](result)
+  }
+
+  test("IllegalParametersToTestEntryPoint.02") {
+    val input =
+      """
+        |@test
+        |def g(x: Int32, _y: Int32, _a: Float64): Int32 = x
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalTestParameters](result)
+  }
+
+  test("IllegalParametersToTestEntryPoint.03") {
+    val input =
+      """
+        |@test
+        |def f(_x: Int32, _y: Int32, a: Float64): Float64 = a
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalTestParameters](result)
+  }
+
+  test("IllegalParametersToTestEntryPoint.04") {
+    val input =
+      """
+        |@test
+        |def f(_x: Int32, _y: Int32, _a: Float64): Float64 = 1.0f64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalTestParameters](result)
   }
 
 }

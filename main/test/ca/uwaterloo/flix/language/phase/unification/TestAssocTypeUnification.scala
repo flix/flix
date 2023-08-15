@@ -17,13 +17,13 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocation, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, Name, RigidityEnv, SourceLocation, SourcePosition, Symbol, Type}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
 import ca.uwaterloo.flix.util.collection.ListMap
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestAssocTypeUnification extends FunSuite with TestUtils {
+class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
 
   private implicit val flix: Flix = new Flix()
   private val loc: SourceLocation = SourceLocation.Unknown
@@ -35,7 +35,7 @@ class TestAssocTypeUnification extends FunSuite with TestUtils {
     val tpe1 = Type.AssocType(ElemCst, Type.Str, Kind.Star, loc)
     val tpe2 = Type.Char
     val renv = RigidityEnv.empty
-    val result = Unification.unifyTypes(tpe1, tpe2, renv)
+    val result = Unification.unifyTypes(tpe1, tpe2, renv, LevelEnv.Unleveled)
 
     val expectedSubst = Substitution.empty
     val expectedEconstrs = List(Ast.EqualityConstraint(ElemCst, Type.Str, Type.Char, loc))
@@ -49,7 +49,7 @@ class TestAssocTypeUnification extends FunSuite with TestUtils {
     val tpe2 = Type.Char
     val renv = RigidityEnv.empty
     val eqEnv = ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]
-    val result = Unification.unifiesWith(tpe1, tpe2, renv, eqEnv)
+    val result = Unification.unifiesWith(tpe1, tpe2, renv, LevelEnv.Unleveled, eqEnv)
 
     val expectedResult = false
 
@@ -61,7 +61,7 @@ class TestAssocTypeUnification extends FunSuite with TestUtils {
     val tpe2 = Type.Int32
     val renv = RigidityEnv.empty
     val eqEnv = ListMap.singleton(ElemSym, Ast.AssocTypeDef(Type.Str, Type.Char))
-    val result = Unification.unifiesWith(tpe1, tpe2, renv, eqEnv)
+    val result = Unification.unifiesWith(tpe1, tpe2, renv, LevelEnv.Unleveled, eqEnv)
 
     val expectedResult = false
 

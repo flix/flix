@@ -39,6 +39,72 @@ def charAt05(): Bool = String.charAt(4, "Hello World!") == 'o'
 def charAt06(): Bool = String.charAt(5, "Hello World!") == ' '
 
 /////////////////////////////////////////////////////////////////////////////
+// nth                                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def nth01(): Bool = String.nth(0, "") == None
+
+@test
+def nth02(): Bool = String.nth(-1, "Hello World!") == None
+
+@test
+def nth03(): Bool = String.nth(15, "Hello World!") == None
+
+@test
+def nth04(): Bool = String.nth(0, "Hello World!") == Some('H')
+
+@test
+def nth05(): Bool = String.nth(1, "Hello World!") == Some('e')
+
+@test
+def nth06(): Bool = String.nth(2, "Hello World!") == Some('l')
+
+@test
+def nth07(): Bool = String.nth(3, "Hello World!") == Some('l')
+
+@test
+def nth08(): Bool = String.nth(4, "Hello World!") == Some('o')
+
+@test
+def nth09(): Bool = String.nth(5, "Hello World!") == Some(' ')
+
+@test
+def nth10(): Bool = String.nth(11, "Hello World!") == Some('!')
+
+/////////////////////////////////////////////////////////////////////////////
+// codePointAt                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def codePointAt01(): Bool = String.codePointAt(0, CodePoint.toString(0x1f3dd)) == 0x1f3dd
+
+@test
+def codePointAt02(): Bool = String.codePointAt(2, "\uD83C\uDFDD.") == 0x002E
+
+@test
+def codePointAt03(): Bool = String.codePointAt(1, ".\uD83C\uDFDD") == 0x1f3dd
+
+/////////////////////////////////////////////////////////////////////////////
+// nthCodePoint                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def nthCodePoint01(): Bool = String.nthCodePoint(0, "") == None
+
+@test
+def nthCodePoint02(): Bool = String.nthCodePoint(0, CodePoint.toString(0x1f3dd)) == Some(0x1f3dd)
+
+@test
+def nthCodePoint03(): Bool = String.nthCodePoint(2, CodePoint.toString(0x1f3dd)) == None
+
+@test
+def nthCodePoint04(): Bool = String.nthCodePoint(2, "\uD83C\uDFDD.") == Some(0x002E)
+
+@test
+def nthCodePoint05(): Bool = String.nthCodePoint(1, ".\uD83C\uDFDD") == Some(0x1f3dd)
+
+/////////////////////////////////////////////////////////////////////////////
 // concat                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -184,19 +250,35 @@ def lineSeparator02(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def toArray01(): Bool = region r {
-    Array.sameElements(String.toArray(r, ""), Array#{} @ r)
+def toArray01(): Bool = region rc {
+    Array.sameElements(String.toArray(rc, ""), Array#{} @ rc)
 }
 
 @test
-def toArray02(): Bool = region r {
-    Array.sameElements(String.toArray(r, "ABC"), Array#{'A', 'B', 'C'} @ r)
+def toArray02(): Bool = region rc {
+    Array.sameElements(String.toArray(rc, "ABC"), Array#{'A', 'B', 'C'} @ rc)
 }
 
 @test
-def toArray03(): Bool = region r {
-    Array.sameElements(String.toArray(r, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ r)
+def toArray03(): Bool = region rc {
+    Array.sameElements(String.toArray(rc, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ rc)
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// toVector                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toVector01(): Bool =
+    String.toVector("") == Vector#{}
+
+@test
+def toVector02(): Bool =
+    String.toVector("ABC") == Vector#{'A', 'B', 'C'}
+
+@test
+def toVector03(): Bool =
+    String.toVector("1 2 3") == Vector#{'1', ' ', '2', ' ', '3'}
 
 /////////////////////////////////////////////////////////////////////////////
 // toRegex                                                                 //
@@ -1576,8 +1658,8 @@ def toChar(step: Int32): Char = match step {
 }
 
 @test
-def unfoldWithIter01(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter01(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (true)
             None
@@ -1590,8 +1672,8 @@ def unfoldWithIter01(): Bool = region r {
 }
 
 @test
-def unfoldWithIter02(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter02(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 0)
             None
@@ -1604,8 +1686,8 @@ def unfoldWithIter02(): Bool = region r {
 }
 
 @test
-def unfoldWithIter03(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter03(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 1)
             None
@@ -1618,8 +1700,8 @@ def unfoldWithIter03(): Bool = region r {
 }
 
 @test
-def unfoldWithIter04(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter04(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1632,8 +1714,8 @@ def unfoldWithIter04(): Bool = region r {
 }
 
 @test
-def unfoldWithIter05(): Bool = region r {
-    let x = ref 5 @ r;
+def unfoldWithIter05(): Bool = region rc {
+    let x = ref 5 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1646,8 +1728,8 @@ def unfoldWithIter05(): Bool = region r {
 }
 
 @test
-def unfoldWithIter06(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldWithIter06(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1701,8 +1783,8 @@ def unfoldString08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldStringWithIter01(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter01(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (true)
             None
@@ -1717,8 +1799,8 @@ def unfoldStringWithIter01(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter02(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter02(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 0)
             None
@@ -1733,8 +1815,8 @@ def unfoldStringWithIter02(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter03(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter03(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x > 1)
             None
@@ -1749,8 +1831,8 @@ def unfoldStringWithIter03(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter04(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter04(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1765,8 +1847,8 @@ def unfoldStringWithIter04(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter05(): Bool = region r {
-    let x = ref 5 @ r;
+def unfoldStringWithIter05(): Bool = region rc {
+    let x = ref 5 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1781,8 +1863,8 @@ def unfoldStringWithIter05(): Bool = region r {
 }
 
 @test
-def unfoldStringWithIter06(): Bool = region r {
-    let x = ref 0 @ r;
+def unfoldStringWithIter06(): Bool = region rc {
+    let x = ref 0 @ rc;
     let step = () ->
         if (deref x >= 10)
             None
@@ -2129,6 +2211,61 @@ def padRight14(): Bool = String.padRight(3, '_', "ab") == "ab_"
 
 @test
 def padRight15(): Bool = String.padRight(3, '_', "abc") == "abc"
+
+/////////////////////////////////////////////////////////////////////////////
+// center                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def center01(): Bool = String.center(0, ' ', "") == ""
+
+@test
+def center02(): Bool = String.center(1, ' ', "") == " "
+
+@test
+def center03(): Bool = String.center(2, ' ', "") == "  "
+
+@test
+def center04(): Bool = String.center(3, ' ', "") == "   "
+
+@test
+def center05(): Bool = String.center(0, ' ', "a") == "a"
+
+@test
+def center06(): Bool = String.center(1, ' ', "a") == "a"
+
+@test
+def center07(): Bool = String.center(2, ' ', "a") == "a "
+
+@test
+def center08(): Bool = String.center(3, ' ', "a") == " a "
+
+@test
+def center09(): Bool = String.center(0, ' ', "ab") == "ab"
+
+@test
+def center10(): Bool = String.center(1, ' ', "ab") == "ab"
+
+@test
+def center11(): Bool = String.center(2, ' ', "ab") == "ab"
+
+@test
+def center12(): Bool = String.center(3, ' ', "ab") == "ab "
+
+@test
+def center13(): Bool = String.center(3, '_', "a") == "_a_"
+
+@test
+def center14(): Bool = String.center(3, '_', "ab") == "ab_"
+
+@test
+def center15(): Bool = String.center(3, '_', "abc") == "abc"
+
+@test
+def center16(): Bool = String.center(7, '_', "abc") == "__abc__"
+
+@test
+def center17(): Bool = String.center(8, '_', "abc") == "__abc___"
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
@@ -3353,6 +3490,72 @@ def countSubstring11(): Bool = String.countSubstring({substr = "abc"}, "ABC abc 
 def countSubstring12(): Bool = String.countSubstring({substr = "abc"}, "aBC::abc::AbC::abc::Abc") == 2
 
 /////////////////////////////////////////////////////////////////////////////
+// stripMargin                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def stripMargin01(): Bool = String.stripMargin("") == ""
+
+@test
+def stripMargin02(): Bool = String.stripMargin("abc") == "abc"
+
+@test
+def stripMargin03(): Bool = String.stripMargin("${'\t'}") == "${'\t'}"
+
+@test
+def stripMargin04(): Bool = String.stripMargin("    |abc") == "abc"
+
+@test
+def stripMargin05(): Bool = String.stripMargin("${'\t'} |abc") == "abc"
+
+@test
+def stripMargin06(): Bool = String.stripMargin(" | abc") == " abc"
+
+@test
+def stripMargin07(): Bool = String.stripMargin(" ||abc") == "|abc"
+
+@test
+def stripMargin08(): Bool = String.stripMargin(String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+@test
+def stripMargin09(): Bool = String.stripMargin(String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
+// stripMarginWith                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def stripMarginWith01(): Bool = String.stripMarginWith({margin = "|"}, "") == ""
+
+@test
+def stripMarginWith02(): Bool = String.stripMarginWith({margin = "|"}, "abc") == "abc"
+
+@test
+def stripMarginWith03(): Bool = String.stripMarginWith({margin = "|"}, "${'\t'}") == "${'\t'}"
+
+@test
+def stripMarginWith04(): Bool = String.stripMarginWith({margin = "|"}, "    |abc") == "abc"
+
+@test
+def stripMarginWith05(): Bool = String.stripMarginWith({margin = "|"}, "${'\t'} |abc") == "abc"
+
+@test
+def stripMarginWith06(): Bool = String.stripMarginWith({margin = "|"}, " | abc") == " abc"
+
+@test
+def stripMarginWith07(): Bool = String.stripMarginWith({margin = "|"}, " ||abc") == "|abc"
+
+@test
+def stripMarginWith08(): Bool = String.stripMarginWith({margin = "| "}, " | abc") == "abc"
+
+@test
+def stripMarginWith09(): Bool = String.stripMarginWith({margin = "|"}, String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+@test
+def stripMarginWith10(): Bool = String.stripMarginWith({margin = "|"}, String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
+
+
+/////////////////////////////////////////////////////////////////////////////
 // stripPrefix                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3403,6 +3606,40 @@ def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == So
 def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 /////////////////////////////////////////////////////////////////////////////
+// unwrap                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unwrap01(): Bool = String.unwrap("") == ""
+
+@test
+def unwrap02(): Bool = String.unwrap("a\nb") == "a b"
+
+@test
+def unwrap03(): Bool = String.unwrap("a\nb\nc") == "a b c"
+
+@test
+def unwrap04(): Bool = String.unwrap("ab\nc\nd") == "ab c d"
+
+@test
+def unwrap05(): Bool = String.unwrap("a\rb") == "a b"
+
+@test
+def unwrap06(): Bool = String.unwrap("a\rb\rc") == "a b c"
+
+@test
+def unwrap07(): Bool = String.unwrap("ab\rc\rd") == "ab c d"
+
+@test
+def unwrap08(): Bool = String.unwrap("a\r\nb") == "a b"
+
+@test
+def unwrap09(): Bool = String.unwrap("a\r\nb\r\nc") == "a b c"
+
+@test
+def unwrap10(): Bool = String.unwrap("ab\r\nc\r\nd") == "ab c d"
+
+/////////////////////////////////////////////////////////////////////////////
 // escapeInterpolation                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3424,13 +3661,13 @@ def escapeInterpolation04(): String = "$"
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool = region r {
-        String.iterator(r, "") |> Iterator.toList == Nil
+    def iterator01(): Bool = region rc {
+        String.iterator(rc, "") |> Iterator.toList == Nil
     }
 
     @test
-    def iterator02(): Bool = region r {
-        String.iterator(r, "abc") |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
+    def iterator02(): Bool = region rc {
+        String.iterator(rc, "abc") |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
     }
 
 
@@ -3439,13 +3676,13 @@ def escapeInterpolation04(): String = "$"
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def enumerator01(): Bool = region r {
-        String.enumerator(r, "") |> Iterator.toList == Nil
+    def enumerator01(): Bool = region rc {
+        String.enumerator(rc, "") |> Iterator.toList == Nil
     }
 
     @test
-    def enumerator02(): Bool = region r {
-        String.enumerator(r, "abc") |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
+    def enumerator02(): Bool = region rc {
+        String.enumerator(rc, "abc") |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
     }
 
 }

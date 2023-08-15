@@ -86,7 +86,7 @@ mod Test.Dec.Class {
     }
 
     mod Test09 {
-        class Eff[ef : Bool] {
+        class Eff[ef : Eff] {
             pub def isPure(f: a -> b \ ef): Bool
         }
 
@@ -205,36 +205,6 @@ mod Test.Dec.Class {
         class E[a: Type -> Type] {
             law l: forall (x: a[b]) with D[a[b]] . Test.Dec.Class.Test17.D.f(x)
         }
-    }
-
-    mod Test18 {
-        pub enum E[_: Bool]
-        pub enum F[_: Bool, _: Type]
-
-        class C[a]
-        class D[a: Type -> Type]
-
-        instance C[E[true]]
-        instance C[F[false, a]]
-        instance D[F[true]]
-    }
-
-    mod Test19 {
-        pub enum M[_: Bool, a: Type] {
-            case M(a)
-        }
-
-        instance Eq[M[true, a]] with Eq[a] {
-            pub def eq(x: M[true, a], y: M[true, a]): Bool = match (x, y) {
-                case (M.M(x1), M.M(y1)) => x1 == y1
-            }
-        }
-
-        @test
-        def testCallComplexBoolSig01(): Bool = M.M(10): M[true, Int32] == M.M(10): M[true, Int32]
-
-        @test
-        def testCallComplexBoolSig02(): Bool = M.M(10): M[true, Int32] != M.M(11): M[true, Int32]
     }
 
     @test

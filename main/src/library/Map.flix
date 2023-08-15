@@ -102,7 +102,7 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
 }
 
 instance Iterable[Map[k]] {
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r = Map.iteratorValues(rc, m)
 }
 
 mod Map {
@@ -110,8 +110,8 @@ mod Map {
     ///
     /// Returns a string representation of the given map `m`.
     ///
-    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -138,7 +138,7 @@ mod Map {
     ///
     def useParallelEvaluation(m: Map[k, v]): Bool =
         let Map(t) = m;
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -703,20 +703,19 @@ mod Map {
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
     pub def intersection(m1: Map[k, v], m2: Map[k, v]): Map[k, v] with Order[k] =
-        intersectionWithKey((_, v1, _) -> v1, m1, m2)
+        filterWithKey((k, _) -> memberOf(k, m2), m1)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def intersectionWith(f: (v, v) -> v \ ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] \ ef with Order[k] =
+    pub def intersectionWith(f: (v1, v2) -> v3 \ ef, m1: Map[k, v1], m2: Map[k, v2]): Map[k, v3] \ ef with Order[k] =
         intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def intersectionWithKey(f: (k, v, v) -> v \ ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] \ ef with Order[k] =
-        let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
-        foldRightWithKey((k, v, acc) -> adjustWithKey((key, v1) -> f(key, v, v1), k, acc), intersect, m1)
+    pub def intersectionWithKey(f: (k, v1, v2) -> v3 \ ef, m1: Map[k, v1], m2: Map[k, v2]): Map[k, v3] \ ef with Order[k] =
+        filterMapWithKey((k, v1) -> Option.map(v2 -> f(k, v1, v2), get(k, m2)), m1)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -769,7 +768,7 @@ mod Map {
     ///
     /// Returns `m` as a mutable map.
     ///
-    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
         MutMap.MutMap(rc, ref m @ rc)
 
     ///
@@ -805,8 +804,8 @@ mod Map {
     ///
     /// Returns `m` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
+        let d = MutDeque.new(rc);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 
@@ -879,21 +878,21 @@ mod Map {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r =
         let Map(t) = m;
         RedBlackTree.iterator(rc, t)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r, r] \ Write(r) =
-        iterator(r, m) |> Iterator.map(fst)
+    pub def iteratorKeys(rc: Region[r], m: Map[k, v]): Iterator[k, r, r] \ r =
+        iterator(rc, m) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) =
-        iterator(r, m) |> Iterator.map(snd)
+    pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
+        iterator(rc, m) |> Iterator.map(snd)
 
     ///
     /// Returns `m` as a `DelayMap`.

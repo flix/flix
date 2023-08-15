@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
 
@@ -31,8 +31,7 @@ object HoleCompletion {
   def candidates(sourceType: Type, targetType: Type, root: TypedAst.Root)(implicit flix: Flix): List[Symbol.DefnSym] = {
     val matchType = Type.mkArrowWithEffect(
       sourceType,
-      Type.freshVar(Kind.Bool, SourceLocation.Unknown),
-      Type.freshVar(Kind.Effect, SourceLocation.Unknown),
+      Type.freshVar(Kind.Eff, SourceLocation.Unknown),
       targetType,
       SourceLocation.Unknown
     )
@@ -41,13 +40,12 @@ object HoleCompletion {
       case TypedAst.Def(sym, spec, _) =>
         val lastArrow = Type.mkArrowWithEffect(
           spec.fparams.last.tpe,
-          spec.pur,
           spec.eff,
           spec.retTpe,
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
-        Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty) match {
+        Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty, LevelEnv.Unleveled) match {
           case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
             // Track the size of all the types in the substitution.
             // A smaller substitution means a more precise unification match.

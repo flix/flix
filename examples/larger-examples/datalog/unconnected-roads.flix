@@ -1,4 +1,4 @@
-pub def unconnected(roads: List[(city, city)]): List[(city, city)] with Order[city] =
+pub def unconnected(roads: List[(city, city)]): Vector[(city, city)] with Order[city] =
     let r = inject roads into Road;
     let lp = #{
         City(x) :- Road(x, _).

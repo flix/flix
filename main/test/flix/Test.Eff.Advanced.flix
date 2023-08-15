@@ -49,31 +49,31 @@ mod Test.Eff.Advanced {
     def pure(): Unit = ()
 
     /// An impure function from Unit -> Unit.
-    def impure(): Unit \ IO = discard Array#{1, 2, 3} @ Static; ()
+    def impure(): Unit \ Impure = discard Array#{1, 2, 3} @ Static; ()
 
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()
 
     /// A function that requires an impure function.
-    def requiresImpure(_f: a -> b \ IO): Unit = ()
+    def requiresImpure(_f: a -> b \ Impure): Unit = ()
 
     /// A function that requires a pure and an impure function.
-    def requiresPureAndImpure1(_f: a -> b \ ef, _g: a -> b & (not e)): Unit = ()
+    def requiresPureAndImpure1(_f: a -> b \ ef, _g: a -> b \ ~ef): Unit = ()
 
     /// A function that requires a pure and an impure function.
-    def requiresPureAndImpure2(_f: a -> b & (not e), _g: a -> b \ ef): Unit = ()
+    def requiresPureAndImpure2(_f: a -> b \ ~ef, _g: a -> b \ ef): Unit = ()
 
     /// A function that requires at most one pure function.
-    def requiresAtmostOnePure1(_f: a -> b \ ef1, _g: a -> b & (not ef1 and ef2)): Unit = ()
+    def requiresAtmostOnePure1(_f: a -> b \ ef1, _g: a -> b \ ~ef1 + ef2): Unit = ()
 
     /// A function that requires at most one pure function.
-    def requiresAtmostOnePure2(_f: a -> b & (not ef1 and ef2), _g: a -> b \ ef1): Unit = ()
+    def requiresAtmostOnePure2(_f: a -> b \ ~ef1 + ef2, _g: a -> b \ ef1): Unit = ()
 
     // First and last must be the same. Middle must be the inverse.
-    def requiresTwoAndOne(_f: a -> b \ ef, _g: a -> b & (not e), _h: a -> b \ ef): Unit = ()
+    def requiresTwoAndOne(_f: a -> b \ ef, _g: a -> b \ ~ef, _h: a -> b \ ef): Unit = ()
 
     // A unSAT instance.
-    //pub def yikes(_f: a -> b & {{(x \/ y \/ z) /\ (x \/ y \/ not z) /\ (x \/ not y \/ z) /\ (x \/ not y \/ not z) /\ (not x \/ y \/ z) /\ (not x \/ y \/ not z) /\ (not x \/ not y \/ z) /\ (not x \/ not y \/ not z)}}): Unit = ()
+    //pub def yikes(_f: a -> b \ {{(x \/ y \/ z) /\ (x \/ y \/ not z) /\ (x \/ not y \/ z) /\ (x \/ not y \/ not z) /\ (not x \/ y \/ z) /\ (not x \/ y \/ not z) /\ (not x \/ not y \/ z) /\ (not x \/ not y \/ not z)}}): Unit = ()
 
     //@test
     //def testYikes(): Unit = yikes(pure)

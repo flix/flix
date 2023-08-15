@@ -36,8 +36,8 @@ mod MutList {
     ///
     /// Returns a string representation of the given MutList `l`.
     ///
-    pub def toString(l: MutList[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = StringBuilder.new(r2);
+    pub def toString(l: MutList[a, r]): String \ r with ToString[a] = region rc2 {
+        let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -52,25 +52,25 @@ mod MutList {
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(r: Region[r]): MutList[a, r] \ Write(r) =
-        MutList(r, ref Array.new(r, minCapacity()) @ r, ref 0 @ r)
+    pub def new(rc: Region[r]): MutList[a, r] \ r =
+        MutList(rc, ref Array.new(rc, minCapacity()) @ rc, ref 0 @ rc)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty mutable list if `b >= e`.
     ///
-    pub def range(r: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ Write(r) =
+    pub def range(rc: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ r =
         let minCap = minCapacity();
         let d = e - b;
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else Reflect.default() };
-        MutList(r, ref Array.init(r, f, c) @ r, ref d @ r)
+        MutList(rc, ref Array.init(rc, f, c) @ rc, ref d @ rc)
 
     ///
     /// Optionally returns the element at position `i` in the mutable list `v`.
     ///
-    pub def nth(i: Int32, v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def nth(i: Int32, v: MutList[a, r]): Option[a] \ r =
         let MutList(_, a, l) = v;
         if (0 <= i and i < deref l)
             Array.nth(i, deref a)
@@ -80,20 +80,20 @@ mod MutList {
     ///
     /// Returns the number of elements in the given mutable list `v`.
     ///
-    pub def length(v: MutList[a, r]): Int32 \ Read(r) =
+    pub def length(v: MutList[a, r]): Int32 \ r =
         let MutList(_, _, l) = v;
         deref l
 
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    pub def isEmpty(v: MutList[a, r]): Bool \ Read(r) =
+    pub def isEmpty(v: MutList[a, r]): Bool \ r =
         length(v) == 0
 
     ///
     /// Returns `true` if the given element `x` is a member of the given mutable list `v`.
     ///
-    pub def memberOf(x: a, v: MutList[a, r]): Bool \ Read(r) with Eq[a] =
+    pub def memberOf(x: a, v: MutList[a, r]): Bool \ r with Eq[a] =
         exists(y -> y == x, v)
 
     ///
@@ -101,7 +101,7 @@ mod MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def minimum(v: MutList[a, r]): Option[a] \ Read(r) with Order[a] =
+    pub def minimum(v: MutList[a, r]): Option[a] \ r with Order[a] =
         reduceLeft(Order.min, v)
 
     ///
@@ -109,7 +109,7 @@ mod MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def minimumBy(cmp: (a, a) -> Comparison, v: MutList[a, r]): Option[a] \ r =
         reduceLeft(Order.minBy(cmp), v)
 
     ///
@@ -117,7 +117,7 @@ mod MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def maximum(v: MutList[a, r]): Option[a] \ Read(r) with Order[a] =
+    pub def maximum(v: MutList[a, r]): Option[a] \ r with Order[a] =
         reduceLeft(Order.max, v)
 
     ///
@@ -125,7 +125,7 @@ mod MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def maximumBy(cmp: (a, a) -> Comparison, v: MutList[a, r]): Option[a] \ r =
         reduceLeft(Order.maxBy(cmp), v)
 
     ///
@@ -133,19 +133,19 @@ mod MutList {
     ///
     /// Returns `0` if the given mutable list `v` is empty.
     ///
-    pub def count(f: a -> Bool \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
+    pub def count(f: a -> Bool \ ef, v: MutList[a, r]): Int32 \ { ef, r } =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, v)
 
     ///
     /// Returns the sum of all elements in the MutList `v`.
     ///
-    pub def sum(v: MutList[Int32, r]): Int32 \ Read(r) =
+    pub def sum(v: MutList[Int32, r]): Int32 \ r =
         foldLeft((acc, x) -> acc + x, 0, v)
 
     ///
     /// Returns the sum of all elements in the MutList `v` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef, v: MutList[a, r]): Int32 \ { ef, r } =
         foldLeft((acc, x) -> acc + f(x), 0, v)
 
     ///
@@ -153,7 +153,7 @@ mod MutList {
     ///
     /// Returns `false` if the given mutable list `v` is empty.
     ///
-    pub def exists(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
+    pub def exists(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, r } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -170,7 +170,7 @@ mod MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    pub def forAll(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
+    pub def forAll(f: a -> Bool \ ef, v: MutList[a, r]): Bool \ { ef, r } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -187,7 +187,7 @@ mod MutList {
     ///
     /// Returns `None` if the given mutable list `v` is empty.
     ///
-    pub def head(v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def head(v: MutList[a, r]): Option[a] \ r =
         let MutList(_, a, _) = v;
         if (isEmpty(v))
             None
@@ -199,7 +199,7 @@ mod MutList {
     ///
     /// Returns `None` if the given mutable list `v` is empty.
     ///
-    pub def last(v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def last(v: MutList[a, r]): Option[a] \ r =
         let MutList(_, a, l) = v;
         let len = deref l;
         if (len > 0) Some(Array.get(len - 1, deref a)) else None
@@ -207,14 +207,14 @@ mod MutList {
     ///
     /// Alias for `IndexOfLeft`
     ///
-    pub def indexOf(x: a, v: MutList[a, r]): Option[Int32] \ Read(r) with Eq[a] =
+    pub def indexOf(x: a, v: MutList[a, r]): Option[Int32] \ r with Eq[a] =
         indexOfLeft(x, v)
 
     ///
     /// Optionally returns the position of the first occurrence of `x` in `v`
     /// searching from left to right.
     ///
-    pub def indexOfLeft(x: a, v: MutList[a, r]): Option[Int32] \ Read(r) with Eq[a] =
+    pub def indexOfLeft(x: a, v: MutList[a, r]): Option[Int32] \ r with Eq[a] =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -230,7 +230,7 @@ mod MutList {
     /// Optionally returns the position of the first occurrence of `x` in `v`
     /// searching from right to left.
     ///
-    pub def indexOfRight(x: a, v: MutList[a, r]): Option[Int32] \ Read(r) with Eq[a] =
+    pub def indexOfRight(x: a, v: MutList[a, r]): Option[Int32] \ r with Eq[a] =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -245,7 +245,7 @@ mod MutList {
     ///
     /// Alias for `findLeft`.
     ///
-    pub def find(f: a -> Bool, v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def find(f: a -> Bool, v: MutList[a, r]): Option[a] \ r =
         findLeft(f, v)
 
     ///
@@ -254,7 +254,7 @@ mod MutList {
     /// Returns `None` if no element satisfies the given predicate `f`.
     /// Returns `None` if the given mutable list `v` is empty.
     ///
-    pub def findLeft(f: a -> Bool, v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def findLeft(f: a -> Bool, v: MutList[a, r]): Option[a] \ r =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -273,7 +273,7 @@ mod MutList {
     /// Returns `None` if no element satisfies the given predicate `f`.
     /// Returns `None` if the given mutable list `v` is empty.
     ///
-    pub def findRight(f: a -> Bool, v: MutList[a, r]): Option[a] \ Read(r) =
+    pub def findRight(f: a -> Bool, v: MutList[a, r]): Option[a] \ r =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -288,18 +288,18 @@ mod MutList {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(r1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, Read(r2), Write(r1) } =
-        scanLeft(r1, f, s, v)
+    pub def scan(rc1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
+        scanLeft(rc1, f, s, v)
 
     ///
     /// Accumulates the result of applying `f` to `v` going left to right.
     ///
-    pub def scanLeft(r1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, Read(r2), Write(r1) } =
+    pub def scanLeft(rc1: Region[r1], f: (b, a) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = Array.repeat(r1, n, s);
+        let b = Array.repeat(rc1, n, s);
         def loop(i, acc) = {
             if (i >= n)
                 ()
@@ -310,17 +310,17 @@ mod MutList {
             }
         };
         loop(1, s);
-        MutList(r1, ref b @ r1, ref n @ r1)
+        MutList(rc1, ref b @ rc1, ref n @ rc1)
 
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
     ///
-    pub def scanRight(r1: Region[r1], f: (a, b) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, Read(r2), Write(r1) } =
+    pub def scanRight(rc1: Region[r1], f: (a, b) -> b \ ef, s: b, v: MutList[a, r2]): MutList[b, r1] \ { ef, r2, r1 } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = Array.repeat(r1, n, s);
+        let b = Array.repeat(rc1, n, s);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -331,22 +331,22 @@ mod MutList {
             }
         };
         loop(l - 1, s);
-        MutList(r1, ref b @ r1, ref n @ r1)
+        MutList(rc1, ref b @ rc1, ref n @ rc1)
 
     ///
     /// Apply `f` to every element in `v`.
     ///
     /// The result is a new mutable list.
     ///
-    pub def map(r1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
+    pub def map(rc1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new(r1)
+            MutList.new(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(Array.get(0, a));
-            let b = Array.repeat(r1, Array.length(a), x);
+            let b = Array.repeat(rc1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -356,21 +356,21 @@ mod MutList {
                 }
             };
             loop(1);
-            MutList(r1, ref b @ r1, ref l @ r1)
+            MutList(rc1, ref b @ rc1, ref l @ rc1)
         }
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
-    pub def mapWithIndex(r1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
+    pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new(r1)
+            MutList.new(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(0, Array.get(0, a));
-            let b = Array.repeat(r1, Array.length(a), x);
+            let b = Array.repeat(rc1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -380,13 +380,13 @@ mod MutList {
                 }
             };
             loop(1);
-            MutList(r1, ref b @ r1, ref l @ r1)
+            MutList(rc1, ref b @ rc1, ref l @ rc1)
         }
 
     ///
     /// Apply `f` to every element in `v`.
     ///
-    pub def transform!(f: a -> a, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def transform!(f: a -> a, v: MutList[a, r]): Unit \ r =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -403,7 +403,7 @@ mod MutList {
     ///
     /// Apply `f` to every element in `v` along with that element's index.
     ///
-    pub def transformWithIndex!(f: (Int32, a) -> a, v: MutList[a, r]): Unit \ Read(r) =
+    pub def transformWithIndex!(f: (Int32, a) -> a, v: MutList[a, r]): Unit \ r =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -422,7 +422,7 @@ mod MutList {
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: MutList[a, r]): b \ { ef, r } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -443,7 +443,7 @@ mod MutList {
     ///
     /// The implementation is tail recursive.
     ///
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, v: MutList[a, r]): b \ { ef, r } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -463,7 +463,7 @@ mod MutList {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, v: MutList[a, r]): b \ { ef, r } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -479,7 +479,7 @@ mod MutList {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ {ef, Read(r)} with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ {ef, r} with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
 
     ///
@@ -487,7 +487,7 @@ mod MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
+    pub def reduceLeft(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, r } =
         foldLeft((acc, x) -> match acc {
             case Some(y) => Some(f(y, x))
             case None => Some(x)
@@ -498,7 +498,7 @@ mod MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
+    pub def reduceRight(f: (a, a) -> a \ ef, v: MutList[a, r]): Option[a] \ { ef, r } =
         foldRight((x, acc) -> match acc {
             case Some(y) => Some(f(x, y))
             case None => Some(x)
@@ -507,7 +507,7 @@ mod MutList {
     ///
     /// Removes all elements from the given mutable list `v`.
     ///
-    pub def clear!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def clear!(v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
         a := Array.new(r, Array.length(deref a));
         l := 0
@@ -516,18 +516,18 @@ mod MutList {
     /// Returns a shallow copy of the given mutable list `v`.
     /// The capacity of the copy is equal to the length of the list.
     ///
-    pub def copy(r1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } =
+    pub def copy(rc1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
         let MutList(_, a, l) = v;
         let len = deref l;
         if (len > minCapacity())
-            MutList(r1, ref Array.copyOfRange(r1, 0, len, deref a) @ r1, ref len @ r1)
+            MutList(rc1, ref Array.copyOfRange(rc1, 0, len, deref a) @ rc1, ref len @ rc1)
         else
-            MutList(r1, ref Array.copyOfRange(r1, 0, capacity(v), deref a) @ r1, ref len @ r1)
+            MutList(rc1, ref Array.copyOfRange(rc1, 0, capacity(v), deref a) @ rc1, ref len @ rc1)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
     ///
-    pub def pop!(v: MutList[a, r]): Option[a] \ { Read(r), Write(r) } =
+    pub def pop!(v: MutList[a, r]): Option[a] \ r =
         let MutList(_, a, l) = v;
         let len = deref l;
         if (len > 0)
@@ -542,7 +542,7 @@ mod MutList {
     ///
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
-    pub def push!(x: a, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def push!(x: a, v: MutList[a, r]): Unit \ r =
         let MutList(_, a, l) = v;
         let len = deref l;
         if (capacity(v) - len == 0)
@@ -558,7 +558,7 @@ mod MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
-    pub def insert!(x: a, i: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def insert!(x: a, i: Int32, v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
         let len = deref l;
         if (capacity(v) - len == 0)
@@ -576,7 +576,7 @@ mod MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, no element is removed.
     ///
-    pub def remove!(i: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def remove!(i: Int32, v: MutList[a, r]): Unit \ r =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -603,19 +603,19 @@ mod MutList {
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
         Foldable.forEach(x -> MutList.push!(x, v), m)
 
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+    pub def append!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
         pushAll!(m, v)
 
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
     ///
-    pub def retain!(f: a -> Bool, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def retain!(f: a -> Bool, v: MutList[a, r]): Unit \ r =
         let MutList(r, a1, l1) = v;
         let l = MutList.new(r);
         forEach(e -> if (f(e)) push!(e, l) else (), v);
@@ -626,13 +626,13 @@ mod MutList {
     ///
     /// Replaces all occurrences of the `from` with `to` in the given mutable list `v`.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Eq[a] =
+    pub def replace!(from: {from = a}, to: {to = a}, v: MutList[a, r]): Unit \ r with Eq[a] =
         transform!(e -> if (e == from.from) to.to else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.
     ///
-    pub def reverse!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def reverse!(v: MutList[a, r]): Unit \ r =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -655,7 +655,7 @@ mod MutList {
     ///
     /// Truncates the mutable list as needed.
     ///
-    def shrinkTo!(n: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    def shrinkTo!(n: Int32, v: MutList[a, r]): Unit \ r =
         let minCap = minCapacity();
         let capv = capacity(v);
         let MutList(r, a, l) = v;
@@ -671,7 +671,7 @@ mod MutList {
     ///
     /// Shrinks the given mutable list `v` to its actual size.
     ///
-    pub def shrink!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def shrink!(v: MutList[a, r]): Unit \ r =
         shrinkTo!(length(v), v)
 
     ///
@@ -681,7 +681,7 @@ mod MutList {
     ///
     /// If the given length `l` is negative, all elements are removed.
     ///
-    pub def truncate!(l: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def truncate!(l: Int32, v: MutList[a, r]): Unit \ r =
         if (l < 0)
             clear!(v)
         else if (l < length(v)) {
@@ -701,27 +701,27 @@ mod MutList {
     ///
     /// The content of the mutable list is unchanged.
     ///
-    pub def reserve!(n: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def reserve!(n: Int32, v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
         a := Array.copyOfRange(r, 0, (deref l) + n, deref a)
 
     ///
     /// Returns `v` as an immutable list.
     ///
-    pub def toList(v: MutList[a, r]): List[a] \ Read(r) =
+    pub def toList(v: MutList[a, r]): List[a] \ r =
         foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(r1: Region[r1], v: MutList[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } =
+    pub def toArray(rc1: Region[r1], v: MutList[a, r2]): Array[a, r1] \ { r2, r1 } =
         let MutList(_, a, l) = v;
-        Array.copyOfRange(r1, 0, deref l, deref a)
+        Array.copyOfRange(rc1, 0, deref l, deref a)
 
     ///
     /// Returns `xs` as a vector.
     ///
-    pub def toVector(xs: MutList[a, r]): Vector[a] \ Read(r) = region rc {
+    pub def toVector(xs: MutList[a, r]): Vector[a] \ r = region rc {
         let arr = Array.new(rc, length(xs));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), xs);
         Array.toVector(arr)
@@ -730,21 +730,21 @@ mod MutList {
     ///
     /// Returns the mutable list `xs` as a chain.
     ///
-    pub def toChain(xs: MutList[a, r]): Chain[a] \ Read(r) =
+    pub def toChain(xs: MutList[a, r]): Chain[a] \ r =
         foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
 
     ///
     /// Returns `v` as a MutDeque.
     ///
-    pub def toMutDeque(r1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = MutDeque.new(r1);
+    pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
+        let d = MutDeque.new(rc1);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements in the same order, i.e. are structurally equal.
     ///
-    pub def sameElements(v1: MutList[a, r1], v2: MutList[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
+    pub def sameElements(v1: MutList[a, r1], v2: MutList[a, r2]): Bool \ { r1, r2 } with Eq[a] =
         let MutList(_, ra1, rl1) = v1;
         let MutList(_, ra2, rl2) = v2;
         let a1 = deref ra1;
@@ -765,15 +765,15 @@ mod MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: MutList[a, r]): String \ Read(r) with ToString[a] =
+    pub def join(sep: String, v: MutList[a, r]): String \ r with ToString[a] =
         joinWith(ToString.toString, sep, v)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
-        let sb = StringBuilder.new(r1);
+    pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, r } = region rc1 {
+        let sb = StringBuilder.new(rc1);
         let step = (i, x) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
@@ -790,7 +790,7 @@ mod MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutList(_, a, len) = l;
         let len1 = deref len;
         let ix = ref 0 @ rc;
@@ -809,7 +809,7 @@ mod MutList {
     ///
     /// Applies `f` to all the elements in `v`.
     ///
-    pub def forEach(f: a -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, r } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -826,7 +826,7 @@ mod MutList {
     ///
     /// Applies `f` to all the elements in `v` along with that element's index.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, r } =
         let MutList(_, ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -845,7 +845,7 @@ mod MutList {
     ///
     /// The mutable list will be shrunk to 1/2 of its size if the load factor is less than 1/4.
     ///
-    pub def compress!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def compress!(v: MutList[a, r]): Unit \ r =
         let c = capacity(v);
         let len = length(v);
         let loadFactor = Int32.toFloat32(len) / Int32.toFloat32(c);
@@ -861,7 +861,7 @@ mod MutList {
     ///
     /// Returns the capacity of `v`.
     ///
-    def capacity(v: MutList[a, r]): Int32 \ Read(r) =
+    def capacity(v: MutList[a, r]): Int32 \ r =
         let MutList(_, a, _) = v;
         Array.length(deref a)
 
@@ -873,8 +873,8 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(r1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } with Order[a] =
-        sortWith(r1, Order.compare, v)
+    pub def sort(rc1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[a] =
+        sortWith(rc1, Order.compare, v)
 
     ///
     /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
@@ -884,8 +884,8 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(r1: Region[r1], f: a -> b, v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } with Order[b] =
-        sortWith(r1, Order.compare `on` f, v)
+    pub def sortBy(rc1: Region[r1], f: a -> b, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } with Order[b] =
+        sortWith(rc1, Order.compare `on` f, v)
 
     ///
     /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
@@ -895,8 +895,8 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(r1: Region[r1], cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } =
-        let vCopy = copy(r1, v);
+    pub def sortWith(rc1: Region[r1], cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r1] \ { r, r1 } =
+        let vCopy = copy(rc1, v);
         sortWith!(cmp, vCopy);
         vCopy
 
@@ -908,7 +908,7 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Order[a] =
+    pub def sort!(v: MutList[a, r]): Unit \ r with Order[a] =
         sortWith!(Order.compare, v)
 
     ///
@@ -919,7 +919,7 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Order[b] =
+    pub def sortBy!(f: a -> b, v: MutList[a, r]): Unit \ r with Order[b] =
         sortWith!(Order.compare `on` f, v)
 
     ///
@@ -930,15 +930,15 @@ mod MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def sortWith!(cmp: (a,a) -> Comparison, v: MutList[a, r]): Unit \ r =
         let MutList(_, a, l) = v;
         Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region r2 {
-        toArray(r2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
+    pub def shuffle(rc1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { r1, NonDet } = region rc2 {
+        toArray(rc2, v) !> Array.shuffle(rnd) |> Array.toMutList(rc1)
     }
 
 }

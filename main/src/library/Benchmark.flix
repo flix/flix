@@ -63,7 +63,7 @@ mod Benchmark {
     /// One seconds is `1_000_000_000i64`.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region r {
+    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region rc {
         if (Array.length(bs) == 0) {
             println("No benchmarks");
             1
@@ -72,7 +72,7 @@ mod Benchmark {
             let t = nanoTime();
             printHeader();
             println("");
-            let benchmarksWithEstimates = warmupAndEstimate(r, bs);
+            let benchmarksWithEstimates = warmupAndEstimate(rc, bs);
             println("");
             println("");
             printCols();
@@ -87,9 +87,9 @@ mod Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(r1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ IO = {
+    def warmupAndEstimate(rc1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ IO = {
         Console.print("Warmup: ");
-        bs |> Array.map(r1, b -> {
+        bs |> Array.map(rc1, b -> {
             let time = runBenchmarkOnce(b);
             Console.print(".");
             (b, time)

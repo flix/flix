@@ -38,8 +38,7 @@ sealed trait UnkindedType {
     case t: UnkindedType.UnappliedAssocType => t
     case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
-    case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
-    case UnkindedType.ReadWrite(tpe, loc) => UnkindedType.ReadWrite(tpe.map(f), loc)
+    case UnkindedType.Arrow(eff, arity, loc) => UnkindedType.Arrow(eff.map(_.map(f)), arity, loc)
     case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(tpe.map(f), loc)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
@@ -72,28 +71,29 @@ sealed trait UnkindedType {
   }
 
   /**
-    * Returns the type variables in the given type.
+    * Type vars that are certain to appear in the type even after reduction.
+    *
+    * (Boolean variables may appear in this set even if they are not essential.)
     */
-  def typeVars: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
-    case UnkindedType.Var(sym, loc) => SortedSet(sym)
-    case UnkindedType.Cst(tc, loc) => SortedSet.empty
-    case UnkindedType.Enum(sym, loc) => SortedSet.empty
-    case UnkindedType.RestrictableEnum(sym, loc) => SortedSet.empty
-    case UnkindedType.UnappliedAlias(sym, loc) => SortedSet.empty
-    case UnkindedType.UnappliedAssocType(sym, loc) => SortedSet.empty
-    case UnkindedType.Apply(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
-    case UnkindedType.Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) =>
-      val p = pur.iterator.flatMap(_.typeVars).to(SortedSet)
-      val e = eff.iterator.flatMap(_.flatMap(_.typeVars)).to(SortedSet)
-      p ++ e
+  def definiteTypeVars: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
+    case UnkindedType.Var(sym, _) => SortedSet(sym)
+    case UnkindedType.Cst(_, _) => SortedSet.empty
+    case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
+    case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
-    case UnkindedType.CaseComplement(tpe, loc) => tpe.typeVars
-    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
-    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
-    case UnkindedType.ReadWrite(tpe, loc) => tpe.typeVars
-    case UnkindedType.Ascribe(tpe, kind, loc) => tpe.typeVars
-    case UnkindedType.Alias(cst, args, tpe, loc) => args.flatMap(_.typeVars).to(SortedSet)
-    case UnkindedType.AssocType(cst, arg, loc) => arg.typeVars
+    case UnkindedType.CaseComplement(tpe, _) => tpe.definiteTypeVars
+    case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
+    case UnkindedType.CaseIntersection(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
+    case UnkindedType.Ascribe(tpe, _, _) => tpe.definiteTypeVars
+
+    // For aliases we used the reduced type
+    case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
+    // For associated types we cannot yet reduce, so we are conservative and say none.
+    case UnkindedType.AssocType(_, _, _) => SortedSet.empty
   }
 }
 
@@ -190,25 +190,13 @@ object UnkindedType {
   /**
     * A function type.
     */
-  case class Arrow(purAndEff: PurityAndEffect, arity: Int, loc: SourceLocation) extends UnkindedType {
+  case class Arrow(eff: Option[UnkindedType], arity: Int, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case Arrow(purAndEff2, arity2, _) => purAndEff2 == purAndEff && arity == arity2
+      case Arrow(eff2, arity2, _) => eff2 == eff && arity == arity2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(purAndEff, arity)
-  }
-
-  /**
-    * A read or write type.
-    */
-  case class ReadWrite(tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
-    override def equals(that: Any): Boolean = that match {
-      case ReadWrite(tpe2, _) => tpe == tpe2
-      case _ => false
-    }
-
-    override def hashCode(): Int = Objects.hash(tpe)
+    override def hashCode(): Int = Objects.hash(eff, arity)
   }
 
   /**
@@ -295,13 +283,6 @@ object UnkindedType {
     override def hashCode(): Int = Objects.hash(cst, arg)
   }
 
-  case class PurityAndEffect(pur: Option[UnkindedType], eff: Option[List[UnkindedType]]) {
-    /**
-      * Maps the function `f` over the contents of this PurityAndEffect
-      */
-    def map(f: UnkindedType => UnkindedType): PurityAndEffect = PurityAndEffect(pur.map(f), eff.map(_.map(f)))
-  }
-
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
@@ -364,8 +345,8 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val purAndEff = PurityAndEffect(Some(UnkindedType.Cst(TypeConstructor.False, loc)), None)
-    mkApply(UnkindedType.Arrow(purAndEff, 2, loc), List(a, b), loc)
+    val eff = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
+    mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
   /**
@@ -496,9 +477,9 @@ object UnkindedType {
   def mkIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation): UnkindedType = UnkindedType.mkApply(UnkindedType.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
 
   /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ e.
     */
-  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType.PurityAndEffect, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: Option[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = {
     val arrow = UnkindedType.Arrow(e, as.length + 1, loc)
     val inner = as.foldLeft(arrow: UnkindedType) {
       case (acc, x) => UnkindedType.Apply(acc, x, loc)
@@ -516,8 +497,7 @@ object UnkindedType {
     case tpe: RestrictableEnum => tpe
     case tpe: UnkindedType.CaseSet => tpe
     case Apply(tpe1, tpe2, loc) => Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
-    case Arrow(purAndEff, arity, loc) => Arrow(purAndEff.map(eraseAliases), arity, loc)
-    case ReadWrite(tpe, loc) => ReadWrite(eraseAliases(tpe), loc)
+    case Arrow(eff, arity, loc) => Arrow(eff.map(eraseAliases), arity, loc)
     case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(eraseAliases(tpe), loc)
     case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
@@ -579,7 +559,7 @@ object UnkindedType {
       val elmType = getFlixType(comp)
       UnkindedType.mkApply(
         UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.False, SourceLocation.Unknown)),
+        List(elmType, UnkindedType.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)),
         SourceLocation.Unknown
       )
     }

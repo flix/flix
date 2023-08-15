@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
 class ExampleSuite extends FlixSuite(incremental = true) {
 
-  private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
+  private implicit val TestOptions: Options = Options.TestWithLibAll
 
   mkTestDir("examples")
   mkTestDir("examples/larger-examples/datalog")

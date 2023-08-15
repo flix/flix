@@ -118,6 +118,11 @@ object Validation {
   final val SuccessNone = Success(None)
 
   /**
+    * Represents a successful validation with the unit value.
+    */
+  final val SuccessUnit = Success(())
+
+  /**
     * Represents a success `value`.
     */
   case class Success[T, E](t: T) extends Validation[T, E] {
@@ -347,6 +352,18 @@ object Validation {
     (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8) => (t9: T9) => f(t1, t2, t3, t4, t5, t6, t7, t8, t9)
 
   /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => T11): (T1, T2, T3, T4, T5, T6, T7, T8, T9) => T10 => T11 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9) => (t10: T10) => f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => T12): (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => T11 => T12 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10) => (t11: T11) => f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)
+
+  /**
     * Maps over t1.
     */
   def mapN[T1, U, E](t1: Validation[T1, E])
@@ -421,6 +438,26 @@ object Validation {
                                                      t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
                                                     (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => U): Validation[U, E] =
     ap(mapN(t1, t2, t3, t4, t5, t6, t7, t8)(curry(f)))(t9)
+
+  /**
+    * Maps over t1, t2, t3, t4, t5, t6, t7, t8, t9, and t10
+    */
+  def mapN[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                                          t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                          t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E],
+                                                          t10: Validation[T10, E])
+                                                         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => U): Validation[U, E] =
+    ap(mapN(t1, t2, t3, t4, t5, t6, t7, t8, t9)(curry(f)))(t10)
+
+  /**
+    * Maps over t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, and t11
+    */
+  def mapN[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                                               t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                               t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E],
+                                                               t10: Validation[T10, E], t11: Validation[T11, E])
+                                                              (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => U): Validation[U, E] =
+    ap(mapN(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)(curry(f)))(t11)
 
   /**
     * FlatMaps over t1.

@@ -33,7 +33,9 @@ instance Add[Float64] {
 }
 
 instance Add[BigDecimal] {
-    pub def add(x: BigDecimal, y: BigDecimal): BigDecimal = $BIGDECIMAL_ADD$(x, y)
+    pub def add(x: BigDecimal, y: BigDecimal): BigDecimal =
+        import java.math.BigDecimal.add(BigDecimal): BigDecimal \ {};
+        x `add` y
 }
 
 instance Add[Int8] {
@@ -53,7 +55,9 @@ instance Add[Int64] {
 }
 
 instance Add[BigInt] {
-    pub def add(x: BigInt, y: BigInt): BigInt = $BIGINT_ADD$(x, y)
+    pub def add(x: BigInt, y: BigInt): BigInt =
+        import java.math.BigInteger.add(BigInt): BigInt \ {};
+        x `add` y
 }
 
 instance Add[String] {

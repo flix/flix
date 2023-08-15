@@ -2,8 +2,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
@@ -478,7 +478,7 @@ object SafetyError {
     * @param exp the par expression.
     * @param loc the source location of the expression.
     */
-  case class IllegalParExpression(exp: Expression, loc: SourceLocation) extends SafetyError {
+  case class IllegalParExpression(exp: Expr, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"Unable to parallelize $exp"
 
     override def message(formatter: Formatter): String = {
@@ -550,6 +550,50 @@ object SafetyError {
          |An example of a type parameter of kind 'Region':
          |
          |enum MyEnum[r: Region] { ... }
+         |""".stripMargin
+    )
+  }
+
+  /**
+    * An error raised to indicate that a function marked with the `@test` annotation
+    * has at least one non-unit parameter.
+    *
+    * @param loc the source location of the parameter.
+    */
+  case class IllegalTestParameters(loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Test entry point must not have parameters."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Test entry point must not have parameters.
+
+         |${code(loc, "Parameter for test function occurs here.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""
+         |A test function must not have parameters.
+         |
+         |If you need to test your code with different values,
+         |you can create a helper function that takes parameters.
+         |Then, you can call the helper function with different
+         |values to perform various tests.
+         |
+         |Example
+         |
+         |    @test
+         |    def test01(x: Int32): Int32 = x + 1
+         |
+         |Should be
+         |
+         |    @test
+         |    def test01(): Int32 = testHelper(1)
+         |
+         |    def testHelper(x: Int32): Int32 = x + 1
+         |
          |""".stripMargin
     )
   }

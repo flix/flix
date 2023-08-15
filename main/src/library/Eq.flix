@@ -77,8 +77,13 @@ instance Eq[Float64] {
 }
 
 instance Eq[BigDecimal] {
-    pub def eq(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_EQ$(x, y)
-    pub override def neq(x: BigDecimal, y: BigDecimal): Bool = $BIGDECIMAL_NEQ$(x, y)
+    pub def eq(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) == 0
+
+    pub override def neq(x: BigDecimal, y: BigDecimal): Bool =
+        import java.math.BigDecimal.compareTo(BigDecimal): Int32 \ {};
+        (x `compareTo` y) != 0
 }
 
 instance Eq[Int8] {
@@ -92,8 +97,8 @@ instance Eq[Int16] {
 }
 
 instance Eq[Int32] {
-    pub def eq(x: Int32, y: Int32): Bool = $INT16_EQ$(x, y)
-    pub override def neq(x: Int32, y: Int32): Bool = $INT16_NEQ$(x, y)
+    pub def eq(x: Int32, y: Int32): Bool = $INT32_EQ$(x, y)
+    pub override def neq(x: Int32, y: Int32): Bool = $INT32_NEQ$(x, y)
 }
 
 instance Eq[Int64] {
@@ -102,13 +107,20 @@ instance Eq[Int64] {
 }
 
 instance Eq[BigInt] {
-    pub def eq(x: BigInt, y: BigInt): Bool = $BIGINT_EQ$(x, y)
-    pub override def neq(x: BigInt, y: BigInt): Bool = $BIGINT_NEQ$(x, y)
+    pub def eq(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) == 0
+
+    pub override def neq(x: BigInt, y: BigInt): Bool =
+        import java.math.BigInteger.compareTo(BigInt): Int32 \ {};
+        (x `compareTo` y) != 0
 }
 
 instance Eq[String] {
-    pub def eq(x: String, y: String): Bool = $STRING_EQ$(x, y)
-    pub override def neq(x: String, y: String): Bool = $STRING_NEQ$(x, y)
+    pub def eq(x: String, y: String): Bool =
+        import java.lang.String.equals(##java.lang.Object): Bool \ {};
+        equals(x, checked_cast(y))
+
 }
 
 instance Eq[(a1, a2)] with Eq[a1], Eq[a2] {

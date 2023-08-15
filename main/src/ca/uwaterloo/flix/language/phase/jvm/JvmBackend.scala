@@ -18,12 +18,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.Validation
 
 import java.lang.reflect.InvocationTargetException
 
@@ -32,7 +29,7 @@ object JvmBackend {
   /**
     * Emits JVM bytecode for the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): CompilationResult = flix.phase("JvmBackend") {
 
     //
     // Put the AST root into implicit scope.
@@ -43,11 +40,6 @@ object JvmBackend {
     val allClasses = flix.subphase("CodeGen") {
 
       //
-      // Compute the set of closures in the program.
-      //
-      val closures = root.closures
-
-      //
       // Compute the set of namespaces in the program.
       //
       val namespaces = JvmOps.namespacesOf(root)
@@ -56,11 +48,6 @@ object JvmBackend {
       // Compute the set of types in the program.
       //
       val types = JvmOps.typesOf(root)
-
-      //
-      // Compute the set of instantiated tags in the program.
-      //
-      val tags = JvmOps.tagsOf(types)
 
       val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
       val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
@@ -107,17 +94,17 @@ object JvmBackend {
       //
       // Generate closure classes for each closure in the program.
       //
-      val closureClasses = GenClosureClasses.gen(closures)
+      val closureClasses = GenClosureClasses.gen(root.defs)
 
       //
       // Generate enum interfaces for each enum type in the program.
       //
-      val enumInterfaces = GenEnumInterfaces.gen(types)
+      val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
 
       //
       // Generate tag classes for each enum instantiation in the program.
       //
-      val tagClasses = GenTagClasses.gen(tags)
+      val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
 
       //
       // Generate tuple classes for each tuple type in the program.
@@ -246,7 +233,7 @@ object JvmBackend {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes)
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -257,15 +244,17 @@ object JvmBackend {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes)
     }
   }
 
   /**
-    * Returns a map from definition symbols to executable functions (backed by JVM backend).
+    * Returns a map from non-closure definition symbols to executable functions (backed by JVM backend).
     */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
+      case (macc, (_, defn)) if defn.cparams.nonEmpty =>
+        macc
       case (macc, (sym, _)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))
@@ -280,7 +269,6 @@ object JvmBackend {
       /// Retrieve the definition and its type.
       ///
       val defn = root.defs(sym)
-      val MonoType.Arrow(_, _) = defn.tpe
 
       ///
       /// Construct the arguments array.

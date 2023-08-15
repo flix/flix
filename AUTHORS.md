@@ -59,3 +59,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Magnus Holm Rasmussen](https://github.com/mR4smussen)
 - [Daniel Welch](https://github.com/dtwelch)
 - [Sam Ezeh](https://github.com/dignissimus)
+- [Holger Dal Mogensen](https://github.com/sockmaster27)
+- [Roland Csaszar](https://github.com/Release-Candidate/)
+- [Ziyao Wei](https://github.com/ZiyaoWei)
+- [Xavier deSouza](https://github.com/xdesou01)

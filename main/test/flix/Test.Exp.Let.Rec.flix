@@ -163,7 +163,7 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed01(): Bool =
-        def succ(x): Int = x + 1;
+        def succ(x): Int32 = x + 1;
         succ(1) == 2
 
     ///
@@ -171,16 +171,16 @@ mod Test.Exp.LetRec {
     ///
     @test
     def testLetRecAscribed02(): Bool =
-        def succ(x): Int \ {} = x + 1;
+        def succ(x): Int32 \ {} = x + 1;
         succ(1) == 2
 
     ///
     /// Nested definitions with type ascription
     ///
     @test
-    def testLetRecAscribed03(): Bool = region rh {
-        def incr(x): Int \ { Read(rh), Write(rh) } = x := deref x + 1;
-        let r = ref 1 @ rh;
+    def testLetRecAscribed03(): Bool = region rc {
+        def incr(x): Unit \ rc = x := deref x + 1;
+        let r = ref 1 @ rc;
         incr(r);
         deref r == 2
     }

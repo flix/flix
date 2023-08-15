@@ -92,7 +92,7 @@ instance Collectable[Set] {
 }
 
 instance Iterable[Set] {
-    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
 mod Set {
@@ -100,8 +100,8 @@ mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] = region r {
-        let sb = StringBuilder.new(r);
+    pub def toString(s: Set[a]): String with ToString[a] = region rc {
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -128,7 +128,7 @@ mod Set {
     ///
     def useParallelEvaluation(s: Set[a]): Bool =
         let Set(t) = s;
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -499,7 +499,7 @@ mod Set {
     /// Returns the set `s` as a list.
     ///
     pub def toList(s: Set[a]): List[a] =
-        foldLeft((acc, x) -> x :: acc, Nil, s)
+        foldRight((x, acc) -> x :: acc, Nil, s)
 
     ///
     /// Returns the set `s` as a chain.
@@ -525,15 +525,15 @@ mod Set {
     ///
     /// Returns `s` as a MutDeque.
     ///
-    pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
-        let d = MutDeque.new(r);
+    pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), s);
         d
 
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
+    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
         MutSet.MutSet(rc, ref s @ rc)
 
     ///
@@ -588,15 +588,15 @@ mod Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =
         let Set(t) = s;
         RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ Write(r) =
-        iterator(r, s) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ r =
+        iterator(rc, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns the concatenation of the string representation

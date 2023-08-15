@@ -36,37 +36,6 @@ sealed trait ResolutionError extends CompilationMessage {
 object ResolutionError {
 
   /**
-    * Ambiguous Tag Error.
-    *
-    * @param tag  the tag.
-    * @param ns   the current namespace.
-    * @param locs the source location of the matched tags.
-    * @param loc  the location where the error occurred.
-    */
-  case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Ambiguous tag."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Ambiguous tag '${red(tag)}'.
-         |
-         |${code(loc, "ambiguous tag name.")}
-         |
-         |The tag is defined in multiple enums:
-         |
-         |${appendLocations(locs, "tag is defined in this enum.", formatter)}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Prefix the tag with the enum name."
-    })
-
-  }
-
-  /**
     * Illegal Type Error.
     *
     * @param tpe the illegal type.
@@ -307,36 +276,6 @@ object ResolutionError {
   }
 
   /**
-    * Opaque Enum Error.
-    *
-    * @param sym the enum symbol.
-    * @param ns  the namespace from which the enum is opaque.
-    * @param loc the location where the error occurred.
-    */
-  case class OpaqueEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Opaque."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Enum '${red(sym.toString)}' is opaque from the namespace '${cyan(ns.toString)}'.
-         |
-         |${code(loc, "opaque enum.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"""Opaque enums cannot be constructed or destructed outside their declaring namespace.
-         |
-         |${underline("Tip:")} Use helper functions from the enum's namespace.
-         |""".stripMargin
-    })
-
-  }
-
-  /**
     * Inaccessible Type Alias Error.
     *
     * @param sym the type alias symbol.
@@ -432,12 +371,13 @@ object ResolutionError {
   /**
     * Undefined Name Error.
     *
-    * @param qn  the unresolved name.
-    * @param ns  the current namespace.
-    * @param env the variables in the scope.
-    * @param loc the location where the error occurred.
+    * @param qn    the unresolved name.
+    * @param ns    the current namespace.
+    * @param env   the variables in the scope.
+    * @param isUse true if the undefined name occurs in a use.
+    * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -1129,6 +1069,74 @@ object ResolutionError {
         |}
         |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that an associated type application is not allowed.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
+    override def summary: String = " Illegal associated type application."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal associated type application.
+         |
+         |${code(loc, "illegal associated type application.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      "An associated type may only be applied to a variable."
+    })
+  }
+
+  /**
+    * An error raised to indicate a duplicate associated type definition.
+    *
+    * @param name the name of the duplicated associated type definition.
+    * @param loc1 the location of the first associated type definition.
+    * @param loc2 the location of the second associated type definition.
+    */
+  case class DuplicateAssocTypeDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Duplicate associated type definition: $name."
+
+    // TODO ASSOC-TYPES also show other loc
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Duplicate associated type definition.
+         |
+         |${code(loc2, "duplicate associated type definition.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+
+    val loc: SourceLocation = loc2
+  }
+
+  /**
+    * An error raised to indicate a missing associated type definition.
+    *
+    * @param name the name of the missing associated type definition.
+    * @param loc the location of the instance symbol where the error occurred.
+    */
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Missing associated type definition: $name."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing associated type definition: $name.
+         |
+         |${code(loc, s"missing associated type definition: $name.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

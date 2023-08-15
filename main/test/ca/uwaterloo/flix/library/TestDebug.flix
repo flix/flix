@@ -212,7 +212,7 @@ mod TestDebug {
     @test
     def testNullStringify04(): Bool = {
         let s = stringify(Poly.This(unchecked_cast(null as String)));
-        s == "This"
+        s == "This(null)"
     }
 
     @test
@@ -222,8 +222,8 @@ mod TestDebug {
     }
 
     @test
-    def testNullStringify06(): Bool = region r {
-        let s = stringify(Array#{unchecked_cast(null as String), "42"} @ r);
+    def testNullStringify06(): Bool = region rc {
+        let s = stringify(Array#{unchecked_cast(null as String), "42"} @ rc);
         s == "[null, 42]"
     }
 

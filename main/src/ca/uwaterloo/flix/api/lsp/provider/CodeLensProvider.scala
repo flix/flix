@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
+import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range, ResponseStatus}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
@@ -28,7 +28,7 @@ object CodeLensProvider {
     */
   def processCodeLens(uri: String)(implicit index: Index, root: Option[Root]): JObject = {
     val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
-    ("status" -> "success") ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
+    ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
 
   /**
@@ -42,7 +42,7 @@ object CodeLensProvider {
     getEntryPoints(uri)(root.get).map {
       case sym =>
         val args = List(JString(sym.toString))
-        val command = Command("Run", "flix.runMain", args)
+        val command = Command("▶ Run", "flix.runMain", args)
         val range = Range.from(sym.loc)
         CodeLens(range, Some(command))
     }
@@ -58,7 +58,7 @@ object CodeLensProvider {
 
     getTests(uri)(root.get).map {
       case sym =>
-        val command = Command("Run Tests", "flix.cmdTests", Nil)
+        val command = Command("▶ Run Tests", "flix.cmdTests", Nil)
         val range = Range.from(sym.loc)
         CodeLens(range, Some(command))
     }

@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Case, Root}
+import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -28,19 +28,19 @@ import org.objectweb.asm.Opcodes._
 object GenTagClasses {
 
   /**
-    * Returns the set of tuple interfaces for the given set of types `ts`.
+    * Returns the set of tuple interfaces for the given cases (also called tags).
     */
-  def gen(ts: Set[TagInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
+  def gen(tags: Iterable[Case])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    tags.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tag) =>
-        val jvmType = JvmOps.getTagClassType(tag)
+        val jvmType = JvmOps.getTagClassType(tag.sym)
         val jvmName = jvmType.name
         val bytecode = genByteCode(tag)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
     }
   }
 
-  /** Generate bytecode for each enum case.
+  /** Generate bytecode for each enum case (also called tag).
     *
     * First we generate bytecode for enum case interface:
     * This interface will generate a single method called `getValue` which does not have a parameter and returns the value
@@ -52,11 +52,11 @@ object GenTagClasses {
     * This class will extend the enum case interface generated for the same enum case with the same field type.
     * This class contains one field: `value`. `value` contains the field of the case.
     * If the field is primitive, then `value` is of the type of that primitive, otherwise, `value` is just an object.
-    * For example, for the case `Ok[Int32]` we generate:
+    * For example, for the case `Some$123` (corresponding to `Some[Int32]`) we generate:
     *
     * public int value;
     *
-    * but for the case `Ok[List[Int32]]` we generate:
+    * but for the case `Some$32` (corresponding to `Some[List[Int32]]`) we generate:
     *
     * public Object value;
     *
@@ -65,7 +65,7 @@ object GenTagClasses {
     * `equals(Object)`.
     * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
     * `getBoxedTagValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
-    * `getBoxedTagValue()` of the class representing `Ok[Int32]` is as follows:
+    * `getBoxedTagValue()` of the class representing `Some$123` (corresponding to `Some[Int32]`) is as follows:
     *
     * public final int getValue() {
     * return this.value;
@@ -91,15 +91,15 @@ object GenTagClasses {
     * throw new Exception("equals method shouldn't be called");
     * }
     */
-  private def genByteCode(tag: TagInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(tag: Case)(implicit root: Root, flix: Flix): Array[Byte] = {
     // The JvmType of the interface for enum of `tag`.
-    val superType = JvmOps.getEnumInterfaceType(tag.enumType)
+    val superType = JvmOps.getEnumInterfaceType(tag.sym.enumSym)
 
     // The JvmType of the class for `tag`..
-    val classType = JvmOps.getTagClassType(tag)
+    val classType = JvmOps.getTagClassType(tag.sym)
 
     // The erased JvmType of the value of `tag`.
-    val valueType = JvmOps.getErasedJvmType(tag.tagType)
+    val valueType = JvmOps.getErasedJvmType(tag.tpe)
 
     // Create a new class writer.
     val visitor = AsmOps.mkClassWriter()
@@ -139,7 +139,7 @@ object GenTagClasses {
     AsmOps.compileGetBoxedTagValueMethod(visitor, classType, valueType)
 
     // Generate the `getTag` method.
-    compileGetTagMethod(visitor, tag.tag)
+    compileGetTagMethod(visitor, tag.sym.name)
 
     compileToStringMethod(visitor, classType, tag)
 
@@ -200,7 +200,7 @@ object GenTagClasses {
   /**
     * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
     * This methods returns an string containing the tag name.
-    * For example, `Val[Char]` has following `getTag()`method:
+    * For example, `Val$42` (corresponding to `Val[Char]`) has following `getTag()`method:
     *
     * public final String getTag() {
     * return "Var";
@@ -217,15 +217,15 @@ object GenTagClasses {
     method.visitEnd()
   }
 
-  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: TagInfo)(implicit root: Root, flix: Flix): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: Case)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    tag.tagType match {
+    tag.tpe match {
       case MonoType.Unit => // "$Tag"
-        method.visitLdcInsn(tag.tag)
+        method.visitLdcInsn(tag.sym.name)
         method.visitInsn(ARETURN)
 
       case _ => // "$Tag($value)" or "$Tag$value" if value already prints "(...)"
-        val printParanthesis = tag.tagType match {
+        val printParanthesis = tag.tpe match {
           case MonoType.Tuple(_) => false
           case MonoType.Unit => false
           case _ => true
@@ -236,7 +236,7 @@ object GenTagClasses {
         method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
         method.visitInsn(DUP)
         method.visitInsn(ICONST_0)
-        method.visitLdcInsn(tag.tag + (if (printParanthesis) "(" else ""))
+        method.visitLdcInsn(tag.sym.name + (if (printParanthesis) "(" else ""))
         method.visitInsn(AASTORE)
         method.visitInsn(DUP)
         method.visitInsn(ICONST_1)

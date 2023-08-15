@@ -154,7 +154,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Reload => execReload()
-    case Command.Doc(s) => execDoc(s)
+    case Command.Info(s) => execInfo(s)
     case Command.Quit => execQuit()
     case Command.Help => execHelp()
     case Command.Praise => execPraise()
@@ -187,7 +187,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Displays documentation for the given identifier
     */
-  private def execDoc(s: String)(implicit terminal: Terminal): Unit = {
+  private def execInfo(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
     val classSym = Symbol.mkClassSym(s)
     val defnSym = Symbol.mkDefnSym(s)
@@ -236,7 +236,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  Command       Arguments     Purpose")
     w.println()
     w.println("  :reload :r                  Recompiles every source file.")
-    w.println("  :doc :d       <fqn>         Displays documentation for <fqn>.")
+    w.println("  :info :i      <fqn>         Displays documentation for <fqn>.")
     w.println("  :init                       Creates a new project in the current directory.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
