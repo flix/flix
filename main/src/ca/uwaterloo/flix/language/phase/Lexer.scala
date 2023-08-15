@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -9,7 +9,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either expressed or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -20,13 +20,12 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, LexerErr, ReadAst, Token, TokenKind}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
-
 import scala.collection.mutable
 
 
-// TODO: Should there be a max nesting level of block comments? 256?
+// TODO: internals? something to handle $DEFAULT$
+// TODO: Everything at https://doc.flix.dev/precedence.html
 
-// TODO: How do we test if UTF-8 support works? just put emojis in strings?
 
 object Lexer {
 
@@ -62,11 +61,20 @@ object Lexer {
     // Add a virtual eof token at the last position
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
-    println(f"> ${src.name}\n${src.data.mkString("")}\n${s.tokens.mkString("\n")}")
+    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
 
-    // TODO: Check if s.tokens contains an error
+    if (src.name == "Prelude.flix") {
+      println(f"${
+        if (hasErrors) {
+          "ERR"
+        } else {
+          "ok "
+        }
+      }\t\t${src.name}\n${src.data.mkString("")}\n${s.tokens.mkString("\n")}")
+    }
+    //        println(f"${if(hasErrors) { "ERR" } else { "ok " }}\t\t${src.name}")
 
-    s.tokens.toArray.toSuccess
+    s.tokens.toArray.toSuccess // TODO: Return failures
   }
 
   // Advances state one forward returning the char it was previously sitting on
@@ -116,55 +124,21 @@ object Lexer {
       case ']' => TokenKind.RBracket
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
-      case '+' => TokenKind.Plus
+      case '_' => TokenKind.Underscore
       case '#' => TokenKind.Hash
-      case '!' => TokenKind.Bang
-      case '-' => {
-        if (peek().isDigit) { // Negative numbers
-          number()
-        } else {
-          TokenKind.Minus
-        }
-      }
+      case '\\' => TokenKind.Backslash
       case '/' => if (peek() == '/') {
         lineComment()
-        TokenKind.LineComment
       } else if (peek() == '*') {
         blockComment()
-        TokenKind.BlockComment
       } else {
         TokenKind.Slash
-      }
-      case '@' => TokenKind.At
-      case '=' => if (peek() == '=') {
-        advance()
-        TokenKind.EqualEqual
-      } else if (peek() == '>') {
-        advance()
-        TokenKind.Arrow
-      } else {
-        TokenKind.Equal
       }
       case '.' => if (peek() == '.') {
         advance()
         TokenKind.DotDot
       } else {
         TokenKind.Dot
-      }
-      case '<' => if (peek() == '-') {
-        advance()
-        TokenKind.BackArrow
-      } else if (peek() == '=') {
-        advance()
-        TokenKind.LAngleEqual
-      } else {
-        TokenKind.LAngle
-      }
-      case '>' => if (peek() == '=') {
-        advance()
-        TokenKind.RAngleEqual
-      } else {
-        TokenKind.RAngle
       }
       case ':' => if (peek() == ':') {
         advance()
@@ -175,15 +149,33 @@ object Lexer {
       } else {
         TokenKind.Colon
       }
-      case '*' => if (peek() == '*') {
-        advance()
-        TokenKind.StarStar
+      case '@' => if (peek().isUpper) {
+        decorator()
       } else {
-        TokenKind.Star
+        TokenKind.At
       }
+      case _ if keyword("**") => TokenKind.StarStar
+      case _ if keyword("<-") => TokenKind.BackArrow
+      case _ if keyword("=>") => TokenKind.Arrow
+      case _ if keyword("<=") => TokenKind.LAngleEqual
+      case _ if keyword(">=") => TokenKind.RAngleEqual
+      case _ if keyword("==") => TokenKind.EqualEqual
+      case _ if keyword("&&&") => TokenKind.TripleAmpersand
+      case _ if keyword("<<<") => TokenKind.TripleLAngle
+      case _ if keyword(">>>") => TokenKind.TripleRAngle
+      case _ if keyword("???") => TokenKind.TripleQuestionMark
+      case _ if keyword("^^^") => TokenKind.TripleCaret
+      case _ if keyword("|||") => TokenKind.TripleBar
+      case _ if keyword("~~~") => TokenKind.TripleTilde
+      case _ if keyword("<+>") => TokenKind.AngledPlus
+      case _ if keyword("<=>") => TokenKind.AngledEqual
+      case _ if keyword("<==>") => TokenKind.AngledEqualEqual
       case _ if keyword("and") => TokenKind.AndKeyword
       case _ if keyword("or") => TokenKind.OrKeyword
       case _ if keyword("mod") => TokenKind.ModKeyword
+      case _ if keyword("foreach") => TokenKind.ForeachKeyword
+      case _ if keyword("forM") => TokenKind.ForMKeyword
+      case _ if keyword("forA") => TokenKind.ForAKeyword
       case _ if keyword("not") => TokenKind.NotKeyword
       case _ if keyword("rem") => TokenKind.RemKeyword
       case _ if keyword("Absent") => TokenKind.AbsentKeyword
@@ -233,6 +225,7 @@ object Lexer {
       case _ if keyword("lazy") => TokenKind.LazyKeyword
       case _ if keyword("let") => TokenKind.LetKeyword
       case _ if keyword("match") => TokenKind.MatchKeyword
+      case _ if keyword("typematch") => TokenKind.TypeMatchKeyword
       case _ if keyword("namespace") => TokenKind.NamespaceKeyword
       case _ if keyword("null") => TokenKind.NullKeyword
       case _ if keyword("opaque") => TokenKind.OpaqueKeyword
@@ -257,24 +250,23 @@ object Lexer {
       case _ if keyword("discard") => TokenKind.DiscardKeyword
       case _ if keyword("object") => TokenKind.ObjectKeyword
       case _ if keyword("par") => TokenKind.ParKeyword
-      case _ if keyword("Yield") => TokenKind.YieldKeyword
+      case _ if keyword("yield") => TokenKind.YieldKeyword
+      // User defined operators
+      case _ if validUserOpTokens.contains(c) => {
+        val p = peek()
+        if (validUserOpTokens.contains(p)) {
+          userDefinedOp()
+        } else if (c == '-' && p.isDigit) {
+          number() // negative numbers
+        } else {
+          validUserOpTokens.apply(c)
+        }
+      }
       case c if c.isLetter => name(c.isUpper)
       case c if c.isDigit => number()
       case '\"' => string()
       case '\'' => char()
-
-      // TODO: What to do with these?
-      //      case _ if keyword("&&&") => TokenKind.Keyword
-      //      case _ if keyword("<+>") => TokenKind.Keyword
-      //      case _ if keyword("<=>") => TokenKind.Keyword
-      //      case _ if keyword("<<<") => TokenKind.Keyword
-      //      case _ if keyword(">>>") => TokenKind.Keyword
-      //      case _ if keyword("???") => TokenKind.Keyword
-      //      case _ if keyword("^^^") => TokenKind.Keyword
-      //      case _ if keyword("|||") => TokenKind.Keyword
-      //      case _ if keyword("~~~") => TokenKind.Keyword
-      //      case _ if keyword("$DEFAULT$") => TokenKind.Keyword
-
+      case '`' => infixFunction()
       case _ => TokenKind.Err(LexerErr.UnexpectedSymbol)
     }
 
@@ -283,7 +275,6 @@ object Lexer {
 
   // Adds a token by consuming the characters between start and current
   private def addToken(k: TokenKind)(implicit s: State): Unit = {
-    println(f"${s.start} ${s.current}")
     val t = s.src.data.slice(s.start.offset, s.current.offset).mkString("")
     s.tokens += Token(k, t, s.start.line, s.start.column)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
@@ -334,6 +325,32 @@ object Lexer {
     kind
   }
 
+  // Advances state past an infix function
+  private def infixFunction()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      val c = peek()
+      if (c == '`') {
+        advance()
+        return TokenKind.InfixFunction
+      }
+      advance()
+    }
+
+    TokenKind.Err(LexerErr.UnterminatedInfixFunction)
+  }
+
+  // Advances state past a user defined operator
+  private def userDefinedOp()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      if (!validUserOpTokens.contains(peek())) {
+        return TokenKind.UserDefinedOperator
+      } else {
+        advance()
+      }
+    }
+    TokenKind.UserDefinedOperator
+  }
+
   // Advances state past a string
   private def string()(implicit s: State): TokenKind = {
     var prev: Char = ' '
@@ -382,14 +399,7 @@ object Lexer {
           isDecimal = true
           advance()
         }
-        // Whitespace or ',' indicates that the number has ended
-        case c if c.isWhitespace || c == ',' =>
-          return if (isDecimal) {
-            TokenKind.Float64
-          } else {
-            TokenKind.Int32
-          }
-        // If this is reached an explicit number type must occur next
+        // If this is reached an explicit number type might occur next
         case _ => return advance() match {
           case _ if keyword("f32") => TokenKind.Float32
           case _ if keyword("f64") => TokenKind.Float64
@@ -399,7 +409,11 @@ object Lexer {
           case _ if keyword("i64") => TokenKind.Int64
           case _ if keyword("ii") => TokenKind.BigInt
           case _ if keyword("ff") => TokenKind.BigDecimal
-          case _ => TokenKind.Err(LexerErr.MalformedNumberType)
+          case _ => return if (isDecimal) {
+            TokenKind.Float64
+          } else {
+            TokenKind.Int32
+          }
         }
       }
     }
@@ -407,24 +421,43 @@ object Lexer {
     TokenKind.Err(LexerErr.MalformedNumber)
   }
 
-  // Advances state past a line comment by looking for the next newline
-  private def lineComment()(implicit s: State): Unit = {
+  // Advances state past a decorator by looking for the next non-letter character
+  // TODO: can decorator names have numbers, underscores, bang in them?
+  private def decorator()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
-      if (peek() == '\n') {
-        return
+      if (!peek().isLetter) {
+        return TokenKind.Decorator
       } else {
         advance()
       }
     }
+
+    TokenKind.Decorator
+  }
+
+  // Advances state past a line comment by looking for the next newline
+  private def lineComment()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      if (peek() == '\n') {
+        return TokenKind.LineComment
+      } else {
+        advance()
+      }
+    }
+
+    TokenKind.LineComment
   }
 
   // Advances state past a block-comment. Supports nested block comments by maintaining a level counter.
-  private def blockComment()(implicit s: State): Unit = {
+  private def blockComment()(implicit s: State): TokenKind = {
     var l = 1
     while (!isAtEnd()) {
       (peek(), peekpeek()) match {
         case ('/', Some('*')) => {
           l += 1
+          if (l >= 256) { // TODO: Should this nesting limit be removed?
+            return TokenKind.Err(LexerErr.BlockCommentTooDeep)
+          }
           advance()
         }
         case ('*', Some('/')) => {
@@ -432,12 +465,14 @@ object Lexer {
           advance()
           advance()
           if (l == 0) {
-            return
+            return TokenKind.BlockComment
           }
         }
         case _ => advance()
       }
     }
+
+    TokenKind.BlockComment // TODO: Is an unclosed block comment at eof an error?
   }
 
   private class Position(var line: Int, var column: Int, var offset: Int)
@@ -447,5 +482,19 @@ object Lexer {
     var current: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
   }
+
+  private val validUserOpTokens = Map(
+    '+' -> TokenKind.Plus,
+    '-' -> TokenKind.Minus,
+    '*' -> TokenKind.Star,
+    '<' -> TokenKind.LAngle,
+    '>' -> TokenKind.RAngle,
+    '=' -> TokenKind.Equal,
+    '!' -> TokenKind.Bang,
+    '&' -> TokenKind.Ampersand,
+    '|' -> TokenKind.Bar,
+    '^' -> TokenKind.Caret,
+    '$' -> TokenKind.Dollar
+  )
 
 }

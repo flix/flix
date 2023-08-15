@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ sealed trait TokenKind
 
 // NOTE: Builtin type keywords like 'Float32' are lexed into 'Float32Keyword' whereas Float32 *literals* are lexed to 'Float32'
 // This aligns naming of literals with other types such as 'String' and 'Bool'
+
+// TODO: double ## signifies something to do with java?
 
 object TokenKind {
   case object LParen extends TokenKind
@@ -60,11 +62,43 @@ object TokenKind {
 
   case object Hash extends TokenKind
 
+  case object Dollar extends TokenKind
+
+  case object Bar extends TokenKind
+
+  case object Caret extends TokenKind
+
+  case object Ampersand extends TokenKind
+
+  case object TripleAmpersand extends TokenKind
+
+  case object TripleLAngle extends TokenKind
+
+  case object TripleRAngle extends TokenKind
+
+  case object TripleQuestionMark extends TokenKind
+
+  case object TripleCaret extends TokenKind
+
+  case object TripleBar extends TokenKind
+
+  case object TripleTilde extends TokenKind
+
+  case object AngledEqual extends TokenKind
+
+  case object AngledEqualEqual extends TokenKind
+
+  case object AngledPlus extends TokenKind
+
   case object Star extends TokenKind
 
   case object StarStar extends TokenKind
 
   case object Slash extends TokenKind
+
+  case object Backslash extends TokenKind
+
+  case object Underscore extends TokenKind
 
   case object LAngle extends TokenKind
 
@@ -78,7 +112,11 @@ object TokenKind {
 
   case object EqualEqual extends TokenKind
 
+  case object UserDefinedOperator extends TokenKind
+
   case object At extends TokenKind
+
+  case object InfixFunction extends TokenKind
 
   case object BackArrow extends TokenKind
 
@@ -87,6 +125,12 @@ object TokenKind {
   case object OrKeyword extends TokenKind
 
   case object ModKeyword extends TokenKind
+
+  case object ForeachKeyword extends TokenKind
+
+  case object ForMKeyword extends TokenKind
+
+  case object ForAKeyword extends TokenKind
 
   case object NotKeyword extends TokenKind
 
@@ -186,6 +230,8 @@ object TokenKind {
 
   case object MatchKeyword extends TokenKind
 
+  case object TypeMatchKeyword extends TokenKind
+
   case object NamespaceKeyword extends TokenKind
 
   case object NullKeyword extends TokenKind
@@ -260,6 +306,8 @@ object TokenKind {
 
   case object Char extends TokenKind
 
+  case object Decorator extends TokenKind // TODO: this refers to stuff like '@Internal'. Is this the right name for it?
+
   case object LineComment extends TokenKind
 
   case object BlockComment extends TokenKind
@@ -280,10 +328,11 @@ object LexerErr {
 
   case object UnterminatedChar extends LexerErr
 
+  case object UnterminatedInfixFunction extends LexerErr
+
   case object DoubleDottedNumber extends LexerErr
 
   case object MalformedNumber extends LexerErr
 
-  case object MalformedNumberType extends LexerErr
-
+  case object BlockCommentTooDeep extends LexerErr
 }
