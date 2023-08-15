@@ -77,6 +77,8 @@ object Ast {
     }
 
     override def hashCode(): Int = input.hashCode()
+
+    override def toString: String = name
   }
 
   /**

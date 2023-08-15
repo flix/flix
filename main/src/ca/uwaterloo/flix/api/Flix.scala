@@ -211,6 +211,7 @@ class Flix {
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
+    "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
@@ -292,6 +293,7 @@ class Flix {
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
+    "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
   )
 
   /**
@@ -523,6 +525,7 @@ class Flix {
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
+      afterLexer <- Lexer.run(afterReader)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
@@ -583,7 +586,7 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
-    cachedDocumentorAst = Documentor.run(typedAst)
+    cachedDocumentorAst = JsonDocumentor.run(typedAst)
     cachedLoweringAst = Lowering.run(cachedDocumentorAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)

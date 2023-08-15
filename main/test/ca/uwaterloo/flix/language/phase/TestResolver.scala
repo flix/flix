@@ -1424,7 +1424,60 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedKind](result)
   }
 
-  test("IllegalAssocTypeDef.01") {
+  test("UndefinedInstanceOf.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    1000ii instanceof ##org.undefined.BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("DuplicateAssocTypeDef.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = String
+        |    type T = Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateAssocTypeDef](result)
+  }
+
+  test("MissingAssocTypeDef.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
+  test("IllegalAssocTypeApplication.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T
+        |}
+        |
+        |def foo(): C.T[String] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeApplication](result)
+  }
+
+  test("IllegalAssocTypeApplication.02") {
     val input =
       """
         |class C[a] {
@@ -1436,16 +1489,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalAssocTypeDef](result)
-  }
-
-  test("UndefinedInstanceOf.01") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    1000ii instanceof ##org.undefined.BigInt
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedJvmClass](result)
+    expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 }
