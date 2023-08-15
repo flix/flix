@@ -1146,23 +1146,4 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidRegularExpression](result)
   }
-
-  test("IllegalEmptyMatch.01") {
-    val input =
-      """
-        |def f(): Bool = match 1 { }
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEmptyMatch](result)
-  }
-
-  test("IllegalEmptyMatch.02") {
-    val input =
-      """
-        |def f(): Bool = match "abc" { }
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEmptyMatch](result)
-  }
-
 }
