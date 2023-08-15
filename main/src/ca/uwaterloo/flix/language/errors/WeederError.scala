@@ -1132,4 +1132,20 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = None
   }
+
+  case class IllegalEmptyMatch(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Match-expression must define at least one match rule."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing match rules.
+         |
+         |${code(loc, "Match-expression must define at least one match rule.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 }

@@ -1428,8 +1428,13 @@ object Weeder {
             case (p, g, b) => WeededAst.MatchRule(p, g, b)
           }
       }
-      mapN(visitExp(exp, senv), rulesVal) {
-        case (e, rs) => WeededAst.Expr.Match(e, rs, loc)
+      flatMapN(visitExp(exp, senv), rulesVal) {
+        case (WeededAst.Expr.Hole(_, _), Nil) => WeededAst.Expr.MatchEmpty(loc).toSuccess
+        case (WeededAst.Expr.HoleWithExp(_, _), Nil) => WeededAst.Expr.MatchEmpty(loc).toSuccess
+        case (_, Nil) =>
+          val err = WeederError.IllegalEmptyMatch(loc)
+          WeededAst.Expr.Error(err).toSoftFailure(err)
+        case (e, rs) => WeededAst.Expr.Match(e, rs, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
