@@ -42,7 +42,7 @@ object CodeLensProvider {
     getEntryPoints(uri)(root.get).map {
       case sym =>
         val args = List(JString(sym.toString))
-        val command = Command("Run", "flix.runMain", args)
+        val command = Command("▶ Run", "flix.runMain", args)
         val range = Range.from(sym.loc)
         CodeLens(range, Some(command))
     }
