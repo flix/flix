@@ -69,16 +69,10 @@ class TestMain extends AnyFunSuite {
     assert(opts.args.contains("--abc --def"))
   }
 
-  test("--doc-json") {
-    val args = Array("--doc-json", "p.flix")
+  test("--doc") {
+    val args = Array("--doc", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.documentorJson)
-  }
-
-  test("--doc-html") {
-    val args = Array("--doc-html", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.documentorHtml)
+    assert(opts.documentor)
   }
 
   test("--explain foo") {

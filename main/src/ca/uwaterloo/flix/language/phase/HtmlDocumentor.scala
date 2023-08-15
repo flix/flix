@@ -49,7 +49,7 @@ object HtmlDocumentor {
     //
     // Determine whether to generate documentation.
     //
-    if (!flix.options.documentorHtml) {
+    if (!flix.options.documentor) {
       return
     }
 

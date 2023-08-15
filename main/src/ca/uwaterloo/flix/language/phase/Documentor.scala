@@ -47,7 +47,7 @@ object Documentor {
     //
     // Determine whether to generate documentation.
     //
-    if (!flix.options.documentorJson) {
+    if (!flix.options.documentor) {
       return root
     }
 
