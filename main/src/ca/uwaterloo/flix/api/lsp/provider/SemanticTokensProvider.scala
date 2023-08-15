@@ -206,12 +206,13 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
       val st1 = visitTypeParams(tparams)
       val st2 = visitFormalParams(fparams)
       val st3 = tconstrs.iterator.flatMap(visitTypeConstraint)
-      val st4 = visitType(retTpe)
-      val st5 = visitType(eff)
+      val st4 = econstrs.iterator.flatMap(visitEqualityConstraint)
+      val st5 = visitType(retTpe)
+      val st6 = visitType(eff)
       st1 ++ st2 ++ st3 ++ st4 ++ st5
   }
 
@@ -741,6 +742,24 @@ object SemanticTokensProvider {
   private def visitTypeConstraintHead(head0: TypeConstraint.Head): Iterator[SemanticToken] = head0 match {
     case TypeConstraint.Head(_, loc) =>
       val o = SemanticTokenType.Class
+      val t = SemanticToken(o, Nil, loc)
+      Iterator(t)
+  }
+
+  /**
+    * Returns all semantic tokens in the given equality constraint `tc0`.
+    */
+  private def visitEqualityConstraint(ec0: Ast.EqualityConstraint): Iterator[SemanticToken] = ec0 match {
+    case Ast.EqualityConstraint(cst, tpe1, tpe2, _) =>
+      visitAssocTypeConstructor(cst) ++ visitType(tpe1) ++ visitType(tpe2)
+  }
+
+  /**
+    * Returns all semantic tokens in the given associated type constructor `cst.
+    */
+  private def visitAssocTypeConstructor(cst: Ast.AssocTypeConstructor): Iterator[SemanticToken] = cst match {
+    case Ast.AssocTypeConstructor(_, loc) =>
+      val o = SemanticTokenType.Type
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
   }

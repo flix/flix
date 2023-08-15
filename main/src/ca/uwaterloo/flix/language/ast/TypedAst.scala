@@ -50,7 +50,7 @@ object TypedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: Spec, impl: Impl)
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], loc: SourceLocation)
 
   case class Impl(exp: Expr, inferredScheme: Scheme)
 

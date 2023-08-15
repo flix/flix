@@ -165,6 +165,7 @@ object Deriver {
         tpe = Type.mkBool(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
+        econstrs = Nil,
         loc = loc
       )
   }
@@ -357,6 +358,7 @@ object Deriver {
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
+        econstrs = Nil,
         loc = loc
       )
   }
@@ -520,6 +522,7 @@ object Deriver {
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
+        econstrs = Nil,
         loc = loc
       )
   }
@@ -656,6 +659,7 @@ object Deriver {
         tpe = Type.mkInt32(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),
+        econstrs = Nil,
         loc = loc
       )
   }
