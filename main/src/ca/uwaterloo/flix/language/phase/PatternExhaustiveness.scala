@@ -436,13 +436,14 @@ object PatternExhaustiveness {
         } else {
           acc
         }
-      case TypedAst.Pattern.Record(pats, extPat, _, _) => ctor match {
+      case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
         case TyCon.Record(_, _) =>
-          val p = extPat match {
+          val ps = pats.map(_.pat)
+          val p = tail match {
             case TypedAst.Pattern.RecordEmpty(_, _) => Nil
-            case _ => List(extPat)
+            case _ => List(tail)
           }
-          (pats.map(_.pat) ::: p ::: pat.tail) :: acc
+          (ps ::: p ::: pat.tail) :: acc
         case _ => acc
       }
       // Also handle the non tag constructors
