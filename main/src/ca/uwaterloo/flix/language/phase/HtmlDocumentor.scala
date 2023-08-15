@@ -57,7 +57,7 @@ object HtmlDocumentor {
     clearOutputDirectory()
     writeStyles()
     val modules = splitModules(root)
-    modules.par.foreach {
+    modules.foreach {
       mod =>
         val pub = filterModule(mod)
         if (!isEmpty(pub)) {
