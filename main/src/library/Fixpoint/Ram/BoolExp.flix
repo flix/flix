@@ -31,6 +31,7 @@ mod Fixpoint.Ram {
     }
 
     instance ToString[BoolExp[v]] {
+        type Effect = Pure
         pub def toString(exp: BoolExp[v]): String =
             match exp {
                 case BoolExp.Empty(ramSym) => "${ramSym} == ∅"

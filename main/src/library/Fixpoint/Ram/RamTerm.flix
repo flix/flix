@@ -40,6 +40,7 @@ mod Fixpoint.Ram {
     }
 
     instance ToString[RamTerm[v]] {
+        type Effect = Pure
         pub def toString(term: RamTerm[v]): String = match term {
             case RamTerm.Lit(v) => "%{v}"
             case RamTerm.RowLoad(var, index) => "${var}[${index}]"

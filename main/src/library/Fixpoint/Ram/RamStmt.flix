@@ -30,6 +30,7 @@ mod Fixpoint.Ram {
     }
 
     instance ToString[RamStmt[v]] {
+        type Effect = Pure
         pub def toString(stmt: RamStmt[v]): String =
             let nl = String.lineSeparator();
             match stmt {

@@ -81,6 +81,7 @@ mod Fixpoint.Ram {
     }
 
     instance ToString[RamSym[v]] {
+        type Effect = Pure
         pub def toString(ramSym: RamSym[v]): String = match ramSym {
             case RamSym.Full(sym, _, _)    => "${sym}"
             case RamSym.Delta(sym, _, _)   => "Δ${sym}"

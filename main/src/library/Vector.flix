@@ -19,7 +19,8 @@
 ///
 
 instance ToString[Vector[a]] with ToString[a] {
-    pub def toString(v: Vector[a]): String = Vector.toString(v)
+    type Effect = ToString.Effect[a]
+    pub def toString(v: Vector[a]): String \ ToString.Effect[a] = Vector.toString(v)
 }
 
 instance Hash[Vector[a]] with Hash[a] {
@@ -128,7 +129,7 @@ mod Vector {
     ///
     /// Returns a string representation of the given vector `v`.
     ///
-    pub def toString(v: Vector[a]): String with ToString[a] = region rc {
+    pub def toString(v: Vector[a]): String \ ToString.Effect[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         let first = ref true @ rc;
 

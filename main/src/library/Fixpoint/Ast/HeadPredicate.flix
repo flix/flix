@@ -40,6 +40,7 @@ mod Fixpoint.Ast {
     }
 
     instance ToString[HeadPredicate[v]] {
+        type Effect = Pure
         pub def toString(head: HeadPredicate[v]): String =
             match head {
                 case HeadPredicate.HeadAtom(predSym, Denotation.Relational, terms) => "${predSym}(${terms |> Vector.join(", ")})"

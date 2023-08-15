@@ -40,6 +40,7 @@ instance Hash[Set[a]] with Hash[a] {
 }
 
 instance ToString[Set[a]] with ToString[a] {
+    type Effect = ToString.Effect[a]
     pub def toString(s: Set[a]): String = Set.toString(s)
 }
 
@@ -100,7 +101,7 @@ mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] = region rc {
+    pub def toString(s: Set[a]): String \ ToString.Effect[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {

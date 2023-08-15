@@ -50,6 +50,7 @@ mod Fixpoint.Ast {
     }
 
     instance ToString[BodyPredicate[v]] {
+        type Effect = Pure
         pub def toString(body: BodyPredicate[v]): String =
             def polarityPrefix(p) = match p {
                 case Polarity.Negative => "not "

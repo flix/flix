@@ -28,7 +28,8 @@ pub enum MultiMap[k, v] with Sendable {
 }
 
 instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
+    type Effect = ToString.Effect[k] + ToString.Effect[v]
+    pub def toString(m: MultiMap[k, v]): String \ ToString.Effect[k] + ToString.Effect[v] = MultiMap.toString(m)
 }
 
 instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {

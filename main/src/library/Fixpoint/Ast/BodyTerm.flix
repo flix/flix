@@ -23,6 +23,7 @@ mod Fixpoint.Ast {
     }
 
     instance ToString[BodyTerm[v]] {
+        type Effect = Pure
         pub def toString(term: BodyTerm[v]): String = match term {
             case BodyTerm.Wild => "_"
             case BodyTerm.Var(varSym) => ToString.toString(varSym)

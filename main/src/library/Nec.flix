@@ -122,7 +122,8 @@ instance Reducible[Nec] {
 }
 
 instance ToString[Nec[a]] with ToString[a] {
-    pub def toString(c: Nec[a]): String = region rc {
+    type Effect = ToString.Effect[a]
+    pub def toString(c: Nec[a]): String \ ToString.Effect[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {

@@ -28,6 +28,7 @@ mod Fixpoint.Ast {
     }
 
     instance ToString[HeadTerm[v]] {
+        type Effect = Pure
         pub def toString(term: HeadTerm[v]): String = match term {
             case HeadTerm.Var(varSym) => "${varSym}"
             case HeadTerm.Lit(v) => "%{v}"

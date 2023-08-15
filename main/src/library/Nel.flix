@@ -22,7 +22,8 @@ pub enum Nel[a] with Sendable {
 }
 
 instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = Nel.toString(l)
+    type Effect = ToString.Effect[a]
+    pub def toString(l: Nel[a]): String \ ToString.Effect[a] = Nel.toString(l)
 }
 
 instance Hash[Nel[a]] with Hash[a] {
@@ -120,7 +121,7 @@ mod Nel {
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
+    pub def toString(l: Nel[a]): String \ ToString.Effect[a] with ToString[a] = region rc {
         let Nel(x, xs) = l;
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nel(${x}, ", sb);

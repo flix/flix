@@ -46,6 +46,7 @@ mod Fixpoint.Ast {
     }
 
     instance ToString[Constraint[v]] {
+        type Effect = Pure
         pub def toString(c: Constraint[v]): String =
             match c {
                 case Constraint.Constraint(head, body) =>

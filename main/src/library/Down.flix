@@ -28,7 +28,8 @@ instance Eq[Down[a]] with Eq[a] {
 }
 
 instance ToString[Down[a]] with ToString[a] {
-    pub def toString(x: Down[a]): String = match x {
+    type Effect = ToString.Effect[a]
+    pub def toString(x: Down[a]): String \ ToString.Effect[a] = match x {
         case Down.Down(xx) => ToString.toString(xx)
     }
 }

@@ -34,6 +34,7 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 }
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
+    type Effect = ToString.Effect[k] + ToString.Effect[v]
     pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 

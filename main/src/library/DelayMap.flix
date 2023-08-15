@@ -29,7 +29,8 @@ instance Order[DelayMap[k, v]] with Order[k], Order[v] {
 }
 
 instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
+    type Effect = ToString.Effect[k] + ToString.Effect[v]
+    pub def toString(m: DelayMap[k, v]): String \ ToString.Effect[k] + ToString.Effect[v] = DelayMap.toString(m)
 }
 
 instance Functor[DelayMap[k]] {

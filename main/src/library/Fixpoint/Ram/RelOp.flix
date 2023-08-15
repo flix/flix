@@ -26,6 +26,7 @@ mod Fixpoint.Ram {
     }
 
     instance ToString[RelOp[v]] {
+        type Effect = Pure
         pub def toString(op: RelOp[v]): String =
             let nl = String.lineSeparator();
             match op {

@@ -22,6 +22,7 @@ mod Time {
     enum Instant(##java.time.Instant)
 
     instance ToString[Instant] {
+        type Effect = Pure
         pub def toString(x: Time.Instant): String = Instant.toString(x)
     }
 

@@ -63,6 +63,7 @@ instance Order[DelayList[a]] with Order[a] {
 }
 
 instance ToString[DelayList[a]] with ToString[a] {
+    type Effect = ToString.Effect[a]
     pub def toString(l: DelayList[a]): String = DelayList.toString(l)
 }
 

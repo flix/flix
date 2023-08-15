@@ -58,6 +58,7 @@ mod Fixpoint.Ast {
     }
 
     instance ToString[Datalog[v]] {
+        type Effect = Pure
         pub def toString(cs: Datalog[v]): String = match cs {
             case Datalog.Datalog(facts, rules) => region rc {
                 let sb = StringBuilder.new(rc);

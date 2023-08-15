@@ -23,6 +23,7 @@ mod Fixpoint.Ram {
     }
 
     instance ToString[RowVar] {
+        type Effect = Pure
         pub def toString(var: RowVar): String = match var {
             case RowVar.Named(name) => name
             case RowVar.Index(i) => "${i}$"

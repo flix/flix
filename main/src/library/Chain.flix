@@ -96,7 +96,8 @@ instance Filterable[Chain] {
 instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
-    pub def toString(c: Chain[a]): String = region rc {
+    type Effect = ToString.Effect[a]
+    pub def toString(c: Chain[a]): String \ ToString.Effect[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Chain#{", sb);
         Chain.forEachWithIndex((i, x) -> {
