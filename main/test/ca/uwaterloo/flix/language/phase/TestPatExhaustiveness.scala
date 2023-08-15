@@ -384,7 +384,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Bool = match { x = 1, y = () } {
-        |    case { x = 1 | r } => true
+        |    case { x = 1 | _ } => true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -449,7 +449,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(): Bool = match { x = A.A, y = A.B } {
-        |    case { x = A.A | r } => true
+        |    case { x = A.A | _ } => true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -497,7 +497,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
-        |    case { x = { x = { }, y = A.A | r }, y = A.B } => true
+        |    case { x = { x = { }, y = A.A | _ }, y = A.B } => true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -513,7 +513,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
-        |    case { x = { y = A.A | r }, y = A.B } => true
+        |    case { x = { y = A.A | _ }, y = A.B } => true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -529,7 +529,24 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |}
         |
         |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
-        |    case { x = { x = { } | r }, y = A.B } => true
+        |    case { x = { x = { } | _ }, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.13") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { a = A.A, a = A.B } {
+        |    case { a = A.A, a = A.A } => true
+        |    case { a = A.B, a = A.A } => true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
