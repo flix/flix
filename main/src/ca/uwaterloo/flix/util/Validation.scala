@@ -118,6 +118,11 @@ object Validation {
   final val SuccessNone = Success(None)
 
   /**
+    * Represents a successful validation with the unit value.
+    */
+  final val SuccessUnit = Success(())
+
+  /**
     * Represents a success `value`.
     */
   case class Success[T, E](t: T) extends Validation[T, E] {
