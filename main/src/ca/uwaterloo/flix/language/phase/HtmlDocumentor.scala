@@ -46,6 +46,11 @@ object HtmlDocumentor {
   val Stylesheet: String = "/doc/styles.css"
 
   /**
+    * The path to the the favicon, relative to the resources folder.
+    */
+  val FavIcon: String = "/doc/favicon.png"
+
+  /**
     * The root of the link to each file of the standard library.
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
@@ -58,7 +63,7 @@ object HtmlDocumentor {
       return
     }
 
-    writeStyles()
+    writeAssets()
     val modules = splitModules(root)
     modules.foreach {
       mod =>
@@ -202,6 +207,7 @@ object HtmlDocumentor {
       |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
       |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
       |<link href='styles.css' rel='stylesheet'>
+      |<link href='favicon.png' rel='icon'>
       |<title>Flix | ${esc(name)}</title>
       |</head>
     """.stripMargin
@@ -563,11 +569,14 @@ object HtmlDocumentor {
   }
 
   /**
-    * Make a copy of the stylesheet into the output directory.
+    * Make a copy of the static assets into the output directory.
     */
-  private def writeStyles(): Unit = {
-    val source = Source.fromURL(getClass.getResource(Stylesheet))
-    writeFile("styles.css", source.mkString)
+  private def writeAssets(): Unit = {
+    val stylesheet = readResource(Stylesheet)
+    writeFile("styles.css", stylesheet)
+
+    val favicon = readResource(FavIcon)
+    writeFile("favicon.png", favicon)
   }
 
   /**
@@ -575,20 +584,30 @@ object HtmlDocumentor {
     */
   private def writeModule(mod: Module, output: String): Unit = {
     val name = if (mod.namespace.isEmpty) List(RootNS) else mod.namespace
-    writeFile(s"${name.mkString(".")}.html", output)
+    writeFile(s"${name.mkString(".")}.html", output.getBytes)
   }
 
   /**
     * Write the file to the output directory with the given file name.
     */
-  private def writeFile(name: String, output: String): Unit = {
+  private def writeFile(name: String, output: Array[Byte]): Unit = {
     val path = OutputDirectory.resolve(name)
     try {
       Files.createDirectories(OutputDirectory)
-      Files.writeString(path, output)
+      Files.write(path, output)
     } catch {
       case ex: IOException => throw new RuntimeException(s"Unable to write to path '$path'.", ex)
     }
+  }
+
+  /**
+    * Reads the given resource as an array of bytes.
+    *
+    * @param path The path of the resource, relative to the resources folder.
+    */
+  private def readResource(path: String): Array[Byte] = {
+    val uri = getClass.getResource(path).toURI
+    Files.readAllBytes(Paths.get(uri))
   }
 
   /**
