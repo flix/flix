@@ -55,16 +55,14 @@ object Lexer {
 
     val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
 
-    if (src.name == "Prelude.flix") {
-      println(f"${
-        if (hasErrors) {
-          "ERR"
-        } else {
-          "ok "
-        }
-      }\t\t${src.name}\n${src.data.mkString("")}\n${s.tokens.mkString("\n")}")
-    }
-    //        println(f"${if(hasErrors) { "ERR" } else { "ok " }}\t\t${src.name}")
+    // TODO: Remove this reporting print
+    println(f"${
+      if (hasErrors) {
+        "ERR"
+      } else {
+        "ok "
+      }
+    }\t${src.name}")
 
     s.tokens.toArray.toSuccess // TODO: Return failures
   }
@@ -244,6 +242,9 @@ object Lexer {
       case _ if keyword("object") => TokenKind.ObjectKeyword
       case _ if keyword("par") => TokenKind.ParKeyword
       case _ if keyword("yield") => TokenKind.YieldKeyword
+      case _ if isMathNameChar(c) => mathName()
+      case _ if isGreekNameChar(c) => greekName()
+
       // User defined operators
       case _ if validUserOpTokens.contains(c) => {
         val p = peek()
@@ -323,6 +324,40 @@ object Lexer {
     kind
   }
 
+  // Advances state past a greek name
+  private def greekName()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      if (!isGreekNameChar(peek())) {
+        return TokenKind.GreekName
+      }
+      advance()
+    }
+    TokenKind.GreekName
+  }
+
+  // Advances state past a math name
+  private def mathName()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      if (!isMathNameChar(peek())) {
+        return TokenKind.MathName
+      }
+      advance()
+    }
+    TokenKind.MathName
+  }
+
+  // Checks whether c lies in unicode range U+2190 to U+22FF
+  private def isMathNameChar(c: Char): Boolean = {
+    val i = c.toInt
+    i >= 8592 && i <= 8959
+  }
+
+  // Checks whether c lies in unicode range U+0370 to U+03FF
+  private def isGreekNameChar(c: Char): Boolean = {
+    val i = c.toInt
+    i >= 880 && i <= 1023
+  }
+
   private def namedHole()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
@@ -363,7 +398,7 @@ object Lexer {
 
   // Advances state past a string
   private def string()(implicit s: State): TokenKind = {
-    var prev: Char = ' '
+    var prev = ' '
     while (!isAtEnd()) {
       val c = peek()
       // Check for termination while handling escaped '\"'
@@ -379,17 +414,16 @@ object Lexer {
 
   // Advances state past a char
   private def char()(implicit s: State): TokenKind = {
-    // Advance twice if character is escaped
-    if (advance() == '\\') {
+    while (!isAtEnd()) {
+      val c = peek()
+      if (c == '\'') {
+        advance()
+        return TokenKind.Char
+      }
       advance()
     }
 
-    // Check for termination
-    if (advance() != '\'') {
-      TokenKind.Err(LexerErr.UnterminatedChar)
-    } else {
-      TokenKind.Char
-    }
+    TokenKind.Err(LexerErr.UnterminatedChar)
   }
 
   // Advances state past a number of any type
