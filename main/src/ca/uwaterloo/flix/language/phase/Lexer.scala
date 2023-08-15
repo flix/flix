@@ -24,8 +24,6 @@ import scala.collection.mutable
 
 
 // TODO: internals? something to handle $DEFAULT$
-// TODO: Everything at https://doc.flix.dev/precedence.html
-
 
 object Lexer {
 
@@ -148,6 +146,8 @@ object Lexer {
       } else {
         TokenKind.At
       }
+      case _ if keyword("???") => TokenKind.AnonymousHole
+      case '?' if (peek().isLetter) => namedHole()
       case _ if keyword("**") => TokenKind.StarStar
       case _ if keyword("<-") => TokenKind.BackArrow
       case _ if keyword("=>") => TokenKind.Arrow
@@ -157,7 +157,6 @@ object Lexer {
       case _ if keyword("&&&") => TokenKind.TripleAmpersand
       case _ if keyword("<<<") => TokenKind.TripleLAngle
       case _ if keyword(">>>") => TokenKind.TripleRAngle
-      case _ if keyword("???") => TokenKind.TripleQuestionMark
       case _ if keyword("^^^") => TokenKind.TripleCaret
       case _ if keyword("|||") => TokenKind.TripleBar
       case _ if keyword("~~~") => TokenKind.TripleTilde
@@ -313,10 +312,27 @@ object Lexer {
       if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
         return kind
       }
+      if (c == '?') {
+        advance()
+        return TokenKind.VariableHole
+      }
+
       advance()
     }
 
     kind
+  }
+
+  private def namedHole()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      if (!peek().isLetter) {
+        return TokenKind.NamedHole
+      }
+
+      advance()
+    }
+
+    TokenKind.NamedHole
   }
 
   // Advances state past an infix function

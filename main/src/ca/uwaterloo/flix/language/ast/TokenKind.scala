@@ -308,6 +308,12 @@ object TokenKind {
 
   case object Decorator extends TokenKind // TODO: this refers to stuff like '@Internal'. Is this the right name for it?
 
+  case object AnonymousHole extends TokenKind
+
+  case object NamedHole extends TokenKind
+
+  case object VariableHole extends TokenKind
+
   case object LineComment extends TokenKind
 
   case object BlockComment extends TokenKind
