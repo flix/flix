@@ -54,7 +54,6 @@ object HtmlDocumentor {
       return root
     }
 
-    clearOutputDirectory()
     writeStyles()
     val modules = splitModules(root)
     modules.foreach {
@@ -557,14 +556,6 @@ object HtmlDocumentor {
       docElt(e)
       if (i < list.length - 1) {
         sb.append(", ")
-      }
-    }
-  }
-
-  private def clearOutputDirectory(): Unit = {
-    if (Files.exists(OutputDirectory)) {
-      Files.list(OutputDirectory).forEach {
-        f => Files.delete(f)
       }
     }
   }
