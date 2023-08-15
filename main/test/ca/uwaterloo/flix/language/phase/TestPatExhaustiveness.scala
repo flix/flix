@@ -394,6 +394,28 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
   test("Pattern.Record.03") {
     val input =
       """
+        |def f(): Bool = match { x = 1, y = 2 } {
+        |    case { x = 1, y = 2 } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.04") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = 2 } {
+        |    case { x = 1, y = 2 | _ } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.05") {
+    val input =
+      """
         |def f(): Bool = match { x = 1, y = () } {
         |    case { x = 1, y = () } => true
         |}
@@ -402,7 +424,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Record.04") {
+  test("Pattern.Record.06") {
     val input =
       """
         |enum A {
@@ -418,7 +440,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Record.05") {
+  test("Pattern.Record.07") {
     val input =
       """
         |enum A {
@@ -434,7 +456,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Record.06") {
+  test("Pattern.Record.08") {
     val input =
       """
         |enum A {
@@ -450,7 +472,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Record.07") {
+  test("Pattern.Record.09") {
     val input =
       """
         |enum A {
@@ -466,7 +488,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Record.08") {
+  test("Pattern.Record.10") {
     val input =
       """
         |enum A {
@@ -482,7 +504,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Record.09") {
+  test("Pattern.Record.11") {
     val input =
       """
         |enum A {
@@ -498,7 +520,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Record.10") {
+  test("Pattern.Record.12") {
     val input =
       """
         |enum A {
