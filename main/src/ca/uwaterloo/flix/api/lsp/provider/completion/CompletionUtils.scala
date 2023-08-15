@@ -61,7 +61,7 @@ object CompletionUtils {
   }
 
   def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
       else

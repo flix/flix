@@ -29,6 +29,7 @@ import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 /**
   * The Resolver phase performs name resolution on the program.
@@ -462,7 +463,7 @@ object Resolver {
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
           flatMapN(clazzVal, tpeVal, tconstrsVal) {
             case (clazz, tpe, tconstrs) =>
-              val assocsVal = traverse(assocs0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
+              val assocsVal = resolveAssocTypeDefs(assocs0, clazz, env, taenv, ns0, root, loc)
               val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
               mapN(defsVal, assocsVal) {
@@ -632,32 +633,50 @@ object Resolver {
   }
 
   /**
+    * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
+    * `loc` is the location of the instance symbol for reporting errors.
+    */
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
+    val assocIdents = d0.map {
+      case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => ident
+    }
+
+    // check that there are no repeated idents
+    val seenIdents = mutable.Map.empty[String, SourceLocation]
+    val dupErrs = mutable.ListBuffer.empty[ResolutionError.DuplicateAssocTypeDef]
+    assocIdents.foreach {
+      ident =>
+        seenIdents.get(ident.name) match {
+          case None => seenIdents.put(ident.name, ident.loc)
+          case Some(seenLoc) => dupErrs.append(ResolutionError.DuplicateAssocTypeDef(ident.name, seenLoc, ident.loc))
+        }
+    }
+    val dupVal = Validation.sequenceX(dupErrs.map(_.toFailure))
+
+    // check that all associated types are covered
+    val missingVal = Validation.traverseX(clazz.assocs) {
+      case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) =>
+        if (assocIdents.exists { ident => ident.name == sym.name }) {
+          ().toSuccess
+        } else {
+          ResolutionError.MissingAssocTypeDef(sym.name, loc).toFailure
+        }
+    }
+
+
+    // check that the types are valid and that there are no extras
+    val assocsVal = Validation.traverse(d0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
+
+    mapN(dupVal, missingVal, assocsVal) {
+      case (_, _, assocs) => assocs
+    }
+  }
+
+  /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
-
-      // TODO ASSOC-TYPES roll into visitType check
-      def checkAssocTypes(t: UnkindedType): Validation[Unit, ResolutionError] = t match {
-        case Var(sym, loc) => ().toSuccess
-        case Cst(tc, loc) => ().toSuccess
-        case Enum(sym, loc) => ().toSuccess
-        case RestrictableEnum(sym, loc) => ().toSuccess
-        case Apply(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
-        case Arrow(eff, arity, loc) => traverseX(eff.toList)(checkAssocTypes)
-        case CaseSet(cases, loc) => ().toSuccess
-        case CaseComplement(tpe, loc) => checkAssocTypes(tpe)
-        case CaseUnion(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
-        case CaseIntersection(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
-        case Ascribe(tpe, kind, loc) => checkAssocTypes(tpe)
-        case Alias(cst, args, tpe, loc) => traverseX(args)(checkAssocTypes)
-
-        case AssocType(cst, UnkindedType.Var(_, _), loc) => ().toSuccess
-        case AssocType(cst, _, loc) => ResolutionError.IllegalAssocTypeDef(loc).toFailure
-
-        case UnappliedAlias(sym, loc) => throw InternalCompilerException("unexpected unresolved type", loc)
-        case UnappliedAssocType(sym, loc) => throw InternalCompilerException("unexpected unresolved type", loc)
-      }
 
       // For now we don't add any tvars from the args. We should have gotten those directly from the instance
       val argVal = resolveType(arg0, Wildness.ForbidWild, env, taenv, ns0, root)
@@ -668,13 +687,10 @@ object Resolver {
         case None => ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc).toFailure
         case Some(sym) => sym.toSuccess
       }
-      flatMapN(symVal, argVal, tpeVal) {
+      mapN(symVal, argVal, tpeVal) {
         case (sym, arg, tpe) =>
-          mapN(checkAssocTypes(tpe)) {
-            case _ =>
-              val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
-              ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
-          }
+          val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
+          ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
       }
   }
 
@@ -2432,16 +2448,18 @@ object Resolver {
           // Case 1: The associated type is under-applied.
           case Nil => ResolutionError.UnderAppliedAssocType(sym, loc).toFailure
 
-          // Case 2: The type alias is fully applied.
+          // Case 2: The associated type is fully applied.
           // Apply the types first type inside the assoc type, then apply any leftover types.
           case targHead :: targTail =>
             val targHeadVal = finishResolveType(targHead, taenv)
             val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
-            mapN(targHeadVal, targTailVal) {
-              case (targHd, targTl) =>
+            flatMapN(targHeadVal, targTailVal) {
+              case (targHd: UnkindedType.Var, targTl) =>
                 val cst = Ast.AssocTypeConstructor(sym, loc)
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
-                UnkindedType.mkApply(assoc, targTl, tpe0.loc)
+                UnkindedType.mkApply(assoc, targTl, tpe0.loc).toSuccess
+              case _ =>
+                ResolutionError.IllegalAssocTypeApplication(tpe0.loc).toFailure
             }
         }
 
