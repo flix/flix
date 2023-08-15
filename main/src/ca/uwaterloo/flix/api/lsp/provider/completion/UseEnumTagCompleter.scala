@@ -19,11 +19,9 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.UseEnumTagCompletion
-import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, CaseSym, mkEnumSym}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
-
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object UseEnumTagCompleter extends Completer {
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseEnumTagCompletion] = {
@@ -69,6 +67,7 @@ object UseEnumTagCompleter extends Completer {
       case None => Nil
     }
   }
+
   private def stripWord(ctx: CompletionContext): Option[String] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
@@ -77,15 +76,15 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
-  private def matches(cSym: CaseSym, tag: String): Boolean = cSym.name.startsWith(tag)
+  private def matches(sym: Symbol.CaseSym, tag: String): Boolean = sym.name.startsWith(tag)
 
-  private def mkEnumSym(segment: List[String]): EnumSym = {
+  private def mkEnumSym(segment: List[String]): Symbol.EnumSym = {
     if (segment.isEmpty) {
-      new EnumSym(None, Nil, "", SourceLocation.Unknown)
+      new Symbol.EnumSym(None, Nil, "", SourceLocation.Unknown)
     } else {
       val ns = segment.dropRight(1)
       val name = segment.takeRight(1).mkString
-      new EnumSym(None, ns, name, SourceLocation.Unknown)
+      new Symbol.EnumSym(None, ns, name, SourceLocation.Unknown)
     }
   }
 

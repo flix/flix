@@ -222,8 +222,8 @@ sealed trait Completion {
         documentation = None,
         kind = CompletionItemKind.Method
       )
-    case Completion.UseEnumTagCompletion(sym, cas) =>
-      val name = s"${sym.toString}.${cas.sym.name}"
+    case Completion.UseEnumTagCompletion(sym, caze) =>
+      val name = s"${sym.toString}.${caze.sym.name}"
       CompletionItem(
         label = name,
         sortText = Priority.normal(name),
@@ -479,9 +479,9 @@ object Completion {
    * Represents a Use Enum Tag completion
    *
    * @param enumSym the sym of the enum.
-   * @param cas     the case of the enum.
+   * @param caze     the case of the enum.
    */
-  case class UseEnumTagCompletion(enumSym: EnumSym, cas: TypedAst.Case) extends Completion
+  case class UseEnumTagCompletion(enumSym: EnumSym, caze: TypedAst.Case) extends Completion
   /**
    * Represents a Use Op completion.
    *
