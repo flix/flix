@@ -585,9 +585,9 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
-    cachedDocumentorAst = Documentor.run(typedAst)
-    cachedHtmlDocumentorAst = HtmlDocumentor.run(cachedDocumentorAst)
-    cachedLoweringAst = Lowering.run(cachedHtmlDocumentorAst)
+    Documentor.run(typedAst)
+    HtmlDocumentor.run(typedAst)
+    cachedLoweringAst = Lowering.run(typedAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
     cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)

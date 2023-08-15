@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
-import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 import com.github.rjeschke.txtmark
 import scala.io.Source
 
@@ -46,12 +45,12 @@ object HtmlDocumentor {
     */
   val Stylesheet: String = "/doc/styles.css"
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("HtmlDocumentor") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = flix.phase("HtmlDocumentor") {
     //
     // Determine whether to generate documentation.
     //
     if (!flix.options.documentorHtml) {
-      return root
+      return
     }
 
     writeStyles()
@@ -64,8 +63,6 @@ object HtmlDocumentor {
           writeModule(mod, out)
         }
     }
-
-    root
   }
 
   /**
