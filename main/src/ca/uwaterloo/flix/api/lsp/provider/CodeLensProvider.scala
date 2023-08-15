@@ -58,7 +58,7 @@ object CodeLensProvider {
 
     getTests(uri)(root.get).map {
       case sym =>
-        val command = Command("Run Tests", "flix.cmdTests", Nil)
+        val command = Command("▶ Run Tests", "flix.cmdTests", Nil)
         val range = Range.from(sym.loc)
         CodeLens(range, Some(command))
     }
