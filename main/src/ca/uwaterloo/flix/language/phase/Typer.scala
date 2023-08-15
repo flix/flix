@@ -964,7 +964,7 @@ object Typer {
           resultEff = Type.mkUnion(Type.Impure, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expr.Match(exp, rules, loc) =>
+      case KindedAst.Expr.Match(exp, rules, tvar, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.flatMap(_.guard)
         val bodies = rules.map(_.exp)
@@ -977,7 +977,7 @@ object Typer {
           (guardConstrs, guardTypes, guardEffs) <- traverseM(guards)(visitExp).map(_.unzip3)
           guardType <- traverseM(guardTypes.zip(guardLocs)) { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
           (bodyConstrs, bodyTypes, bodyEffs) <- traverseM(bodies)(visitExp).map(_.unzip3)
-          resultTyp <- unifyTypeM(bodyTypes, loc)
+          resultTyp <- if (bodyTypes.isEmpty) liftM(tvar) else unifyTypeM(tvar :: bodyTypes, loc)
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
@@ -2020,7 +2020,7 @@ object Typer {
         val eff = Type.Impure
         TypedAst.Expr.ScopeExit(e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expr.Match(matchExp, rules, loc) =>
+      case KindedAst.Expr.Match(matchExp, rules, tvar, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
           case KindedAst.MatchRule(pat, guard, exp) =>
@@ -2029,7 +2029,7 @@ object Typer {
             val b = visitExp(exp, subst0)
             TypedAst.MatchRule(p, g, b)
         }
-        val tpe = rs.head.exp.tpe
+        val tpe = subst0(tvar)
         val eff = rs.foldLeft(e1.eff) {
           case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkUnion(g.map(_.eff).toList ::: List(b.eff, acc), loc)
         }

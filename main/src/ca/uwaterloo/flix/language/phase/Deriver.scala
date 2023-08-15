@@ -137,6 +137,7 @@ object Deriver {
       KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
         (mainMatchRules ++ List(defaultRule)).toList,
+        Type.freshVar(Kind.Star, loc.asSynthetic),
         loc
       )
   }
@@ -283,7 +284,7 @@ object Deriver {
       // Create the lambda mapping tags to indices
       val lambdaParamVarSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
       val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
+      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       val lambda = KindedAst.Expr.Lambda(
         KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
@@ -325,6 +326,7 @@ object Deriver {
       val matchExp = KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
         matchRules.toList :+ defaultMatchRule,
+        Type.freshVar(Kind.Star, loc.asSynthetic),
         loc
       )
 
@@ -497,6 +499,7 @@ object Deriver {
       KindedAst.Expr.Match(
         mkVarExpr(param, loc),
         matchRules.toList,
+        Type.freshVar(Kind.Star, loc.asSynthetic),
         loc
       )
   }
@@ -634,6 +637,7 @@ object Deriver {
       KindedAst.Expr.Match(
         mkVarExpr(param, loc),
         matchRules.toList,
+        Type.freshVar(Kind.Star, loc.asSynthetic),
         loc
       )
   }

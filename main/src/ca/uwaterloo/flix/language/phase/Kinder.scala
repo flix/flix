@@ -537,7 +537,7 @@ object Kinder {
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val rulesVal = traverse(rules0)(visitMatchRule(_, kenv0, taenv, henv0, root))
       mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expr.Match(exp, rules, loc)
+        case (exp, rules) => KindedAst.Expr.Match(exp, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expr.TypeMatch(exp0, rules0, loc) =>
