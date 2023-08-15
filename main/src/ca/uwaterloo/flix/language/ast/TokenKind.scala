@@ -288,6 +288,10 @@ object TokenKind {
 
   case object LowercaseName extends TokenKind
 
+  case object MathName extends TokenKind
+
+  case object GreekName extends TokenKind
+
   case object Float32 extends TokenKind
 
   case object Float64 extends TokenKind
