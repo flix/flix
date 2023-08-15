@@ -479,7 +479,7 @@ object Completion {
    * Represents a Use Enum Tag completion
    *
    * @param enumSym the sym of the enum.
-   * @param caze     the case of the enum.
+   * @param caze    the case of the enum.
    */
   case class UseEnumTagCompletion(enumSym: EnumSym, caze: TypedAst.Case) extends Completion
   /**

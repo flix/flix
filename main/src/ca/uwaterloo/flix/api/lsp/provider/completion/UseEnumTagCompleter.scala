@@ -24,6 +24,9 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object UseEnumTagCompleter extends Completer {
+  /**
+   * Returns an Iterable of Completions for enum tag usages.
+   */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseEnumTagCompletion] = {
     stripWord(context) match {
       case Some(word) => {
@@ -34,6 +37,9 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
+  /**
+   * Returns an Iterable of completions for enum tag uses without a tag present.
+   */
   private def getUseEnumTagCompletionsNoTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     val sym = mkEnumSym(segments)
     root.enums.get(sym) match {
@@ -45,6 +51,9 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
+  /**
+   * Returns an Iterable of completions for enum tag usages with tags present.
+   */
   private def getUseEnumTagCompletionsWithTag(segments: List[String])(implicit root: TypedAst.Root): Iterable[UseEnumTagCompletion] = {
     if (segments.isEmpty) {
       Nil
@@ -68,6 +77,9 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
+  /**
+   * Strips `context` to only include text after "use..."
+   */
   private def stripWord(ctx: CompletionContext): Option[String] = {
     val regex = raw"\s*use\s+(.*)".r
     ctx.prefix match {
@@ -76,8 +88,16 @@ object UseEnumTagCompleter extends Completer {
     }
   }
 
+  /**
+   * Returns true if `tag` matches the provided case.
+   */
   private def matches(sym: Symbol.CaseSym, tag: String): Boolean = sym.name.startsWith(tag)
 
+  /**
+   * Returns an updated EnumSym
+   *
+   *
+   */
   private def mkEnumSym(segment: List[String]): Symbol.EnumSym = {
     if (segment.isEmpty) {
       new Symbol.EnumSym(None, Nil, "", SourceLocation.Unknown)
