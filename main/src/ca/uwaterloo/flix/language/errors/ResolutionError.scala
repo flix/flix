@@ -1072,33 +1072,24 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that an associated type definition is not allowed.
+    * An error raised to indicate that an associated type application is not allowed.
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalAssocTypeDef(loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Illegal associated type definition."
+  case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
+    override def summary: String = " Illegal associated type application."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal associated type in associated type definition.
+         |>> Illegal associated type application.
          |
-         |${code(loc, "illegal associated type definition.")}
+         |${code(loc, "illegal associated type application.")}
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      """The definition of an associate type may only contain associated types applied to variables.
-        |
-        |For example:
-        |
-        |instance C[List[a]] {
-        |    type T1[List[a]] = String            // OK
-        |    type T2[List[a]] = a                 // OK
-        |    type T3[List[a]] = D.T0[a]           // OK
-        |    type T4[List[a]] = D.T0[Option[a]]   // Not OK. Option[a] is not a variable.
-        |""".stripMargin
+      "An associated type may only be applied to a variable."
     })
   }
 
