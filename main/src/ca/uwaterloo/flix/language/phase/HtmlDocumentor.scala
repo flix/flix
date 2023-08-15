@@ -45,6 +45,11 @@ object HtmlDocumentor {
     */
   val Stylesheet: String = "/doc/styles.css"
 
+  /**
+    * The root of the link to each file of the standard library.
+    */
+  val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
+
   def run(root: TypedAst.Root)(implicit flix: Flix): Unit = flix.phase("HtmlDocumentor") {
     //
     // Determine whether to generate documentation.
@@ -591,7 +596,7 @@ object HtmlDocumentor {
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"https://github.com/flix/flix/blob/master/main/src/library/${loc.source.name}#L${loc.beginLine}-L${loc.beginLine}"
+    s"$LibraryGitHub${loc.source.name}#L${loc.beginLine}-L${loc.beginLine}"
   }
 
   /**
