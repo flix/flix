@@ -592,10 +592,7 @@ object PatternExhaustiveness {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, _, numArgs, _) => numArgs
-    case TyCon.Record(fields, tail) => tail match {
-      case TyCon.RecordEmpty => fields.length
-      case _ => fields.length + 1
-    }
+    case TyCon.Record(fields, tail) => fields.length + countCtorArgs(tail)
     case TyCon.RecordEmpty => 0
   }
 
