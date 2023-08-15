@@ -474,7 +474,7 @@ object Redundancy {
           (usedPatGuardAndBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
       }
 
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+      usedMatch ++ usedRules.foldLeft(Used.empty)(_ ++ _)
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       // Visit the match expression.
