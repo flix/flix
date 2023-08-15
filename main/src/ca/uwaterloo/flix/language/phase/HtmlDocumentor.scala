@@ -201,7 +201,7 @@ object HtmlDocumentor {
       "<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>" +
       "<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>" +
       "<link href='styles.css' rel='stylesheet'>" +
-      s"<title>Flix Doc | ${esc(name)}</title>" +
+      s"<title>Flix | ${esc(name)}</title>" +
       "</head>"
   }
 
