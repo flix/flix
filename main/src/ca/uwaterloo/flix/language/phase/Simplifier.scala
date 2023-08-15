@@ -475,7 +475,7 @@ object Simplifier {
           val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
             case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), (exp, matchVarExp)) =>
               val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(matchVarExp), pat.tpe, Pure, loc1)
-              val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(matchVarExp), tpe, matchVarExp.purity, loc1)
+              val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(matchVarExp), Type.mkRecordRestrict(field, varExp.tpe), matchVarExp.purity, loc1)
               val fieldLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
               (fieldLetBinding, restrictedMatchVarExp)
           }

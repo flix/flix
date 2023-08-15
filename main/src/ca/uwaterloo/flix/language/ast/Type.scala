@@ -63,7 +63,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
-    case Type.AssocType(_, arg, _, _) => arg.effects// TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -727,6 +727,19 @@ object Type {
   }
 
   /**
+    * Performs record restriction on `tpe` by removing the first occurrence of `RecordRowExtend(field)` from `tpe`.
+    *
+    * @param field the field / record row to remove from `tpe`.
+    * @param tpe   the record type.
+    */
+  def mkRecordRestrict(field: Name.Field, tpe: Type): Type = tpe match {
+    case Apply(Type.Cst(TypeConstructor.Record, loc1), tpe2, loc2) => Apply(Type.Cst(TypeConstructor.Record, loc1), mkRecordRestrict(field, tpe2), loc2)
+    case Apply(Type.Cst(TypeConstructor.RecordRowExtend(f), _), tpe2, _) if field == f => tpe2
+    case Apply(Type.Cst(TypeConstructor.RecordRowExtend(f), loc1), tpe2, loc2) => Apply(Type.Cst(TypeConstructor.RecordRowExtend(f), loc1), mkRecordRestrict(field, tpe2), loc2)
+    case t => t
+  }
+
+  /**
     * Constructs a SchemaExtend type.
     */
   def mkSchemaRowEmpty(loc: SourceLocation): Type = {
@@ -916,7 +929,7 @@ object Type {
     */
   def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
-      Type.Cst( TypeConstructor.CaseSet(syms1 ++ syms2, sym), loc)
+      Type.Cst(TypeConstructor.CaseSet(syms1 ++ syms2, sym), loc)
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
     case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
     // TODO RESTR-VARS ALL case: universe
