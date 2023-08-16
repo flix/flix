@@ -87,7 +87,7 @@ object Options {
   *
   * @param lib                 selects the level of libraries to include.
   * @param debug               enables the emission of debugging information.
-  * @param documentor          enables generation of flixdoc.
+  * @param documentor          enables generation of flixdoc in JSON and HTML format.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
   * @param githubKey           the API key to use for GitHub dependency resolution.
