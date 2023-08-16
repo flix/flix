@@ -250,6 +250,13 @@ object PatternExhaustiveness {
     }
   }
 
+  /**
+    * Constructs a match rule for an empty pattern match.
+    *
+    * @param tpe the [[Type]] of the [[Expr.Match]].
+    * @param loc the [[SourceLocation]] of the [[Expr.Match]].
+    * @return a [[TypedAst.MatchRule]] with a [[Pattern.Wild]].
+    */
   private def mkVirtualMatchRule(tpe: Type, loc: SourceLocation): List[TypedAst.MatchRule] = {
     List(
       TypedAst.MatchRule(
