@@ -317,14 +317,14 @@ object Simplifier {
       val matchExp = visitExp(exp0)
 
       // Generate a fresh label for the default fall through case.
-      val defaultLab = Symbol.freshLabel("default")
+      val defaultLabel = Symbol.freshLabel("default")
 
       // Generate a label for each rule.
       val ruleLabels = rules.map(_ => Symbol.freshLabel("case"))
 
       // Construct a map from each label to the label of the next case.
       // The default label is the next label of the last case.
-      val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLab :: Nil)).toMap
+      val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLabel :: Nil)).toMap
 
       //TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
       val jumpPurity = combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
@@ -349,10 +349,11 @@ object Simplifier {
       }
       // Construct the error branch.
       val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
-      val errorBranch = defaultLab -> errorExp
+      val errorBranch = defaultLabel -> errorExp
 
       // The initial expression simply jumps to the first label.
-      val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, tpe, jumpPurity, loc)
+      val initialLabel = if (ruleLabels.isEmpty) defaultLabel else ruleLabels.head
+      val entry = SimplifiedAst.Expr.JumpTo(initialLabel, tpe, jumpPurity, loc)
 
       // The purity of the branch
       val branchPurity = combineAll(branches.map { case (_, exp) => exp.purity })
