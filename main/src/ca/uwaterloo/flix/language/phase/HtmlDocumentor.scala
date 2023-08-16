@@ -74,12 +74,13 @@ object HtmlDocumentor {
     }
   }
 
+  private def moduleName(mod: Module): String = if (mod.sym.isRoot) RootNS else mod.sym.toString
+
   /**
     * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
     */
   private def splitModules(root: TypedAst.Root): Map[Symbol.ModuleSym, Module] = root.modules.map {
     case (sym, mod) =>
-      val namespace = sym.ns
       val uses = root.uses.getOrElse(sym, Nil)
 
       var submodules: List[Symbol.ModuleSym] = Nil
@@ -99,7 +100,7 @@ object HtmlDocumentor {
       }
 
       sym -> Module(
-        namespace,
+        sym,
         uses,
         submodules,
         classes,
@@ -134,9 +135,9 @@ object HtmlDocumentor {
     * but with all items that shouldn't appear in the documentation removed.
     */
   private def filterItems(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = mods.map {
-    case (sym, Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs)) =>
+    case (sym, Module(_, uses, submodules, classes, enums, effects, typeAliases, defs)) =>
       sym -> Module(
-        namespace,
+        sym,
         uses,
         submodules,
         classes.filter(c => c.mod.isPublic && !c.ann.isInternal).map(filterClass),
@@ -186,7 +187,7 @@ object HtmlDocumentor {
       */
     def checkMod(sym: Symbol.ModuleSym): Boolean = {
       modMap(sym) match {
-        case Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs) =>
+        case Module(_, uses, submodules, classes, enums, effects, typeAliases, defs) =>
           val filteredSubMods = submodules.filter(checkMod)
 
           val isEmpty = filteredSubMods.isEmpty &&
@@ -197,7 +198,7 @@ object HtmlDocumentor {
             defs.isEmpty
 
           if (isEmpty) modMap.remove(sym)
-          else modMap += sym -> Module(namespace, uses, filteredSubMods, classes, enums, effects, typeAliases, defs)
+          else modMap += sym -> Module(sym, uses, filteredSubMods, classes, enums, effects, typeAliases, defs)
 
           !isEmpty
       }
@@ -214,11 +215,9 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val name = if (mod.namespace.isEmpty) RootNS else mod.namespace.mkString(".")
-
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
-    sb.append(mkHead(name))
+    sb.append(mkHead(moduleName(mod)))
     sb.append("<body>")
 
     sb.append("<nav>")
@@ -230,7 +229,7 @@ object HtmlDocumentor {
     sb.append("</nav>")
 
     sb.append("<main>")
-    sb.append(s"<h1>${esc(name)}</h1>")
+    sb.append(s"<h1>${esc(moduleName(mod))}</h1>")
     docSection("Classes", mod.classes.sortBy(_.sym.name), docClass)
     docSection("Enums", mod.enums.sortBy(_.sym.name), docEnum)
     docSection("Effects", mod.effects.sortBy(_.sym.name), docEffect)
@@ -645,8 +644,7 @@ object HtmlDocumentor {
     * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
     */
   private def writeModule(mod: Module, output: String): Unit = {
-    val name = if (mod.namespace.isEmpty) List(RootNS) else mod.namespace
-    writeFile(s"${name.mkString(".")}.html", output.getBytes)
+    writeFile(s"${moduleName(mod)}.html", output.getBytes)
   }
 
   /**
@@ -688,7 +686,7 @@ object HtmlDocumentor {
   /**
     * A represention of a module that's easier to work with while generating documention.
     */
-  private case class Module(namespace: List[String],
+  private case class Module(sym: Symbol.ModuleSym,
                             uses: List[Ast.UseOrImport],
                             submodules: List[Symbol.ModuleSym],
                             classes: List[Class],
