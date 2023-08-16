@@ -45,6 +45,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.BuildPkg)
   }
 
+  test("doc") {
+    val args = Array("doc")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Doc)
+  }
+
   test("run") {
     val args = Array("run")
     val opts = Main.parseCmdOpts(args).get
@@ -67,12 +73,6 @@ class TestMain extends AnyFunSuite {
     val args = Array("--args", "--abc --def")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.args.contains("--abc --def"))
-  }
-
-  test("--doc") {
-    val args = Array("--doc", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.documentor)
   }
 
   test("--explain foo") {

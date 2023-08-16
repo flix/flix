@@ -43,13 +43,7 @@ object JsonDocumentor {
     */
   val OutputDirectory: Path = Paths.get("./build/api")
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("Documentor") {
-    //
-    // Determine whether to generate documentation.
-    //
-    if (!flix.options.documentor) {
-      return root
-    }
+  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
 
     //
     // Classes.
@@ -165,8 +159,6 @@ object JsonDocumentor {
 
     // Write the string to the path.
     writeString(s, p)
-
-    root
   }
 
   /**
