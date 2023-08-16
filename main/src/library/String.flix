@@ -1352,7 +1352,7 @@ mod String {
     /// If a line contains a single word that exceeds the length of `w`, the word will be broken.
     ///
     pub def wrap(w: Int32, s: String): String =
-        if (w == 0) ""
+        if (w <= 0) ""
         else {
             let lines = List.flatMap(l -> wrapLine(w, l),  lines(s));
             intercalate(lineSeparator(), lines)
