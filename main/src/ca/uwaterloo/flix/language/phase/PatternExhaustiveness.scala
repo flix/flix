@@ -156,11 +156,12 @@ object PatternExhaustiveness {
       case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expr.Discard(exp, _, _) => visitExp(exp, root)
 
-      case Expr.Match(exp, rules, _, _, _) =>
+      case Expr.Match(exp, rules, tpe, _, loc) =>
         val ruleExps = rules.map(_.exp)
         val guards = rules.flatMap(_.guard)
         val expsErrs = (exp :: ruleExps ::: guards).flatMap(visitExp(_, root))
-        val rulesErrs = checkRules(exp, rules, root)
+        val virtualRules = if (rules.isEmpty) mkVirtualMatchRule(tpe, loc) else rules
+        val rulesErrs = checkRules(exp, virtualRules, root)
         expsErrs ::: rulesErrs
 
       case Expr.TypeMatch(exp, rules, _, _, _) =>
@@ -247,6 +248,15 @@ object PatternExhaustiveness {
       case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp, root)
       case Expr.Error(_, _, _) => Nil
     }
+  }
+
+  private def mkVirtualMatchRule(tpe: Type, loc: SourceLocation): List[TypedAst.MatchRule] = {
+    List(
+      TypedAst.MatchRule(
+        Pattern.Wild(tpe, loc.asSynthetic),
+        None,
+        Expr.Cst(
+          Ast.Constant.Unit, Type.Unit, loc.asSynthetic)))
   }
 
   /**
