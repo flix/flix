@@ -269,7 +269,7 @@ object Simplifier {
 
             case TypeConstructor.Regex => MonoType.Regex
 
-            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
+            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty
 
             case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
 
