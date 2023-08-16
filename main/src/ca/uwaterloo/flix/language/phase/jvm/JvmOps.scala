@@ -65,7 +65,7 @@ object JvmOps {
     case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
-    case MonoType.RecordEmpty() => getRecordInterfaceType()
+    case MonoType.RecordEmpty => getRecordInterfaceType()
     case MonoType.RecordExtend(_, _, _) => getRecordInterfaceType()
     case MonoType.Enum(sym) => getEnumInterfaceType(sym)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
@@ -645,10 +645,10 @@ object JvmOps {
       case MonoType.Enum(_) => Set(tpe)
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
 
-      case MonoType.RecordEmpty() => Set(tpe)
+      case MonoType.RecordEmpty => Set(tpe)
       case MonoType.RecordExtend(_, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
 
-      case MonoType.SchemaEmpty() => Set(tpe)
+      case MonoType.SchemaEmpty => Set(tpe)
       case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
       case MonoType.Native(_) => Set(tpe)
