@@ -592,7 +592,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Builds HTML API documentation.
+    * Generates API documentation.
     */
   def doc(o: Options): Validation[Unit, BootstrapError] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)

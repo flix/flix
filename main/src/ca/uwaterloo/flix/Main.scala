@@ -380,7 +380,7 @@ object Main {
 
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
-      cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates HTML API documentation.")
+      cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
