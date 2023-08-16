@@ -19,10 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
+import ca.uwaterloo.flix.util.LocalResource
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
+
 import scala.io.Source
 
 /**
@@ -606,8 +608,8 @@ object HtmlDocumentor {
     * @param path The path of the resource, relative to the resources folder.
     */
   private def readResource(path: String): Array[Byte] = {
-    val uri = getClass.getResource(path).toURI
-    Files.readAllBytes(Paths.get(uri))
+    val is = LocalResource.getInputStream(path)
+    LazyList.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
   }
 
   /**
