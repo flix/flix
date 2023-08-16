@@ -82,6 +82,9 @@ object UseEnumTagCompleter extends Completer {
 
   /**
    * Strips `context` to only include text after "use..."
+   *
+   * @param ctx the completion context provided by the user
+   * @return Some stripped String if the context matches the required input format, otherwise None
    */
   private def stripWord(ctx: CompletionContext): Option[String] = {
     val regex = raw"\s*use\s+(.*)".r
@@ -93,6 +96,10 @@ object UseEnumTagCompleter extends Completer {
 
   /**
    * Returns true if `tag` matches the provided case.
+   *
+   * @param sym the CaseSym of the Enum case to compare.
+   * @param tag the provided tag.
+   * @return true if the provied tag matches `sym`, and false otherwise.
    */
   private def matches(sym: Symbol.CaseSym, tag: String): Boolean = sym.name.startsWith(tag)
 
@@ -102,6 +109,9 @@ object UseEnumTagCompleter extends Completer {
    * Symbol.mkEnumSym("A.B.C.Color") would yield a namespace of "A" and a name of "B.C.Color".
    *
    * Conversely, this function would yield a namespace of "A.B.C" and a name of "Color".
+   *
+   * @param segment the name as a List[String], segmented by `.`.
+   * @return the correctly represented Enum Sym with the full name.
    */
   private def mkEnumSym(segment: List[String]): Symbol.EnumSym = {
     if (segment.isEmpty) {
