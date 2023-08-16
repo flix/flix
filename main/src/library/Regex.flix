@@ -503,6 +503,32 @@ mod Regex {
     }
 
     ///
+    /// Return the index of the first occurence of `substr` in `s` from the left within
+    /// the bounds `(start, end)`.
+    ///
+    /// If the Regex `substr` is not present in `s` or the bounds are invalid return `None`.
+    ///
+    pub def indexOfFirstWithBounds(substr: {substr = Regex}, start: {start = Int32}, end: {end = Int32}, s: String): Option[Int32] = region rc {
+        match newMatcherWithBounds(rc, substr.substr, start, end, s) {
+            case Ok(m)  => firstSubmatch(matcherStart, m) |> Result.toOption
+            case Err(_) => None
+        }
+    }
+
+    ///
+    /// Return the index of the last occurence of `substr` in `s` from the left within
+    /// the bounds `(start, end)`.
+    ///
+    /// If the Regex `substr` is not present in `s` or the bounds are invalid return `None`.
+    ///
+    pub def indexOfLastWithBounds(substr: {substr = Regex}, start: {start = Int32}, end: {end = Int32}, s: String): Option[Int32] = region rc {
+        match newMatcherWithBounds(rc, substr.substr, start, end, s) {
+            case Ok(m)  => lastSubmatch(matcherStart, m) |> Result.toOption
+            case Err(_) => None
+        }
+    }
+
+    ///
     /// Return the content of the first occurence of `substr` in `s` from the left within
     /// the bounds `(start, end)`.
     ///

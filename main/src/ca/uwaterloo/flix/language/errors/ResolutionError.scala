@@ -1072,34 +1072,71 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that an associated type definition is not allowed.
+    * An error raised to indicate that an associated type application is not allowed.
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalAssocTypeDef(loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Illegal associated type definition."
+  case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
+    override def summary: String = " Illegal associated type application."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal associated type in associated type definition.
+         |>> Illegal associated type application.
          |
-         |${code(loc, "illegal associated type definition.")}
+         |${code(loc, "illegal associated type application.")}
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      """The definition of an associate type may only contain associated types applied to variables.
-        |
-        |For example:
-        |
-        |instance C[List[a]] {
-        |    type T1[List[a]] = String            // OK
-        |    type T2[List[a]] = a                 // OK
-        |    type T3[List[a]] = D.T0[a]           // OK
-        |    type T4[List[a]] = D.T0[Option[a]]   // Not OK. Option[a] is not a variable.
-        |""".stripMargin
+      "An associated type may only be applied to a variable."
     })
+  }
+
+  /**
+    * An error raised to indicate a duplicate associated type definition.
+    *
+    * @param name the name of the duplicated associated type definition.
+    * @param loc1 the location of the first associated type definition.
+    * @param loc2 the location of the second associated type definition.
+    */
+  case class DuplicateAssocTypeDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Duplicate associated type definition: $name."
+
+    // TODO ASSOC-TYPES also show other loc
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Duplicate associated type definition.
+         |
+         |${code(loc2, "duplicate associated type definition.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+
+    val loc: SourceLocation = loc2
+  }
+
+  /**
+    * An error raised to indicate a missing associated type definition.
+    *
+    * @param name the name of the missing associated type definition.
+    * @param loc the location of the instance symbol where the error occurred.
+    */
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Missing associated type definition: $name."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing associated type definition: $name.
+         |
+         |${code(loc, s"missing associated type definition: $name.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
