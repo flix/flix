@@ -727,31 +727,6 @@ object Type {
   }
 
   /**
-    * Performs record restriction on `tpe` by removing the first occurrence of `RecordRowExtend(field)` from `tpe`.
-    *
-    * @param field the field / record row to remove from `tpe`.
-    * @param tpe   the record type.
-    */
-  def mkRecordRestrict(field: Name.Field, tpe: Type): Type = {
-
-    @tailrec
-    def visit(t: Type, cont: Type => Type): Type = t match {
-      case Apply(Type.Cst(TypeConstructor.RecordRowExtend(f), _), tpe2, _) if field == f =>
-        cont(tpe2)
-
-      case Apply(Type.Cst(TypeConstructor.Record, loc1), tpe2, loc2) =>
-        visit(tpe2, ty => cont(Apply(Type.Cst(TypeConstructor.Record, loc1), ty, loc2)))
-
-      case Apply(Type.Cst(TypeConstructor.RecordRowExtend(f), loc1), tpe2, loc2) =>
-        visit(tpe2, ty => cont(Apply(Type.Cst(TypeConstructor.RecordRowExtend(f), loc1), ty, loc2)))
-
-      case ty => cont(ty)
-    }
-
-    visit(tpe, t => t)
-  }
-
-  /**
     * Constructs a SchemaExtend type.
     */
   def mkSchemaRowEmpty(loc: SourceLocation): Type = {

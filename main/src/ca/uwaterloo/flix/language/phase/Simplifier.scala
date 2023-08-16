@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Purity._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -615,14 +616,14 @@ object Simplifier {
         case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
           val freshVars = pats.map(_ => Symbol.freshVarSym("innerField" + Flix.Delimiter, BoundBy.Let, loc))
           val fieldPats = pats.map(_.pat)
-          val varExp = SimplifiedAst.Expr.Var(v, tpe, loc)
+          val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
           val zero = patternMatchList(fieldPats ::: ps, freshVars ::: vs, guard, succ, fail)
           // Note that we reverse pats and freshVars because we still want to fold right
           // but we want to restrict the record / matchVar from left to right
           val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
             case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), (exp, matchVarExp)) =>
-              val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(matchVarExp), pat.tpe, Pure, loc1)
-              val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(matchVarExp), Type.mkRecordRestrict(field, varExp.tpe), matchVarExp.purity, loc1)
+              val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(matchVarExp), visitType(pat.tpe), Pure, loc1)
+              val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(matchVarExp), mkRecordRestrict(field, varExp.tpe), matchVarExp.purity, loc1)
               val fieldLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
               (fieldLetBinding, restrictedMatchVarExp)
           }
@@ -774,5 +775,27 @@ object Simplifier {
     */
   def combineAll(purities: List[Purity]): Purity = purities.foldLeft[Purity](Pure) {
     case (acc, purity) => combine(acc, purity)
+  }
+
+  /**
+    * Performs record restriction on `tpe` by removing the first occurrence of `RecordRowExtend(field)` from `tpe`.
+    *
+    * @param field the field / record row to remove from `tpe`.
+    * @param tpe   the record type.
+    */
+  private def mkRecordRestrict(field: Name.Field, tpe: MonoType): MonoType = {
+
+    @tailrec
+    def visit(t: MonoType, cont: MonoType => MonoType): MonoType = t match {
+      case MonoType.RecordExtend(f, _, tail) if field.name == f =>
+        cont(tail)
+
+      case MonoType.RecordExtend(f, tp, tail) =>
+        visit(tail, ty => MonoType.RecordExtend(f, tp, ty))
+
+      case ty => cont(ty)
+    }
+
+    visit(tpe, t => t)
   }
 }
