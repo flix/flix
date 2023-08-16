@@ -1267,6 +1267,86 @@ mod TestRegex {
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "::::") == 0
 
     /////////////////////////////////////////////////////////////////////////////
+    // indexOfFirstWithBounds                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indexOfFirstWithBounds01(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
+
+    @test
+    def indexOfFirstWithBounds02(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
+
+    @test
+    def indexOfFirstWithBounds03(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some(0)
+
+    @test
+    def indexOfFirstWithBounds04(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some(0)
+
+    @test
+    def indexOfFirstWithBounds05(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "a::b::c") == Some(0)
+
+    @test
+    def indexOfFirstWithBounds06(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 3, end = 7, "a::b::c") == Some(3)
+
+    @test
+    def indexOfFirstWithBounds07(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 6, end = 7, "a::b::c") == Some(6)
+
+    @test
+    def indexOfFirstWithBounds08(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some(3)
+
+    @test
+    def indexOfFirstWithBounds09(): Bool =
+        Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 7, end = 9, "a::b::c::") == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLastWithBounds                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indexOfLastWithBounds01(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
+
+    @test
+    def indexOfLastWithBounds02(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
+
+    @test
+    def indexOfLastWithBounds03(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some(0)
+
+    @test
+    def indexOfLastWithBounds04(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some(6)
+
+    @test
+    def indexOfLastWithBounds05(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 5, end = 7, "a::b::c") == Some(6)
+
+    @test
+    def indexOfLastWithBounds06(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 6, "a::b::c") == Some(3)
+
+    @test
+    def indexOfLastWithBounds07(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::b::c") == Some(0)
+
+    @test
+    def indexOfLastWithBounds08(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some(3)
+
+    @test
+    def indexOfLastWithBounds09(): Bool =
+        Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "::a::b::c") == None
+
+    /////////////////////////////////////////////////////////////////////////////
     // getFirstWithBounds                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
