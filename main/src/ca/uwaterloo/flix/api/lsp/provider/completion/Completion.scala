@@ -93,6 +93,12 @@ sealed trait Completion {
         documentation = documentation,
         insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Class)
+    case Completion.TryWithCompletion(name) =>
+      CompletionItem(label = name,
+        sortText = name,
+        textEdit = TextEdit(context.range, name),
+        documentation = None,
+        kind = CompletionItemKind.Method)
     case Completion.ImportNewCompletion(constructor, clazz, aliasSuggestion) =>
       val (label, priority, textEdit) = CompletionUtils.getExecutableCompletionInfo(constructor, clazz, aliasSuggestion, context)
       CompletionItem(label = label,
@@ -347,7 +353,7 @@ object Completion {
   case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
 
-
+  case class TryWithCompletion(name: String) extends Completion
   /**
     * Represents an importNew completion (java constructors)
     *
