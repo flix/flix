@@ -87,6 +87,11 @@ object LambdaLift {
       case SimplifiedAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(sym, tpe, loc)
 
       case SimplifiedAst.Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
+        val arrowTpe = tpe match {
+          case t: MonoType.Arrow => t
+          case _ =>  throw InternalCompilerException(s"Lambda has unexpected type: $tpe", loc)
+        }
+
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
@@ -106,7 +111,7 @@ object LambdaLift {
         val fs = fparams.map(visitFormalParam)
 
         // Construct a new definition.
-        val defTpe = tpe.result
+        val defTpe = arrowTpe.result
         val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
 
         // Add the new definition to the map of lifted definitions.
@@ -120,7 +125,7 @@ object LambdaLift {
         }
 
         // Construct the closure expression.
-        LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, tpe, Purity.Pure, loc)
+        LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps map visitExp

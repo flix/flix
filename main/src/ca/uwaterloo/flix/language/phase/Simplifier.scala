@@ -69,12 +69,8 @@ object Simplifier {
       case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
         val p = visitFormalParam(fparam)
         val e = visitExp(exp)
-        visitType(tpe) match {
-          case t: MonoType.Arrow =>
-            SimplifiedAst.Expr.Lambda(List(p), e, t, loc)
-          case _ =>
-            throw InternalCompilerException(s"Unexpected type: $tpe", tpe.loc)
-        }
+        val t = visitType(tpe)
+        SimplifiedAst.Expr.Lambda(List(p), e, t, loc)
 
       case LoweredAst.Expr.Apply(exp, exps, tpe, eff, loc) =>
         val e = visitExp(exp)

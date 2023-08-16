@@ -164,7 +164,7 @@ object ClosureConv {
   /**
     * Returns a LambdaClosure under the given formal parameters fparams for the body expression exp where the overall lambda has type tpe.
     */
-  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType.Arrow, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
+  private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
     //         (Remove the variables bound by the lambda itself).
     val fvs = filterBoundParams(freeVars(exp), fparams).toList

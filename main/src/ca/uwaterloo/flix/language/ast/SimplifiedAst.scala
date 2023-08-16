@@ -55,14 +55,14 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class Lambda(fparams: List[FormalParam], exp: Expr, tpe: MonoType.Arrow, loc: SourceLocation) extends Expr {
+    case class Lambda(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
     case class Apply(exp: Expr, args: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     @IntroducedBy(ClosureConv.getClass)
-    case class LambdaClosure(cparams: List[FormalParam], fparams: List[FormalParam], freeVars: List[FreeVar], exp: Expr, tpe: MonoType.Arrow, loc: SourceLocation) extends Expr {
+    case class LambdaClosure(cparams: List[FormalParam], fparams: List[FormalParam], freeVars: List[FreeVar], exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
