@@ -64,6 +64,7 @@ main {
     flex: 1;
 
     overflow-y: auto;
+    scroll-behavior: smooth;
 }
 
 h1, h2 {
@@ -110,13 +111,16 @@ section > * {
 }
 
 .box {
-    box-shadow: 0 0 10px 0 rgba(0,0,0,.1);
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     margin-bottom: 0.8rem;
     border-radius: 0.2rem;
     box-sizing: border-box;
     overflow: auto;
+}
+.box:target {
+    box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.3);
 }
 .box code {
     font-size: 0.85rem;

@@ -74,6 +74,9 @@ object HtmlDocumentor {
     }
   }
 
+  /**
+    * Get the name of the module.
+    */
   private def moduleName(mod: Module): String = if (mod.sym.isRoot) RootNS else mod.sym.toString
 
   /**
@@ -226,6 +229,11 @@ object HtmlDocumentor {
       mod.submodules,
       (m: Symbol.ModuleSym) => sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>"),
     )
+    docSideBarSection(
+      "Definitions",
+      sortedDefs,
+      (d: TypedAst.Def) => sb.append(s"<a href='#${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+    )
     sb.append("</nav>")
 
     sb.append("<main>")
@@ -259,6 +267,18 @@ object HtmlDocumentor {
     """.stripMargin
   }
 
+  /**
+    * Documents a section in the side bar, (Modules, Classes, Enums, etc.), containing a `group` of items.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `group` is empty, nothing will be generated.
+    *
+    * @param name   The name of the section, e.g. "Modules".
+    * @param group  The list of items in the section, in the order that they should appear.
+    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    *               Note that they will each be wrapped in an `<li>` tag.
+    */
   private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
@@ -275,7 +295,7 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents a section, (Classes, Enums, Effects, etc.), containing a `group` of items, each being placed in a box.
+    * Documents a section, (Classes, Enums, Effects, etc.), containing a `group` of items.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
@@ -284,7 +304,6 @@ object HtmlDocumentor {
     * @param name   The name of the section, e.g. "Classes".
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
-    *               Note that this will be already be wrapped in a box.
     */
   private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
@@ -294,9 +313,7 @@ object HtmlDocumentor {
     sb.append("<section>")
     sb.append(s"<h2>${esc(name)}</h2>")
     for (e <- group) {
-      sb.append("<div class='box'>")
       docElt(e)
-      sb.append("</div>")
     }
     sb.append("</section>")
   }
@@ -331,6 +348,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div class='box'>")
     docAnnotations(clazz.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
@@ -343,6 +361,7 @@ object HtmlDocumentor {
     docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
+    sb.append("</div>")
   }
 
   /**
@@ -351,6 +370,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div class='box'>")
     docAnnotations(enm.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
@@ -361,6 +381,7 @@ object HtmlDocumentor {
     docSourceLocation(enm.loc)
     docCases(enm.cases.values.toList)
     docDoc(enm.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -369,6 +390,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div class='box'>")
     docAnnotations(eff.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
@@ -377,6 +399,7 @@ object HtmlDocumentor {
     docSourceLocation(eff.loc)
     docSubSection("Ops", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec))
     docDoc(eff.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -385,6 +408,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div class='box'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
@@ -394,6 +418,7 @@ object HtmlDocumentor {
     sb.append("</code>")
     docSourceLocation(ta.loc)
     docDoc(ta.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -401,8 +426,11 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit =
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<div class='box' id='${defn.sym.name}'>")
     docSpec(defn.sym.name, defn.spec)
+    sb.append("</div>")
+  }
 
   /**
     * Documents the given `Sig`, `sig`.
@@ -420,7 +448,7 @@ object HtmlDocumentor {
     */
   private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
-    sb.append("<code>")
+    sb.append(s"<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${esc(name)}</span>")
     docTypeParams(spec.tparams, showKinds = false)
