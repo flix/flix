@@ -20,15 +20,50 @@
     --show-hide-hover-color: #0a58ca;
 }
 
+html, body {
+    height: 100vh;
+    overflow-y: hidden;
+    margin: 0;
+    padding: 0;
+}
+
 body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, 
         "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, 
         sans-serif, "Apple Color Emoji", "Segoe UI Emoji", 
         "Segoe UI Symbol", "Noto Color Emoji";
 
-    padding: 0 10%;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+
+    display: flex;
+}
+
+nav {
+    box-sizing: border-box;
+    padding: 0.5rem 1rem;
+    height: 100%;
+    width: 15rem;
+    overflow-y: auto;
+}
+
+nav ul {
+    margin-top: 0.5rem;
+}
+
+nav a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+nav a:hover {
+    text-decoration: underline;
+}
+
+main {
+    padding: 1rem 10%;
+    flex: 1;
+
+    overflow-y: auto;
 }
 
 h1, h2 {
@@ -40,7 +75,7 @@ h1, h2 {
 h1 {
     font-size: 4.5rem;
     font-weight: 300;
-    margin-bottom: 0.5rem;
+    margin-bottom: 3rem;
 }
 h2 {
     font-size: 2rem;

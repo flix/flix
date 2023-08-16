@@ -25,8 +25,6 @@ import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
 
-import scala.io.Source
-
 /**
   * A phase that emits a JSON file for library documentation.
   */
@@ -169,8 +167,8 @@ object HtmlDocumentor {
     * Checks whether the given `Module`, `mod`, contains anything or not.
     */
   private def isEmpty(mod: HtmlDocumentor.Module): Boolean = mod match {
-    case Module(_, _, _, classes, enums, effects, typeAliases, defs) =>
-      classes.isEmpty && enums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
+    case Module(_, _, submodules, classes, enums, effects, typeAliases, defs) =>
+      submodules.isEmpty && classes.isEmpty && enums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
   }
 
   /**
@@ -181,17 +179,27 @@ object HtmlDocumentor {
 
     val name = if (mod.namespace.isEmpty) RootNS else mod.namespace.mkString(".")
 
+    val sortedDefs = mod.defs.sortBy(_.sym.name)
+
     sb.append(mkHead(name))
     sb.append("<body>")
 
-    sb.append(s"<h1>${esc(name)}</h1>")
-    sb.append("<hr/>")
+    sb.append("<nav>")
+    docSideBarSection(
+      "Modules",
+      mod.submodules,
+      (m: Symbol.ModuleSym) => sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>"),
+    )
+    sb.append("</nav>")
 
+    sb.append("<main>")
+    sb.append(s"<h1>${esc(name)}</h1>")
     docSection("Classes", mod.classes.sortBy(_.sym.name), docClass)
     docSection("Enums", mod.enums.sortBy(_.sym.name), docEnum)
     docSection("Effects", mod.effects.sortBy(_.sym.name), docEffect)
     docSection("Type Aliases", mod.typeAliases.sortBy(_.sym.name), docTypeAlias)
-    docSection("Definitions", mod.defs.sortBy(_.sym.name), docDef)
+    docSection("Definitions", sortedDefs, docDef)
+    sb.append("</main>")
 
     sb.append("</body>")
 
@@ -213,6 +221,21 @@ object HtmlDocumentor {
       |<title>Flix | ${esc(name)}</title>
       |</head>
     """.stripMargin
+  }
+
+  private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (group.isEmpty) {
+      return
+    }
+
+    sb.append(s"<h3>$name</h3>")
+    sb.append("<ul>")
+    for (e <- group) {
+      sb.append("<li>")
+      docElt(e)
+      sb.append("</li>")
+    }
+    sb.append("</ul>")
   }
 
   /**
