@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.util.LocalResource
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
+import scala.collection.mutable
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -65,20 +66,18 @@ object HtmlDocumentor {
 
     writeAssets()
     val modules = splitModules(root)
-    modules.foreach {
-      mod =>
-        val pub = filterModule(mod)
-        if (!isEmpty(pub)) {
-          val out = documentModule(pub)
-          writeModule(mod, out)
-        }
+    val filteredModules = filterModules(modules)
+    filteredModules.foreach {
+      case (sym, mod) =>
+        val out = documentModule(mod)
+        writeModule(mod, out)
     }
   }
 
   /**
     * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
     */
-  private def splitModules(root: TypedAst.Root): Iterable[Module] = root.modules.map {
+  private def splitModules(root: TypedAst.Root): Map[Symbol.ModuleSym, Module] = root.modules.map {
     case (sym, mod) =>
       val namespace = sym.ns
       val uses = root.uses.getOrElse(sym, Nil)
@@ -99,7 +98,7 @@ object HtmlDocumentor {
         case _ => // No op
       }
 
-      Module(
+      sym -> Module(
         namespace,
         uses,
         submodules,
@@ -124,12 +123,19 @@ object HtmlDocumentor {
   }
 
   /**
-    * Returns a `Module` corresponding to the given `mod`,
+    * Filter the map of modules, removing all items and empty modules, which shouldn't appear in the documentation.
+    */
+  private def filterModules(mods: Map[Symbol.ModuleSym, HtmlDocumentor.Module]): Map[Symbol.ModuleSym, Module] = {
+    filterEmpty(filterItems(mods))
+  }
+
+  /**
+    * Returns a map of modules corresponding to the given input,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterModule(mod: Module): Module = mod match {
-    case Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs) =>
-      Module(
+  private def filterItems(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = mods.map {
+    case (sym, Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs)) =>
+      sym -> Module(
         namespace,
         uses,
         submodules,
@@ -140,6 +146,7 @@ object HtmlDocumentor {
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
       )
   }
+
 
   /**
     * Returns a `Class` corresponding to the given `clazz`,
@@ -164,11 +171,41 @@ object HtmlDocumentor {
   }
 
   /**
-    * Checks whether the given `Module`, `mod`, contains anything or not.
+    * Remove any modules and references to them if they:
+    *   1. Contain no public items
+    *   1. Contain no submodules with any public items
     */
-  private def isEmpty(mod: HtmlDocumentor.Module): Boolean = mod match {
-    case Module(_, _, submodules, classes, enums, effects, typeAliases, defs) =>
-      submodules.isEmpty && classes.isEmpty && enums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
+  private def filterEmpty(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = {
+    val modMap: mutable.Map[Symbol.ModuleSym, Module] = mutable.Map(mods.toSeq: _*)
+
+    /**
+      * Recursively walks the module tree removing empty modules.
+      * These modules are removed from the map, and from the `submodules` field.
+      *
+      * Returns a boolean, describing whether or not this module is included.
+      */
+    def checkMod(sym: Symbol.ModuleSym): Boolean = {
+      modMap(sym) match {
+        case Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs) =>
+          val filteredSubMods = submodules.filter(checkMod)
+
+          val isEmpty = filteredSubMods.isEmpty &&
+            classes.isEmpty &&
+            enums.isEmpty &&
+            effects.isEmpty &&
+            typeAliases.isEmpty &&
+            defs.isEmpty
+
+          if (isEmpty) modMap.remove(sym)
+          else modMap += sym -> Module(namespace, uses, filteredSubMods, classes, enums, effects, typeAliases, defs)
+
+          !isEmpty
+      }
+    }
+
+    val root = Symbol.mkModuleSym(Nil)
+    checkMod(root)
+    Map(modMap.toSeq: _*)
   }
 
   /**
