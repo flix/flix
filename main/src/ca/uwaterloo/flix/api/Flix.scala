@@ -88,7 +88,6 @@ class Flix {
   /**
     * A cache of ASTs for debugging.
     */
-  private var cachedDocumentorAst: TypedAst.Root = TypedAst.empty
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
   private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
@@ -102,7 +101,6 @@ class Flix {
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
 
-  def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
   def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
   def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
@@ -525,6 +523,7 @@ class Flix {
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
+      afterLexer <- Lexer.run(afterReader)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
@@ -585,8 +584,9 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
-    cachedDocumentorAst = Documentor.run(typedAst)
-    cachedLoweringAst = Lowering.run(cachedDocumentorAst)
+    JsonDocumentor.run(typedAst)
+    HtmlDocumentor.run(typedAst)
+    cachedLoweringAst = Lowering.run(typedAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
     cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)

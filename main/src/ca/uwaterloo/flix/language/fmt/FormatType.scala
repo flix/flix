@@ -87,6 +87,18 @@ object FormatType {
   }
 
   /**
+    * Transforms the given simple type into a string.
+    */
+  def formatSimpleType(tpe: SimpleType)(implicit flix: Flix): String =
+    formatSimpleTypeWithOptions(tpe, flix.getFormatOptions)
+
+  /**
+    * Transforms the given simple type into a string, using the given format options.
+    */
+  def formatSimpleTypeWithOptions(tpe: SimpleType, fmt: FormatOptions): String =
+    format(tpe)(fmt)
+
+  /**
     * Transforms the given type into a string.
     */
   private def format(tpe00: SimpleType)(implicit fmt: FormatOptions): String = {

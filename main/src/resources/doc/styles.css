@@ -1,0 +1,181 @@
+:root {
+    --bg-color: white;
+    --bg-emph-color: rgb(248, 249, 250);
+
+    --heading-color: rgb(33, 37, 41);
+    --text-color: rgb(17, 17, 17);
+
+    --section-arrow-color: rgb(85, 91, 96);
+
+    --annotation-color: #b15422;
+    --keyword-color: #030303;
+    --name-color: #b12250;
+    --type-color: #3061c4;
+    --kind-color: #8a8a8a;
+    --effect-color: #d4671e;
+
+    --doc-code-color: #d63384;
+
+    --show-hide-color: #0d6efd;
+    --show-hide-hover-color: #0a58ca;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, 
+        "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, 
+        sans-serif, "Apple Color Emoji", "Segoe UI Emoji", 
+        "Segoe UI Symbol", "Noto Color Emoji";
+
+    padding: 0 10%;
+}
+
+h1, h2 {
+    color: var(--heading-color);
+    font-family: Oswald, sans-serif;
+    margin-top: 0;
+    line-height: 1.2;
+}
+h1 {
+    font-size: 4.5rem;
+    font-weight: 300;
+    margin-bottom: 0.5rem;
+}
+h2 {
+    font-size: 2rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+}
+h3 {
+    display: inline;
+    font-size: 1rem;
+    color: var(--heading-color);
+    font-weight: 500;
+}
+
+hr {
+    color: transparent;
+}
+body > hr {
+    margin-top: 1rem;
+    margin-bottom: 3rem;
+}
+
+section {
+    --h-padding: 0.75rem;
+    margin-left: calc(-1 * var(--h-padding));
+    margin-right: calc(-1 * var(--h-padding));
+
+    margin-bottom: 3rem;
+}
+section > * {
+    padding-left: var(--h-padding);
+    padding-right: var(--h-padding);
+}
+
+.box {
+    box-shadow: 0 0 10px 0 rgba(0,0,0,.1);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.8rem;
+    border-radius: 0.2rem;
+    box-sizing: border-box;
+    overflow: auto;
+}
+.box code {
+    font-size: 0.85rem;
+}
+
+.source {
+    color: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background-color: var(--bg-emph-color);
+    padding: 0.2em 0.65em;
+    border-radius: 0.375rem;
+
+    float: right;
+}
+
+.cases {
+    margin-left: 1rem;
+    margin-top: 0.7rem;
+    margin-bottom: 0.7rem;
+}
+.cases > code {
+    display: block;
+}
+.case-tag {
+    font-style: italic;
+    margin-right: 0.1em;
+}
+
+.doc {
+    margin-left: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+
+    font-size: 0.8rem;   
+    font-family: Roboto, sans-serif;
+}
+.doc p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+.doc p:last-child {
+    margin-bottom: 0;
+}
+.box .doc code {
+    color: var(--doc-code-color);
+}
+
+details {
+    margin-top: 1rem;
+    padding-left: 1.5rem;
+}
+summary {
+    cursor: pointer;
+    list-style: none;
+    color: var(--section-arrow-color);
+    margin-left: -1.5rem;
+}
+summary::after {
+    content: "(show)";
+    font-size: 0.875em;
+    margin-left: 0.3rem;
+    color: var(--show-hide-color);
+}
+summary:hover::after {
+    text-decoration: underline;
+    color: var(--show-hide-hover-color);
+}
+details[open] > summary::after {
+    content: "(hide)";
+}
+
+code {
+    font-family: Fira Code, monospace;
+}
+code.annotation {
+    color: var(--annotation-color);
+    display: block;
+}
+code .keyword {
+    color: var(--keyword-color);
+}
+code .name {
+    color: var(--name-color);
+}
+code .type {
+    color: var(--type-color);
+}
+code .kind {
+    color: var(--kind-color);
+}
+code .effect {
+    color: var(--effect-color);
+}
+code .tpe-constraint {
+    text-decoration: underline;
+}
