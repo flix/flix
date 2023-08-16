@@ -1851,4 +1851,31 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnsupportedEquality](result)
   }
+
+  test("TestMatchEmpty.01") {
+    val input =
+      """
+        |def f(): String = match (???: Void) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("TestMatchEmpty.02") {
+    val input =
+      """
+        |def f(): String = match (42) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("TestMatchEmpty.03") {
+    val input =
+      """
+        |def f(): Int32 = match ("abc") { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
 }
