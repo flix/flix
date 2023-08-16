@@ -28,6 +28,7 @@ object UseEnumTagCompleter extends Completer {
    * Returns an Iterable of Completions for enum tag usages.
    */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseEnumTagCompletion] = {
+    //Need to return completion possibilities regardless of whether a tag was provided.
     stripWord(context) match {
       case Some(word) => {
         val segments = word.split('.').toList
@@ -58,6 +59,8 @@ object UseEnumTagCompleter extends Completer {
     if (segments.isEmpty) {
       Nil
     }
+
+    //Create a new tag that matches the user's syntax.
     val tag = segments.takeRight(1).mkString
     val withoutTag = segments.dropRight(1)
     val sym = mkEnumSym(withoutTag)
@@ -94,9 +97,11 @@ object UseEnumTagCompleter extends Completer {
   private def matches(sym: Symbol.CaseSym, tag: String): Boolean = sym.name.startsWith(tag)
 
   /**
-   * Returns an updated EnumSym
+   * Returns an updated EnumSym.
    *
+   * Symbol.mkEnumSym("A.B.C.Color") would yield a namespace of "A" and a name of "B.C.Color".
    *
+   * Conversely, this function would yield a namespace of "A.B.C" and a name of "Color".
    */
   private def mkEnumSym(segment: List[String]): Symbol.EnumSym = {
     if (segment.isEmpty) {
