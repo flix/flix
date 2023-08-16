@@ -31,7 +31,7 @@ object LiftedAstPrinter {
       case LiftedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
           case LiftedAst.Case(sym, tpe, _) =>
-            DocAst.Case(sym, TypePrinter.print(tpe))
+            DocAst.Case(sym, MonoTypePrinter.print(tpe))
         }.toList
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
@@ -42,7 +42,7 @@ object LiftedAstPrinter {
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
-          TypePrinter.print(tpe),
+          MonoTypePrinter.print(tpe),
           print(exp)
         )
     }.toList
@@ -55,15 +55,15 @@ object LiftedAstPrinter {
   def print(e: LiftedAst.Expr): DocAst.Expression = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
-    case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe))
+    case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case ApplyClo(exp, exps, ct, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print), Some(ct))
     case ApplyDef(sym, args, ct, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print), Some(ct))
     case ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
-    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
@@ -74,9 +74,9 @@ object LiftedAstPrinter {
     })
     case Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
     case Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, TypePrinter.print(tpe), methods.map {
+    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), TypePrinter.print(retTpe))
+        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
     })
   }
 
@@ -85,7 +85,7 @@ object LiftedAstPrinter {
     */
   private def printFormalParam(fp: LiftedAst.FormalParam): DocAst.Expression.Ascription = {
     val LiftedAst.FormalParam(sym, _, tpe, _) = fp
-    DocAst.Expression.Ascription(printVarSym(sym), TypePrinter.print(tpe))
+    DocAst.Expression.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
 
   /**

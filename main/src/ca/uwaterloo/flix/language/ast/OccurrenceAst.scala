@@ -26,12 +26,12 @@ object OccurrenceAst {
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[OccurrenceAst.FormalParam], fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: Type, purity: Purity, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[OccurrenceAst.FormalParam], fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, OccurrenceAst.Case], tpe: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, OccurrenceAst.Case], tpe: MonoType, loc: SourceLocation)
 
   sealed trait Expression {
-    def tpe: Type
+    def tpe: MonoType
 
     def purity: Purity
 
@@ -40,47 +40,47 @@ object OccurrenceAst {
 
   object Expression {
 
-    case class Constant(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class Constant(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Pure
     }
 
-    case class ApplyAtomic(op: AtomicOp, exps: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ApplyAtomic(op: AtomicOp, exps: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ApplyClo(exp: OccurrenceAst.Expression, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ApplyClo(exp: OccurrenceAst.Expression, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[OccurrenceAst.FormalParam], actuals: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[OccurrenceAst.FormalParam], actuals: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class IfThenElse(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class IfThenElse(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Let(sym: Symbol.VarSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, occur: Occur, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, occur: Occur, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expression, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class TryCatch(exp: OccurrenceAst.Expression, rules: List[OccurrenceAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class TryCatch(exp: OccurrenceAst.Expression, rules: List[OccurrenceAst.CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: Type, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: OccurrenceAst.Expression)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
 
   sealed trait Occur
 

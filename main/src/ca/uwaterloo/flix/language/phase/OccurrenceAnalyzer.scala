@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.LiftedAst.Expr
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -243,15 +243,15 @@ object OccurrenceAnalyzer {
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       // TODO AE erasing to unit for now
-      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
+      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, MonoType.Unit, loc), OccurInfo.Empty)
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
       // TODO AE erasing to unit for now
-      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
+      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, MonoType.Unit, loc), OccurInfo.Empty)
 
     case Expr.Resume(exp, tpe, loc) =>
       // TODO AE erasing to unit for now
-      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, Type.Unit, loc), OccurInfo.Empty)
+      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, MonoType.Unit, loc), OccurInfo.Empty)
 
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {

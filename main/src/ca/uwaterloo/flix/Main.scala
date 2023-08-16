@@ -396,7 +396,7 @@ object Main {
         text("arguments passed to main. Must be a single quoted string.")
 
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
-        text("generates HTML documentation.")
+        text("generates JSON and HTML documentation.")
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
         text("specifies the main entry point.")
