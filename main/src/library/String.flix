@@ -1347,6 +1347,36 @@ mod String {
             Some(dropRight(length(substr.substr), s))
 
     ///
+    /// Wrap the string `s` into lines that are each at most as long as `w`, breaking on whitespace.
+    ///
+    /// If a line contains a single word that exceeds the length of `w`, the word will be broken.
+    ///
+    pub def wrap(w: Int32, s: String): String =
+        if (w <= 0) ""
+        else {
+            let lines = List.flatMap(l -> wrapLine(w, l),  lines(s));
+            intercalate(lineSeparator(), lines)
+        }
+
+    ///
+    /// Helper for wrap.
+    /// Takes a single line, `s`, and returns a list consisting of the split lines, each being no longer than `w`.
+    ///
+    def wrapLine(w: Int32, s: String): List[String] =
+        if (length(s) <= w)
+            s :: Nil
+        else {
+            // Find the last occurrence of non-whitespace followed by whitespace
+            // This is the end of the first line
+            let endOpt = Regex.indexOfLastWithBounds({substr = regex"(?<!\\s)\\s"}, {start = 0}, {end = w}, s);
+            let end = match endOpt {
+                case Some(end) => end
+                case None => w
+            };
+            sliceLeft({end = end}, s) :: wrapLine(w, trimLeft(sliceRight({start = end}, s)))
+        }
+
+    ///
     /// Unwrap the string, replacing every newline with a space
     ///
     pub def unwrap(s: String): String =
