@@ -16,10 +16,12 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 
@@ -462,7 +464,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Type checks the source files for the project.
     */
-  def check(o: Options): Validation[Unit, BootstrapError] = {
+  def check(o: Options): Validation[TypedAst.Root, BootstrapError] = {
     // Configure a new Flix object.
     implicit val flix: Flix = new Flix()
     flix.setOptions(o)
@@ -471,7 +473,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     reconfigureFlix(flix)
 
     flix.check() match {
-      case Validation.Success(_) => ().toSuccess
+      case Validation.Success(root) => root.toSuccess
       case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
     }
   }
@@ -586,6 +588,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     build() map {
       compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
+    }
+  }
+
+  /**
+    * Builds HTML API documentation.
+    */
+  def doc(o: Options): Validation[Unit, BootstrapError] = {
+    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    check(o) map {
+      root =>
+        JsonDocumentor.run(root)(flix)
+        HtmlDocumentor.run(root)(flix)
     }
   }
 
