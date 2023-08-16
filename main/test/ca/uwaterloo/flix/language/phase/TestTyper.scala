@@ -1855,7 +1855,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestMatchEmpty.01") {
     val input =
       """
-        |def f(): String = match (???: Void) { }
+        |def f(): String = match (???) { }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectSuccess(result)
@@ -1864,13 +1864,22 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestMatchEmpty.02") {
     val input =
       """
-        |def f(): String = match (42) { }
+        |def f(): String = match (???: String) { }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectSuccess(result)
   }
 
   test("TestMatchEmpty.03") {
+    val input =
+      """
+        |def f(): String = match (42) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("TestMatchEmpty.04") {
     val input =
       """
         |def f(): Int32 = match ("abc") { }
