@@ -5,6 +5,7 @@
 
     --heading-color: #212529;
     --text-color: #111111;
+    --faded-text-color: #8a8a8a;
 
     --section-arrow-color: #555b60;
 
@@ -50,7 +51,6 @@ body {
 
 h1, h2 {
     color: var(--heading-color);
-    font-family: Oswald, sans-serif;
     margin-top: 0;
     line-height: 1.2;
 }
@@ -58,6 +58,7 @@ h1 {
     font-size: 4.5rem;
     font-weight: 300;
     margin-bottom: 3rem;
+    font-family: Oswald, sans-serif;
 }
 h2 {
     font-size: 2rem;
@@ -80,6 +81,18 @@ nav {
     height: 100%;
     width: 20rem;
     overflow-y: auto;
+}
+
+nav h2 {
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.version {
+    color: var(--faded-text-color);
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
 }
 
 nav ul {
@@ -136,9 +149,10 @@ main {
     scroll-behavior: smooth;
 }
 
-hr {
-    color: transparent;
+main h2 {
+    font-family: Oswald, sans-serif;
 }
+
 body > hr {
     margin-top: 1rem;
     margin-bottom: 3rem;

@@ -63,7 +63,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
-    case Type.AssocType(_, arg, _, _) => arg.effects// TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -916,7 +916,7 @@ object Type {
     */
   def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
-      Type.Cst( TypeConstructor.CaseSet(syms1 ++ syms2, sym), loc)
+      Type.Cst(TypeConstructor.CaseSet(syms1 ++ syms2, sym), loc)
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
     case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
     // TODO RESTR-VARS ALL case: universe

@@ -88,6 +88,9 @@ object PatternExhaustiveness {
 
     case class Enum(name: String, sym: EnumSym, args: List[TyCon]) extends TyCon
 
+    case class Record(fields: List[(Name.Field, TyCon)], tail: TyCon) extends TyCon
+
+    case object RecordEmpty extends TyCon
   }
 
   /**
@@ -433,6 +436,16 @@ object PatternExhaustiveness {
         } else {
           acc
         }
+      case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
+        case TyCon.Record(_, _) =>
+          val ps = pats.map(_.pat)
+          val p = tail match {
+            case TypedAst.Pattern.RecordEmpty(_, _) => Nil
+            case _ => List(tail)
+          }
+          (ps ::: p ::: pat.tail) :: acc
+        case _ => acc
+      }
       // Also handle the non tag constructors
       case p =>
         if (patToCtor(p) == ctor) {
@@ -462,10 +475,10 @@ object PatternExhaustiveness {
     *
     */
   private def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
-    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.head match {
+    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.headOption match {
       // If it's a wild card, we take the rest of the pattern
-      case _: TypedAst.Pattern.Wild => pat.tail :: acc
-      case _: TypedAst.Pattern.Var => pat.tail :: acc
+      case Some(_: TypedAst.Pattern.Wild) => pat.tail :: acc
+      case Some(_: TypedAst.Pattern.Var) => pat.tail :: acc
 
       // If it's a constructor, we don't include a row
       case _ => acc
@@ -492,11 +505,11 @@ object PatternExhaustiveness {
     *
     */
   private def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
-    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.head match {
-      case _: Pattern.Wild => pats
-      case _: Pattern.Var => pats
-      case tg: Pattern.Tag => tg :: pats
-      case p => p :: pats
+    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.headOption match {
+      case Some(_: Pattern.Wild) => pats
+      case Some(_: Pattern.Var) => pats
+      case Some(p) => p :: pats
+      case None => pats
     }
 
     rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor).map(patToCtor)
@@ -530,6 +543,7 @@ object PatternExhaustiveness {
       case TyCon.True => TyCon.True :: TyCon.False :: xs
       case TyCon.False => TyCon.True :: TyCon.False :: xs
       case a: TyCon.Tuple => a :: xs
+      case a: TyCon.Record => a :: xs
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other enums
@@ -579,6 +593,11 @@ object PatternExhaustiveness {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, _, args) => args.length
+    case TyCon.Record(fields, tail) => tail match {
+      case TyCon.RecordEmpty => fields.length
+      case _ => fields.length + 1
+    }
+    case TyCon.RecordEmpty => 0
   }
 
   /**
@@ -646,6 +665,16 @@ object PatternExhaustiveness {
     case TyCon.Array => "Array"
     case TyCon.Vector => "Vector"
     case TyCon.Enum(name, _, args) => if (args.isEmpty) name else name + prettyPrintCtor(TyCon.Tuple(args))
+    case TyCon.Record(fields, tail) =>
+      val fieldsStr = fields.map {
+        case (f, p) => s"$f = ${prettyPrintCtor(p)}"
+      }.mkString(", ")
+      val tailStr = tail match {
+        case TyCon.RecordEmpty => ""
+        case r => s" | ${prettyPrintCtor(r)}"
+      }
+      "{ " + fieldsStr + tailStr + " }"
+    case TyCon.RecordEmpty => ""
   }
 
 
@@ -661,6 +690,7 @@ object PatternExhaustiveness {
     case (TyCon.Enum(n1, s1, _), TyCon.Enum(n2, s2, _)) => n1 == n2 && s1 == s2
     // Everything else is the same constructor if they are the same type
     case (a: TyCon.Tuple, b: TyCon.Tuple) => true
+    case (a: TyCon.Record, b: TyCon.Record) => true
     case (a, b) => a == b;
   }
 
@@ -697,6 +727,14 @@ object PatternExhaustiveness {
       TyCon.Enum(sym.name, sym.enumSym, args)
     }
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
+    case Pattern.Record(pats, pat, _, _) =>
+      val patsVal = pats.map {
+        case TypedAst.Pattern.Record.RecordFieldPattern(field, _, pat1, _) =>
+          (field, patToCtor(pat1))
+      }
+      val pVal = patToCtor(pat)
+      TyCon.Record(patsVal, pVal)
+    case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
   }
 
   /**
@@ -713,6 +751,14 @@ object PatternExhaustiveness {
     case TyCon.Enum(name, sym, args) =>
       val rebuiltArgs = lst.take(args.length)
       TyCon.Enum(name, sym, rebuiltArgs) :: lst.drop(args.length)
+    case TyCon.Record(fields, _) =>
+      val all = lst.take(fields.length + 1)
+      val fs = fields.map {
+        case (f, _) => f
+      }.zip(all.take(fields.length))
+      val t = all.takeRight(1).head
+      TyCon.Record(fs, t) :: lst.drop(fields.length + 1)
+    case TyCon.RecordEmpty => lst
     case a => a :: lst
   }
 

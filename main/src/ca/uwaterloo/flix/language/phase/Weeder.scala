@@ -2426,6 +2426,34 @@ object Weeder {
             WeededAst.Pattern.Tag(qname, pat, loc)
         }
 
+      case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
+        val loc = mkSL(sp1, sp2)
+        val fsVal = traverse(fields) {
+          case ParsedAst.Pattern.RecordFieldPattern(sp11, field, pat, sp22) =>
+            mapN(visitName(field), traverseOpt(pat)(visit)) {
+              case (_, p) =>
+                val f = Name.mkField(field)
+                val patLoc = mkSL(sp11, sp22)
+                WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc)
+            }
+        }
+        val rsVal = traverseOpt(rest)(visit)
+        flatMapN(fsVal, rsVal) {
+          // Pattern { ... }
+          case (fs, None) => WeededAst.Pattern.Record(fs, WeededAst.Pattern.RecordEmpty(loc.asSynthetic), loc).toSuccess
+
+          // Pattern { x, ... | r }
+          case (x :: xs, Some(Pattern.Var(v, l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Var(v, l), loc).toSuccess
+
+          // Pattern { x, ... | _ }
+          case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc).toSuccess
+
+          // Bad Pattern { | r }
+          case (Nil, Some(r)) => WeederError.EmptyRecordExtensionPattern(r.loc).toFailure
+
+          // Bad Pattern e.g., { x, ... | (1, 2, 3) }
+          case (_, Some(r)) => WeederError.IllegalRecordExtensionPattern(r.loc).toFailure
+        }
     }
 
     visit(pattern)

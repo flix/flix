@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.WeededAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.WeededAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -1107,8 +1108,25 @@ object Namer {
     case WeededAst.Pattern.Tag(qname, pat, loc) =>
       NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
 
-    case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visitPattern, loc)
+    case WeededAst.Pattern.Tuple(elms, loc) =>
+      NamedAst.Pattern.Tuple(elms.map(visitPattern), loc)
 
+    case WeededAst.Pattern.Record(pats, pat, loc) =>
+      val psVal = pats.map {
+        case WeededAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+          val p = pat1 match {
+            case Some(p1) => visitPattern(p1)
+            case None =>
+              // Introduce new symbols if there is no pattern
+              val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
+              NamedAst.Pattern.Var(sym, field.loc)
+          }
+          NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
+      }
+      val pVal = visitPattern(pat)
+      NamedAst.Pattern.Record(psVal, pVal, loc)
+
+    case WeededAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(loc)
   }
 
   /**
@@ -1356,7 +1374,18 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Regex(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
-    case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
+    case WeededAst.Pattern.Tuple(elms, loc) => elms.flatMap(freeVars)
+    case WeededAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
+    case WeededAst.Pattern.RecordEmpty(_) => Nil
+  }
+
+  /**
+    * Returns the free variables in the list of [[Record.RecordFieldPattern]] `pats`.
+    */
+  private def recordPatternFreeVars(pats: List[Record.RecordFieldPattern]): List[Name.Ident] = {
+    def optFreeVars(rfp: Record.RecordFieldPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
+
+    pats.flatMap(optFreeVars)
   }
 
   /**

@@ -850,6 +850,20 @@ object Lowering {
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       LoweredAst.Pattern.Tuple(es, t, loc)
+
+    case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val patsVal = pats.map {
+        case TypedAst.Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
+          val p1 = visitPat(pat1)
+          val t1 = visitType(tpe1)
+          LoweredAst.Pattern.Record.RecordFieldPattern(field, t1, p1, loc1)
+      }
+      val patVal = visitPat(pat)
+      val t = visitType(tpe)
+      LoweredAst.Pattern.Record(patsVal, patVal, t, loc)
+
+    case TypedAst.Pattern.RecordEmpty(tpe, loc) =>
+      LoweredAst.Pattern.RecordEmpty(visitType(tpe), loc)
   }
 
   /**
@@ -1120,6 +1134,10 @@ object Lowering {
     case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
     case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.RecordEmpty(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
   }
 
