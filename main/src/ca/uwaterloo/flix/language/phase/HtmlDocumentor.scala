@@ -56,14 +56,7 @@ object HtmlDocumentor {
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = flix.phase("HtmlDocumentor") {
-    //
-    // Determine whether to generate documentation.
-    //
-    if (!flix.options.documentor) {
-      return
-    }
-
+  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
     writeAssets()
     val modules = splitModules(root)
     val filteredModules = filterModules(modules)

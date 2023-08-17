@@ -3606,6 +3606,49 @@ def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == So
 def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 /////////////////////////////////////////////////////////////////////////////
+// wrap                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def wrap01(): Bool = String.wrap(0, "a") == ""
+
+@test
+def wrap02(): Bool = String.wrap(1, "a") == "a"
+
+@test
+def wrap03(): Bool = String.wrap(2, "a") == "a"
+
+@test
+def wrap04(): Bool = String.wrap(2, "ab") == "ab"
+
+@test
+def wrap05(): Bool = String.wrap(1, "ab") == "a" + String.lineSeparator() + "b"
+
+@test
+def wrap06(): Bool = String.wrap(2, "a b") == "a" + String.lineSeparator() + "b"
+
+@test
+def wrap07(): Bool = String.wrap(2, "a b c") == "a" + String.lineSeparator() + "b" + String.lineSeparator() + "c"
+
+@test
+def wrap08(): Bool = String.wrap(2, "ab   cd") == "ab" + String.lineSeparator() + "cd"
+
+@test
+def wrap09(): Bool = String.wrap(3, "ab   cd") == "ab" + String.lineSeparator() + "cd"
+
+@test
+def wrap10(): Bool = String.wrap(5, "ab   cd") == "ab" + String.lineSeparator() + "cd"
+
+@test
+def wrap11(): Bool =
+    String.wrap(5, "Lorem ipsum dolor sitamet")
+        == "Lorem" + String.lineSeparator()
+        + "ipsum" + String.lineSeparator()
+        + "dolor" + String.lineSeparator()
+        + "sitam" + String.lineSeparator()
+        + "et"
+
+/////////////////////////////////////////////////////////////////////////////
 // unwrap                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 

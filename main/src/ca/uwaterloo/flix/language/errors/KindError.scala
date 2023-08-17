@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -106,5 +108,30 @@ object KindError {
       import formatter._
       s"${underline("Tip: ")} Add a kind annotation."
     })
+  }
+
+
+  /**
+    * Missing type class constraint.
+    *
+    * @param clazz the class of the constraint.
+    * @param tpe   the type of the constraint.
+    * @param renv  the rigidity environment.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingConstraint(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends KindError {
+    def summary: String = s"No constraint of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> No constraint of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
+         |
+         |${code(loc, s"missing constraint")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 }
