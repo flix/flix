@@ -15,4 +15,4 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-case class Token(kind: TokenKind, text: String, line: Int, column: Int)
+case class Token(kind: TokenKind, text: String, line: Int, col: Int)
