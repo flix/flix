@@ -521,8 +521,18 @@ object Monomorph {
       val (p, env1) = visitPat(pat, subst)
       (Pattern.Tag(sym, p, subst(tpe), loc), env1)
     case Pattern.Tuple(elms, tpe, loc) =>
-      val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
+      val (ps, envs) = elms.map(visitPat(_, subst)).unzip
       (Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val (ps, envs) = pats.map {
+        case Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
+          val (p1, env1) = visitPat(pat1, subst)
+          (Pattern.Record.RecordFieldPattern(field, subst(tpe1), p1, loc1), env1)
+      }.unzip
+      val (p, env1) = visitPat(pat, subst)
+      val finalEnv = env1 :: envs
+      (Pattern.Record(ps, p, subst(tpe), loc), finalEnv.reduce(_ ++ _))
+    case Pattern.RecordEmpty(tpe, loc) => (Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
   /**

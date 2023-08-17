@@ -889,6 +889,9 @@ object Redundancy {
     case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
+    case Pattern.Record(pats, pat, _, _) =>
+      visitPats(pats.map(_.pat)) ++ visitPat(pat)
+    case Pattern.RecordEmpty(_, _) => Used.empty
   }
 
   /**
@@ -1045,6 +1048,13 @@ object Redundancy {
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
+    case Pattern.Record(pats, pat, _, _) =>
+      val patsVal = pats.foldLeft(Set.empty[Symbol.VarSym]) {
+        case (acc, rfp) => acc ++ freeVars(rfp.pat)
+      }
+      val patVal = freeVars(pat)
+      patsVal ++ patVal
+    case Pattern.RecordEmpty(_, _) => Set.empty
   }
 
   /**

@@ -1851,4 +1851,50 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnsupportedEquality](result)
   }
+
+  test("TestRecordPattern.01") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1 } {
+        |    case { x = false } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TestRecordPattern.02") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = false } {
+        |    case { x = _ } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedField](result)
+  }
+
+  test("TestRecordPattern.03") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = false } {
+        |    case { } => false
+        |    case { x = _ | r } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedField](result)
+  }
+
+  test("TestRecordPattern.04") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = false } {
+        |    case { x = _ | r } => false
+        |    case { x = _ } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UndefinedField](result)
+  }
 }

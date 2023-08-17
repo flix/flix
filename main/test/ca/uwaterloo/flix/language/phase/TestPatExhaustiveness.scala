@@ -17,9 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -365,6 +363,190 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |def f(): Int32 = match E.E1 {
         |    case E.E1 if true => 123
         |    case E.E2 => 456
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.01") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1 } {
+        |    case { x = 1 } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.02") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = () } {
+        |    case { x = 1 | _ } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.03") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = 2 } {
+        |    case { x = 1, y = 2 } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.04") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = 2 } {
+        |    case { x = 1, y = 2 | _ } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.05") {
+    val input =
+      """
+        |def f(): Bool = match { x = 1, y = () } {
+        |    case { x = 1, y = () } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.06") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = A.A } {
+        |    case { x = A.A } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.07") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = A.A, y = A.B } {
+        |    case { x = A.A | _ } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.08") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = A.A, y = A.B } {
+        |    case { x = A.A, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.09") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
+        |    case { x = { x = { }, y = A.A }, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.10") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
+        |    case { x = { x = { }, y = A.A | _ }, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.11") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
+        |    case { x = { y = A.A | _ }, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.12") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { x = { x = { }, y = A.A }, y = A.B } {
+        |    case { x = { x = { } | _ }, y = A.B } => true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NonExhaustiveMatchError](result)
+  }
+
+  test("Pattern.Record.13") {
+    val input =
+      """
+        |enum A {
+        |    case A,
+        |    case B
+        |}
+        |
+        |def f(): Bool = match { a = A.A, a = A.B } {
+        |    case { a = A.A, a = A.A } => true
+        |    case { a = A.B, a = A.A } => true
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

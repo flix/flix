@@ -22,6 +22,13 @@ object TypedAstOps {
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }
+    case Pattern.Record(pats, pat, _, _) =>
+      val patsVal = pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, rfp) => macc ++ binds(rfp.pat)
+      }
+      val patVal = binds(pat)
+      patsVal ++ patVal
+    case Pattern.RecordEmpty(_, _) => Map.empty
   }
 
   /**
@@ -181,7 +188,7 @@ object TypedAstOps {
     case Expr.Match(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, MatchRule(pat, guard, exp)) =>
-          acc ++ ( (guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys )
+          acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys)
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
@@ -400,6 +407,14 @@ object TypedAstOps {
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)
       }
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val patsVal = pats.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, rfp) => acc ++ freeVars(rfp.pat)
+      }
+      val patVal = freeVars(pat)
+      patsVal ++ patVal
+
+    case Pattern.RecordEmpty(_, _) => Map.empty
   }
 
   /**

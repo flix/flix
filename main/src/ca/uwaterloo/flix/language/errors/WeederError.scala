@@ -709,8 +709,8 @@ object WeederError {
   /**
     * An error raised to indicate that the case of an alias does not match the case of the original value.
     *
-    * @param patt     the invalid regular expression
-    * @param loc      the location where the error occurred
+    * @param patt the invalid regular expression
+    * @param loc  the location where the error occurred
     */
   case class InvalidRegularExpression(patt: String, err: String, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
@@ -1126,6 +1126,48 @@ object WeederError {
          |>> Illegal effect set member.
          |
          |${code(loc, s"Effect sets may only contain variables and constants.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a record pattern has shape the illegal shape `{ | r }`.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "A record pattern must specify at least one field."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected record pattern.
+         |
+         |${code(loc, "A record pattern must specify at least one field.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that the extension of a record pattern is malformed.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "A record extension must be either a variable or wildcard."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected record extension pattern.
+         |
+         |${code(loc, "A record extension must be either a variable or wildcard.")}
          |
          |""".stripMargin
     }

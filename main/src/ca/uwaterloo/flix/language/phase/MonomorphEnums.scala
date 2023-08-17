@@ -329,6 +329,16 @@ object MonomorphEnums {
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       Pattern.Tuple(es, t, loc)
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val ps = pats.map {
+        case Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
+          Pattern.Record.RecordFieldPattern(field, visitType(tpe1), visitPat(pat1), loc1)
+      }
+      val p = visitPat(pat)
+      val t = visitType(tpe)
+      Pattern.Record(ps, p, t, loc)
+    case Pattern.RecordEmpty(tpe, loc) =>
+      Pattern.RecordEmpty(visitType(tpe), loc)
   }
 
   /**

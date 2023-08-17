@@ -377,6 +377,26 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonLinearPattern](result)
   }
 
+  test("NonLinearPattern.04") {
+    val input =
+      """def f(): Bool = match { a = 1, b = 1 } {
+        |  case { a = x, b = x } => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
+  test("NonLinearPattern.05") {
+    val input =
+      """def f(): Bool = match { a = { b = 1 }, b = 1 } {
+        |  case { a = { b = x }, b = x } => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
   test("IllegalNullPattern.01") {
     val input =
       s"""
@@ -1146,4 +1166,27 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidRegularExpression](result)
   }
+
+  test("IllegalRecordPattern.01") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { | r } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyRecordExtensionPattern](result)
+  }
+
+  test("IllegalRecordExtensionPattern.01") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { x | (1, 2, 3) } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordExtensionPattern](result)
+  }
+
 }

@@ -1209,6 +1209,7 @@ object ParsedAst {
       case Pattern.Tag(sp1, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
+      case Pattern.Record(sp1, _, _, _) => sp1
     }
 
   }
@@ -1263,6 +1264,27 @@ object ParsedAst {
       * @param tl  the tail pattern.
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
+
+    /**
+      * Record Pattern
+      *
+      * @param sp1    the position of the first character in the pattern.
+      * @param fields list of [[RecordFieldPattern]].
+      * @param rest   optional record extension pattern `| r`.
+      * @param sp2    the position of the last character in the pattern.
+      */
+    case class Record(sp1: SourcePosition, fields: Seq[RecordFieldPattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+
+    /**
+      * Represents a pattern for a field of a record.
+      * `field {= pattern}`
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param field the field the pattern refers to.
+      * @param pat   optional pattern.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class RecordFieldPattern(sp1: SourcePosition, field: Name.Ident, pat: Option[Pattern], sp2: SourcePosition)
 
   }
 
@@ -1559,11 +1581,11 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-     * A type representing a logical negation.
-     *
-     * @param tpe the complemented type.
-     * @param sp2 the position of the last character in the type.
-     */
+      * A type representing a logical negation.
+      *
+      * @param tpe the complemented type.
+      * @param sp2 the position of the last character in the type.
+      */
     case class Not(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
@@ -1585,12 +1607,12 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-     * A type representing a logical exclusive or.
-     *
-     * @param tpe1 the 1st type.
-     * @param tpe2 the 2nd type.
-     * @param sp2  the position of the last character in the type.
-     */
+      * A type representing a logical exclusive or.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
     case class Xor(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
@@ -2219,7 +2241,6 @@ object ParsedAst {
     * @param sp2 the position of the last character in the fragment.
     */
   case class ParYieldFragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: Expression, sp2: SourcePosition)
-
 
   /**
     * The derivations of an enum. If length of `classes` is greater than zero, this represents:
