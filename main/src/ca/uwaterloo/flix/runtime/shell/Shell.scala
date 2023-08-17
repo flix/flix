@@ -162,9 +162,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     case Command.ReloadAndEval(s) => execReloadAndEval(s)
     case Command.Init => Bootstrap.init(bootstrap.projectPath, flix.options)(new PrintStream(terminal.output()))
     case Command.Build => bootstrap.build()(flix)
-    case Command.Check => bootstrap.check(flix.options)
     case Command.BuildJar => bootstrap.buildJar(flix.options)
     case Command.BuildPkg => bootstrap.buildPkg(flix.options)
+    case Command.Check => bootstrap.check(flix.options)
+    case Command.Doc => bootstrap.doc(flix.options)
     case Command.Test => bootstrap.test(flix.options)
     case Command.Unknown(s) => execUnknown(s)
   }

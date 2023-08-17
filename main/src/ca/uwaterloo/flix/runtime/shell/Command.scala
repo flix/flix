@@ -46,11 +46,6 @@ object Command {
   case object Init extends Command
 
   /**
-    * Checks the current project for errors.
-    */
-  case object Check extends Command
-
-  /**
     * Builds the current project.
     */
   case object Build extends Command
@@ -64,6 +59,16 @@ object Command {
     * Builds an fpkg file from the current project.
     */
   case object BuildPkg extends Command
+
+  /**
+    * Checks the current project for errors.
+    */
+  case object Check extends Command
+
+  /**
+    * Generates API document for the current project.
+    */
+  case object Doc extends Command
 
   /**
     * Runs the tests for the current project.
@@ -104,90 +109,51 @@ object Command {
     * Parses the given `input` into a command.
     */
   def parse(input: String)(implicit terminal: Terminal): Command = {
-    //
-    // Eof
-    //
     if (input == null)
       return Command.Quit
 
-    //
-    // Nop
-    //
     if (input.trim == "")
       return Command.Nop
 
-    //
-    // Reload
-    //
     if (input == ":r" || input == ":reload")
       return Command.Reload
 
-    //
-    // Info
-    //
     val infoPattern = raw":i(nfo)?\s+(\S+)\s*".r
     input match {
       case infoPattern(_, s) => return Command.Info(s)
       case _ => // no-op
     }
 
-    //
-    // Init
-    //
     if (input == ":init")
       return Command.Init
 
-    //
-    // Check
-    //
-    if (input == ":check" || input == ":c")
-      return Command.Check
-
-    //
-    // Build
-    //
     if (input == ":build" || input == ":b")
       return Command.Build
 
-    //
-    // Jar
-    //
+    if (input == ":check" || input == ":c")
+      return Command.Check
+
+    if (input == ":doc")
+      return Command.Doc
+
     if (input == ":build-jar" || input == ":jar")
       return Command.BuildJar
 
-    //
-    // Fpkg
-    //
     if (input == ":build-pkg" || input == ":pkg")
       return Command.BuildPkg
 
-    //
-    // Eval
-    //
     if (input.startsWith(":eval"))
       return Command.ReloadAndEval(input.drop(":eval".length + 1))
 
-    //
-    // Test
-    //
     if (input == ":test" || input == ":t")
       return Command.Test
 
-    //
-    // Quit
-    //
     if (input == ":quit" || input == ":q")
       return Command.Quit
 
-    //
-    // Help
-    //
     if (input == ":help" || input == ":h" || input == ":?")
       return Command.Help
 
-    //
-    // Praise
-    //
     if (input == ":praise")
       return Command.Praise
 
