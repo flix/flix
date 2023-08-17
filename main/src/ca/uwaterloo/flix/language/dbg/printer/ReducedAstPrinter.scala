@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.Ast.CallType.{NonTailCall, TailCall}
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Expr, Stmt}
 import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -57,10 +56,8 @@ object ReducedAstPrinter {
     case Expr.Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Expr.Var(sym, _, _) => printVarSym(sym)
     case Expr.ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
-    case Expr.ApplyClo(exp, exps, NonTailCall, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print))
-    case Expr.ApplyClo(exp, exps, TailCall, _, _, _) => DocAst.Expression.ApplyCloTail(print(exp), exps.map(print))
-    case Expr.ApplyDef(sym, exps, NonTailCall, _, _, _) => DocAst.Expression.ApplyDef(sym, exps.map(print))
-    case Expr.ApplyDef(sym, exps, TailCall, _, _, _) => DocAst.Expression.ApplyDefTail(sym, exps.map(print))
+    case Expr.ApplyClo(exp, exps, ct, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print), Some(ct))
+    case Expr.ApplyDef(sym, exps, ct, _, _, _) => DocAst.Expression.ApplyDef(sym, exps.map(print), Some(ct))
     case Expr.ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
@@ -68,10 +65,10 @@ object ReducedAstPrinter {
     case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
-    case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map{
+    case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
-    case Expr.NewObject(name, clazz, tpe, _, _, _, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), /* TODO */ Nil)
+    case Expr.NewObject(name, clazz, tpe, _, methods, exps, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.zip(exps).map(printJvmMethod))
   }
 
   /**
@@ -95,5 +92,10 @@ object ReducedAstPrinter {
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
     DocAst.Expression.Var(sym)
 
-
+  /**
+    * Returns the [[DocAst.JvmMethod]] representation of `method`.
+    */
+  private def printJvmMethod(method: (ReducedAst.JvmMethod, ReducedAst.Expr)): DocAst.JvmMethod = method match {
+    case (m, clo) => DocAst.JvmMethod(m.ident, m.fparams map printFormalParam, print(clo), MonoTypePrinter.print(m.tpe))
+  }
 }

@@ -87,7 +87,7 @@ instance Functor[DelayList] {
 }
 
 instance Applicative[DelayList] {
-    pub def point(x: a): DelayList[a] = DelayList.point(x)
+    pub def point(x: a): DelayList[a] = DelayList.singleton(x)
     pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef = DelayList.ap(f, l)
 }
 
@@ -540,7 +540,7 @@ mod DelayList {
     /// Return the singleton list with element `x`.
     ///
     @Experimental
-    pub def point(x: a): DelayList[a] = ECons(x, ENil)
+    pub def singleton(x: a): DelayList[a] = ECons(x, ENil)
 
     ///
     /// Apply every function from `f` to every argument from `l` and return a list with all results.
