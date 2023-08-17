@@ -349,4 +349,6 @@ object LexerErr {
   case object MalformedNumber extends LexerErr
 
   case object BlockCommentTooDeep extends LexerErr
+
+  case object UnterminatedBuiltIn extends LexerErr
 }
