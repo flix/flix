@@ -22,9 +22,6 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
-
-// TODO: internals? something to handle $DEFAULT$
-
 object Lexer {
 
   def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
@@ -154,7 +151,7 @@ object Lexer {
         TokenKind.Colon
       }
       case '@' => if (peek().isUpper) {
-        decorator()
+        annotation()
       } else {
         TokenKind.At
       }
@@ -495,17 +492,16 @@ object Lexer {
   }
 
   // Advances state past a decorator by looking for the next non-letter character
-  // TODO: can decorator names have numbers, underscores, bang in them?
-  private def decorator()(implicit s: State): TokenKind = {
+  private def annotation()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
-        return TokenKind.Decorator
+        return TokenKind.Annotation
       } else {
         advance()
       }
     }
 
-    TokenKind.Decorator
+    TokenKind.Annotation
   }
 
   // Advances state past a line comment by looking for the next newline

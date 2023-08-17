@@ -310,11 +310,13 @@ object TokenKind {
 
   case object Char extends TokenKind
 
-  case object Decorator extends TokenKind // TODO: this refers to stuff like '@Internal'. Is this the right name for it?
+  case object Annotation extends TokenKind
 
   case object AnonymousHole extends TokenKind
 
   case object JavaName extends TokenKind
+
+  case object BuiltIn extends TokenKind
 
   case object NamedHole extends TokenKind
 
