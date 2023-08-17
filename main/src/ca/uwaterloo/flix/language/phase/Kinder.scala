@@ -251,7 +251,7 @@ object Kinder {
           val sigsVal = traverse(sigs0) {
             case (sigSym, sig0) => visitSig(sig0, tparam, kenv, taenv, root).map(sig => sigSym -> sig)
           }
-          val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root))
+          val lawsVal = traverse(laws0)(visitDef(_, Nil, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super classes?
           mapN(sigsVal, lawsVal) {
             case (sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs.toMap, laws, loc)
           }
@@ -272,9 +272,12 @@ object Kinder {
           val tpeVal = visitType(tpe0, kind, kenv, taenv, root)
           val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, taenv, root))
           val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kenv, taenv, root))
-          val defsVal = traverse(defs0)(visitDef(_, kenv, taenv, root))
-          mapN(tpeVal, tconstrsVal, assocsVal, defsVal) {
-            case (tpe, tconstrs, assocs, defs) => KindedAst.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc)
+          flatMapN(tpeVal, tconstrsVal, assocsVal) {
+            case (tpe, tconstrs, assocs) =>
+              val defsVal = traverse(defs0)(visitDef(_, tconstrs, kenv, taenv, root))
+              mapN(defsVal) {
+                case defs => KindedAst.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc)
+              }
           }
       }
   }
@@ -296,7 +299,7 @@ object Kinder {
   private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-    val results = ParOps.parMap(staleDefs.values)(visitDef(_, KindEnv.empty, taenv, root))
+    val results = ParOps.parMap(staleDefs.values)(visitDef(_, Nil, KindEnv.empty, taenv, root))
 
     Validation.sequence(results) map {
       res =>
@@ -309,7 +312,7 @@ object Kinder {
   /**
     * Performs kinding on the given def under the given kind environment.
     */
-  private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+  private def visitDef(def0: ResolvedAst.Declaration.Def, extraTconstrs: List[Ast.TypeConstraint], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
@@ -317,7 +320,7 @@ object Kinder {
       flatMapN(kenvVal) {
         kenv =>
           val henv = None
-          val specVal = visitSpec(spec0, Nil, kenv, taenv, root)
+          val specVal = visitSpec(spec0, Nil, extraTconstrs, kenv, taenv, root)
           val expVal = visitExp(exp0, kenv, taenv, henv, root)
           mapN(specVal, expVal) {
             case (spec, exp) => KindedAst.Def(sym, spec, exp)
@@ -334,7 +337,7 @@ object Kinder {
       flatMapN(kenvVal) {
         kenv =>
           val henv = None
-          val specVal = visitSpec(spec0, List(classTparam.sym), kenv, taenv, root)
+          val specVal = visitSpec(spec0, List(classTparam.sym), Nil, kenv, taenv, root) // TODO ASSOC-TYPES should be NonEmpty extra tconstrs?
           val expVal = traverseOpt(exp0)(visitExp(_, kenv, taenv, henv, root))
           mapN(specVal, expVal) {
             case (spec, exp) => KindedAst.Sig(sym, spec, exp)
@@ -350,7 +353,7 @@ object Kinder {
       val kenvVal = inferSpec(spec0, KindEnv.empty, taenv, root)
       flatMapN(kenvVal) {
         case kenv =>
-          val specVal = visitSpec(spec0, Nil, kenv, taenv, root)
+          val specVal = visitSpec(spec0, Nil, Nil, kenv, taenv, root)
           mapN(specVal) {
             case spec => KindedAst.Op(sym, spec)
           }
@@ -362,7 +365,7 @@ object Kinder {
     *
     * Adds `quantifiers` to the generated scheme's quantifier list.
     */
-  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
+  private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], extraTconstrs: List[Ast.TypeConstraint], kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
@@ -377,7 +380,7 @@ object Kinder {
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, econstrs.map(EqualityEnvironment.broaden), base)
           val spec = KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc)
-          mapN(checkAssocTypes(spec)) {
+          mapN(checkAssocTypes(spec, extraTconstrs)) {
             case _ => spec
           }
       }
@@ -386,7 +389,7 @@ object Kinder {
   /**
     * Verifies that all the associated types in the spec are resolvable, according to the declared type constraints.
     */
-  private def checkAssocTypes(spec0: KindedAst.Spec)(implicit flix: Flix): Validation[Unit, KindError] = {
+  private def checkAssocTypes(spec0: KindedAst.Spec, extraTconstrs: List[Ast.TypeConstraint])(implicit flix: Flix): Validation[Unit, KindError] = {
     def getAssocTypes(t: Type): List[Type.AssocType] = t match {
       case Type.Var(_, _) => Nil
       case Type.Cst(_, _) => Nil
@@ -408,7 +411,7 @@ object Kinder {
         Validation.traverseX(tpes.flatMap(getAssocTypes)) {
           case Type.AssocType(Ast.AssocTypeConstructor(assocSym, _), arg@Type.Var(tvarSym1, _), _, loc) =>
             val clazzSym = assocSym.clazz
-            val matches = tconstrs.exists {
+            val matches = (extraTconstrs ::: tconstrs).exists {
               case Ast.TypeConstraint(Ast.TypeConstraint.Head(tconstrSym, _), Type.Var(tvarSym2, _), _) =>
                 clazzSym == tconstrSym && tvarSym1 == tvarSym2
               case _ => false
