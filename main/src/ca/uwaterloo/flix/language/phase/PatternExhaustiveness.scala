@@ -751,12 +751,6 @@ object PatternExhaustiveness {
     case TyCon.Enum(name, sym, args) =>
       val rebuiltArgs = lst.take(args.length)
       TyCon.Enum(name, sym, rebuiltArgs) :: lst.drop(args.length)
-    case TyCon.Record(fields, TyCon.RecordEmpty) =>
-      val all = lst.take(fields.length)
-      val fs = fields.map {
-        case (f, _) => f
-      }.zip(all.take(fields.length))
-      TyCon.Record(fs, TyCon.RecordEmpty) :: lst.drop(fields.length)
     case TyCon.Record(fields, _) =>
       val all = lst.take(fields.length + 1)
       val fs = fields.map {
