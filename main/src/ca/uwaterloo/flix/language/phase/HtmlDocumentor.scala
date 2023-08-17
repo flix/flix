@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.util.LocalResource
@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.util.LocalResource
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
+
 import scala.collection.mutable
 
 /**
@@ -57,7 +58,6 @@ object HtmlDocumentor {
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
-    writeAssets()
     val modules = splitModules(root)
     val filteredModules = filterModules(modules)
     filteredModules.foreach {
@@ -65,6 +65,7 @@ object HtmlDocumentor {
         val out = documentModule(mod)
         writeModule(mod, out)
     }
+    writeAssets()
   }
 
   /**
@@ -222,6 +223,10 @@ object HtmlDocumentor {
     sb.append("<body>")
 
     sb.append("<nav>")
+    sb.append("<div class='flix'>")
+    sb.append("<h2>flix</h2>")
+    sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
+    sb.append("</div>")
     docSubModules(sortedMods)
     docSideBarSection(
       "Classes",
@@ -358,13 +363,14 @@ object HtmlDocumentor {
     * @param name   The name of the subsection, e.g. "Signatures".
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    * @param open   Whether or not the subsection is opened by default. Default to false.
     */
-  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit, open: Boolean = false)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
 
-    sb.append("<details>")
+    sb.append(s"<details ${if (open) "open" else ""}>")
     sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
     for (e <- group) {
       docElt(e)
@@ -388,7 +394,7 @@ object HtmlDocumentor {
     sb.append("</code>")
     docSourceLocation(clazz.loc)
     docDoc(clazz.doc)
-    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature)
+    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
     sb.append("</div>")
