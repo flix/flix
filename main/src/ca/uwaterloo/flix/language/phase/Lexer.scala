@@ -61,7 +61,7 @@ object Lexer {
       }
     }\t${src.name}")
 
-    if (src.name == "foo.flix") {
+    if (src.name == "Int32.flix") {
       println(f"${s.tokens.mkString("\n")}")
     }
 
@@ -257,7 +257,9 @@ object Lexer {
           userDefinedOp()
         } else if (c == '-' && p.isDigit) {
           number() // negative numbers
-        } else {
+        } else if (c == '$' && p.isLetter) {
+          builtIn()
+        } else{
           validUserOpTokens.apply(c)
         }
       }
@@ -329,7 +331,22 @@ object Lexer {
     kind
   }
 
-  // Advances state past a greek name
+  // Advances state past a built-in function
+  private def builtIn()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      val c = peek()
+      if (c == '$') {
+        advance()
+        return TokenKind.BuiltIn
+      }
+
+      advance()
+    }
+
+    TokenKind.Err(LexerErr.UnterminatedBuiltIn)
+  }
+
+  // Advances state past a java name
   private def javaName()(implicit s: State): TokenKind = {
     advance()
     while (!isAtEnd()) {
