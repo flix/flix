@@ -358,13 +358,14 @@ object HtmlDocumentor {
     * @param name   The name of the subsection, e.g. "Signatures".
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    * @param open   Whether or not the subsection is opened by default. Default to false.
     */
-  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit, open: Boolean = false)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
 
-    sb.append("<details>")
+    sb.append(s"<details ${if (open) "open" else ""}>")
     sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
     for (e <- group) {
       docElt(e)
@@ -388,7 +389,7 @@ object HtmlDocumentor {
     sb.append("</code>")
     docSourceLocation(clazz.loc)
     docDoc(clazz.doc)
-    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature)
+    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
     sb.append("</div>")
