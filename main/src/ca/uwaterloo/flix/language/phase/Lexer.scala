@@ -70,6 +70,10 @@ object Lexer {
       }
     }\t${src.name}")
 
+    if (src.name == "foo.flix") {
+      println(f"${s.tokens.mkString("\n")}")
+    }
+
     s.tokens.toArray.toSuccess // TODO: Return failures
   }
 
@@ -121,7 +125,11 @@ object Lexer {
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
       case '_' => TokenKind.Underscore
-      case '#' => TokenKind.Hash
+      case '#' => if (peek() == '#') {
+        javaName()
+      } else {
+        TokenKind.Hash
+      }
       case '\\' => TokenKind.Backslash
       case '/' => if (peek() == '/') {
         lineComment()
@@ -328,6 +336,21 @@ object Lexer {
     }
 
     kind
+  }
+
+  // Advances state past a greek name
+  private def javaName()(implicit s: State): TokenKind = {
+    advance()
+    while (!isAtEnd()) {
+      val c = peek()
+      if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
+        return TokenKind.JavaName
+      }
+
+      advance()
+    }
+
+    TokenKind.JavaName
   }
 
   // Advances state past a greek name
