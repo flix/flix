@@ -24,8 +24,7 @@ import ca.uwaterloo.flix.util.LocalResource
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
-
-import scala.io.Source
+import scala.collection.mutable
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -60,22 +59,24 @@ object HtmlDocumentor {
   def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
     writeAssets()
     val modules = splitModules(root)
-    modules.foreach {
-      mod =>
-        val pub = filterModule(mod)
-        if (!isEmpty(pub)) {
-          val out = documentModule(pub)
-          writeModule(mod, out)
-        }
+    val filteredModules = filterModules(modules)
+    filteredModules.foreach {
+      case (sym, mod) =>
+        val out = documentModule(mod)
+        writeModule(mod, out)
     }
   }
 
   /**
+    * Get the name of the module.
+    */
+  private def moduleName(mod: Module): String = if (mod.sym.isRoot) RootNS else mod.sym.toString
+
+  /**
     * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
     */
-  private def splitModules(root: TypedAst.Root): Iterable[Module] = root.modules.map {
+  private def splitModules(root: TypedAst.Root): Map[Symbol.ModuleSym, Module] = root.modules.map {
     case (sym, mod) =>
-      val namespace = sym.ns
       val uses = root.uses.getOrElse(sym, Nil)
 
       var submodules: List[Symbol.ModuleSym] = Nil
@@ -94,8 +95,8 @@ object HtmlDocumentor {
         case _ => // No op
       }
 
-      Module(
-        namespace,
+      sym -> Module(
+        sym,
         uses,
         submodules,
         classes,
@@ -119,13 +120,20 @@ object HtmlDocumentor {
   }
 
   /**
-    * Returns a `Module` corresponding to the given `mod`,
+    * Filter the map of modules, removing all items and empty modules, which shouldn't appear in the documentation.
+    */
+  private def filterModules(mods: Map[Symbol.ModuleSym, HtmlDocumentor.Module]): Map[Symbol.ModuleSym, Module] = {
+    filterEmpty(filterItems(mods))
+  }
+
+  /**
+    * Returns a map of modules corresponding to the given input,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterModule(mod: Module): Module = mod match {
-    case Module(namespace, uses, submodules, classes, enums, effects, typeAliases, defs) =>
-      Module(
-        namespace,
+  private def filterItems(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = mods.map {
+    case (sym, Module(_, uses, submodules, classes, enums, effects, typeAliases, defs)) =>
+      sym -> Module(
+        sym,
         uses,
         submodules,
         classes.filter(c => c.mod.isPublic && !c.ann.isInternal).map(filterClass),
@@ -135,6 +143,7 @@ object HtmlDocumentor {
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
       )
   }
+
 
   /**
     * Returns a `Class` corresponding to the given `clazz`,
@@ -159,11 +168,41 @@ object HtmlDocumentor {
   }
 
   /**
-    * Checks whether the given `Module`, `mod`, contains anything or not.
+    * Remove any modules and references to them if they:
+    *   1. Contain no public items
+    *   1. Contain no submodules with any public items
     */
-  private def isEmpty(mod: HtmlDocumentor.Module): Boolean = mod match {
-    case Module(_, _, _, classes, enums, effects, typeAliases, defs) =>
-      classes.isEmpty && enums.isEmpty && effects.isEmpty && typeAliases.isEmpty && defs.isEmpty
+  private def filterEmpty(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = {
+    val modMap: mutable.Map[Symbol.ModuleSym, Module] = mutable.Map(mods.toSeq: _*)
+
+    /**
+      * Recursively walks the module tree removing empty modules.
+      * These modules are removed from the map, and from the `submodules` field.
+      *
+      * Returns a boolean, describing whether or not this module is included.
+      */
+    def checkMod(sym: Symbol.ModuleSym): Boolean = {
+      modMap(sym) match {
+        case Module(_, uses, submodules, classes, enums, effects, typeAliases, defs) =>
+          val filteredSubMods = submodules.filter(checkMod)
+
+          val isEmpty = filteredSubMods.isEmpty &&
+            classes.isEmpty &&
+            enums.isEmpty &&
+            effects.isEmpty &&
+            typeAliases.isEmpty &&
+            defs.isEmpty
+
+          if (isEmpty) modMap.remove(sym)
+          else modMap += sym -> Module(sym, uses, filteredSubMods, classes, enums, effects, typeAliases, defs)
+
+          !isEmpty
+      }
+    }
+
+    val root = Symbol.mkModuleSym(Nil)
+    checkMod(root)
+    Map(modMap.toSeq: _*)
   }
 
   /**
@@ -172,19 +211,53 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val name = if (mod.namespace.isEmpty) RootNS else mod.namespace.mkString(".")
+    val sortedMods = mod.submodules.sortBy(_.ns.last)
+    val sortedClasses = mod.classes.sortBy(_.sym.name)
+    val sortedEnums = mod.enums.sortBy(_.sym.name)
+    val sortedEffs = mod.effects.sortBy(_.sym.name)
+    val sortedTypeAliases = mod.typeAliases.sortBy(_.sym.name)
+    val sortedDefs = mod.defs.sortBy(_.sym.name)
 
-    sb.append(mkHead(name))
+    sb.append(mkHead(moduleName(mod)))
     sb.append("<body>")
 
-    sb.append(s"<h1>${esc(name)}</h1>")
-    sb.append("<hr/>")
+    sb.append("<nav>")
+    docSubModules(sortedMods)
+    docSideBarSection(
+      "Classes",
+      sortedClasses,
+      (c: Class) => sb.append(s"<a href='#class-${esc(c.sym.name)}'>${esc(c.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "Enums",
+      sortedEnums,
+      (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "Effects",
+      sortedEffs,
+      (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "Type Aliases",
+      sortedTypeAliases,
+      (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${esc(t.sym.name)}'>${esc(t.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "Definitions",
+      sortedDefs,
+      (d: TypedAst.Def) => sb.append(s"<a href='#def-${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+    )
+    sb.append("</nav>")
 
-    docSection("Classes", mod.classes.sortBy(_.sym.name), docClass)
-    docSection("Enums", mod.enums.sortBy(_.sym.name), docEnum)
-    docSection("Effects", mod.effects.sortBy(_.sym.name), docEffect)
-    docSection("Type Aliases", mod.typeAliases.sortBy(_.sym.name), docTypeAlias)
-    docSection("Definitions", mod.defs.sortBy(_.sym.name), docDef)
+    sb.append("<main>")
+    sb.append(s"<h1>${esc(moduleName(mod))}</h1>")
+    docSection("Classes", sortedClasses, docClass)
+    docSection("Enums", sortedEnums, docEnum)
+    docSection("Effects", sortedEffs, docEffect)
+    docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
+    docSection("Definitions", sortedDefs, docDef)
+    sb.append("</main>")
 
     sb.append("</body>")
 
@@ -209,28 +282,68 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents a section, (Classes, Enums, Effects, etc.), containing a `group` of items, each being placed in a box.
+    * Documents a section in the side bar, (Modules, Classes, Enums, etc.), containing a `group` of items.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `group` is empty, nothing will be generated.
+    *
+    * @param name   The name of the section, e.g. "Modules".
+    * @param group  The list of items in the section, in the order that they should appear.
+    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    *               Note that they will each be wrapped in an `<li>` tag.
+    */
+  private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (group.isEmpty) {
+      return
+    }
+
+    sb.append(s"<h3><a href='#$name'>$name</a></h3>")
+    sb.append(s"<ul class='${name.replace(" ", "-")}'>")
+    for (e <- group) {
+      sb.append("<li>")
+      docElt(e)
+      sb.append("</li>")
+    }
+    sb.append("</ul>")
+  }
+
+  private def docSubModules(submodules: List[Symbol.ModuleSym])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (submodules.isEmpty) {
+      return
+    }
+
+    sb.append("<h3>Modules</h3>")
+    sb.append("<ul class='Modules'>")
+    for (m <- submodules) {
+      sb.append("<li>")
+      sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>")
+      sb.append("</li>")
+    }
+    sb.append("</ul>")
+  }
+
+  /**
+    * Documents a section, (Classes, Enums, Effects, etc.), containing a `group` of items.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `group` is empty, nothing will be generated.
     *
     * @param name   The name of the section, e.g. "Classes".
+    *               This name will also be the id of the section.
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
-    *               Note that this will be already be wrapped in a box.
     */
   private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
 
-    sb.append("<section>")
-    sb.append(s"<h2>${esc(name)}</h2>")
+    sb.append(s"<section id='$name'>")
+    sb.append(s"<h2>$name</h2>")
     for (e <- group) {
-      sb.append("<div class='box'>")
       docElt(e)
-      sb.append("</div>")
     }
     sb.append("</section>")
   }
@@ -265,6 +378,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
     docAnnotations(clazz.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
@@ -277,6 +391,7 @@ object HtmlDocumentor {
     docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
+    sb.append("</div>")
   }
 
   /**
@@ -285,6 +400,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<div class='box' id='enum-${esc(enm.sym.name)}'>")
     docAnnotations(enm.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
@@ -295,6 +411,7 @@ object HtmlDocumentor {
     docSourceLocation(enm.loc)
     docCases(enm.cases.values.toList)
     docDoc(enm.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -303,6 +420,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<div class='box' id='eff-${esc(eff.sym.name)}'>")
     docAnnotations(eff.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
@@ -311,6 +429,7 @@ object HtmlDocumentor {
     docSourceLocation(eff.loc)
     docSubSection("Ops", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec))
     docDoc(eff.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -319,6 +438,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
@@ -328,6 +448,7 @@ object HtmlDocumentor {
     sb.append("</code>")
     docSourceLocation(ta.loc)
     docDoc(ta.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -335,8 +456,11 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit =
+  private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
     docSpec(defn.sym.name, defn.spec)
+    sb.append("</div>")
+  }
 
   /**
     * Documents the given `Sig`, `sig`.
@@ -354,7 +478,7 @@ object HtmlDocumentor {
     */
   private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
-    sb.append("<code>")
+    sb.append(s"<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${esc(name)}</span>")
     docTypeParams(spec.tparams, showKinds = false)
@@ -578,8 +702,7 @@ object HtmlDocumentor {
     * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
     */
   private def writeModule(mod: Module, output: String): Unit = {
-    val name = if (mod.namespace.isEmpty) List(RootNS) else mod.namespace
-    writeFile(s"${name.mkString(".")}.html", output.getBytes)
+    writeFile(s"${moduleName(mod)}.html", output.getBytes)
   }
 
   /**
@@ -621,7 +744,7 @@ object HtmlDocumentor {
   /**
     * A represention of a module that's easier to work with while generating documention.
     */
-  private case class Module(namespace: List[String],
+  private case class Module(sym: Symbol.ModuleSym,
                             uses: List[Ast.UseOrImport],
                             submodules: List[Symbol.ModuleSym],
                             classes: List[Class],
