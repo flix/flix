@@ -243,7 +243,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :build-jar :jar             Builds a jar-file from the current project.")
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
     w.println("  :check :c                   Checks the current project for errors.")
-    w.println("  :doc                        Generates API documentation for the current project.")
+    w.println("  :doc :d                     Generates API documentation for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")

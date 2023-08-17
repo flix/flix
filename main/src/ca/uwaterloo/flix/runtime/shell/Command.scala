@@ -133,7 +133,7 @@ object Command {
     if (input == ":check" || input == ":c")
       return Command.Check
 
-    if (input == ":doc")
+    if (input == ":doc" || input == ":d")
       return Command.Doc
 
     if (input == ":build-jar" || input == ":jar")
