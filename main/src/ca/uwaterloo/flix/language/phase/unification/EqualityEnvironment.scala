@@ -36,10 +36,12 @@ object EqualityEnvironment {
     val newTpe1 = subst(tpe1)
     val newTpe2 = subst(tpe2)
 
+    val res1 = reduceType2(newTpe1, eqEnv)
+    val res2 = reduceType2(newTpe2, eqEnv)
     // check that econstr becomes tautological (according to global instance map)
     for {
-      res1 <- reduceType(newTpe1, eqEnv)
-      res2 <- reduceType(newTpe2, eqEnv)
+//      res1 <- reduceType(newTpe1, eqEnv) // TODO ASSOC-TYPES
+//      res2 <- reduceType(newTpe2, eqEnv)
       res <- Unification.unifyTypes(res1, res2, renv, LevelEnv.Top) match {
         case Result.Ok((subst, Nil)) => Result.Ok(subst): Result[Substitution, UnificationError]
         case Result.Ok((_, _ :: _)) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
@@ -97,6 +99,22 @@ object EqualityEnvironment {
   }
 
   /**
+    * Reduces the associated type in the equality environment.
+    *
+    * Only performs one reduction step. The result may itself contain associated types.
+    */
+  def reduceAssocTypeStep2(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Option[Type] = { // TODO ASSOC-TYPES better thing than option
+    val renv = arg.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+    val insts = eqEnv(cst.sym)
+    insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
+      inst =>
+        Unification.unifyTypes(arg, inst.arg, renv, LevelEnv.Top).toOption.map { // TODO level env?
+          case (subst, econstrs) => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
+        }
+    }.nextOption()
+  }
+
+  /**
     * Fully reduces the given associated type.
     */
   def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Type, UnificationError] = {
@@ -104,6 +122,13 @@ object EqualityEnvironment {
       tpe <- reduceAssocTypeStep(cst, arg, eqEnv)
       res <- reduceType(tpe, eqEnv)
     } yield res
+  }
+
+  /**
+    * Fully reduces the given associated type.
+    */
+  def reduceAssocType2(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Option[Type] = {
+    reduceAssocTypeStep2(cst, arg, eqEnv) map (reduceType2(_, eqEnv))
   }
 
   /**
@@ -131,6 +156,29 @@ object EqualityEnvironment {
           res0 <- reduceAssocTypeStep(cst, arg, eqEnv)
           res <- visit(res0)
         } yield res
+    }
+
+    visit(t0)
+  }
+
+  /**
+    * Reduces associated types in the equality environment.
+    */
+  def reduceType2(t0: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Type = {
+    // TODO ASSOC-TYPE require that AssocTypeDefs which themselves include assoc types are supported by tconstrs
+    def visit(t: Type): Type = t match {
+      case t: Type.Var => t
+      case t: Type.Cst => t
+      case Type.Apply(tpe1, tpe2, loc) =>
+        Type.Apply(visit(tpe1), visit(tpe2), loc)
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        Type.Alias(cst, args0.map(visit), visit(tpe0), loc)
+      case Type.AssocType(cst, arg0, kind, loc) =>
+        val arg = visit(arg0)
+        reduceAssocTypeStep2(cst, arg, eqEnv) match {
+          case None => Type.AssocType(cst, arg, kind, loc)
+          case Some(reduced) => visit(reduced)
+        }
     }
 
     visit(t0)
