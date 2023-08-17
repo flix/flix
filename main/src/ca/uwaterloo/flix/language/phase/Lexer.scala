@@ -326,7 +326,7 @@ object Lexer {
       case '\"' => string()
       case '\'' => char()
       case '`' => infixFunction()
-      case _ => TokenKind.Err(LexerErr.UnexpectedSymbol)
+      case _ => TokenKind.Err(LexerErr.UnexpectedChar)
     }
 
     addToken(kind)
