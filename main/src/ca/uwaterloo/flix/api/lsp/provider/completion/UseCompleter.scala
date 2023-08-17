@@ -29,6 +29,7 @@ object UseCompleter extends Completer {
       UseEffCompleter.getCompletions(context)         ++
       UseDefCompleter.getCompletions(context)         ++
       UseSignatureCompleter.getCompletions(context)   ++
-      UseOpCompleter.getCompletions(context)
+      UseOpCompleter.getCompletions(context)          ++
+      UseEnumTagCompleter.getCompletions(context)
   }
 }

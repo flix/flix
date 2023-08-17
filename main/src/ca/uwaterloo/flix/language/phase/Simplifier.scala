@@ -270,7 +270,7 @@ object Simplifier {
 
             case TypeConstructor.Regex => MonoType.Regex
 
-            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
+            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty
 
             case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
 
@@ -472,7 +472,7 @@ object Simplifier {
 
       val t = visitType(tpe)
 
-      //TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
+      // TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
       val jumpPurity = combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
 
       // Create a branch for each rule.
@@ -657,7 +657,7 @@ object Simplifier {
   /**
     * Returns a copy of the given expression `exp0` where every variable symbol has been replaced according to the given substitution `m`.
     */
-  def substitute(exp0: SimplifiedAst.Expr, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expr = {
+  private def substitute(exp0: SimplifiedAst.Expr, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expr = {
 
     def visitExp(e: SimplifiedAst.Expr): SimplifiedAst.Expr = e match {
       case SimplifiedAst.Expr.Cst(_, _, _) => e
@@ -758,7 +758,7 @@ object Simplifier {
     * Combines purities `p1` and `p2`
     * A combined purity is only pure if both `p1` and `p2` are pure, otherwise it is always impure.
     */
-  def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
+  private def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
     case (Pure, Pure) => Pure
     case _ => Impure
   }
@@ -767,13 +767,13 @@ object Simplifier {
     * Combine `p1`, `p2` and `p3`
     * A combined purity is only pure if `p1`, `p2` and `p3` are pure, otherwise it is always impure.
     */
-  def combine(p1: Purity, p2: Purity, p3: Purity): Purity = combine(p1, combine(p2, p3))
+  private def combine(p1: Purity, p2: Purity, p3: Purity): Purity = combine(p1, combine(p2, p3))
 
   /**
     * Combine `purities`
     * A combined purity is only pure if every purity in `purities` are pure, otherwise it is always impure.
     */
-  def combineAll(purities: List[Purity]): Purity = purities.foldLeft[Purity](Pure) {
+  private def combineAll(purities: List[Purity]): Purity = purities.foldLeft[Purity](Pure) {
     case (acc, purity) => combine(acc, purity)
   }
 
