@@ -133,6 +133,18 @@ object LoweredAstPrinter {
     case Pattern.Cst(cst, tpe, loc) => DocAst.Expression.Cst(cst)
     case Pattern.Tag(sym, pat, tpe, loc) => DocAst.Expression.Tag(sym.sym, List(printPattern(pat)))
     case Pattern.Tuple(elms, tpe, loc) => DocAst.Expression.Tuple(elms.map(printPattern))
+    case Pattern.Record(pats, pat, tpe, loc) => printRecordPattern(pats, pat)
+    case Pattern.RecordEmpty(_, _) => DocAst.Expression.RecordEmpty
+  }
+
+  /**
+    * Converts the record pattern into a [[DocAst.Expression]] by adding a series of [[DocAst.Expression.RecordExtend]] expressions.
+    */
+  private def printRecordPattern(pats: List[LoweredAst.Pattern.Record.RecordFieldPattern], pat: LoweredAst.Pattern): DocAst.Expression = {
+    pats.foldRight(printPattern(pat)) {
+      case (LoweredAst.Pattern.Record.RecordFieldPattern(field, _, p, _), acc) =>
+        DocAst.Expression.RecordExtend(field, printPattern(p), acc)
+    }
   }
 
   /**

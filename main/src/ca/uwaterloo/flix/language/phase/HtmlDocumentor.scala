@@ -484,7 +484,6 @@ object HtmlDocumentor {
     docFormalParams(spec.fparams)
     sb.append(": ")
     docType(spec.retTpe)
-    sb.append(" \\ ")
     docEffectType(spec.eff)
     sb.append("</code>")
     docSourceLocation(spec.loc)
@@ -658,12 +657,22 @@ object HtmlDocumentor {
   /**
     * Document the the given `Type`, `eff`, when it is known to be in effect position.
     *
+    * For example: `" \ IO"`
+    *
+    * If this is the pure effect, nothing is written.
+    *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<span class='effect'>")
-    sb.append(esc(FormatType.formatType(eff)))
-    sb.append("</span>")
+    val simpleEff = SimpleType.fromWellKindedType(eff)(flix.getFormatOptions)
+    simpleEff match {
+      case SimpleType.Empty => // No op
+      case _ =>
+        sb.append(" \\ ")
+        sb.append("<span class='effect'>")
+        sb.append(esc(FormatType.formatSimpleType(simpleEff)))
+        sb.append("</span>")
+    }
   }
 
   /**
