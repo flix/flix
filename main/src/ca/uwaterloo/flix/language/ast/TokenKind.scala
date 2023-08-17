@@ -336,7 +336,7 @@ sealed trait LexerErr
 
 object LexerErr {
 
-  case object UnexpectedSymbol extends LexerErr
+  case object UnexpectedChar extends LexerErr
 
   case object UnterminatedString extends LexerErr
 
