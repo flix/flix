@@ -624,9 +624,15 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    for (a <- anns.annotations) {
-      sb.append(s"<code class='annotation'>${esc(a.toString)}</code>")
+    if (anns.annotations.isEmpty) {
+      return
     }
+
+    sb.append("<code class='annotations'>")
+    for (a <- anns.annotations) {
+      sb.append(s"<span class='annotation'>${esc(a.toString)}</span> ")
+    }
+    sb.append("</code>")
   }
 
   /**
