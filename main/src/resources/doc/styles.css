@@ -1,6 +1,7 @@
 :root {
-    --bg-color: white;
-    --bg-emph-color: rgb(248, 249, 250);
+    --bg-color-1: white;
+    --bg-color-2: #fcfcfd;
+    --bg-color-3: rgb(248, 249, 250);
 
     --heading-color: rgb(33, 37, 41);
     --text-color: rgb(17, 17, 17);
@@ -33,13 +34,40 @@ body {
         sans-serif, "Apple Color Emoji", "Segoe UI Emoji", 
         "Segoe UI Symbol", "Noto Color Emoji";
 
-    background-color: var(--bg-color);
+    background-color: var(--bg-color-1);
     color: var(--text-color);
 
     display: flex;
+    background-color: var(--bg-color-2);
+}
+
+h1, h2 {
+    color: var(--heading-color);
+    font-family: Oswald, sans-serif;
+    margin-top: 0;
+    line-height: 1.2;
+}
+h1 {
+    font-size: 4.5rem;
+    font-weight: 300;
+    margin-bottom: 3rem;
+}
+h2 {
+    font-size: 2rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+}
+h3 {
+    display: inline;
+    font-size: 1rem;
+    color: var(--heading-color);
+    font-weight: 500;
 }
 
 nav {
+    background-color: var(--bg-color-1);
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.05);
+    border-right: 1px solid rgba(0, 0, 0, 0.07);
     box-sizing: border-box;
     padding: 0.5rem 1rem;
     height: 100%;
@@ -67,29 +95,6 @@ main {
     scroll-behavior: smooth;
 }
 
-h1, h2 {
-    color: var(--heading-color);
-    font-family: Oswald, sans-serif;
-    margin-top: 0;
-    line-height: 1.2;
-}
-h1 {
-    font-size: 4.5rem;
-    font-weight: 300;
-    margin-bottom: 3rem;
-}
-h2 {
-    font-size: 2rem;
-    font-weight: 500;
-    margin-bottom: 1.5rem;
-}
-h3 {
-    display: inline;
-    font-size: 1rem;
-    color: var(--heading-color);
-    font-weight: 500;
-}
-
 hr {
     color: transparent;
 }
@@ -111,7 +116,9 @@ section > * {
 }
 
 .box {
-    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-color-1);
+    border: 1px solid rgba(0, 0, 0, 0.07);
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     margin-bottom: 0.8rem;
@@ -130,7 +137,7 @@ section > * {
     color: inherit;
     font-size: 0.75rem;
     font-weight: 700;
-    background-color: var(--bg-emph-color);
+    background-color: var(--bg-color-3);
     padding: 0.2em 0.65em;
     border-radius: 0.375rem;
 
