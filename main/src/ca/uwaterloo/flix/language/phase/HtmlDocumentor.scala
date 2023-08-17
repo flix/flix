@@ -231,7 +231,7 @@ object HtmlDocumentor {
       (m: Symbol.ModuleSym) => sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>"),
     )
     docSideBarSection(
-      "Definitions",
+      "<a href='#Definitions'>Definitions</a>",
       sortedDefs,
       (d: TypedAst.Def) => sb.append(s"<a href='#${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
     )
@@ -303,6 +303,7 @@ object HtmlDocumentor {
     * If `group` is empty, nothing will be generated.
     *
     * @param name   The name of the section, e.g. "Classes".
+    *               This name will also be the id of the section.
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     */
@@ -311,8 +312,8 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append("<section>")
-    sb.append(s"<h2>${esc(name)}</h2>")
+    sb.append(s"<section id='$name'>")
+    sb.append(s"<h2>$name</h2>")
     for (e <- group) {
       docElt(e)
     }
