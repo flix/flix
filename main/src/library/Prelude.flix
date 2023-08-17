@@ -173,3 +173,8 @@ pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
         case _: _ => println(x)
     }
 }
+
+///
+/// Marshals `t` to its Java representation.
+///
+def toJava(t: t): ToJava.O[t] \ IO with ToJava[t] = ToJava.toJava(t)

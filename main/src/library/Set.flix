@@ -95,6 +95,11 @@ instance Iterable[Set] {
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
+instance ToJava[Set[a]] with Order[a] {
+    type O = ##java.util.Set
+    pub def toJava(s: Set[a]): ##java.util.Set \ IO = Adaptor.toSet(s)
+}
+
 mod Set {
 
     ///

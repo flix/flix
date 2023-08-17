@@ -115,6 +115,11 @@ instance Iterable[Nel] {
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
+instance ToJava[Nel[a]] {
+    type O = ##java.util.List
+    pub def toJava(l: Nel[a]): ##java.util.List \ IO = Adaptor.toList(l)
+}
+
 mod Nel {
 
     ///
