@@ -31,11 +31,11 @@ object Lexer {
     }
 
     flix.phase("Lexer") {
+
       // TODO: Remove this debug printing
       val state = new State(root.sources.head._1)
       val stats = tokenStats()(state)
       val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
-
       println(f"${"%34s".format("filename")}${s}")
 
       // Lex each source file in parallel.
@@ -354,8 +354,7 @@ object Lexer {
   private def javaName()(implicit s: State): TokenKind = {
     advance()
     while (!isAtEnd()) {
-      val c = peek()
-      if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
+      if (peek().isWhitespace) {
         return TokenKind.JavaName
       }
 
