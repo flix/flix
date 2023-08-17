@@ -464,7 +464,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Type checks the source files for the project.
     */
-  def check(o: Options): Validation[TypedAst.Root, BootstrapError] = {
+  def check(o: Options): Validation[Unit, BootstrapError] = {
     // Configure a new Flix object.
     implicit val flix: Flix = new Flix()
     flix.setOptions(o)
@@ -473,7 +473,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     reconfigureFlix(flix)
 
     flix.check() match {
-      case Validation.Success(root) => root.toSuccess
+      case Validation.Success(root) => ().toSuccess
       case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
     }
   }
@@ -595,11 +595,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Generates API documentation.
     */
   def doc(o: Options): Validation[Unit, BootstrapError] = {
-    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    check(o) map {
+    // Configure a new Flix object.
+    implicit val flix: Flix = new Flix()
+    flix.setOptions(o)
+
+    // Add sources and packages.
+    reconfigureFlix(flix)
+
+    flix.check() map {
       root =>
         JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
+    } match {
+      case Validation.Success(root) => ().toSuccess
+      case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
     }
   }
 
