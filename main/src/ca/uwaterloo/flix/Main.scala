@@ -199,6 +199,12 @@ object Main {
         case Command.Doc =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.doc(options)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
           }
 
         case Command.Run =>
