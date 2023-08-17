@@ -316,6 +316,8 @@ object TokenKind {
 
   case object AnonymousHole extends TokenKind
 
+  case object JavaName extends TokenKind
+
   case object NamedHole extends TokenKind
 
   case object VariableHole extends TokenKind
