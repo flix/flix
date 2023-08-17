@@ -58,7 +58,6 @@ object HtmlDocumentor {
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
-    writeAssets()
     val modules = splitModules(root)
     val filteredModules = filterModules(modules)
     filteredModules.foreach {
@@ -66,6 +65,7 @@ object HtmlDocumentor {
         val out = documentModule(mod)
         writeModule(mod, out)
     }
+    writeAssets()
   }
 
   /**
