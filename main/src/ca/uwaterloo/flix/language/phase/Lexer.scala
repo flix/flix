@@ -78,12 +78,12 @@ object Lexer {
    */
   def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     flix.phase("Lexer") {
-
       // TODO: Remove this debug printing
-//      val state = new State(root.sources.head._1)
-//      val stats = tokenStats()(state)
-//      val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
-//      println(f"${"%34s".format("filename")}${s}")
+      val state = new State(root.sources.head._1)
+      val stats = tokenStats()(state)
+      val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
+
+      println(f"${"%34s".format("filename")}${s}")
 
       // Lex each source file in parallel.
       val results = ParOps.parMap(root.sources) {
@@ -116,21 +116,12 @@ object Lexer {
     // Add a virtual eof token at the last position
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
-    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
+    // TODO: Remove this debug printing
+    val stats = tokenStats()
+    val debug = stats.toSeq.sortBy(_._1).map(v => "%5d".format(v._2)).mkString("")
+    println(f"${"%34s".format(src.name)}${debug}")
 
-    // TODO: Remove this reporting print
-    println(f"${
-      if (hasErrors) {
-        "ERR"
-      } else {
-        "ok "
-      }
-    }\t${src.name}")
-
-    if (src.name == "Int32.flix") {
-      println(f"${s.tokens.mkString("\n")}")
-    }
-
+//    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
     s.tokens.toArray.toSuccess // TODO: Return failures
   }
 
@@ -642,5 +633,23 @@ object Lexer {
     '^' -> TokenKind.Caret,
     '$' -> TokenKind.Dollar
   )
+
+  private def tokenStats()(implicit s: State): Map[String, Int] = {
+    def isKind(k: TokenKind)(t: Token) = t.kind == k
+
+    Map(
+      "def" -> s.tokens.count(isKind(TokenKind.DefKeyword)),
+      "class" -> s.tokens.count(isKind(TokenKind.ClassKeyword)),
+      "//" -> s.tokens.count(isKind(TokenKind.LineComment)),
+      "/%" -> s.tokens.count(isKind(TokenKind.BlockComment)),
+      "(" -> s.tokens.count(isKind(TokenKind.LParen)),
+      ")" -> s.tokens.count(isKind(TokenKind.RParen)),
+      "[" -> s.tokens.count(isKind(TokenKind.LBracket)),
+      "]" -> s.tokens.count(isKind(TokenKind.RBracket)),
+      "{" -> s.tokens.count(isKind(TokenKind.LCurly)),
+      "}" -> s.tokens.count(isKind(TokenKind.RCurly)),
+      "err" -> s.tokens.count(t => t.kind.isInstanceOf[TokenKind.Err]),
+    )
+  }
 
 }
