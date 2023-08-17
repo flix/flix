@@ -229,33 +229,29 @@ object HtmlDocumentor {
     sb.append("<body>")
 
     sb.append("<nav>")
+    docSubModules(sortedMods)
     docSideBarSection(
-      "Modules",
-      sortedMods,
-      (m: Symbol.ModuleSym) => sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>"),
-    )
-    docSideBarSection(
-      "<a href='#Classes'>Classes</a>",
+      "Classes",
       sortedClasses,
       (c: Class) => sb.append(s"<a href='#class-${esc(c.sym.name)}'>${esc(c.sym.name)}</a>"),
     )
     docSideBarSection(
-      "<a href='#Enums'>Enums</a>",
+      "Enums",
       sortedEnums,
       (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
     )
     docSideBarSection(
-      "<a href='#Effects'>Effects</a>",
+      "Effects",
       sortedEffs,
       (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
     )
     docSideBarSection(
-      "<a href='#Type Aliases'>Type Aliases</a>",
+      "Type Aliases",
       sortedTypeAliases,
       (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${esc(t.sym.name)}'>${esc(t.sym.name)}</a>"),
     )
     docSideBarSection(
-      "<a href='#Definitions'>Definitions</a>",
+      "Definitions",
       sortedDefs,
       (d: TypedAst.Def) => sb.append(s"<a href='#def-${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
     )
@@ -309,11 +305,26 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append(s"<h3>$name</h3>")
-    sb.append("<ul>")
+    sb.append(s"<h3><a href='#$name'>$name</a></h3>")
+    sb.append(s"<ul class='${name.replace(" ", "-")}'>")
     for (e <- group) {
       sb.append("<li>")
       docElt(e)
+      sb.append("</li>")
+    }
+    sb.append("</ul>")
+  }
+
+  private def docSubModules(submodules: List[Symbol.ModuleSym])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (submodules.isEmpty) {
+      return
+    }
+
+    sb.append("<h3>Modules</h3>")
+    sb.append("<ul class='Modules'>")
+    for (m <- submodules) {
+      sb.append("<li>")
+      sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>")
       sb.append("</li>")
     }
     sb.append("</ul>")
