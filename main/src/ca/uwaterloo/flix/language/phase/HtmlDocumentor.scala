@@ -219,6 +219,10 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedMods = mod.submodules.sortBy(_.ns.last)
+    val sortedClasses = mod.classes.sortBy(_.sym.name)
+    val sortedEnums = mod.enums.sortBy(_.sym.name)
+    val sortedEffs = mod.effects.sortBy(_.sym.name)
+    val sortedTypeAliases = mod.typeAliases.sortBy(_.sym.name)
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
     sb.append(mkHead(moduleName(mod)))
@@ -231,18 +235,38 @@ object HtmlDocumentor {
       (m: Symbol.ModuleSym) => sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>"),
     )
     docSideBarSection(
+      "<a href='#Classes'>Classes</a>",
+      sortedClasses,
+      (c: Class) => sb.append(s"<a href='#class-${esc(c.sym.name)}'>${esc(c.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "<a href='#Enums'>Enums</a>",
+      sortedEnums,
+      (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "<a href='#Effects'>Effects</a>",
+      sortedEffs,
+      (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "<a href='#Type Aliases'>Type Aliases</a>",
+      sortedTypeAliases,
+      (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${esc(t.sym.name)}'>${esc(t.sym.name)}</a>"),
+    )
+    docSideBarSection(
       "<a href='#Definitions'>Definitions</a>",
       sortedDefs,
-      (d: TypedAst.Def) => sb.append(s"<a href='#${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+      (d: TypedAst.Def) => sb.append(s"<a href='#def-${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
     )
     sb.append("</nav>")
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(moduleName(mod))}</h1>")
-    docSection("Classes", mod.classes.sortBy(_.sym.name), docClass)
-    docSection("Enums", mod.enums.sortBy(_.sym.name), docEnum)
-    docSection("Effects", mod.effects.sortBy(_.sym.name), docEffect)
-    docSection("Type Aliases", mod.typeAliases.sortBy(_.sym.name), docTypeAlias)
+    docSection("Classes", sortedClasses, docClass)
+    docSection("Enums", sortedEnums, docEnum)
+    docSection("Effects", sortedEffs, docEffect)
+    docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
 
@@ -350,7 +374,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div class='box'>")
+    sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
     docAnnotations(clazz.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
@@ -372,7 +396,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div class='box'>")
+    sb.append(s"<div class='box' id='enum-${esc(enm.sym.name)}'>")
     docAnnotations(enm.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
@@ -392,7 +416,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div class='box'>")
+    sb.append(s"<div class='box' id='eff-${esc(eff.sym.name)}'>")
     docAnnotations(eff.ann)
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
@@ -410,7 +434,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div class='box'>")
+    sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
@@ -429,7 +453,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<div class='box' id='${defn.sym.name}'>")
+    sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
     docSpec(defn.sym.name, defn.spec)
     sb.append("</div>")
   }
