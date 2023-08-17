@@ -218,6 +218,7 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
+    val sortedMods = mod.submodules.sortBy(_.ns.last)
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
     sb.append(mkHead(moduleName(mod)))
@@ -226,7 +227,7 @@ object HtmlDocumentor {
     sb.append("<nav>")
     docSideBarSection(
       "Modules",
-      mod.submodules,
+      sortedMods,
       (m: Symbol.ModuleSym) => sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>"),
     )
     docSideBarSection(
