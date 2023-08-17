@@ -224,7 +224,7 @@ object HtmlDocumentor {
 
     sb.append("<nav>")
     sb.append("<div class='flix'>")
-    sb.append("<h2>flix</h2>")
+    sb.append("<h2><a href='Prelude.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
     docSubModules(sortedMods)
