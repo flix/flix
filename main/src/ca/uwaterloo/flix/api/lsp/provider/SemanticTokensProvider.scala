@@ -602,8 +602,9 @@ object SemanticTokensProvider {
 
     case Pattern.Record(pats, pat, tpe, loc) =>
       val patsVal = pats.flatMap {
-        case Pattern.Record.RecordFieldPattern(_, tpe1, pat1, _) =>
-          visitType(tpe1) ++ visitPat(pat1)
+        case Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
+          val f = SemanticToken(SemanticTokenType.Property, Nil, loc1)
+          Iterator(f) ++ visitType(tpe1) ++ visitPat(pat1)
       }.iterator
       val patVal = visitPat(pat)
       val tVal = visitType(tpe)
