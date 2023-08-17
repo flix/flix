@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -1737,6 +1738,20 @@ object Resolver {
           mapN(esVal) {
             es => ResolvedAst.Pattern.Tuple(es, loc)
           }
+
+        case NamedAst.Pattern.Record(pats, pat, loc) =>
+          val psVal = traverse(pats) {
+            case NamedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+              mapN(visit(pat1)) {
+                case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
+              }
+          }
+          val pVal = visit(pat)
+          mapN(psVal, pVal) {
+            case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
+          }
+
+        case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
       }
 
       visit(pat0)
@@ -1768,6 +1783,19 @@ object Resolver {
             es => ResolvedAst.Pattern.Tuple(es, loc)
           }
 
+        case NamedAst.Pattern.Record(pats, pat, loc) =>
+          val psVal = traverse(pats) {
+            case NamedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+              mapN(visit(pat1)) {
+                case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
+              }
+          }
+          val pVal = visit(pat)
+          mapN(psVal, pVal) {
+            case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
+          }
+
+        case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
       }
 
       visit(pat0)
@@ -1796,7 +1824,7 @@ object Resolver {
         */
       def resolve(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-          val tsVal = traverse(terms)(t => Patterns.resolveInConstraint(t, env, ns0, root))
+          val tsVal = traverse(terms)(Patterns.resolveInConstraint(_, env, ns0, root))
           mapN(tsVal) {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
@@ -3510,6 +3538,15 @@ object Resolver {
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
     case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
+    case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
+    case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty
+  }
+
+  /**
+    * Creates an environment from the given record pattern.
+    */
+  private def mkRecordPatternEnv(pats: List[Record.RecordFieldPattern], pat: ResolvedAst.Pattern): ListMap[String, Resolution] = {
+    mkPatternsEnv(pats.map(_.pat)) ++ mkPatternEnv(pat)
   }
 
   /**

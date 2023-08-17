@@ -2548,6 +2548,28 @@ object Typer {
           elementTypes <- traverseM(elms)(visit)
         } yield Type.mkTuple(elementTypes, loc)
 
+
+      case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
+        val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
+        val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
+
+        def mkRecordType(patTypes: List[(Name.Field, Type, SourceLocation)]): Type = {
+          val ps = patTypes.foldRight(freshRowVar: Type) {
+            case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
+          }
+          Type.mkRecord(ps, loc)
+        }
+
+        for {
+          recordTail <- visit(pat)
+          _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
+          patTypes <- traverseM(pats)(visitRecordFieldPattern(_, root))
+          resultType = mkRecordType(patTypes)
+          _ <- unifyTypeM(resultType, tvar, loc)
+        } yield resultType
+
+      case KindedAst.Pattern.RecordEmpty(loc) => liftM(Type.mkRecord(Type.RecordRowEmpty, loc))
+
     }
 
     visit(pat0)
@@ -2558,6 +2580,18 @@ object Typer {
     */
   private def inferPatterns(pats0: List[KindedAst.Pattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferPattern(_, root))
+  }
+
+  /**
+    * Infers the type of the given [[KindedAst.Pattern.Record.RecordFieldPattern]] `pat`.
+    */
+  private def visitRecordFieldPattern(pat: KindedAst.Pattern.Record.RecordFieldPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Field, Type, SourceLocation)] = pat match {
+    case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar, p, loc) =>
+      // { Field = Pattern ... }
+      for {
+        patType <- inferPattern(p, root)
+        _ <- unifyTypeM(patType, tvar, loc)
+      } yield (field, patType, loc)
   }
 
   /**
@@ -2578,6 +2612,17 @@ object Typer {
         val es = elms.map(visit)
         val tpe = Type.mkTuple(es.map(_.tpe), loc)
         TypedAst.Pattern.Tuple(es, tpe, loc)
+
+      case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
+        val ps = pats.map {
+          case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar1, pat1, loc1) =>
+            TypedAst.Pattern.Record.RecordFieldPattern(field, subst0(tvar1), visit(pat1), loc1)
+        }
+        val p = visit(pat)
+        TypedAst.Pattern.Record(ps, p, subst0(tvar), loc)
+
+      case KindedAst.Pattern.RecordEmpty(loc) =>
+        TypedAst.Pattern.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
 
     }
 

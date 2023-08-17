@@ -1113,6 +1113,20 @@ object Kinder {
       mapN(elmsVal) {
         elms => KindedAst.Pattern.Tuple(elms, loc)
       }
+    case ResolvedAst.Pattern.Record(pats, pat, loc) =>
+      val psVal = traverse(pats) {
+        case ResolvedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+          val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
+          mapN(visitPattern(pat1, kenv, root)) {
+            case p => KindedAst.Pattern.Record.RecordFieldPattern(field, tvar, p, loc1)
+          }
+      }
+      val pVal = visitPattern(pat, kenv, root)
+      mapN(psVal, pVal) {
+        case (ps, p) => KindedAst.Pattern.Record(ps, p, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
+    case ResolvedAst.Pattern.RecordEmpty(loc) => KindedAst.Pattern.RecordEmpty(loc).toSuccess
   }
 
   /**
