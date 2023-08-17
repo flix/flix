@@ -601,7 +601,7 @@ object Lexer {
       (peek(), peekpeek()) match {
         case ('/', Some('*')) => {
           l += 1
-          if (l >= 256) { // TODO: Should this nesting limit be removed?
+          if (l >= 32) {
             return TokenKind.Err(LexerErr.BlockCommentTooDeep)
           }
           advance()
@@ -618,7 +618,7 @@ object Lexer {
       }
     }
 
-    TokenKind.BlockComment // TODO: Is an unclosed block comment at eof an error?
+    TokenKind.Err(LexerErr.UnterminatedBlockComment)
   }
 
   private class Position(var line: Int, var column: Int, var offset: Int)

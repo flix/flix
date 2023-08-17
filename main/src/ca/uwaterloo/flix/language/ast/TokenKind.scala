@@ -352,5 +352,7 @@ object LexerErr {
 
   case object BlockCommentTooDeep extends LexerErr
 
+  case object UnterminatedBlockComment extends LexerErr
+
   case object UnterminatedBuiltIn extends LexerErr
 }
