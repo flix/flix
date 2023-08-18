@@ -24,236 +24,43 @@ sealed trait LexerError extends CompilationMessage {
 }
 
 object LexerError {
+  
   /**
-   * An error raised when block-comments are nested too deep.
-   *
-   * @param loc The location of the opening "\*".
+   * An error raised when an unexpected character, such as €, is encountered
+   * @param char the problematic character
+   * @param loc the location of `char`
    */
-  case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Block-comment nested too deep."
+  case class UnexpectedChar(char: Char, loc: SourceLocation) extends LexerError {
+      override def summary: String = s"Unexpected character '$char'"
 
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Block-comment nested too deep.
-         |
-         |${code(loc, "This is nested too deep.")}
-         |
-         |""".stripMargin
+      override def message(formatter: Formatter): String = {
+        import formatter._
+        s"""${line(kind, source.name)}
+           |>> Unexpected character '${red(char.toString)}'.
+           |
+           |${code(loc, "found here")}
+           |
+           |""".stripMargin
+      }
+
+      override def explain(formatter: Formatter): Option[String] = None
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
-  }
+//    case object UnterminatedString extends LexerErr
+//
+//    case object UnterminatedChar extends LexerErr
+//
+//    case object UnterminatedInfixFunction extends LexerErr
+//
+//    case object DoubleDottedNumber extends LexerErr
+//
+//    case object MalformedNumber extends LexerErr
+//
+//    case object BlockCommentTooDeep extends LexerErr
+//
+//    case object UnterminatedBlockComment extends LexerErr
+//
+//    case object UnterminatedBuiltIn extends LexerErr
 
-  /**
-   * An error raised when more than one decimal dot is found in a number.
-   * For instance `123.456.78f32`.
-   *
-   * @param loc The location of the double dotted number literal.
-   */
-  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number has two decimal dots."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two decimal dots.
-         |
-         |${code(loc, "Second decimal dot is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unexpected character, such as €, is encountered.
-   *
-   * @param s   the problematic character.
-   * @param loc the location of char.
-   */
-  case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unexpected character '$s'."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected character '${red(s)}'.
-         |
-         |${code(loc, "Unexpected character.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated block comment is encountered.
-   *
-   * @param loc The location of the opening "/ *".
-   */
-  case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated block-comment."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '*/' in block-comment.
-         |
-         |${code(loc, "Block-comment starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated built-in function is encountered.
-   *
-   * @param loc The location of the opening "$".
-   */
-  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated built-in."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '$$' in built-in.
-         |
-         |${code(loc, "Built-in starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated char is encountered.
-   *
-   * @param loc The location of the opening `'`.
-   */
-  case class UnterminatedChar(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated char."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `'` in char.
-         |
-         |${code(loc, "Char starts here")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated regex is encountered.
-   *
-   * @param loc The location of the opening `"`.
-   */
-  case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated regex."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `"` in regex.
-         |
-         |${code(loc, "Regex starts here")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated infix function is encountered.
-   *
-   * @param loc The location of the opening '&#96;'.
-   */
-  case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated infix function."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '`' in infix function.
-         |
-         |${code(loc, "Infix function starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated string is encountered.
-   *
-   * @param loc The location of the opening `"`.
-   */
-  case class UnterminatedString(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated string."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> missing '"' in string.
-         |
-         |${code(loc, "String starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated string is encountered.
-   *
-   * @param loc The location of the opening `{`.
-   */
-  case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated string interpolation."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '}' in string interpolation.
-         |
-         |${code(loc, "Interpolation starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when block-comments are nested too deep.
-   *
-   * @param loc The location of the opening "${".
-   */
-  case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"String interpolation nested too deep."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> String interpolation nested too deep.
-         |
-         |${code(loc, "This is nested too deep.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
 }
+
