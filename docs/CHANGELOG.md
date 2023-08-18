@@ -2,6 +2,7 @@
 
 Version 0.40.0:
 
+- Language: Added support for pattern matching on records (Thanks Jakob!)
 - Library: Added `MutPriorityQueue` (thanks Xavier!)
 - VSCode: Added completion for `use` of signatures and operations (thanks Xavier!)
 - VSCode: Added code actions to derive missing type class instances (thanks Holger!)
