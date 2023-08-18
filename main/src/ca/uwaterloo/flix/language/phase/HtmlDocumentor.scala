@@ -229,7 +229,7 @@ object HtmlDocumentor {
 
     sb.append("<button id='theme-toggle' disabled aria-describedby='no-script'>")
     sb.append("<span>Toggle theme.</span>")
-    sb.append("<div role='tooltip' id='no-script'>Enable JavaScript to use this toggle</div>")
+    sb.append("<div role='tooltip' id='no-script'>Requires JavaScript</div>")
     sb.append("</button>")
 
     sb.append("<nav>")
