@@ -223,6 +223,9 @@ object HtmlDocumentor {
     sb.append("<body>")
 
     sb.append("<nav>")
+    sb.append("<input type='checkbox' id='menu-toggle' />")
+    sb.append("<label for='menu-toggle'>Toggle the menu</label>")
+    sb.append("<div>")
     sb.append("<div class='flix'>")
     sb.append("<h2><a href='Prelude.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
@@ -253,6 +256,7 @@ object HtmlDocumentor {
       sortedDefs,
       (d: TypedAst.Def) => sb.append(s"<a href='#def-${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
     )
+    sb.append("</div>")
     sb.append("</nav>")
 
     sb.append("<main>")
