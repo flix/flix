@@ -63,3 +63,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Roland Csaszar](https://github.com/Release-Candidate/)
 - [Ziyao Wei](https://github.com/ZiyaoWei)
 - [Xavier deSouza](https://github.com/xdesou01)
+- [Herluf Baggesen](https://github.com/herluf-ba)
