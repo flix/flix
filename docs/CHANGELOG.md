@@ -1,5 +1,16 @@
 # Changelog
 
+Version 0.40.0:
+
+- Library: Added `Adaptor` module and `ToJava` class for working with Java collections (thanks Stephen!)
+- Library: Added `MutPriorityQueue` (thanks Xavier!)
+- VSCode: Added completion for `use` of signatures and operations (thanks Xavier!)
+- VSCode: Added code actions to derive missing type class instances (thanks Holger!)
+- VSCode: Added code actions for unused code (thanks Holger!)
+- Compiler: Added new HTML API Documentation tool (thanks Holger!)
+  - Emits plain HTML and CSS.
+  - Supports "light" and "dark" modes.
+
 Version 0.39.0:
 
 - VSCode: Added support for code actions (thanks Magnus, Holger!)
