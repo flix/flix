@@ -174,7 +174,7 @@ html, body {
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Noto Sans', sans-serif;
 
     background-color: var(--bg-color-1);
     color: var(--text-color);
