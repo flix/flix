@@ -41,7 +41,7 @@ instance Hash[Set[a]] with Hash[a] {
 
 instance ToString[Set[a]] with ToString[a] {
     type Effect = ToString.Effect[a]
-    pub def toString(s: Set[a]): String = Set.toString(s)
+    pub def toString(s: Set[a]): String \ ToString.Effect[a] = Set.toString(s)
 }
 
 instance LowerBound[Set[a]] {
