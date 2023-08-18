@@ -76,6 +76,7 @@
     --def-color: var(--light-def-color);
     --shadow-color: var(--light-shadow-color);
     --highlight-color: var(--light-highlight-color);
+    color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
     :root {
@@ -104,6 +105,7 @@
         --def-color: var(--dark-def-color);
         --shadow-color: var(--dark-shadow-color);
         --highlight-color: var(--dark-highlight-color);
+        color-scheme: dark;
     }
 }
 
@@ -133,6 +135,7 @@ body.light {
     --def-color: var(--light-def-color);
     --shadow-color: var(--light-shadow-color);
     --highlight-color: var(--light-highlight-color);
+    color-scheme: light;
 }
 body.dark {
     --toggle-icon: var(--dark-toggle-icon);
@@ -160,6 +163,7 @@ body.dark {
     --def-color: var(--dark-def-color);
     --shadow-color: var(--dark-shadow-color);
     --highlight-color: var(--dark-highlight-color);
+    color-scheme: dark;
 }
 
 html, body {
