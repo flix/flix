@@ -16,8 +16,10 @@ function setTheme(dark) {
 let dark;
 const stored = localStorage.getItem(storeKey);
 if (stored === null) {
+    // User has not stored any preference. Check if the browser prefers a dark theme.
     dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 } else {
+    // User has set a preference. Use it.
     dark = stored === "true";
 }
 setTheme(dark);
