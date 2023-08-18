@@ -234,14 +234,14 @@ object HtmlDocumentor {
       (c: Class) => sb.append(s"<a href='#class-${esc(c.sym.name)}'>${esc(c.sym.name)}</a>"),
     )
     docSideBarSection(
-      "Enums",
-      sortedEnums,
-      (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
-    )
-    docSideBarSection(
       "Effects",
       sortedEffs,
       (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+    )
+    docSideBarSection(
+      "Enums",
+      sortedEnums,
+      (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
     )
     docSideBarSection(
       "Type Aliases",
@@ -258,8 +258,8 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(moduleName(mod))}</h1>")
     docSection("Classes", sortedClasses, docClass)
-    docSection("Enums", sortedEnums, docEnum)
     docSection("Effects", sortedEffs, docEffect)
+    docSection("Enums", sortedEnums, docEnum)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
