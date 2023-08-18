@@ -718,14 +718,13 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
     case Pattern.Cst(Ast.Constant.Regex(_), _, _) => throw InternalCompilerException("unexpected regex pattern", pattern.loc)
     case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
-      val (args, numArgs) = pat match {
-        case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)
-        case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
-        case a => (List(patToCtor(a)), 1)
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) =>
+      val args = pat match {
+        case Pattern.Cst(Ast.Constant.Unit, _, _) => List.empty[TyCon]
+        case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
+        case a => List(patToCtor(a))
       }
       TyCon.Enum(sym.name, sym.enumSym, args)
-    }
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
