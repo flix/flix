@@ -246,6 +246,8 @@ object TokenKind {
 
   case object PubKeyword extends TokenKind
 
+  case object AsKeyword extends TokenKind
+
   case object RefKeyword extends TokenKind
 
   case object RegionKeyword extends TokenKind
