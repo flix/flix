@@ -841,6 +841,8 @@ object Ast {
 
     case object WithClause extends SyntacticContext
 
+    case object HandlerBody extends SyntacticContext
+
     case object Unknown extends SyntacticContext
 
     def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {

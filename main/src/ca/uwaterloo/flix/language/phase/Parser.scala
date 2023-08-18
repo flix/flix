@@ -164,6 +164,8 @@ object Parser {
 
       case "WithClause" => SyntacticContext.WithClause
 
+      case "HandlerBody" => SyntacticContext.HandlerBody
+
       case _ => SyntacticContext.Unknown
     }
   }

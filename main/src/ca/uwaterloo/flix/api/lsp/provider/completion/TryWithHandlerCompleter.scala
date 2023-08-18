@@ -8,8 +8,10 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, Ty
 
 object TryWithHandlerCompleter extends Completer {
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[TryWithCompletion] = {
+    println("looking")
     stripWord(context) match {
       case Some(word) =>
+        println("found word")
         root.effects.flatMap {
           case (sym, eff) =>
             if (matches(sym, word)) {
@@ -21,7 +23,9 @@ object TryWithHandlerCompleter extends Completer {
             }
           case _ => None
         }
-      case None => Nil
+      case None =>
+        println("no word found")
+        Nil
     }
     Nil
   }

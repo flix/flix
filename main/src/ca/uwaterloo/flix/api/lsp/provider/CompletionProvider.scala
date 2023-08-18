@@ -189,6 +189,8 @@ object CompletionProvider {
         // A with context could also be just a type context.
         TypeCompleter.getCompletions(context) ++ WithCompleter.getCompletions(context)
 
+      case SyntacticContext.HandlerBody => TryWithHandlerCompleter.getCompletions(context)
+
       //
       // Fallthrough.
       //
