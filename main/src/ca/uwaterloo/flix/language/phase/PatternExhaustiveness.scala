@@ -529,7 +529,7 @@ object PatternExhaustiveness {
     * If the constructors are a complete signature, then they are exhaustive for the type, and we just have to
     * check that their arguments are also exhaustive
     *
-    * Wildcards are exhaustive, but we need to do some additional checking in that case (@see DefaultMatrix)
+    * Wildcards are exhaustive, but we need to do some additional checking in that case (@see defaultMatrix)
     *
     * @param ctors The ctors that we match with
     * @param root  Root of the expression tree
@@ -695,10 +695,10 @@ object PatternExhaustiveness {
   }
 
   /**
-    * Convert a pattern to a TypeConstructor
+    * Convert a pattern to a TyCon
     *
     * @param pattern The pattern to convert
-    * @return a TypeConstructor representing the given pattern
+    * @return a TyCon representing the given pattern
     */
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
@@ -718,14 +718,13 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
     case Pattern.Cst(Ast.Constant.Regex(_), _, _) => throw InternalCompilerException("unexpected regex pattern", pattern.loc)
     case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
-      val (args, numArgs) = pat match {
-        case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)
-        case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
-        case a => (List(patToCtor(a)), 1)
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) =>
+      val args = pat match {
+        case Pattern.Cst(Ast.Constant.Unit, _, _) => List.empty[TyCon]
+        case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
+        case a => List(patToCtor(a))
       }
       TyCon.Enum(sym.name, sym.enumSym, args)
-    }
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
@@ -738,9 +737,9 @@ object PatternExhaustiveness {
   }
 
   /**
-    * Adds a TypeConstructor to a list of TypeConstructors, using up items in the list if it requires arguments
+    * Adds a `TyCon` to a list of `TyCon`s, using up items in the list if it requires arguments
     *
-    * e.g. rebuildPatter(Foo(a,b), [1,2,3]) => [Foo(1,2), 3]
+    * e.g. rebuildPattern(Foo(a,b), [1,2,3]) => [Foo(1,2), 3]
     *
     * @param tc  The type constructor to add
     * @param lst The list to add to
