@@ -68,11 +68,16 @@ object Lexer {
     val debug = stats.toSeq.sortBy(_._1).map(v => "%5d".format(v._2)).mkString("")
     println(f"${"%34s".format(src.name)}${debug}")
 
-//    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
+
+//    if (src.name == "Channel.flix") {
+//      println(f"${s.tokens.mkString("\n")}")
+//    }
+
+    //    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
     s.tokens.toArray.toSuccess // TODO: Return failures
   }
 
-  // Advances state one forward returning the char it was previously sitting on
+  // Advances state one char forward returning the char it was previously sitting on
   // keeps track of line and column numbers too
   private def advance()(implicit s: State): Char = {
     val c = s.src.data(s.current.offset)
@@ -87,13 +92,28 @@ object Lexer {
     c
   }
 
+  // Retreats state one char backwards returning the char it was previously sitting on
+  // keeps track of line and column numbers too
+  private def retreat()(implicit s: State): Char = {
+    val c = s.src.data(s.current.offset)
+    s.current.offset -= 1
+    if (c == '\n') {
+      s.current.line -= 1
+      s.current.column = 0
+    } else {
+      s.current.column -= 1
+    }
+
+    c
+  }
+
   // Peeks the character that state is currently sitting on without advancing
   private def peek()(implicit s: State): Char = {
     s.src.data(s.current.offset)
   }
 
   // Peeks the character after the one that state is sitting on if available
-  private def peekpeek()(implicit s: State): Option[Char] = {
+  private def peekPeek()(implicit s: State): Option[Char] = {
     if (s.current.offset >= s.src.data.length) {
       None
     } else {
@@ -263,7 +283,7 @@ object Lexer {
           number() // negative numbers
         } else if (c == '$' && p.isLetter) {
           builtIn()
-        } else{
+        } else {
           validUserOpTokens.apply(c)
         }
       }
@@ -342,6 +362,8 @@ object Lexer {
       if (c == '$') {
         advance()
         return TokenKind.BuiltIn
+      } else if (!c.isLetter && c != '_') {
+        return TokenKind.JavaName
       }
 
       advance()
@@ -354,7 +376,8 @@ object Lexer {
   private def javaName()(implicit s: State): TokenKind = {
     advance()
     while (!isAtEnd()) {
-      if (peek().isWhitespace) {
+      val c = peek()
+      if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
         return TokenKind.JavaName
       }
 
@@ -493,10 +516,13 @@ object Lexer {
           case _ if keyword("i64") => TokenKind.Int64
           case _ if keyword("ii") => TokenKind.BigInt
           case _ if keyword("ff") => TokenKind.BigDecimal
-          case _ => return if (isDecimal) {
-            TokenKind.Float64
-          } else {
-            TokenKind.Int32
+          case _ => {
+            retreat()
+            if (isDecimal) {
+              TokenKind.Float64
+            } else {
+              TokenKind.Int32
+            }
           }
         }
       }
@@ -535,7 +561,7 @@ object Lexer {
   private def blockComment()(implicit s: State): TokenKind = {
     var l = 1
     while (!isAtEnd()) {
-      (peek(), peekpeek()) match {
+      (peek(), peekPeek()) match {
         case ('/', Some('*')) => {
           l += 1
           if (l >= 32) {
