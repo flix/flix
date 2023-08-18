@@ -3,8 +3,8 @@ const storeKey = "flix-html-docs:use-dark-theme";
 const body = document.querySelector("body");
 body.classList.remove("no-script");
 
-function setTheme(dark) {
-    if (dark) {
+function setTheme(useDarkTheme) {
+    if (useDarkTheme) {
         body.classList.remove("light");
         body.classList.add("dark");
     } else {
