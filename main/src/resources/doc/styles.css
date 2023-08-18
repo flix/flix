@@ -1,63 +1,165 @@
 :root {
-    --bg-color-1: white;
-    --bg-color-2: #fcfcfd;
-    --bg-color-3: rgb(248, 249, 250);
-
-    --border-color: rgba(0, 0, 0, 0.07);
-
-    --heading-color: rgb(33, 37, 41);
-    --text-color: rgb(17, 17, 17);
-    --faded-text-color: #8a8a8a;
-
-    --annotation-color: #b15422;
-    --keyword-color: #030303;
-    --name-color: #b12250;
-    --type-color: #3061c4;
-    --kind-color: #8a8a8a;
-    --effect-color: #d4671e;
-
-    --doc-code-color: #d63384;
-
-    --show-hide-color: #0d6efd;
-    --show-hide-hover-color: #0a58ca;
-
-    --module-color: #a0a5ff;
-    --classes-color: #fc9d9a;
-    --enum-color: #c8c8a9;
-    --eff-color: #ffaefa;
-    --type-alias-color: #f9cdad;
-    --def-color: #83af9b;
-
-    --shadow-color: rgba(0, 0, 0, 0.05);
-    --highlight-color: rgba(0, 0, 0, 0.3);
+    --light-toggle-icon: "☼";
+    --light-bg-color-1: #ffffff;
+    --light-bg-color-2: #fcfcfd;
+    --light-bg-color-3: #f8f9fa;
+    --light-border-color: rgba(0, 0, 0, 0.071);
+    --light-heading-color: #212529;
+    --light-text-color: #111111;
+    --light-faded-text-color: #8a8a8a;
+    --light-annotation-color: #b15422;
+    --light-keyword-color: #030303;
+    --light-name-color: #b12250;
+    --light-type-color: #3061c4;
+    --light-kind-color: #8a8a8a;
+    --light-effect-color: #d4671e;
+    --light-doc-code-color: #d63384;
+    --light-show-hide-color: #0d6efd;
+    --light-show-hide-hover-color: #0a58ca;
+    --light-module-color: #a0a5ff;
+    --light-classes-color: #fc9d9a;
+    --light-enum-color: #c8c8a9;
+    --light-eff-color: #ffaefa;
+    --light-type-alias-color: #f9cdad;
+    --light-def-color: #83af9b;
+    --light-shadow-color: rgba(0, 0, 0, 0.05);
+    --light-highlight-color: rgba(0, 0, 0, 0.3);
+    
+    --dark-toggle-icon: "☾";
+    --dark-bg-color-1: #151719;
+    --dark-bg-color-2: #101214;
+    --dark-bg-color-3: #0e0f11;
+    --dark-border-color: rgba(255, 255, 255, 0.15);
+    --dark-heading-color: #e6e6e6;
+    --dark-text-color: #f7f7f7;
+    --dark-faded-text-color: #8a8a8a;
+    --dark-annotation-color: #e7a37e;
+    --dark-keyword-color: #fcfcfc;
+    --dark-name-color: #ff6696;
+    --dark-type-color: #6699ff;
+    --dark-kind-color: #999999;
+    --dark-effect-color: #ff944d;
+    --dark-doc-code-color: #ff66b3;
+    --dark-show-hide-color: #68a4fd;
+    --dark-show-hide-hover-color: #3c86f6;
+    --dark-module-color: #a0a5ff;
+    --dark-classes-color: #fc9d9a;
+    --dark-enum-color: #c8c8a9;
+    --dark-eff-color: #ffaefa;
+    --dark-type-alias-color: #f9cdad;
+    --dark-def-color: #83af9b;
+    --dark-shadow-color: rgba(0, 0, 0, 0.5);
+    --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
+    
+    --toggle-icon: var(--light-toggle-icon);
+    --bg-color-1: var(--light-bg-color-1);
+    --bg-color-2: var(--light-bg-color-2);
+    --bg-color-3: var(--light-bg-color-3);
+    --border-color: var(--light-border-color);
+    --heading-color: var(--light-heading-color);
+    --text-color: var(--light-text-color);
+    --faded-text-color: var(--light-faded-text-color);
+    --annotation-color: var(--light-annotation-color);
+    --keyword-color: var(--light-keyword-color);
+    --name-color: var(--light-name-color);
+    --type-color: var(--light-type-color);
+    --kind-color: var(--light-kind-color);
+    --effect-color: var(--light-effect-color);
+    --doc-code-color: var(--light-doc-code-color);
+    --show-hide-color: var(--light-show-hide-color);
+    --show-hide-hover-color: var(--light-show-hide-hover-color);
+    --module-color: var(--light-module-color);
+    --classes-color: var(--light-classes-color);
+    --enum-color: var(--light-enum-color);
+    --eff-color: var(--light-eff-color);
+    --type-alias-color: var(--light-type-alias-color);
+    --def-color: var(--light-def-color);
+    --shadow-color: var(--light-shadow-color);
+    --highlight-color: var(--light-highlight-color);
 }
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-color-1: #151719;
-        --bg-color-2: #101214;
-        --bg-color-3: #0e0f11;
-
-        --border-color: rgba(255, 255, 255, 0.15);
-    
-        --heading-color: #e6e6e6;
-        --text-color: #f7f7f7;
-        --faded-text-color: #8a8a8a;
-    
-        --annotation-color: #e7a37e;
-        --keyword-color: #fcfcfc;
-        --name-color: #ff6696;
-        --type-color: #6699ff;
-        --kind-color: #999999;
-        --effect-color: #ff944d;
-    
-        --doc-code-color: #ff66b3;
-    
-        --show-hide-color: #68a4fd;
-        --show-hide-hover-color: #3c86f6;
-
-        --shadow-color: rgba(0, 0, 0, 0.5);
-        --highlight-color: hsla(50, 0%, 100%, 0.3);
+        --toggle-icon: var(--dark-toggle-icon);
+        --bg-color-1: var(--dark-bg-color-1);
+        --bg-color-2: var(--dark-bg-color-2);
+        --bg-color-3: var(--dark-bg-color-3);
+        --border-color: var(--dark-border-color);
+        --heading-color: var(--dark-heading-color);
+        --text-color: var(--dark-text-color);
+        --faded-text-color: var(--dark-faded-text-color);
+        --annotation-color: var(--dark-annotation-color);
+        --keyword-color: var(--dark-keyword-color);
+        --name-color: var(--dark-name-color);
+        --type-color: var(--dark-type-color);
+        --kind-color: var(--dark-kind-color);
+        --effect-color: var(--dark-effect-color);
+        --doc-code-color: var(--dark-doc-code-color);
+        --show-hide-color: var(--dark-show-hide-color);
+        --show-hide-hover-color: var(--dark-show-hide-hover-color);
+        --module-color: var(--dark-module-color);
+        --classes-color: var(--dark-classes-color);
+        --enum-color: var(--dark-enum-color);
+        --eff-color: var(--dark-eff-color);
+        --type-alias-color: var(--dark-type-alias-color);
+        --def-color: var(--dark-def-color);
+        --shadow-color: var(--dark-shadow-color);
+        --highlight-color: var(--dark-highlight-color);
     }
+}
+
+body.light {
+    --toggle-icon: var(--light-toggle-icon);
+    --bg-color-1: var(--light-bg-color-1);
+    --bg-color-2: var(--light-bg-color-2);
+    --bg-color-3: var(--light-bg-color-3);
+    --border-color: var(--light-border-color);
+    --heading-color: var(--light-heading-color);
+    --text-color: var(--light-text-color);
+    --faded-text-color: var(--light-faded-text-color);
+    --annotation-color: var(--light-annotation-color);
+    --keyword-color: var(--light-keyword-color);
+    --name-color: var(--light-name-color);
+    --type-color: var(--light-type-color);
+    --kind-color: var(--light-kind-color);
+    --effect-color: var(--light-effect-color);
+    --doc-code-color: var(--light-doc-code-color);
+    --show-hide-color: var(--light-show-hide-color);
+    --show-hide-hover-color: var(--light-show-hide-hover-color);
+    --module-color: var(--light-module-color);
+    --classes-color: var(--light-classes-color);
+    --enum-color: var(--light-enum-color);
+    --eff-color: var(--light-eff-color);
+    --type-alias-color: var(--light-type-alias-color);
+    --def-color: var(--light-def-color);
+    --shadow-color: var(--light-shadow-color);
+    --highlight-color: var(--light-highlight-color);
+}
+body.dark {
+    --toggle-icon: var(--dark-toggle-icon);
+    --bg-color-1: var(--dark-bg-color-1);
+    --bg-color-2: var(--dark-bg-color-2);
+    --bg-color-3: var(--dark-bg-color-3);
+    --border-color: var(--dark-border-color);
+    --heading-color: var(--dark-heading-color);
+    --text-color: var(--dark-text-color);
+    --faded-text-color: var(--dark-faded-text-color);
+    --annotation-color: var(--dark-annotation-color);
+    --keyword-color: var(--dark-keyword-color);
+    --name-color: var(--dark-name-color);
+    --type-color: var(--dark-type-color);
+    --kind-color: var(--dark-kind-color);
+    --effect-color: var(--dark-effect-color);
+    --doc-code-color: var(--dark-doc-code-color);
+    --show-hide-color: var(--dark-show-hide-color);
+    --show-hide-hover-color: var(--dark-show-hide-hover-color);
+    --module-color: var(--dark-module-color);
+    --classes-color: var(--dark-classes-color);
+    --enum-color: var(--dark-enum-color);
+    --eff-color: var(--dark-eff-color);
+    --type-alias-color: var(--dark-type-alias-color);
+    --def-color: var(--dark-def-color);
+    --shadow-color: var(--dark-shadow-color);
+    --highlight-color: var(--dark-highlight-color);
 }
 
 html, body {
@@ -78,6 +180,45 @@ body {
 
     display: flex;
     background-color: var(--bg-color-2);
+}
+
+#theme-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 1rem 2rem;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--heading-color);
+}
+#theme-toggle span {
+    display: none;
+}
+#theme-toggle::before {
+    line-height: 1.2;
+    width: 3rem;
+    font-size: 2rem;
+    content: var(--toggle-icon);
+}
+#theme-toggle:hover {
+    color: var(--text-color);
+}
+
+#theme-toggle [role="tooltip"] {
+    color: var(--faded-text-color);
+    background-color: var(--bg-color-2);
+    padding: 0.2rem;
+    display: none;
+}
+.no-script #theme-toggle:hover [role="tooltip"] {
+    display: block;
+}
+.no-script #theme-toggle:focus [role="tooltip"] {
+    display: block;
 }
 
 h1, h2 {
