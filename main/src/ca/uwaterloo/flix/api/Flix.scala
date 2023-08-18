@@ -292,6 +292,7 @@ class Flix {
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
+    "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
   )
 
   /**
