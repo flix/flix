@@ -33,9 +33,13 @@ import scala.collection.mutable
 object HtmlDocumentor {
 
   /**
-    * The "Pseudo-name" of the root namespace.
+    * The "Pseudo-name" of the root namespace displayed on the pages.
     */
   val RootNS: String = "Prelude"
+  /**
+    * The "Pseudo-name" of the root namespace used for its file name.
+    */
+  val RootFileName: String = "index"
 
   /**
     * The directory where to write the ouput.
@@ -69,9 +73,16 @@ object HtmlDocumentor {
   }
 
   /**
-    * Get the name of the module.
+    * Get the display name of the module.
+    *
+    * See also `moduleFileName` for the file name of the module.
     */
   private def moduleName(mod: Module): String = if (mod.sym.isRoot) RootNS else mod.sym.toString
+
+  /**
+    * Get the file name of the module.
+    */
+  private def moduleFileName(mod: Module): String = if (mod.sym.isRoot) RootFileName else mod.sym.toString
 
   /**
     * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
@@ -224,7 +235,7 @@ object HtmlDocumentor {
 
     sb.append("<nav>")
     sb.append("<div class='flix'>")
-    sb.append("<h2><a href='Prelude.html'>flix</a></h2>")
+    sb.append("<h2><a href='index.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
     docSubModules(sortedMods)
@@ -715,7 +726,7 @@ object HtmlDocumentor {
     * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
     */
   private def writeModule(mod: Module, output: String): Unit = {
-    writeFile(s"${moduleName(mod)}.html", output.getBytes)
+    writeFile(s"${moduleFileName(mod)}.html", output.getBytes)
   }
 
   /**
