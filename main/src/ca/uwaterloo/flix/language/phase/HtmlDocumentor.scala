@@ -63,7 +63,6 @@ object HtmlDocumentor {
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
-    writeAssets()
     val modules = splitModules(root)
     val filteredModules = filterModules(modules)
     filteredModules.foreach {
@@ -71,6 +70,7 @@ object HtmlDocumentor {
         val out = documentModule(mod)
         writeModule(mod, out)
     }
+    writeAssets()
   }
 
   /**
@@ -234,7 +234,7 @@ object HtmlDocumentor {
 
     sb.append("<nav>")
     sb.append("<div class='flix'>")
-    sb.append("<h2>flix</h2>")
+    sb.append("<h2><a href='Prelude.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
     docSubModules(sortedMods)
@@ -289,6 +289,7 @@ object HtmlDocumentor {
       |<meta name='viewport' content='width=device-width,initial-scale=1'/>
       |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
       |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
+      |<link href='https://fonts.googleapis.com/css?family=Roboto&display=swap' rel='stylesheet'>
       |<link href='styles.css' rel='stylesheet'>
       |<link href='favicon.png' rel='icon'>
       |<script defer src='index.js' type="text/javascript"></script>
@@ -374,13 +375,14 @@ object HtmlDocumentor {
     * @param name   The name of the subsection, e.g. "Signatures".
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    * @param open   Whether or not the subsection is opened by default. Default to false.
     */
-  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit, open: Boolean = false)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
 
-    sb.append("<details>")
+    sb.append(s"<details ${if (open) "open" else ""}>")
     sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
     for (e <- group) {
       docElt(e)
@@ -399,12 +401,12 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
-    docTypeParams(List(clazz.tparam), showKinds = true)
+    docTypeParams(List(clazz.tparam))
     docTypeConstraints(clazz.superClasses)
     sb.append("</code>")
     docSourceLocation(clazz.loc)
     docDoc(clazz.doc)
-    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature)
+    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
     sb.append("</div>")
@@ -421,7 +423,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${esc(enm.sym.name)}</span>")
-    docTypeParams(enm.tparams, showKinds = true)
+    docTypeParams(enm.tparams)
     docDerivations(enm.derives)
     sb.append("</code>")
     docSourceLocation(enm.loc)
@@ -458,7 +460,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
-    docTypeParams(ta.tparams, showKinds = true)
+    docTypeParams(ta.tparams)
     sb.append(" = ")
     docType(ta.tpe)
     sb.append("</code>")
@@ -497,7 +499,6 @@ object HtmlDocumentor {
     sb.append(s"<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${esc(name)}</span>")
-    docTypeParams(spec.tparams, showKinds = false)
     docFormalParams(spec.fparams)
     sb.append(": ")
     docType(spec.retTpe)
@@ -594,14 +595,8 @@ object HtmlDocumentor {
     * Documents the given list of `TypeParam`s wrapped in `[]`.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
-    *
-    * @param showKinds  Whether or not the kinds of the types should be included.
-    *                   Example: {{{
-    *                    docTypeParams(... showKinds = false) -> "[a, b, ef]"
-    *                    docTypeParams(... showKinds = true) -> "[a: Type, b: Type -> Type, ef: Eff]"
-    *                   }}}
     */
-  private def docTypeParams(tparams: List[TypedAst.TypeParam], showKinds: Boolean)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tparams.isEmpty) {
       return
     }
@@ -610,9 +605,7 @@ object HtmlDocumentor {
     docList(tparams.sortBy(_.loc)) { p =>
       sb.append("<span class='tparam'>")
       sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
-      if (showKinds) {
-        sb.append(s": <span class='kind'>${esc(p.sym.kind.toString)}</span>")
-      }
+      sb.append(s": <span class='kind'>${esc(p.sym.kind.toString)}</span>")
       sb.append("</span>")
     }
     sb.append("]</span>")
@@ -639,9 +632,15 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    for (a <- anns.annotations) {
-      sb.append(s"<code class='annotation'>${esc(a.toString)}</code>")
+    if (anns.annotations.isEmpty) {
+      return
     }
+
+    sb.append("<code class='annotations'>")
+    for (a <- anns.annotations) {
+      sb.append(s"<span class='annotation'>${esc(a.toString)}</span> ")
+    }
+    sb.append("</code>")
   }
 
   /**

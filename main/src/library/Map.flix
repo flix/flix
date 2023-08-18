@@ -105,6 +105,11 @@ instance Iterable[Map[k]] {
     pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r = Map.iteratorValues(rc, m)
 }
 
+instance ToJava[Map[k, v]] with Order[k] {
+    type O = ##java.util.Map
+    pub def toJava(m: Map[k, v]): ##java.util.Map \ IO = Adaptor.toMap(m)
+}
+
 mod Map {
 
     ///

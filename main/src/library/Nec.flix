@@ -140,6 +140,11 @@ instance Iterable[Nec] {
     pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
 }
 
+instance ToJava[Nec[a]] {
+    type O = ##java.util.List
+    pub def toJava(l: Nec[a]): ##java.util.List \ IO = Adaptor.toList(l)
+}
+
 mod Nec {
     use ViewLeft.{OneLeft, SomeLeft}
     use ViewRight.{OneRight, SomeRight}
