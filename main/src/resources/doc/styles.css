@@ -281,10 +281,6 @@ nav ul {
     list-style: none;
 }
 
-nav h3 {
-    font-weight: 700;
-}
-
 nav a {
     color: var(--text-color);
     text-decoration: none;
