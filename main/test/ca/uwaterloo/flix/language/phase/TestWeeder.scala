@@ -400,7 +400,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("NonLinearPattern.06") {
     val input =
       """def f(): Bool = match { x = 1, x = false } {
-        |  case { x = _, x = _ } => true
+        |  case { x, x } => true
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
