@@ -33,9 +33,13 @@ import scala.collection.mutable
 object HtmlDocumentor {
 
   /**
-    * The "Pseudo-name" of the root namespace.
+    * The "Pseudo-name" of the root namespace displayed on the pages.
     */
   val RootNS: String = "Prelude"
+  /**
+    * The "Pseudo-name" of the root namespace used for its file name.
+    */
+  val RootFileName: String = "index"
 
   /**
     * The directory where to write the ouput.
@@ -51,6 +55,11 @@ object HtmlDocumentor {
     * The path to the the favicon, relative to the resources folder.
     */
   val FavIcon: String = "/doc/favicon.png"
+
+  /**
+    * The path to the the script, relative to the resources folder.
+    */
+  val Script: String = "/doc/index.js"
 
   /**
     * The root of the link to each file of the standard library.
@@ -69,9 +78,16 @@ object HtmlDocumentor {
   }
 
   /**
-    * Get the name of the module.
+    * Get the display name of the module.
+    *
+    * See also `moduleFileName` for the file name of the module.
     */
   private def moduleName(mod: Module): String = if (mod.sym.isRoot) RootNS else mod.sym.toString
+
+  /**
+    * Get the file name of the module.
+    */
+  private def moduleFileName(mod: Module): String = if (mod.sym.isRoot) RootFileName else mod.sym.toString
 
   /**
     * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
@@ -220,14 +236,19 @@ object HtmlDocumentor {
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
     sb.append(mkHead(moduleName(mod)))
-    sb.append("<body>")
+    sb.append("<body class='no-script'>")
+
+    sb.append("<button id='theme-toggle' disabled aria-describedby='no-script'>")
+    sb.append("<span>Toggle theme.</span>")
+    sb.append("<div role='tooltip' id='no-script'>Requires JavaScript</div>")
+    sb.append("</button>")
 
     sb.append("<nav>")
     sb.append("<input type='checkbox' id='menu-toggle' />")
     sb.append("<label for='menu-toggle'>Toggle the menu</label>")
     sb.append("<div>")
     sb.append("<div class='flix'>")
-    sb.append("<h2><a href='Prelude.html'>flix</a></h2>")
+    sb.append("<h2><a href='index.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
     docSubModules(sortedMods)
@@ -286,6 +307,7 @@ object HtmlDocumentor {
       |<link href='https://fonts.googleapis.com/css?family=Roboto&display=swap' rel='stylesheet'>
       |<link href='styles.css' rel='stylesheet'>
       |<link href='favicon.png' rel='icon'>
+      |<script defer src='index.js' type="text/javascript"></script>
       |<title>Flix | ${esc(name)}</title>
       |</head>
     """.stripMargin
@@ -438,7 +460,7 @@ object HtmlDocumentor {
     sb.append(s"<span class='name'>${esc(eff.sym.name)}</span>")
     sb.append("</code>")
     docSourceLocation(eff.loc)
-    docSubSection("Operations", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec))
+    docSubSection("Operations", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec), open = true)
     docDoc(eff.doc)
     sb.append("</div>")
   }
@@ -713,13 +735,16 @@ object HtmlDocumentor {
 
     val favicon = readResource(FavIcon)
     writeFile("favicon.png", favicon)
+
+    val script = readResource(Script)
+    writeFile("index.js", script)
   }
 
   /**
     * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
     */
   private def writeModule(mod: Module, output: String): Unit = {
-    writeFile(s"${moduleName(mod)}.html", output.getBytes)
+    writeFile(s"${moduleFileName(mod)}.html", output.getBytes)
   }
 
   /**
