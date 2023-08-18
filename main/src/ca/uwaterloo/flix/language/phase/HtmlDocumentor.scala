@@ -224,7 +224,7 @@ object HtmlDocumentor {
 
     sb.append("<nav>")
     sb.append("<div class='flix'>")
-    sb.append("<h2>flix</h2>")
+    sb.append("<h2><a href='Prelude.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     sb.append("</div>")
     docSubModules(sortedMods)
@@ -390,7 +390,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
-    docTypeParams(List(clazz.tparam), showKinds = true)
+    docTypeParams(List(clazz.tparam))
     docTypeConstraints(clazz.superClasses)
     sb.append("</code>")
     docSourceLocation(clazz.loc)
@@ -412,7 +412,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${esc(enm.sym.name)}</span>")
-    docTypeParams(enm.tparams, showKinds = true)
+    docTypeParams(enm.tparams)
     docDerivations(enm.derives)
     sb.append("</code>")
     docSourceLocation(enm.loc)
@@ -449,7 +449,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
-    docTypeParams(ta.tparams, showKinds = true)
+    docTypeParams(ta.tparams)
     sb.append(" = ")
     docType(ta.tpe)
     sb.append("</code>")
@@ -488,7 +488,6 @@ object HtmlDocumentor {
     sb.append(s"<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${esc(name)}</span>")
-    docTypeParams(spec.tparams, showKinds = false)
     docFormalParams(spec.fparams)
     sb.append(": ")
     docType(spec.retTpe)
@@ -585,14 +584,8 @@ object HtmlDocumentor {
     * Documents the given list of `TypeParam`s wrapped in `[]`.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
-    *
-    * @param showKinds  Whether or not the kinds of the types should be included.
-    *                   Example: {{{
-    *                    docTypeParams(... showKinds = false) -> "[a, b, ef]"
-    *                    docTypeParams(... showKinds = true) -> "[a: Type, b: Type -> Type, ef: Eff]"
-    *                   }}}
     */
-  private def docTypeParams(tparams: List[TypedAst.TypeParam], showKinds: Boolean)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTypeParams(tparams: List[TypedAst.TypeParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tparams.isEmpty) {
       return
     }
@@ -601,9 +594,7 @@ object HtmlDocumentor {
     docList(tparams.sortBy(_.loc)) { p =>
       sb.append("<span class='tparam'>")
       sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
-      if (showKinds) {
-        sb.append(s": <span class='kind'>${esc(p.sym.kind.toString)}</span>")
-      }
+      sb.append(s": <span class='kind'>${esc(p.sym.kind.toString)}</span>")
       sb.append("</span>")
     }
     sb.append("]</span>")
@@ -630,9 +621,15 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docAnnotations(anns: Ast.Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    for (a <- anns.annotations) {
-      sb.append(s"<code class='annotation'>${esc(a.toString)}</code>")
+    if (anns.annotations.isEmpty) {
+      return
     }
+
+    sb.append("<code class='annotations'>")
+    for (a <- anns.annotations) {
+      sb.append(s"<span class='annotation'>${esc(a.toString)}</span> ")
+    }
+    sb.append("</code>")
   }
 
   /**

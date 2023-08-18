@@ -1,13 +1,13 @@
 :root {
-    --bg-color-1: white;
+    --bg-color-1: #ffffff;
     --bg-color-2: #fcfcfd;
-    --bg-color-3: rgb(248, 249, 250);
+    --bg-color-3: #f8f9fa;
 
-    --heading-color: rgb(33, 37, 41);
-    --text-color: rgb(17, 17, 17);
+    --heading-color: #212529;
+    --text-color: #111111;
     --faded-text-color: #8a8a8a;
 
-    --section-arrow-color: rgb(85, 91, 96);
+    --section-arrow-color: #555b60;
 
     --annotation-color: #b15422;
     --keyword-color: #030303;
@@ -254,9 +254,11 @@ details[open] > summary::after {
 code {
     font-family: Fira Code, monospace;
 }
-code.annotation {
-    color: var(--annotation-color);
+code.annotations {
     display: block;
+}
+code .annotation {
+    color: var(--annotation-color);
 }
 code .keyword {
     color: var(--keyword-color);
