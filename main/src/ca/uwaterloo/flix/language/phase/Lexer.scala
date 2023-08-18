@@ -123,10 +123,6 @@ object Lexer {
     println(f"${"%34s".format(src.name)}${debug}")
 
 
-//    if (src.name == "Channel.flix") {
-//      println(f"${s.tokens.mkString("\n")}")
-//    }
-
     //    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
     s.tokens.toArray.toSuccess // TODO: Return failures
   }
@@ -245,6 +241,7 @@ object Lexer {
       case _ if keyword("<=>") => TokenKind.AngledEqual
       case _ if keyword("<==>") => TokenKind.AngledEqualEqual
       case _ if keyword("and") => TokenKind.AndKeyword
+      case _ if keyword("as") => TokenKind.AsKeyword
       case _ if keyword("or") => TokenKind.OrKeyword
       case _ if keyword("mod") => TokenKind.ModKeyword
       case _ if keyword("foreach") => TokenKind.ForeachKeyword
