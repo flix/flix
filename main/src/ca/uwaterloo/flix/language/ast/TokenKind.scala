@@ -25,8 +25,6 @@ sealed trait TokenKind
 // NOTE: Builtin type keywords like 'Float32' are lexed into 'Float32Keyword' whereas Float32 *literals* are lexed to 'Float32'
 // This aligns naming of literals with other types such as 'String' and 'Bool'
 
-// TODO: double ## signifies something to do with java?
-
 object TokenKind {
   case object LParen extends TokenKind
 
