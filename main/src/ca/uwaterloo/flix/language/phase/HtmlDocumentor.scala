@@ -57,6 +57,11 @@ object HtmlDocumentor {
   val FavIcon: String = "/doc/favicon.png"
 
   /**
+    * The path to the the script, relative to the resources folder.
+    */
+  val Script: String = "/doc/index.js"
+
+  /**
     * The root of the link to each file of the standard library.
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
@@ -231,7 +236,12 @@ object HtmlDocumentor {
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
     sb.append(mkHead(moduleName(mod)))
-    sb.append("<body>")
+    sb.append("<body class='no-script'>")
+
+    sb.append("<button id='theme-toggle' disabled aria-describedby='no-script'>")
+    sb.append("<span>Toggle theme.</span>")
+    sb.append("<div role='tooltip' id='no-script'>Requires JavaScript</div>")
+    sb.append("</button>")
 
     sb.append("<nav>")
     sb.append("<div class='flix'>")
@@ -293,6 +303,7 @@ object HtmlDocumentor {
       |<link href='https://fonts.googleapis.com/css?family=Roboto&display=swap' rel='stylesheet'>
       |<link href='styles.css' rel='stylesheet'>
       |<link href='favicon.png' rel='icon'>
+      |<script defer src='index.js' type="text/javascript"></script>
       |<title>Flix | ${esc(name)}</title>
       |</head>
     """.stripMargin
@@ -720,6 +731,9 @@ object HtmlDocumentor {
 
     val favicon = readResource(FavIcon)
     writeFile("favicon.png", favicon)
+
+    val script = readResource(Script)
+    writeFile("index.js", script)
   }
 
   /**
