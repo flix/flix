@@ -2,7 +2,6 @@
 
 Version 0.40.0:
 
-- Library: Added `Adaptor` module and `ToJava` class for working with Java collections (thanks Stephen!)
 - Library: Added `MutPriorityQueue` (thanks Xavier!)
 - VSCode: Added completion for `use` of signatures and operations (thanks Xavier!)
 - VSCode: Added code actions to derive missing type class instances (thanks Holger!)
@@ -439,6 +438,7 @@ HEAD (in progress, not released):
 - Added a new file API (thanks Nina!)
 - Added `DelayList` and `DelayMap` (thanks Jakob!)
 - Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
+- Library: Added `Adaptor` module and `ToJava` class for working with Java collections (thanks Stephen!)
 - Improved stratification algorithm (thanks Jonathan!)
 - Inliner
 - Datalog abstraction
