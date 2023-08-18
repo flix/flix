@@ -71,5 +71,17 @@ object PredefinedClasses {
     enumDecl.cases.getOrElse(cazeKey, throw InternalCompilerException(s"The definition '$enumKey' is not defined.", SourceLocation.Unknown)).sym
   }
 
+  /**
+    * Returns the associated type symbol with the given `clazz` and name `sig`.
+    */
+  def lookupAssocTypeSym(clazz: String, assoc: String, root: KindedAst.Root): Symbol.AssocTypeSym = {
+    val clazzKey = new Symbol.ClassSym(Nil, clazz, SourceLocation.Unknown)
+    val assocKey = new Symbol.AssocTypeSym(clazzKey, assoc, SourceLocation.Unknown)
+    root.classes.getOrElse(clazzKey, throw InternalCompilerException(s"The type class: '$clazzKey' is not defined.", SourceLocation.Unknown))
+      .assocs.find(_.sym == assocKey)
+      .getOrElse(throw InternalCompilerException(s"The associated type '$assoc' is not defined.", SourceLocation.Unknown))
+      .sym
+  }
+
 
 }

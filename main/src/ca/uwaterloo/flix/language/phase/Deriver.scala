@@ -461,11 +461,22 @@ object Deriver {
   private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
+      val effectAssocSym = PredefinedClasses.lookupAssocTypeSym("ToString", "Effect", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString")
 
+      val eff = getEffectForTypeParams(tparams, effectAssocSym, loc)
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkToStringImpl(enum0, param, loc, root)
-      val spec = mkToStringSpec(enum0, param, loc, root)
+      val spec = mkToStringSpec(enum0, param, eff, loc, root)
+
+      val assoc = KindedAst.AssocTypeDef( // TODO ASSOC-TYPES add tests for this
+        doc = Ast.Doc(Nil, loc),
+        mod = Ast.Modifiers.Empty,
+        sym = Ast.AssocTypeSymUse(effectAssocSym, loc),
+        arg = tpe,
+        tpe = eff,
+        loc = loc
+      )
 
       val defn = KindedAst.Def(toStringDefSym, spec, exp)
 
@@ -478,7 +489,7 @@ object Deriver {
         clazz = Ast.ClassSymUse(toStringClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
-        assocs = Nil,
+        assocs = List(assoc),
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
@@ -504,7 +515,7 @@ object Deriver {
   /**
     * Creates the toString spec for the given enum, where `param` is the parameter to the function.
     */
-  private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+  private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, eff: Type, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       KindedAst.Spec(
@@ -749,6 +760,22 @@ object Deriver {
   private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
       Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), Type.Var(tparam.sym, loc), loc)
+  }
+
+  /**
+    * Creates an effect for the given type parameters.
+    * The resulting effect is the union of the associated effect of each type parameter.
+    * Filters out non-star type parameters and wild type parameters.
+    */
+  private def getEffectForTypeParams(tparams: List[KindedAst.TypeParam], assoc: Symbol.AssocTypeSym, loc: SourceLocation): Type = {
+    val syms = tparams.collect {
+      case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild => tparam.sym
+    }
+    val cst = Ast.AssocTypeConstructor(assoc, loc)
+    val assocs = syms.map {
+      sym => Type.AssocType(cst, Type.Var(sym, loc), Kind.Eff, loc)
+    }
+    Type.mkUnion(assocs, loc)
   }
 
   /**
