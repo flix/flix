@@ -45,6 +45,7 @@ jobs:
           - "mlutze/fcwg"
           - "mlutze/flix-json"
           - "mlutze/flixball"
+          - "stephentetley/charset-local"
           - "stephentetley/flix-either"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
