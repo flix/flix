@@ -407,6 +407,36 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonLinearPattern](result)
   }
 
+  test("NonLinearPattern.07") {
+    val input =
+      """def f(): Bool = match { x = 1, y = false } {
+        |  case { x = x, y = x } => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
+  test("NonLinearPattern.08") {
+    val input =
+      """def f(): Bool = match { x = 1, y = false } {
+        |  case { x , y = x } => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
+  test("NonLinearPattern.09") {
+    val input =
+      """def f(): Bool = match { x = 1, y = false } {
+        |  case { y = x, x } => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
   test("IllegalNullPattern.01") {
     val input =
       s"""
