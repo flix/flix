@@ -118,6 +118,7 @@ object JvmBackend {
       val resultInterface = Map(BackendObjType.Result.jvmName -> JvmClass(BackendObjType.Result.jvmName, BackendObjType.Result.genByteCode()))
       val valueClass = Map(BackendObjType.Value.jvmName -> JvmClass(BackendObjType.Value.jvmName, BackendObjType.Value.genByteCode()))
       val frameInterface = Map(BackendObjType.Frame.jvmName -> JvmClass(BackendObjType.Frame.jvmName, BackendObjType.Frame.genByteCode()))
+      val thunkInterface = Map(BackendObjType.Thunk.jvmName -> JvmClass(BackendObjType.Thunk.jvmName, BackendObjType.Thunk.genByteCode()))
 
       // Collect all the classes and interfaces together.
       List(
@@ -147,7 +148,8 @@ object JvmBackend {
         uncaughtExceptionHandlerClass,
         resultInterface,
         valueClass,
-        frameInterface
+        frameInterface,
+        thunkInterface
       ).reduce(_ ++ _)
     }
 
