@@ -1063,13 +1063,13 @@ object BackendObjType {
       ) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
         thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
-          DUP() ~ thisLoad() ~
-          invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
-          INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
-          thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
-          thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
-          INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
-          RETURN()
+        DUP() ~ thisLoad() ~
+        invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
+        INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
+        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
+        thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
+        INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
+        RETURN()
       }
     ))
 
