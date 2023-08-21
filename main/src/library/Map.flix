@@ -35,7 +35,7 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     type Effect = ToString.Effect[k] + ToString.Effect[v]
-    pub def toString(m: Map[k, v]): String = Map.toString(m)
+    pub def toString(m: Map[k, v]): String \ ToString.Effect[k] + ToString.Effect[v] = Map.toString(m)
 }
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
@@ -111,7 +111,7 @@ mod Map {
     ///
     /// Returns a string representation of the given map `m`.
     ///
-    pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
+    pub def toString(m: Map[k, v]): String \ ToString.Effect[k] + ToString.Effect[v] with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
@@ -930,7 +930,7 @@ mod Map {
     /// Returns the concatenation of the string representation of each key `k`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinKeys(sep: String, m: Map[k, v]): String with ToString[k] =
+    pub def joinKeys(sep: String, m: Map[k, v]): String \ ToString.Effect[k] with ToString[k] =
         let Map(t) = m;
         RedBlackTree.joinKeys(sep, t)
 
@@ -938,7 +938,7 @@ mod Map {
     /// Returns the concatenation of the string representation of each value `v`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinValues(sep: String, m: Map[k, v]): String with ToString[v] =
+    pub def joinValues(sep: String, m: Map[k, v]): String \ ToString.Effect[v] with ToString[v] =
         let Map(t) = m;
         RedBlackTree.joinValues(sep, t)
 

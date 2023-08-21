@@ -683,7 +683,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def join(sep: String, iter: Iterator[a, ef, r]): String \ { ef, r } with ToString[a] =
+    pub def join(sep: String, iter: Iterator[a, ef, r]): String \ { ef, r } + ToString.Effect[a] with ToString[a] =
         joinWith(ToString.toString, sep, iter)
 
     ///

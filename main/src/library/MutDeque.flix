@@ -61,7 +61,7 @@ mod MutDeque {
     ///
     /// Returns a string representation of the given MutDeque `d`.
     ///
-    pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc2 {
+    pub def toString(d: MutDeque[a, r]): String \ r + ToString.Effect[a] with ToString[a] = region rc2 {
         let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutDeque#{", sb);
         forEachWithIndex((i, x) -> {
@@ -392,7 +392,7 @@ mod MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, d: MutDeque[a, r]): String \ r with ToString[a] =
+    pub def join(sep: String, d: MutDeque[a, r]): String \ r + ToString.Effect[a] with ToString[a] =
         joinWith(ToString.toString, sep, d)
 
     ///

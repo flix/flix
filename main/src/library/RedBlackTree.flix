@@ -904,14 +904,14 @@ mod RedBlackTree {
     /// Returns the concatenation of the string representation of each key `k`
     /// in `t` with `sep` inserted between each element.
     ///
-    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String with ToString[k] =
+    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String \ ToString.Effect[k] with ToString[k] =
         joinWith((k, _) -> ToString.toString(k), sep, t)
 
     ///
     /// Returns the concatenation of the string representation of each value `v`
     /// in `t` with `sep` inserted between each element.
     ///
-    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String with ToString[v] =
+    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String \ ToString.Effect[v] with ToString[v] =
         joinWith((_, v) -> ToString.toString(v), sep, t)
 
     ///

@@ -79,7 +79,7 @@ mod MultiMap {
     ///
     /// Returns a string representation of `m`.
     ///
-    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region rc {
+    pub def toString(m: MultiMap[k, v]): String \ ToString.Effect[k] + ToString.Effect[v] with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);

@@ -26,7 +26,7 @@ mod MutMap {
     ///
     /// Returns a string representation of the given MutMap `m`.
     ///
-    pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
+    pub def toString(m: MutMap[k, v, r]): String \ r + ToString.Effect[k] + ToString.Effect[v] with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
@@ -611,7 +611,7 @@ mod MutMap {
     /// Returns the concatenation of the string representation of each key `k`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinKeys(sep: String, m: MutMap[k, v, r]): String \ r with ToString[k] =
+    pub def joinKeys(sep: String, m: MutMap[k, v, r]): String \ r + ToString.Effect[k] with ToString[k] =
         let MutMap(_, mm) = m;
         Map.joinKeys(sep, deref mm)
 
@@ -619,7 +619,7 @@ mod MutMap {
     /// Returns the concatenation of the string representation of each value `v`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinValues(sep: String, m: MutMap[k, v, r]): String \ r with ToString[v] =
+    pub def joinValues(sep: String, m: MutMap[k, v, r]): String \ r + ToString.Effect[v] with ToString[v] =
         let MutMap(_, mm) = m;
         Map.joinValues(sep, deref mm)
 

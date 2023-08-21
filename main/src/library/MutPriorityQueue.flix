@@ -32,7 +32,7 @@ mod MutPriorityQueue {
     ///
     /// Returns a String representation of the mutable priority queue `pq`.
     ///
-    pub def toString(pq: MutPriorityQueue[a, r]): String \ r with ToString[a] = region reg {
+    pub def toString(pq: MutPriorityQueue[a, r]): String \ r + ToString.Effect[a] with ToString[a] = region reg {
         let MutPriorityQueue(_, arr, s) = pq;
         let sb = StringBuilder.new(reg);
         StringBuilder.appendString!("MutPriorityQueue {", sb);

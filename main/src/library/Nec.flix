@@ -922,7 +922,7 @@ mod Nec {
     /// Returns the concatenation of the string representation
     /// of each element in `c` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, c: Nec[a]): String with ToString[a] =
+    pub def join(sep: String, c: Nec[a]): String \ ToString.Effect[a] with ToString[a] =
         Foldable.join(sep, c)
 
     ///

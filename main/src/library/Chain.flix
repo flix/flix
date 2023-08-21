@@ -928,7 +928,7 @@ mod Chain {
     /// Returns the concatenation of the string representation
     /// of each element in `c` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, c: Chain[a]): String with ToString[a] =
+    pub def join(sep: String, c: Chain[a]): String \ ToString.Effect[a] with ToString[a] =
         Foldable.join(sep, c)
 
     ///

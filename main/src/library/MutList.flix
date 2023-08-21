@@ -36,7 +36,7 @@ mod MutList {
     ///
     /// Returns a string representation of the given MutList `l`.
     ///
-    pub def toString(l: MutList[a, r]): String \ r with ToString[a] = region rc2 {
+    pub def toString(l: MutList[a, r]): String \ r + ToString.Effect[a] with ToString[a] = region rc2 {
         let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
@@ -765,7 +765,7 @@ mod MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: MutList[a, r]): String \ r with ToString[a] =
+    pub def join(sep: String, v: MutList[a, r]): String \ r + ToString.Effect[a] with ToString[a] =
         joinWith(ToString.toString, sep, v)
 
     ///

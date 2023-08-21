@@ -55,7 +55,7 @@ mod DelayMap {
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
-    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
+    pub def toString(m: DelayMap[k, v]): String \ ToString.Effect[k] + ToString.Effect[v] with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
@@ -868,7 +868,7 @@ mod DelayMap {
     /// in `m` with `sep` inserted between each element.
     ///
     @Experimental
-    pub def joinKeys(sep: String, m: DelayMap[k, v]): String with ToString[k] =
+    pub def joinKeys(sep: String, m: DelayMap[k, v]): String \ ToString.Effect[k] with ToString[k] =
         let DMap(t) = m;
         RedBlackTree.joinKeys(sep, t)
 
@@ -877,7 +877,7 @@ mod DelayMap {
     /// in `m` with `sep` inserted between each element.
     ///
     @Experimental
-    pub def joinValues(sep: String, m: DelayMap[k, v]): String with ToString[v] =
+    pub def joinValues(sep: String, m: DelayMap[k, v]): String \ ToString.Effect[v] with ToString[v] =
         joinWith((_, v) -> ToString.toString(v), sep, m)
 
     ///

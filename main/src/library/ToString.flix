@@ -119,7 +119,7 @@ instance ToString[Regex] {
 
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
     type Effect = Pure
-    pub def toString(t: (a1, a2)): String = match t {
+    pub def toString(t: (a1, a2)): String \ ToString.Effect[a1] + ToString.Effect[a2] = match t {
         case (x1, x2) =>
             "(${x1}, ${x2})"
     }
@@ -127,7 +127,7 @@ instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
 
 instance ToString[(a1, a2, a3)] with ToString[a1], ToString[a2], ToString[a3] {
     type Effect = Pure
-    pub def toString(t: (a1, a2, a3)): String = match t {
+    pub def toString(t: (a1, a2, a3)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] = match t {
         case (x1, x2, x3) =>
             "(${x1}, ${x2}, ${x3})"
     }
@@ -135,96 +135,97 @@ instance ToString[(a1, a2, a3)] with ToString[a1], ToString[a2], ToString[a3] {
 
 instance ToString[(a1, a2, a3, a4)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4] {
     type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4)): String = match t {
+    pub def toString(t: (a1, a2, a3, a4)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] = match t {
         case (x1, x2, x3, x4) =>
             "(${x1}, ${x2}, ${x3}, ${x4})"
     }
 }
 
-instance ToString[(a1, a2, a3, a4, a5)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5)): String = match t {
-        case (x1, x2, x3, x4, x5) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6)): String = match t {
-        case (x1, x2, x3, x4, x5, x6) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12], ToString[a13] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12], ToString[a13], ToString[a14] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13}, ${x14})"
-    }
-}
-
-instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12], ToString[a13], ToString[a14], ToString[a15] {
-    type Effect = Pure
-    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)): String = match t {
-        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) =>
-            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13}, ${x14}, ${x15})"
-    }
-}
+// TODO ASSOC-TYPES too complex
+//instance ToString[(a1, a2, a3, a4, a5)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] = match t {
+//        case (x1, x2, x3, x4, x5) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] = match t {
+//        case (x1, x2, x3, x4, x5, x6) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] + ToString.Effect[a9] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] + ToString.Effect[a9] + ToString.Effect[a10] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] + ToString.Effect[a9] + ToString.Effect[a10] + ToString.Effect[a11] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] + ToString.Effect[a9] + ToString.Effect[a10] + ToString.Effect[a11] + ToString.Effect[a12] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12], ToString[a13] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] + ToString.Effect[a9] + ToString.Effect[a10] + ToString.Effect[a11] + ToString.Effect[a12] + ToString.Effect[a13] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12], ToString[a13], ToString[a14] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] + ToString.Effect[a9] + ToString.Effect[a10] + ToString.Effect[a11] + ToString.Effect[a12] + ToString.Effect[a13] + ToString.Effect[a14] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13}, ${x14})"
+//    }
+//}
+//
+//instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4], ToString[a5], ToString[a6], ToString[a7], ToString[a8], ToString[a9], ToString[a10], ToString[a11], ToString[a12], ToString[a13], ToString[a14], ToString[a15] {
+//    type Effect = Pure
+//    pub def toString(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)): String \ ToString.Effect[a1] + ToString.Effect[a2] + ToString.Effect[a3] + ToString.Effect[a4] + ToString.Effect[a5] + ToString.Effect[a6] + ToString.Effect[a7] + ToString.Effect[a8] + ToString.Effect[a9] + ToString.Effect[a10] + ToString.Effect[a11] + ToString.Effect[a12] + ToString.Effect[a13] + ToString.Effect[a14] + ToString.Effect[a15] = match t {
+//        case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) =>
+//            "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13}, ${x14}, ${x15})"
+//    }
+//}

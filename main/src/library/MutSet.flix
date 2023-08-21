@@ -26,7 +26,7 @@ mod MutSet {
     ///
     /// Returns a string representation of the given mutable set `s`.
     ///
-    pub def toString(s: MutSet[a, r]): String \r with ToString[a] = region rc {
+    pub def toString(s: MutSet[a, r]): String \ r + ToString.Effect[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
@@ -410,7 +410,7 @@ mod MutSet {
     /// Returns the concatenation of the string representation
     /// of each element in `s` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, s: MutSet[a, r]): String \ r with ToString[a] =
+    pub def join(sep: String, s: MutSet[a, r]): String \ r + ToString.Effect[a] with ToString[a] =
         let MutSet(_, ms) = s;
         Set.join(sep, deref ms)
 
