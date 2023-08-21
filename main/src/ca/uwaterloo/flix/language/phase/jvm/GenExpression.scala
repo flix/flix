@@ -742,7 +742,6 @@ object GenExpression {
         // Evaluating the 'length' of the array
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
-        mv.visitTypeInsn(ANEWARRAY, jvmTpe.toDescriptor)
         jvmTpe match {
           case JvmType.Reference(name) => mv.visitTypeInsn(ANEWARRAY, name.toInternalName)
           case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmTpe))
@@ -761,7 +760,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(jvmTpe)
+        val arrayFillType = AsmOps.getArrayFillType(JvmOps.getErasedJvmType(elmType))
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
