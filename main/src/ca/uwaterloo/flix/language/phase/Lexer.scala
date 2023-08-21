@@ -26,11 +26,7 @@ import scala.collection.mutable
 
 object Lexer {
 
-  // TODO: A single source can have more than one error that we would like to report.
-  // For instance there might be an unexpected char multiple spots in the source file.
-  // Therefore run needs to return something like `Validation[Map[Ast.Source, Array[Token]], Array[CompilationMessage]]`
-  // but that seems to clash with the rest of the pipeline. How do we resolve this?
-  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], Array[CompilationMessage]] = {
+  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     if (!flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
       return Map.empty[Ast.Source, Array[Token]].toSuccess
@@ -47,14 +43,16 @@ object Lexer {
       // Construct a map from each source to its tokens.
       mapN(sequence(results))(_.toMap)
     }
+
   }
 
-  private def lex(src: Ast.Source): Validation[Array[Token], Array[CompilationMessage]] = {
+  private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
     // TODO: LEXER
 
     val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
     if (hasErrors) {
+      // TODO: Fix type error in return type
       s.tokens.flatMap(tokenErrToCompilationMessage).toArray.toFailure
     } else {
       s.tokens.toArray.toSuccess
@@ -69,12 +67,14 @@ object Lexer {
 
   private def addToken(token: Token)(implicit s: State): Unit = ???
 
-  // Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
-  // NOTE: Why is this necessary?
-  // We would like the lexer to capture as many errors as possible before terminating.
-  // To do this, the lexer will produce error tokens instead of halting,
-  // each holding a kind of the simple type `ErrKind`.
-  // So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
+  /**
+   * Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
+   * NOTE: Why is this necessary?
+   * We would like the lexer to capture as many errors as possible before terminating.
+   * To do this, the lexer will produce error tokens instead of halting,
+   * each holding a kind of the simple type `ErrKind`.
+   * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
+   */
   private def tokenErrToCompilationMessage(t: Token)(implicit s: State): Option[CompilationMessage] = {
     t.kind match {
       case TokenKind.Err(e) => e match {
