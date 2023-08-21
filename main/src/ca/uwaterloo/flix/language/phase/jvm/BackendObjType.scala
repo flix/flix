@@ -1033,17 +1033,17 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
-        DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
-        PUTFIELD(ThreadsField) ~
-        thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
-        PUTFIELD(RegionThreadField) ~
-        thisLoad() ~ ACONST_NULL() ~
-        PUTFIELD(ChildExceptionField) ~
-        thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
-        DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
-        PUTFIELD(OnExitField) ~
-        RETURN()
+      thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTFIELD(ThreadsField) ~
+      thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
+      PUTFIELD(RegionThreadField) ~
+      thisLoad() ~ ACONST_NULL() ~
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTFIELD(OnExitField) ~
+      RETURN()
     ))
 
     // final public void spawn(Runnable r) {
@@ -1058,19 +1058,19 @@ object BackendObjType {
           INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
         } else {
           NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
-            invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
+          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
         }
-        ) ~
-        storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
-          thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
-            DUP() ~ thisLoad() ~
-            invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
-            INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
-            thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
-            thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
-            INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
-            RETURN()
-        }
+      ) ~
+      storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+        thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
+          DUP() ~ thisLoad() ~
+          invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
+          INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
+          thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
+          thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
+          INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
+          RETURN()
+      }
     ))
 
     // final public void exit() throws InterruptedException {
@@ -1084,24 +1084,24 @@ object BackendObjType {
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad() ~ GETFIELD(ThreadsField) ~
-            INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
-            CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
+          INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
+          CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
         } {
           t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
         } ~
-          withName(2, BackendObjType.Iterator.toTpe) { i =>
-            thisLoad() ~ GETFIELD(OnExitField) ~
-              INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
-              i.store() ~
-              whileLoop(Condition.NE) {
-                i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
-              } {
-                i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
-                  CHECKCAST(Runnable.jvmName) ~
-                  INVOKEINTERFACE(Runnable.RunMethod)
-              }
-          } ~
-          RETURN()
+        withName(2, BackendObjType.Iterator.toTpe) { i =>
+          thisLoad() ~ GETFIELD(OnExitField) ~
+          INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
+          i.store() ~
+          whileLoop(Condition.NE) {
+            i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
+          } {
+            i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
+            CHECKCAST(Runnable.jvmName) ~
+            INVOKEINTERFACE(Runnable.RunMethod)
+          }
+        } ~
+        RETURN()
       }
     ))
 
@@ -1111,10 +1111,10 @@ object BackendObjType {
     // }
     def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
       thisLoad() ~ ALOAD(1) ~
-        PUTFIELD(ChildExceptionField) ~
-        thisLoad() ~ GETFIELD(RegionThreadField) ~
-        INVOKEVIRTUAL(Thread.InterruptMethod) ~
-        RETURN()
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ GETFIELD(RegionThreadField) ~
+      INVOKEVIRTUAL(Thread.InterruptMethod) ~
+      RETURN()
     ))
 
     // final public void reThrowChildException() throws Throwable {
@@ -1123,11 +1123,11 @@ object BackendObjType {
     // }
     def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(
       thisLoad() ~ GETFIELD(ChildExceptionField) ~
-        ifTrue(Condition.NONNULL) {
-          thisLoad() ~ GETFIELD(ChildExceptionField) ~
-            ATHROW()
-        } ~
-        RETURN()
+      ifTrue(Condition.NONNULL) {
+        thisLoad() ~ GETFIELD(ChildExceptionField) ~
+        ATHROW()
+      } ~
+      RETURN()
     ))
 
     // final public void runOnExit(Runnable r) {
@@ -1135,8 +1135,8 @@ object BackendObjType {
     // }
     def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(
       thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
-        INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
-        RETURN()
+      INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
+      RETURN()
     ))
   }
 
@@ -1158,15 +1158,15 @@ object BackendObjType {
     // UncaughtExceptionHandler(Region r) { this.r = r; }
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
-        thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
-        RETURN()
+      thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
+      RETURN()
     ))
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(
       thisLoad() ~ GETFIELD(RegionField) ~
-        ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
-        RETURN()
+      ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+      RETURN()
     ))
   }
 
