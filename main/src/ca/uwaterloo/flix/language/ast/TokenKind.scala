@@ -27,6 +27,27 @@ object TokenKind {
 
   case object Eof extends TokenKind
 
-  case object Err extends TokenKind
+  case class Err(kind: ErrKind) extends TokenKind
 
+}
+
+sealed trait ErrKind
+
+object ErrKind {
+
+  case object UnexpectedChar extends ErrKind
+
+  case object UnterminatedString extends ErrKind
+
+  case object UnterminatedChar extends ErrKind
+
+  case object UnterminatedInfixFunction extends ErrKind
+
+  case object DoubleDottedNumber extends ErrKind
+
+  case object BlockCommentTooDeep extends ErrKind
+
+  case object UnterminatedBlockComment extends ErrKind
+
+  case object UnterminatedBuiltIn extends ErrKind
 }
