@@ -735,25 +735,21 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val elmType = tpe.asInstanceOf[MonoType.Array].tpe
-        // We get the erased elm type.
-        val jvmType = JvmOps.getErasedJvmType(elmType)
+        // We get the jvmType of elmType.
+        val jvmTpe = JvmOps.getJvmType(elmType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
-        if (elmType == MonoType.Str) {
-          mv.visitTypeInsn(ANEWARRAY, "java/lang/String")
-        } else if (elmType.isInstanceOf[MonoType.Native]) {
-          val native = elmType.asInstanceOf[MonoType.Native]
-          val name = native.clazz.getName.replace('.', '/')
-          mv.visitTypeInsn(ANEWARRAY, name)
-        } else if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-          mv.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-        } else { // Happens if the inner type is a primitive type
-          mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+        mv.visitTypeInsn(ANEWARRAY, jvmTpe.toDescriptor)
+        jvmTpe match {
+          case JvmType.Reference(name) =>
+            val internalN = name.toInternalName
+            mv.visitTypeInsn(ANEWARRAY, internalN)
+          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmTpe))
         }
-        if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
+        if (jvmTpe == JvmType.PrimLong || jvmTpe == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
           // Duplicates the 'array reference' three places down the stack
@@ -767,7 +763,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(jvmType)
+        val arrayFillType = AsmOps.getArrayFillType(jvmTpe)
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
