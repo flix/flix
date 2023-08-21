@@ -78,20 +78,45 @@ object Lexer {
   private def tokenErrToCompilationMessage(t: Token)(implicit s: State): Option[CompilationMessage] = {
     t.kind match {
       case TokenKind.Err(e) => e match {
-        case ErrKind.UnexpectedChar | ErrKind.DoubleDottedNumber => Some(
+        case ErrKind.UnexpectedChar => Some(
           LexerError.UnexpectedChar(
             t.text,
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + t.text.length)
           )
         )
-        case ErrKind.UnterminatedString
-             | ErrKind.UnterminatedChar
-             | ErrKind.UnterminatedInfixFunction
-             | ErrKind.UnterminatedBuiltIn
-             | ErrKind.UnterminatedBlockComment
-             | ErrKind.BlockCommentTooDeep => Some(
+        case ErrKind.DoubleDottedNumber => Some(
+          LexerError.DoubleDottedNumber(
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + t.text.length)
+          )
+        )
+        case ErrKind.UnterminatedString => Some(
           LexerError.UnterminatedString(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
+          )
+        )
+        case ErrKind.UnterminatedChar => Some(
+          LexerError.UnterminatedChar(
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
+          )
+        )
+        case ErrKind.UnterminatedInfixFunction => Some(
+          LexerError.UnterminatedInfixFunction(
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
+          )
+        )
+        case ErrKind.UnterminatedBuiltIn => Some(
+          LexerError.UnterminatedBuiltin(
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
+          )
+        )
+        case ErrKind.UnterminatedBlockComment => Some(
+          LexerError.UnterminatedBlockComment(
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
+          )
+        )
+        case ErrKind.BlockCommentTooDeep => Some(
+          LexerError.BlockCommentTooDeep(
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 2)
           )
         )
       }
