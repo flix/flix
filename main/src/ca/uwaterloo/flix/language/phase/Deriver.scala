@@ -528,10 +528,10 @@ object Deriver {
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
           Nil,
-          Type.mkPureArrow(tpe, Type.mkString(loc), loc)
+          Type.mkArrowWithEffect(tpe, eff, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
-        eff = Type.Cst(TypeConstructor.Pure, loc),
+        eff = eff,
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
