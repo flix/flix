@@ -744,9 +744,7 @@ object GenExpression {
         // Instantiating a new array of type jvmType
         mv.visitTypeInsn(ANEWARRAY, jvmTpe.toDescriptor)
         jvmTpe match {
-          case JvmType.Reference(name) =>
-            val internalN = name.toInternalName
-            mv.visitTypeInsn(ANEWARRAY, internalN)
+          case JvmType.Reference(name) => mv.visitTypeInsn(ANEWARRAY, name.toInternalName)
           case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmTpe))
         }
         if (jvmTpe == JvmType.PrimLong || jvmTpe == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
