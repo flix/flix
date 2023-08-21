@@ -15,20 +15,23 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-sealed trait TokenKind
+sealed trait TokenErrorKind
 
-object TokenKind {
+object TokenErrorKind {
 
-  case object LParen extends TokenKind
+  case object UnexpectedChar extends TokenErrorKind
 
-  case object RParen extends TokenKind
+  case object UnterminatedString extends TokenErrorKind
 
-  // TODO: LEXER
+  case object UnterminatedChar extends TokenErrorKind
 
-  case object Eof extends TokenKind
+  case object UnterminatedInfixFunction extends TokenErrorKind
 
-  case class Err(kind: TokenErrorKind) extends TokenKind
+  case object DoubleDottedNumber extends TokenErrorKind
 
+  case object BlockCommentTooDeep extends TokenErrorKind
+
+  case object UnterminatedBlockComment extends TokenErrorKind
+
+  case object UnterminatedBuiltIn extends TokenErrorKind
 }
-
-

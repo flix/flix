@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ErrKind, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, TokenErrorKind, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -78,43 +78,43 @@ object Lexer {
   private def tokenErrToCompilationMessage(t: Token)(implicit s: State): Option[CompilationMessage] = {
     t.kind match {
       case TokenKind.Err(e) => e match {
-        case ErrKind.UnexpectedChar => Some(
+        case TokenErrorKind.UnexpectedChar => Some(
           LexerError.UnexpectedChar(
             t.text,
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + t.text.length)
           )
         )
-        case ErrKind.DoubleDottedNumber => Some(
+        case TokenErrorKind.DoubleDottedNumber => Some(
           LexerError.DoubleDottedNumber(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + t.text.length)
           )
         )
-        case ErrKind.UnterminatedString => Some(
+        case TokenErrorKind.UnterminatedString => Some(
           LexerError.UnterminatedString(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
           )
         )
-        case ErrKind.UnterminatedChar => Some(
+        case TokenErrorKind.UnterminatedChar => Some(
           LexerError.UnterminatedChar(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
           )
         )
-        case ErrKind.UnterminatedInfixFunction => Some(
+        case TokenErrorKind.UnterminatedInfixFunction => Some(
           LexerError.UnterminatedInfixFunction(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
           )
         )
-        case ErrKind.UnterminatedBuiltIn => Some(
+        case TokenErrorKind.UnterminatedBuiltIn => Some(
           LexerError.UnterminatedBuiltin(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
           )
         )
-        case ErrKind.UnterminatedBlockComment => Some(
+        case TokenErrorKind.UnterminatedBlockComment => Some(
           LexerError.UnterminatedBlockComment(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
           )
         )
-        case ErrKind.BlockCommentTooDeep => Some(
+        case TokenErrorKind.BlockCommentTooDeep => Some(
           LexerError.BlockCommentTooDeep(
             SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 2)
           )
