@@ -73,6 +73,7 @@ sealed trait BackendObjType {
     case BackendObjType.Value => JvmName(DevFlixRuntime, "Value")
     case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
     case BackendObjType.Thunk => JvmName(DevFlixRuntime, "Thunk")
+    case BackendObjType.Frames => JvmName(DevFlixRuntime, "Frames")
   }
 
   /**
@@ -1414,5 +1415,18 @@ object BackendObjType {
     }
 
     def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor()(Result.toTpe))
+  }
+
+  case object Frames extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
+
+      cm.mkInterfaceMethod(ReverseOntoMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
   }
 }
