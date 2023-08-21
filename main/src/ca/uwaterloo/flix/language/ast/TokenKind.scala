@@ -326,31 +326,29 @@ object TokenKind {
 
   case object BlockComment extends TokenKind
 
-  case class Err(kind: LexerErr) extends TokenKind
+  case class Err(kind: ErrKind) extends TokenKind
 
   case object Eof extends TokenKind
 
 }
 
-sealed trait LexerErr
+sealed trait ErrKind
 
-object LexerErr {
+object ErrKind {
 
-  case object UnexpectedChar extends LexerErr
+  case object UnexpectedChar extends ErrKind
 
-  case object UnterminatedString extends LexerErr
+  case object UnterminatedString extends ErrKind
 
-  case object UnterminatedChar extends LexerErr
+  case object UnterminatedChar extends ErrKind
 
-  case object UnterminatedInfixFunction extends LexerErr
+  case object UnterminatedInfixFunction extends ErrKind
 
-  case object DoubleDottedNumber extends LexerErr
+  case object DoubleDottedNumber extends ErrKind
 
-  case object MalformedNumber extends LexerErr
+  case object BlockCommentTooDeep extends ErrKind
 
-  case object BlockCommentTooDeep extends LexerErr
+  case object UnterminatedBlockComment extends ErrKind
 
-  case object UnterminatedBlockComment extends LexerErr
-
-  case object UnterminatedBuiltIn extends LexerErr
+  case object UnterminatedBuiltIn extends ErrKind
 }

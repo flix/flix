@@ -17,27 +17,27 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, LexerErr, ReadAst, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ErrKind, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
+
 import scala.collection.mutable
 
 object Lexer {
 
-  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
+  // TODO: A single source can have more than one error that we would like to report.
+  // For instance there might be an unexpected char multiple spots in the source file.
+  // Therefore run needs to return something like `Validation[Map[Ast.Source, Array[Token]], Array[CompilationMessage]]`
+  // but that seems to clash with the rest of the pipeline. How do we resolve this?
+
+  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], Array[CompilationMessage]] = {
     if (!flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
       return Map.empty[Ast.Source, Array[Token]].toSuccess
     }
 
     flix.phase("Lexer") {
-
-      // TODO: Remove this debug printing
-      val state = new State(root.sources.head._1)
-      val stats = tokenStats()(state)
-      val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
-      println(f"${"%34s".format("filename")}${s}")
-
       // Lex each source file in parallel.
       val results = ParOps.parMap(root.sources) {
         case (src, _) => mapN(lex(src))({
@@ -50,7 +50,7 @@ object Lexer {
     }
   }
 
-  private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  private def lex(src: Ast.Source): Validation[Array[Token], Array[CompilationMessage]] = {
     implicit val s: State = new State(src)
     while (!isAtEnd()) {
       whitespace() // consume whitespace
@@ -63,14 +63,12 @@ object Lexer {
     // Add a virtual eof token at the last position
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
-    // TODO: Remove this debug printing
-    val stats = tokenStats()
-    val debug = stats.toSeq.sortBy(_._1).map(v => "%5d".format(v._2)).mkString("")
-    println(f"${"%34s".format(src.name)}${debug}")
-
-
-    //    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
-    s.tokens.toArray.toSuccess // TODO: Return failures
+    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
+    if (hasErrors) {
+      s.tokens.flatMap(tokenErrToCompilationMessage).toArray.toFailure
+    } else {
+      s.tokens.toArray.toSuccess
+    }
   }
 
   // Advances state one char forward returning the char it was previously sitting on
@@ -289,7 +287,7 @@ object Lexer {
       case '\"' => string()
       case '\'' => char()
       case '`' => infixFunction()
-      case _ => TokenKind.Err(LexerErr.UnexpectedChar)
+      case _ => TokenKind.Err(ErrKind.UnexpectedChar)
     }
 
     addToken(kind)
@@ -366,7 +364,7 @@ object Lexer {
       advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedBuiltIn)
+    TokenKind.Err(ErrKind.UnterminatedBuiltIn)
   }
 
   // Advances state past a java name
@@ -441,7 +439,7 @@ object Lexer {
       advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedInfixFunction)
+    TokenKind.Err(ErrKind.UnterminatedInfixFunction)
   }
 
   // Advances state past a user defined operator
@@ -469,7 +467,7 @@ object Lexer {
       prev = advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedString)
+    TokenKind.Err(ErrKind.UnterminatedString)
   }
 
   // Advances state past a char
@@ -483,7 +481,7 @@ object Lexer {
       advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedChar)
+    TokenKind.Err(ErrKind.UnterminatedChar)
   }
 
   // Advances state past a number of any type
@@ -498,7 +496,7 @@ object Lexer {
         // Dots mark a decimal but are otherwise ignored
         case '.' => {
           if (isDecimal) {
-            return TokenKind.Err(LexerErr.DoubleDottedNumber)
+            return TokenKind.Err(ErrKind.DoubleDottedNumber)
           }
           isDecimal = true
           advance()
@@ -525,7 +523,11 @@ object Lexer {
       }
     }
 
-    TokenKind.Err(LexerErr.MalformedNumber)
+    if (isDecimal) {
+      TokenKind.Float64
+    } else {
+      TokenKind.Int32
+    }
   }
 
   // Advances state past a decorator by looking for the next non-letter character
@@ -562,7 +564,7 @@ object Lexer {
         case ('/', Some('*')) => {
           l += 1
           if (l >= 32) {
-            return TokenKind.Err(LexerErr.BlockCommentTooDeep)
+            return TokenKind.Err(ErrKind.BlockCommentTooDeep)
           }
           advance()
         }
@@ -578,7 +580,7 @@ object Lexer {
       }
     }
 
-    TokenKind.Err(LexerErr.UnterminatedBlockComment)
+    TokenKind.Err(ErrKind.UnterminatedBlockComment)
   }
 
   private class Position(var line: Int, var column: Int, var offset: Int)
@@ -603,22 +605,33 @@ object Lexer {
     '$' -> TokenKind.Dollar
   )
 
-  private def tokenStats()(implicit s: State): Map[String, Int] = {
-    def isKind(k: TokenKind)(t: Token) = t.kind == k
-
-    Map(
-      "def" -> s.tokens.count(isKind(TokenKind.DefKeyword)),
-      "class" -> s.tokens.count(isKind(TokenKind.ClassKeyword)),
-      "//" -> s.tokens.count(isKind(TokenKind.LineComment)),
-      "/%" -> s.tokens.count(isKind(TokenKind.BlockComment)),
-      "(" -> s.tokens.count(isKind(TokenKind.LParen)),
-      ")" -> s.tokens.count(isKind(TokenKind.RParen)),
-      "[" -> s.tokens.count(isKind(TokenKind.LBracket)),
-      "]" -> s.tokens.count(isKind(TokenKind.RBracket)),
-      "{" -> s.tokens.count(isKind(TokenKind.LCurly)),
-      "}" -> s.tokens.count(isKind(TokenKind.RCurly)),
-      "err" -> s.tokens.count(t => t.kind.isInstanceOf[TokenKind.Err]),
-    )
+  // Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
+  // NOTE: Why is this necessary?
+  // We would like the lexer to capture as many errors as possible before terminating.
+  // To do this, the lexer will produce error tokens instead of halting,
+  // which we would like to be case objects to keep the `TokenKind` type simple.
+  // So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
+  private def tokenErrToCompilationMessage(t: Token)(implicit s: State): Option[CompilationMessage] = {
+    t.kind match {
+      case TokenKind.Err(e) => e match {
+        case ErrKind.UnexpectedChar | ErrKind.DoubleDottedNumber => Some(
+          LexerError.UnexpectedChar(
+            t.text,
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + t.text.length)
+          )
+        )
+        case ErrKind.UnterminatedString
+             | ErrKind.UnterminatedChar
+             | ErrKind.UnterminatedInfixFunction
+             | ErrKind.UnterminatedBuiltIn
+             | ErrKind.UnterminatedBlockComment
+             | ErrKind.BlockCommentTooDeep => Some(
+          LexerError.UnterminatedString(
+            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
+          )
+        )
+      }
+      case _ => None
+    }
   }
-
 }
