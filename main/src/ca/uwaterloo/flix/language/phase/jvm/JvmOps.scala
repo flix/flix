@@ -488,18 +488,18 @@ object JvmOps {
   }
 
   /**
-    * Returns the set of ref types in `types` without searching recursively.
+    * Returns the set of erased ref types in `types` without searching recursively.
     */
-  def getRefsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] =
+  def getErasedRefsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] =
     types.foldLeft(Set.empty[BackendObjType.Ref]) {
       case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.toErasedBackendType(tpe))
       case (acc, _) => acc
     }
 
   /**
-    * Returns the set of record extend types in `types` without searching recursively.
+    * Returns the set of erased record extend types in `types` without searching recursively.
     */
-  def getRecordExtendsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] =
+  def getErasedRecordExtendsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(field, value, _)) =>
         // TODO: should use mono -> backend transformation on `rest`
@@ -508,9 +508,9 @@ object JvmOps {
     }
 
   /**
-    * Returns the set of function types in `types` without searching recursively.
+    * Returns the set of erased function types in `types` without searching recursively.
     */
-  def getArrowsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Arrow] =
+  def getErasedArrowsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, MonoType.Arrow(args, result)) =>
         acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
