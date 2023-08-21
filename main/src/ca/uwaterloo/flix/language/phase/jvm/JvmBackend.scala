@@ -117,6 +117,7 @@ object JvmBackend {
       // Generate new (unused) effect handler classes.
       val resultInterface = Map(BackendObjType.Result.jvmName -> JvmClass(BackendObjType.Result.jvmName, BackendObjType.Result.genByteCode()))
       val valueClass = Map(BackendObjType.Value.jvmName -> JvmClass(BackendObjType.Value.jvmName, BackendObjType.Value.genByteCode()))
+      val frameInterface = Map(BackendObjType.Frame.jvmName -> JvmClass(BackendObjType.Frame.jvmName, BackendObjType.Frame.genByteCode()))
 
       // Collect all the classes and interfaces together.
       List(
@@ -145,7 +146,8 @@ object JvmBackend {
         regionClass,
         uncaughtExceptionHandlerClass,
         resultInterface,
-        valueClass
+        valueClass,
+        frameInterface
       ).reduce(_ ++ _)
     }
 
