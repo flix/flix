@@ -42,7 +42,7 @@ object EqualityEnvironment {
     for {
 //      res1 <- reduceType(newTpe1, eqEnv) // TODO ASSOC-TYPES
 //      res2 <- reduceType(newTpe2, eqEnv)
-      res <- Unification.unifyTypes(res1, res2, renv, LevelEnv.Top) match {
+      res <- unifyWithHiddenAssocTypes(res1, res2, renv, LevelEnv.Top) match {
         case Result.Ok((subst, Nil)) => Result.Ok(subst): Result[Substitution, UnificationError]
         case Result.Ok((_, _ :: _)) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
         case Result.Err(_) => Result.Err(UnificationError.UnsupportedEquality(res1, res2): UnificationError): Result[Substitution, UnificationError]
@@ -50,6 +50,65 @@ object EqualityEnvironment {
       // TODO ASSOC-TYPES weird typing hack
     } yield res
   }.toValidation
+
+  // MATT docs
+  def entailAll(econstrs1: List[Ast.EqualityConstraint], econstrs2: List[Ast.BroadEqualityConstraint], renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
+    // split by kind
+    val (effEconstrs, tpeEconstrs) = econstrs2.partition {
+      case Ast.BroadEqualityConstraint(tpe1, _) => tpe1.kind == Kind.Bool
+    }
+
+    // We process the tpe econstrs first to be sure that vars in eff econstrs are fully resolved
+    Validation.fold(tpeEconstrs ::: effEconstrs, Substitution.empty) {
+      case (subst, econstr) =>
+        val newEconstrs1 = econstrs1.map(subst.apply)
+        val newEconstr = subst.apply(econstr)
+        entail(newEconstrs1, newEconstr, renv, eqEnv)
+    }
+  }
+
+  // MATT docs
+  def unifyWithHiddenAssocTypes(tpe10: Type, tpe20: Type, renv0: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+    val assocs = getAssocTypes(tpe10) ++ getAssocTypes(tpe20)
+
+    val rigidAssocs = assocs.filter {
+      case (_, tvar, _) => renv0.isRigid(tvar)
+    }
+
+    val aliases = rigidAssocs.map {
+      case (assoc, tvar, kind) => (assoc, tvar, Type.freshVar(kind, SourceLocation.Unknown))
+    }
+
+    val renv = aliases.foldLeft(renv0) {
+      case (renv1, (_, _, alias)) => renv1.markRigid(alias.sym)
+    }
+
+    val assocSubst = aliases.foldLeft(AssocTypeSubstitution.empty) {
+      case (acc, (assoc, tvar, alias)) => acc ++ AssocTypeSubstitution.singleton(assoc, tvar, alias)
+    }
+
+    val backSubst = aliases.foldLeft(Substitution.empty) {
+      case (acc, (assoc, tvar, alias)) =>
+        acc ++ Substitution.singleton(alias.sym, Type.AssocType(Ast.AssocTypeConstructor(assoc, SourceLocation.Unknown), Type.Var(tvar, SourceLocation.Unknown), alias.kind, SourceLocation.Unknown))
+    }
+
+    val tpe1 = assocSubst(tpe10)
+    val tpe2 = assocSubst(tpe20)
+
+    Unification.unifyTypes(tpe1, tpe2, renv, lenv).map {
+      case (subst, econstrs) => (backSubst @@ subst, econstrs.map(backSubst.apply))
+    }
+  }
+
+  // MATT docs
+  def getAssocTypes(tpe: Type): Set[(Symbol.AssocTypeSym, Symbol.KindedTypeVarSym, Kind)] = tpe match {
+    case Type.Var(_, _) => Set.empty
+    case Type.Cst(_, _) => Set.empty
+    case Type.Apply(tpe1, tpe2, _) => getAssocTypes(tpe1) ++ getAssocTypes(tpe2)
+    case Type.Alias(_, _, tpe, _) => getAssocTypes(tpe) // TODO ASSOC-TYPES handle aliases
+    case Type.AssocType(Ast.AssocTypeConstructor(assoc, _), Type.Var(tvar, _), k, _) => Set((assoc, tvar, k))
+    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected non-HNF assoc type", loc)
+  }
 
   /**
     * Converts the given EqualityConstraint into a BroadEqualityConstraint.
