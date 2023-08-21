@@ -760,7 +760,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(JvmOps.getErasedJvmType(elmType))
+        val arrayFillType = AsmOps.getArrayFillType(jvmTpe)
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
