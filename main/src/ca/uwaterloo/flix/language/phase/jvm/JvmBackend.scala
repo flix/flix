@@ -19,8 +19,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.InvocationTargetException
 
@@ -31,159 +32,89 @@ object JvmBackend {
     */
   def run(root: Root)(implicit flix: Flix): CompilationResult = flix.phase("JvmBackend") {
 
-    //
     // Put the AST root into implicit scope.
-    //
     implicit val r: Root = root
 
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
 
       //
-      // Compute the set of namespaces in the program.
+      // First, collect information and types needed to generate classes.
       //
+
+      // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
-      //
-      // Compute the set of types in the program.
-      //
+      // Compute the set of flattened types in the program.
+      // All inner types will also be present in the set.
       val types = JvmOps.typesOf(root)
 
-      val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
-      val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
-      val erasedFunctionTypes: Iterable[BackendObjType.Arrow] = JvmOps.getArrowsOf(types)
-      val erasedContinuations: Iterable[BackendObjType.Continuation] =
-        erasedFunctionTypes.map(f => BackendObjType.Continuation(f.result)).toSet
-      // TODO: all the type collection above should maybe have its own subphase
+      // Filter the program types into different sets
+      val erasedRefTypes = JvmOps.getErasedRefsOf(types)
+      val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
+      val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
+      val erasedContinuationTypes = erasedFunctionTypes.map(f => BackendObjType.Continuation(f.result))
 
       //
-      // Compute the set of anonymous classes (NewObjects) in the program.
+      // Second, generate classes.
       //
+
+      // Compute the set of anonymous classes (NewObjects) in the program.
       val anonClassDefs = root.anonClasses
 
-      //
       // Generate the main class.
-      //
       val mainClass = GenMainClass.gen()
 
-      //
       // Generate the namespace classes.
-      //
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
-      //
-      // Generate continuation classes for each function type in the program.
-      //
-      val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedContinuations)
-
-      //
-      // Generate a function abstract class for each function type in the program.
-      //
+      // Generate function classes.
+      val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedContinuationTypes)
       val functionInterfaces = GenFunctionAbstractClasses.gen(erasedFunctionTypes)
-
-      //
-      // Generate function classes for each function in the program.
-      //
       val functionClasses = GenFunctionClasses.gen(root.defs)
-
-      //
-      // Generate closure abstract classes for each function in the program.
-      //
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
-
-      //
-      // Generate closure classes for each closure in the program.
-      //
       val closureClasses = GenClosureClasses.gen(root.defs)
 
-      //
-      // Generate enum interfaces for each enum type in the program.
-      //
+      // Generate enum classes.
       val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
-
-      //
-      // Generate tag classes for each enum instantiation in the program.
-      //
       val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
 
-      //
       // Generate tuple classes for each tuple type in the program.
-      //
       val tupleClasses = GenTupleClasses.gen(types)
 
-      //
-      // Generate record interface.
-      //
+      // Generate record classes.
       val recordInterfaces = GenRecordInterface.gen()
-
-      //
-      // Generate empty record class.
-      //
       val recordEmptyClasses = GenRecordEmptyClass.gen()
-
-      //
-      // Generate extended record classes for each (different) RecordExtend type in the program
-      //
       val recordExtendClasses = GenRecordExtendClasses.gen(erasedExtendTypes)
 
-      //
       // Generate references classes.
-      //
       val refClasses = GenRefClasses.gen(erasedRefTypes)
 
-      //
       // Generate lazy classes.
-      //
       val lazyClasses = GenLazyClasses.gen(types)
 
-      //
       // Generate anonymous classes.
-      //
       val anonClasses = GenAnonymousClasses.gen(anonClassDefs)
 
-      //
       // Generate the Unit class.
-      //
       val unitClass = GenUnitClass.gen()
 
-      //
-      // Generate the FlixError class.
-      //
+      // Generate error classes.
       val flixErrorClass = GenFlixErrorClass.gen()
-
-      //
-      // Generate the ReifiedSourceLocation class.
-      //
       val rslClass = GenReifiedSourceLocationClass.gen()
-
-      //
-      // Generate the HoleError class.
-      //
       val holeErrorClass = GenHoleErrorClass.gen()
-
-      //
-      // Generate the MatchError class.
-      //
       val matchErrorClass = GenMatchErrorClass.gen()
 
-      //
       // Generate the Global class.
-      //
       val globalClass = GenGlobalClass.gen()
 
-      //
       // Generate the Region class.
-      //
       val regionClass = GenRegionClass.gen()
 
-      //
       // Generate the UncaughtExceptionHandler class.
-      //
       val uncaughtExceptionHandlerClass = GenUncaughtExceptionHandlerClass.gen()
 
-      //
       // Collect all the classes and interfaces together.
-      //
       List(
         mainClass,
         namespaceClasses,
@@ -212,9 +143,7 @@ object JvmBackend {
       ).reduce(_ ++ _)
     }
 
-    //
     // Write each class (and interface) to disk.
-    //
     // NB: In interactive and test mode we skip writing the files to disk.
     if (flix.options.output.nonEmpty) {
       flix.subphase("WriteClasses") {
@@ -225,25 +154,20 @@ object JvmBackend {
       }
     }
 
+    // Collect code size for performance tracking.
     val outputBytes = allClasses.map(_._2.bytecode.length).sum
 
     val loadClasses = flix.options.loadClassFiles
 
     if (!loadClasses) {
-      //
       // Do not load any classes.
-      //
       new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes)
     } else {
-      //
-      // Loads all the generated classes into the JVM and decorates the AST.
+      // Loads all the generated classes into the JVM and initializes the method field of defs.
       // Returns the main of `Main.class` if it exists.
-      //
       val main = Loader.load(allClasses)
 
-      //
       // Return the compilation result.
-      //
       new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes)
     }
   }
@@ -263,24 +187,23 @@ object JvmBackend {
   /**
     * Returns a function object for the given definition symbol `sym`.
     */
-  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], AnyRef] =
-    (args: Array[AnyRef]) => {
-      ///
-      /// Retrieve the definition and its type.
-      ///
-      val defn = root.defs(sym)
+  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], AnyRef] = {
+    // Retrieve the definition and its type.
+    val defn = root.defs.getOrElse(sym, throw InternalCompilerException(s"Linking error: '$sym' cannot be found in root defs", SourceLocation.Unknown))
+    // Check that the method is initialized.
+    if (defn.method == null) throw InternalCompilerException(s"Linking error: '$sym' has an uninitialized method.", SourceLocation.Unknown)
 
-      ///
-      /// Construct the arguments array.
-      ///
+    // Construct the reflected function.
+    (args: Array[AnyRef]) => {
+      // Construct the arguments array.
       val argsArray = if (args.isEmpty) Array(null) else args
-      if (argsArray.length != defn.method.getParameterCount) {
-        throw new RuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${argsArray.length} for method ${defn.method.getName}.")
+      val parameterCount = defn.method.getParameterCount
+      val argumentCount = argsArray.length
+      if (argumentCount != parameterCount) {
+        throw new RuntimeException(s"Expected $parameterCount arguments, but got: $argumentCount for method ${defn.method.getName}.")
       }
 
-      ///
-      /// Perform the method call using reflection.
-      ///
+      // Perform the method call using reflection.
       try {
         // Call the method passing the arguments.
         val result = defn.method.invoke(null, argsArray: _*)
@@ -291,5 +214,6 @@ object JvmBackend {
           throw e.getTargetException
       }
     }
+  }
 
 }
