@@ -736,17 +736,17 @@ object GenExpression {
         // We get the inner type of the array
         val elmType = tpe.asInstanceOf[MonoType.Array].tpe
         // We get the jvmType of elmType.
-        val jvmTpe = JvmOps.getJvmType(elmType)
+        val jvmType = JvmOps.getJvmType(elmType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
-        jvmTpe match {
+        jvmType match {
           case JvmType.Reference(name) => mv.visitTypeInsn(ANEWARRAY, name.toInternalName)
-          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmTpe))
+          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
         }
-        if (jvmTpe == JvmType.PrimLong || jvmTpe == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
+        if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
           // Duplicates the 'array reference' three places down the stack
@@ -760,7 +760,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(jvmTpe)
+        val arrayFillType = AsmOps.getArrayFillType(jvmType)
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
