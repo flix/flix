@@ -71,6 +71,7 @@ sealed trait BackendObjType {
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
     case BackendObjType.Result => JvmName(DevFlixRuntime, "Result")
     case BackendObjType.Value => JvmName(DevFlixRuntime, "Value")
+    case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
   }
 
   /**
@@ -1386,5 +1387,18 @@ object BackendObjType {
     def Float64Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "f64", BackendType.Float64)
 
     def ObjectField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "o", BackendObjType.JavaObject.toTpe)
+  }
+
+  case object Frame extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
+
+      cm.mkInterfaceMethod(ApplyMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor(Value.toTpe)(Result.toTpe))
   }
 }
