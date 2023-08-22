@@ -286,9 +286,17 @@ object Simplifier {
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-            case TypeConstructor.Array => MonoType.Array(args.head)
+            case TypeConstructor.Array => args.head match {
+              case t@MonoType.Array(_) => MonoType.ArrayMultiDim(t, 2)
+              case t@MonoType.ArrayMultiDim(_, dim) => MonoType.ArrayMultiDim(t, dim + 1)
+              case t => MonoType.ArrayMultiDim(t, 1)
+            }
 
-            case TypeConstructor.Vector => MonoType.Array(args.head)
+            case TypeConstructor.Vector => args.head match {
+              case t@MonoType.Array(_) => MonoType.ArrayMultiDim(t, 2)
+              case t@MonoType.ArrayMultiDim(_, dim) => MonoType.ArrayMultiDim(t, dim + 1)
+              case t => MonoType.ArrayMultiDim(t, 1)
+            }
 
             case TypeConstructor.Ref => MonoType.Ref(args.head)
 
