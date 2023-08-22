@@ -735,23 +735,16 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val elmType = tpe.asInstanceOf[MonoType.Array].tpe
-        // We get the erased elm type.
-        val jvmType = JvmOps.getErasedJvmType(elmType)
+        // We get the JVM Type of elmType.
+        val jvmType = JvmOps.getJvmType(elmType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
-        if (elmType == MonoType.Str) {
-          mv.visitTypeInsn(ANEWARRAY, "java/lang/String")
-        } else if (elmType.isInstanceOf[MonoType.Native]) {
-          val native = elmType.asInstanceOf[MonoType.Native]
-          val name = native.clazz.getName.replace('.', '/')
-          mv.visitTypeInsn(ANEWARRAY, name)
-        } else if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-          mv.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-        } else { // Happens if the inner type is a primitive type
-          mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+        jvmType match {
+          case JvmType.Reference(name) => mv.visitTypeInsn(ANEWARRAY, name.toInternalName)
+          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
         }
         if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
           // Duplicates the 'array reference' three places down the stack

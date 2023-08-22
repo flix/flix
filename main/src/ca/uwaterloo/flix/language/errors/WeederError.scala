@@ -487,7 +487,7 @@ object WeederError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Multiple occurrences of '${red(name)}'  in pattern.
+         |>> Multiple occurrences of '${red(name)}' in pattern.
          |
          |${code(loc1, "the first occurrence was here.")}
          |
