@@ -102,7 +102,7 @@ object BytecodeInstructions {
   }
 
   // TODO: do this for methods
-  class Variable(tpe: BackendType, index: Int) {
+  class Variable(val tpe: BackendType, index: Int) {
     def load(): InstructionSet = xLoad(tpe, index)
 
     def store(): InstructionSet = xStore(tpe, index)
