@@ -74,6 +74,8 @@ sealed trait BackendObjType {
     case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
     case BackendObjType.Thunk => JvmName(DevFlixRuntime, "Thunk")
     case BackendObjType.Frames => JvmName(DevFlixRuntime, "Frames")
+    case BackendObjType.FramesCons => JvmName(DevFlixRuntime, "FramesCons")
+    case BackendObjType.FramesNil => JvmName(DevFlixRuntime, "FramesNil")
   }
 
   /**
@@ -1428,5 +1430,60 @@ object BackendObjType {
     }
 
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
+  }
+
+  case object FramesCons extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
+
+      cm.mkField(HeadField)
+      cm.mkField(TailField)
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(ReverseOntoMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def HeadField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "head", Frame.toTpe)
+
+    def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "tail", Frames.toTpe)
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
+    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
+      withName(1, Frames.toTpe)(rest =>
+        thisLoad() ~ GETFIELD(TailField) ~
+        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
+        DUP() ~ thisLoad() ~ GETFIELD(HeadField) ~ PUTFIELD(HeadField) ~
+        DUP() ~ rest.load() ~ PUTFIELD(TailField) ~
+        INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+        xReturn(Frames.toTpe)
+      )
+    ))
+  }
+
+  case object FramesNil extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
+
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(ReverseOntoMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
+    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
+      withName(1, Frames.toTpe)(rest =>
+        rest.load() ~ xReturn(rest.tpe)
+      )
+    ))
   }
 }

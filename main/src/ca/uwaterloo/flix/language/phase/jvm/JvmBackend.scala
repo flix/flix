@@ -120,6 +120,8 @@ object JvmBackend {
       val frameInterface = Map(BackendObjType.Frame.jvmName -> JvmClass(BackendObjType.Frame.jvmName, BackendObjType.Frame.genByteCode()))
       val thunkInterface = Map(BackendObjType.Thunk.jvmName -> JvmClass(BackendObjType.Thunk.jvmName, BackendObjType.Thunk.genByteCode()))
       val framesInterface = Map(BackendObjType.Frames.jvmName -> JvmClass(BackendObjType.Frames.jvmName, BackendObjType.Frames.genByteCode()))
+      val framesConsClass = Map(BackendObjType.FramesCons.jvmName -> JvmClass(BackendObjType.FramesCons.jvmName, BackendObjType.FramesCons.genByteCode()))
+      val framesNilClass = Map(BackendObjType.FramesNil.jvmName -> JvmClass(BackendObjType.FramesNil.jvmName, BackendObjType.FramesNil.genByteCode()))
 
       // Collect all the classes and interfaces together.
       List(
@@ -151,7 +153,9 @@ object JvmBackend {
         valueClass,
         frameInterface,
         thunkInterface,
-        framesInterface
+        framesInterface,
+        framesConsClass,
+        framesNilClass
       ).reduce(_ ++ _)
     }
 
