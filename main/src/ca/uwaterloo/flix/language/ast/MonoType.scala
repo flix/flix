@@ -62,6 +62,8 @@ object MonoType {
 
   case class Array(tpe: MonoType) extends MonoType
 
+  case class ArrayMultiDim(tpe: MonoType, dim: Int) extends MonoType
+
   case class Lazy(tpe: MonoType) extends MonoType
 
   case class Ref(tpe: MonoType) extends MonoType
