@@ -1424,10 +1424,16 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
 
+      cm.mkInterfaceMethod(PushMethod)
+      cm.mkInterfaceMethod(ReverseMethod)
       cm.mkInterfaceMethod(ReverseOntoMethod)
 
       cm.closeClassMaker()
     }
+
+    def PushMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "push", mkDescriptor(Frame.toTpe)(Frames.toTpe))
+
+    def ReverseMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverse", mkDescriptor()(Frames.toTpe))
 
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
   }
@@ -1440,6 +1446,8 @@ object BackendObjType {
       cm.mkField(HeadField)
       cm.mkField(TailField)
       cm.mkConstructor(Constructor)
+      cm.mkMethod(PushMethod)
+      cm.mkMethod(ReverseMethod)
       cm.mkMethod(ReverseOntoMethod)
 
       cm.closeClassMaker()
@@ -1451,6 +1459,22 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
+    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(
+      withName(1, Frame.toTpe)(frame =>
+        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
+        DUP() ~ frame.load() ~ PUTFIELD(FramesCons.HeadField) ~
+        DUP() ~ thisLoad() ~ PUTFIELD(FramesCons.TailField) ~
+        xReturn(FramesCons.toTpe)
+      )
+    ))
+
+    def ReverseMethod: InstanceMethod = Frames.ReverseMethod.implementation(this.jvmName, IsFinal, Some(
+      thisLoad() ~
+      NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~
+      INVOKEVIRTUAL(ReverseOntoMethod) ~
+      xReturn(Frames.toTpe)
     ))
 
     def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
@@ -1471,6 +1495,8 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
 
       cm.mkConstructor(Constructor)
+      cm.mkMethod(PushMethod)
+      cm.mkMethod(ReverseMethod)
       cm.mkMethod(ReverseOntoMethod)
 
       cm.closeClassMaker()
@@ -1478,6 +1504,22 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
+    ))
+
+    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(
+      withName(1, Frame.toTpe)(frame =>
+        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
+        DUP() ~ frame.load() ~ PUTFIELD(FramesCons.HeadField) ~
+        DUP() ~ thisLoad() ~ PUTFIELD(FramesCons.TailField) ~
+        xReturn(FramesCons.toTpe)
+      )
+    ))
+
+    def ReverseMethod: InstanceMethod = Frames.ReverseMethod.implementation(this.jvmName, IsFinal, Some(
+      thisLoad() ~
+      NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~
+      INVOKEVIRTUAL(ReverseOntoMethod) ~
+      xReturn(Frames.toTpe)
     ))
 
     def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
