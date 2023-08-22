@@ -710,7 +710,7 @@ object GenExpression {
         // We push the 'length' of the array on top of stack
         compileInt(exps.length)
         // We get the inner type of the array
-        val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+        val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.ArrayMultiDim].tpe)
         // Instantiating a new array of type jvmType
         jvmType match {
           case ref: JvmType.Reference => // Happens if the inner type is an object type
@@ -734,7 +734,7 @@ object GenExpression {
       case AtomicOp.ArrayNew =>
         val List(exp1, exp2) = exps
         // We get the inner type of the array
-        val elmType = tpe.asInstanceOf[MonoType.Array].tpe
+        val elmType = tpe.asInstanceOf[MonoType.ArrayMultiDim].tpe
         // We get the JVM Type of elmType.
         val jvmType = JvmOps.getJvmType(elmType)
         // Evaluating the value of the 'default element'
@@ -810,7 +810,7 @@ object GenExpression {
         addSourceLine(mv, loc)
 
         // We get the inner type of the array
-        val jvmType = JvmOps.getErasedJvmType(exp.tpe.asInstanceOf[MonoType.Array].tpe)
+        val jvmType = JvmOps.getErasedJvmType(exp.tpe.asInstanceOf[MonoType.ArrayMultiDim].tpe)
         // Evaluating the 'base'
         compileExpr(exp)
         // Cast the object to array
@@ -1612,12 +1612,12 @@ object GenExpression {
       } else {
         arg.tpe match {
           // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-          case MonoType.Array(MonoType.Float32) => mv.visitTypeInsn(CHECKCAST, "[F")
-          case MonoType.Array(MonoType.Float64) => mv.visitTypeInsn(CHECKCAST, "[D")
-          case MonoType.Array(MonoType.Int8) => mv.visitTypeInsn(CHECKCAST, "[B")
-          case MonoType.Array(MonoType.Int16) => mv.visitTypeInsn(CHECKCAST, "[S")
-          case MonoType.Array(MonoType.Int32) => mv.visitTypeInsn(CHECKCAST, "[I")
-          case MonoType.Array(MonoType.Int64) => mv.visitTypeInsn(CHECKCAST, "[J")
+          case MonoType.ArrayMultiDim(MonoType.Float32, _) => mv.visitTypeInsn(CHECKCAST, "[F")
+          case MonoType.ArrayMultiDim(MonoType.Float64, _) => mv.visitTypeInsn(CHECKCAST, "[D")
+          case MonoType.ArrayMultiDim(MonoType.Int8, _) => mv.visitTypeInsn(CHECKCAST, "[B")
+          case MonoType.ArrayMultiDim(MonoType.Int16, _) => mv.visitTypeInsn(CHECKCAST, "[S")
+          case MonoType.ArrayMultiDim(MonoType.Int32, _) => mv.visitTypeInsn(CHECKCAST, "[I")
+          case MonoType.ArrayMultiDim(MonoType.Int64, _) => mv.visitTypeInsn(CHECKCAST, "[J")
           case _ => // nop
         }
       }

@@ -39,7 +39,7 @@ object MonoTypePrinter {
     case MonoType.Str => Type.Str
     case MonoType.Regex => Type.Regex
     case MonoType.Region => Type.Region
-    case MonoType.Array(tpe) => Type.Array(print(tpe))
+    case MonoType.ArrayMultiDim(tpe, _) => Type.Array(print(tpe))
     case MonoType.Lazy(tpe) => Type.Lazy(print(tpe))
     case MonoType.Ref(tpe) => Type.Ref(print(tpe))
     case MonoType.Tuple(elms) => Type.Tuple(elms.map(print))

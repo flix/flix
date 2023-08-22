@@ -97,7 +97,7 @@ object GenAnonymousClasses {
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
   def getDescriptorHacked(tpe: MonoType)(implicit root: Root, flix: Flix): String = tpe match {
-    case MonoType.Array(t) => s"[${JvmOps.getJvmType(t).toDescriptor}"
+    case MonoType.ArrayMultiDim(t, _) => s"[${JvmOps.getJvmType(t).toDescriptor}"
     case MonoType.Unit => JvmType.Void.toDescriptor
     case _ => JvmOps.getJvmType(tpe).toDescriptor
   }
@@ -153,13 +153,13 @@ object GenAnonymousClasses {
         backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
 
       tpe match {
-        case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
+        case MonoType.ArrayMultiDim(_, _) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
         case _ => AsmOps.castIfNotPrim(methodVisitor, JvmOps.getJvmType(tpe))
       }
 
       val returnInstruction = tpe match {
         case MonoType.Unit => RETURN
-        case MonoType.Array(_) => ARETURN
+        case MonoType.ArrayMultiDim(_, _) => ARETURN
         case _ => AsmOps.getReturnInstruction(JvmOps.getJvmType(tpe))
       }
       methodVisitor.visitInsn(returnInstruction)

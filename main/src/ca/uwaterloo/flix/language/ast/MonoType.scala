@@ -60,8 +60,6 @@ object MonoType {
   /// Compound Types.
   ///
 
-  case class Array(tpe: MonoType) extends MonoType
-
   case class ArrayMultiDim(tpe: MonoType, dim: Int) extends MonoType
 
   case class Lazy(tpe: MonoType) extends MonoType

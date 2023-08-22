@@ -61,7 +61,7 @@ object JvmOps {
     case MonoType.Region => JvmType.Object
 
     // Compound
-    case MonoType.Array(_) => JvmType.Object
+    case MonoType.ArrayMultiDim(_, _) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
@@ -209,8 +209,8 @@ object JvmOps {
     * NB: The given type `tpe` must be an enum type.
     */
   def getEnumInterfaceType(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
-      // The enum resides in its namespace package.
-      JvmType.Reference(JvmName(sym.namespace, "I" + sym.name + Flix.Delimiter))
+    // The enum resides in its namespace package.
+    JvmType.Reference(JvmName(sym.namespace, "I" + sym.name + Flix.Delimiter))
   }
 
   /**
@@ -638,7 +638,7 @@ object JvmOps {
       case MonoType.Regex => Set(tpe)
       case MonoType.Region => Set(tpe)
 
-      case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.ArrayMultiDim(elm, _) => nestedTypesOf(elm) + tpe
       case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
