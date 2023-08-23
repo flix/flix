@@ -739,14 +739,25 @@ object GenExpression {
         val elmType = tpe.asInstanceOf[MonoType.Array].tpe
         // We get the JVM Type of elmType.
         val jvmType = JvmOps.getJvmType(elmType)
+        val backendType = BackendType.toBackendType(elmType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
+        // TODO: Figure out if we need up to expn or how to encode component length of multidimensional arrays.
+        // If we use `Array.new(Static, 10)` then all inner arrays should be 0 length?
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
-        jvmType match {
-          case JvmType.Reference(name) => mv.visitTypeInsn(ANEWARRAY, name.toInternalName)
-          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+        @tailrec
+        def helper(t: BackendType, acc: String, dims: Int): Unit = t match {
+          case BackendType.Array(t1) => helper(t1, acc + "[", dims + 1)
+          case BackendType.Reference(ref) => mv.visitMultiANewArrayInsn(acc + ref.toDescriptor, dims)
+          case _ => mv.visitMultiANewArrayInsn(acc + AsmOps.getArrayTypeCode(t).head, dims)
+        }
+
+        backendType match {
+          case BackendType.Array(_) => helper(backendType, "", 1)
+          case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
+          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(backendType).head)
         }
         if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
           // Duplicates the 'array reference' three places down the stack
