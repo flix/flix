@@ -151,7 +151,7 @@ object BackendType {
     case MonoType.Array(t) => Array(toBackendType(t))
     case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
     case MonoType.BigInt => BackendObjType.BigInt.toTpe
-    case MonoType.Str => BackendObjType.String.toTpe
+    case MonoType.String => BackendObjType.String.toTpe
     case MonoType.Regex => BackendObjType.Regex.toTpe
     case MonoType.Unit => BackendObjType.Unit.toTpe
     case MonoType.Native(clazz) =>
