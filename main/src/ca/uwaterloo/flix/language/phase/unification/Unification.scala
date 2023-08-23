@@ -141,7 +141,10 @@ object Unification {
     case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
       unifyTypes(t11, t21, renv, lenv) match {
         case Result.Ok((subst1, econstrs1)) => unifyTypes(subst1(t12), subst1(t22), renv, lenv) match {
-          case Result.Ok((subst2, econstrs2)) => Result.Ok(subst2 @@ subst1, econstrs1 ++ econstrs2) // TODO ASSOC-TYPES do we need to subst on econstrs?
+          case Result.Ok((subst2, econstrs2)) =>
+            val subst = subst2 @@ subst1
+            val econstrs = (econstrs1 ++ econstrs2).map(subst.apply)
+            Result.Ok(subst, econstrs) // TODO ASSOC-TYPES do we need to subst on econstrs?
           case Result.Err(e) => Result.Err(e)
         }
         case Result.Err(e) => Result.Err(e)
