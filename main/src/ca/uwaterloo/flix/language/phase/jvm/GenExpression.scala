@@ -1610,16 +1610,17 @@ object GenExpression {
     }
 
     backendType match {
-      case BackendType.Array(tpe) =>
-        // Generate a multidimensional array with at least 2 dimensions
-        val (baseType, dims) = base(tpe, 2)
-        mv.visitMultiANewArrayInsn(???, ???)
-
-      case BackendType.Reference(ref) =>
-        // Non-array complex type
-        mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
-      case t =>
-        mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(t).head)
+      case BackendType.Array(innerType) =>
+        val (tpe, dims) = base(innerType, 1)
+        tpe match {
+          case t if dims > 1 =>
+            mv.visitMultiANewArrayInsn(???, ???)
+          case BackendType.Reference(ref) =>
+            mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
+          case t =>
+            mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(t).head)
+        }
+      case _ => ???
     }
   }
 
