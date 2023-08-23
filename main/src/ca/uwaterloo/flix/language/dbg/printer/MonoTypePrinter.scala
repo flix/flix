@@ -36,7 +36,7 @@ object MonoTypePrinter {
     case MonoType.Int32 => Type.Int32
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
-    case MonoType.Str => Type.Str
+    case MonoType.String => Type.Str
     case MonoType.Regex => Type.Regex
     case MonoType.Region => Type.Region
     case MonoType.Array(tpe) => Type.Array(print(tpe))
