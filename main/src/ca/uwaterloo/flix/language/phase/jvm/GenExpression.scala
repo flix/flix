@@ -1590,8 +1590,8 @@ object GenExpression {
     case _ => mv.visitLdcInsn(i)
   }
 
-  /*
-   * Adding the source of the line for debugging
+  /**
+   * Adds the source of the line for debugging
    */
   private def addSourceLine(visitor: MethodVisitor, loc: SourceLocation): Unit = {
     val label = new Label()
