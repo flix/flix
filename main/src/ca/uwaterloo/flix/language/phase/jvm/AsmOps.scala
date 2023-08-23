@@ -135,6 +135,18 @@ object AsmOps {
     case JvmType.Reference(_) => throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe", SourceLocation.Unknown)
   }
 
+  def getArrayTypeCode(tpe: BackendType): Option[Int] = tpe match {
+    case BackendType.Bool => Some(T_BOOLEAN)
+    case BackendType.Char => Some(T_CHAR)
+    case BackendType.Int8 => Some(T_BYTE)
+    case BackendType.Int16 => Some(T_SHORT)
+    case BackendType.Int32 => Some(T_INT)
+    case BackendType.Int64 => Some(T_LONG)
+    case BackendType.Float32 => Some(T_FLOAT)
+    case BackendType.Float64 => Some(T_DOUBLE)
+    case BackendType.Array(_) | BackendType.Reference(_) => None
+  }
+
   /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */

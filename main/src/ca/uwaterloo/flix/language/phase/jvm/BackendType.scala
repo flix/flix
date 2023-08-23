@@ -59,6 +59,7 @@ sealed trait BackendType extends VoidableType {
   /**
     * Returns the erased type, either itself if `this` is primitive or `java.lang.Object`
     * if `this` is an array or a reference.
+    *
     * @return
     */
   def toErased: BackendType = this match {
@@ -128,10 +129,38 @@ object BackendType {
     case MonoType.Int16 => Int16
     case MonoType.Int32 => Int32
     case MonoType.Int64 => Int64
-    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.Str | MonoType.Regex |
+    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
          MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
+         MonoType.Region => BackendObjType.JavaObject.toTpe
+  }
+
+  /**
+    * Computes the `BackendType` based on the given `MonoType`.
+    */
+  def toBackendType(tpe: MonoType): BackendType = tpe match {
+    case MonoType.Bool => Bool
+    case MonoType.Char => Char
+    case MonoType.Float32 => Float32
+    case MonoType.Float64 => Float64
+    case MonoType.Int8 => Int8
+    case MonoType.Int16 => Int16
+    case MonoType.Int32 => Int32
+    case MonoType.Int64 => Int64
+    case MonoType.Array(t) => Array(toBackendType(t))
+    case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
+    case MonoType.BigInt => BackendObjType.BigInt.toTpe
+    case MonoType.Str => BackendObjType.String.toTpe
+    case MonoType.Regex => BackendObjType.Regex.toTpe
+    case MonoType.Unit => BackendObjType.Unit.toTpe
+    case MonoType.Native(clazz) =>
+      // Maybe use clazz.getPackage and clazz.getSimpleName
+      val fqn = clazz.getName.replace('.', '/')
+      BackendObjType.Native(JvmName.mk(fqn)).toTpe
+    case MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
+         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) |
          MonoType.Region => BackendObjType.JavaObject.toTpe
   }
 }
