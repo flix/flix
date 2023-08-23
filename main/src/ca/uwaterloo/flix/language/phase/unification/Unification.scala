@@ -63,6 +63,8 @@ object Unification {
         // don't do the substitution if the var is in the assoc type
         if (assoc.typeVars contains x) {
           Result.Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(x, assoc))))
+        } else if (renv.isRigid(x.sym)) {
+          Result.Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(x, assoc))))
         } else {
           Result.Ok((Substitution.singleton(x.sym, assoc), Nil))
         }
