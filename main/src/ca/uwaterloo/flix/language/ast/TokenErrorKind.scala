@@ -15,4 +15,23 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-case class Token(kind: TokenKind, text: String, line: Int, col: Int)
+sealed trait TokenErrorKind
+
+object TokenErrorKind {
+
+  case object BlockCommentTooDeep extends TokenErrorKind
+
+  case object DoubleDottedNumber extends TokenErrorKind
+
+  case object UnexpectedChar extends TokenErrorKind
+
+  case object UnterminatedBlockComment extends TokenErrorKind
+
+  case object UnterminatedBuiltIn extends TokenErrorKind
+
+  case object UnterminatedChar extends TokenErrorKind
+
+  case object UnterminatedInfixFunction extends TokenErrorKind
+
+  case object UnterminatedString extends TokenErrorKind
+}
