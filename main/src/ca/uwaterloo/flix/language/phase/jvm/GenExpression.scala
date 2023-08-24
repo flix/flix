@@ -752,7 +752,7 @@ object GenExpression {
         def helper(t: BackendType, acc: String): Unit = t match {
           case BackendType.Array(t1) => helper(t1, acc + "[L")
           case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, acc + ref.jvmName.toInternalName + ";")
-          case _ => mv.visitTypeInsn(ANEWARRAY, acc + AsmOps.getArrayTypeCode(t).head.toString + ";")
+          case _ => mv.visitTypeInsn(ANEWARRAY, acc + AsmOps.getArrayTypeCode(t).head.toString)
         }
 
         backendType match {
