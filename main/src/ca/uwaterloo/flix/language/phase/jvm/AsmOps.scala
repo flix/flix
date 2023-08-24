@@ -137,22 +137,6 @@ object AsmOps {
     case BackendType.Array(_) => AASTORE
   }
 
-  /**
-    * Returns the array type code for the value of the type specified by `tpe`
-    */
-  def getArrayTypeCode(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => T_BOOLEAN
-    case JvmType.PrimChar => T_CHAR
-    case JvmType.PrimFloat => T_FLOAT
-    case JvmType.PrimDouble => T_DOUBLE
-    case JvmType.PrimByte => T_BYTE
-    case JvmType.PrimShort => T_SHORT
-    case JvmType.PrimInt => T_INT
-    case JvmType.PrimLong => T_LONG
-    case JvmType.Reference(_) => throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe", SourceLocation.Unknown)
-  }
-
   def getArrayTypeCode(tpe: BackendType): Option[Int] = tpe match {
     case BackendType.Bool => Some(T_BOOLEAN)
     case BackendType.Char => Some(T_CHAR)
