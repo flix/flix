@@ -735,8 +735,6 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val elmType = tpe.asInstanceOf[MonoType.Array].tpe
-        // We get the JVM Type of elmType.
-        val jvmType = JvmOps.getJvmType(elmType)
         val backendType = BackendType.toBackendType(elmType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
@@ -748,7 +746,7 @@ object GenExpression {
           case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(backendType))
           case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(backendType).head)
         }
-        if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
+        if (backendType == BackendType.Int64 || backendType == BackendType.Float64) {
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
           // Duplicates the 'array reference' three places down the stack
@@ -762,7 +760,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(jvmType)
+        val arrayFillType = AsmOps.getArrayFillType(backendType)
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 

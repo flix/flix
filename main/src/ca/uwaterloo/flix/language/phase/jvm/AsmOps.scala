@@ -188,6 +188,23 @@ object AsmOps {
   /**
     * Returns the Array fill type for the value of the type specified by `tpe`
     */
+  def getArrayFillType(tpe: BackendType): String = tpe match {
+    case BackendType.Bool => "([ZZ)V"
+    case BackendType.Char => "([CC)V"
+    case BackendType.Int8 => "([BB)V"
+    case BackendType.Int16 => "([SS)V"
+    case BackendType.Int32 => "([II)V"
+    case BackendType.Int64 => "([JJ)V"
+    case BackendType.Float32 => "([FF)V"
+    case BackendType.Float64 => "([DD)V"
+    case BackendType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
+    case BackendType.Array(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
+  }
+
+
+  /**
+    * Returns the Array fill type for the value of the type specified by `tpe`
+    */
   def getArrayFillType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => "([ZZ)V"
