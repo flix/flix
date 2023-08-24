@@ -70,7 +70,7 @@ object Verifier {
       case Constant.Int32(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
       case Constant.Int64(_) => check(expected = MonoType.Int64)(actual = tpe, loc)
       case Constant.BigInt(_) => check(expected = MonoType.BigInt)(actual = tpe, loc)
-      case Constant.Str(_) => check(expected = MonoType.Str)(actual = tpe, loc)
+      case Constant.Str(_) => check(expected = MonoType.String)(actual = tpe, loc)
       case Constant.Regex(_) => check(expected = MonoType.Regex)(actual = tpe, loc)
     }
 
@@ -214,7 +214,7 @@ object Verifier {
             case SemanticOp.Int64Op.Shl => (MonoType.Int64, MonoType.Int32, MonoType.Int64)
             case SemanticOp.Int64Op.Shr => (MonoType.Int64, MonoType.Int32, MonoType.Int64)
 
-            case SemanticOp.StringOp.Concat => (MonoType.Str, MonoType.Str, MonoType.Str)
+            case SemanticOp.StringOp.Concat => (MonoType.String, MonoType.String, MonoType.String)
 
             case _ => throw InternalCompilerException(s"Invalid binary operator: '$sop'", loc)
           }

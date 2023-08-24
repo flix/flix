@@ -128,7 +128,7 @@ object BackendType {
     case MonoType.Int16 => Int16
     case MonoType.Int32 => Int32
     case MonoType.Int64 => Int64
-    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.Str | MonoType.Regex |
+    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
          MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
