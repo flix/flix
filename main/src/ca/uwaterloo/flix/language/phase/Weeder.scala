@@ -2430,11 +2430,22 @@ object Weeder {
         val loc = mkSL(sp1, sp2)
         val fsVal = traverse(fields) {
           case ParsedAst.Pattern.RecordFieldPattern(sp11, field, pat, sp22) =>
-            mapN(visitName(field), traverseOpt(pat)(visit)) {
+            flatMapN(visitName(field), traverseOpt(pat)(visit)) {
+              case (_, p) if p.isEmpty =>
+                // Check that we have not seen the field symbol in a pattern before.
+                seen.get(field.name) match {
+                  case Some(dup) => WeederError.NonLinearPattern(field.name, dup.loc, field.loc).toFailure
+                  case None =>
+                    // It was unseen until now, so we add it to the seen variables.
+                    seen += field.name -> field
+                    val f = Name.mkField(field)
+                    val patLoc = mkSL(sp11, sp22)
+                    WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc).toSuccess
+                }
               case (_, p) =>
                 val f = Name.mkField(field)
                 val patLoc = mkSL(sp11, sp22)
-                WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc)
+                WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc).toSuccess
             }
         }
         val rsVal = traverseOpt(rest)(visit)

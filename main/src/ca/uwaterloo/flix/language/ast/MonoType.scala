@@ -50,7 +50,7 @@ object MonoType {
 
   case object BigInt extends MonoType
 
-  case object Str extends MonoType
+  case object String extends MonoType
 
   case object Regex extends MonoType
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.api
-
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 40, revision = 0)
-}
-
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+///
+/// A type class for types which are resources that can be accessed as bytes.
+///
+class Reader[t] {
+    ///
+    /// Reads `k` bytes from the underlying resource and writes them into `b`.
+    ///
+    /// Returns `Ok(k)` to signify that `k` bytes was successfully read and written to `b`.
+    ///
+    /// Guarantees that `0 <= k < length(b)`.
+    ///
+    /// Returns `Err(e)` if some underlying I/O error occurs.
+    ///
+    pub def read(b: Array[Int8, r], r: t): Result[IOError, Int32] \ {r, IO}
 }

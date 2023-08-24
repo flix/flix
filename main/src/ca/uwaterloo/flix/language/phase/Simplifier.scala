@@ -266,7 +266,7 @@ object Simplifier {
 
             case TypeConstructor.BigInt => MonoType.BigInt
 
-            case TypeConstructor.Str => MonoType.Str
+            case TypeConstructor.Str => MonoType.String
 
             case TypeConstructor.Regex => MonoType.Regex
 
@@ -396,7 +396,7 @@ object Simplifier {
           // Unit is always equal to itself.
           return SimplifiedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
 
-        case (MonoType.Str, _) =>
+        case (MonoType.String, _) =>
           val strClass = Class.forName("java.lang.String")
           val objClass = Class.forName("java.lang.Object")
           val method = strClass.getMethod("equals", objClass)

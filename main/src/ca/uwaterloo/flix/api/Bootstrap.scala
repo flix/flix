@@ -617,6 +617,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def run(o: Options, args: Array[String]): Validation[Unit, BootstrapError] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    flix.setOptions(o)
     build().map(_.getMain).map {
       case Some(main) => main(args)
       case None => ()
@@ -628,6 +629,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def test(o: Options): Validation[Unit, BootstrapError] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    flix.setOptions(o)
     flatMapN(build()) {
       compilationResult =>
         Tester.run(Nil, compilationResult) match {
