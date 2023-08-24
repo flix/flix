@@ -28,7 +28,7 @@ object LexerError {
   /**
    * An error raised when an unexpected character, such as €, is encountered.
    *
-   * @param s   the problematic character. This is a string to handle escaped characters.
+   * @param s   the problematic character.
    * @param loc the location of char.
    */
   case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError {
@@ -115,7 +115,7 @@ object LexerError {
    *
    * @param loc The location of the opening "$".
    */
-  case class UnterminatedBuiltin(loc: SourceLocation) extends LexerError {
+  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated built-in."
 
     override def message(formatter: Formatter): String = {
@@ -134,7 +134,7 @@ object LexerError {
   /**
    * An error raised when an unterminated block comment is encountered.
    *
-   * @param loc The location of the opening "\*".
+   * @param loc The location of the opening "/ *".
    */
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated block-comment."

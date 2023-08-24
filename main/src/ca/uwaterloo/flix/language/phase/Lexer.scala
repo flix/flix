@@ -49,14 +49,9 @@ object Lexer {
   private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
     // TODO: LEXER
-
-    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
-    if (hasErrors) {
-      // TODO: Fix type error in return type
-      s.tokens.flatMap(tokenErrToCompilationMessage).toArray.toFailure
-    } else {
-      s.tokens.toArray.toSuccess
-    }
+    Validation.SoftFailure(s.tokens.toArray, LazyList.from(s.tokens).collect {
+      case Token(TokenKind.Err(e), t, l, c) => tokenErrToCompilationMessage(e, t, l, c)
+    })
   }
 
   private def advance()(implicit s: State): Char = ???
@@ -75,52 +70,23 @@ object Lexer {
    * each holding a kind of the simple type `ErrKind`.
    * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
    */
-  private def tokenErrToCompilationMessage(t: Token)(implicit s: State): Option[CompilationMessage] = {
-    t.kind match {
-      case TokenKind.Err(e) => e match {
-        case TokenErrorKind.UnexpectedChar => Some(
-          LexerError.UnexpectedChar(
-            t.text,
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + t.text.length)
-          )
-        )
-        case TokenErrorKind.DoubleDottedNumber => Some(
-          LexerError.DoubleDottedNumber(
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + t.text.length)
-          )
-        )
-        case TokenErrorKind.UnterminatedString => Some(
-          LexerError.UnterminatedString(
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
-          )
-        )
-        case TokenErrorKind.UnterminatedChar => Some(
-          LexerError.UnterminatedChar(
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
-          )
-        )
-        case TokenErrorKind.UnterminatedInfixFunction => Some(
-          LexerError.UnterminatedInfixFunction(
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
-          )
-        )
-        case TokenErrorKind.UnterminatedBuiltIn => Some(
-          LexerError.UnterminatedBuiltin(
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
-          )
-        )
-        case TokenErrorKind.UnterminatedBlockComment => Some(
-          LexerError.UnterminatedBlockComment(
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 1)
-          )
-        )
-        case TokenErrorKind.BlockCommentTooDeep => Some(
-          LexerError.BlockCommentTooDeep(
-            SourceLocation(None, s.src, SourceKind.Real, t.line, t.col, t.line, t.col + 2)
-          )
-        )
-      }
-      case _ => None
+  private def tokenErrToCompilationMessage(e: TokenErrorKind, t: String, l: Int, c: Int)(implicit s: State): CompilationMessage = {
+    val o = e match {
+      case TokenErrorKind.UnexpectedChar | TokenErrorKind.DoubleDottedNumber => t.length
+      case TokenErrorKind.BlockCommentTooDeep => 2
+      case _ => 1
+    }
+
+    val loc = SourceLocation(None, s.src, SourceKind.Real, l, c, l, c + o)
+    e match {
+      case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
+      case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
+      case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
+      case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)
+      case TokenErrorKind.UnterminatedInfixFunction => LexerError.UnterminatedInfixFunction(loc)
+      case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
+      case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
+      case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
     }
   }
 
