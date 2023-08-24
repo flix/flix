@@ -122,6 +122,22 @@ object AsmOps {
   }
 
   /**
+    * Returns the array store instruction for arrays of the given JvmType tpe
+    */
+  def getArrayStoreInstruction(tpe: BackendType): Int = tpe match {
+    case BackendType.Bool => BASTORE
+    case BackendType.Char => CASTORE
+    case BackendType.Int8 => BASTORE
+    case BackendType.Int16 => SASTORE
+    case BackendType.Int32 => IASTORE
+    case BackendType.Int64 => LASTORE
+    case BackendType.Float32 => FASTORE
+    case BackendType.Float64 => DASTORE
+    case BackendType.Reference(_) => AASTORE
+    case BackendType.Array(_) => AASTORE
+  }
+
+  /**
     * Returns the array type code for the value of the type specified by `tpe`
     */
   def getArrayTypeCode(tpe: JvmType): Int = tpe match {
