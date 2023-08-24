@@ -748,16 +748,8 @@ object GenExpression {
         compileExpr(exp2)
 
         // Instantiating a new array of type jvmType
-        @tailrec
-        def helper(t: BackendType, acc: String): Unit = t match {
-          case BackendType.Array(t1) => helper(t1, acc + "[L")
-          case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, acc + ref.jvmName.toInternalName + ";")
-          case _ => mv.visitTypeInsn(ANEWARRAY, acc + AsmOps.getArrayTypeCode(t).head.toString)
-        }
-
         backendType match {
-          case BackendType.Array(_) => helper(backendType, "")
-          case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
+          case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(backendType))
           case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(backendType).head)
         }
         if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64

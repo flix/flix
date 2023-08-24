@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 
+import scala.annotation.tailrec
+
 object AsmOps {
 
   /**
@@ -145,6 +147,25 @@ object AsmOps {
     case BackendType.Float32 => Some(T_FLOAT)
     case BackendType.Float64 => Some(T_DOUBLE)
     case BackendType.Array(_) | BackendType.Reference(_) => None
+  }
+
+  def getArrayType(tpe: BackendType): String = {
+    @tailrec
+    def visit(tt: BackendType, acc: String): String = tt match {
+      case BackendType.Bool => acc + "Z"
+      case BackendType.Char => acc + "C"
+      case BackendType.Int8 => acc + "B"
+      case BackendType.Int16 => acc + "S"
+      case BackendType.Int32 => acc + "I"
+      case BackendType.Int64 => acc + "J"
+      case BackendType.Float32 => acc + "F"
+      case BackendType.Float64 => acc + "D"
+      case BackendType.Reference(ref) if acc.isEmpty => ref.jvmName.toInternalName
+      case BackendType.Reference(ref) => acc + "L" + ref.jvmName.toInternalName + ";"
+      case BackendType.Array(t) => visit(t, acc + "[")
+    }
+
+    visit(tpe, "")
   }
 
   /**
@@ -444,9 +465,9 @@ object AsmOps {
     * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
     * then we just return the field
     *
-    * @param method     MethodVisitor used to emit the code to a method
-    * @param fieldType  type of the field to be boxed
-    * @param classType  class that the field is defined on
+    * @param method    MethodVisitor used to emit the code to a method
+    * @param fieldType type of the field to be boxed
+    * @param classType class that the field is defined on
     * @param fieldName name of the field to be boxed
     */
   def boxField(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, fieldName: String): Unit = {
