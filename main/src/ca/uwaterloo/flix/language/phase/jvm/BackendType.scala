@@ -158,14 +158,9 @@ object BackendType {
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
       BackendObjType.Native(JvmName.mk(fqn)).toTpe
-    case MonoType.Unit => BackendObjType.Unit.toTpe
-    case MonoType.Lazy(t) => BackendObjType.Lazy(toBackendType(t)).toTpe
-    case MonoType.Ref(t) => BackendObjType.Ref(toBackendType(t)).toTpe
-    case MonoType.Tuple(ts) => BackendObjType.Tuple(ts.map(toBackendType)).toTpe
-    case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
-    case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
-    case MonoType.RecordExtend(label, value, rest) => BackendObjType.RecordExtend(label, toBackendType(value), toBackendType(rest)).toTpe
-    case MonoType.Region => BackendObjType.Region.toTpe
-    case MonoType.Enum(_) | MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
+    case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
+         MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
+         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |
+         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
   }
 }
