@@ -24,6 +24,51 @@ sealed trait LexerError extends CompilationMessage {
 }
 
 object LexerError {
+  /**
+   * An error raised when block-comments are nested too deep.
+   *
+   * @param loc The location of the opening "\*".
+   */
+  case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Block-comment nested too deep."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Block-comment nested too deep.
+         |
+         |${code(loc, "Block-comment starts here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that block-comments are not nested more than 32 levels deep."
+    })
+  }
+
+  /**
+   * An error raised when more than one decimal dot is found in a number.
+   * For instance `123.456.78f32`.
+   *
+   * @param loc The location of the double dotted number literal.
+   */
+  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Number has two decimal dots."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Number has two decimal dots.
+         |
+         |${code(loc, "Number found here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 
   /**
    * An error raised when an unexpected character, such as €, is encountered.
@@ -48,19 +93,40 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated string is encountered.
+   * An error raised when an unterminated block comment is encountered.
    *
-   * @param loc The location of the opening `"`.
+   * @param loc The location of the opening "/ *".
    */
-  case class UnterminatedString(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated string."
+  case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated block-comment."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated string.
+         |>> Unterminated block-comment.
          |
-         |${code(loc, "String starts here.")}
+         |${code(loc, "Block-comment starts here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when an unterminated built-in function is encountered.
+   *
+   * @param loc The location of the opening "$".
+   */
+  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated built-in."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unterminated built-in.
+         |
+         |${code(loc, "Built-in starts here.")}
          |
          |""".stripMargin
     }
@@ -111,86 +177,19 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unterminated built-in function is encountered.
+   * An error raised when an unterminated string is encountered.
    *
-   * @param loc The location of the opening "$".
+   * @param loc The location of the opening `"`.
    */
-  case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated built-in."
+  case class UnterminatedString(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated string."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated built-in.
+         |>> Unterminated string.
          |
-         |${code(loc, "Built-in starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when an unterminated block comment is encountered.
-   *
-   * @param loc The location of the opening "/ *".
-   */
-  case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated block-comment."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unterminated block-comment.
-         |
-         |${code(loc, "Block-comment starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised when block-comments are nested too deep.
-   *
-   * @param loc The location of the opening "\*".
-   */
-  case class BlockCommentTooDeep(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Block-comment nested too deep."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Block-comment nested too deep.
-         |
-         |${code(loc, "Block-comment starts here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that block-comments are not nested more than 32 levels deep."
-    })
-  }
-
-  /**
-   * An error raised when more than one decimal dot is found in a number.
-   * For instance `123.456.78f32`.
-   *
-   * @param loc The location of the double dotted number literal.
-   */
-  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number has two decimal dots."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two decimal dots.
-         |
-         |${code(loc, "Number found here.")}
+         |${code(loc, "String starts here.")}
          |
          |""".stripMargin
     }

@@ -79,14 +79,14 @@ object Lexer {
 
     val loc = SourceLocation(None, s.src, SourceKind.Real, l, c, l, c + o)
     e match {
-      case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
+      case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
       case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
-      case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
+      case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
+      case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
+      case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
       case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)
       case TokenErrorKind.UnterminatedInfixFunction => LexerError.UnterminatedInfixFunction(loc)
-      case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
-      case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
-      case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
+      case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
     }
   }
 
