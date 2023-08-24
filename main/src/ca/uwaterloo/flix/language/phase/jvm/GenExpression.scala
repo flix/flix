@@ -713,10 +713,7 @@ object GenExpression {
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
         // Instantiating a new array of type jvmType
-        backendType match {
-          case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(backendType))
-          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(backendType).head)
-        }
+        visitArrayInstantiate(mv, backendType)
         // For each element we generate code to store it into the array
         for (i <- exps.indices) {
           // Duplicates the 'array reference'
@@ -740,10 +737,7 @@ object GenExpression {
         // Evaluating the 'length' of the array
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
-        backendType match {
-          case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(backendType))
-          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(backendType).head)
-        }
+        visitArrayInstantiate(mv, backendType)
         if (backendType == BackendType.Int64 || backendType == BackendType.Float64) {
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
@@ -1481,6 +1475,11 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = tpe match {
+    case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(tpe))
+    case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(tpe).head)
   }
 
   /**
