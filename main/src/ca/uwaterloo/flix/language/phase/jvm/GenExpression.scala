@@ -710,13 +710,12 @@ object GenExpression {
         // We push the 'length' of the array on top of stack
         compileInt(exps.length)
         // We get the inner type of the array
-        val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+        val innerType = tpe.asInstanceOf[MonoType.Array].tpe
+        val backendType = BackendType.toBackendType(innerType)
         // Instantiating a new array of type jvmType
-        jvmType match {
-          case ref: JvmType.Reference => // Happens if the inner type is an object type
-            mv.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
-          case _ => // Happens if the inner type is a primitive type
-            mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+        backendType match {
+          case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(backendType))
+          case _ => mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(backendType).head)
         }
         // For each element we generate code to store it into the array
         for (i <- exps.indices) {
@@ -728,7 +727,7 @@ object GenExpression {
           compileExpr(exps(i))
           // Stores the 'element' at the given 'index' in the 'array'
           // with the store instruction corresponding to the stored element
-          mv.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
+          mv.visitInsn(AsmOps.getArrayStoreInstruction(backendType))
         }
 
       case AtomicOp.ArrayNew =>
@@ -740,7 +739,6 @@ object GenExpression {
         compileExpr(exp1)
         // Evaluating the 'length' of the array
         compileExpr(exp2)
-
         // Instantiating a new array of type jvmType
         backendType match {
           case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(backendType))
