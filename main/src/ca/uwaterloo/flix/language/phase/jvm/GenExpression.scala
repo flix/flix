@@ -743,8 +743,6 @@ object GenExpression {
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
-        // TODO: Figure out if we need up to expn or how to encode component length of multidimensional arrays.
-        // If we use `Array.new(Static, 10)` then all inner arrays should be 0 length?
         compileExpr(exp2)
 
         // Instantiating a new array of type jvmType
