@@ -201,24 +201,6 @@ object AsmOps {
     case BackendType.Array(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
   }
 
-
-  /**
-    * Returns the Array fill type for the value of the type specified by `tpe`
-    */
-  def getArrayFillType(tpe: JvmType): String = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => "([ZZ)V"
-    case JvmType.PrimChar => "([CC)V"
-    case JvmType.PrimByte => "([BB)V"
-    case JvmType.PrimShort => "([SS)V"
-    case JvmType.PrimInt => "([II)V"
-    case JvmType.PrimLong => "([JJ)V"
-    case JvmType.PrimFloat => "([FF)V"
-    case JvmType.PrimDouble => "([DD)V"
-    case JvmType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
-  }
-
-
   /**
     * Returns the load instruction corresponding to the given type `tpe`
     */
