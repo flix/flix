@@ -28,8 +28,6 @@ import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
 
-import scala.annotation.tailrec
-
 /**
   * Generate expression
   */
@@ -1602,30 +1600,6 @@ object GenExpression {
     visitor.visitLabel(label)
     visitor.visitLineNumber(loc.beginLine, label)
   }
-
-  private def visitArrayInstantiate(mv: MethodVisitor, backendType: BackendType): Unit = {
-
-    @tailrec
-    def base(tpe: BackendType, dims: Int): (BackendType, Int) = tpe match {
-      case BackendType.Array(t) => base(t, dims + 1)
-      case t => (t, dims)
-    }
-
-    backendType match {
-      case BackendType.Array(innerType) =>
-        val (tpe, dims) = base(innerType, 1)
-        tpe match {
-          case t if dims > 1 =>
-            mv.visitMultiANewArrayInsn(???, ???)
-          case BackendType.Reference(ref) =>
-            mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
-          case t =>
-            mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(t).head)
-        }
-      case _ => ???
-    }
-  }
-
 
   /**
     * Pushes arguments onto the stack ready to invoke a method
