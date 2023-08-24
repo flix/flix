@@ -153,12 +153,12 @@ object BackendType {
     case MonoType.BigInt => BackendObjType.BigInt.toTpe
     case MonoType.String => BackendObjType.String.toTpe
     case MonoType.Regex => BackendObjType.Regex.toTpe
-    case MonoType.Unit => BackendObjType.Unit.toTpe
     case MonoType.Native(clazz) =>
       // Maybe use clazz.getPackage and clazz.getSimpleName
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
       BackendObjType.Native(JvmName.mk(fqn)).toTpe
+    case MonoType.Unit => BackendObjType.Unit.toTpe
     case MonoType.Lazy(t) => BackendObjType.Lazy(toBackendType(t)).toTpe
     case MonoType.Ref(t) => BackendObjType.Ref(toBackendType(t)).toTpe
     case MonoType.Tuple(ts) => BackendObjType.Tuple(ts.map(toBackendType)).toTpe
