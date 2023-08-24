@@ -56,7 +56,7 @@ object JvmOps {
     case MonoType.Int32 => JvmType.PrimInt
     case MonoType.Int64 => JvmType.PrimLong
     case MonoType.BigInt => JvmType.BigInteger
-    case MonoType.Str => JvmType.String
+    case MonoType.String => JvmType.String
     case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
 
@@ -634,7 +634,7 @@ object JvmOps {
       case MonoType.Int32 => Set(tpe)
       case MonoType.Int64 => Set(tpe)
       case MonoType.BigInt => Set(tpe)
-      case MonoType.Str => Set(tpe)
+      case MonoType.String => Set(tpe)
       case MonoType.Regex => Set(tpe)
       case MonoType.Region => Set(tpe)
 
