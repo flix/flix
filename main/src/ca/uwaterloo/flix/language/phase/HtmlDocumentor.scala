@@ -62,6 +62,11 @@ object HtmlDocumentor {
   val Script: String = "/doc/index.js"
 
   /**
+    * The path to the the fonts directory, relative to the resources folder.
+    */
+  val Fonts: String = "/doc/fonts"
+
+  /**
     * The root of the link to each file of the standard library.
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
@@ -739,6 +744,15 @@ object HtmlDocumentor {
 
     val script = readResource(Script)
     writeFile("index.js", script)
+
+    val fontDirs = readResource(Fonts).map(_.toChar).mkString.stripLineEnd.linesIterator
+    for (dir <- fontDirs) {
+      val files = readResource(s"$Fonts/$dir").map(_.toChar).mkString.stripLineEnd.linesIterator
+      for (file <- files) {
+        val content = readResource(s"$Fonts/$dir/$file")
+        writeFile(s"fonts/$dir/$file", content)
+      }
+    }
   }
 
   /**
@@ -754,7 +768,7 @@ object HtmlDocumentor {
   private def writeFile(name: String, output: Array[Byte]): Unit = {
     val path = OutputDirectory.resolve(name)
     try {
-      Files.createDirectories(OutputDirectory)
+      Files.createDirectories(path.getParent)
       Files.write(path, output)
     } catch {
       case ex: IOException => throw new RuntimeException(s"Unable to write to path '$path'.", ex)
