@@ -260,7 +260,6 @@ h3 {
 
 nav {
     position: relative;
-    size: fit-content;
 }
 @media screen and (max-width: 50rem) {
     nav {
