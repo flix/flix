@@ -159,7 +159,7 @@ object BackendType {
   /**
     * Computes the `BackendType` based on the given `MonoType`.
     */
-  def toBackendType(tpe: MonoType): BackendType = tpe match {
+  def toFlixErasedBackendType(tpe: MonoType): BackendType = tpe match {
     case MonoType.Bool => Bool
     case MonoType.Char => Char
     case MonoType.Float32 => Float32
@@ -168,7 +168,7 @@ object BackendType {
     case MonoType.Int16 => Int16
     case MonoType.Int32 => Int32
     case MonoType.Int64 => Int64
-    case MonoType.Array(t) => Array(toBackendType(t))
+    case MonoType.Array(t) => Array(toFlixErasedBackendType(t))
     case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
     case MonoType.BigInt => BackendObjType.BigInt.toTpe
     case MonoType.String => BackendObjType.String.toTpe

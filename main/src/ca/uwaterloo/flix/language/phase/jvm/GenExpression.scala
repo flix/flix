@@ -711,7 +711,7 @@ object GenExpression {
         compileInt(exps.length)
         // We get the inner type of the array
         val innerType = tpe.asInstanceOf[MonoType.Array].tpe
-        val backendType = BackendType.toBackendType(innerType)
+        val backendType = BackendType.toFlixErasedBackendType(innerType)
         // Instantiating a new array of type jvmType
         visitArrayInstantiate(mv, backendType)
         // For each element we generate code to store it into the array
@@ -731,7 +731,7 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // We get the inner type of the array
         val elmType = tpe.asInstanceOf[MonoType.Array].tpe
-        val backendType = BackendType.toBackendType(elmType)
+        val backendType = BackendType.toFlixErasedBackendType(elmType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
