@@ -125,14 +125,14 @@ object AsmOps {
     * Returns the array store instruction for arrays of the given JvmType tpe
     */
   def getArrayStoreInstruction(tpe: BackendType): Int = tpe match {
-    case BackendType.Bool => BASTORE
-    case BackendType.Char => CASTORE
-    case BackendType.Int8 => BASTORE
-    case BackendType.Int16 => SASTORE
-    case BackendType.Int32 => IASTORE
-    case BackendType.Int64 => LASTORE
-    case BackendType.Float32 => FASTORE
-    case BackendType.Float64 => DASTORE
+    case BackendType.Primitive(PrimitiveType.Bool) => BASTORE
+    case BackendType.Primitive(PrimitiveType.Char) => CASTORE
+    case BackendType.Primitive(PrimitiveType.Int8) => BASTORE
+    case BackendType.Primitive(PrimitiveType.Int16) => SASTORE
+    case BackendType.Primitive(PrimitiveType.Int32) => IASTORE
+    case BackendType.Primitive(PrimitiveType.Int64) => LASTORE
+    case BackendType.Primitive(PrimitiveType.Float32) => FASTORE
+    case BackendType.Primitive(PrimitiveType.Float64) => DASTORE
     case BackendType.Reference(_) => AASTORE
     case BackendType.Array(_) => AASTORE
   }
@@ -158,14 +158,14 @@ object AsmOps {
     * Returns the Array fill type for the value of the type specified by `tpe`
     */
   def getArrayFillType(tpe: BackendType): String = tpe match {
-    case BackendType.Bool => "([ZZ)V"
-    case BackendType.Char => "([CC)V"
-    case BackendType.Int8 => "([BB)V"
-    case BackendType.Int16 => "([SS)V"
-    case BackendType.Int32 => "([II)V"
-    case BackendType.Int64 => "([JJ)V"
-    case BackendType.Float32 => "([FF)V"
-    case BackendType.Float64 => "([DD)V"
+    case BackendType.Primitive(PrimitiveType.Bool) => "([ZZ)V"
+    case BackendType.Primitive(PrimitiveType.Char) => "([CC)V"
+    case BackendType.Primitive(PrimitiveType.Int8) => "([BB)V"
+    case BackendType.Primitive(PrimitiveType.Int16) => "([SS)V"
+    case BackendType.Primitive(PrimitiveType.Int32) => "([II)V"
+    case BackendType.Primitive(PrimitiveType.Int64) => "([JJ)V"
+    case BackendType.Primitive(PrimitiveType.Float32) => "([FF)V"
+    case BackendType.Primitive(PrimitiveType.Float64) => "([DD)V"
     case BackendType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
     case BackendType.Array(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
   }

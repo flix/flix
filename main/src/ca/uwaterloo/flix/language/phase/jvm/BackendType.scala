@@ -46,14 +46,7 @@ object VoidableType {
   */
 sealed trait BackendType extends VoidableType {
   def toDescriptor: String = this match {
-    case BackendType.Bool => "Z"
-    case BackendType.Char => "C"
-    case BackendType.Int8 => "B"
-    case BackendType.Int16 => "S"
-    case BackendType.Int32 => "I"
-    case BackendType.Int64 => "J"
-    case BackendType.Float32 => "F"
-    case BackendType.Float64 => "D"
+    case BackendType.Primitive(tpe) => tpe.toDescriptor
     case BackendType.Array(tpe) => s"[${tpe.toDescriptor}"
     case BackendType.Reference(ref) => ref.toDescriptor
   }
@@ -65,8 +58,7 @@ sealed trait BackendType extends VoidableType {
     * @return
     */
   def toErased: BackendType = this match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
-         BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 => this
+    case BackendType.Primitive(_) => this
     case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
   }
 
@@ -74,50 +66,31 @@ sealed trait BackendType extends VoidableType {
     * A string representing the erased type. This is used for parametrized class names.
     */
   val toErasedString: String = this match {
-    case BackendType.Bool => "Bool"
-    case BackendType.Char => "Char"
-    case BackendType.Int8 => "Int8"
-    case BackendType.Int16 => "Int16"
-    case BackendType.Int32 => "Int32"
-    case BackendType.Int64 => "Int64"
-    case BackendType.Float32 => "Float32"
-    case BackendType.Float64 => "Float64"
+    case BackendType.Primitive(tpe) => tpe.toErasedString
     case BackendType.Array(_) | BackendType.Reference(_) => "Obj"
+  }
+
+  def is64BitWidth: Boolean = this match {
+    case BackendType.Primitive(PrimitiveType.Int64) => true
+    case BackendType.Primitive(PrimitiveType.Float64) => true
+    case BackendType.Primitive(_) => false
+    case BackendType.Array(_) => false
+    case BackendType.Reference(_) => false
   }
 }
 
 object BackendType {
-  case object Bool extends BackendType
 
-  case object Char extends BackendType
-
-  case object Int8 extends BackendType
-
-  case object Int16 extends BackendType
-
-  case object Int32 extends BackendType
-
-  case object Int64 extends BackendType
-
-  case object Float32 extends BackendType
-
-  case object Float64 extends BackendType
+  case class Primitive(tpe: PrimitiveType) extends BackendType
 
   case class Array(tpe: BackendType) extends BackendType {
     override def toDescriptor: String = {
 
       @tailrec
       def visit(t: BackendType, acc: String): String = t match {
-        case Array(tt) => visit(tt, acc + "[")
+        case Primitive(_) => acc + t.toDescriptor
         case Reference(_) => acc + t.toDescriptor
-        case Bool => acc + t.toDescriptor
-        case Char => acc + t.toDescriptor
-        case Int8 => acc + t.toDescriptor
-        case Int16 => acc + t.toDescriptor
-        case Int32 => acc + t.toDescriptor
-        case Int64 => acc + t.toDescriptor
-        case Float32 => acc + t.toDescriptor
-        case Float64 => acc + t.toDescriptor
+        case Array(tt) => visit(tt, acc + "[")
       }
 
       visit(tpe, "[")
@@ -135,20 +108,20 @@ object BackendType {
     * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
     */
   def erasedTypes: List[BackendType] =
-    Bool :: Char :: Float32 :: Float64 :: Int8 :: Int16 :: Int32 :: Int64 :: BackendObjType.JavaObject.toTpe :: Nil
+    Primitive(PrimitiveType.Bool) :: Primitive(PrimitiveType.Char) :: Primitive(PrimitiveType.Float32) :: Primitive(PrimitiveType.Float64) :: Primitive(PrimitiveType.Int8) :: Primitive(PrimitiveType.Int16) :: Primitive(PrimitiveType.Int32) :: Primitive(PrimitiveType.Int64) :: BackendObjType.JavaObject.toTpe :: Nil
 
   /**
     * Computes the erased `BackendType` based on the given `MonoType`.
     */
   def toErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => Bool
-    case MonoType.Char => Char
-    case MonoType.Float32 => Float32
-    case MonoType.Float64 => Float64
-    case MonoType.Int8 => Int8
-    case MonoType.Int16 => Int16
-    case MonoType.Int32 => Int32
-    case MonoType.Int64 => Int64
+    case MonoType.Bool => Primitive(PrimitiveType.Bool)
+    case MonoType.Char => Primitive(PrimitiveType.Char)
+    case MonoType.Float32 => Primitive(PrimitiveType.Float32)
+    case MonoType.Float64 => Primitive(PrimitiveType.Float64)
+    case MonoType.Int8 => Primitive(PrimitiveType.Int8)
+    case MonoType.Int16 => Primitive(PrimitiveType.Int16)
+    case MonoType.Int32 => Primitive(PrimitiveType.Int32)
+    case MonoType.Int64 => Primitive(PrimitiveType.Int64)
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
          MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
@@ -160,14 +133,14 @@ object BackendType {
     * Computes the `BackendType` based on the given `MonoType`.
     */
   def toFlixErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => Bool
-    case MonoType.Char => Char
-    case MonoType.Float32 => Float32
-    case MonoType.Float64 => Float64
-    case MonoType.Int8 => Int8
-    case MonoType.Int16 => Int16
-    case MonoType.Int32 => Int32
-    case MonoType.Int64 => Int64
+    case MonoType.Bool => Primitive(PrimitiveType.Bool)
+    case MonoType.Char => Primitive(PrimitiveType.Char)
+    case MonoType.Int8 => Primitive(PrimitiveType.Int8)
+    case MonoType.Int16 => Primitive(PrimitiveType.Int16)
+    case MonoType.Int32 => Primitive(PrimitiveType.Int32)
+    case MonoType.Int64 => Primitive(PrimitiveType.Int64)
+    case MonoType.Float32 => Primitive(PrimitiveType.Float32)
+    case MonoType.Float64 => Primitive(PrimitiveType.Float64)
     case MonoType.Array(t) => Array(toFlixErasedBackendType(t))
     case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
     case MonoType.BigInt => BackendObjType.BigInt.toTpe

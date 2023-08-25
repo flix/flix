@@ -738,7 +738,7 @@ object GenExpression {
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
         visitArrayInstantiate(mv, backendType)
-        if (backendType == BackendType.Int64 || backendType == BackendType.Float64) {
+        if (backendType.is64BitWidth) {
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
           // Duplicates the 'array reference' three places down the stack
@@ -1477,19 +1477,10 @@ object GenExpression {
 
   }
 
-  private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = {
-    tpe match {
-      case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
-      case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
-      case BackendType.Bool => mv.visitIntInsn(NEWARRAY, T_BOOLEAN)
-      case BackendType.Char => mv.visitIntInsn(NEWARRAY, T_CHAR)
-      case BackendType.Int8 => mv.visitIntInsn(NEWARRAY, T_BYTE)
-      case BackendType.Int16 => mv.visitIntInsn(NEWARRAY, T_SHORT)
-      case BackendType.Int32 => mv.visitIntInsn(NEWARRAY, T_INT)
-      case BackendType.Int64 => mv.visitIntInsn(NEWARRAY, T_LONG)
-      case BackendType.Float32 => mv.visitIntInsn(NEWARRAY, T_FLOAT)
-      case BackendType.Float64 => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
-    }
+  private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = tpe match {
+    case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
+    case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
+    case BackendType.Primitive(t) => mv.visitIntInsn(NEWARRAY, t.toArrayTypeCode)
   }
 
   /**

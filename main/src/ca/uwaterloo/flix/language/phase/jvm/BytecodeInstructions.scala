@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBr
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.PrimitiveType.{Bool, Char, Float32, Float64, Int16, Int32, Int64, Int8}
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
@@ -430,10 +431,10 @@ object BytecodeInstructions {
     body(new Variable(tpe, index))
 
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
-    case BackendType.Int64 => LLOAD(index)
-    case BackendType.Float32 => FLOAD(index)
-    case BackendType.Float64 => DLOAD(index)
+    case BackendType.Primitive(Bool) | BackendType.Primitive(Char) | BackendType.Primitive(Int8) | BackendType.Primitive(Int16) | BackendType.Primitive(Int32) => ILOAD(index)
+    case BackendType.Primitive(Int64) => LLOAD(index)
+    case BackendType.Primitive(Float32) => FLOAD(index)
+    case BackendType.Primitive(Float64) => DLOAD(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
   }
 
@@ -441,24 +442,24 @@ object BytecodeInstructions {
     * Pops the top of the stack using `POP` or `POP2` depending on the value size.
     */
   def xPop(tpe: BackendType): InstructionSet = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 |
-         BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => POP()
-    case BackendType.Int64 | BackendType.Float64 => POP2()
+    case BackendType.Primitive(Bool) | BackendType.Primitive(Char) | BackendType.Primitive(Int8) | BackendType.Primitive(Int16) | BackendType.Primitive(Int32) |
+         BackendType.Primitive(Float32) | BackendType.Array(_) | BackendType.Reference(_) => POP()
+    case BackendType.Primitive(Int64) | BackendType.Primitive(Float64) => POP2()
   }
 
   def xReturn(tpe: BackendType): InstructionSet = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => IRETURN()
-    case BackendType.Int64 => LRETURN()
-    case BackendType.Float32 => FRETURN()
-    case BackendType.Float64 => DRETURN()
+    case BackendType.Primitive(Bool) | BackendType.Primitive(Char) | BackendType.Primitive(Int8) | BackendType.Primitive(Int16) | BackendType.Primitive(Int32) => IRETURN()
+    case BackendType.Primitive(Int64) => LRETURN()
+    case BackendType.Primitive(Float32) => FRETURN()
+    case BackendType.Primitive(Float64) => DRETURN()
     case BackendType.Array(_) | BackendType.Reference(_) => ARETURN()
   }
 
   def xStore(tpe: BackendType, index: Int): InstructionSet = tpe match {
-    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ISTORE(index)
-    case BackendType.Int64 => LSTORE(index)
-    case BackendType.Float32 => FSTORE(index)
-    case BackendType.Float64 => DSTORE(index)
+    case BackendType.Primitive(Bool) | BackendType.Primitive(Char) | BackendType.Primitive(Int8) | BackendType.Primitive(Int16) | BackendType.Primitive(Int32) => ISTORE(index)
+    case BackendType.Primitive(Int64) => LSTORE(index)
+    case BackendType.Primitive(Float32) => FSTORE(index)
+    case BackendType.Primitive(Float64) => DSTORE(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
   }
 
@@ -467,24 +468,24 @@ object BytecodeInstructions {
     * `tpe` accurately represents its type.
     */
   def xToString(tpe: BackendType): InstructionSet = tpe match {
-    case BackendType.Bool => INVOKESTATIC(BackendObjType.String.BoolValueOf)
-    case BackendType.Char => INVOKESTATIC(BackendObjType.String.CharValueOf)
-    case BackendType.Int8 => INVOKESTATIC(BackendObjType.String.Int8ValueOf)
-    case BackendType.Int16 => INVOKESTATIC(BackendObjType.String.Int16ValueOf)
-    case BackendType.Int32 => INVOKESTATIC(BackendObjType.String.Int32ValueOf)
-    case BackendType.Int64 => INVOKESTATIC(BackendObjType.String.Int64ValueOf)
-    case BackendType.Float32 => INVOKESTATIC(BackendObjType.String.Float32ValueOf)
-    case BackendType.Float64 => INVOKESTATIC(BackendObjType.String.Float64ValueOf)
+    case BackendType.Primitive(Bool) => INVOKESTATIC(BackendObjType.String.BoolValueOf)
+    case BackendType.Primitive(Char) => INVOKESTATIC(BackendObjType.String.CharValueOf)
+    case BackendType.Primitive(Int8) => INVOKESTATIC(BackendObjType.String.Int8ValueOf)
+    case BackendType.Primitive(Int16) => INVOKESTATIC(BackendObjType.String.Int16ValueOf)
+    case BackendType.Primitive(Int32) => INVOKESTATIC(BackendObjType.String.Int32ValueOf)
+    case BackendType.Primitive(Int64) => INVOKESTATIC(BackendObjType.String.Int64ValueOf)
+    case BackendType.Primitive(Float32) => INVOKESTATIC(BackendObjType.String.Float32ValueOf)
+    case BackendType.Primitive(Float64) => INVOKESTATIC(BackendObjType.String.Float64ValueOf)
     case BackendType.Reference(_) => INVOKESTATIC(BackendObjType.String.ObjectValueOf)
 
-    case BackendType.Array(BackendType.Bool) => INVOKESTATIC(BackendObjType.Arrays.BoolArrToString)
-    case BackendType.Array(BackendType.Char) => INVOKESTATIC(BackendObjType.Arrays.CharArrToString)
-    case BackendType.Array(BackendType.Int8) => INVOKESTATIC(BackendObjType.Arrays.Int8ArrToString)
-    case BackendType.Array(BackendType.Int16) => INVOKESTATIC(BackendObjType.Arrays.Int16ArrToString)
-    case BackendType.Array(BackendType.Int32) => INVOKESTATIC(BackendObjType.Arrays.Int32ArrToString)
-    case BackendType.Array(BackendType.Int64) => INVOKESTATIC(BackendObjType.Arrays.Int64ArrToString)
-    case BackendType.Array(BackendType.Float32) => INVOKESTATIC(BackendObjType.Arrays.Float32ArrToString)
-    case BackendType.Array(BackendType.Float64) => INVOKESTATIC(BackendObjType.Arrays.Float64ArrToString)
+    case BackendType.Array(BackendType.Primitive(Bool)) => INVOKESTATIC(BackendObjType.Arrays.BoolArrToString)
+    case BackendType.Array(BackendType.Primitive(Char)) => INVOKESTATIC(BackendObjType.Arrays.CharArrToString)
+    case BackendType.Array(BackendType.Primitive(Int8)) => INVOKESTATIC(BackendObjType.Arrays.Int8ArrToString)
+    case BackendType.Array(BackendType.Primitive(Int16)) => INVOKESTATIC(BackendObjType.Arrays.Int16ArrToString)
+    case BackendType.Array(BackendType.Primitive(Int32)) => INVOKESTATIC(BackendObjType.Arrays.Int32ArrToString)
+    case BackendType.Array(BackendType.Primitive(Int64)) => INVOKESTATIC(BackendObjType.Arrays.Int64ArrToString)
+    case BackendType.Array(BackendType.Primitive(Float32)) => INVOKESTATIC(BackendObjType.Arrays.Float32ArrToString)
+    case BackendType.Array(BackendType.Primitive(Float64)) => INVOKESTATIC(BackendObjType.Arrays.Float64ArrToString)
     case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(BackendObjType.Arrays.DeepToString)
   }
 
