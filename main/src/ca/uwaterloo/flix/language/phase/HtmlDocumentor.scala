@@ -25,6 +25,7 @@ import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
 
+import java.net.URLEncoder
 import scala.collection.mutable
 
 /**
@@ -240,11 +241,11 @@ object HtmlDocumentor {
 
     sb.append("<button id='theme-toggle' disabled aria-describedby='no-script'>")
     sb.append("<span>Toggle theme.</span>")
-    sb.append("<div role='tooltip' id='no-script'>Requires JavaScript</div>")
+    sb.append("<span role='tooltip' id='no-script'>Requires JavaScript</span>")
     sb.append("</button>")
 
     sb.append("<nav>")
-    sb.append("<input type='checkbox' id='menu-toggle' />")
+    sb.append("<input type='checkbox' id='menu-toggle'>")
     sb.append("<label for='menu-toggle'>Toggle the menu</label>")
     sb.append("<div>")
     sb.append("<div class='flix'>")
@@ -255,27 +256,27 @@ object HtmlDocumentor {
     docSideBarSection(
       "Classes",
       sortedClasses,
-      (c: Class) => sb.append(s"<a href='#class-${esc(c.sym.name)}'>${esc(c.sym.name)}</a>"),
+      (c: Class) => sb.append(s"<a href='#class-${escUrl(c.sym.name)}'>${esc(c.sym.name)}</a>"),
     )
     docSideBarSection(
       "Effects",
       sortedEffs,
-      (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+      (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
     )
     docSideBarSection(
       "Enums",
       sortedEnums,
-      (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${esc(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+      (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
     )
     docSideBarSection(
       "Type Aliases",
       sortedTypeAliases,
-      (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${esc(t.sym.name)}'>${esc(t.sym.name)}</a>"),
+      (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
     )
     docSideBarSection(
       "Definitions",
       sortedDefs,
-      (d: TypedAst.Def) => sb.append(s"<a href='#def-${esc(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+      (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
     )
     sb.append("</div>")
     sb.append("</nav>")
@@ -300,15 +301,15 @@ object HtmlDocumentor {
   private def mkHead(name: String): String = {
     s"""<!doctype html><html lang='en'>
       |<head>
-      |<meta charset='utf-8'/>
-      |<meta name='viewport' content='width=device-width,initial-scale=1'/>
+      |<meta charset='utf-8'>
+      |<meta name='viewport' content='width=device-width,initial-scale=1'>
       |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
       |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
       |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
       |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
       |<link href='styles.css' rel='stylesheet'>
       |<link href='favicon.png' rel='icon'>
-      |<script defer src='index.js' type="text/javascript"></script>
+      |<script defer src='index.js'></script>
       |<title>Flix | ${esc(name)}</title>
       |</head>
     """.stripMargin
@@ -331,8 +332,8 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append(s"<h3><a href='#$name'>$name</a></h3>")
-    sb.append(s"<ul class='${name.replace(" ", "-")}'>")
+    sb.append(s"<h3><a href='#${name.replace(' ', '-')}'>$name</a></h3>")
+    sb.append(s"<ul class='${name.replace(' ', '-')}'>")
     for (e <- group) {
       sb.append("<li>")
       docElt(e)
@@ -373,7 +374,7 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append(s"<section id='$name'>")
+    sb.append(s"<section id='${name.replace(' ', '-')}'>")
     sb.append(s"<h2>$name</h2>")
     for (e <- group) {
       docElt(e)
@@ -674,8 +675,12 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    // DEFAULT_SAFE escapes HTML
-    val config = txtmark.Configuration.DEFAULT_SAFE
+    // Panic mode will escape all < and > characters
+    val config =
+      txtmark.Configuration.builder()
+      .enableSafeMode()
+      .enablePanicMode()
+      .build()
     val parsed = txtmark.Processor.process(doc.text, config)
 
     sb.append("<div class='doc'>")
@@ -783,6 +788,11 @@ object HtmlDocumentor {
     * Escape any HTML in the string.
     */
   private def esc(s: String): String = xml.Utility.escape(s)
+
+  /**
+    * Transform the string into a valid URL.
+    */
+  private def escUrl(s: String): String = URLEncoder.encode(s, "UTF-8")
 
   /**
     * A represention of a module that's easier to work with while generating documention.
