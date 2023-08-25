@@ -307,15 +307,37 @@ object HtmlDocumentor {
       |<head>
       |<meta charset='utf-8'/>
       |<meta name='viewport' content='width=device-width,initial-scale=1'/>
-      |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
-      |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
-      |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
-      |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
       |<link href='styles.css' rel='stylesheet'>
       |<link href='favicon.png' rel='icon'>
       |<script defer src='index.js' type="text/javascript"></script>
       |<title>Flix | ${esc(name)}</title>
       |</head>
+      |<style>
+      |@font-face {
+      |    font-family: Fira Code;
+      |    src: url(fonts/FiraCode/400.ttf);
+      |    font-weight: 400;
+      |    font-display: swap;
+      |}
+      |@font-face {
+      |    font-family: Inter;
+      |    src: url(fonts/Inter/variable.ttf);
+      |    font-weight: 400;
+      |    font-display: swap;
+      |}
+      |@font-face {
+      |    font-family: Noto Sans;
+      |    src: url(fonts/NotoSans/400.ttf);
+      |    font-weight: 400;
+      |    font-display: swap;
+      |}
+      |@font-face {
+      |    font-family: Oswald;
+      |    src: url(fonts/Oswald/variable.ttf);
+      |    font-weight: 400;
+      |    font-display: swap;
+      |}
+      |</style>
     """.stripMargin
   }
 
@@ -777,6 +799,17 @@ object HtmlDocumentor {
 
   /**
     * Reads the given resource as an array of bytes.
+    *
+    * When the path points to a directory, a byte array representing a newline separated string
+    * (with a trailing newline) of all contained items is returned.
+    * Example: {{{
+    * """
+    * FiraCode
+    * Inter
+    * NotoSans
+    *
+    * """
+    * }}}
     *
     * @param path The path of the resource, relative to the resources folder.
     */
