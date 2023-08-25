@@ -244,7 +244,7 @@ object HtmlDocumentor {
     sb.append("</button>")
 
     sb.append("<nav>")
-    sb.append("<input type='checkbox' id='menu-toggle' />")
+    sb.append("<input type='checkbox' id='menu-toggle' aria-label='Show/hide sidebar menu' />")
     sb.append("<label for='menu-toggle'>Toggle the menu</label>")
     sb.append("<div>")
     sb.append("<div class='flix'>")
