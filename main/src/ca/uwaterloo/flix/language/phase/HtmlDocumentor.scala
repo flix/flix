@@ -302,6 +302,8 @@ object HtmlDocumentor {
       |<head>
       |<meta charset='utf-8'/>
       |<meta name='viewport' content='width=device-width,initial-scale=1'/>
+      |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
+      |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
       |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
       |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
       |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
