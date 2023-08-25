@@ -73,10 +73,25 @@ sealed trait BackendType extends VoidableType {
   def is64BitWidth: Boolean = this match {
     case BackendType.Primitive(PrimitiveType.Int64) => true
     case BackendType.Primitive(PrimitiveType.Float64) => true
-    case BackendType.Primitive(_) => false
-    case BackendType.Array(_) => false
-    case BackendType.Reference(_) => false
+    case BackendType.Primitive(_) | BackendType.Array(_) |
+         BackendType.Reference(_) => false
   }
+
+  /**
+    * Returns the Array fill type for the value of the type specified by `tpe`
+    */
+  def toArrayFillType: String = this match {
+    case BackendType.Primitive(PrimitiveType.Bool) => "([ZZ)V"
+    case BackendType.Primitive(PrimitiveType.Char) => "([CC)V"
+    case BackendType.Primitive(PrimitiveType.Int8) => "([BB)V"
+    case BackendType.Primitive(PrimitiveType.Int16) => "([SS)V"
+    case BackendType.Primitive(PrimitiveType.Int32) => "([II)V"
+    case BackendType.Primitive(PrimitiveType.Int64) => "([JJ)V"
+    case BackendType.Primitive(PrimitiveType.Float32) => "([FF)V"
+    case BackendType.Primitive(PrimitiveType.Float64) => "([DD)V"
+    case BackendType.Array(_) | BackendType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
+  }
+
 }
 
 object BackendType {

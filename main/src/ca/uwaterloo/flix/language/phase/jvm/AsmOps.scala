@@ -155,22 +155,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the Array fill type for the value of the type specified by `tpe`
-    */
-  def getArrayFillType(tpe: BackendType): String = tpe match {
-    case BackendType.Primitive(PrimitiveType.Bool) => "([ZZ)V"
-    case BackendType.Primitive(PrimitiveType.Char) => "([CC)V"
-    case BackendType.Primitive(PrimitiveType.Int8) => "([BB)V"
-    case BackendType.Primitive(PrimitiveType.Int16) => "([SS)V"
-    case BackendType.Primitive(PrimitiveType.Int32) => "([II)V"
-    case BackendType.Primitive(PrimitiveType.Int64) => "([JJ)V"
-    case BackendType.Primitive(PrimitiveType.Float32) => "([FF)V"
-    case BackendType.Primitive(PrimitiveType.Float64) => "([DD)V"
-    case BackendType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
-    case BackendType.Array(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
-  }
-
-  /**
     * Returns the load instruction corresponding to the given type `tpe`
     */
   def getReturnInstruction(tpe: JvmType): Int = tpe match {

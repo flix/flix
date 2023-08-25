@@ -38,7 +38,6 @@ sealed trait PrimitiveType {
     case PrimitiveType.Float32 => T_FLOAT
     case PrimitiveType.Float64 => T_DOUBLE
   }
-
 }
 
 object PrimitiveType {
