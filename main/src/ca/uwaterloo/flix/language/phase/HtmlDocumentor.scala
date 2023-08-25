@@ -238,7 +238,7 @@ object HtmlDocumentor {
     sb.append(mkHead(moduleName(mod)))
     sb.append("<body class='no-script'>")
 
-    sb.append("<button id='theme-toggle' disabled aria-describedby='no-script'>")
+    sb.append("<button id='theme-toggle' disabled aria-label='Toggle theme' aria-describedby='no-script'>")
     sb.append("<span>Toggle theme.</span>")
     sb.append("<div role='tooltip' id='no-script'>Requires JavaScript</div>")
     sb.append("</button>")
