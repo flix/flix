@@ -730,8 +730,8 @@ object GenExpression {
       case AtomicOp.ArrayNew =>
         val List(exp1, exp2) = exps
         // We get the inner type of the array
-        val elmType = tpe.asInstanceOf[MonoType.Array].tpe
-        val backendType = BackendType.toFlixErasedBackendType(elmType)
+        val innerType = tpe.asInstanceOf[MonoType.Array].tpe
+        val backendType = BackendType.toFlixErasedBackendType(innerType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
