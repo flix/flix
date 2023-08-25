@@ -675,11 +675,16 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val config = txtmark.Configuration.DEFAULT_SAFE
+    // Panic mode will escape all < and > characters
+    val config =
+      txtmark.Configuration.builder()
+      .enableSafeMode()
+      .enablePanicMode()
+      .build()
     val parsed = txtmark.Processor.process(doc.text, config)
 
     sb.append("<div class='doc'>")
-    sb.append(esc(parsed))
+    sb.append(parsed)
     sb.append("</div>")
   }
 
