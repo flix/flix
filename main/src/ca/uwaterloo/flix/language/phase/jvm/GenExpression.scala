@@ -1479,7 +1479,8 @@ object GenExpression {
 
   private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = {
     tpe match {
-      case BackendType.Array(_) | BackendType.Reference(_) => mv.visitTypeInsn(ANEWARRAY, AsmOps.getArrayType(tpe))
+      case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
+      case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
       case BackendType.Bool => mv.visitIntInsn(NEWARRAY, T_BOOLEAN)
       case BackendType.Char => mv.visitIntInsn(NEWARRAY, T_CHAR)
       case BackendType.Int8 => mv.visitIntInsn(NEWARRAY, T_BYTE)
