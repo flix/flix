@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.MonoType
 
+import scala.annotation.tailrec
+
 /**
   * Represents all Flix types that are not object on the JVM including Void.
   */
@@ -102,6 +104,24 @@ object BackendType {
   case object Float64 extends BackendType
 
   case class Array(tpe: BackendType) extends BackendType {
+    override def toDescriptor: String = {
+
+      @tailrec
+      def visit(t: BackendType, acc: String): String = t match {
+        case Array(tt) => visit(tt, acc + "[")
+        case Reference(_) => acc + t.toDescriptor
+        case Bool => acc + t.toDescriptor
+        case Char => acc + t.toDescriptor
+        case Int8 => acc + t.toDescriptor
+        case Int16 => acc + t.toDescriptor
+        case Int32 => acc + t.toDescriptor
+        case Int64 => acc + t.toDescriptor
+        case Float32 => acc + t.toDescriptor
+        case Float64 => acc + t.toDescriptor
+      }
+
+      visit(tpe, "[")
+    }
   }
 
   /**
