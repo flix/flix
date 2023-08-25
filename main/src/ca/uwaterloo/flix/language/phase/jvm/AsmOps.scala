@@ -137,25 +137,6 @@ object AsmOps {
     case BackendType.Array(_) => AASTORE
   }
 
-  def getArrayType(tpe: BackendType): String = {
-    @tailrec
-    def visit(tt: BackendType, acc: String): String = tt match {
-      case BackendType.Bool => acc + "Z"
-      case BackendType.Char => acc + "C"
-      case BackendType.Int8 => acc + "B"
-      case BackendType.Int16 => acc + "S"
-      case BackendType.Int32 => acc + "I"
-      case BackendType.Int64 => acc + "J"
-      case BackendType.Float32 => acc + "F"
-      case BackendType.Float64 => acc + "D"
-      case BackendType.Reference(ref) if acc.isEmpty => ref.jvmName.toInternalName
-      case BackendType.Reference(ref) => acc + "L" + ref.jvmName.toInternalName + ";"
-      case BackendType.Array(t) => visit(t, acc + "[")
-    }
-
-    visit(tpe, "")
-  }
-
   /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
