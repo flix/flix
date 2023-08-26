@@ -239,13 +239,13 @@ object HtmlDocumentor {
     sb.append(mkHead(moduleName(mod)))
     sb.append("<body class='no-script'>")
 
-    sb.append("<button id='theme-toggle' disabled aria-describedby='no-script'>")
+    sb.append("<button id='theme-toggle' disabled aria-label='Toggle theme' aria-describedby='no-script'>")
     sb.append("<span>Toggle theme.</span>")
     sb.append("<span role='tooltip' id='no-script'>Requires JavaScript</span>")
     sb.append("</button>")
 
     sb.append("<nav>")
-    sb.append("<input type='checkbox' id='menu-toggle'>")
+    sb.append("<input type='checkbox' id='menu-toggle' aria-label='Show/hide sidebar menu'>")
     sb.append("<label for='menu-toggle'>Toggle the menu</label>")
     sb.append("<div>")
     sb.append("<div class='flix'>")
