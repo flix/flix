@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 
 import scala.annotation.tailrec
 
