@@ -46,17 +46,27 @@ object VoidableType {
   */
 sealed trait BackendType extends VoidableType {
 
-  def toDescriptor: String = this match {
-    case BackendType.Bool => "Z"
-    case BackendType.Char => "C"
-    case BackendType.Int8 => "B"
-    case BackendType.Int16 => "S"
-    case BackendType.Int32 => "I"
-    case BackendType.Int64 => "J"
-    case BackendType.Float32 => "F"
-    case BackendType.Float64 => "D"
-    case BackendType.Array(tpe) => s"[${tpe.toDescriptor}"
-    case BackendType.Reference(ref) => ref.toDescriptor
+  def toDescriptor: String = {
+    @tailrec
+    def visit(t: BackendType, acc: String): String = t match {
+      case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
+           BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 |
+           BackendType.Reference(_) => acc + t.toDescriptor
+      case BackendType.Array(tt) => visit(tt, acc + "[")
+    }
+
+    this match {
+      case BackendType.Bool => "Z"
+      case BackendType.Char => "C"
+      case BackendType.Int8 => "B"
+      case BackendType.Int16 => "S"
+      case BackendType.Int32 => "I"
+      case BackendType.Int64 => "J"
+      case BackendType.Float32 => "F"
+      case BackendType.Float64 => "D"
+      case BackendType.Array(tpe) => visit(tpe, "[")
+      case BackendType.Reference(ref) => ref.toDescriptor
+    }
   }
 
   /**
@@ -117,20 +127,7 @@ object BackendType {
 
   case object Float64 extends BackendType with PrimitiveType
 
-  case class Array(tpe: BackendType) extends BackendType {
-    override def toDescriptor: String = {
-
-      @tailrec
-      def visit(t: BackendType, acc: String): String = t match {
-        case Reference(_) => acc + t.toDescriptor
-        case Array(tt) => visit(tt, acc + "[")
-        // TODO
-        case _ => acc + t.toDescriptor
-      }
-
-      visit(tpe, "[")
-    }
-  }
+  case class Array(tpe: BackendType) extends BackendType
 
   /**
     * Holds a reference to some object type.
