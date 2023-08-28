@@ -93,7 +93,23 @@ mod TestFile {
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
-    // readChar                                                                //
+    // readBool!                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readBool01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(b -> if (b == false) Ok() else Err(Generic("readBool! error")), File.readBool!(f)))
+            |> Result.isOk
+
+    @test
+    def readBool02(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    f -> Result.flatMap(b -> if (b == true) Ok() else Err(Generic("readBool! error")), File.readBool!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readChar!                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -103,7 +119,47 @@ mod TestFile {
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
-    // readLine                                                               //
+    // readInt8!                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readInt801(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    f -> Result.flatMap(i -> if (i == -1i8) Ok() else Err(Generic("readInt8! error")), File.readInt8!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readInt16!                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readInt161(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-2bytes.bin",
+                    f -> Result.flatMap(i -> if (i == 255i16) Ok() else Err(Generic("readInt16! error")), File.readInt16!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readInt32!                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readInt321(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-4bytes.bin",
+                    f -> Result.flatMap(i -> if (i == 255) Ok() else Err(Generic("readInt32! error")), File.readInt32!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readInt64!                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readInt641(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-8bytes.bin",
+                    f -> Result.flatMap(i -> if (i == 255i64) Ok() else Err(Generic("readInt64! error")), File.readInt64!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLine!                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test

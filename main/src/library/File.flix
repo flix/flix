@@ -247,9 +247,9 @@ mod File {
     ///
     pub def readInt32!(f: File): Result[IOError, Int32] \ IO =
         IOError.tryCatch(_ -> {
-            import java.io.RandomAccessFile.read(): Int32 \ IO;
+            import java.io.RandomAccessFile.readInt(): Int32 \ IO;
             let File(f1) = f;
-            read(f1)
+            readInt(f1)
         })
 
     ///
