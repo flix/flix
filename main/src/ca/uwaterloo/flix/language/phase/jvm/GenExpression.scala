@@ -724,7 +724,7 @@ object GenExpression {
           compileExpr(exps(i))
           // Stores the 'element' at the given 'index' in the 'array'
           // with the store instruction corresponding to the stored element
-          mv.visitInsn(AsmOps.getArrayStoreInstruction(backendType))
+          mv.visitInsn(backendType.getArrayStoreInstruction)
         }
 
       case AtomicOp.ArrayNew =>

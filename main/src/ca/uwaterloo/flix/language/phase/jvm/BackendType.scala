@@ -87,6 +87,21 @@ sealed trait BackendType extends VoidableType {
     */
   def toArrayFillType: String = s"([${this.toErased.toDescriptor}${this.toErased.toDescriptor})V"
 
+  /**
+    * Returns the array store instruction for arrays of the given tpe.
+    */
+  def getArrayStoreInstruction: Int = this match {
+    case BackendType.Bool => BASTORE
+    case BackendType.Char => CASTORE
+    case BackendType.Int8 => BASTORE
+    case BackendType.Int16 => SASTORE
+    case BackendType.Int32 => IASTORE
+    case BackendType.Int64 => LASTORE
+    case BackendType.Float32 => FASTORE
+    case BackendType.Float64 => DASTORE
+    case BackendType.Reference(_) | BackendType.Array(_) => AASTORE
+  }
+
 }
 
 object BackendType {
