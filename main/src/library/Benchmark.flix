@@ -188,12 +188,12 @@ mod Benchmark {
     def toMicroSeconds(d: Int64): Int64 = d / 1_000i64
 
     ///
-    /// Returns the given nano seconds `d` in mili seconds.
+    /// Returns the given nano seconds `d` in milli seconds.
     ///
-    def toMiliSeconds(d: Int64): Int64 = toMicroSeconds(d) / 1_000i64
+    def toMilliSeconds(d: Int64): Int64 = toMicroSeconds(d) / 1_000i64
 
     ///
     /// Returns the given nano seconds `d` in seconds.
     ///
-    def toSeconds(d: Int64): Int64 = toMiliSeconds(d) / 1_000i64
+    def toSeconds(d: Int64): Int64 = toMilliSeconds(d) / 1_000i64
 }
