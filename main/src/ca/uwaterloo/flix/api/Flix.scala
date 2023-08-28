@@ -658,7 +658,7 @@ class Flix {
       val d = new Duration(e)
       val emojiPart = formatter.blue("✓ ")
       val phasePart = formatter.blue(f"$phase%-40s")
-      val timePart = f"${d.fmtMiliSeconds}%8s"
+      val timePart = f"${d.fmtMilliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
 
       // Print information about each subphase.
@@ -666,7 +666,7 @@ class Flix {
         val d = new Duration(e)
         val emojiPart = "    "
         val phasePart = formatter.magenta(f"$subphase%-37s")
-        val timePart = f"(${d.fmtMiliSeconds}%8s)"
+        val timePart = f"(${d.fmtMilliSeconds}%8s)"
         Console.println(emojiPart + phasePart + timePart)
       }
     }
