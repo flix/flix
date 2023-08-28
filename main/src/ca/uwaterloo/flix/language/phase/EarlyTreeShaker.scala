@@ -33,7 +33,7 @@ import ca.uwaterloo.flix.util.ParOps
   * (c) Appears in a function which itself is reachable.
   *
   * (d) Is an instance of a class whose signature(s) appear in a reachable function.
-  * Monomorph will erase erase unused instances so this phase must check all instances
+  * Monomorph will erase unused instances so this phase must check all instances
   * for the monomorph to work.
   *
   */

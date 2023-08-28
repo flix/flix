@@ -273,7 +273,7 @@ object Statistics {
     def of(name: String): Counter = Counter(Map(name -> 1))
 
     /**
-      * Merges an interable of counters.
+      * Merges an iterable of counters.
       */
     def merge(counters: Iterable[Counter]): Counter = counters.foldLeft(Counter.empty)(_ ++ _)
   }

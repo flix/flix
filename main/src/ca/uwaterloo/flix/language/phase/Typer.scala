@@ -499,7 +499,7 @@ object Typer {
     * Performs type inference and reassembly on all restrictable enums in the given AST root.
     */
   private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] =
-    flix.subphase("Restrictble Enums") {
+    flix.subphase("Restrictable Enums") {
       // Visit every restrictable enum in the ast.
       val result = root.restrictableEnums.toList.map {
         case (_, re) => visitRestrictableEnum(re, root)
