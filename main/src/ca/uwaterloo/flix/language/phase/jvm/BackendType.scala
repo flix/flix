@@ -17,29 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.MonoType
-import org.objectweb.asm.Opcodes.{T_BOOLEAN, T_BYTE, T_CHAR, T_DOUBLE, T_FLOAT, T_INT, T_LONG, T_SHORT}
+import org.objectweb.asm.Opcodes._
+
 import scala.annotation.tailrec
-
-/**
-  * Represents all Flix types that are not object on the JVM including Void.
-  */
-sealed trait VoidableType {
-  /**
-    * Returns a descriptor for the type. `Void` has descriptor `"V"`.
-    */
-  def toDescriptor: String
-}
-
-object VoidableType {
-  case object Void extends VoidableType {
-    override val toDescriptor: String = "V"
-
-    /**
-      * The erased string representation used in JVM names.
-      */
-    val toErasedString: String = "Void"
-  }
-}
 
 /**
   * Represents all Flix types that are not objects on the JVM (array is an exception).
