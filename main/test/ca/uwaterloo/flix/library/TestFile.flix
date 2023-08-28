@@ -17,7 +17,9 @@
 mod TestFile {
 
     use File.Mode.{ReadOnly, ReadWrite}
+    use Applicative.{*>}
     use IOError.Generic
+
 
     def withReadOnlyFile(path: String, fn: File -> Result[IOError, a] \IO): Result[IOError, a] \ IO =
         match File.open(path, ReadOnly) {
@@ -28,14 +30,13 @@ mod TestFile {
             case Err(err) => Err(err)
     }
 
-
     /////////////////////////////////////////////////////////////////////////////
     // open / close!                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def openClose01(): Bool \ IO =
-        match File.open("README.md", ReadOnly) {
+        match File.open("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin", ReadOnly) {
             case Ok(f) => match File.close!(f) {
                 case Ok() => true
                 case _    => false
@@ -45,7 +46,7 @@ mod TestFile {
 
     @test
     def openClose02(): Bool \ IO =
-        match File.open("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin", ReadOnly) {
+        match File.open("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin", ReadOnly) {
             case Ok(f) => match File.close!(f) {
                 case Ok() => true
                 case _    => false
@@ -59,8 +60,36 @@ mod TestFile {
 
     @test
     def length01(): Bool \ IO =
-        withReadOnlyFile("README.md",
-                    f -> Result.flatMap(len -> if (len > 1i64) Ok() else Err(Generic("empty length")), File.length(f)))
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(len -> if (len == 8i64) Ok() else Err(Generic("length error")), File.length(f)))
+            |> Result.isOk
+
+    @test
+    def length02(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    f -> Result.flatMap(len -> if (len == 1i64) Ok() else Err(Generic("length error")), File.length(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // seek!                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def seek01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("seek! error")), File.seek!(0i64, f) *> File.readChar!(f)))
+            |> Result.isOk
+
+    @test
+    def seek02(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(ch -> if (ch == 'B') Ok() else Err(Generic("seek! error")), File.seek!(2i64, f) *> File.readChar!(f)))
+            |> Result.isOk
+
+    @test
+    def seek03(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(ch -> if (ch == 'C') Ok() else Err(Generic("seek! error")), File.seek!(4i64, f) *> File.readChar!(f)))
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
@@ -70,7 +99,16 @@ mod TestFile {
     @test
     def readChar01(): Bool \ IO =
         withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("not char A")), File.readChar!(f)))
+                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("readChar! error")), File.readChar!(f)))
             |> Result.isOk
 
+    /////////////////////////////////////////////////////////////////////////////
+    // readLine                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readLine01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/multiline.txt",
+                    f -> Result.flatMap(s -> if (s == "Sample text for TestFile.flix") Ok() else Err(Generic("readLine! error")), File.readLine!(f)))
+            |> Result.isOk
 }
