@@ -1480,7 +1480,7 @@ object GenExpression {
   private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = tpe match {
     case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
     case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
-    case BackendType.Primitive(t) => mv.visitIntInsn(NEWARRAY, t.toArrayTypeCode)
+    case t: BackendType.PrimitiveType => mv.visitIntInsn(NEWARRAY, t.toArrayTypeCode)
   }
 
   /**

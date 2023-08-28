@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.MonoType
-
+import org.objectweb.asm.Opcodes.{T_BOOLEAN, T_BYTE, T_CHAR, T_DOUBLE, T_FLOAT, T_INT, T_LONG, T_SHORT}
 import scala.annotation.tailrec
 
 /**
@@ -45,8 +45,16 @@ object VoidableType {
   * Represents all Flix types that are not objects on the JVM (array is an exception).
   */
 sealed trait BackendType extends VoidableType {
+
   def toDescriptor: String = this match {
-    case BackendType.Primitive(tpe) => tpe.toDescriptor
+    case BackendType.Bool => "Z"
+    case BackendType.Char => "C"
+    case BackendType.Int8 => "B"
+    case BackendType.Int16 => "S"
+    case BackendType.Int32 => "I"
+    case BackendType.Int64 => "J"
+    case BackendType.Float32 => "F"
+    case BackendType.Float64 => "D"
     case BackendType.Array(tpe) => s"[${tpe.toDescriptor}"
     case BackendType.Reference(ref) => ref.toDescriptor
   }
@@ -58,23 +66,30 @@ sealed trait BackendType extends VoidableType {
     * @return
     */
   def toErased: BackendType = this match {
-    case BackendType.Primitive(_) => this
+    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
+         BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 => this
     case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
   }
 
   /**
     * A string representing the erased type. This is used for parametrized class names.
     */
-  val toErasedString: String = this match {
-    case BackendType.Primitive(tpe) => tpe.toErasedString
+  def toErasedString: String = this match {
+    case BackendType.Bool => "Bool"
+    case BackendType.Char => "Char"
+    case BackendType.Int8 => "Int8"
+    case BackendType.Int16 => "Int16"
+    case BackendType.Int32 => "Int32"
+    case BackendType.Int64 => "Int64"
+    case BackendType.Float32 => "Float32"
+    case BackendType.Float64 => "Float64"
     case BackendType.Array(_) | BackendType.Reference(_) => "Obj"
   }
 
   def is64BitWidth: Boolean = this match {
-    case BackendType.Primitive(PrimitiveType.Int64) => true
-    case BackendType.Primitive(PrimitiveType.Float64) => true
-    case BackendType.Primitive(_) | BackendType.Array(_) |
-         BackendType.Reference(_) => false
+    case BackendType.Int64 | BackendType.Float64 => true
+    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
+         BackendType.Int32 | BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => false
   }
 
   /**
@@ -86,16 +101,31 @@ sealed trait BackendType extends VoidableType {
 
 object BackendType {
 
-  case class Primitive(tpe: PrimitiveType) extends BackendType
+  case object Bool extends BackendType with PrimitiveType
+
+  case object Char extends BackendType with PrimitiveType
+
+  case object Int8 extends BackendType with PrimitiveType
+
+  case object Int16 extends BackendType with PrimitiveType
+
+  case object Int32 extends BackendType with PrimitiveType
+
+  case object Int64 extends BackendType with PrimitiveType
+
+  case object Float32 extends BackendType with PrimitiveType
+
+  case object Float64 extends BackendType with PrimitiveType
 
   case class Array(tpe: BackendType) extends BackendType {
     override def toDescriptor: String = {
 
       @tailrec
       def visit(t: BackendType, acc: String): String = t match {
-        case Primitive(_) => acc + t.toDescriptor
         case Reference(_) => acc + t.toDescriptor
         case Array(tt) => visit(tt, acc + "[")
+        // TODO
+        case _ => acc + t.toDescriptor
       }
 
       visit(tpe, "[")
@@ -113,20 +143,20 @@ object BackendType {
     * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
     */
   def erasedTypes: List[BackendType] =
-    Primitive(PrimitiveType.Bool) :: Primitive(PrimitiveType.Char) :: Primitive(PrimitiveType.Float32) :: Primitive(PrimitiveType.Float64) :: Primitive(PrimitiveType.Int8) :: Primitive(PrimitiveType.Int16) :: Primitive(PrimitiveType.Int32) :: Primitive(PrimitiveType.Int64) :: BackendObjType.JavaObject.toTpe :: Nil
+    Bool :: Char :: Float32 :: Float64 :: Int8 :: Int16 :: Int32 :: Int64 :: BackendObjType.JavaObject.toTpe :: Nil
 
   /**
     * Computes the erased `BackendType` based on the given `MonoType`.
     */
   def toErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => Primitive(PrimitiveType.Bool)
-    case MonoType.Char => Primitive(PrimitiveType.Char)
-    case MonoType.Float32 => Primitive(PrimitiveType.Float32)
-    case MonoType.Float64 => Primitive(PrimitiveType.Float64)
-    case MonoType.Int8 => Primitive(PrimitiveType.Int8)
-    case MonoType.Int16 => Primitive(PrimitiveType.Int16)
-    case MonoType.Int32 => Primitive(PrimitiveType.Int32)
-    case MonoType.Int64 => Primitive(PrimitiveType.Int64)
+    case MonoType.Bool => Bool
+    case MonoType.Char => Char
+    case MonoType.Int8 => Int8
+    case MonoType.Int16 => Int16
+    case MonoType.Int32 => Int32
+    case MonoType.Int64 => Int64
+    case MonoType.Float32 => Float32
+    case MonoType.Float64 => Float64
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
          MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
@@ -138,14 +168,14 @@ object BackendType {
     * Computes the `BackendType` based on the given `MonoType`.
     */
   def toFlixErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => Primitive(PrimitiveType.Bool)
-    case MonoType.Char => Primitive(PrimitiveType.Char)
-    case MonoType.Int8 => Primitive(PrimitiveType.Int8)
-    case MonoType.Int16 => Primitive(PrimitiveType.Int16)
-    case MonoType.Int32 => Primitive(PrimitiveType.Int32)
-    case MonoType.Int64 => Primitive(PrimitiveType.Int64)
-    case MonoType.Float32 => Primitive(PrimitiveType.Float32)
-    case MonoType.Float64 => Primitive(PrimitiveType.Float64)
+    case MonoType.Bool => Bool
+    case MonoType.Char => Char
+    case MonoType.Int8 => Int8
+    case MonoType.Int16 => Int16
+    case MonoType.Int32 => Int32
+    case MonoType.Int64 => Int64
+    case MonoType.Float32 => Float32
+    case MonoType.Float64 => Float64
     case MonoType.Array(t) => Array(toFlixErasedBackendType(t))
     case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
     case MonoType.BigInt => BackendObjType.BigInt.toTpe
@@ -160,5 +190,30 @@ object BackendType {
          MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
          MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |
          MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
+  }
+
+  sealed trait PrimitiveType {
+
+    def toTpe: BackendType = this match {
+      case Bool => Bool
+      case Char => Char
+      case Int8 => Int8
+      case Int16 => Int16
+      case Int32 => Int32
+      case Int64 => Int64
+      case Float32 => Float32
+      case Float64 => Float64
+    }
+
+    def toArrayTypeCode: Int = this match {
+      case Bool => T_BOOLEAN
+      case Char => T_CHAR
+      case Int8 => T_BYTE
+      case Int16 => T_SHORT
+      case Int32 => T_INT
+      case Int64 => T_LONG
+      case Float32 => T_FLOAT
+      case Float64 => T_DOUBLE
+    }
   }
 }

@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, N
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
-import ca.uwaterloo.flix.language.phase.jvm.PrimitiveType.{Bool, Char, Float32, Float64, Int16, Int32, Int64, Int8}
 import org.objectweb.asm.Opcodes
 
 /**
@@ -214,91 +213,91 @@ object BackendObjType {
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
         case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
-          mkDescriptor(JavaObject.toTpe)(BackendType.Primitive(Bool)),
+          mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
-          mkDescriptor(BackendType.Primitive(Int32))(JavaObject.toTpe),
+          mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
-          mkDescriptor(BackendType.Primitive(Int32))(VoidableType.Void),
+          mkDescriptor(BackendType.Int32)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
         case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
-          mkDescriptor(BackendType.Primitive(Int32))(BackendType.Primitive(Bool)),
+          mkDescriptor(BackendType.Int32)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
         case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
-          mkDescriptor(BackendType.Primitive(Int32))(BackendType.Primitive(Int32)),
+          mkDescriptor(BackendType.Int32)(BackendType.Int32),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
-          mkDescriptor(BackendType.Primitive(Int64))(JavaObject.toTpe),
+          mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
-          mkDescriptor(BackendType.Primitive(Int64))(VoidableType.Void),
+          mkDescriptor(BackendType.Int64)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
         case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
-          mkDescriptor(BackendType.Primitive(Int64))(BackendType.Primitive(Bool)),
+          mkDescriptor(BackendType.Int64)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
         case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
-          mkDescriptor(BackendType.Primitive(Int64))(BackendType.Primitive(Int64)),
+          mkDescriptor(BackendType.Int64)(BackendType.Int64),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ LRETURN()
           ))
         case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
-          mkDescriptor(BackendType.Primitive(Float64))(JavaObject.toTpe),
+          mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
           ))
         case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
-          mkDescriptor(BackendType.Primitive(Float64))(VoidableType.Void),
+          mkDescriptor(BackendType.Float64)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
         case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
-          mkDescriptor(BackendType.Primitive(Float64))(BackendType.Primitive(Bool)),
+          mkDescriptor(BackendType.Float64)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
         case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
-          mkDescriptor(BackendType.Primitive(Float64))(BackendType.Primitive(Float64)),
+          mkDescriptor(BackendType.Float64)(BackendType.Float64),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
@@ -360,25 +359,25 @@ object BackendObjType {
       (args, result) match {
         case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
           ObjFunction :: ObjConsumer :: Nil
-        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Primitive(Bool)) =>
+        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Bool) =>
           ObjPredicate :: Nil
-        case (BackendType.Primitive(Int32) :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+        case (BackendType.Int32 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
           IntFunction :: IntConsumer :: Nil
-        case (BackendType.Primitive(Int32) :: Nil, BackendType.Primitive(Bool)) =>
+        case (BackendType.Int32 :: Nil, BackendType.Bool) =>
           IntPredicate :: Nil
-        case (BackendType.Primitive(Int32) :: Nil, BackendType.Primitive(Int32)) =>
+        case (BackendType.Int32 :: Nil, BackendType.Int32) =>
           IntUnaryOperator :: Nil
-        case (BackendType.Primitive(Int64) :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+        case (BackendType.Int64 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
           LongFunction :: LongConsumer :: Nil
-        case (BackendType.Primitive(Int64) :: Nil, BackendType.Primitive(Bool)) =>
+        case (BackendType.Int64 :: Nil, BackendType.Bool) =>
           LongPredicate :: Nil
-        case (BackendType.Primitive(Int64) :: Nil, BackendType.Primitive(Int64)) =>
+        case (BackendType.Int64 :: Nil, BackendType.Int64) =>
           LongUnaryOperator :: Nil
-        case (BackendType.Primitive(Float64) :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
+        case (BackendType.Float64 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
           DoubleFunction :: DoubleConsumer :: Nil
-        case (BackendType.Primitive(Float64) :: Nil, BackendType.Primitive(Bool)) =>
+        case (BackendType.Float64 :: Nil, BackendType.Bool) =>
           DoublePredicate :: Nil
-        case (BackendType.Primitive(Float64) :: Nil, BackendType.Primitive(Float64)) =>
+        case (BackendType.Float64 :: Nil, BackendType.Float64) =>
           DoubleUnaryOperator :: Nil
         case _ => Nil
       }
@@ -663,7 +662,7 @@ object BackendObjType {
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
-      List(String.toTpe, BackendType.Primitive(Int32), BackendType.Primitive(Int32), BackendType.Primitive(Int32), BackendType.Primitive(Int32)), Some(
+      List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32), Some(
         thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
           thisLoad() ~ ALOAD(1) ~ PUTFIELD(SourceField) ~
           thisLoad() ~ ILOAD(2) ~ PUTFIELD(BeginLineField) ~
@@ -677,16 +676,16 @@ object BackendObjType {
       InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "source", String.toTpe)
 
     def BeginLineField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginLine", BackendType.Primitive(Int32))
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginLine", BackendType.Int32)
 
     def BeginColField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginCol", BackendType.Primitive(Int32))
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginCol", BackendType.Int32)
 
     def EndLineField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endLine", BackendType.Primitive(Int32))
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endLine", BackendType.Int32)
 
     def EndColField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endCol", BackendType.Primitive(Int32))
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endCol", BackendType.Int32)
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       // create string builder
@@ -752,7 +751,7 @@ object BackendObjType {
     ))
 
     private def boxInt(): InstructionSet = INVOKESTATIC(JvmName.Integer, "valueOf",
-      mkDescriptor(BackendType.Primitive(Int32))(JvmName.Integer.toTpe))
+      mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
   }
 
   case object Global extends BackendObjType {
@@ -787,10 +786,10 @@ object BackendObjType {
     ))
 
     def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "newId",
-      mkDescriptor()(BackendType.Primitive(Int64)), Some(
+      mkDescriptor()(BackendType.Int64), Some(
         GETSTATIC(CounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
-            MethodDescriptor(Nil, BackendType.Primitive(Int64))) ~
+            MethodDescriptor(Nil, BackendType.Int64)) ~
           LRETURN()
       ))
 
@@ -827,8 +826,8 @@ object BackendObjType {
 
     private def arrayCopy(): InstructionSet = (f: F) => {
       f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
-        MethodDescriptor(List(JavaObject.toTpe, BackendType.Primitive(Int32), JavaObject.toTpe, BackendType.Primitive(Int32),
-          BackendType.Primitive(Int32)), VoidableType.Void))
+        MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
+          BackendType.Int32), VoidableType.Void))
       f
     }
   }
@@ -1182,30 +1181,30 @@ object BackendObjType {
 
   case object String extends BackendObjType {
     def BoolValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Bool))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Bool)(this.jvmName.toTpe), None)
 
     def CharValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Char))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Char)(this.jvmName.toTpe), None)
 
     // implicit use of Int8 as Int32
     def Int8ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Int32))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
 
     // implicit use of Int16 as Int32
     def Int16ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Int32))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
 
     def Int32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Int32))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int32)(this.jvmName.toTpe), None)
 
     def Int64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Int64))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Int64)(this.jvmName.toTpe), None)
 
     def Float32ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Float32))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Float32)(this.jvmName.toTpe), None)
 
     def Float64ValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "valueOf", mkDescriptor(BackendType.Primitive(Float64))(this.jvmName.toTpe), None)
+      "valueOf", mkDescriptor(BackendType.Float64)(this.jvmName.toTpe), None)
 
     def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
       "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.jvmName.toTpe), None)
@@ -1213,28 +1212,28 @@ object BackendObjType {
 
   case object Arrays extends BackendObjType {
     def BoolArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Bool)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Bool))(BackendObjType.String.toTpe), None)
 
     def CharArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Char)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Char))(BackendObjType.String.toTpe), None)
 
     def Int8ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Int8)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int8))(BackendObjType.String.toTpe), None)
 
     def Int16ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Int16)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int16))(BackendObjType.String.toTpe), None)
 
     def Int32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Int32)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int32))(BackendObjType.String.toTpe), None)
 
     def Int64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Int64)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Int64))(BackendObjType.String.toTpe), None)
 
     def Float32ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Float32)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float32))(BackendObjType.String.toTpe), None)
 
     def Float64ArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
-      "toString", mkDescriptor(BackendType.Array(BackendType.Primitive(Float64)))(BackendObjType.String.toTpe), None)
+      "toString", mkDescriptor(BackendType.Array(BackendType.Float64))(BackendObjType.String.toTpe), None)
 
     def ObjArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
       "toString", mkDescriptor(BackendType.Array(BackendObjType.JavaObject.toTpe))(BackendObjType.String.toTpe), None)
@@ -1248,10 +1247,10 @@ object BackendObjType {
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
 
     def EqualsMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "equals",
-      mkDescriptor(JavaObject.toTpe)(BackendType.Primitive(Bool)), None)
+      mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
 
     def HashcodeMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "hashCode",
-      mkDescriptor()(BackendType.Primitive(Int32)), None)
+      mkDescriptor()(BackendType.Int32), None)
 
     def ToStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "toString",
       mkDescriptor()(String.toTpe), None)
@@ -1268,17 +1267,17 @@ object BackendObjType {
       mkDescriptor(String.toTpe)(StringBuilder.toTpe), None)
 
     def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "append",
-      mkDescriptor(BackendType.Primitive(Int32))(StringBuilder.toTpe), None)
+      mkDescriptor(BackendType.Int32)(StringBuilder.toTpe), None)
 
   }
 
   case object Objects extends BackendObjType {
 
     def EqualsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "equals",
-      mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Primitive(Bool)), None)
+      mkDescriptor(JavaObject.toTpe, JavaObject.toTpe)(BackendType.Bool), None)
 
     def HashMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "hash",
-      mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Primitive(Int32)), None)
+      mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32), None)
 
   }
 
@@ -1294,7 +1293,7 @@ object BackendObjType {
   case object Iterator extends BackendObjType {
 
     def HasNextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "hasNext",
-      mkDescriptor()(BackendType.Primitive(Bool)))
+      mkDescriptor()(BackendType.Bool))
 
     def NextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "next",
       mkDescriptor()(JavaObject.toTpe))
@@ -1309,7 +1308,7 @@ object BackendObjType {
   case object ConcurrentLinkedQueue extends BackendObjType {
 
     def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "add",
-      mkDescriptor(JavaObject.toTpe)(BackendType.Primitive(Bool)), None)
+      mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
 
     def PollMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "poll",
       mkDescriptor()(JavaObject.toTpe), None)
@@ -1375,21 +1374,21 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def BoolField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "b", BackendType.Primitive(Bool))
+    def BoolField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "b", BackendType.Bool)
 
-    def CharField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "c", BackendType.Primitive(Char))
+    def CharField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "c", BackendType.Char)
 
-    def Int8Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i8", BackendType.Primitive(Int8))
+    def Int8Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i8", BackendType.Int8)
 
-    def Int16Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i16", BackendType.Primitive(Int16))
+    def Int16Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i16", BackendType.Int16)
 
-    def Int32Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i32", BackendType.Primitive(Int32))
+    def Int32Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i32", BackendType.Int32)
 
-    def Int64Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i64", BackendType.Primitive(Int64))
+    def Int64Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "i64", BackendType.Int64)
 
-    def Float32Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "f32", BackendType.Primitive(Float32))
+    def Float32Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "f32", BackendType.Float32)
 
-    def Float64Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "f64", BackendType.Primitive(Float64))
+    def Float64Field: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "f64", BackendType.Float64)
 
     def ObjectField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "o", BackendObjType.JavaObject.toTpe)
   }

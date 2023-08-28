@@ -123,14 +123,14 @@ object AsmOps {
     * Returns the array store instruction for arrays of the given JvmType tpe
     */
   def getArrayStoreInstruction(tpe: BackendType): Int = tpe match {
-    case BackendType.Primitive(PrimitiveType.Bool) => BASTORE
-    case BackendType.Primitive(PrimitiveType.Char) => CASTORE
-    case BackendType.Primitive(PrimitiveType.Int8) => BASTORE
-    case BackendType.Primitive(PrimitiveType.Int16) => SASTORE
-    case BackendType.Primitive(PrimitiveType.Int32) => IASTORE
-    case BackendType.Primitive(PrimitiveType.Int64) => LASTORE
-    case BackendType.Primitive(PrimitiveType.Float32) => FASTORE
-    case BackendType.Primitive(PrimitiveType.Float64) => DASTORE
+    case BackendType.Bool => BASTORE
+    case BackendType.Char => CASTORE
+    case BackendType.Int8 => BASTORE
+    case BackendType.Int16 => SASTORE
+    case BackendType.Int32 => IASTORE
+    case BackendType.Int64 => LASTORE
+    case BackendType.Float32 => FASTORE
+    case BackendType.Float64 => DASTORE
     case BackendType.Reference(_) => AASTORE
     case BackendType.Array(_) => AASTORE
   }
