@@ -3,7 +3,7 @@ def main(): Unit \ IO =
   let f = "README.md";
 
   // Check if the file 'README.md' exists.
-  match File.exists(f) {
+  match Files.exists(f) {
     case Ok(exist) => {
       println("The file ${f} exists: ${exist}.")
     }
@@ -11,7 +11,7 @@ def main(): Unit \ IO =
   };
 
   // Get statistics of the file 'README.md'.
-  match File.stat(f) {
+  match Files.stat(f) {
     case Ok(stats) => {
       println("${f} is of type: ${stats.fileType}");
       println("The size of ${f} is: ${stats.size}.");
