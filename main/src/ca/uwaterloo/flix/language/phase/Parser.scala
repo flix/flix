@@ -113,7 +113,9 @@ object Parser {
         // Case 1: We have a named rule application. Determine if we know it.
         syntacticContextOf(name) match {
           case SyntacticContext.Unknown =>
-            // println(name)
+            println("UNKNOWN  CASE:::       ")
+            println(name)
+            println("")
             // Case 1.1: The named rule is not one of the contexts. Continue recursively.
             parseRuleTrace(rest)
           case result =>
@@ -132,6 +134,8 @@ object Parser {
     * Returns [[SyntacticContext.Unknown]] if the context cannot be determined.
     */
   private def syntacticContextOf(name: String): SyntacticContext = {
+    print("NAME MATCH:")
+    println(name)
     name match {
       case "Expression" => SyntacticContext.Expr.OtherExpr
       case "Constraint" => SyntacticContext.Expr.Constraint
@@ -166,7 +170,9 @@ object Parser {
 
       case "HandlerBody" => SyntacticContext.HandlerBody
 
-      case _ => SyntacticContext.Unknown
+      case x =>
+        println(x)
+        SyntacticContext.Unknown
     }
   }
 
@@ -1067,7 +1073,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def HandlerBody: Rule1[ParsedAst.CatchOrHandler] = rule {
-        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optional(optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}") ~> ParsedAst.CatchOrHandler.Handler
+        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Handler
       }
 
       def Body: Rule1[ParsedAst.CatchOrHandler] = rule {

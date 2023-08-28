@@ -11,11 +11,15 @@ object TryWithHandlerCompleter extends Completer {
     println("looking")
     stripWord(context) match {
       case Some(word) =>
-        println("found word")
+        print("found word: ")
+        println(word)
         root.effects.flatMap {
           case (sym, eff) =>
+            print("here is sym: ")
+            println(sym.toString)
             if (matches(sym, word)) {
-              eff.ops.map(op => println(op.toString)) //print every op associated with an effect that matches
+              println("FOUND MATCHING EFFECT")
+              eff.ops.foreach(op => println(op.toString)) //print every op associated with an effect that matches
               None
             }
             else {
@@ -31,7 +35,7 @@ object TryWithHandlerCompleter extends Completer {
   }
 
   private def stripWord(context: CompletionContext): Option[String] = {
-    val regex = raw"\s*try\s*with\s+(.*)".r
+    val regex = raw".*\s*with\s+(.*)".r
     context.prefix match {
       case regex(word) => Some(word)
       case _           => None

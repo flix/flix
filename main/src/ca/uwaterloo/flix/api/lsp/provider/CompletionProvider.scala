@@ -141,6 +141,8 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+    println("HERE IS THE CONTEXT!!!!!")
+    println(context.sctx.toString)
     context.sctx match {
       //
       // Expressions.
@@ -187,9 +189,12 @@ object CompletionProvider {
       //
       case SyntacticContext.WithClause =>
         // A with context could also be just a type context.
+        println("WITHCLAUSE")
         TypeCompleter.getCompletions(context) ++ WithCompleter.getCompletions(context)
 
-      case SyntacticContext.HandlerBody => TryWithHandlerCompleter.getCompletions(context)
+      case SyntacticContext.HandlerBody =>
+        println("HANDLERBODY")
+        TryWithHandlerCompleter.getCompletions(context)
 
       //
       // Fallthrough.

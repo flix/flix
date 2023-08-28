@@ -1930,7 +1930,7 @@ object ParsedAst {
       * @param eff   the effect to be handled.
       * @param rules the handler rules.
       */
-    case class Handler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]]) extends CatchOrHandler
+    case class Handler(eff: Name.QName, rules: Seq[ParsedAst.HandlerRule]) extends CatchOrHandler
   }
 
   /**
