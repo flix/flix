@@ -33,10 +33,10 @@ object Lexer {
     flix.phase("Lexer") {
 
       // TODO: Remove this debug printing
-      val state = new State(root.sources.head._1)
-      val stats = tokenStats()(state)
-      val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
-      println(f"${"%34s".format("filename")}${s}")
+//      val state = new State(root.sources.head._1)
+//      val stats = tokenStats()(state)
+//      val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
+//      println(f"${"%34s".format("filename")}${s}")
 
       // Lex each source file in parallel.
       val results = ParOps.parMap(root.sources) {
@@ -64,9 +64,9 @@ object Lexer {
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
     // TODO: Remove this debug printing
-    val stats = tokenStats()
-    val debug = stats.toSeq.sortBy(_._1).map(v => "%5d".format(v._2)).mkString("")
-    println(f"${"%34s".format(src.name)}${debug}")
+//    val stats = tokenStats()
+//    val debug = stats.toSeq.sortBy(_._1).map(v => "%5d".format(v._2)).mkString("")
+//    println(f"${"%34s".format(src.name)}${debug}")
 
 
     //    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
@@ -310,12 +310,21 @@ object Lexer {
     }
 
     val start = s.current.offset - 1
-    val matches = s.src.data.slice(start, start + k.length).sameElements(k.toCharArray)
-    if (matches) { // advance the lexer past the keyword
+    var matches = true
+    var o = 0
+    while (matches && o < k.length) {
+      if (s.src.data(start + o) != k(o)) {
+        matches = false
+      } else {
+        o += 1
+      }
+    }
+    if (matches) {
       for (_ <- 1 until k.length) {
         advance()
       }
     }
+
     matches
   }
 
