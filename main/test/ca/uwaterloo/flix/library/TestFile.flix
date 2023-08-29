@@ -20,7 +20,9 @@ mod TestFile {
     use Applicative.{*>}
     use IOError.Generic
 
-
+    ///
+    /// Helper - open an existing file for reading, run an action and close the file
+    ///
     def withReadOnlyFile(path: String, fn: File -> Result[IOError, a] \IO): Result[IOError, a] \ IO =
         match File.open(path, ReadOnly) {
             case Ok(f)    => match fn(f) {
@@ -29,6 +31,20 @@ mod TestFile {
             }
             case Err(err) => Err(err)
     }
+
+
+    ///
+    /// Helper - open a file for writing, run an action and close the file
+    ///
+    def withWritableFile(path: String, fn: File -> Result[IOError, a] \IO): Result[IOError, a] \ IO =
+        match File.open(path, ReadWrite) {
+            case Ok(f)    => match fn(f) {
+                case Ok(ans)  => Functor.replace(File.close!(f), ans)
+                case Err(err) => Err(err)
+            }
+            case Err(err) => Err(err)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // open / close!                                                           //
@@ -91,6 +107,89 @@ mod TestFile {
         withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
                     f -> Result.flatMap(ch -> if (ch == 'C') Ok() else Err(Generic("seek! error")), File.seek!(4i64, f) *> File.readChar!(f)))
             |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // skipBytes!                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def skipBytes01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("seek! error")), File.skipBytes!(0, f) *> File.readChar!(f)))
+            |> Result.isOk
+
+    @test
+    def skipBytes02(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(ch -> if (ch == 'B') Ok() else Err(Generic("seek! error")), File.skipBytes!(2, f) *> File.readChar!(f)))
+            |> Result.isOk
+
+    @test
+    def skipBytes03(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(ch -> if (ch == 'C') Ok() else Err(Generic("seek! error")), File.skipBytes!(4, f) *> File.readChar!(f)))
+            |> Result.isOk
+
+    @test
+    def skipBytes04(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("skipBytes! error")), File.skipBytes!(-1, f) *> File.readChar!(f)))
+            |> Result.isOk
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // setLength!                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def setLength01(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile-len10.bin",
+                    f -> Result.flatMap(len -> if (len == 10i64) Ok() else Err(Generic("setLength! error")), File.setLength!(10i64, f) *> File.length(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // read!                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def read01(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 1);
+        let expected = Array#{-1i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("read! error")), File.read!(arr, f)))
+            |> Result.isOk
+    }
+
+    @test
+    def read02(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 8);
+        let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 67i8, 0i8, 68i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("read! error")), File.read!(arr, f)))
+            |> Result.isOk
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readWith!                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readWith01(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 6);
+        let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 0i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readWith! error")), File.readWith!(destOffset = 0, length = 4, arr, f)))
+            |> Result.isOk
+    }
+
+    @test
+    def readWith02(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 6);
+        let expected = Array#{0i8, 0i8, 0i8, 65i8, 0i8, 66i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(i -> if (i == 4 and Array.sameElements(arr, expected)) Ok() else Err(Generic("readWith! error")), File.readWith!(destOffset = 2, length = 4, arr, f)))
+            |> Result.isOk
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // readBool!                                                               //
@@ -156,6 +255,26 @@ mod TestFile {
     def readInt641(): Bool \ IO =
         withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-8bytes.bin",
                     f -> Result.flatMap(i -> if (i == 255i64) Ok() else Err(Generic("readInt64! error")), File.readInt64!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readFloat32!                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readFloat321(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-float.bin",
+                    f -> Result.flatMap(d -> if (d == 1.0f32) Ok() else Err(Generic("readFloat32! error")), File.readFloat32!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readFloat64!                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readFloat641(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-double.bin",
+                    f -> Result.flatMap(d -> if (d == 1.0f64) Ok() else Err(Generic("readFloat64! error")), File.readFloat64!(f)))
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////

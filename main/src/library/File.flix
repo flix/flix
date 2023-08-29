@@ -146,14 +146,14 @@ mod File {
         })
 
     ///
-    /// Read up to `length.length` bytes at the position `offset.offset` from the file `f`.
+    /// Read up to `length.length` bytes from the file `f`, the bytes are written to the array `buf` at the offset `destOffset`.
     /// This function blocks until at least one byte of data is available.
     ///
-    pub def readWith!(offset: {offset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Int32] \ {IO, r} =
+    pub def readWith!(destOffset: {destOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Int32] \ {IO, r} =
         IOError.tryCatch(_ -> {
             import java.io.RandomAccessFile.read(Array[Int8, r], Int32, Int32): Int32 \ {IO, r};
             let File(f1) = f;
-            read(f1, buf, offset.offset, length.length)
+            read(f1, buf, destOffset.destOffset, length.length)
         })
 
     ///
@@ -168,14 +168,14 @@ mod File {
         })
 
     ///
-    /// Reads `length.length` bytes at the position `offset.offset` from the file `f`.
+    /// Reads `length.length` bytes from the file `f`, the bytes are written to the array `buf` at the offset `destOffset`.
     /// This function blocks until the requested length of data is available.
     ///
-    pub def readFullyWith!(offset: {offset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
+    pub def readFullyWith!(destOffset: {destOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
             import java.io.RandomAccessFile.readFully(Array[Int8, r], Int32, Int32): Unit \ {IO, r};
             let File(f1) = f;
-            readFully(f1, buf, offset.offset, length.length)
+            readFully(f1, buf, destOffset.destOffset, length.length)
         })
 
     ///
@@ -353,13 +353,14 @@ mod File {
         })
 
     ///
-    /// Write to `length.length` bytes to the file `f` starting at `offset.offset`.
+    /// Write to `length.length` bytes to the file `f`, the bytes are read from the
+    /// array `buf` starting at `sourceOffset.sourceOffset`.
     ///
-    pub def writeWith!(offset: {offset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
+    pub def writeWith!(sourceOffset: {sourceOffset = Int32}, length: {length = Int32}, buf: Array[Int8, r], f: File): Result[IOError, Unit] \ {IO, r} =
         IOError.tryCatch(_ -> {
             import java.io.RandomAccessFile.write(Array[Int8, r], Int32, Int32): Unit \ {IO, r};
             let File(f1) = f;
-            write(f1, buf, offset.offset, length.length)
+            write(f1, buf, sourceOffset.sourceOffset, length.length)
         })
 
     ///
@@ -432,7 +433,7 @@ mod File {
         })
 
     ///
-    /// Write the floating point value `d` to file `f` using an Java's 4-byte Float representation.
+    /// Write the floating point value `d` to file `f` using Java's 4-byte Float representation.
     ///
     /// Internally `d` is first converted to a Int32 than written to file with the high byte first.
     ///
@@ -445,7 +446,7 @@ mod File {
 
 
     ///
-    /// Write the floating point value `d` to file `f` using an Java's 8-byte Double representation.
+    /// Write the floating point value `d` to file `f` using Java's 8-byte Double representation.
     ///
     /// Internally `d` is first converted to a Int64 than written to file with the high byte first.
     ///
