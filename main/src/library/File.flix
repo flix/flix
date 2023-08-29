@@ -327,7 +327,9 @@ mod File {
 
 
     ///
-    /// Read a "modified" UTF8 string from the file `f`.
+    /// Read a length prefixed, "modified" UTF8 string from the file `f`.
+    /// The length is derived from the first two bytes which are treated as
+    /// an unsigned short.
     ///
     /// The modifications are:
     /// Null ('\u0000') is written as two bytes rather than one.
@@ -458,7 +460,8 @@ mod File {
         })
 
     ///
-    /// Read a "modified" UTF8 string.
+    /// Read a length prefixed, "modified" UTF8 string.
+    /// The length is written to the first two bytes using the same encoding as an unsigned short.
     ///
     /// The modifications follow the rules used by `readString`.
     ///

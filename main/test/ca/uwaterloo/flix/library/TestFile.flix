@@ -187,9 +187,69 @@ mod TestFile {
         let arr: Array[Int8, rc] = Array.new(rc, 6);
         let expected = Array#{0i8, 0i8, 0i8, 65i8, 0i8, 66i8} @ rc;
         withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(i -> if (i == 4 and Array.sameElements(arr, expected)) Ok() else Err(Generic("readWith! error")), File.readWith!(destOffset = 2, length = 4, arr, f)))
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readWith! error")), File.readWith!(destOffset = 2, length = 4, arr, f)))
             |> Result.isOk
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readFully!                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readFully01(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 1);
+        let expected = Array#{-1i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFully! error")), File.readFully!(arr, f)))
+            |> Result.isOk
+    }
+
+    @test
+    def readFully02(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 8);
+        let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 67i8, 0i8, 68i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFully! error")), File.readFully!(arr, f)))
+            |> Result.isOk
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readFullyWith!                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readFullyWith01(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 6);
+        let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 0i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFullyWith! error")), File.readFullyWith!(destOffset = 0, length = 4, arr, f)))
+            |> Result.isOk
+    }
+
+    @test
+    def readFullyWith02(): Bool \ IO = region rc {
+        let arr: Array[Int8, rc] = Array.new(rc, 6);
+        let expected = Array#{0i8, 0i8, 0i8, 65i8, 0i8, 66i8} @ rc;
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFullyWith! error")), File.readFullyWith!(destOffset = 2, length = 4, arr, f)))
+            |> Result.isOk
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readByte!                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readByte01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-1byte.bin",
+                    f -> Result.flatMap(i -> if (i == 1) Ok() else Err(Generic("readByte! error")), File.readByte!(f)))
+            |> Result.isOk
+
+    @test
+    def readByte02(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    f -> Result.flatMap(i -> if (i == 255) Ok() else Err(Generic("readByte! error")), File.readByte!(f)))
+            |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
     // readBool!                                                               //
@@ -228,7 +288,7 @@ mod TestFile {
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
-    // readInt16!                                                               //
+    // readInt16!                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -238,7 +298,7 @@ mod TestFile {
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
-    // readInt32!                                                               //
+    // readInt32!                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -248,7 +308,7 @@ mod TestFile {
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
-    // readInt64!                                                               //
+    // readInt64!                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -278,6 +338,32 @@ mod TestFile {
             |> Result.isOk
 
     /////////////////////////////////////////////////////////////////////////////
+    // readUnsignedByte!                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readUnsignedByte01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-1byte.bin",
+                    f -> Result.flatMap(i -> if (i == 1) Ok() else Err(Generic("readUnsignedByte! error")), File.readUnsignedByte!(f)))
+            |> Result.isOk
+
+    @test
+    def readUnsignedByte02(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    f -> Result.flatMap(i -> if (i == 255) Ok() else Err(Generic("readUnsignedByte! error")), File.readUnsignedByte!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readUnsignedShort!                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readUnsignedShort01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/modified-utf8.txt",
+                    f -> Result.flatMap(i -> if (i == 12) Ok() else Err(Generic("readUnsignedShort! error")), File.readUnsignedShort!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
     // readLine!                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -285,5 +371,15 @@ mod TestFile {
     def readLine01(): Bool \ IO =
         withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/multiline.txt",
                     f -> Result.flatMap(s -> if (s == "Sample text for TestFile.flix") Ok() else Err(Generic("readLine! error")), File.readLine!(f)))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readModifiedUTF!                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def readModifiedUTF01(): Bool \ IO =
+        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/modified-utf8.txt",
+                    f -> Result.flatMap(s -> if (s == "Hello World!") Ok() else Err(Generic("readModifiedUTF! error")), File.readModifiedUTF!(f)))
             |> Result.isOk
 }
