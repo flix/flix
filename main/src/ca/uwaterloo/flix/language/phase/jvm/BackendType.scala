@@ -19,21 +19,34 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 
+import scala.annotation.tailrec
+
 /**
   * Represents all Flix types that are not objects on the JVM (array is an exception).
   */
 sealed trait BackendType extends VoidableType {
-  def toDescriptor: String = this match {
-    case BackendType.Bool => "Z"
-    case BackendType.Char => "C"
-    case BackendType.Int8 => "B"
-    case BackendType.Int16 => "S"
-    case BackendType.Int32 => "I"
-    case BackendType.Int64 => "J"
-    case BackendType.Float32 => "F"
-    case BackendType.Float64 => "D"
-    case BackendType.Array(tpe) => s"[${tpe.toDescriptor}"
-    case BackendType.Reference(ref) => ref.toDescriptor
+
+  def toDescriptor: String = {
+    @tailrec
+    def visit(t: BackendType, acc: String): String = t match {
+      case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
+           BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 |
+           BackendType.Reference(_) => acc + t.toDescriptor
+      case BackendType.Array(tt) => visit(tt, acc + "[")
+    }
+
+    this match {
+      case BackendType.Bool => "Z"
+      case BackendType.Char => "C"
+      case BackendType.Int8 => "B"
+      case BackendType.Int16 => "S"
+      case BackendType.Int32 => "I"
+      case BackendType.Int64 => "J"
+      case BackendType.Float32 => "F"
+      case BackendType.Float64 => "D"
+      case BackendType.Array(tpe) => visit(tpe, "[")
+      case BackendType.Reference(ref) => ref.toDescriptor
+    }
   }
 
   /**
@@ -72,11 +85,7 @@ sealed trait BackendType extends VoidableType {
   /**
     * Returns the Array fill type for the value of the type specified by `tpe`
     */
-  def toArrayFillType: String = s"([${
-    this.toErased.toDescriptor
-  }${
-    this.toErased.toDescriptor
-  })V"
+  def toArrayFillType: String = s"([${this.toErased.toDescriptor}${this.toErased.toDescriptor})V"
 
   /**
     * Returns the array store instruction for arrays of the given tpe.
