@@ -21,30 +21,33 @@ mod TestFile {
     use IOError.Generic
 
     ///
-    /// Helper - open an existing file for reading, run an action and close the file
+    /// Helper - open an existing file for reading, run `reader`, use `test`
+    /// to check what has been read and close the file.
     ///
-    def withReadOnlyFile(path: String, fn: File -> Result[IOError, a] \IO): Result[IOError, a] \ IO =
+    def testReadFunction(path: String, reader: File -> Result[IOError, a] \IO, test: a -> Bool \ ef): Result[IOError, Bool] \ {ef, IO} =
         match File.open(path, ReadOnly) {
-            case Ok(f)    => match fn(f) {
-                case Ok(ans)  => Functor.replace(File.close!(f), ans)
+            case Ok(f)    => match reader(f) {
+                case Ok(a)    => Functor.replace(File.close!(f), test(a))
                 case Err(err) => Err(err)
             }
             case Err(err) => Err(err)
     }
 
-
     ///
-    /// Helper - open a file for writing, run an action and close the file
+    /// Helper - open an existing file for reading, run `reader`, use `test`
+    /// to check what has been read and close the file.
     ///
-    def withWritableFile(path: String, fn: File -> Result[IOError, a] \IO): Result[IOError, a] \ IO =
+    def testWriteFunctionWithReadBack(path: String, writer: File -> Result[IOError, b] \IO, reader: File -> Result[IOError, a] \IO, test: a -> Bool \ ef): Result[IOError, Bool] \ {ef, IO} =
         match File.open(path, ReadWrite) {
-            case Ok(f)    => match fn(f) {
-                case Ok(ans)  => Functor.replace(File.close!(f), ans)
+            case Ok(f)    => match writer(f) {
+                case Ok(_)    => match (File.seek!(0i64, f) *> reader(f)) {
+                    case Ok(a)    => Functor.replace(File.close!(f), test(a))
+                    case Err(err) => Err(err)
+                }
                 case Err(err) => Err(err)
             }
             case Err(err) => Err(err)
     }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // open / close!                                                           //
@@ -76,15 +79,17 @@ mod TestFile {
 
     @test
     def length01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(len -> if (len == 8i64) Ok() else Err(Generic("length error")), File.length(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                        File.length,
+                        len -> len == 8i64)
+            |> Result.getWithDefault(false)
 
     @test
     def length02(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
-                    f -> Result.flatMap(len -> if (len == 1i64) Ok() else Err(Generic("length error")), File.length(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.length,
+                    len -> len == 1i64)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // seek!                                                                   //
@@ -92,21 +97,24 @@ mod TestFile {
 
     @test
     def seek01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("seek! error")), File.seek!(0i64, f) *> File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> File.seek!(0i64, f) *> File.readChar!(f),
+                    ch -> ch == 'A')
+            |> Result.getWithDefault(false)
 
     @test
     def seek02(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'B') Ok() else Err(Generic("seek! error")), File.seek!(2i64, f) *> File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> File.seek!(2i64, f) *> File.readChar!(f),
+                    ch -> ch == 'B')
+            |> Result.getWithDefault(false)
 
     @test
     def seek03(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'C') Ok() else Err(Generic("seek! error")), File.seek!(4i64, f) *> File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> File.seek!(4i64, f) *> File.readChar!(f),
+                    ch -> ch == 'C')
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // skipBytes!                                                              //
@@ -114,27 +122,31 @@ mod TestFile {
 
     @test
     def skipBytes01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("seek! error")), File.skipBytes!(0, f) *> File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> File.skipBytes!(0, f) *> File.readChar!(f),
+                    ch -> ch == 'A')
+            |> Result.getWithDefault(false)
 
     @test
     def skipBytes02(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'B') Ok() else Err(Generic("seek! error")), File.skipBytes!(2, f) *> File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> File.skipBytes!(2, f) *> File.readChar!(f),
+                    ch -> ch == 'B')
+            |> Result.getWithDefault(false)
 
     @test
     def skipBytes03(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'C') Ok() else Err(Generic("seek! error")), File.skipBytes!(4, f) *> File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> File.skipBytes!(4, f) *> File.readChar!(f),
+                    ch -> ch == 'C')
+            |> Result.getWithDefault(false)
 
     @test
     def skipBytes04(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("skipBytes! error")), File.skipBytes!(-1, f) *> File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    f -> File.skipBytes!(-1, f) *> File.readChar!(f),
+                    ch -> ch == 'A')
+            |> Result.getWithDefault(false)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -143,9 +155,11 @@ mod TestFile {
 
     @test
     def setLength01(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile-len10.bin",
-                    f -> Result.flatMap(len -> if (len == 10i64) Ok() else Err(Generic("setLength! error")), File.setLength!(10i64, f) *> File.length(f)))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.setLength!(10i64),
+                    File.length,
+                    len -> len == 10i64)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // read!                                                                   //
@@ -155,18 +169,20 @@ mod TestFile {
     def read01(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 1);
         let expected = Array#{-1i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("read! error")), File.read!(arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.read!(arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     @test
     def read02(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 8);
         let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 67i8, 0i8, 68i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("read! error")), File.read!(arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.read!(arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -177,18 +193,20 @@ mod TestFile {
     def readWith01(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 6);
         let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 0i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readWith! error")), File.readWith!(destOffset = 0, length = 4, arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.readWith!(destOffset = 0, length = 4, arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     @test
     def readWith02(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 6);
         let expected = Array#{0i8, 0i8, 0i8, 65i8, 0i8, 66i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readWith! error")), File.readWith!(destOffset = 2, length = 4, arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.readWith!(destOffset = 2, length = 4, arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -199,18 +217,20 @@ mod TestFile {
     def readFully01(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 1);
         let expected = Array#{-1i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFully! error")), File.readFully!(arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.readFully!(arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     @test
     def readFully02(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 8);
         let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 67i8, 0i8, 68i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFully! error")), File.readFully!(arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.readFully!(arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -221,18 +241,20 @@ mod TestFile {
     def readFullyWith01(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 6);
         let expected = Array#{0i8, 65i8, 0i8, 66i8, 0i8, 0i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFullyWith! error")), File.readFullyWith!(destOffset = 0, length = 4, arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.readFullyWith!(destOffset = 0, length = 4, arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     @test
     def readFullyWith02(): Bool \ IO = region rc {
         let arr: Array[Int8, rc] = Array.new(rc, 6);
         let expected = Array#{0i8, 0i8, 0i8, 65i8, 0i8, 66i8} @ rc;
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(_ -> if (Array.sameElements(arr, expected)) Ok() else Err(Generic("readFullyWith! error")), File.readFullyWith!(destOffset = 2, length = 4, arr, f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.readFullyWith!(destOffset = 2, length = 4, arr),
+                    _ -> Array.sameElements(arr, expected))
+            |> Result.getWithDefault(false)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -241,15 +263,17 @@ mod TestFile {
 
     @test
     def readByte01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-1byte.bin",
-                    f -> Result.flatMap(i -> if (i == 1) Ok() else Err(Generic("readByte! error")), File.readByte!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/1-1byte.bin",
+                    File.readByte!,
+                    i -> i == 1)
+            |> Result.getWithDefault(false)
 
     @test
     def readByte02(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
-                    f -> Result.flatMap(i -> if (i == 255) Ok() else Err(Generic("readByte! error")), File.readByte!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.readByte!,
+                    i -> i == 255)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readBool!                                                               //
@@ -257,15 +281,17 @@ mod TestFile {
 
     @test
     def readBool01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(b -> if (b == false) Ok() else Err(Generic("readBool! error")), File.readBool!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.readBool!,
+                    b -> b == false)
+            |> Result.getWithDefault(false)
 
     @test
     def readBool02(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
-                    f -> Result.flatMap(b -> if (b == true) Ok() else Err(Generic("readBool! error")), File.readBool!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.readBool!,
+                    b -> b == true)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readChar!                                                               //
@@ -273,9 +299,10 @@ mod TestFile {
 
     @test
     def readChar01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
-                    f -> Result.flatMap(ch -> if (ch == 'A') Ok() else Err(Generic("readChar! error")), File.readChar!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/ABCD.bin",
+                    File.readChar!,
+                    ch -> ch == 'A')
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readInt8!                                                               //
@@ -283,9 +310,10 @@ mod TestFile {
 
     @test
     def readInt801(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
-                    f -> Result.flatMap(i -> if (i == -1i8) Ok() else Err(Generic("readInt8! error")), File.readInt8!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.readInt8!,
+                    i -> i == -1i8)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readInt16!                                                              //
@@ -293,9 +321,10 @@ mod TestFile {
 
     @test
     def readInt161(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-2bytes.bin",
-                    f -> Result.flatMap(i -> if (i == 255i16) Ok() else Err(Generic("readInt16! error")), File.readInt16!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-2bytes.bin",
+                    File.readInt16!,
+                    i -> i == 255i16)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readInt32!                                                              //
@@ -303,9 +332,10 @@ mod TestFile {
 
     @test
     def readInt321(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-4bytes.bin",
-                    f -> Result.flatMap(i -> if (i == 255) Ok() else Err(Generic("readInt32! error")), File.readInt32!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-4bytes.bin",
+                    File.readInt32!,
+                    i -> i == 255)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readInt64!                                                              //
@@ -313,9 +343,10 @@ mod TestFile {
 
     @test
     def readInt641(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-8bytes.bin",
-                    f -> Result.flatMap(i -> if (i == 255i64) Ok() else Err(Generic("readInt64! error")), File.readInt64!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-8bytes.bin",
+                    File.readInt64!,
+                    i -> i == 255i64)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readFloat32!                                                            //
@@ -323,9 +354,10 @@ mod TestFile {
 
     @test
     def readFloat321(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-float.bin",
-                    f -> Result.flatMap(d -> if (d == 1.0f32) Ok() else Err(Generic("readFloat32! error")), File.readFloat32!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/1-float.bin",
+                    File.readFloat32!,
+                    d -> d == 1.0f32)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readFloat64!                                                            //
@@ -333,9 +365,10 @@ mod TestFile {
 
     @test
     def readFloat641(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-double.bin",
-                    f -> Result.flatMap(d -> if (d == 1.0f64) Ok() else Err(Generic("readFloat64! error")), File.readFloat64!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/1-double.bin",
+                    File.readFloat64!,
+                    d -> d == 1.0f64)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readUnsignedByte!                                                       //
@@ -343,15 +376,17 @@ mod TestFile {
 
     @test
     def readUnsignedByte01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/1-1byte.bin",
-                    f -> Result.flatMap(i -> if (i == 1) Ok() else Err(Generic("readUnsignedByte! error")), File.readUnsignedByte!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/1-1byte.bin",
+                    File.readUnsignedByte!,
+                    i -> i == 1)
+            |> Result.getWithDefault(false)
 
     @test
     def readUnsignedByte02(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
-                    f -> Result.flatMap(i -> if (i == 255) Ok() else Err(Generic("readUnsignedByte! error")), File.readUnsignedByte!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/255-1byte.bin",
+                    File.readUnsignedByte!,
+                    i -> i == 255)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readUnsignedShort!                                                      //
@@ -359,9 +394,10 @@ mod TestFile {
 
     @test
     def readUnsignedShort01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/modified-utf8.txt",
-                    f -> Result.flatMap(i -> if (i == 12) Ok() else Err(Generic("readUnsignedShort! error")), File.readUnsignedShort!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/modified-utf8.txt",
+                    File.readUnsignedShort!,
+                    i -> i == 12)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readLine!                                                              //
@@ -369,9 +405,10 @@ mod TestFile {
 
     @test
     def readLine01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/multiline.txt",
-                    f -> Result.flatMap(s -> if (s == "Sample text for TestFile.flix") Ok() else Err(Generic("readLine! error")), File.readLine!(f)))
-            |> Result.isOk
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/multiline.txt",
+                    File.readLine!,
+                    s -> s == "Sample text for TestFile.flix")
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // readModifiedUTF!                                                        //
@@ -379,10 +416,10 @@ mod TestFile {
 
     @test
     def readModifiedUTF01(): Bool \ IO =
-        withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/modified-utf8.txt",
-                    f -> Result.flatMap(s -> if (s == "Hello World!") Ok() else Err(Generic("readModifiedUTF! error")), File.readModifiedUTF!(f)))
-            |> Result.isOk
-
+        testReadFunction("./main/test/ca/uwaterloo/flix/library/testdata/modified-utf8.txt",
+                    File.readModifiedUTF!,
+                    s -> s == "Hello World!")
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // write!                                                                  //
@@ -390,10 +427,14 @@ mod TestFile {
 
     @test
     def write01(): Bool \ IO = region rc {
-        let buf = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
-                    f -> File.write!(buf, f))
-            |> Result.isOk
+        let src = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
+        let dest = Array.new(rc, 4);
+        let expected = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.write!(src),
+                    File.read!(dest),
+                    _ -> Array.sameElements(dest, expected))
+            |> Result.getWithDefault(false)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -402,10 +443,14 @@ mod TestFile {
 
     @test
     def writeWith01(): Bool \ IO = region rc {
-        let buf = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile02.bin",
-                    f -> File.writeWith!(sourceOffset = 2, length = 2, buf, f))
-            |> Result.isOk
+        let src = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
+        let dest = Array.new(rc, 2);
+        let expected = Array#{2i8, 3i8} @ rc;
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeWith!(sourceOffset = 2, length = 2, src),
+                    File.read!(dest),
+                    _ -> Array.sameElements(dest, expected))
+            |> Result.getWithDefault(false)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -414,10 +459,20 @@ mod TestFile {
 
     @test
     def writeBool01(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile03.bin",
-                    f -> File.writeBool!(true, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeBool!(true),
+                    File.readBool!,
+                    b -> b == true)
+            |> Result.getWithDefault(false)
 
+
+    @test
+    def writeBool02(): Bool \ IO =
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeBool!(false),
+                    File.readBool!,
+                    b -> b == false)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeAsChar!                                                            //
@@ -425,9 +480,11 @@ mod TestFile {
 
     @test
     def writeAsChar01(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile04.bin",
-                    f -> File.writeAsChar!(100, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeAsChar!(65),
+                    File.readChar!,
+                    ch -> ch == 'A')
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeAsByte!                                                            //
@@ -435,9 +492,11 @@ mod TestFile {
 
     @test
     def writeAsByte01(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile05.bin",
-                    f -> File.writeAsByte!(100, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeAsByte!(100),
+                    File.readByte!,
+                    i -> i == 100)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeAsShort!                                                           //
@@ -445,9 +504,11 @@ mod TestFile {
 
     @test
     def writeAsShort01(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile06.bin",
-                    f -> File.writeAsShort!(100, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeAsShort!(100),
+                    File.readUnsignedShort!,
+                    i -> i == 100)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeInt32!                                                             //
@@ -455,9 +516,11 @@ mod TestFile {
 
     @test
     def writeInt3201(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile07.bin",
-                    f -> File.writeInt32!(100, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeInt32!(100),
+                    File.readInt32!,
+                    i -> i == 100)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeInt64!                                                             //
@@ -465,9 +528,11 @@ mod TestFile {
 
     @test
     def writeInt6401(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile07.bin",
-                    f -> File.writeInt64!(100i64, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeInt64!(100i64),
+                    File.readInt64!,
+                    i -> i == 100i64)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeFloat32!                                                           //
@@ -475,9 +540,11 @@ mod TestFile {
 
     @test
     def writeFloat3201(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile08.bin",
-                    f -> File.writeFloat32!(100.0f32, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeFloat32!(100.0f32),
+                    File.readFloat32!,
+                    d -> d == 100.0f32)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeFloat64!                                                           //
@@ -485,9 +552,11 @@ mod TestFile {
 
     @test
     def writeFloat6401(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile09.bin",
-                    f -> File.writeFloat64!(100.0f64, f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeFloat64!(100.0f64),
+                    File.readFloat64!,
+                    d -> d == 100.0f64)
+            |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // writeModifiedUTF!                                                       //
@@ -495,8 +564,10 @@ mod TestFile {
 
     @test
     def writeModifiedUTF01(): Bool \ IO =
-        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile10.bin",
-                    f -> File.writeModifiedUTF!("Hello World!", f))
-            |> Result.isOk
+        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    File.writeModifiedUTF!("Hello World!"),
+                    File.readModifiedUTF!,
+                    s -> s == "Hello World!")
+            |> Result.getWithDefault(false)
 
 }
