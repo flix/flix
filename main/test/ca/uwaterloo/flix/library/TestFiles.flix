@@ -16,7 +16,7 @@
 
 mod TestFile {
 
-    use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
+    use Files.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
         readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks,
         stat, accessTime, creationTime, modificationTime, size}
@@ -64,7 +64,7 @@ mod TestFile {
     @test
     def testStat02(): Bool \ IO =
         match stat("README.md") {
-            case Ok(v) => v.fileType == File.FileType.File
+            case Ok(v) => v.fileType == Files.FileType.File
             case _ => false
         }
 
