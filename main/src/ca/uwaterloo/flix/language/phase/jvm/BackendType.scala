@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.MonoType
 
-import scala.annotation.tailrec
-
 /**
   * Represents all Flix types that are not object on the JVM including Void.
   */
