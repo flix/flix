@@ -382,4 +382,121 @@ mod TestFile {
         withReadOnlyFile("./main/test/ca/uwaterloo/flix/library/testdata/modified-utf8.txt",
                     f -> Result.flatMap(s -> if (s == "Hello World!") Ok() else Err(Generic("readModifiedUTF! error")), File.readModifiedUTF!(f)))
             |> Result.isOk
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // write!                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def write01(): Bool \ IO = region rc {
+        let buf = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+                    f -> File.write!(buf, f))
+            |> Result.isOk
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeWith!                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeWith01(): Bool \ IO = region rc {
+        let buf = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile02.bin",
+                    f -> File.writeWith!(sourceOffset = 2, length = 2, buf, f))
+            |> Result.isOk
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeBool!                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeBool01(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile03.bin",
+                    f -> File.writeBool!(true, f))
+            |> Result.isOk
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeAsChar!                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeAsChar01(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile04.bin",
+                    f -> File.writeAsChar!(100, f))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeAsByte!                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeAsByte01(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile05.bin",
+                    f -> File.writeAsByte!(100, f))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeAsShort!                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeAsShort01(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile06.bin",
+                    f -> File.writeAsShort!(100, f))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeInt32!                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeInt3201(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile07.bin",
+                    f -> File.writeInt32!(100, f))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeInt64!                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeInt6401(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile07.bin",
+                    f -> File.writeInt64!(100i64, f))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeFloat32!                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeFloat3201(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile08.bin",
+                    f -> File.writeFloat32!(100.0f32, f))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeFloat64!                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeFloat6401(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile09.bin",
+                    f -> File.writeFloat64!(100.0f64, f))
+            |> Result.isOk
+
+    /////////////////////////////////////////////////////////////////////////////
+    // writeModifiedUTF!                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def writeModifiedUTF01(): Bool \ IO =
+        withWritableFile("./main/test/ca/uwaterloo/flix/library/testdata/outfile10.bin",
+                    f -> File.writeModifiedUTF!("Hello World!", f))
+            |> Result.isOk
+
 }
