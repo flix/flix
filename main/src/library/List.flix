@@ -1073,6 +1073,7 @@ mod List {
     ///
     /// Returns the elements of `l` as a `DelayList`.
     ///
+    @Lazy
     pub def toDelayList(l: List[a]): DelayList[a] = match l {
         case Nil     => DelayList.ENil
         case x :: xs => DelayList.LCons(x, lazy toDelayList(xs))

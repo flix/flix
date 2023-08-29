@@ -1340,7 +1340,7 @@ object Resolver {
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
           val eVal = visitExp(exp, env0)
-          val clazzVal = lookupJvmClass(className, loc);
+          val clazzVal = lookupJvmClass(className, loc)
           mapN(eVal, clazzVal) {
             (e, clazz) => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
           }
@@ -3071,7 +3071,7 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the type of the given associtated type `assoc0` if it is accessible from the given namespace `ns0`.
+    * Successfully returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     */

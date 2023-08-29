@@ -260,7 +260,6 @@ h3 {
 
 nav {
     position: relative;
-    size: fit-content;
 }
 @media screen and (max-width: 50rem) {
     nav {
@@ -269,6 +268,14 @@ nav {
         left: 0;
         height: 100%;
     }
+}
+
+nav .back {
+    display: block;
+    margin-bottom: 1rem;
+}
+nav .back::before {
+    content: "↩ ";
 }
 
 nav > div {
