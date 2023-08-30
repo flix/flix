@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.MonoType
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes
 
 import scala.annotation.tailrec
 
@@ -91,15 +91,15 @@ sealed trait BackendType extends VoidableType {
     * Returns the array store instruction for arrays of the given tpe.
     */
   def getArrayStoreInstruction: Int = this match {
-    case BackendType.Bool => BASTORE
-    case BackendType.Char => CASTORE
-    case BackendType.Int8 => BASTORE
-    case BackendType.Int16 => SASTORE
-    case BackendType.Int32 => IASTORE
-    case BackendType.Int64 => LASTORE
-    case BackendType.Float32 => FASTORE
-    case BackendType.Float64 => DASTORE
-    case BackendType.Reference(_) | BackendType.Array(_) => AASTORE
+    case BackendType.Bool => Opcodes.BASTORE
+    case BackendType.Char => Opcodes.CASTORE
+    case BackendType.Int8 => Opcodes.BASTORE
+    case BackendType.Int16 => Opcodes.SASTORE
+    case BackendType.Int32 => Opcodes.IASTORE
+    case BackendType.Int64 => Opcodes.LASTORE
+    case BackendType.Float32 => Opcodes.FASTORE
+    case BackendType.Float64 => Opcodes.DASTORE
+    case BackendType.Reference(_) | BackendType.Array(_) => Opcodes.AASTORE
   }
 
 }
@@ -198,14 +198,14 @@ object BackendType {
     }
 
     def toArrayTypeCode: Int = this match {
-      case Bool => T_BOOLEAN
-      case Char => T_CHAR
-      case Int8 => T_BYTE
-      case Int16 => T_SHORT
-      case Int32 => T_INT
-      case Int64 => T_LONG
-      case Float32 => T_FLOAT
-      case Float64 => T_DOUBLE
+      case Bool => Opcodes.T_BOOLEAN
+      case Char => Opcodes.T_CHAR
+      case Int8 => Opcodes.T_BYTE
+      case Int16 => Opcodes.T_SHORT
+      case Int32 => Opcodes.T_INT
+      case Int64 => Opcodes.T_LONG
+      case Float32 => Opcodes.T_FLOAT
+      case Float64 => Opcodes.T_DOUBLE
     }
   }
 }
