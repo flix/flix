@@ -64,7 +64,7 @@ sealed trait BackendType extends VoidableType {
   /**
     * A string representing the erased type. This is used for parametrized class names.
     */
-  def toErasedString: String = this match {
+  val toErasedString: String = this match {
     case BackendType.Bool => "Bool"
     case BackendType.Char => "Char"
     case BackendType.Int8 => "Int8"
