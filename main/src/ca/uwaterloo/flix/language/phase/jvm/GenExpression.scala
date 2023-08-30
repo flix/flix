@@ -1477,10 +1477,22 @@ object GenExpression {
 
   }
 
-  private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = tpe match {
-    case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
-    case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
-    case t: BackendType.PrimitiveType => mv.visitIntInsn(NEWARRAY, t.toArrayTypeCode)
+  /**
+    * Emits code that instantiates an array of the type `tpe`.
+    */
+  private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = {
+    tpe match {
+      case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
+      case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
+      case BackendType.Bool => mv.visitIntInsn(NEWARRAY, T_BOOLEAN)
+      case BackendType.Char => mv.visitIntInsn(NEWARRAY, T_CHAR)
+      case BackendType.Int8 => mv.visitIntInsn(NEWARRAY, T_BYTE)
+      case BackendType.Int16 => mv.visitIntInsn(NEWARRAY, T_SHORT)
+      case BackendType.Int32 => mv.visitIntInsn(NEWARRAY, T_INT)
+      case BackendType.Int64 => mv.visitIntInsn(NEWARRAY, T_LONG)
+      case BackendType.Float32 => mv.visitIntInsn(NEWARRAY, T_FLOAT)
+      case BackendType.Float64 => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
+    }
   }
 
   /**

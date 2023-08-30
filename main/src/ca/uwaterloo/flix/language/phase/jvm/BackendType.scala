@@ -161,6 +161,9 @@ object BackendType {
 
   /**
     * Computes the `BackendType` based on the given `MonoType`.
+    * Types are erased except for the types that have built-in support in
+    * the Java standard library.
+    * Additionally, [[MonoType.Native]] is <b>not</b> erased.
     */
   def toFlixErasedBackendType(tpe: MonoType): BackendType = tpe match {
     case MonoType.Bool => Bool

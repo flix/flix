@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
 
+import scala.annotation.tailrec
+
 object AsmOps {
 
   /**
