@@ -187,18 +187,6 @@ object BackendType {
   }
 
   sealed trait PrimitiveType extends BackendType {
-
-    def toTpe: BackendType = this match {
-      case Bool => Bool
-      case Char => Char
-      case Int8 => Int8
-      case Int16 => Int16
-      case Int32 => Int32
-      case Int64 => Int64
-      case Float32 => Float32
-      case Float64 => Float64
-    }
-
     def toArrayTypeCode: Int = this match {
       case Bool => Opcodes.T_BOOLEAN
       case Char => Opcodes.T_CHAR
