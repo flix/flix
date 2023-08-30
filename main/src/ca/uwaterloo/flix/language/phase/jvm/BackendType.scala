@@ -52,8 +52,6 @@ sealed trait BackendType extends VoidableType {
   /**
     * Returns the erased type, either itself if `this` is primitive or `java.lang.Object`
     * if `this` is an array or a reference.
-    *
-    * @return
     */
   def toErased: BackendType = this match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
@@ -76,6 +74,10 @@ sealed trait BackendType extends VoidableType {
     case BackendType.Array(_) | BackendType.Reference(_) => "Obj"
   }
 
+  /**
+    * Denotes whether the type requires 64 bits on the jvm rather than 32 bit.
+    * This is important when it takes up two elements on the stack rather than one.
+    */
   def is64BitWidth: Boolean = this match {
     case BackendType.Int64 | BackendType.Float64 => true
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
