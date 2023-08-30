@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.Opcodes
 
 import scala.annotation.tailrec
@@ -87,7 +88,7 @@ sealed trait BackendType extends VoidableType {
   /**
     * Returns the Array fill type for the value of the type specified by `tpe`.
     */
-  def toArrayFillType: String = s"([${this.toErased.toDescriptor}${this.toErased.toDescriptor})V"
+  def toArrayFillType: String = mkDescriptor(BackendType.Array(this.toErased), this.toErased)(VoidableType.Void).toDescriptor
 
   /**
     * Returns the array store instruction for arrays of the given tpe.
