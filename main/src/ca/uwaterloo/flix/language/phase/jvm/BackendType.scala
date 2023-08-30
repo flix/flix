@@ -83,7 +83,7 @@ sealed trait BackendType extends VoidableType {
   }
 
   /**
-    * Returns the Array fill type for the value of the type specified by `tpe`
+    * Returns the Array fill type for the value of the type specified by `tpe`.
     */
   def toArrayFillType: String = s"([${this.toErased.toDescriptor}${this.toErased.toDescriptor})V"
 
