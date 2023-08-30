@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod File {
+mod Files {
 
     ///
     /// File types.
@@ -123,9 +123,9 @@ mod File {
     ///
     pub def fileType(f: String): Result[String, FileType] \ IO =
         forM (
-            isFile <- File.isRegularFile(f);
-            isDirec <- File.isDirectory(f);
-            isSymLink <- File.isSymbolicLink(f)
+            isFile <- Files.isRegularFile(f);
+            isDirec <- Files.isDirectory(f);
+            isSymLink <- Files.isSymbolicLink(f)
         ) yield {
             if (isFile)         FileType.File
             else if (isDirec)   FileType.Directory
@@ -612,7 +612,7 @@ mod File {
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
-            let alreadyExists = File.exists(f);
+            let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
@@ -647,7 +647,7 @@ mod File {
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
-            let alreadyExists = File.exists(f);
+            let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
@@ -681,7 +681,7 @@ mod File {
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
-            let alreadyExists = File.exists(f);
+            let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
@@ -717,7 +717,7 @@ mod File {
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
-            let alreadyExists = File.exists(f);
+            let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
@@ -755,7 +755,7 @@ mod File {
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
-            let alreadyExists = File.exists(f);
+            let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             let fileStream = newFileStream(javaFile);
@@ -792,7 +792,7 @@ mod File {
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
-            let alreadyExists = File.exists(f);
+            let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
@@ -827,7 +827,7 @@ mod File {
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
-            let alreadyExists = File.exists(f);
+            let alreadyExists = Files.exists(f);
 
             let javaFile = newFile(f);
             let printWriter = newPrintWriter(javaFile);
@@ -1023,7 +1023,7 @@ mod File {
     ///
     pub def moveInto(src: {src = String} , dst: String): Result[String, Unit] \ IO =
         try {
-            match File.isDirectory(dst) {
+            match isDirectory(dst) {
                 case Ok(true)  => {
                     import new java.io.File(String): ##java.io.File \ IO as newFile;
                     import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1114,7 +1114,7 @@ mod File {
     ///
     pub def copyInto(src: {src = String} , dst: String): Result[String, Unit] \ IO =
         try {
-            match File.isDirectory(dst) {
+            match isDirectory(dst) {
                 case Ok(true)  => {
                     import new java.io.File(String): ##java.io.File \ IO as newFile;
                     import java.io.File.toPath(): ##java.nio.file.Path \ IO;
