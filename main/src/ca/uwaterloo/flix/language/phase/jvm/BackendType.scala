@@ -106,21 +106,21 @@ sealed trait BackendType extends VoidableType {
 
 object BackendType {
 
-  case object Bool extends BackendType with PrimitiveType
+  case object Bool extends PrimitiveType
 
-  case object Char extends BackendType with PrimitiveType
+  case object Char extends PrimitiveType
 
-  case object Int8 extends BackendType with PrimitiveType
+  case object Int8 extends PrimitiveType
 
-  case object Int16 extends BackendType with PrimitiveType
+  case object Int16 extends PrimitiveType
 
-  case object Int32 extends BackendType with PrimitiveType
+  case object Int32 extends PrimitiveType
 
-  case object Int64 extends BackendType with PrimitiveType
+  case object Int64 extends PrimitiveType
 
-  case object Float32 extends BackendType with PrimitiveType
+  case object Float32 extends PrimitiveType
 
-  case object Float64 extends BackendType with PrimitiveType
+  case object Float64 extends PrimitiveType
 
   case class Array(tpe: BackendType) extends BackendType
 
@@ -184,7 +184,7 @@ object BackendType {
          MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
   }
 
-  sealed trait PrimitiveType {
+  sealed trait PrimitiveType extends BackendType {
 
     def toTpe: BackendType = this match {
       case Bool => Bool
