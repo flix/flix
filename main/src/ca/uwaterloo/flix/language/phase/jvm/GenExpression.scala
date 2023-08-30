@@ -1477,6 +1477,9 @@ object GenExpression {
 
   }
 
+  /**
+    * Emits code that instantiates an array of the type `tpe`.
+    */
   private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = {
     tpe match {
       case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
