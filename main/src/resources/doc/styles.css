@@ -24,7 +24,7 @@
     --light-def-color: #83af9b;
     --light-shadow-color: rgba(0, 0, 0, 0.05);
     --light-highlight-color: rgba(0, 0, 0, 0.3);
-    
+
     --dark-toggle-icon: "☾";
     --dark-bg-color-1: #151719;
     --dark-bg-color-2: #101214;
@@ -50,7 +50,7 @@
     --dark-def-color: #83af9b;
     --dark-shadow-color: rgba(0, 0, 0, 0.5);
     --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
-    
+
     --toggle-icon: var(--light-toggle-icon);
     --bg-color-1: var(--light-bg-color-1);
     --bg-color-2: var(--light-bg-color-2);
@@ -314,7 +314,7 @@ nav > div {
     #menu-toggle:not(:checked) {
         transform: translateX(2.8rem);
     }
-    
+
     #menu-toggle:not(:checked) ~ div {
         display: none;
     }
@@ -430,6 +430,22 @@ section > * {
     font-size: 0.85rem;
 }
 
+.copy-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    height: 16px;
+    color: var(--faded-text-color);
+}
+.copy-link svg {
+    width: 16px;
+    height: 16px;
+}
+.copy-link:hover {
+    color: var(--text-color);
+}
+
 .source {
     color: inherit;
     font-family: 'Inter', sans-serif;
@@ -461,7 +477,7 @@ section > * {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 
-    font-size: 0.8rem;   
+    font-size: 0.8rem;
 }
 .doc p {
     margin-top: 0;

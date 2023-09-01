@@ -63,6 +63,11 @@ object HtmlDocumentor {
   val Script: String = "/doc/index.js"
 
   /**
+    * The path to the the icon directory, relative to the resources folder.
+    */
+  val Icons: String = "/doc/icons"
+
+  /**
     * The root of the link to each file of the standard library.
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
@@ -417,6 +422,9 @@ object HtmlDocumentor {
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
     docAnnotations(clazz.ann)
+    sb.append("<button class='copy-link' title='Requires JavaScript' aria-label='Copy link'>")
+    inlineIcon("link")
+    sb.append("</button> ")
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
@@ -749,6 +757,15 @@ object HtmlDocumentor {
   }
 
   /**
+    * Append the contents of the SVG file with the given `name` to the given `StringBuilder`.
+    *
+    * By inlining the icon into the HTML itself, it can inherit the `color` of its parent.
+    */
+  private def inlineIcon(name: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(readResourceString(s"$Icons/$name.svg"))
+  }
+
+  /**
     * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
     */
   private def writeModule(mod: Module, output: String): Unit = {
@@ -777,6 +794,13 @@ object HtmlDocumentor {
     val is = LocalResource.getInputStream(path)
     LazyList.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
   }
+
+  /**
+    * Reads the given resource as a string.
+    *
+    * @param path The path of the resource, relative to the resources folder.
+    */
+  private def readResourceString(path: String): String = LocalResource.get(path)
 
   /**
     * Create a raw link to the given `SourceLocation`.
