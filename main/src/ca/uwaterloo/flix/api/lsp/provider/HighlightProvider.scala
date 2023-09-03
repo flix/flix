@@ -54,7 +54,7 @@ object HighlightProvider {
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
-        case Entity.Field(field) => highlightField(field)
+        case Entity.Field(field) => highlightLabel(field)
 
         case Entity.FormalParam(fparam) => highlightVar(fparam.sym)
 
@@ -70,7 +70,7 @@ object HighlightProvider {
 
         case Entity.Type(t) => t match {
           case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(label) => highlightField(label)
+            case TypeConstructor.RecordRowExtend(label) => highlightLabel(label)
             case TypeConstructor.SchemaRowExtend(pred) => highlightPred(pred)
             case TypeConstructor.Enum(sym, _) => highlightEnum(sym)
             case TypeConstructor.Effect(sym) => highlightEffect(sym)
@@ -128,9 +128,9 @@ object HighlightProvider {
     highlight(write :: reads)
   }
 
-  private def highlightField(field: Name.Field)(implicit index: Index, root: Option[Root]): JObject = {
-    val writes = index.defsOf(field).toList.map(loc => (loc, DocumentHighlightKind.Write))
-    val reads = index.usesOf(field).toList.map(loc => (loc, DocumentHighlightKind.Read))
+  private def highlightLabel(label: Name.Field)(implicit index: Index, root: Option[Root]): JObject = {
+    val writes = index.defsOf(label).toList.map(loc => (loc, DocumentHighlightKind.Write))
+    val reads = index.usesOf(label).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(reads ::: writes)
   }
 
