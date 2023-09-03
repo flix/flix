@@ -291,11 +291,11 @@ object Indexer {
     case Expr.RecordSelect(exp, label, _, _, _) =>
       Index.occurrenceOf(label) ++ Index.useOf(label) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RecordExtend(field, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordExtend(label, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.defOf(label) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RecordRestrict(field, exp, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordRestrict(label, exp, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.defOf(label) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.ArrayLit(exps, exp, _, _, _) =>
       visitExps(exps) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -476,7 +476,7 @@ object Indexer {
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
-      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordFieldPattern) ++ visitPat(pat)
+      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordLabelPattern) ++ visitPat(pat)
     case Pattern.RecordEmpty(_, _) => Index.empty
   }
 
@@ -486,10 +486,10 @@ object Indexer {
   private def visitPats(pats0: List[Pattern]): Index = traverse(pats0)(visitPat)
 
   /**
-    * Returns a reverse index for the given [[Pattern.Record.RecordFieldPattern]] `rfp`.
+    * Returns a reverse index for the given [[Pattern.Record.RecordLabelPattern]] `rfp`.
     */
-  private def visitRecordFieldPattern(rfp: Pattern.Record.RecordFieldPattern): Index = {
-    Index.useOf(rfp.field) ++ visitType(rfp.tpe) ++ visitPat(rfp.pat)
+  private def visitRecordLabelPattern(rfp: Pattern.Record.RecordLabelPattern): Index = {
+    Index.useOf(rfp.label) ++ visitType(rfp.tpe) ++ visitPat(rfp.pat)
   }
 
   /**
@@ -550,7 +550,7 @@ object Indexer {
       case TypeConstructor.Arrow(_) =>
         // We do not index arrow constructors.
         Index.empty
-      case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
+      case TypeConstructor.RecordRowExtend(label) => Index.occurrenceOf(tpe0) ++ Index.useOf(label)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
       case TypeConstructor.Enum(sym, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case TypeConstructor.Effect(sym) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)

@@ -130,7 +130,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended record rows.
     */
-  case class RecordRowExtend(field: Name.Field) extends TypeConstructor {
+  case class RecordRowExtend(label: Name.Field) extends TypeConstructor {
     /**
       * The shape of an extended record is { field :: type | rest }
       */

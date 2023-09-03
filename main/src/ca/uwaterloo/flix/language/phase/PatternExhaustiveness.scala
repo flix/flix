@@ -728,7 +728,7 @@ object PatternExhaustiveness {
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     case Pattern.Record(pats, pat, _, _) =>
       val patsVal = pats.map {
-        case TypedAst.Pattern.Record.RecordFieldPattern(field, _, pat1, _) =>
+        case TypedAst.Pattern.Record.RecordLabelPattern(field, _, pat1, _) =>
           (field, patToCtor(pat1))
       }
       val pVal = patToCtor(pat)

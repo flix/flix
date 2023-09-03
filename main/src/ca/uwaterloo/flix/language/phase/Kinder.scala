@@ -1115,10 +1115,10 @@ object Kinder {
       }
     case ResolvedAst.Pattern.Record(pats, pat, loc) =>
       val psVal = traverse(pats) {
-        case ResolvedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+        case ResolvedAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
           val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
           mapN(visitPattern(pat1, kenv, root)) {
-            case p => KindedAst.Pattern.Record.RecordFieldPattern(field, tvar, p, loc1)
+            case p => KindedAst.Pattern.Record.RecordLabelPattern(field, tvar, p, loc1)
           }
       }
       val pVal = visitPattern(pat, kenv, root)

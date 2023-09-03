@@ -1741,9 +1741,9 @@ object Resolver {
 
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+            case NamedAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
               mapN(visit(pat1)) {
-                case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
+                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(field, p, loc1)
               }
           }
           val pVal = visit(pat)
@@ -1785,9 +1785,9 @@ object Resolver {
 
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+            case NamedAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
               mapN(visit(pat1)) {
-                case p => ResolvedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
+                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(field, p, loc1)
               }
           }
           val pVal = visit(pat)
@@ -3545,7 +3545,7 @@ object Resolver {
   /**
     * Creates an environment from the given record pattern.
     */
-  private def mkRecordPatternEnv(pats: List[Record.RecordFieldPattern], pat: ResolvedAst.Pattern): ListMap[String, Resolution] = {
+  private def mkRecordPatternEnv(pats: List[Record.RecordLabelPattern], pat: ResolvedAst.Pattern): ListMap[String, Resolution] = {
     mkPatternsEnv(pats.map(_.pat)) ++ mkPatternEnv(pat)
   }
 

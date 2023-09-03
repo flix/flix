@@ -2563,7 +2563,7 @@ object Typer {
         for {
           recordTail <- visit(pat)
           _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
-          patTypes <- traverseM(pats)(visitRecordFieldPattern(_, root))
+          patTypes <- traverseM(pats)(visitRecordLabelPattern(_, root))
           resultType = mkRecordType(patTypes)
           _ <- unifyTypeM(resultType, tvar, loc)
         } yield resultType
@@ -2583,10 +2583,10 @@ object Typer {
   }
 
   /**
-    * Infers the type of the given [[KindedAst.Pattern.Record.RecordFieldPattern]] `pat`.
+    * Infers the type of the given [[KindedAst.Pattern.Record.RecordLabelPattern]] `pat`.
     */
-  private def visitRecordFieldPattern(pat: KindedAst.Pattern.Record.RecordFieldPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Field, Type, SourceLocation)] = pat match {
-    case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar, p, loc) =>
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Field, Type, SourceLocation)] = pat match {
+    case KindedAst.Pattern.Record.RecordLabelPattern(field, tvar, p, loc) =>
       // { Field = Pattern ... }
       for {
         patType <- inferPattern(p, root)
@@ -2615,8 +2615,8 @@ object Typer {
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val ps = pats.map {
-          case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar1, pat1, loc1) =>
-            TypedAst.Pattern.Record.RecordFieldPattern(field, subst0(tvar1), visit(pat1), loc1)
+          case KindedAst.Pattern.Record.RecordLabelPattern(field, tvar1, pat1, loc1) =>
+            TypedAst.Pattern.Record.RecordLabelPattern(field, subst0(tvar1), visit(pat1), loc1)
         }
         val p = visit(pat)
         TypedAst.Pattern.Record(ps, p, subst0(tvar), loc)

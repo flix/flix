@@ -1113,7 +1113,7 @@ object Namer {
 
     case WeededAst.Pattern.Record(pats, pat, loc) =>
       val psVal = pats.map {
-        case WeededAst.Pattern.Record.RecordFieldPattern(field, pat1, loc1) =>
+        case WeededAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
           val p = pat1 match {
             case Some(p1) => visitPattern(p1)
             case None =>
@@ -1121,7 +1121,7 @@ object Namer {
               val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
               NamedAst.Pattern.Var(sym, field.loc)
           }
-          NamedAst.Pattern.Record.RecordFieldPattern(field, p, loc1)
+          NamedAst.Pattern.Record.RecordLabelPattern(field, p, loc1)
       }
       val pVal = visitPattern(pat)
       NamedAst.Pattern.Record(psVal, pVal, loc)
@@ -1380,10 +1380,10 @@ object Namer {
   }
 
   /**
-    * Returns the free variables in the list of [[Record.RecordFieldPattern]] `pats`.
+    * Returns the free variables in the list of [[Record.RecordLabelPattern]] `pats`.
     */
-  private def recordPatternFreeVars(pats: List[Record.RecordFieldPattern]): List[Name.Ident] = {
-    def optFreeVars(rfp: Record.RecordFieldPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
+  private def recordPatternFreeVars(pats: List[Record.RecordLabelPattern]): List[Name.Ident] = {
+    def optFreeVars(rfp: Record.RecordLabelPattern): List[Name.Ident] = rfp.pat.map(freeVars).getOrElse(Nil)
 
     pats.flatMap(optFreeVars)
   }

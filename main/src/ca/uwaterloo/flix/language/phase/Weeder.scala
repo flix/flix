@@ -2429,7 +2429,7 @@ object Weeder {
       case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
         val loc = mkSL(sp1, sp2)
         val fsVal = traverse(fields) {
-          case ParsedAst.Pattern.RecordFieldPattern(sp11, field, pat, sp22) =>
+          case ParsedAst.Pattern.RecordLabelPattern(sp11, field, pat, sp22) =>
             flatMapN(visitName(field), traverseOpt(pat)(visit)) {
               case (_, p) if p.isEmpty =>
                 // Check that we have not seen the field symbol in a pattern before.
@@ -2440,12 +2440,12 @@ object Weeder {
                     seen += field.name -> field
                     val f = Name.mkField(field)
                     val patLoc = mkSL(sp11, sp22)
-                    WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc).toSuccess
+                    WeededAst.Pattern.Record.RecordLabelPattern(f, p, patLoc).toSuccess
                 }
               case (_, p) =>
                 val f = Name.mkField(field)
                 val patLoc = mkSL(sp11, sp22)
-                WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc).toSuccess
+                WeededAst.Pattern.Record.RecordLabelPattern(f, p, patLoc).toSuccess
             }
         }
         val rsVal = traverseOpt(rest)(visit)

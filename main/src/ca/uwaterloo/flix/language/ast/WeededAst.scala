@@ -243,12 +243,12 @@ object WeededAst {
 
     case class Tuple(elms: scala.List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordFieldPattern(field: Name.Field, pat: Option[Pattern], loc: SourceLocation)
+      case class RecordLabelPattern(field: Name.Field, pat: Option[Pattern], loc: SourceLocation)
     }
 
   }
