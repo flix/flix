@@ -431,10 +431,7 @@ section > * {
 }
 
 .copy-link {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
+    text-decoration: none;
     height: 1rem;
     color: var(--faded-text-color);
     margin-left: -0.25rem;

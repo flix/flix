@@ -35,11 +35,13 @@ function initTheme() {
 }
 
 function initCopyLinks() {
-    const btns = document.querySelectorAll(".copy-link");
-    for (const btn of btns) {
-        btn.setAttribute("title", "Copy link");
-        btn.addEventListener("click", async (e) => {
-            const href = location.href.split("#")[0] + "#" + btn.parentElement.id;
+    const links = document.querySelectorAll(".copy-link");
+    for (const link of links) {
+        link.setAttribute("title", "Copy link");
+        link.addEventListener("click", async (e) => {
+            e.preventDefault();
+
+            const href = location.href.split("#")[0] + link.href;
 
             let msg;
             try {
