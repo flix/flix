@@ -763,19 +763,19 @@ object Namer {
     case WeededAst.Expr.RecordEmpty(loc) =>
       NamedAst.Expr.RecordEmpty(loc).toSuccess
 
-    case WeededAst.Expr.RecordSelect(exp, field, loc) =>
+    case WeededAst.Expr.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expr.RecordSelect(e, field, loc)
+        case e => NamedAst.Expr.RecordSelect(e, label, loc)
       }
 
-    case WeededAst.Expr.RecordExtend(field, exp1, exp2, loc) =>
+    case WeededAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (v, r) => NamedAst.Expr.RecordExtend(field, v, r, loc)
+        case (v, r) => NamedAst.Expr.RecordExtend(label, v, r, loc)
       }
 
-    case WeededAst.Expr.RecordRestrict(field, exp, loc) =>
+    case WeededAst.Expr.RecordRestrict(label, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
-        case r => NamedAst.Expr.RecordRestrict(field, r, loc)
+        case r => NamedAst.Expr.RecordRestrict(label, r, loc)
       }
 
     case WeededAst.Expr.ArrayLit(exps, exp, loc) =>
@@ -1113,15 +1113,15 @@ object Namer {
 
     case WeededAst.Pattern.Record(pats, pat, loc) =>
       val psVal = pats.map {
-        case WeededAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
+        case WeededAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
           val p = pat1 match {
             case Some(p1) => visitPattern(p1)
             case None =>
               // Introduce new symbols if there is no pattern
-              val sym = Symbol.freshVarSym(field.name, BoundBy.Pattern, field.loc)
-              NamedAst.Pattern.Var(sym, field.loc)
+              val sym = Symbol.freshVarSym(label.name, BoundBy.Pattern, label.loc)
+              NamedAst.Pattern.Var(sym, label.loc)
           }
-          NamedAst.Pattern.Record.RecordLabelPattern(field, p, loc1)
+          NamedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
       }
       val pVal = visitPattern(pat)
       NamedAst.Pattern.Record(psVal, pVal, loc)
@@ -1208,9 +1208,9 @@ object Namer {
       case WeededAst.Type.RecordRowEmpty(loc) =>
         NamedAst.Type.RecordRowEmpty(loc).toSuccess
 
-      case WeededAst.Type.RecordRowExtend(field, value, rest, loc) =>
+      case WeededAst.Type.RecordRowExtend(label, value, rest, loc) =>
         mapN(visit(value), visit(rest)) {
-          case (t, r) => NamedAst.Type.RecordRowExtend(field, t, r, loc)
+          case (t, r) => NamedAst.Type.RecordRowExtend(label, t, r, loc)
         }
 
       case WeededAst.Type.Record(row, loc) =>

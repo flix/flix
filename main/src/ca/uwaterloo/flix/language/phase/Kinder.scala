@@ -633,23 +633,23 @@ object Kinder {
 
     case ResolvedAst.Expr.RecordEmpty(loc) => KindedAst.Expr.RecordEmpty(loc).toSuccess
 
-    case ResolvedAst.Expr.RecordSelect(exp0, field, loc) =>
+    case ResolvedAst.Expr.RecordSelect(exp0, label, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       mapN(expVal) {
-        exp => KindedAst.Expr.RecordSelect(exp, field, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        exp => KindedAst.Expr.RecordSelect(exp, label, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expr.RecordExtend(field, value0, rest0, loc) =>
+    case ResolvedAst.Expr.RecordExtend(label, value0, rest0, loc) =>
       val valueVal = visitExp(value0, kenv0, taenv, henv0, root)
       val restVal = visitExp(rest0, kenv0, taenv, henv0, root)
       mapN(valueVal, restVal) {
-        case (value, rest) => KindedAst.Expr.RecordExtend(field, value, rest, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (value, rest) => KindedAst.Expr.RecordExtend(label, value, rest, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expr.RecordRestrict(field, rest0, loc) =>
+    case ResolvedAst.Expr.RecordRestrict(label, rest0, loc) =>
       val restVal = visitExp(rest0, kenv0, taenv, henv0, root)
       mapN(restVal) {
-        rest => KindedAst.Expr.RecordRestrict(field, rest, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        rest => KindedAst.Expr.RecordRestrict(label, rest, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expr.ArrayLit(exps, exp, loc) =>
@@ -1115,10 +1115,10 @@ object Kinder {
       }
     case ResolvedAst.Pattern.Record(pats, pat, loc) =>
       val psVal = traverse(pats) {
-        case ResolvedAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
+        case ResolvedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
           val tvar = Type.freshVar(Kind.Star, loc1.asSynthetic)
           mapN(visitPattern(pat1, kenv, root)) {
-            case p => KindedAst.Pattern.Record.RecordLabelPattern(field, tvar, p, loc1)
+            case p => KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc1)
           }
       }
       val pVal = visitPattern(pat, kenv, root)
