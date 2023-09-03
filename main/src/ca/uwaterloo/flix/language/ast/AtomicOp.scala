@@ -46,11 +46,11 @@ object AtomicOp {
 
   case object RecordEmpty extends AtomicOp
 
-  case class RecordSelect(field: Name.Field) extends AtomicOp
+  case class RecordSelect(label: Name.Field) extends AtomicOp
 
-  case class RecordExtend(field: Name.Field) extends AtomicOp
+  case class RecordExtend(label: Name.Field) extends AtomicOp
 
-  case class RecordRestrict(field: Name.Field) extends AtomicOp
+  case class RecordRestrict(label: Name.Field) extends AtomicOp
 
   case object ArrayLit extends AtomicOp
 

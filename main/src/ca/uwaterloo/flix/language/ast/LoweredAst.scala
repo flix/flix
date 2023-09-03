@@ -168,7 +168,7 @@ object LoweredAst {
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordLabelPattern(field: Name.Field, tpe: Type, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Field, tpe: Type, pat: Pattern, loc: SourceLocation)
     }
   }
 
