@@ -435,15 +435,38 @@ section > * {
     border: none;
     padding: 0;
     cursor: pointer;
-    height: 16px;
+    height: 1rem;
     color: var(--faded-text-color);
+    margin-left: -0.25rem;
 }
 .copy-link svg {
-    width: 16px;
-    height: 16px;
+    width: 1rem;
+    height: 1rem;
 }
 .copy-link:hover {
     color: var(--text-color);
+}
+
+.copy-link-msg {
+    background-color:var(--shadow-color);
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.2rem;
+    pointer-events: none;
+
+    animation: fade-out 1s ease-in;
+}
+@keyframes fade-out {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
 }
 
 .source {
