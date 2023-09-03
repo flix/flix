@@ -844,19 +844,19 @@ object ParsedAst {
       * Record Literal Expression.
       *
       * @param sp1    the position of the first character in the expression.
-      * @param fields the field literals of the record.
+      * @param labels the label literals of the record.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordLit(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordLit(sp1: SourcePosition, labels: Seq[ParsedAst.RecordLabel], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Select Expression.
       *
       * @param exp   the record expression.
-      * @param field the field to select from the record.
+      * @param label the label to select from the record.
       * @param sp2   the position of the last character in the expression.
       */
-    case class RecordSelect(exp: ParsedAst.Expression, field: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordSelect(exp: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Operation Expression.
@@ -1269,22 +1269,22 @@ object ParsedAst {
       * Record Pattern
       *
       * @param sp1    the position of the first character in the pattern.
-      * @param fields list of [[RecordLabelPattern]].
+      * @param labels list of [[RecordLabelPattern]].
       * @param rest   optional record extension pattern `| r`.
       * @param sp2    the position of the last character in the pattern.
       */
-    case class Record(sp1: SourcePosition, fields: Seq[RecordLabelPattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Record(sp1: SourcePosition, labels: Seq[RecordLabelPattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
-      * Represents a pattern for a field of a record.
-      * `field {= pattern}`
+      * Represents a pattern for a label of a record.
+      * `label {= pattern}`
       *
       * @param sp1   the position of the first character in the pattern.
-      * @param field the field the pattern refers to.
+      * @param label the label the pattern refers to.
       * @param pat   optional pattern.
       * @param sp2   the position of the last character in the pattern.
       */
-    case class RecordLabelPattern(sp1: SourcePosition, field: Name.Ident, pat: Option[Pattern], sp2: SourcePosition)
+    case class RecordLabelPattern(sp1: SourcePosition, label: Name.Ident, pat: Option[Pattern], sp2: SourcePosition)
 
   }
 
@@ -1433,21 +1433,21 @@ object ParsedAst {
       * Record Type.
       *
       * @param sp1    the position of the first character in the type.
-      * @param fields the sequence of field types.
+      * @param labels the sequence of label types.
       * @param rest   the optional row variable.
       * @param sp2    the position of the last character in the type.
       */
-    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+    case class Record(sp1: SourcePosition, labels: Seq[ParsedAst.RecordLabelType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Record Row type.
       *
       * @param sp1    the position of the first character in the type.
-      * @param fields the sequence of field types.
+      * @param labels the sequence of label types.
       * @param rest   the optional row variable.
       * @param sp2    the position of the last character in the type.
       */
-    case class RecordRow(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+    case class RecordRow(sp1: SourcePosition, labels: Seq[ParsedAst.RecordLabelType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Schema Type.
@@ -2096,52 +2096,52 @@ object ParsedAst {
       * Record Extension.
       *
       * @param sp1   the position of the first character in the operation.
-      * @param field the field of the field.
-      * @param exp   the value of the field.
+      * @param label the label of the label.
+      * @param exp   the value of the label.
       * @param sp2   the position of the last character in the operation.
       */
-    case class Extend(sp1: SourcePosition, field: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
+    case class Extend(sp1: SourcePosition, label: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
 
     /**
       * Record Restriction.
       *
       * @param sp1   the position of the first character in the operation.
-      * @param field the field of the field.
+      * @param label the label of the label.
       * @param sp2   the position of the last character in the operation.
       */
-    case class Restrict(sp1: SourcePosition, field: Name.Ident, sp2: SourcePosition) extends RecordOp
+    case class Restrict(sp1: SourcePosition, label: Name.Ident, sp2: SourcePosition) extends RecordOp
 
     /**
       * Record Update.
       *
       * @param sp1   the position of the first character in the operation.
-      * @param field the field of the field.
-      * @param exp   the value of the field.
+      * @param label the label of the label.
+      * @param exp   the value of the label.
       * @param sp2   the position of the last character in the operation.
       */
-    case class Update(sp1: SourcePosition, field: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
+    case class Update(sp1: SourcePosition, label: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends RecordOp
 
   }
 
   /**
-    * Record Field Value.
+    * Record Label Value.
     *
-    * @param sp1   the position of the first character in the field.
-    * @param field the field of the field.
-    * @param exp   the value of the field.
-    * @param sp2   the position of the last character in the field.
+    * @param sp1   the position of the first character in the label.
+    * @param label the label of the label.
+    * @param exp   the value of the label.
+    * @param sp2   the position of the last character in the label.
     */
-  case class RecordField(sp1: SourcePosition, field: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition)
+  case class RecordLabel(sp1: SourcePosition, label: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
-    * Record Field Type.
+    * Record Label Type.
     *
-    * @param sp1   the position of the first character in the field.
-    * @param field the field of the field.
-    * @param tpe   the type of the field.
-    * @param sp2   the position of the last character in the field.
+    * @param sp1   the position of the first character in the label.
+    * @param label the label of the label.
+    * @param tpe   the type of the label.
+    * @param sp2   the position of the last character in the label.
     */
-  case class RecordFieldType(sp1: SourcePosition, field: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+  case class RecordLabelType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
   /**
     * A common super-type for schema predicate types.

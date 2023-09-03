@@ -1507,7 +1507,7 @@ object Weeder {
 
     case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
       val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordField(_, ident, exp, _) =>
+        case ParsedAst.RecordLabel(_, ident, exp, _) =>
           val expVal = visitExp(exp, senv)
 
           mapN(expVal, visitName(ident)) {
@@ -2907,7 +2907,7 @@ object Weeder {
   /**
     * Builds a record row from the given fields and optional rest variable.
     */
-  private def buildRecordRow(fields0: Seq[ParsedAst.RecordFieldType], restOpt: Option[Name.Ident], loc: SourceLocation): Validation[WeededAst.Type, WeederError] = {
+  private def buildRecordRow(fields0: Seq[ParsedAst.RecordLabelType], restOpt: Option[Name.Ident], loc: SourceLocation): Validation[WeededAst.Type, WeederError] = {
     // If rest is absent, then it is the empty record row
     val rest = restOpt match {
       case None => WeededAst.Type.RecordRowEmpty(loc)
@@ -2915,7 +2915,7 @@ object Weeder {
     }
 
     val fieldsVal = traverse(fields0) {
-      case ParsedAst.RecordFieldType(sp1, ident, tpe, sp2) =>
+      case ParsedAst.RecordLabelType(sp1, ident, tpe, sp2) =>
         mapN(visitType(tpe)) {
           case t => (Name.mkField(ident), t)
         }
