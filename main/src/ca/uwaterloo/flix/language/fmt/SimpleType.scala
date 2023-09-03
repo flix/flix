@@ -566,9 +566,9 @@ object SimpleType {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
         val labelType = RecordLabelType(name.name, fromWellKindedType(tpe))
         visit(rest) match {
-          // Case 1.1: Unextended row. Put the fields together.
+          // Case 1.1: Unextended row. Put the labels together.
           case SimpleType.RecordRow(labels) => SimpleType.RecordRow(labelType :: labels)
-          // Case 1.2: Extended row. Put the fields together.
+          // Case 1.2: Extended row. Put the labels together.
           case SimpleType.RecordRowExtend(labels, restOfRest) => SimpleType.RecordRowExtend(labelType :: labels, restOfRest)
           // Case 1.3: Non-row. Put it in the "rest" position.
           case nonRecord => SimpleType.RecordRowExtend(labelType :: Nil, nonRecord)
@@ -579,7 +579,7 @@ object SimpleType {
       case nonRecord => fromWellKindedType(nonRecord)
     }
 
-    // sort the fields after converting
+    // sort the labels after converting
     visit(row0) match {
       case RecordRowExtend(labels, rest) => RecordRowExtend(labels.sortBy(_.name), rest)
       case RecordRow(labels) => RecordRow(labels.sortBy(_.name))

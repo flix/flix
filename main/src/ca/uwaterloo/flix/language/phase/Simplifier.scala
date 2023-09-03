@@ -610,7 +610,7 @@ object Simplifier {
           * Matching a record may succeed or fail.
           *
           * We generate a fresh variable and let-binding for each component of the
-          * record (field or extension) and then we recurse on the nested patterns
+          * record (label or extension) and then we recurse on the nested patterns
           * and freshly generated variables.
           */
         case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>

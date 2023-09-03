@@ -109,7 +109,7 @@ object FormatType {
     def parenthesize(s: String): String = "(" + s + ")"
 
     /**
-      * Transforms the given record `fieldType` pair into a string.
+      * Transforms the given record `labelType` pair into a string.
       */
     def visitRecordLabelType(labelType: SimpleType.RecordLabelType): String = labelType match {
       case SimpleType.RecordLabelType(label, tpe) => s"$label = ${visit(tpe, Mode.Type)}"
