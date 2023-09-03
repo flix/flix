@@ -422,9 +422,7 @@ object HtmlDocumentor {
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
     docAnnotations(clazz.ann)
-    sb.append("<button class='copy-link' title='Requires JavaScript' aria-label='Copy link'>")
-    inlineIcon("link")
-    sb.append("</button> ")
+    docLink()
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
@@ -447,6 +445,7 @@ object HtmlDocumentor {
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='enum-${esc(enm.sym.name)}'>")
     docAnnotations(enm.ann)
+    docLink()
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${esc(enm.sym.name)}</span>")
@@ -467,6 +466,7 @@ object HtmlDocumentor {
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='eff-${esc(eff.sym.name)}'>")
     docAnnotations(eff.ann)
+    docLink()
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
     sb.append(s"<span class='name'>${esc(eff.sym.name)}</span>")
@@ -484,6 +484,7 @@ object HtmlDocumentor {
     */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
+    docLink()
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
@@ -503,6 +504,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
+    docLink()
     docSpec(defn.sym.name, defn.spec)
     sb.append("</div>")
   }
@@ -740,6 +742,16 @@ object HtmlDocumentor {
         sb.append(", ")
       }
     }
+  }
+
+  /**
+    * Appends a 'copy link' button the the given `StringBuilder`.
+    * This creates a link to the ID of the direct parent, so this must be present.
+    */
+  private def docLink()(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<button class='copy-link' title='Requires JavaScript' aria-label='Copy link'>")
+    inlineIcon("link")
+    sb.append("</button> ")
   }
 
   /**
