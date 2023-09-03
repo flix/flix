@@ -57,7 +57,7 @@ object FindReferencesProvider {
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
-        case Entity.Field(field) => findFieldReferences(field)
+        case Entity.Field(field) => findLabelReferences(field)
 
         case Entity.FormalParam(param) => findVarReferences(param.sym)
 
@@ -74,7 +74,7 @@ object FindReferencesProvider {
         case Entity.Type(t) => t match {
           case Type.Var(sym, _) => findTypeVarReferences(sym)
           case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(label) => findFieldReferences(label)
+            case TypeConstructor.RecordRowExtend(label) => findLabelReferences(label)
             case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
             case TypeConstructor.Enum(sym, _) => findEnumReferences(sym)
             case TypeConstructor.Effect(sym) => findEffectReferences(sym)
@@ -133,9 +133,9 @@ object FindReferencesProvider {
     ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findFieldReferences(field: Name.Field)(implicit index: Index, root: Root): JObject = {
-    val defSites = index.defsOf(field)
-    val useSites = index.usesOf(field)
+  private def findLabelReferences(label: Name.Field)(implicit index: Index, root: Root): JObject = {
+    val defSites = index.defsOf(label)
+    val useSites = index.usesOf(label)
     val locs = (defSites ++ useSites).toList.map(Location.from)
     ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
   }
