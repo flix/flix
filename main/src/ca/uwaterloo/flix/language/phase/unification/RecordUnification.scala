@@ -85,7 +85,7 @@ object RecordUnification {
 
       case (Type.Cst(TypeConstructor.RecordRowEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), fieldType1, _), _, _)) =>
         // Case 3: The `field` does not exist in the record.
-        Err(UnificationError.UndefinedField(field1, fieldType1, rewrittenRow))
+        Err(UnificationError.UndefinedLabel(field1, fieldType1, rewrittenRow))
 
       case _ =>
         // Case 4: The type is not a row.
