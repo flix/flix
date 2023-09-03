@@ -112,7 +112,7 @@ object TypeNormalization {
             case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula: $tpe", applyLoc)
           }
 
-        // Sort record row fields
+        // Sort record row labels
         case Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), labelType, _) =>
           insertRecordLabel(label, labelType, t2, applyLoc)
 

@@ -614,7 +614,7 @@ object Simplifier {
           * and freshly generated variables.
           */
         case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
-          val freshVars = pats.map(_ => Symbol.freshVarSym("innerField" + Flix.Delimiter, BoundBy.Let, loc))
+          val freshVars = pats.map(_ => Symbol.freshVarSym("innerLabel" + Flix.Delimiter, BoundBy.Let, loc))
           val labelPats = pats.map(_.pat)
           val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
           val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
