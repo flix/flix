@@ -62,7 +62,7 @@ object RenameProvider {
 
         case Entity.Type(t) => t match {
           case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(field) => renameField(field, newName)
+            case TypeConstructor.RecordRowExtend(label) => renameField(label, newName)
             case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
             case _ => mkNotFound(uri, pos)
           }

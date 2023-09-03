@@ -74,7 +74,7 @@ object FindReferencesProvider {
         case Entity.Type(t) => t match {
           case Type.Var(sym, _) => findTypeVarReferences(sym)
           case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
+            case TypeConstructor.RecordRowExtend(label) => findFieldReferences(label)
             case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
             case TypeConstructor.Enum(sym, _) => findEnumReferences(sym)
             case TypeConstructor.Effect(sym) => findEffectReferences(sym)
