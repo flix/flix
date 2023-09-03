@@ -139,11 +139,11 @@ object ResolvedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, field: Name.Field, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Field, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, value: Expr, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Field, value: Expr, rest: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Field, rest: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
@@ -260,7 +260,7 @@ object ResolvedAst {
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordLabelPattern(field: Name.Field, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Field, pat: Pattern, loc: SourceLocation)
     }
 
   }
