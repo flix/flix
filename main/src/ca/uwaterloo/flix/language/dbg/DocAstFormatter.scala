@@ -247,11 +247,11 @@ object DocAstFormatter {
   private def formatRecordBlock(d: RecordOp)(implicit i: Indent): Doc = {
     val (exs, restOpt) = collectRecordOps(d)
     val exsf = exs.map {
-      case RecordExtend(field, value, _) =>
+      case RecordExtend(label, value, _) =>
         val valuef = aux(value, paren = false)
-        text("+" + field.toString) +: text("=") +: valuef
-      case RecordRestrict(field, _) =>
-        text("-" + field.toString)
+        text("+" + label.toString) +: text("=") +: valuef
+      case RecordRestrict(label, _) =>
+        text("-" + label.toString)
     }
     restOpt match {
       case Some(rest) =>
@@ -332,10 +332,10 @@ object DocAstFormatter {
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
-        val (fields, restOpt) = collectRecordTypes(re)
-        val exsf = fields.map {
-          case Type.RecordExtend(field, value, _) =>
-            text(field) +: text("=") +: formatType(value, paren = false)
+        val (labels, restOpt) = collectRecordTypes(re)
+        val exsf = labels.map {
+          case Type.RecordExtend(label, value, _) =>
+            text(label) +: text("=") +: formatType(value, paren = false)
         }
         restOpt match {
           case Some(rest) =>

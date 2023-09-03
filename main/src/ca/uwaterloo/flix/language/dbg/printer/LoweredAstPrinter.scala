@@ -142,8 +142,8 @@ object LoweredAstPrinter {
     */
   private def printRecordPattern(pats: List[LoweredAst.Pattern.Record.RecordLabelPattern], pat: LoweredAst.Pattern): DocAst.Expression = {
     pats.foldRight(printPattern(pat)) {
-      case (LoweredAst.Pattern.Record.RecordLabelPattern(field, _, p, _), acc) =>
-        DocAst.Expression.RecordExtend(field, printPattern(p), acc)
+      case (LoweredAst.Pattern.Record.RecordLabelPattern(label, _, p, _), acc) =>
+        DocAst.Expression.RecordExtend(label, printPattern(p), acc)
     }
   }
 
