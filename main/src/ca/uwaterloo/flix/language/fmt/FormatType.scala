@@ -111,8 +111,8 @@ object FormatType {
     /**
       * Transforms the given record `fieldType` pair into a string.
       */
-    def visitRecordLabelType(labelType: SimpleType.RecordFieldType): String = labelType match {
-      case SimpleType.RecordFieldType(label, tpe) => s"$label = ${visit(tpe, Mode.Type)}"
+    def visitRecordLabelType(labelType: SimpleType.RecordLabelType): String = labelType match {
+      case SimpleType.RecordLabelType(label, tpe) => s"$label = ${visit(tpe, Mode.Type)}"
     }
 
     /**
