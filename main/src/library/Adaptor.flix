@@ -35,12 +35,42 @@ mod Adaptor {
         }
 
     ///
+    /// Returns the given Java Optional as a Flix Option.
+    ///
+    pub def fromOptional(_: Proxy[a], o: ##java.util.Optional): Option[a] =
+        import java.util.Optional.isPresent(): Bool \ {};
+        import java.util.Optional.get(): ##java.lang.Object \ {};
+        if (isPresent(o)) {
+            let o1 = get(o);
+            Some(unchecked_cast(o1 as a))
+        } else
+            None
+
+    ///
+    /// Returns the given Java Optional as a Flix Option.
+    ///
+    pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: ##java.util.Map$Entry): (k, v) =
+        import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
+        import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
+        let k1 = getKey(e);
+        let v1 = getValue(e);
+        (unchecked_cast(k1 as k), unchecked_cast(v1 as v))
+
+
+    ///
     /// Returns all elements in the given Java List as a Flix List.
     ///
     pub def fromList(l: ##java.util.List): List[a] = region rc {
         import java.util.List.iterator(): ##java.util.Iterator \ rc;
         iterator(l) |> fromIterator(rc, Proxy.Proxy: Proxy[a]) |> Iterator.toList
     }
+
+    ///
+    /// Returns a Flix Iterator of the elements in the given Java List.
+    ///
+    pub def fromListToIterator(rc: Region[r], prx: Proxy[a], l: ##java.util.List): Iterator[a, r, r] \ r =
+        import java.util.List.iterator(): ##java.util.Iterator \ r;
+        iterator(l) |> fromIterator(rc, prx)
 
     ///
     /// Returns all elements in the given Java Set as a Flix Set.
@@ -53,6 +83,13 @@ mod Adaptor {
     }
 
     ///
+    /// Returns a Flix Iterator of the elements in the given Java Set.
+    ///
+    pub def fromSetToIterator(rc: Region[r], prx: Proxy[a], s: ##java.util.Set): Iterator[a, r, r] \ r =
+        import java.util.Set.iterator(): ##java.util.Iterator \ r;
+        iterator(s) |> fromIterator(rc, prx)
+
+    ///
     /// Returns all key-value pairs in the given Java Map as a Flix Map.
     ///
     /// WARNING: The Flix Map will use the ordering defined on `k`.
@@ -62,26 +99,23 @@ mod Adaptor {
             let (k, v) = entry;
             Map.insert(k, v, acc)
         };
-        mapIterator(rc, m) |> Iterator.foldLeft(step, Map.empty())
+        fromMapToIterator(rc, m) |> Iterator.foldLeft(step, Map.empty())
     }
 
     ///
-    /// Helper function for `fromMap`.
+    /// Returns a Flix Iterator of the key-value pairs in the given Java Map.
     ///
-    def mapIterator(rc: Region[r], m: ##java.util.Map): Iterator[(k, v), r, r] \ r =
+    pub def fromMapToIterator(rc: Region[r], m: ##java.util.Map): Iterator[(k, v), r, r] \ r =
         import java.util.Map.entrySet(): ##java.util.Set \ r;
         import java.util.Set.iterator(): ##java.util.Iterator \ r;
         import java.util.Iterator.hasNext(): Bool \ r;
         import java.util.Iterator.next(): ##java.lang.Object \ r;
-        import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
-        import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
         let entries = entrySet(m);
         let iter = iterator(entries);
         let getNext = () -> match hasNext(iter) {
             case true  => {
                 let entry = {let obj = next(iter); unchecked_cast(obj as ##java.util.Map$Entry)};
-                let k = {let okey = getKey(entry); unchecked_cast(okey as k)};
-                let v = {let ovalue = getValue(entry); unchecked_cast(ovalue as v)};
+                let (k, v) = fromMapEntry(Proxy.Proxy: Proxy[k], Proxy.Proxy: Proxy[v], entry);
                 Some((k, v))
             }
             case false => None
@@ -102,6 +136,33 @@ mod Adaptor {
         };
         let iterF = () -> checked_ecast(step());
         Iterator.iterate(rc, iterF)
+
+    ///
+    /// Returns a Flix Iterator of the elements in the given Java Stream.
+    ///
+    pub def fromStreamToIterator(rc: Region[r], proxy: Proxy[a], strm: ##java.util.stream.Stream): Iterator[a, r, r] =
+        import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ {};
+        let iter = iterator(unchecked_cast(strm as ##java.util.stream.BaseStream));
+        Adaptor.fromIterator(rc, proxy, iter)
+
+    ///
+    /// Returns a Flix Iterator of the elements in the given Java Collection.
+    ///
+    pub def fromCollectionToIterator(rc: Region[r], proxy: Proxy[a], col: ##java.util.Collection): Iterator[a, r, r] =
+        import java.util.Collection.iterator(): ##java.util.Iterator \ {};
+        let iter = iterator(col);
+        Adaptor.fromIterator(rc, proxy, iter)
+
+    ///
+    /// Returns the `o` as a new Java `Optional`.
+    ///
+    pub def toOptional(o: Option[a]): ##java.util.Optional \ IO =
+        import static java.util.Optional.empty(): ##java.util.Optional \ IO;
+        import static java.util.Optional.of(##java.lang.Object): ##java.util.Optional \ IO;
+        match o {
+            case None    => empty()
+            case Some(a) => of(unchecked_cast(a as ##java.lang.Object))
+        }
 
     ///
     /// Alias for `toArrayList`.
@@ -163,5 +224,6 @@ mod Adaptor {
         let tmap = newTreeMap();
         Map.forEach((k, v) -> discard put(tmap, unchecked_cast(k as ##java.lang.Object), unchecked_cast(v as ##java.lang.Object)), m);
         tmap
+
 
 }
