@@ -343,17 +343,17 @@ object SimpleType {
 
         case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
 
-        case TypeConstructor.RecordRowExtend(field) =>
+        case TypeConstructor.RecordRowExtend(label) =>
           val args = t.typeArguments.map(visit)
           args match {
             // Case 1: No args. ( name: ? | ? )
-            case Nil => RecordRowExtend(RecordLabelType(field.name, Hole) :: Nil, Hole)
+            case Nil => RecordRowExtend(RecordLabelType(label.name, Hole) :: Nil, Hole)
             // Case 2: One arg. ( name: tpe | ? )
-            case tpe :: Nil => RecordRowExtend(RecordLabelType(field.name, tpe) :: Nil, Hole)
+            case tpe :: Nil => RecordRowExtend(RecordLabelType(label.name, tpe) :: Nil, Hole)
             // Case 3: Fully applied. Dispatch to proper record handler.
             case _ :: _ :: Nil => fromRecordRow(t)
             // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(field.loc)
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(label.loc)
           }
 
         case TypeConstructor.Record =>
@@ -363,8 +363,8 @@ object SimpleType {
             case Nil => RecordConstructor(Hole)
             // Case 2: One row argument. Extract its values.
             case tpe :: Nil => tpe match {
-              case RecordRow(fields) => Record(fields)
-              case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
+              case RecordRow(labels) => Record(labels)
+              case RecordRowExtend(labels, rest) => RecordExtend(labels, rest)
               case nonRecord => RecordConstructor(nonRecord)
             }
             // Case 3: Too many args. Error.
