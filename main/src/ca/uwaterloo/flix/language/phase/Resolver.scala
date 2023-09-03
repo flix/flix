@@ -1230,23 +1230,23 @@ object Resolver {
         case NamedAst.Expr.RecordEmpty(loc) =>
           ResolvedAst.Expr.RecordEmpty(loc).toSuccess
 
-        case NamedAst.Expr.RecordSelect(base, field, loc) =>
+        case NamedAst.Expr.RecordSelect(base, label, loc) =>
           val bVal = visitExp(base, env0)
           mapN(bVal) {
-            b => ResolvedAst.Expr.RecordSelect(b, field, loc)
+            b => ResolvedAst.Expr.RecordSelect(b, label, loc)
           }
 
-        case NamedAst.Expr.RecordExtend(field, value, rest, loc) =>
+        case NamedAst.Expr.RecordExtend(label, value, rest, loc) =>
           val vVal = visitExp(value, env0)
           val rVal = visitExp(rest, env0)
           mapN(vVal, rVal) {
-            case (v, r) => ResolvedAst.Expr.RecordExtend(field, v, r, loc)
+            case (v, r) => ResolvedAst.Expr.RecordExtend(label, v, r, loc)
           }
 
-        case NamedAst.Expr.RecordRestrict(field, rest, loc) =>
+        case NamedAst.Expr.RecordRestrict(label, rest, loc) =>
           val rVal = visitExp(rest, env0)
           mapN(rVal) {
-            r => ResolvedAst.Expr.RecordRestrict(field, r, loc)
+            r => ResolvedAst.Expr.RecordRestrict(label, r, loc)
           }
 
         case NamedAst.Expr.ArrayLit(exps, exp, loc) =>
@@ -1741,9 +1741,9 @@ object Resolver {
 
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
+            case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
               mapN(visit(pat1)) {
-                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(field, p, loc1)
+                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
               }
           }
           val pVal = visit(pat)
@@ -1785,9 +1785,9 @@ object Resolver {
 
         case NamedAst.Pattern.Record(pats, pat, loc) =>
           val psVal = traverse(pats) {
-            case NamedAst.Pattern.Record.RecordLabelPattern(field, pat1, loc1) =>
+            case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
               mapN(visit(pat1)) {
-                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(field, p, loc1)
+                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
               }
           }
           val pVal = visit(pat)
@@ -2299,11 +2299,11 @@ object Resolver {
 
       case NamedAst.Type.RecordRowEmpty(loc) => UnkindedType.Cst(TypeConstructor.RecordRowEmpty, loc).toSuccess
 
-      case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
+      case NamedAst.Type.RecordRowExtend(label, value, rest, loc) =>
         val vVal = visit(value)
         val rVal = visit(rest)
         mapN(vVal, rVal) {
-          case (v, r) => UnkindedType.mkRecordRowExtend(field, v, r, loc)
+          case (v, r) => UnkindedType.mkRecordRowExtend(label, v, r, loc)
         }
 
       case NamedAst.Type.Record(row, loc) =>
