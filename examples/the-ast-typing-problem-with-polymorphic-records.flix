@@ -2,7 +2,7 @@
 
 /// We begin with a grammar for expressions.
 /// The definition of Exp is polymorphic in a record type that
-/// allows the AST to be decorated with additional fields.
+/// allows the AST to be decorated with additional labels.
 enum Expr[r: RecordRow] {
     case True,
     case False,
@@ -53,7 +53,7 @@ def run(): Type =
     typeOf(typeCheck(e))
 
 /// We can extend the function above to be one that is polymorphic
-/// in whatever other fields an expression may be decorated with:
+/// in whatever other labels an expression may be decorated with:
 def typeCheck2(e: Expr[r]): Expr[(tpe = Type | r)] = match e {
     case Expr.True   => Expr.True
     case Expr.False  => Expr.False
