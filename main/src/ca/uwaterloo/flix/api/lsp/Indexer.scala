@@ -288,8 +288,8 @@ object Indexer {
     case Expr.RecordEmpty(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expr.RecordSelect(exp, field, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordSelect(exp, label, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.useOf(label) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.RecordExtend(field, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
