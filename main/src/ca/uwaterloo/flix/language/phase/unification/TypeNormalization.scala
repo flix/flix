@@ -113,8 +113,8 @@ object TypeNormalization {
           }
 
         // Sort record row fields
-        case Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field), _), fieldType, _) =>
-          insertRecordField(field, fieldType, t2, applyLoc)
+        case Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), labelType, _) =>
+          insertRecordLabel(label, labelType, t2, applyLoc)
 
         // Sort schema row fields
         case Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _) =>
@@ -130,24 +130,24 @@ object TypeNormalization {
   }
 
   /**
-    * Inserts the given field into `rest` in its ordered position, assuming that
+    * Inserts the given label into `rest` in its ordered position, assuming that
     * `rest` is already ordered. This, together with [[normalizeType]]
     * effectively implements insertion sort.
     */
-  private def insertRecordField(field: Name.Field, fieldType: Type, rest: Type, loc: SourceLocation): Type = rest match {
+  private def insertRecordLabel(label: Name.Field, labelType: Type, rest: Type, loc: SourceLocation): Type = rest match {
     // empty rest, create the singleton record row
     case Type.Cst(TypeConstructor.RecordRowEmpty, emptyLoc) =>
-      Type.mkRecordRowExtend(field, fieldType, Type.mkRecordRowEmpty(emptyLoc), loc)
+      Type.mkRecordRowExtend(label, labelType, Type.mkRecordRowEmpty(emptyLoc), loc)
     // the current field should be before the next field and since
     // - we insert from the left, one by one
     // - rest is ordered
     // we can return the current field with the rest
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), _, _), _, _) if field.name <= field1.name =>
-      Type.mkRecordRowExtend(field, fieldType, rest, loc)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), _, _), _, _) if label.name <= field1.name =>
+      Type.mkRecordRowExtend(label, labelType, rest, loc)
     // The current field should be after the next field, so we swap and continue recursively
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), field1Loc), field1Type, field1TypeLoc), rest1, rest1Loc) =>
-      val tail = insertRecordField(field, fieldType, rest1, loc)
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), field1Loc), field1Type, field1TypeLoc), tail, rest1Loc)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), field1Loc), field1Type, field1TypeLoc), rest1, rest1Loc) =>
+      val tail = insertRecordLabel(label, labelType, rest1, loc)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), field1Loc), field1Type, field1TypeLoc), tail, rest1Loc)
     case other => throw InternalCompilerException(s"Unexpected record rest: '$other'", rest.loc)
   }
 
