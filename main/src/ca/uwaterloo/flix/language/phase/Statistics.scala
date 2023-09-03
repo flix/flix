@@ -108,9 +108,9 @@ object Statistics {
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => visitExp(exp)
       case Expr.Tuple(elms, tpe, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expr.RecordEmpty(tpe, loc) => Counter.empty
-      case Expr.RecordSelect(exp, field, tpe, eff, loc) => visitExp(exp)
-      case Expr.RecordExtend(field, value, rest, tpe, eff, loc) => visitExp(value) ++ visitExp(rest)
-      case Expr.RecordRestrict(field, rest, tpe, eff, loc) => visitExp(rest)
+      case Expr.RecordSelect(exp, label, tpe, eff, loc) => visitExp(exp)
+      case Expr.RecordExtend(label, value, rest, tpe, eff, loc) => visitExp(value) ++ visitExp(rest)
+      case Expr.RecordRestrict(label, rest, tpe, eff, loc) => visitExp(rest)
       case Expr.ArrayLit(exps, exp, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ visitExp(exp)
       case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expr.ArrayLoad(base, index, tpe, eff, loc) => visitExp(base) ++ visitExp(index)
