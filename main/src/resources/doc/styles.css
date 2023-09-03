@@ -270,6 +270,14 @@ nav {
     }
 }
 
+nav .back {
+    display: block;
+    margin-bottom: 1rem;
+}
+nav .back::before {
+    content: "↩ ";
+}
+
 nav > div {
     background-color: var(--bg-color-1);
     box-shadow: 0 0 10px 0 var(--shadow-color);
