@@ -775,5 +775,45 @@ mod TestFloat64 {
 
     @test
     def exp03(): Bool = equalsEps(Float64.exp(5.0f64), 148.413159f64, 0.001f64)
+    /////////////////////////////////////////////////////////////////////////////
+    // doubleValue                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def doubleValue01(): Bool =
+        let d = Float64.valueOf(0.0f64);
+        Float64.doubleValue(d) == 0.0f64
+
+    @test
+    def doubleValue02(): Bool =
+        let d = Float64.valueOf(1.0f64);
+        Float64.doubleValue(d) == 1.0f64
+
+    @test
+    def doubleValue03(): Bool =
+        let d = Float64.valueOf(-1.0f64);
+        Float64.doubleValue(d) == -1.0f64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valueOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def valueOf01(): Bool =
+        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
+        let d = Float64.valueOf(0.0f64);
+        equals(d, checked_cast(Float64.valueOf(0.0f64)))
+
+    @test
+    def valueOf02(): Bool =
+        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
+        let d = Float64.valueOf(1.0f64);
+        equals(d, checked_cast(Float64.valueOf(1.0f64)))
+
+    @test
+    def valueOf03(): Bool =
+        import java.lang.Double.equals(##java.lang.Object): Bool \ {};
+        let d = Float64.valueOf(-1.0f64);
+        equals(d, checked_cast(Float64.valueOf(-1.0f64)))
 
 }
