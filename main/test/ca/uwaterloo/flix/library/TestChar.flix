@@ -817,4 +817,45 @@ def forDigit10(): Bool = Char.forDigit(radix = 16, 10) == Some('a')
 @test
 def forDigit11(): Bool = Char.forDigit(radix = 16, 15) == Some('f')
 
+/////////////////////////////////////////////////////////////////////////////
+// charValue                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def charValue01(): Bool =
+    let c = Char.valueOf('0');
+    Char.charValue(c) == '0'
+
+@test
+def charValue02(): Bool =
+    let c = Char.valueOf('A');
+    Char.charValue(c) == 'A'
+
+@test
+def charValue03(): Bool =
+    let c = Char.valueOf('+');
+    Char.charValue(c) == '+'
+
+/////////////////////////////////////////////////////////////////////////////
+// valueOf                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def valueOf01(): Bool =
+    import java.lang.Character.equals(##java.lang.Object): Bool \ {};
+    let c = Char.valueOf('0');
+    equals(c, checked_cast(Char.valueOf('0')))
+
+@test
+def valueOf02(): Bool =
+    import java.lang.Character.equals(##java.lang.Object): Bool \ {};
+    let c = Char.valueOf('A');
+    equals(c, checked_cast(Char.valueOf('A')))
+
+@test
+def valueOf03(): Bool =
+    import java.lang.Character.equals(##java.lang.Object): Bool \ {};
+    let c = Char.valueOf('+');
+    equals(c, checked_cast(Char.valueOf('+')))
+
 }

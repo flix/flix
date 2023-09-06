@@ -377,4 +377,24 @@ mod Float64 {
         import static java.lang.Math.exp(Float64): Float64 \ {};
         exp(x)
 
+    ///
+    /// Get the primitive Float64 value from its object representation (i.e. ##java.lang.Double).
+    ///
+    /// This function is expected to be used when marshaling Float64s from Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Double`.
+    ///
+    pub def doubleValue(i: ##java.lang.Double): Float64 =
+        import java.lang.Double.doubleValue(): Float64 \ {};
+        doubleValue(i)
+
+    ///
+    /// Convert an Float64 value to its object representation (i.e. ##java.lang.Double).
+    ///
+    /// This function is expected to be used when marshaling Float64s to Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Double`.
+    ///
+    pub def valueOf(i: Float64): ##java.lang.Double =
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double \ {};
+        valueOf(i)
+
 }

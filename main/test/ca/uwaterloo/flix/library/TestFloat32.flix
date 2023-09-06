@@ -734,4 +734,45 @@ mod TestFloat32 {
     @test
     def pow05(): Bool = equalsEps(Float32.pow(5.0f32, 2.0f32), 25.0f32, 0.001f32)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // floatValue                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def floatValue01(): Bool =
+        let d = Float32.valueOf(0.0f32);
+        Float32.floatValue(d) == 0.0f32
+
+    @test
+    def floatValue02(): Bool =
+        let d = Float32.valueOf(1.0f32);
+        Float32.floatValue(d) == 1.0f32
+
+    @test
+    def floatValue03(): Bool =
+        let d = Float32.valueOf(-1.0f32);
+        Float32.floatValue(d) == -1.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valueOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def valueOf01(): Bool =
+        import java.lang.Float.equals(##java.lang.Object): Bool \ {};
+        let d = Float32.valueOf(0.0f32);
+        equals(d, checked_cast(Float32.valueOf(0.0f32)))
+
+    @test
+    def valueOf02(): Bool =
+        import java.lang.Float.equals(##java.lang.Object): Bool \ {};
+        let d = Float32.valueOf(1.0f32);
+        equals(d, checked_cast(Float32.valueOf(1.0f32)))
+
+    @test
+    def valueOf03(): Bool =
+        import java.lang.Float.equals(##java.lang.Object): Bool \ {};
+        let d = Float32.valueOf(-1.0f32);
+        equals(d, checked_cast(Float32.valueOf(-1.0f32)))
+
 }

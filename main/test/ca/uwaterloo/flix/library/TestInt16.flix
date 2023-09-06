@@ -1124,4 +1124,45 @@ mod TestInt16 {
     @test
     def clampToInt808(): Bool = Int16.clampToInt8(min = 10i8, max = 0i8, 5i16) == 10i8      // Bad range
 
+    /////////////////////////////////////////////////////////////////////////////
+    // shortValue                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def shortValue01(): Bool =
+        let i = Int16.valueOf(0i16);
+        Int16.shortValue(i) == 0i16
+
+    @test
+    def shortValue02(): Bool =
+        let i = Int16.valueOf(1i16);
+        Int16.shortValue(i) == 1i16
+
+    @test
+    def shortValue03(): Bool =
+        let i = Int16.valueOf(-1i16);
+        Int16.shortValue(i) == -1i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valueOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def valueOf01(): Bool =
+        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
+        let i = Int16.valueOf(0i16);
+        equals(i, checked_cast(Int16.valueOf(0i16)))
+
+    @test
+    def valueOf02(): Bool =
+        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
+        let i = Int16.valueOf(1i16);
+        equals(i, checked_cast(Int16.valueOf(1i16)))
+
+    @test
+    def valueOf03(): Bool =
+        import java.lang.Short.equals(##java.lang.Object): Bool \ {};
+        let i = Int16.valueOf(-1i16);
+        equals(i, checked_cast(Int16.valueOf(-1i16)))
+
 }
