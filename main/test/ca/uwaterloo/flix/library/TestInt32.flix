@@ -1169,4 +1169,45 @@ mod TestInt32 {
     @test
     def clampToInt1607(): Bool = Int32.clampToInt16(min = -100i16, max = 100i16, Int32.minValue()) == -100i16
 
+    /////////////////////////////////////////////////////////////////////////////
+    // intValue                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def intValue01(): Bool =
+        let i = Int32.valueOf(0);
+        Int32.intValue(i) == 0
+
+    @test
+    def intValue02(): Bool =
+        let i = Int32.valueOf(1);
+        Int32.intValue(i) == 1
+
+    @test
+    def intValue03(): Bool =
+        let i = Int32.valueOf(-1);
+        Int32.intValue(i) == -1
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valueOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def valueOf01(): Bool =
+        import java.lang.Integer.equals(##java.lang.Object): Bool \ {};
+        let i = Int32.valueOf(0);
+        equals(i, checked_cast(Int32.valueOf(0)))
+
+    @test
+    def valueOf02(): Bool =
+        import java.lang.Integer.equals(##java.lang.Object): Bool \ {};
+        let i = Int32.valueOf(1);
+        equals(i, checked_cast(Int32.valueOf(1)))
+
+    @test
+    def valueOf03(): Bool =
+        import java.lang.Integer.equals(##java.lang.Object): Bool \ {};
+        let i = Int32.valueOf(-1);
+        equals(i, checked_cast(Int32.valueOf(-1)))
+
 }
