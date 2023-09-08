@@ -1646,6 +1646,15 @@ mod Array {
         }
 
     ///
+    /// Copies an array of length `len` from the `src` array starting at index `srcPos` to the `dst` array starting at
+    /// index `dstPos`.
+    ///
+    pub def copyRangeTo(src: {src = Array[a, r1]}, srcPos: {srcPos = Int32}, dst: {dst = Array[a, r2]}, dstPos: {dstPos = Int32}, len: Int32): Unit \ {r1, r2} = {
+        import static java.lang.System.arraycopy(##java.lang.Object, Int32, ##java.lang.Object, Int32, Int32): Unit \ {r1, r2};
+        arraycopy(checked_cast(src.src), srcPos.srcPos, checked_cast(dst.dst), dstPos.dstPos, len)
+    }
+
+    ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, NonDet} =
