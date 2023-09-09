@@ -96,110 +96,60 @@ object HtmlDocumentor {
   private def splitModules(root: TypedAst.Root): Map[Symbol.ModuleSym, Module] = {
 
     /**
-      * Initializes a map of the split modules with the `parent`- and `mainItem` fields being `None`.
+      * Visits a module and all of its submodules
       */
-    def init(root: TypedAst.Root): Map[Symbol.ModuleSym, Module] = root.modules.map {
-      case (sym, mod) =>
-        val uses = root.uses.getOrElse(sym, Nil)
+    def visitMod(sym: Symbol.ModuleSym, parent: Option[Symbol.ModuleSym], mainItem: Option[MainItem]): Map[Symbol.ModuleSym, Module] = {
+      val mod = root.modules(sym)
+      val uses = root.uses.getOrElse(sym, Nil)
 
-        var submodules: List[Symbol.ModuleSym] = Nil
-        var classes: List[Class] = Nil
-        var enums: List[TypedAst.Enum] = Nil
-        var effects: List[TypedAst.Effect] = Nil
-        var typeAliases: List[TypedAst.TypeAlias] = Nil
-        var defs: List[TypedAst.Def] = Nil
-        mod.foreach {
-          case sym: Symbol.ModuleSym => submodules = sym :: submodules
-          case sym: Symbol.ClassSym => classes = mkClass(sym, root) :: classes
-          case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
-          case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
-          case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
-          case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
-          case _ => // No op
+      var submodules: List[Symbol.ModuleSym] = Nil
+      var classes: List[Class] = Nil
+      var enums: List[TypedAst.Enum] = Nil
+      var effects: List[TypedAst.Effect] = Nil
+      var typeAliases: List[TypedAst.TypeAlias] = Nil
+      var defs: List[TypedAst.Def] = Nil
+      mod.foreach {
+        case sym: Symbol.ModuleSym => submodules = sym :: submodules
+        case sym: Symbol.ClassSym => classes = mkClass(sym, root) :: classes
+        case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
+        case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
+        case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
+        case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
+        case _ => // No op
+      }
+
+      val mainItems = submodules.map { subSym =>
+        val copt = classes.find(c => c.sym.name == subSym.toString)
+        copt.foreach {
+          c1 => classes = classes.filter(c2 => c1 != c2)
         }
 
-        sym -> Module(
+        val eopt = enums.find(e => e.sym.name == subSym.toString)
+        if (copt.isEmpty) eopt.foreach {
+          e1 => enums = enums.filter(e2 => e1 != e2)
+        }
+
+        subSym -> copt.orElse(eopt.map(Enum))
+      }.toMap
+
+      submodules.map { subSym =>
+        visitMod(subSym, Some(sym), mainItems(subSym))
+      }.fold(Map.empty)((a, b) => a ++ b) +
+        (sym -> Module(
           sym,
-          parent = None,
+          parent,
           uses,
-          mainItem = None,
+          mainItem,
           submodules,
           classes,
           enums,
           effects,
           typeAliases,
           defs,
-        )
+        ))
     }
 
-    /**
-      * Populates the `parent` fields of the modules.
-      */
-    def populateParents(noParents: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = {
-      val children = noParents.flatMap {
-        case (parentSym, mod) => mod.submodules.map {
-          subSym =>
-            val Module(_, _, uses, mainItem, submodules, classes, enums, effects, typeAliases, defs) = noParents(subSym)
-            subSym -> Module(
-              subSym,
-              parent = Some(parentSym),
-              uses,
-              mainItem,
-              submodules,
-              classes,
-              enums,
-              effects,
-              typeAliases,
-              defs,
-            )
-        }
-      }
-
-      val rootSym = Symbol.mkModuleSym(Nil)
-      val rootMod = noParents(rootSym)
-      children + (rootSym -> rootMod)
-    }
-
-    /**
-      * Detects all 'companion modules' by going through each submodule and checking whether its name coincides
-      * with a class or enum in the same namespace.
-      *
-      * If this is found, the enum or class will be removed from its original location, and instead moved to the
-      * `mainItem` field of the submodule.
-      */
-    def mergeCompanionMods(noMains: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = {
-      val children = noMains.flatMap {
-        case (_, mod) => mod.submodules.map {
-          subSym =>
-            val mainItem =
-              mod.classes.find(c => c.sym.name == subSym.toString)
-                .orElse(mod.enums.find(e => e.sym.name == subSym.toString).map(Enum))
-
-            val Module(_, parent, uses, _, submodules, classes, enums, effects, typeAliases, defs) = noMains(subSym)
-            subSym -> Module(
-              subSym,
-              parent,
-              uses,
-              mainItem,
-              submodules,
-              classes,
-              enums,
-              effects,
-              typeAliases,
-              defs,
-            )
-        }
-      }
-
-      val rootSym = Symbol.mkModuleSym(Nil)
-      val rootMod = noMains(rootSym)
-      children + (rootSym -> rootMod)
-    }
-
-    val split = init(root)
-    val withParents = populateParents(split)
-    val withMains = mergeCompanionMods(withParents)
-    withMains
+    visitMod(Symbol.mkModuleSym(Nil), None, None)
   }
 
   /**
