@@ -1178,4 +1178,45 @@ mod TestInt64 {
     @test
     def clampToInt3207(): Bool = Int64.clampToInt32(min = -100, max = 100, Int64.minValue()) == -100
 
+    /////////////////////////////////////////////////////////////////////////////
+    // longValue                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def longValue01(): Bool =
+        let i = Int64.valueOf(0i64);
+        Int64.longValue(i) == 0i64
+
+    @test
+    def longValue02(): Bool =
+        let i = Int64.valueOf(1i64);
+        Int64.longValue(i) == 1i64
+
+    @test
+    def shortValue03(): Bool =
+        let i = Int64.valueOf(-1i64);
+        Int64.longValue(i) == -1i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valueOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def valueOf01(): Bool =
+        import java.lang.Long.equals(##java.lang.Object): Bool \ {};
+        let i = Int64.valueOf(0i64);
+        equals(i, checked_cast(Int64.valueOf(0i64)))
+
+    @test
+    def valueOf02(): Bool =
+        import java.lang.Long.equals(##java.lang.Object): Bool \ {};
+        let i = Int64.valueOf(1i64);
+        equals(i, checked_cast(Int64.valueOf(1i64)))
+
+    @test
+    def valueOf03(): Bool =
+        import java.lang.Long.equals(##java.lang.Object): Bool \ {};
+        let i = Int64.valueOf(-1i64);
+        equals(i, checked_cast(Int64.valueOf(-1i64)))
+
 }
