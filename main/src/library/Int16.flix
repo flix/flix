@@ -438,4 +438,24 @@ mod Int16 {
         let maxi16 = Int8.toInt16(max.max);
         (valueOf(clamp(min = mini16, max = maxi16, x)) |> byteValue)
 
+    ///
+    /// Get the primitive Int16 value from its object representation (i.e. ##java.lang.Short).
+    ///
+    /// This function is expected to be used when marshaling Int16s from Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Short`.
+    ///
+    pub def shortValue(i: ##java.lang.Short): Int16 =
+        import java.lang.Short.shortValue(): Int16 \ {};
+        shortValue(i)
+
+    ///
+    /// Convert an Int16 value to its object representation (i.e. ##java.lang.Short).
+    ///
+    /// This function is expected to be used when marshaling Int16s to Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Short`.
+    ///
+    pub def valueOf(i: Int16): ##java.lang.Short =
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short \ {};
+        valueOf(i)
+
 }

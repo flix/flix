@@ -492,4 +492,24 @@ mod Int64 {
         let maxi64 = Int32.toInt64(max.max);
         (valueOf(clamp(min = mini64, max = maxi64, x)) |> intValue)
 
+    ///
+    /// Get the primitive Int64 value from its object representation (i.e. ##java.lang.Long).
+    ///
+    /// This function is expected to be used when marshaling Int64s from Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Long`.
+    ///
+    pub def longValue(i: ##java.lang.Long): Int64 =
+        import java.lang.Long.longValue(): Int64 \ {};
+        longValue(i)
+
+    ///
+    /// Convert an Int64 value to its object representation (i.e. ##java.lang.Long).
+    ///
+    /// This function is expected to be used when marshaling Int64s to Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Long`.
+    ///
+    pub def valueOf(i: Int64): ##java.lang.Long =
+        import static java.lang.Long.valueOf(Int64): ##java.lang.Long \ {};
+        valueOf(i)
+
 }
