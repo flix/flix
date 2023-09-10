@@ -483,7 +483,7 @@ object HtmlDocumentor {
     docSourceLocation(clazz.loc)
     docDoc(clazz.doc)
     docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
-    docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
+    docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature, open = true)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
     sb.append("</div>")
   }
