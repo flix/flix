@@ -438,21 +438,39 @@ section > * {
     font-size: 0.85rem;
 }
 
-.copy-link {
-    text-decoration: none;
-    height: 1rem;
+.actions {
+    float: right;
+    display: flex;
+    gap: 0.2rem;
     color: var(--faded-text-color);
-    margin-left: -0.25rem;
 }
-.copy-link svg {
-    width: 1rem;
-    height: 1rem;
+
+.actions > * {
+    color: inherit;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    text-decoration: none;
+    background-color: var(--bg-color-3);
+    padding: 0.2em 0.65em;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border-color);
 }
-.copy-link:hover {
+.actions > *:hover {
     color: var(--text-color);
 }
 
+.actions > .copy-link {
+    text-decoration: none;
+    height: 1rem;
+    padding: 0.2em;
+}
+.actions > .copy-link svg {
+    width: 1rem;
+    height: 1rem;
+}
+
 .copy-link-msg {
+    font-size: 0.8rem;
     background-color:var(--shadow-color);
     padding: 0.1rem 0.4rem;
     border-radius: 0.2rem;
@@ -472,19 +490,6 @@ section > * {
         opacity: 0;
         transform: translateY(-20px);
     }
-}
-
-.source {
-    color: inherit;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    text-decoration: none;
-    background-color: var(--bg-color-3);
-    padding: 0.2em 0.65em;
-    border-radius: 0.375rem;
-    border: 1px solid var(--border-color);
-
-    float: right;
 }
 
 .cases {

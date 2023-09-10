@@ -41,11 +41,9 @@ function initCopyLinks() {
         link.addEventListener("click", async (e) => {
             e.preventDefault();
 
-            const href = location.href.split("#")[0] + link.href;
-
             let msg;
             try {
-                await navigator.clipboard.writeText(href);
+                await navigator.clipboard.writeText(link.href);
                 msg = "Link copied";
             } catch {
                 msg = "Failed to copy link ✕";
