@@ -403,11 +403,6 @@ main h2 {
     font-family: Oswald, sans-serif;
 }
 
-body > hr {
-    margin-top: 1rem;
-    margin-bottom: 3rem;
-}
-
 section {
     --h-padding: 0.75rem;
     margin-left: calc(-1 * var(--h-padding));
@@ -438,6 +433,36 @@ section > * {
     font-size: 0.85rem;
 }
 
+.subsection {
+    margin-top: 1rem;
+    padding-left: 1.5rem;
+}
+.subsection > summary {
+    cursor: pointer;
+    list-style: none;
+    margin-left: -1.5rem;
+}
+.subsection > summary::after {
+    content: "(show)";
+    font-size: 0.875em;
+    margin-left: 0.3rem;
+    color: var(--show-hide-color);
+}
+.subsection > summary:hover::after {
+    text-decoration: underline;
+    color: var(--show-hide-hover-color);
+}
+.subsection[open] > summary::after {
+    content: "(hide)";
+}
+
+.subsection > div {
+    margin-top: 0.5rem;
+}
+.subsection > div:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
 .source {
     color: inherit;
     font-family: 'Inter', sans-serif;
@@ -447,8 +472,17 @@ section > * {
     padding: 0.2em 0.65em;
     border-radius: 0.375rem;
     border: 1px solid var(--border-color);
+}
 
-    float: right;
+.decl {
+    display: flex;
+    gap: 0.2rem;
+}
+.decl > code {
+    flex: 1;
+}
+.decl > * {
+    height: fit-content;
 }
 
 .cases {
@@ -480,29 +514,6 @@ section > * {
 }
 .box .doc code {
     color: var(--doc-code-color);
-}
-
-details {
-    margin-top: 1rem;
-    padding-left: 1.5rem;
-}
-summary {
-    cursor: pointer;
-    list-style: none;
-    margin-left: -1.5rem;
-}
-summary::after {
-    content: "(show)";
-    font-size: 0.875em;
-    margin-left: 0.3rem;
-    color: var(--show-hide-color);
-}
-summary:hover::after {
-    text-decoration: underline;
-    color: var(--show-hide-hover-color);
-}
-details[open] > summary::after {
-    content: "(hide)";
 }
 
 code {

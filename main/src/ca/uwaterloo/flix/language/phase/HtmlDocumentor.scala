@@ -430,7 +430,7 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append(s"<details ${if (open) "open" else ""}>")
+    sb.append(s"<details class='subsection' ${if (open) "open" else ""}>")
     sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
     for (e <- group) {
       docElt(e)
@@ -446,6 +446,7 @@ object HtmlDocumentor {
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
     docAnnotations(clazz.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
@@ -453,6 +454,7 @@ object HtmlDocumentor {
     docTypeConstraints(clazz.superClasses)
     sb.append("</code>")
     docSourceLocation(clazz.loc)
+    sb.append("</div>")
     docDoc(clazz.doc)
     docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
@@ -468,6 +470,7 @@ object HtmlDocumentor {
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='enum-${esc(enm.sym.name)}'>")
     docAnnotations(enm.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${esc(enm.sym.name)}</span>")
@@ -475,6 +478,7 @@ object HtmlDocumentor {
     docDerivations(enm.derives)
     sb.append("</code>")
     docSourceLocation(enm.loc)
+    sb.append("</div>")
     docCases(enm.cases.values.toList)
     docDoc(enm.doc)
     sb.append("</div>")
@@ -488,11 +492,13 @@ object HtmlDocumentor {
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='eff-${esc(eff.sym.name)}'>")
     docAnnotations(eff.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
     sb.append(s"<span class='name'>${esc(eff.sym.name)}</span>")
     sb.append("</code>")
     docSourceLocation(eff.loc)
+    sb.append("</div>")
     docSubSection("Operations", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec), open = true)
     docDoc(eff.doc)
     sb.append("</div>")
@@ -505,6 +511,7 @@ object HtmlDocumentor {
     */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
@@ -513,6 +520,7 @@ object HtmlDocumentor {
     docType(ta.tpe)
     sb.append("</code>")
     docSourceLocation(ta.loc)
+    sb.append("</div>")
     docDoc(ta.doc)
     sb.append("</div>")
   }
@@ -533,8 +541,11 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit =
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div>")
     docSpec(sig.sym.name, sig.spec)
+    sb.append("</div>")
+  }
 
   /**
     * Documents the given `Spec`, `spec`, with the given `name`.
@@ -544,6 +555,7 @@ object HtmlDocumentor {
     */
   private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
+    sb.append("<div class='decl'>")
     sb.append(s"<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${esc(name)}</span>")
@@ -553,6 +565,7 @@ object HtmlDocumentor {
     docEffectType(spec.eff)
     sb.append("</code>")
     docSourceLocation(spec.loc)
+    sb.append("</div>")
     docDoc(spec.doc)
   }
 
@@ -562,14 +575,18 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div>")
     docAnnotations(instance.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>instance</span> ")
     docType(instance.tpe)
     docTypeConstraints(instance.tconstrs)
     sb.append("</code>")
     docSourceLocation(instance.loc)
+    sb.append("</div>")
     docDoc(instance.doc)
+    sb.append("</div>")
   }
 
   /**
