@@ -318,7 +318,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   test("Unify.12") {
     val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.RecordRow, isRegion = false, loc), loc)
     val labelType = Type.Bool
-    val label = Name.Field("x", loc)
+    val label = Name.Label("x", loc)
     val tpe2 = Type.mkRecord(Type.mkRecordRowExtend(label, labelType, tpe1, loc), loc)
     val result = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top) // TODO ASSOC-TYPES consider econstrs
     assert(!isOk(result))

@@ -108,6 +108,12 @@ object Entity {
     def precision: Precision = Precision.High
   }
 
+  case class Label(e: Name.Label) extends Entity {
+    def loc: SourceLocation = e.loc
+
+    def precision: Precision = Precision.High
+  }
+
   case class FormalParam(e: TypedAst.FormalParam) extends Entity {
     def loc: SourceLocation = e.loc
     def precision: Precision = Precision.High

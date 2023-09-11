@@ -57,7 +57,9 @@ object FindReferencesProvider {
 
         case Entity.Exp(_) => mkNotFound(uri, pos)
 
-        case Entity.Field(field) => findLabelReferences(field)
+        case Entity.Field(field) => findFieldReferences(field)
+
+        case Entity.Label(label) => findLabelReferences(label)
 
         case Entity.FormalParam(param) => findVarReferences(param.sym)
 
@@ -130,6 +132,13 @@ object FindReferencesProvider {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findFieldReferences(field: Name.Field)(implicit index: Index, root: Root): JObject = {
+    val defSites = index.defsOf(field)
+    val useSites = index.usesOf(field)
+    val locs = (defSites ++ useSites).toList.map(Location.from)
     ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
   }
 

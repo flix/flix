@@ -2553,9 +2553,10 @@ object Typer {
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
 
-        def mkRecordType(patTypes: List[(Name.Field, Type, SourceLocation)]): Type = {
+        def mkRecordType(patTypes: List[(Name.Label, Type, SourceLocation)]): Type = {
           val ps = patTypes.foldRight(freshRowVar: Type) {
-            case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
+            case ((lbl, t, l), acc) => Type.mkRecordRowExtend(
+              lbl, t, acc, l)
           }
           Type.mkRecord(ps, loc)
         }
@@ -2585,7 +2586,7 @@ object Typer {
   /**
     * Infers the type of the given [[KindedAst.Pattern.Record.RecordLabelPattern]] `pat`.
     */
-  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Field, Type, SourceLocation)] = pat match {
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Label, Type, SourceLocation)] = pat match {
     case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
       // { Label = Pattern ... }
       for {
