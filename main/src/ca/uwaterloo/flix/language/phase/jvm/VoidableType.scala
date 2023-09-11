@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
-
 /**
   * Represents all Flix types that are not object on the JVM including Void.
   */
