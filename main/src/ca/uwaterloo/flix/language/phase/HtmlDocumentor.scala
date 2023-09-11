@@ -63,6 +63,11 @@ object HtmlDocumentor {
   val Script: String = "/doc/index.js"
 
   /**
+    * The path to the the icon directory, relative to the resources folder.
+    */
+  val Icons: String = "/doc/icons"
+
+  /**
     * The root of the link to each file of the standard library.
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
@@ -430,7 +435,7 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append(s"<details ${if (open) "open" else ""}>")
+    sb.append(s"<details class='subsection' ${if (open) "open" else ""}>")
     sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
     for (e <- group) {
       docElt(e)
@@ -446,13 +451,15 @@ object HtmlDocumentor {
   private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
     docAnnotations(clazz.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
     sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
     docTypeParams(List(clazz.tparam))
     docTypeConstraints(clazz.superClasses)
     sb.append("</code>")
-    docSourceLocation(clazz.loc)
+    docActions(Some(s"class-${clazz.sym.name}"), clazz.loc)
+    sb.append("</div>")
     docDoc(clazz.doc)
     docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
     docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
@@ -468,13 +475,15 @@ object HtmlDocumentor {
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='enum-${esc(enm.sym.name)}'>")
     docAnnotations(enm.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${esc(enm.sym.name)}</span>")
     docTypeParams(enm.tparams)
     docDerivations(enm.derives)
     sb.append("</code>")
-    docSourceLocation(enm.loc)
+    docActions(Some(s"enum-${esc(enm.sym.name)}"), enm.loc)
+    sb.append("</div>")
     docCases(enm.cases.values.toList)
     docDoc(enm.doc)
     sb.append("</div>")
@@ -488,12 +497,14 @@ object HtmlDocumentor {
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='eff-${esc(eff.sym.name)}'>")
     docAnnotations(eff.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
     sb.append(s"<span class='name'>${esc(eff.sym.name)}</span>")
     sb.append("</code>")
-    docSourceLocation(eff.loc)
-    docSubSection("Operations", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec), open = true)
+    docActions(Some(s"eff-${esc(eff.sym.name)}"), eff.loc)
+    sb.append("</div>")
+    docSubSection("Operations", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec, None), open = true)
     docDoc(eff.doc)
     sb.append("</div>")
   }
@@ -505,6 +516,7 @@ object HtmlDocumentor {
     */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
@@ -512,7 +524,8 @@ object HtmlDocumentor {
     sb.append(" = ")
     docType(ta.tpe)
     sb.append("</code>")
-    docSourceLocation(ta.loc)
+    docActions(Some(s"ta-${esc(ta.sym.name)}"), ta.loc)
+    sb.append("</div>")
     docDoc(ta.doc)
     sb.append("</div>")
   }
@@ -524,7 +537,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
-    docSpec(defn.sym.name, defn.spec)
+    docSpec(defn.sym.name, defn.spec, Some(s"def-${esc(defn.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -533,8 +546,11 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit =
-    docSpec(sig.sym.name, sig.spec)
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div>")
+    docSpec(sig.sym.name, sig.spec, None)
+    sb.append("</div>")
+  }
 
   /**
     * Documents the given `Spec`, `spec`, with the given `name`.
@@ -542,8 +558,9 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
+    sb.append("<div class='decl'>")
     sb.append(s"<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${esc(name)}</span>")
@@ -552,7 +569,8 @@ object HtmlDocumentor {
     docType(spec.retTpe)
     docEffectType(spec.eff)
     sb.append("</code>")
-    docSourceLocation(spec.loc)
+    docActions(linkId, spec.loc)
+    sb.append("</div>")
     docDoc(spec.doc)
   }
 
@@ -562,14 +580,18 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div>")
     docAnnotations(instance.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>instance</span> ")
     docType(instance.tpe)
     docTypeConstraints(instance.tconstrs)
     sb.append("</code>")
-    docSourceLocation(instance.loc)
+    docActions(None, instance.loc)
+    sb.append("</div>")
     docDoc(instance.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -692,12 +714,38 @@ object HtmlDocumentor {
   }
 
   /**
+    * Appends a 'copy link' button the the given `StringBuilder`.
+    * This creates a link to the given ID on the current URL.
+    */
+  private def docLink(id: String)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<a href='#$id' class='copy-link' aria-label='Link'>")
+    inlineIcon("link")
+    sb.append("</a> ")
+  }
+
+  /**
     * Document the given `SourceLocation`, `loc`, in the form of a link.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<a class='source' target='_blank' href='${esc(createLink(loc))}'>Source</a>")
+  }
+
+  /**
+    * Document the right hand actions.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * @param linkId An optional ID in the document, that the 'copy link' button will refer to.
+    *               If `None`, the button will not be included.
+    * @param loc    The source location that the 'source' button will refer to.
+    */
+  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='actions'>")
+    linkId.foreach(docLink)
+    docSourceLocation(loc)
+    sb.append("</span>")
   }
 
   /**
@@ -778,6 +826,15 @@ object HtmlDocumentor {
   }
 
   /**
+    * Append the contents of the SVG file with the given `name` to the given `StringBuilder`.
+    *
+    * By inlining the icon into the HTML itself, it can inherit the `color` of its parent.
+    */
+  private def inlineIcon(name: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(readResourceString(s"$Icons/$name.svg"))
+  }
+
+  /**
     * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
     */
   private def writeModule(mod: Module, output: String): Unit = {
@@ -806,6 +863,13 @@ object HtmlDocumentor {
     val is = LocalResource.getInputStream(path)
     LazyList.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
   }
+
+  /**
+    * Reads the given resource as a string.
+    *
+    * @param path The path of the resource, relative to the resources folder.
+    */
+  private def readResourceString(path: String): String = LocalResource.get(path)
 
   /**
     * Create a raw link to the given `SourceLocation`.

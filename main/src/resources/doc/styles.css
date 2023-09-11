@@ -24,7 +24,7 @@
     --light-def-color: #83af9b;
     --light-shadow-color: rgba(0, 0, 0, 0.05);
     --light-highlight-color: rgba(0, 0, 0, 0.3);
-    
+
     --dark-toggle-icon: "☾";
     --dark-bg-color-1: #151719;
     --dark-bg-color-2: #101214;
@@ -50,7 +50,7 @@
     --dark-def-color: #83af9b;
     --dark-shadow-color: rgba(0, 0, 0, 0.5);
     --dark-highlight-color: hsla(50, 0%, 100%, 0.3);
-    
+
     --toggle-icon: var(--light-toggle-icon);
     --bg-color-1: var(--light-bg-color-1);
     --bg-color-2: var(--light-bg-color-2);
@@ -322,7 +322,7 @@ nav > div {
     #menu-toggle:not(:checked) {
         transform: translateX(2.8rem);
     }
-    
+
     #menu-toggle:not(:checked) ~ div {
         display: none;
     }
@@ -403,11 +403,6 @@ main h2 {
     font-family: Oswald, sans-serif;
 }
 
-body > hr {
-    margin-top: 1rem;
-    margin-bottom: 3rem;
-}
-
 section {
     --h-padding: 0.75rem;
     margin-left: calc(-1 * var(--h-padding));
@@ -438,7 +433,55 @@ section > * {
     font-size: 0.85rem;
 }
 
-.source {
+.subsection {
+    margin-top: 1rem;
+    padding-left: 1.5rem;
+}
+.subsection > summary {
+    cursor: pointer;
+    list-style: none;
+    margin-left: -1.5rem;
+}
+.subsection > summary::after {
+    content: "(show)";
+    font-size: 0.875em;
+    margin-left: 0.3rem;
+    color: var(--show-hide-color);
+}
+.subsection > summary:hover::after {
+    text-decoration: underline;
+    color: var(--show-hide-hover-color);
+}
+.subsection[open] > summary::after {
+    content: "(hide)";
+}
+
+.subsection > div {
+    margin-top: 0.5rem;
+}
+.subsection > div:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.decl {
+    display: flex;
+    gap: 0.2rem;
+}
+.decl > code {
+    flex: 1;
+}
+.decl > * {
+    height: fit-content;
+}
+
+.actions {
+    float: right;
+    display: flex;
+    gap: 0.2rem;
+    color: var(--faded-text-color);
+}
+
+.actions > * {
     color: inherit;
     font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
@@ -447,8 +490,42 @@ section > * {
     padding: 0.2em 0.65em;
     border-radius: 0.375rem;
     border: 1px solid var(--border-color);
+}
+.actions > *:hover {
+    color: var(--text-color);
+}
 
-    float: right;
+.actions > .copy-link {
+    text-decoration: none;
+    height: 1rem;
+    padding: 0.2em;
+}
+.actions > .copy-link svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.copy-link-msg {
+    font-size: 0.8rem;
+    background-color:var(--shadow-color);
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.2rem;
+    pointer-events: none;
+
+    animation: fade-out 1s ease-in;
+}
+@keyframes fade-out {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
 }
 
 .cases {
@@ -469,7 +546,7 @@ section > * {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 
-    font-size: 0.8rem;   
+    font-size: 0.8rem;
 }
 .doc p {
     margin-top: 0;
@@ -480,29 +557,6 @@ section > * {
 }
 .box .doc code {
     color: var(--doc-code-color);
-}
-
-details {
-    margin-top: 1rem;
-    padding-left: 1.5rem;
-}
-summary {
-    cursor: pointer;
-    list-style: none;
-    margin-left: -1.5rem;
-}
-summary::after {
-    content: "(show)";
-    font-size: 0.875em;
-    margin-left: 0.3rem;
-    color: var(--show-hide-color);
-}
-summary:hover::after {
-    text-decoration: underline;
-    color: var(--show-hide-hover-color);
-}
-details[open] > summary::after {
-    content: "(hide)";
 }
 
 code {

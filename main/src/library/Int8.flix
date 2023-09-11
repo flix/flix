@@ -408,4 +408,25 @@ mod Int8 {
     pub def toBigDecimal(x: Int8): BigDecimal =
         import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
         Int8.toInt32(x) |> fromInt32
+
+    ///
+    /// Get the primitive Int8 value from its object representation (i.e. ##java.lang.Byte).
+    ///
+    /// This function is expected to be used when marshaling Int8s from Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Byte`.
+    ///
+    pub def byteValue(i: ##java.lang.Byte): Int8 =
+        import java.lang.Byte.byteValue(): Int8 \ {};
+        byteValue(i)
+
+    ///
+    /// Convert an Int8 value to its object representation (i.e. ##java.lang.Byte).
+    ///
+    /// This function is expected to be used when marshaling Int8s to Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Byte`.
+    ///
+    pub def valueOf(i: Int8): ##java.lang.Byte =
+        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte \ {};
+        valueOf(i)
+
 }
