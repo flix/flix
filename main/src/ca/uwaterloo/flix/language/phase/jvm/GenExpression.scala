@@ -724,7 +724,7 @@ object GenExpression {
           compileExpr(exps(i))
           // Stores the 'element' at the given 'index' in the 'array'
           // with the store instruction corresponding to the stored element
-          mv.visitInsn(AsmOps.getArrayStoreInstruction(backendType))
+          mv.visitInsn(backendType.getArrayStoreInstruction)
         }
 
       case AtomicOp.ArrayNew =>
@@ -738,7 +738,7 @@ object GenExpression {
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
         visitArrayInstantiate(mv, backendType)
-        if (backendType == BackendType.Int64 || backendType == BackendType.Float64) {
+        if (backendType.is64BitWidth) {
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
           // Duplicates the 'array reference' three places down the stack
@@ -752,7 +752,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(backendType)
+        val arrayFillType = backendType.toArrayFillType
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
