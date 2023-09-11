@@ -362,7 +362,7 @@ object UnkindedType {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordRowExtend(label: Name.Field, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
+  def mkRecordRowExtend(label: Name.Label, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
     mkApply(UnkindedType.Cst(TypeConstructor.RecordRowExtend(label), loc), List(tpe, rest), loc)
   }
 

@@ -67,9 +67,9 @@ object DocAst {
 
     case object RecordEmpty extends Atom
 
-    case class RecordExtend(label: Name.Field, value: Expression, rest: Expression) extends RecordOp
+    case class RecordExtend(label: Name.Label, value: Expression, rest: Expression) extends RecordOp
 
-    case class RecordRestrict(label: Name.Field, value: Expression) extends RecordOp
+    case class RecordRestrict(label: Name.Label, value: Expression) extends RecordOp
 
     case class Keyword(word: String, d: Expression) extends Composite
 
@@ -274,7 +274,7 @@ object DocAst {
     def JumpTo(sym: Symbol.LabelSym): Expression =
       Keyword("goto", AsIs(sym.toString))
 
-    def RecordSelect(label: Name.Field, d: Expression): Expression =
+    def RecordSelect(label: Name.Label, d: Expression): Expression =
       Dot(d, AsIs(label.name))
 
     def Regex(p: java.util.regex.Pattern): Expression =

@@ -124,11 +124,11 @@ object KindedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, label: Name.Field, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(label: Name.Field, value: Expr, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(label: Name.Field, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -245,7 +245,7 @@ object KindedAst {
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordLabelPattern(label: Name.Field, tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Label, tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)
     }
   }
 

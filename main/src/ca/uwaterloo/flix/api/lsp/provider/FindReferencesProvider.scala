@@ -133,7 +133,7 @@ object FindReferencesProvider {
     ("status" -> ResponseStatus.Success) ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findLabelReferences(label: Name.Field)(implicit index: Index, root: Root): JObject = {
+  private def findLabelReferences(label: Name.Label)(implicit index: Index, root: Root): JObject = {
     val defSites = index.defsOf(label)
     val useSites = index.usesOf(label)
     val locs = (defSites ++ useSites).toList.map(Location.from)

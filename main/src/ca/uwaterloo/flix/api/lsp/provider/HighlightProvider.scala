@@ -128,7 +128,7 @@ object HighlightProvider {
     highlight(write :: reads)
   }
 
-  private def highlightLabel(label: Name.Field)(implicit index: Index, root: Option[Root]): JObject = {
+  private def highlightLabel(label: Name.Label)(implicit index: Index, root: Option[Root]): JObject = {
     val writes = index.defsOf(label).toList.map(loc => (loc, DocumentHighlightKind.Write))
     val reads = index.usesOf(label).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(reads ::: writes)

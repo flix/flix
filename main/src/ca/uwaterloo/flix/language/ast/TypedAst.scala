@@ -160,11 +160,11 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class RecordSelect(exp: Expr, label: Name.Field, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(label: Name.Field, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(label: Name.Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -301,7 +301,7 @@ object TypedAst {
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordLabelPattern(label: Name.Field, tpe: Type, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Label, tpe: Type, pat: Pattern, loc: SourceLocation)
     }
   }
 

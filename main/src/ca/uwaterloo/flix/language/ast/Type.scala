@@ -736,7 +736,7 @@ object Type {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordRowExtend(label: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
+  def mkRecordRowExtend(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = {
     mkApply(Type.Cst(TypeConstructor.RecordRowExtend(label), loc), List(tpe, rest), loc)
   }
 

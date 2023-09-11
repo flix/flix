@@ -783,7 +783,7 @@ object Simplifier {
     * @param label the label / record row to remove from `tpe`.
     * @param tpe   the record type.
     */
-  private def mkRecordRestrict(label: Name.Field, tpe: MonoType): MonoType = {
+  private def mkRecordRestrict(label: Name.Label, tpe: MonoType): MonoType = {
 
     @tailrec
     def visit(t: MonoType, cont: MonoType => MonoType): MonoType = t match {

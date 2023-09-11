@@ -134,7 +134,7 @@ object TypeNormalization {
     * `rest` is already ordered. This, together with [[normalizeType]]
     * effectively implements insertion sort.
     */
-  private def insertRecordLabel(label: Name.Field, labelType: Type, rest: Type, loc: SourceLocation): Type = rest match {
+  private def insertRecordLabel(label: Name.Label, labelType: Type, rest: Type, loc: SourceLocation): Type = rest match {
     // empty rest, create the singleton record row
     case Type.Cst(TypeConstructor.RecordRowEmpty, emptyLoc) =>
       Type.mkRecordRowExtend(label, labelType, Type.mkRecordRowEmpty(emptyLoc), loc)

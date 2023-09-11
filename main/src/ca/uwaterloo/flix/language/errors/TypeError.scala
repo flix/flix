@@ -526,7 +526,7 @@ object TypeError {
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedLabel(label: Name.Field, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Missing label '$label' of type '$labelType'."
 
     def message(formatter: Formatter): String = {

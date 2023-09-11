@@ -126,7 +126,7 @@ object RenameProvider {
     rename(newName, uses + defn)
   }
 
-  private def renameLabel(label: Name.Field, newName: String)(implicit index: Index, root: Root): JObject = {
+  private def renameLabel(label: Name.Label, newName: String)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(label)
     val uses = index.usesOf(label)
     rename(newName, defs ++ uses)
