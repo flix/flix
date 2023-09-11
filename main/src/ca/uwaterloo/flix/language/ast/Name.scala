@@ -265,12 +265,12 @@ object Name {
     */
   case class Field(name: String, loc: SourceLocation) {
     /**
-      * Two predicate names are equal if their names are the same.
+      * Two predicate field are equal if their names are the same.
       */
     override def hashCode(): Int = name.hashCode
 
     /**
-      * Two predicate names are equal if their names are the same.
+      * Two predicate field are equal if their names are the same.
       */
     override def equals(o: Any): Boolean = o match {
       case that: Field => this.name == that.name
@@ -291,12 +291,12 @@ object Name {
     */
   case class Label(name: String, loc: SourceLocation) {
     /**
-      * Two predicate names are equal if their names are the same.
+      * Two label names are equal if their names are the same.
       */
     override def hashCode(): Int = name.hashCode
 
     /**
-      * Two predicate names are equal if their names are the same.
+      * Two label names are equal if their names are the same.
       */
     override def equals(o: Any): Boolean = o match {
       case that: Label => this.name == that.name
