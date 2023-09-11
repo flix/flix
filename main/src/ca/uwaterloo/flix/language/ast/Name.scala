@@ -56,6 +56,11 @@ object Name {
   def mkField(ident: Ident): Field = Field(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
 
   /**
+    * Converts the given identifier `ident` to a label.
+    */
+  def mkLabel(ident: Ident): Label = Label(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
+
+  /**
     * Converts the given identifier `ident` to a predicate name.
     */
   def mkPred(ident: Ident): Pred = Pred(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
@@ -269,6 +274,32 @@ object Name {
       */
     override def equals(o: Any): Boolean = o match {
       case that: Field => this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = name
+  }
+
+  /**
+    * The name of a label.
+    *
+    * @param name the name of the label.
+    * @param loc  the specific occurrence of the name.
+    */
+  case class Label(name: String, loc: SourceLocation) {
+    /**
+      * Two predicate names are equal if their names are the same.
+      */
+    override def hashCode(): Int = name.hashCode
+
+    /**
+      * Two predicate names are equal if their names are the same.
+      */
+    override def equals(o: Any): Boolean = o match {
+      case that: Label => this.name == that.name
       case _ => false
     }
 
