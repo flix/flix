@@ -257,7 +257,7 @@ sealed trait Completion {
       val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
-        label = CompletionUtils.getLabelForEnumTags(name, cas),
+        label = CompletionUtils.getLabelForEnumTags(name, cas, arity),
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(enumSym.name),

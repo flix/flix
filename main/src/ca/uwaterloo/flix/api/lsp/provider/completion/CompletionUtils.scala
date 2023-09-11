@@ -52,11 +52,11 @@ object CompletionUtils {
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
 
-  def getLabelForEnumTags(name: String, cas: TypedAst.Case)(implicit flix: Flix): String = {
-    cas.tpe match {
-      case Type.Unit => name
-      case tpe: Type.Cst => s"$name(${FormatType.formatType(tpe)})"
-      case _ =>  s"$name${FormatType.formatType(cas.tpe)}"
+  def getLabelForEnumTags(name: String, cas: TypedAst.Case, arity: Int)(implicit flix: Flix): String = {
+    arity match {
+      case 0 => name
+      case 1 => s"$name(${FormatType.formatType(cas.tpe)})"
+      case _ => s"$name${FormatType.formatType(cas.tpe)}"
     }
   }
 
