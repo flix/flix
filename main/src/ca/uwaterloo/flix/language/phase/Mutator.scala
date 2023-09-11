@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.SemanticOperator.BoolOp
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -70,7 +71,13 @@ object Mutator {
     case Expression.Lambda(fparam, exp, tpe, loc) => ???
     case Expression.Apply(exp, exps, tpe, eff, loc) => ???
     case Expression.Unary(sop, exp, tpe, eff, loc) => ???
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+      val op = sop match {
+        case BoolOp.Eq => BoolOp.Neq
+        case BoolOp.Neq => BoolOp.Eq
+        case _ => ???
+      }
+      Expression.Binary(op, exp1, exp2, tpe, eff, loc)
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => ???
     case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => ???
     case Expression.Region(tpe, loc) => ???
