@@ -27,7 +27,7 @@ object Index {
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -78,11 +78,6 @@ object Index {
     * Returns an index for the given `pat0`.
     */
   def occurrenceOf(pat0: Pattern): Index = empty + Entity.Pattern(pat0)
-
-  /**
-    * Returns an index for the given field `field`.
-    */
-  def occurrenceOf(field: Name.Field): Index = empty + Entity.Field(field)
 
   /**
     * Returns an index for the given label `label`.
@@ -178,16 +173,6 @@ object Index {
   def useOf(sym: Symbol.OpSym, loc: SourceLocation, parent: Entity): Index = Index.empty.copy(opUses = MultiMap.singleton(sym, loc)) + Entity.OpUse(sym, loc, parent)
 
   /**
-    * Returns an index with a def of the given `field`.
-    */
-  def defOf(field: Name.Field): Index = Index.empty.copy(fieldDefs = MultiMap.singleton(field, field.loc))
-
-  /**
-    * Returns an index with a use of the given `field`.
-    */
-  def useOf(field: Name.Field): Index = Index.empty.copy(fieldUses = MultiMap.singleton(field, field.loc))
-
-  /**
     * Returns an index with a def of the given `label`.
     */
   def defOf(label: Name.Label): Index = Index.empty.copy(labelDefs = MultiMap.singleton(label, label.loc))
@@ -229,8 +214,6 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  aliasUses: MultiMap[Symbol.TypeAliasSym, SourceLocation],
                  assocUses: MultiMap[Symbol.AssocTypeSym, SourceLocation],
                  tagUses: MultiMap[Symbol.CaseSym, SourceLocation],
-                 fieldDefs: MultiMap[Name.Field, SourceLocation],
-                 fieldUses: MultiMap[Name.Field, SourceLocation],
                  labelDefs: MultiMap[Name.Label, SourceLocation],
                  labelUses: MultiMap[Name.Label, SourceLocation],
                  predDefs: MultiMap[Name.Pred, SourceLocation],
@@ -360,16 +343,6 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.OpSym): Set[SourceLocation] = opUses(sym)
 
   /**
-    * Returns all defs of the given `field`.
-    */
-  def defsOf(field: Name.Field): Set[SourceLocation] = fieldDefs(field)
-
-  /**
-    * Returns all uses of the given `field`.
-    */
-  def usesOf(field: Name.Field): Set[SourceLocation] = fieldUses(field)
-
-  /**
     * Returns all defs of the given `label`.
     */
   def defsOf(label: Name.Label): Set[SourceLocation] = labelDefs(label)
@@ -432,8 +405,6 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.aliasUses ++ that.aliasUses,
       this.assocUses ++ that.assocUses,
       this.tagUses ++ that.tagUses,
-      this.fieldDefs ++ that.fieldDefs,
-      this.fieldUses ++ that.fieldUses,
       this.labelDefs ++ that.labelDefs,
       this.labelUses ++ that.labelUses,
       this.predDefs ++ that.predDefs,
