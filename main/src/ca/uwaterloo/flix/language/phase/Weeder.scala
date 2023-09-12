@@ -2587,7 +2587,7 @@ object Weeder {
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
     case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
     case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
-    case "Tailrec" | "tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
+    case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
     case name => WeederError.UndefinedAnnotation(name, ident.loc).toFailure
   }
 
