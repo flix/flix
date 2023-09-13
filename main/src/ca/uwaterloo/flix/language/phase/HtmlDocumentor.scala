@@ -99,60 +99,62 @@ object HtmlDocumentor {
     * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
     */
   private def splitModules(root: TypedAst.Root): Map[Symbol.ModuleSym, Module] = {
-    val noParents = root.modules.map {
-      case (sym, mod) =>
-        val uses = root.uses.getOrElse(sym, Nil)
 
-        var submodules: List[Symbol.ModuleSym] = Nil
-        var classes: List[Class] = Nil
-        var enums: List[TypedAst.Enum] = Nil
-        var effects: List[TypedAst.Effect] = Nil
-        var typeAliases: List[TypedAst.TypeAlias] = Nil
-        var defs: List[TypedAst.Def] = Nil
-        mod.foreach {
-          case sym: Symbol.ModuleSym => submodules = sym :: submodules
-          case sym: Symbol.ClassSym => classes = mkClass(sym, root) :: classes
-          case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
-          case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
-          case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
-          case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
-          case _ => // No op
+    /**
+      * Visits a module and all of its submodules
+      */
+    def visitMod(sym: Symbol.ModuleSym, parent: Option[Symbol.ModuleSym], mainItem: Option[MainItem]): Map[Symbol.ModuleSym, Module] = {
+      val mod = root.modules(sym)
+      val uses = root.uses.getOrElse(sym, Nil)
+
+      var submodules: List[Symbol.ModuleSym] = Nil
+      var classes: List[Class] = Nil
+      var enums: List[TypedAst.Enum] = Nil
+      var effects: List[TypedAst.Effect] = Nil
+      var typeAliases: List[TypedAst.TypeAlias] = Nil
+      var defs: List[TypedAst.Def] = Nil
+      mod.foreach {
+        case sym: Symbol.ModuleSym => submodules = sym :: submodules
+        case sym: Symbol.ClassSym => classes = mkClass(sym, root) :: classes
+        case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
+        case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
+        case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
+        case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
+        case _ => // No op
+      }
+
+      val mainItems = submodules.map { subSym =>
+        val copt = classes.find(c => c.sym.name == subSym.toString)
+        copt.foreach {
+          c1 => classes = classes.filter(c2 => c1 != c2)
         }
 
-        sym -> Module(
+        val eopt = enums.find(e => e.sym.name == subSym.toString)
+        if (copt.isEmpty) eopt.foreach {
+          e1 => enums = enums.filter(e2 => e1 != e2)
+        }
+
+        subSym -> copt.orElse(eopt.map(Enum))
+      }.toMap
+
+      submodules.map { subSym =>
+        visitMod(subSym, Some(sym), mainItems(subSym))
+      }.fold(Map.empty)((a, b) => a ++ b) +
+        (sym -> Module(
           sym,
-          parent = None,
+          parent,
           uses,
+          mainItem,
           submodules,
           classes,
           enums,
           effects,
           typeAliases,
           defs,
-        )
+        ))
     }
 
-    val children = noParents.flatMap {
-      case (parentSym, mod) => mod.submodules.map {
-        subSym =>
-          val Module(_, _, uses, submodules, classes, enums, effects, typeAliases, defs) = noParents(subSym)
-          subSym -> Module(
-            subSym,
-            parent = Some(parentSym),
-            uses,
-            submodules,
-            classes,
-            enums,
-            effects,
-            typeAliases,
-            defs,
-          )
-      }
-    }
-
-    val rootSym = Symbol.mkModuleSym(Nil)
-    val rootMod = noParents(rootSym)
-    children + (rootSym -> rootMod)
+    visitMod(Symbol.mkModuleSym(Nil), None, None)
   }
 
   /**
@@ -179,11 +181,20 @@ object HtmlDocumentor {
     * but with all items that shouldn't appear in the documentation removed.
     */
   private def filterItems(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = mods.map {
-    case (sym, Module(_, parent, uses, submodules, classes, enums, effects, typeAliases, defs)) =>
+    case (sym, Module(_, parent, uses, mainItem, submodules, classes, enums, effects, typeAliases, defs)) =>
       sym -> Module(
         sym,
         parent,
         uses,
+        mainItem match {
+          case Some(Enum(e)) =>
+            if (e.mod.isPublic && !e.ann.isInternal) mainItem
+            else None
+          case Some(c: Class) =>
+            if (c.mod.isPublic && !c.ann.isInternal) Some(filterClass(c))
+            else None
+          case None => None
+        },
         submodules,
         classes.filter(c => c.mod.isPublic && !c.ann.isInternal).map(filterClass),
         enums.filter(e => e.mod.isPublic && !e.ann.isInternal),
@@ -232,18 +243,21 @@ object HtmlDocumentor {
       */
     def checkMod(sym: Symbol.ModuleSym): Boolean = {
       modMap(sym) match {
-        case Module(_, parent, uses, submodules, classes, enums, effects, typeAliases, defs) =>
+        case Module(_, parent, uses, mainItem, submodules, classes, enums, effects, typeAliases, defs) =>
           val filteredSubMods = submodules.filter(checkMod)
 
-          val isEmpty = filteredSubMods.isEmpty &&
+          val isEmpty = {
+            mainItem.isEmpty &&
+              filteredSubMods.isEmpty &&
             classes.isEmpty &&
             enums.isEmpty &&
             effects.isEmpty &&
             typeAliases.isEmpty &&
             defs.isEmpty
+          }
 
           if (isEmpty) modMap.remove(sym)
-          else modMap += sym -> Module(sym, parent, uses, filteredSubMods, classes, enums, effects, typeAliases, defs)
+          else modMap += sym -> Module(sym, parent, uses, mainItem, filteredSubMods, classes, enums, effects, typeAliases, defs)
 
           !isEmpty
       }
@@ -317,6 +331,7 @@ object HtmlDocumentor {
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(moduleName(mod.sym))}</h1>")
+    docMainItem(mod.mainItem)
     docSection("Classes", sortedClasses, docClass)
     docSection("Effects", sortedEffs, docEffect)
     docSection("Enums", sortedEnums, docEnum)
@@ -418,6 +433,19 @@ object HtmlDocumentor {
     sb.append("</section>")
   }
 
+  private def docMainItem(mainItem: Option[MainItem])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    mainItem match {
+      case None => return
+      case Some(mi) =>
+        sb.append("<section>")
+        mi match {
+          case Enum(e) => docEnum(e)
+          case c: Class => docClass(c)
+        }
+        sb.append("</section>")
+    }
+  }
+
   /**
     * Documents a collapsable subsection, (Signatures, Instances, etc.), containing a `group` of items.
     *
@@ -462,7 +490,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(clazz.doc)
     docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
-    docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
+    docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature, open = true)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
     sb.append("</div>")
   }
@@ -895,12 +923,20 @@ object HtmlDocumentor {
   private case class Module(sym: Symbol.ModuleSym,
                             parent: Option[Symbol.ModuleSym],
                             uses: List[Ast.UseOrImport],
+                            mainItem: Option[MainItem],
                             submodules: List[Symbol.ModuleSym],
                             classes: List[Class],
                             enums: List[TypedAst.Enum],
                             effects: List[TypedAst.Effect],
                             typeAliases: List[TypedAst.TypeAlias],
                             defs: List[TypedAst.Def])
+
+  /**
+    * A trait describing all types that can be contained as the main item of a module.
+    */
+  private sealed trait MainItem
+
+  private case class Enum(enm: TypedAst.Enum) extends MainItem
 
   /**
     * A represention of a class that's easier to work with while generating documention.
@@ -916,5 +952,5 @@ object HtmlDocumentor {
                            defs: List[TypedAst.Sig],
                            laws: List[TypedAst.Def],
                            instances: List[TypedAst.Instance],
-                           loc: SourceLocation)
+                           loc: SourceLocation) extends MainItem
 }
