@@ -1225,7 +1225,7 @@ object GenExpression {
           val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
           // previous JvmOps functions are already partial pattern matches
           val MonoType.Arrow(_, closureResultType) = exp.tpe
-          val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
+//          val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
 
           compileExpr(exp)
           // Casting to JvmType of closure abstract class
@@ -1242,8 +1242,9 @@ object GenExpression {
               s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
-          mv.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-            backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+//          mv.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
+//            backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+          BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1270,7 +1271,7 @@ object GenExpression {
         // JvmType of Def
         val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
         // previous JvmOps function are already partial pattern matches
-        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tpe))
+//        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tpe))
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1285,8 +1286,9 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        mv.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethod.name,
-          AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+//        mv.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethod.name,
+//          AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 

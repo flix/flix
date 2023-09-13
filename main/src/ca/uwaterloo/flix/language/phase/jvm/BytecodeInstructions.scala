@@ -237,6 +237,11 @@ object BytecodeInstructions {
     f
   }
 
+  def INSTANCEOF(tpe: JvmName): InstructionSet = f => {
+    f.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
+    f
+  }
+
   def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor)
     f
@@ -460,6 +465,13 @@ object BytecodeInstructions {
     case BackendType.Float32 => FSTORE(index)
     case BackendType.Float64 => DSTORE(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
+  }
+
+  def xSwap(lower: BackendType, higher: BackendType): InstructionSet = (lower, higher) match {
+    case (BackendType.Int64 | BackendType.Float64, BackendType.Int64 | BackendType.Float64) => ???
+    case (BackendType.Int64 | BackendType.Float64, _) => ???
+    case (_, BackendType.Int64 | BackendType.Float64) => ???
+    case (_, _) => ???
   }
 
   /**

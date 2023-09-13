@@ -104,14 +104,14 @@ object GenFunctionClasses {
                                   classType: JvmType.Reference,
                                   defn: Def)(implicit root: Root, flix: Flix): Unit = {
     // Continuation class
-    val continuationType = JvmOps.getContinuationInterfaceType(defn.arrowType)
+//    val continuationType = JvmOps.getContinuationInterfaceType(defn.arrowType)
 
     // previous JvmOps function are already partial pattern matches
-    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
+//    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
 
     // Method header
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethod.name,
-      AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
+      AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
 
     // Enter label
     val enterLabel = new Label()
@@ -135,27 +135,28 @@ object GenFunctionClasses {
       m.visitVarInsn(iSTORE, sym.getStackOffset + 1)
     }
 
+    // Loading 2x Value
+    val createValue = {
+      import BytecodeInstructions._
+      import BackendObjType._
+      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP()
+    }
+    createValue(new BytecodeInstructions.F(m))
+
     // Generating the expression
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
 
-    // Loading `this`
-    m.visitVarInsn(ALOAD, 0)
-
-    // Swapping `this` and result of the expression
-    val resultJvmType = JvmOps.getErasedJvmType(defn.tpe)
-    if (AsmOps.getStackSize(resultJvmType) == 1) {
-      m.visitInsn(SWAP)
-    } else {
-      m.visitInsn(DUP_X2)
-      m.visitInsn(POP)
+    // returning a Value
+    val returnValue = {
+      import BytecodeInstructions._
+      import BackendObjType._
+      PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
+        xReturn(Result.toTpe)
     }
-
-    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendContinuationType.ResultField.name, resultJvmType.toDescriptor)
+    returnValue(new BytecodeInstructions.F(m))
 
     // Return
-    m.visitInsn(ACONST_NULL)
-    m.visitInsn(ARETURN)
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
