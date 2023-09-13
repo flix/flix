@@ -597,4 +597,21 @@ object SafetyError {
          |""".stripMargin
     )
   }
+
+  case class NonTailRecursiveFunction(loc: SourceLocation) extends SafetyError {
+    /**
+      * Returns a short description of the error message.
+      */
+    override def summary: String = ???
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = ???
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = ???
+  }
 }

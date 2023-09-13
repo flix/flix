@@ -75,7 +75,8 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root)
+    val tailpos = if (def0.spec.ann.isTailRecursive) TailPosition else NonTailPosition
+    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, tailpos, root)
   }
 
   /**
@@ -102,54 +103,62 @@ object Safety {
 
   }
 
+
+  // Maybe use Ast.CallType?
+  private sealed trait Tailrec
+
+  private case object TailPosition extends Tailrec
+
+  private case object NonTailPosition extends Tailrec
+
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expr, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(e0: Expr, renv: RigidityEnv, t0: Tailrec, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
 
     /**
       * Local visitor.
       */
-    def visit(exp0: Expr): List[CompilationMessage] = exp0 match {
-      case Expr.Cst(_, _, _) => Nil
+    def visit(exp0: Expr, tailrec: Tailrec): List[CompilationMessage] = exp0 match {
+      case Expr.Cst(_, _, _) => if (tailrec != t0) SafetyError.NonTailRecursiveFunction(e0.loc) :: Nil else Nil
 
-      case Expr.Var(_, _, _) => Nil
+      case Expr.Var(_, _, _) => if (tailrec != t0) SafetyError.NonTailRecursiveFunction(e0.loc) :: Nil else Nil
 
-      case Expr.Def(_, _, _) => Nil
+      case Expr.Def(_, _, _) => if (tailrec != t0) SafetyError.NonTailRecursiveFunction(e0.loc) :: Nil else Nil
 
-      case Expr.Sig(_, _, _) => Nil
+      case Expr.Sig(_, _, _) => if (tailrec != t0) SafetyError.NonTailRecursiveFunction(e0.loc) :: Nil else Nil
 
-      case Expr.Hole(_, _, _) => Nil
+      case Expr.Hole(_, _, _) => if (tailrec != t0) SafetyError.NonTailRecursiveFunction(e0.loc) :: Nil else Nil
 
       case Expr.HoleWithExp(exp, _, _, _) =>
-        visit(exp)
+        visit(exp, t0)
 
       case Expr.OpenAs(_, exp, _, _) =>
-        visit(exp)
+        visit(exp, t0)
 
       case Expr.Use(_, _, exp, _) =>
-        visit(exp)
+        visit(exp, NonTailPosition)
 
       case Expr.Lambda(_, exp, _, _) =>
-        visit(exp)
+        visit(exp, NonTailPosition)
 
       case Expr.Apply(exp, exps, _, _, _) =>
-        visit(exp) ++ exps.flatMap(visit)
+        visit(exp, t0) ++ exps.flatMap(visit(_, t0))
 
       case Expr.Unary(_, exp, _, _, _) =>
-        visit(exp)
+        visit(exp, NonTailPosition)
 
       case Expr.Binary(_, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
 
       case Expr.Let(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
 
       case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
+        visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
 
       case Expr.Region(_, _) =>
-        Nil
+        if (tailrec != t0) SafetyError.NonTailRecursiveFunction(e0.loc) :: Nil else Nil
 
       case Expr.Scope(_, _, exp, _, _, _) =>
         visit(exp)
@@ -368,7 +377,7 @@ object Safety {
 
     }
 
-    visit(e0)
+    visit(e0, t0)
 
   }
 
@@ -586,9 +595,9 @@ object Safety {
       val inVars = freeVars(exp).keySet intersect quantVars
       val err1 = ((inVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
 
-      err1 ::: visitExp(exp, renv, root)
+      err1 ::: visitExp(exp, renv, NonTailPosition, root)
 
-    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
+    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, NonTailPosition, root)
 
   }
 

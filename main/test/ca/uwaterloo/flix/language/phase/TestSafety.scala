@@ -714,4 +714,34 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalTestParameters](result)
   }
 
+  test("NonTailRecursiveFunction.01") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 = 1 + f()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.NonTailRecursiveFunction](result)
+  }
+
+  test("NonTailRecursiveFunction.02") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 = 1
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("NonTailRecursiveFunction.03") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 = f()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
 }
