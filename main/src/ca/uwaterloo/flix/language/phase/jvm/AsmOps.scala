@@ -18,11 +18,13 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Root
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
+import org.objectweb.asm.{ClassWriter, MethodVisitor}
+
+import scala.annotation.tailrec
 
 object AsmOps {
 
@@ -120,22 +122,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the array type code for the value of the type specified by `tpe`
-    */
-  def getArrayTypeCode(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => T_BOOLEAN
-    case JvmType.PrimChar => T_CHAR
-    case JvmType.PrimFloat => T_FLOAT
-    case JvmType.PrimDouble => T_DOUBLE
-    case JvmType.PrimByte => T_BYTE
-    case JvmType.PrimShort => T_SHORT
-    case JvmType.PrimInt => T_INT
-    case JvmType.PrimLong => T_LONG
-    case JvmType.Reference(_) => throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe", SourceLocation.Unknown)
-  }
-
-  /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
   def getArrayType(tpe: JvmType): String = tpe match {
@@ -151,23 +137,6 @@ object AsmOps {
     case JvmType.String => "[Ljava/lang/String;"
     case JvmType.Reference(_) => "[Ljava/lang/Object;"
   }
-
-  /**
-    * Returns the Array fill type for the value of the type specified by `tpe`
-    */
-  def getArrayFillType(tpe: JvmType): String = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
-    case JvmType.PrimBool => "([ZZ)V"
-    case JvmType.PrimChar => "([CC)V"
-    case JvmType.PrimByte => "([BB)V"
-    case JvmType.PrimShort => "([SS)V"
-    case JvmType.PrimInt => "([II)V"
-    case JvmType.PrimLong => "([JJ)V"
-    case JvmType.PrimFloat => "([FF)V"
-    case JvmType.PrimDouble => "([DD)V"
-    case JvmType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
-  }
-
 
   /**
     * Returns the load instruction corresponding to the given type `tpe`
@@ -432,9 +401,9 @@ object AsmOps {
     * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
     * then we just return the field
     *
-    * @param method     MethodVisitor used to emit the code to a method
-    * @param fieldType  type of the field to be boxed
-    * @param classType  class that the field is defined on
+    * @param method    MethodVisitor used to emit the code to a method
+    * @param fieldType type of the field to be boxed
+    * @param classType class that the field is defined on
     * @param fieldName name of the field to be boxed
     */
   def boxField(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, fieldName: String): Unit = {

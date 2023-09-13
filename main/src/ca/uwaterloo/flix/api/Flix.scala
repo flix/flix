@@ -215,7 +215,7 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
-    "File.flix" -> LocalResource.get("/src/library/File.flix"),
+    "Files.flix" -> LocalResource.get("/src/library/Files.flix"),
     "IOError.flix" -> LocalResource.get("/src/library/IOError.flix"),
     "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
 
@@ -658,7 +658,7 @@ class Flix {
       val d = new Duration(e)
       val emojiPart = formatter.blue("✓ ")
       val phasePart = formatter.blue(f"$phase%-40s")
-      val timePart = f"${d.fmtMiliSeconds}%8s"
+      val timePart = f"${d.fmtMilliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
 
       // Print information about each subphase.
@@ -666,7 +666,7 @@ class Flix {
         val d = new Duration(e)
         val emojiPart = "    "
         val phasePart = formatter.magenta(f"$subphase%-37s")
-        val timePart = f"(${d.fmtMiliSeconds}%8s)"
+        val timePart = f"(${d.fmtMilliSeconds}%8s)"
         Console.println(emojiPart + phasePart + timePart)
       }
     }
