@@ -25,7 +25,6 @@ sealed trait Chain[+A] extends Iterable[A] {
     */
   override def iterator: Iterator[A] = this match {
     case Chain.Empty => Iterator.empty
-    case Chain.One(x) => Iterator.single(x)
     case Chain.Link(l, r) => Iterator.concat(l, r)
     case Chain.Many(cs) => Iterator.concat(cs: _*)
     case Chain.Proxy(xs) => xs.iterator
@@ -55,30 +54,35 @@ object Chain {
   /**
     * The empty chain.
     */
-  case object Empty extends Chain[Nothing]
-
-  /**
-    * A singleton chain.
-    */
-  case class One[A](x: A) extends Chain[A]
+  private case object Empty extends Chain[Nothing]
 
   /**
     * A concatenation of two chains.
     */
-  case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
+  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
 
   /**
     * A concatenation of many chains.
     */
-  case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
+  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
 
   /**
     * A chain wrapping a sequence.
     */
-  case class Proxy[A](cs: Seq[A]) extends Chain[A]
+  private case class Proxy[A](xs: Seq[A]) extends Chain[A]
 
   /**
     * Returns a chain containing the given elements.
     */
   def apply[A](xs: A*): Chain[A] = Chain.Proxy(xs)
+
+  /**
+    * The empty chain.
+    */
+  val empty: Chain[Nothing] = Chain.Empty
+
+  /**
+    * Concatenates the given sequence of chains, in order.
+    */
+  def concat[A](cs: Seq[Chain[A]]): Chain[A] = Chain.Many(cs)
 }
