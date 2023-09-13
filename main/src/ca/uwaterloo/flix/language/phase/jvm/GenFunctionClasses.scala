@@ -143,8 +143,8 @@ object GenFunctionClasses {
     val returnValue = {
       import BytecodeInstructions._
       import BackendObjType._
-      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~
-      xSwap(lower = BackendType.toErasedBackendType(defn.tpe), higher = Value.toTpe) ~
+      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP() ~
+      xSwap(lower = BackendType.toErasedBackendType(defn.tpe), higher = BackendType.Int64) ~ // Int64 since its two objects
       PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
       xReturn(Result.toTpe)
     }
