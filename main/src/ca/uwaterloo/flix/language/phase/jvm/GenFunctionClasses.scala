@@ -135,14 +135,6 @@ object GenFunctionClasses {
       m.visitVarInsn(iSTORE, sym.getStackOffset + 1)
     }
 
-    // Loading 2x Value
-    val createValue = {
-      import BytecodeInstructions._
-      import BackendObjType._
-      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP()
-    }
-    createValue(new BytecodeInstructions.F(m))
-
     // Generating the expression
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
@@ -151,8 +143,10 @@ object GenFunctionClasses {
     val returnValue = {
       import BytecodeInstructions._
       import BackendObjType._
+      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~
+      xSwap(lower = BackendType.toErasedBackendType(defn.tpe), higher = Value.toTpe) ~
       PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
-        xReturn(Result.toTpe)
+      xReturn(Result.toTpe)
     }
     returnValue(new BytecodeInstructions.F(m))
 

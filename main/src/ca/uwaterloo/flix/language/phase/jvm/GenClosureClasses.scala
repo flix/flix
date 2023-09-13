@@ -150,14 +150,6 @@ object GenClosureClasses {
       invokeMethod.visitVarInsn(iSTORE, sym.getStackOffset + 1)
     }
 
-    // Loading 2x Value
-    val createValue = {
-      import BytecodeInstructions._
-      import BackendObjType._
-      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP()
-    }
-    createValue(new BytecodeInstructions.F(invokeMethod))
-
     // Generating the expression
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
     GenExpression.compileStmt(defn.stmt)(invokeMethod, ctx, root, flix)
@@ -166,8 +158,10 @@ object GenClosureClasses {
     val returnValue = {
       import BytecodeInstructions._
       import BackendObjType._
-      PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
-      xReturn(Result.toTpe)
+      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP() ~
+        xSwap(lower = BackendType.toErasedBackendType(defn.tpe), higher = BackendType.Int64) ~ // Int64 since its two objects
+        PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
+        xReturn(Result.toTpe)
     }
     returnValue(new BytecodeInstructions.F(invokeMethod))
 
