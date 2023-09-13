@@ -490,7 +490,7 @@ object BytecodeInstructions {
   def xSwap(lower: BackendType, higher: BackendType): InstructionSet = (lower.is64BitWidth, higher.is64BitWidth) match {
     case (true, true) => DUP2_X2() ~ POP2()
     case (true, false) => DUP_X2() ~ POP()
-    case (false, true) => DUP2_X1() ~ POP()
+    case (false, true) => DUP2_X1() ~ POP2()
     case (false, false) => SWAP()
   }
 
