@@ -111,14 +111,11 @@ object Safety {
 
   private case object NonTailPosition extends Tailrec
 
-  private def checkTailCallAnnotation(annotationValue: Tailrec, actualPosition: Tailrec, loc: SourceLocation): List[CompilationMessage] = {
-    val isNotTailRecursive = annotationValue == TailPosition && actualPosition != NonTailPosition
-    if (isNotTailRecursive) {
-      SafetyError.NonTailRecursiveFunction(loc) :: Nil
-    } else {
-      Nil
+  private def checkTailCallAnnotation(annotationValue: Tailrec, actualPosition: Tailrec, loc: SourceLocation): List[CompilationMessage] =
+    (annotationValue, actualPosition) match {
+      case (TailPosition, NonTailPosition) => SafetyError.NonTailRecursiveFunction(loc) :: Nil
+      case _ => Nil
     }
-  }
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
@@ -385,7 +382,7 @@ object Safety {
 
     }
 
-    visit(e0, t0)
+    visit(e0, TailPosition)
 
   }
 
