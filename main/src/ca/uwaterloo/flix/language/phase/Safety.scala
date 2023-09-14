@@ -152,7 +152,7 @@ object Safety {
         visit(exp, NonTailPosition)
 
       case Expr.Apply(exp, exps, _, _, _) =>
-        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ visit(exp, tailrec) ++ exps.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ visit(exp, NonTailPosition) ++ exps.flatMap(visit(_, NonTailPosition))
 
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
