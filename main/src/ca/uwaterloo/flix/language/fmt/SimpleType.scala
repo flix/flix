@@ -103,22 +103,22 @@ object SimpleType {
   /**
     * An unextended record.
     */
-  case class Record(fields: List[RecordFieldType]) extends SimpleType
+  case class Record(labels: List[RecordLabelType]) extends SimpleType
 
   /**
     * An extended record. `arg` should be a variable or a Hole.
     */
-  case class RecordExtend(fields: List[RecordFieldType], rest: SimpleType) extends SimpleType
+  case class RecordExtend(labels: List[RecordLabelType], rest: SimpleType) extends SimpleType
 
   /**
     * An unextended record row.
     */
-  case class RecordRow(fields: List[RecordFieldType]) extends SimpleType
+  case class RecordRow(labels: List[RecordLabelType]) extends SimpleType
 
   /**
     * An extended record row. `arg` should be a variable or a Hole.
     */
-  case class RecordRowExtend(fields: List[RecordFieldType], rest: SimpleType) extends SimpleType
+  case class RecordRowExtend(labels: List[RecordLabelType], rest: SimpleType) extends SimpleType
 
   //////////
   // Schemas
@@ -257,16 +257,16 @@ object SimpleType {
   /**
     * A tuple.
     */
-  case class Tuple(fields: List[SimpleType]) extends SimpleType
+  case class Tuple(elms: List[SimpleType]) extends SimpleType
 
   /////////
   // Fields
   /////////
 
   /**
-    * A record field name and its type.
+    * A record label name and its type.
     */
-  case class RecordFieldType(name: String, tpe: SimpleType)
+  case class RecordLabelType(name: String, tpe: SimpleType)
 
   /**
     * A common supertype for schema predicates.
@@ -343,17 +343,17 @@ object SimpleType {
 
         case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
 
-        case TypeConstructor.RecordRowExtend(field) =>
+        case TypeConstructor.RecordRowExtend(label) =>
           val args = t.typeArguments.map(visit)
           args match {
             // Case 1: No args. ( name: ? | ? )
-            case Nil => RecordRowExtend(RecordFieldType(field.name, Hole) :: Nil, Hole)
+            case Nil => RecordRowExtend(RecordLabelType(label.name, Hole) :: Nil, Hole)
             // Case 2: One arg. ( name: tpe | ? )
-            case tpe :: Nil => RecordRowExtend(RecordFieldType(field.name, tpe) :: Nil, Hole)
+            case tpe :: Nil => RecordRowExtend(RecordLabelType(label.name, tpe) :: Nil, Hole)
             // Case 3: Fully applied. Dispatch to proper record handler.
             case _ :: _ :: Nil => fromRecordRow(t)
             // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType(field.loc)
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(label.loc)
           }
 
         case TypeConstructor.Record =>
@@ -363,8 +363,8 @@ object SimpleType {
             case Nil => RecordConstructor(Hole)
             // Case 2: One row argument. Extract its values.
             case tpe :: Nil => tpe match {
-              case RecordRow(fields) => Record(fields)
-              case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
+              case RecordRow(labels) => Record(labels)
+              case RecordRowExtend(labels, rest) => RecordExtend(labels, rest)
               case nonRecord => RecordConstructor(nonRecord)
             }
             // Case 3: Too many args. Error.
@@ -564,14 +564,14 @@ object SimpleType {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
-        val fieldType = RecordFieldType(name.name, fromWellKindedType(tpe))
+        val labelType = RecordLabelType(name.name, fromWellKindedType(tpe))
         visit(rest) match {
-          // Case 1.1: Unextended row. Put the fields together.
-          case SimpleType.RecordRow(fields) => SimpleType.RecordRow(fieldType :: fields)
-          // Case 1.2: Extended row. Put the fields together.
-          case SimpleType.RecordRowExtend(fields, restOfRest) => SimpleType.RecordRowExtend(fieldType :: fields, restOfRest)
+          // Case 1.1: Unextended row. Put the labels together.
+          case SimpleType.RecordRow(labels) => SimpleType.RecordRow(labelType :: labels)
+          // Case 1.2: Extended row. Put the labels together.
+          case SimpleType.RecordRowExtend(labels, restOfRest) => SimpleType.RecordRowExtend(labelType :: labels, restOfRest)
           // Case 1.3: Non-row. Put it in the "rest" position.
-          case nonRecord => SimpleType.RecordRowExtend(fieldType :: Nil, nonRecord)
+          case nonRecord => SimpleType.RecordRowExtend(labelType :: Nil, nonRecord)
         }
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
@@ -579,10 +579,10 @@ object SimpleType {
       case nonRecord => fromWellKindedType(nonRecord)
     }
 
-    // sort the fields after converting
+    // sort the labels after converting
     visit(row0) match {
-      case RecordRowExtend(fields, rest) => RecordRowExtend(fields.sortBy(_.name), rest)
-      case RecordRow(fields) => RecordRow(fields.sortBy(_.name))
+      case RecordRowExtend(labels, rest) => RecordRowExtend(labels.sortBy(_.name), rest)
+      case RecordRow(labels) => RecordRow(labels.sortBy(_.name))
       case nonRecord => nonRecord
     }
   }

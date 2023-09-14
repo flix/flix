@@ -74,7 +74,7 @@ object MonoType {
 
   case object RecordEmpty extends MonoType
 
-  case class RecordExtend(field: String, value: MonoType, rest: MonoType) extends MonoType
+  case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
   case object SchemaEmpty extends MonoType
 

@@ -1239,14 +1239,14 @@ object Typer {
       case KindedAst.Expr.RecordEmpty(loc) =>
         liftM(List.empty, Type.mkRecord(Type.RecordRowEmpty, loc), Type.Pure)
 
-      case KindedAst.Expr.RecordSelect(exp, field, tvar, loc) =>
+      case KindedAst.Expr.RecordSelect(exp, label, tvar, loc) =>
         //
-        // r : { field = tpe | row }
+        // r : { label = tpe | row }
         // -------------------------
-        //       r.field : tpe
+        //       r.label : tpe
         //
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
-        val expectedRowType = Type.mkRecordRowExtend(field, tvar, freshRowVar, loc)
+        val expectedRowType = Type.mkRecordRowExtend(label, tvar, freshRowVar, loc)
         val expectedRecordType = Type.mkRecord(expectedRowType, loc)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
@@ -1254,32 +1254,32 @@ object Typer {
           resultEff = eff
         } yield (constrs, tvar, resultEff)
 
-      case KindedAst.Expr.RecordExtend(field, exp1, exp2, tvar, loc) =>
+      case KindedAst.Expr.RecordExtend(label, exp1, exp2, tvar, loc) =>
         //
         //       exp1 : tpe        exp2 : {| r }
         // ---------------------------------------------
-        // { field = exp1 | exp2 } : { field  :: tpe | r }
+        // { label = exp1 | exp2 } : { label  :: tpe | r }
         //
         val restRow = Type.freshVar(Kind.RecordRow, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(tpe2, Type.mkRecord(restRow, loc), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkRecord(Type.mkRecordRowExtend(field, tpe1, restRow, loc), loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkRecord(Type.mkRecordRowExtend(label, tpe1, restRow, loc), loc), loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expr.RecordRestrict(field, exp, tvar, loc) =>
+      case KindedAst.Expr.RecordRestrict(label, exp, tvar, loc) =>
         //
-        //  exp : { field  :: t | r }
+        //  exp : { label  :: t | r }
         // -------------------------
-        // { -field | exp } : {| r }
+        // { -label | exp } : {| r }
         //
-        val freshFieldType = Type.freshVar(Kind.Star, loc)
+        val freshLabelType = Type.freshVar(Kind.Star, loc)
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          recordType <- unifyTypeM(tpe, Type.mkRecord(Type.mkRecordRowExtend(field, freshFieldType, freshRowVar, loc), loc), loc)
+          recordType <- unifyTypeM(tpe, Type.mkRecord(Type.mkRecordRowExtend(label, freshLabelType, freshRowVar, loc), loc), loc)
           resultTyp <- unifyTypeM(tvar, Type.mkRecord(freshRowVar, loc), loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
@@ -2101,21 +2101,21 @@ object Typer {
       case KindedAst.Expr.RecordEmpty(loc) =>
         TypedAst.Expr.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
 
-      case KindedAst.Expr.RecordSelect(exp, field, tvar, loc) =>
+      case KindedAst.Expr.RecordSelect(exp, label, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expr.RecordSelect(e, field, subst0(tvar), eff, loc)
+        TypedAst.Expr.RecordSelect(e, label, subst0(tvar), eff, loc)
 
-      case KindedAst.Expr.RecordExtend(field, value, rest, tvar, loc) =>
+      case KindedAst.Expr.RecordExtend(label, value, rest, tvar, loc) =>
         val v = visitExp(value, subst0)
         val r = visitExp(rest, subst0)
         val eff = Type.mkUnion(v.eff, r.eff, loc)
-        TypedAst.Expr.RecordExtend(field, v, r, subst0(tvar), eff, loc)
+        TypedAst.Expr.RecordExtend(label, v, r, subst0(tvar), eff, loc)
 
-      case KindedAst.Expr.RecordRestrict(field, rest, tvar, loc) =>
+      case KindedAst.Expr.RecordRestrict(label, rest, tvar, loc) =>
         val r = visitExp(rest, subst0)
         val eff = r.eff
-        TypedAst.Expr.RecordRestrict(field, r, subst0(tvar), eff, loc)
+        TypedAst.Expr.RecordRestrict(label, r, subst0(tvar), eff, loc)
 
       case KindedAst.Expr.ArrayLit(exps, exp, tvar, pvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
@@ -2553,9 +2553,10 @@ object Typer {
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
 
-        def mkRecordType(patTypes: List[(Name.Field, Type, SourceLocation)]): Type = {
+        def mkRecordType(patTypes: List[(Name.Label, Type, SourceLocation)]): Type = {
           val ps = patTypes.foldRight(freshRowVar: Type) {
-            case ((f, t, l), acc) => Type.mkRecordRowExtend(f, t, acc, l)
+            case ((lbl, t, l), acc) => Type.mkRecordRowExtend(
+              lbl, t, acc, l)
           }
           Type.mkRecord(ps, loc)
         }
@@ -2563,7 +2564,7 @@ object Typer {
         for {
           recordTail <- visit(pat)
           _recordExtension <- unifyTypeM(freshRecord, recordTail, loc.asSynthetic)
-          patTypes <- traverseM(pats)(visitRecordFieldPattern(_, root))
+          patTypes <- traverseM(pats)(visitRecordLabelPattern(_, root))
           resultType = mkRecordType(patTypes)
           _ <- unifyTypeM(resultType, tvar, loc)
         } yield resultType
@@ -2583,15 +2584,15 @@ object Typer {
   }
 
   /**
-    * Infers the type of the given [[KindedAst.Pattern.Record.RecordFieldPattern]] `pat`.
+    * Infers the type of the given [[KindedAst.Pattern.Record.RecordLabelPattern]] `pat`.
     */
-  private def visitRecordFieldPattern(pat: KindedAst.Pattern.Record.RecordFieldPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Field, Type, SourceLocation)] = pat match {
-    case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar, p, loc) =>
-      // { Field = Pattern ... }
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Label, Type, SourceLocation)] = pat match {
+    case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
+      // { Label = Pattern ... }
       for {
         patType <- inferPattern(p, root)
         _ <- unifyTypeM(patType, tvar, loc)
-      } yield (field, patType, loc)
+      } yield (label, patType, loc)
   }
 
   /**
@@ -2615,8 +2616,8 @@ object Typer {
 
       case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
         val ps = pats.map {
-          case KindedAst.Pattern.Record.RecordFieldPattern(field, tvar1, pat1, loc1) =>
-            TypedAst.Pattern.Record.RecordFieldPattern(field, subst0(tvar1), visit(pat1), loc1)
+          case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar1, pat1, loc1) =>
+            TypedAst.Pattern.Record.RecordLabelPattern(label, subst0(tvar1), visit(pat1), loc1)
         }
         val p = visit(pat)
         TypedAst.Pattern.Record(ps, p, subst0(tvar), loc)

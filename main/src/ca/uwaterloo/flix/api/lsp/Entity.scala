@@ -103,8 +103,9 @@ object Entity {
     def precision: Precision = Precision.Low
   }
 
-  case class Field(e: Name.Field) extends Entity {
+  case class Label(e: Name.Label) extends Entity {
     def loc: SourceLocation = e.loc
+
     def precision: Precision = Precision.High
   }
 

@@ -677,8 +677,8 @@ object HtmlDocumentor {
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>(")
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
-        case SimpleType.Tuple(fields) =>
-          docList(fields) { t =>
+        case SimpleType.Tuple(elms) =>
+          docList(elms) { t =>
             sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
           }
         case _ => docType(c.tpe)
