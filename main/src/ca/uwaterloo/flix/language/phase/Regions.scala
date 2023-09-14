@@ -46,7 +46,7 @@ object Regions {
   }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError] =
-    visitExp(def0.impl.exp)(Nil, flix)
+    visitExp(def0.exp)(Nil, flix)
 
   private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = exp0 match {
     case Expr.Cst(_, _, _) => Nil

@@ -56,21 +56,14 @@ object Statistics {
     * Counts AST nodes in the given def.
     */
   private def visitDef(defn: Def): Counter = defn match {
-    case Def(sym, spec, impl) => visitImpl(impl)
+    case Def(sym, spec, exp) => visitExp(exp)
   }
 
   /**
     * Counts AST nodes in the given sig.
     */
   private def visitSig(sig: Sig): Counter = sig match {
-    case Sig(sym, spec, impl) => Counter.merge(impl.map(visitImpl))
-  }
-
-  /**
-    * Counts AST nodes in the given impl.
-    */
-  private def visitImpl(impl: Impl): Counter = impl match {
-    case Impl(exp, inferredScheme) => visitExp(exp)
+    case Sig(sym, spec, exp) => Counter.merge(exp.map(visitExp))
   }
 
   /**

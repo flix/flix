@@ -42,13 +42,13 @@ object Simplifier {
       * Translates the given definition `def0` to the SimplifiedAst.
       */
     def visitDef(defn: LoweredAst.Def): SimplifiedAst.Def = defn match {
-      case LoweredAst.Def(sym, spec, impl) =>
+      case LoweredAst.Def(sym, spec, exp) =>
         val fs = spec.fparams.map(visitFormalParam)
-        val exp = visitExp(impl.exp)
-        val funType = impl.inferredScheme.base
+        val e = visitExp(exp)
+        val funType = spec.declaredScheme.base
         val retType = visitType(funType.arrowResultType)
         val eff = visitType(funType.arrowEffectType)
-        SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, exp, retType, eff, sym.loc)
+        SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
     }
 
     /**

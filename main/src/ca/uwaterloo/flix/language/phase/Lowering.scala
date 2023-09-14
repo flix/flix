@@ -169,19 +169,19 @@ object Lowering {
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = defn0 match {
-    case TypedAst.Def(sym, spec0, impl0) =>
+    case TypedAst.Def(sym, spec0, exp0) =>
       val spec = visitSpec(spec0)
-      val impl = visitImpl(impl0)
-      LoweredAst.Def(sym, spec, impl)
+      val exp = visitExp(exp0)
+      LoweredAst.Def(sym, spec, exp)
   }
 
   /**
     * Lowers the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Sig = sig0 match {
-    case TypedAst.Sig(sym, spec0, impl0) =>
+    case TypedAst.Sig(sym, spec0, exp0) =>
       val spec = visitSpec(spec0)
-      val impl = impl0.map(visitImpl)
+      val impl = exp0.map(visitExp)
       LoweredAst.Sig(sym, spec, impl)
   }
 
@@ -318,16 +318,6 @@ object Lowering {
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
       LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, eff, tconstrs, loc)
-  }
-
-  /**
-    * Lowers the given `impl0`.
-    */
-  private def visitImpl(impl0: TypedAst.Impl)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Impl = impl0 match {
-    case TypedAst.Impl(exp, inferredScheme) =>
-      val e = visitExp(exp)
-      val s = visitScheme(inferredScheme)
-      LoweredAst.Impl(e, s)
   }
 
   /**
