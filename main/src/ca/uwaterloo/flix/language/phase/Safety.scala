@@ -263,7 +263,12 @@ object Safety {
         visit(exp, NonTailPosition)
 
       case Expr.Assign(exp1, exp2, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
+        val firstValue = visit(exp1, NonTailPosition).filter { // Exclude tail recursion checks
+          case SafetyError.NonTailRecursiveFunction(_) => false
+          case _ => true
+        }
+
+        firstValue ++ visit(exp2, NonTailPosition)
 
       case Expr.Ascribe(exp, _, _, _) =>
         visit(exp, NonTailPosition)
@@ -305,7 +310,11 @@ object Safety {
           rules.flatMap { case HandlerRule(_, _, e) => visit(e, tailrec) }
 
       case Expr.Do(_, exps, _, _, _) =>
-        exps.flatMap(visit(_, NonTailPosition)) // Maybe last element should have tailrec?
+        val first = exps.take(exps.length - 1).flatMap(visit(_, NonTailPosition)).filter {
+          case SafetyError.NonTailRecursiveFunction(_) => false
+          case _ => true
+        }
+        first ++ visit(exps.last, tailrec)
 
       case Expr.Resume(exp, _, _) =>
         visit(exp, tailrec)
