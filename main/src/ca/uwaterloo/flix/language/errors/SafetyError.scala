@@ -617,7 +617,24 @@ object SafetyError {
          |""".stripMargin
     }
 
-
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """"
+        |The @Tailrec annotation checks that a function is indeed tail recursive.
+        |
+        |A function that calls itself directly is tail recursive.
+        |The fibonacci function can be written as below:
+        |
+        |  def fib(n: Int32): Int32 =
+        |      if (n < 1) 1 else n * fib(n - 1)
+        |
+        |However, this grows the stack with each recursive call.
+        |This can be fixed by adding an additional argument, allowing
+        |the last expression to be a directly recursive call.
+        |
+        |  def fib(n: Int32, acc: Int32): Int32 =
+        |      if (n < 1) acc else fib(n - 1, n * acc)
+        |
+        |"""".stripMargin
+    })
   }
 }
