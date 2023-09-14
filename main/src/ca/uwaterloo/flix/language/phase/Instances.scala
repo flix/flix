@@ -50,7 +50,7 @@ object Instances {
       // Case 1: lawful class
       case TypedAst.Class(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-          case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
+          case (acc, TypedAst.Def(_, _, exp)) => acc ++ TypedAstOps.sigSymsOf(exp)
         }
         val unusedSigs = sigs.map(_.sym).toSet.removedAll(usedSigs)
         unusedSigs.toList.map {
