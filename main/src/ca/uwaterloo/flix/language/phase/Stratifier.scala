@@ -237,19 +237,19 @@ object Stratifier {
     case Expr.RecordEmpty(tpe, loc) =>
       Expr.RecordEmpty(tpe, loc).toSuccess
 
-    case Expr.RecordSelect(base, field, tpe, eff, loc) =>
+    case Expr.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expr.RecordSelect(b, field, tpe, eff, loc)
+        case b => Expr.RecordSelect(b, label, tpe, eff, loc)
       }
 
-    case Expr.RecordExtend(field, value, rest, tpe, eff, loc) =>
+    case Expr.RecordExtend(label, value, rest, tpe, eff, loc) =>
       mapN(visitExp(value), visitExp(rest)) {
-        case (v, r) => Expr.RecordExtend(field, v, r, tpe, eff, loc)
+        case (v, r) => Expr.RecordExtend(label, v, r, tpe, eff, loc)
       }
 
-    case Expr.RecordRestrict(field, rest, tpe, eff, loc) =>
+    case Expr.RecordRestrict(label, rest, tpe, eff, loc) =>
       mapN(visitExp(rest)) {
-        case r => Expr.RecordRestrict(field, r, tpe, eff, loc)
+        case r => Expr.RecordRestrict(label, r, tpe, eff, loc)
       }
 
     case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>

@@ -525,9 +525,9 @@ object Monomorph {
       (Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
     case Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
-        case Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
+        case Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
           val (p1, env1) = visitPat(pat1, subst)
-          (Pattern.Record.RecordFieldPattern(field, subst(tpe1), p1, loc1), env1)
+          (Pattern.Record.RecordLabelPattern(label, subst(tpe1), p1, loc1), env1)
       }.unzip
       val (p, env1) = visitPat(pat, subst)
       val finalEnv = env1 :: envs
