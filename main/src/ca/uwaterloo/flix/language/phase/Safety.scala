@@ -111,6 +111,15 @@ object Safety {
 
   private case object NonTailPosition extends Tailrec
 
+  private def checkTailCallAnnotation(annotationValue: Tailrec, actualPosition: Tailrec, loc: SourceLocation): List[CompilationMessage] = {
+    val isNotTailRecursive = annotationValue == TailPosition && actualPosition != NonTailPosition
+    if (isNotTailRecursive) {
+      SafetyError.NonTailRecursiveFunction(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
@@ -143,8 +152,7 @@ object Safety {
         visit(exp, NonTailPosition)
 
       case Expr.Apply(exp, exps, _, _, _) =>
-        // Handle tail call
-        visit(exp, tailrec) ++ exps.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ visit(exp, tailrec) ++ exps.flatMap(visit(_, NonTailPosition))
 
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
@@ -297,16 +305,13 @@ object Safety {
         visit(exp, tailrec)
 
       case Expr.InvokeConstructor(_, args, _, _, _) =>
-        // Handle tailcall
-        args.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ args.flatMap(visit(_, NonTailPosition))
 
       case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-        // Handle tailcall
-        visit(exp, NonTailPosition) ++ args.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ visit(exp, NonTailPosition) ++ args.flatMap(visit(_, NonTailPosition))
 
       case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-        // Handle tailcall
-        args.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ args.flatMap(visit(_, NonTailPosition))
 
       case Expr.GetField(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
