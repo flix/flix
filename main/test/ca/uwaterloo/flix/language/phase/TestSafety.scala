@@ -769,4 +769,34 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  test("NonTailRecursiveFunction.06") {
+    val input =
+      """
+        |def g(): Int32 \ IO = { println("") ; 1 }
+        |
+        |@Tailrec
+        |def f(): Int32 \ IO =
+        | let _ = g();
+        | let _ = { let _ = g(); g() };
+        | { g(); g(); let _ = { g(); g() }; f() }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("NonTailRecursiveFunction.07") {
+    val input =
+      """
+        |def g(): Int32 \ IO = { println("") ; 1 }
+        |
+        |@Tailrec
+        |def f(): Int32 \ IO =
+        | let _ = g();
+        | let _ = { let _ = g(); g() };
+        | { g(); g(); let _ = { g(); g() }; g() }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
 }
