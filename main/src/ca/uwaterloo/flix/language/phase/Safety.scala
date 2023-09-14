@@ -151,8 +151,8 @@ object Safety {
       case Expr.Lambda(_, exp, _, _) =>
         visit(exp, NonTailPosition)
 
-      case Expr.Apply(exp, exps, _, _, _) =>
-        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ visit(exp, NonTailPosition) ++ exps.flatMap(visit(_, NonTailPosition))
+      case Expr.Apply(exp, exps, _, _, loc) =>
+        checkTailCallAnnotation(t0, tailrec, loc) ++ visit(exp, NonTailPosition) ++ exps.flatMap(visit(_, NonTailPosition))
 
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
@@ -304,14 +304,14 @@ object Safety {
       case Expr.Resume(exp, _, _) =>
         visit(exp, tailrec)
 
-      case Expr.InvokeConstructor(_, args, _, _, _) =>
-        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ args.flatMap(visit(_, NonTailPosition))
+      case Expr.InvokeConstructor(_, args, _, _, loc) =>
+        checkTailCallAnnotation(t0, tailrec, loc) ++ args.flatMap(visit(_, NonTailPosition))
 
-      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ visit(exp, NonTailPosition) ++ args.flatMap(visit(_, NonTailPosition))
+      case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+        checkTailCallAnnotation(t0, tailrec, loc) ++ visit(exp, NonTailPosition) ++ args.flatMap(visit(_, NonTailPosition))
 
-      case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-        checkTailCallAnnotation(t0, tailrec, e0.loc) ++ args.flatMap(visit(_, NonTailPosition))
+      case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+        checkTailCallAnnotation(t0, tailrec, loc) ++ args.flatMap(visit(_, NonTailPosition))
 
       case Expr.GetField(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
