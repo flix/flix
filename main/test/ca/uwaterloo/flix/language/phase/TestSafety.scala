@@ -720,7 +720,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |@Tailrec
         |def f(): Int32 = 1 + f()
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.NonTailRecursiveFunction](result)
   }
 
