@@ -3,7 +3,7 @@ mod BenchmarkConstraint {
     ///
     /// create a set of facts.
     ///
-    @benchmark
+    @Benchmark
     pub def benchmark01(): Bool =
         let fold = (acc: #{ DirectedEdge(Int32, Int32) }, s: Int32) -> {
             let d = s + 1;
@@ -15,7 +15,7 @@ mod BenchmarkConstraint {
     ///
     /// create a set of facts and compute the symmetric facts.
     ///
-    @benchmark
+    @Benchmark
     pub def benchmark02(): Bool =
         let fold = (acc: #{ DirectedEdge(Int32, Int32) }, s: Int32) -> {
             let d = s + 1;
@@ -30,7 +30,7 @@ mod BenchmarkConstraint {
     ///
     /// create a set of facts and compute the transitive closure.
     ///
-    @benchmark
+    @Benchmark
     pub def benchmark03(): Bool =
         let fold = (acc: #{ DirectedEdge(Int32, Int32), DirectedPath(Int32, Int32) }, s: Int32) -> {
             let d = s + 1;

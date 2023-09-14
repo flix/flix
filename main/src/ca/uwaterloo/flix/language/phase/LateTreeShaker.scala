@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.ParOps
   * A function is considered reachable if it:
   *
   * (a) The main function is always reachable.
-  * (b) A function marked with @benchmark or @Test is reachable.
+  * (b) A function marked with @Benchmark or @Test is reachable.
   * (c) Appears in a function which itself is reachable.
   *
   */
@@ -65,7 +65,7 @@ object LateTreeShaker {
     reachable = reachable ++ root.entryPoint
 
     //
-    // (b) A function annotated with @benchmark or @Test is always reachable.
+    // (b) A function annotated with @Benchmark or @Test is always reachable.
     //
     for ((sym, defn) <- root.defs) {
       val isBenchmark = defn.ann.isBenchmark
