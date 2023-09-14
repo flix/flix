@@ -567,7 +567,7 @@ object SafetyError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Test entry point must not have parameters.
-
+         |
          |${code(loc, "Parameter for test function occurs here.")}
          |
          |""".stripMargin
@@ -598,20 +598,26 @@ object SafetyError {
     )
   }
 
+  /**
+    * An error raised to indicate that a function marked with the `@Tailrec` annotation
+    * has at least non-tail-recursive function call.
+    *
+    * @param loc the location of the non-tail-recursive call.
+    */
   case class NonTailRecursiveFunction(loc: SourceLocation) extends SafetyError {
-    /**
-      * Returns a short description of the error message.
-      */
-    override def summary: String = ???
+    override def summary: String = "Function annotated with @Tailrec must be tail recursive."
 
-    /**
-      * Returns the formatted error message.
-      */
-    override def message(formatter: Formatter): String = ???
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Function annotated with @Tailrec must be tail recursive.
+         |
+         |${code(loc, "A recursive call in non-tail position occurs here.")}
+         |
+         |""".stripMargin
+    }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = ???
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }
