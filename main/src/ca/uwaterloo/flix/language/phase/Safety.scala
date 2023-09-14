@@ -158,7 +158,12 @@ object Safety {
         visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
 
       case Expr.Let(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, tailrec)
+        val letValue = visit(exp1, NonTailPosition).filter { // Exclude tail recursion checks
+          case SafetyError.NonTailRecursiveFunction(_) => false
+          case _ => true
+        }
+
+        letValue ++ visit(exp2, tailrec)
 
       case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
         visit(exp1, NonTailPosition) ++ visit(exp2, tailrec)
@@ -175,7 +180,11 @@ object Safety {
         visit(exp1, NonTailPosition) ++ visit(exp2, tailrec) ++ visit(exp3, tailrec)
 
       case Expr.Stm(exp1, exp2, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, tailrec)
+        val firstStmValue = visit(exp1, NonTailPosition).filter { // Exclude tail recursion checks
+          case SafetyError.NonTailRecursiveFunction(_) => false
+          case _ => true
+        }
+        firstStmValue ++ visit(exp2, tailrec)
 
       case Expr.Discard(exp, _, _) =>
         visit(exp, tailrec)
