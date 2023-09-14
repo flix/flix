@@ -1,6 +1,6 @@
 mod Test.Term.Lit.List {
 
-    @test
+    @Test
     def testLitList01(): Bool =
         let p = #{
             A(Nil: List[Int32]).
@@ -10,7 +10,7 @@ mod Test.Term.Lit.List {
         let r = query p select x from R(x);
         Vector.memberOf(Nil, r)
 
-    @test
+    @Test
     def testLitList02(): Bool =
         let p = #{
             A(Nil: List[String]).
@@ -20,7 +20,7 @@ mod Test.Term.Lit.List {
         let r = query p select x from R(x);
         Vector.memberOf(Nil, r)
 
-    @test
+    @Test
     def testLitList03(): Bool =
         let p = #{
             A(1 :: 2 :: Nil).
@@ -30,7 +30,7 @@ mod Test.Term.Lit.List {
         let r = query p select x from R(x);
         Vector.memberOf(1 :: 2 :: Nil, r)
 
-    @test
+    @Test
     def testLitList04(): Bool =
         let p = #{
             A("hello" :: "world" :: Nil).

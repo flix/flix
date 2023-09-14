@@ -22,331 +22,331 @@ mod TestBoxable {
     // Unit                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unitUnbox01(): Bool = unbox(box(())) == ()
 
-    @test
+    @Test
     def unitCompare01(): Bool = box(()) == box(())
 
-    @test
+    @Test
     def unitToString01(): Bool = "${box(())}" == "()"
 
     /////////////////////////////////////////////////////////////////////////////
     // Bool                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def boolUnbox01(): Bool = unbox(box(false)) == false
 
-    @test
+    @Test
     def boolUnbox02(): Bool = unbox(box(true)) == true
 
-    @test
+    @Test
     def boolCompare01(): Bool = box(true) == box(true)
 
-    @test
+    @Test
     def boolCompare02(): Bool = box(false) < box(true)
 
-    @test
+    @Test
     def boolToString01(): Bool = "${box(true)}" == "true"
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def charUnbox01(): Bool = unbox(box('a')) == 'a'
 
-    @test
+    @Test
     def charUnbox02(): Bool = unbox(box('A')) == 'A'
 
-    @test
+    @Test
     def charUnbox03(): Bool = unbox(box(' ')) == ' '
 
-    @test
+    @Test
     def charUnbox04(): Bool = unbox(box('+')) == '+'
 
-    @test
+    @Test
     def charCompare01(): Bool = box('a') == box('a')
 
-    @test
+    @Test
     def charCompare02(): Bool = box('a') < box('b')
 
-    @test
+    @Test
     def charToString01(): Bool = "${box('V')}" == "V"
 
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def float32Unbox01(): Bool = unbox(box(0.0f32)) == 0.0f32
 
-    @test
+    @Test
     def float32Unbox02(): Bool = unbox(box(1.0f32)) == 1.0f32
 
-    @test
+    @Test
     def float32Unbox03(): Bool = unbox(box(-1.0f32)) == -1.0f32
 
-    @test
+    @Test
     def float32Unbox04(): Bool = unbox(box(3.14f32)) == 3.14f32
 
-    @test
+    @Test
     def float32Compare01(): Bool = box(0.0f32) == box(0.0f32)
 
-    @test
+    @Test
     def float32Compare02(): Bool = box(0.0f32) < box(1.0f32)
 
-    @test
+    @Test
     def float32ToString01(): Bool = "${box(123.0f32)}" == "123.0"
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def float64Unbox01(): Bool = unbox(box(0.0f64)) == 0.0f64
 
-    @test
+    @Test
     def float64Unbox02(): Bool = unbox(box(1.0f64)) == 1.0f64
 
-    @test
+    @Test
     def float64Unbox03(): Bool = unbox(box(-1.0f64)) == -1.0f64
 
-    @test
+    @Test
     def float64Unbox04(): Bool = unbox(box(3.14f64)) == 3.14f64
 
-    @test
+    @Test
     def float64Compare01(): Bool = box(0.0f64) == box(0.0f64)
 
-    @test
+    @Test
     def float64Compare02(): Bool = box(0.0f64) < box(1.0f64)
 
-    @test
+    @Test
     def float64ToString01(): Bool = "${box(123.0f64)}" == "123.0"
 
     /////////////////////////////////////////////////////////////////////////////
     // BigDecimal                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def bigDecimalUnbox01(): Bool = unbox(box(0.0ff)) == 0.0ff
 
-    @test
+    @Test
     def bigDecimalUnbox02(): Bool = unbox(box(1.0ff)) == 1.0ff
 
-    @test
+    @Test
     def bigDecimalUnbox03(): Bool = unbox(box(-1.0ff)) == -1.0ff
 
-    @test
+    @Test
     def bigDecimalUnbox04(): Bool = unbox(box(3.14ff)) == 3.14ff
 
-    @test
+    @Test
     def bigDecimalCompare01(): Bool = box(0.0ff) == box(0.0ff)
 
-    @test
+    @Test
     def bigDecimalCompare02(): Bool = box(0.0ff) < box(1.0ff)
 
-    @test
+    @Test
     def bigDecimalToString01(): Bool = "${box(123.0ff)}" == "123.0"
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def int8Unbox01(): Bool = unbox(box(0i8)) == 0i8
 
-    @test
+    @Test
     def int8Unbox02(): Bool = unbox(box(1i8)) == 1i8
 
-    @test
+    @Test
     def int8Unbox03(): Bool = unbox(box(-128i8)) == -128i8
 
-    @test
+    @Test
     def int8Unbox04(): Bool = unbox(box(127i8)) == 127i8
 
-    @test
+    @Test
     def int8Compare01(): Bool = box(0i8) == box(0i8)
 
-    @test
+    @Test
     def int8Compare02(): Bool = box(0i8) < box(1i8)
 
-    @test
+    @Test
     def int8ToString01(): Bool = "${box(123i8)}" == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def int16Unbox01(): Bool = unbox(box(0i16)) == 0i16
 
-    @test
+    @Test
     def int16Unbox02(): Bool = unbox(box(1i16)) == 1i16
 
-    @test
+    @Test
     def int16Unbox03(): Bool = unbox(box(-32768i16)) == -32768i16
 
-    @test
+    @Test
     def int16Unbox04(): Bool = unbox(box(32767i16)) == 32767i16
 
-    @test
+    @Test
     def int16Compare01(): Bool = box(0i16) == box(0i16)
 
-    @test
+    @Test
     def int16Compare02(): Bool = box(0i16) < box(1i16)
 
-    @test
+    @Test
     def int16ToString01(): Bool = "${box(123i16)}" == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def int32Unbox01(): Bool = unbox(box(0)) == 0i32
 
-    @test
+    @Test
     def int32Unbox02(): Bool = unbox(box(1)) == 1i32
 
-    @test
+    @Test
     def int32Unbox03(): Bool = unbox(box(-2147483648)) == -2147483648i32
 
-    @test
+    @Test
     def int32Unbox04(): Bool = unbox(box(2147483647)) == 2147483647i32
 
-    @test
+    @Test
     def int32Compare01(): Bool = box(0i32) == box(0i32)
 
-    @test
+    @Test
     def int32Compare02(): Bool = box(0i32) < box(1i32)
 
-    @test
+    @Test
     def int32ToString01(): Bool = "${box(123i32)}" == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def int64Unbox01(): Bool = unbox(box(0i64)) == 0i64
 
-    @test
+    @Test
     def int64Unbox02(): Bool = unbox(box(1i64)) == 1i64
 
-    @test
+    @Test
     def int64Unbox03(): Bool = unbox(box(-9223372036854775808i64)) == -9223372036854775808i64
 
-    @test
+    @Test
     def int64Unbox04(): Bool = unbox(box(9223372036854775807i64)) == 9223372036854775807i64
 
-    @test
+    @Test
     def int64Compare01(): Bool = box(0i64) == box(0i64)
 
-    @test
+    @Test
     def int64Compare02(): Bool = box(0i64) < box(1i64)
 
-    @test
+    @Test
     def int64ToString01(): Bool = "${box(123i64)}" == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def stringUnbox01(): Bool = unbox(box("")) == ""
 
-    @test
+    @Test
     def stringUnbox02(): Bool = unbox(box("a")) == "a"
 
-    @test
+    @Test
     def stringUnbox03(): Bool = unbox(box(".")) == "."
 
-    @test
+    @Test
     def stringUnbox04(): Bool = unbox(box(".#)!933")) == ".#)!933"
 
-    @test
+    @Test
     def stringCompare01(): Bool = box("") == box("")
 
-    @test
+    @Test
     def stringCompare02(): Bool = box("a") < box("b")
 
-    @test
+    @Test
     def stringToString01(): Bool = "${box("abc")}" == "abc"
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def bigIntUnbox01(): Bool = unbox(box(0ii)) == 0ii
 
-    @test
+    @Test
     def bigIntUnbox02(): Bool = unbox(box(1ii)) == 1ii
 
-    @test
+    @Test
     def bigIntUnbox03(): Bool = unbox(box(-3498457932459234592873452983453245ii)) == -3498457932459234592873452983453245ii
 
-    @test
+    @Test
     def bigIntUnbox04(): Bool = unbox(box(3498457932459234592873452983453245ii)) == 3498457932459234592873452983453245ii
 
-    @test
+    @Test
     def bigIntCompare01(): Bool = box(0ii) == box(0ii)
 
-    @test
+    @Test
     def bigIntCompare02(): Bool = box(0ii) < box(1ii)
 
-    @test
+    @Test
     def bigIntToString01(): Bool = "${box(123ii)}" == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple2                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def tuple2Unbox01(): Bool = unbox(box((1, 1))) == (1, 1)
 
-    @test
+    @Test
     def tuple2Unbox02(): Bool = unbox(box((1, Some(2)))) == (1, Some(2))
 
-    @test
+    @Test
     def tuple2Unbox03(): Bool = unbox(box((true, 1))) == (true, 1)
 
-    @test
+    @Test
     def tuple2Unbox04(): Bool = unbox(box(((1, 2), 91))) == ((1, 2), 91)
 
-    @test
+    @Test
     def tuple2Compare01(): Bool = box((0, 0)) == box((0, 0))
 
-    @test
+    @Test
     def tuple2Compare02(): Bool = box((0, 0)) < box((0, 1))
 
-    @test
+    @Test
     def tuple2ToString01(): Bool = "${box((1, 2))}" == "(1, 2)"
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple3                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def tuple3Unbox01(): Bool = unbox(box((1, 1, 82))) == (1, 1, 82)
 
-    @test
+    @Test
     def tuple3Unbox02(): Bool = unbox(box((1, Some(2), 3))) == (1, Some(2), 3)
 
-    @test
+    @Test
     def tuple3Unbox03(): Bool = unbox(box((true, 1, false))) == (true, 1, false)
 
-    @test
+    @Test
     def tuple3Unbox04(): Bool = unbox(box(((1, 2), 91, true))) == ((1, 2), 91, true)
 
-    @test
+    @Test
     def tuple3Compare01(): Bool = box((0, 0, 0)) == box((0, 0, 0))
 
-    @test
+    @Test
     def tuple3Compare02(): Bool = box((0, 0, 0)) < box((0, 0, 1))
 
-    @test
+    @Test
     def tuple3ToString01(): Bool = "${box((1, 2, 3))}" == "(1, 2, 3)"
 }

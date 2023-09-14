@@ -5,14 +5,14 @@ mod Test.Exp.Regions {
     // Test cases that use 0, 1, 2, 3 data structures nested inside each other (e.g. array inside array inside array).
     // Test cases that mix both multiple regions and multiple data structures.
 
-    @test
+    @Test
     def testRegions1Region01(): Bool =
         region rc {
             let a = Array.repeat(rc, 8, 1);
             Array.get(0, a) == 1
         }
 
-    @test
+    @Test
     def testRegions1Region02(): Bool =
         region rc {
             let l = MutList.new(rc);
@@ -20,7 +20,7 @@ mod Test.Exp.Regions {
             MutList.pop!(l) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1Region03(): Bool =
         region rc {
             let m = MutMap.new(rc);
@@ -28,7 +28,7 @@ mod Test.Exp.Regions {
             MutMap.get(1, m) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1Region1Nested01(): Bool =
         region rc {
             let a = Array.repeat(rc, 8, MutMap.new(rc));
@@ -36,7 +36,7 @@ mod Test.Exp.Regions {
             MutMap.get(1, Array.get(0, a)) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1Region1Nested02(): Bool =
         region rc {
             let l = MutList.new(rc);
@@ -47,7 +47,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region1Nested03(): Bool =
         region rc {
             let m = MutMap.new(rc);
@@ -60,7 +60,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region1Nested04(): Bool =
         region rc {
             let a = Array.repeat(rc, 8, MutMap.new(rc));
@@ -68,7 +68,7 @@ mod Test.Exp.Regions {
             MutMap.get(1, Array.get(0, a)) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1Region1Nested05(): Bool =
         region rc {
             let l = MutList.new(rc);
@@ -79,7 +79,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region1Nested06(): Bool =
         region rc {
             let m = MutMap.new(rc);
@@ -92,7 +92,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region2Nested01(): Bool =
         region rc {
             let a = Array.repeat(rc, 8, MutMap.new(rc));
@@ -105,7 +105,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region2Nested02(): Bool =
         region rc {
             let l = MutList.new(rc);
@@ -118,7 +118,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region2Nested03(): Bool =
         region rc {
             let m = MutMap.new(rc);
@@ -134,7 +134,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region3Nested01(): Bool =
         region rc {
             let a = Array.repeat(rc, 8, MutMap.new(rc));
@@ -150,7 +150,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region3Nested02(): Bool =
         region rc {
             let l = MutList.new(rc);
@@ -168,7 +168,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region3Nested03(): Bool =
         region rc {
             let m = MutMap.new(rc);
@@ -186,7 +186,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions01(): Bool =
         region rc1 {
             let a1 = Array.repeat(rc1, 8, 1);
@@ -197,7 +197,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions02(): Bool =
         region rc1 {
             let l1 = MutList.new(rc1);
@@ -210,7 +210,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions03(): Bool =
         region rc1 {
             let m1 = MutMap.new(rc1);
@@ -223,7 +223,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions04(): Bool =
         region rc1 {
             let a1 = Array.repeat(rc1, 8, 1);
@@ -234,7 +234,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions05(): Bool =
         region rc1 {
             let l1 = MutList.new(rc1);
@@ -247,7 +247,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions06(): Bool =
         region rc1 {
             let m1 = MutMap.new(rc1);
@@ -260,7 +260,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions07(): Bool =
         region rc1 {
             let a1 = Array.repeat(rc1, 8, 1);
@@ -271,7 +271,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions08(): Bool =
         region rc1 {
             let l1 = MutList.new(rc1);
@@ -284,7 +284,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions09(): Bool =
         region rc1 {
             let m1 = MutMap.new(rc1);
@@ -297,7 +297,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions10(): Bool =
         region rc1 {
             let a1 = Array.repeat(rc1, 8, 1);
@@ -308,7 +308,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions11(): Bool =
         region rc1 {
             let l1 = MutList.new(rc1);
@@ -321,7 +321,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions12(): Bool =
         region rc1 {
             let m1 = MutMap.new(rc1);
@@ -334,7 +334,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions13(): Bool =
         region rc1 {
             let a1 = Array.repeat(rc1, 8, 1);
@@ -344,7 +344,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions14(): Bool =
         region rc1 {
             let l1 = MutList.new(rc1);
@@ -357,7 +357,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions15(): Bool =
         region rc1 {
             let m1 = MutMap.new(rc1);
@@ -369,7 +369,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1Nested01(): Bool =
         region rc1 {
             region rc2 {
@@ -379,7 +379,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1Nested02(): Bool =
         region rc1 {
             region rc2 {
@@ -392,7 +392,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1Nested03(): Bool =
         region rc1 {
             region rc2 {
@@ -407,7 +407,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1Nested04(): Bool =
         region rc1 {
             region rc2 {
@@ -417,7 +417,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1Nested05(): Bool =
         region rc1 {
             region rc2 {
@@ -430,7 +430,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1Nested06(): Bool =
         region rc1 {
             let l = MutList.new(rc1);
@@ -445,7 +445,7 @@ mod Test.Exp.Regions {
             } and MutList.nth(0, l) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions2Regions2Nested01(): Bool =
         region rc1 {
             region rc2 {
@@ -460,7 +460,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions2Nested02(): Bool =
         region rc1 {
             region rc2 {
@@ -475,7 +475,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions2Nested03(): Bool =
         region rc1 {
             region rc2 {
@@ -490,7 +490,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions3Nested01(): Bool =
         region rc1 {
             region rc2 {
@@ -505,7 +505,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions3Nested02(): Bool =
         region rc1 {
             region rc2 {
@@ -525,7 +525,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions3Nested03(): Bool =
         region rc1 {
             region rc2 {
@@ -543,7 +543,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions01(): Bool =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
@@ -558,7 +558,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions02(): Bool =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
@@ -573,7 +573,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions03(): Bool =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
@@ -588,7 +588,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions04(): Bool =
         region rc1 {
             let a = Array.repeat(rc1, 8, 1);
@@ -603,7 +603,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions1Nested01(): Bool =
         region rc1 {
             region rc2 {
@@ -615,7 +615,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions1Nested02(): Bool =
         region rc1 {
             region rc2 {
@@ -632,7 +632,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions1Nested03(): Bool =
         region _ {
             region rc2 {
@@ -649,7 +649,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions2Nested01(): Bool =
         region rc1 {
             region rc2 {
@@ -668,7 +668,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions2Nested02(): Bool =
         region rc1 {
             region rc2 {
@@ -685,7 +685,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions2Nested03(): Bool =
         region rc1 {
             region rc2 {
@@ -702,7 +702,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions3Nested01(): Bool =
         region rc1 {
             let l = MutList.new(rc1);
@@ -719,7 +719,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions3Nested02(): Bool =
         region rc1 {
             region rc2 {
@@ -741,7 +741,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions3Nested03(): Bool =
         region rc1 {
             region rc2 {
@@ -760,14 +760,14 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1RegionReferences03(): Bool =
         region rc {
             let a = Array.repeat(rc, 8, ref 1 @ rc);
             deref Array.get(0, a) == 1
         }
 
-    @test
+    @Test
     def testRegions1RegionReferences04(): Bool =
         region rc {
             let l = ref MutList.new(rc) @ rc;
@@ -775,7 +775,7 @@ mod Test.Exp.Regions {
             MutList.pop!(deref l) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1RegionReferences05(): Bool =
         region rc {
             let m = ref MutMap.new(rc) @ rc;
@@ -783,7 +783,7 @@ mod Test.Exp.Regions {
             MutMap.get(1, deref m) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1Region1NestedReferences01(): Bool =
         region rc {
             let a = ref Array.repeat(rc, 8, MutMap.new(rc)) @ rc;
@@ -791,7 +791,7 @@ mod Test.Exp.Regions {
             MutMap.get(1, Array.get(0, deref a)) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1Region1NestedReferences02(): Bool =
         region rc {
             let l = ref MutList.new(rc) @ rc;
@@ -802,7 +802,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region1NestedReferences03(): Bool =
         region rc {
             let m = MutMap.new(rc);
@@ -815,7 +815,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region1NestedReferences04(): Bool =
         region rc {
             let a = ref Array.repeat(rc, 8, ref MutMap.new(rc) @ rc) @ rc;
@@ -823,7 +823,7 @@ mod Test.Exp.Regions {
             MutMap.get(1, deref (Array.get(0, deref a))) == Some(1)
         }
 
-    @test
+    @Test
     def testRegions1Region1NestedReferences05(): Bool =
         region rc {
             let l = ref MutList.new(rc) @ rc;
@@ -834,7 +834,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region2NestedReferences01(): Bool =
         region rc {
             let a = ref Array.repeat(rc, 8, ref MutMap.new(rc) @ rc) @ rc;
@@ -847,7 +847,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region2NestedReferences02(): Bool =
         region rc {
             let l = ref MutList.new(rc) @ rc;
@@ -860,7 +860,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region2NestedReferences03(): Bool =
         region rc {
             let m = ref MutMap.new(rc) @ rc;
@@ -876,7 +876,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region3NestedReferences01(): Bool =
         region rc {
             let a = ref Array.repeat(rc, 8, ref MutMap.new(rc) @ rc) @ rc;
@@ -892,7 +892,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region3NestedReferences02(): Bool =
         region rc {
             let l = ref MutList.new(rc) @ rc;
@@ -910,7 +910,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions1Region3NestedReferences03(): Bool =
         region rc {
             let m = ref MutMap.new(rc) @ rc;
@@ -928,7 +928,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2RegionsReferences01(): Bool =
         region rc1 {
             let a1 = ref Array.repeat(rc1, 8, 1) @ rc1;
@@ -939,7 +939,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2RegionsReferences02(): Bool =
         region rc1 {
             let l1 = ref MutList.new(rc1) @ rc1;
@@ -952,7 +952,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2RegionsReferences03(): Bool =
         region rc1 {
             region rc2 {
@@ -964,7 +964,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2RegionsReferences04(): Bool =
         region rc1 {
             region rc2 {
@@ -976,7 +976,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2RegionsReferences05(): Bool =
         region rc1 {
             region rc2 {
@@ -986,7 +986,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2RegionsReferences06(): Bool =
         region rc1 {
             region rc2 {
@@ -998,7 +998,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1NestedReferences01(): Bool =
         region rc1 {
             region rc2 {
@@ -1008,7 +1008,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1NestedReferences02(): Bool =
         region rc1 {
             region rc2 {
@@ -1021,7 +1021,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1NestedReferences03(): Bool =
         region rc1 {
             region rc2 {
@@ -1036,7 +1036,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions1NestedReferences04(): Bool =
         region rc1 {
             region rc2 {
@@ -1046,7 +1046,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions2NestedReferences01(): Bool =
         region rc1 {
             region rc2 {
@@ -1061,7 +1061,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions2NestedReferences02(): Bool =
         region rc1 {
             region rc2 {
@@ -1076,7 +1076,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions2NestedReferences03(): Bool =
         region rc1 {
             region rc2 {
@@ -1091,7 +1091,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions3NestedReferences01(): Bool =
         region rc1 {
             region rc2 {
@@ -1106,7 +1106,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions3NestedReferences02(): Bool =
         region rc1 {
             region rc2 {
@@ -1126,7 +1126,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions2Regions3NestedReferences03(): Bool =
         region rc1 {
             region rc2 {
@@ -1144,7 +1144,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3RegionsReferences01(): Bool =
         region rc1 {
             let a = ref Array.repeat(rc1, 8, 1) @ rc1;
@@ -1159,7 +1159,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3RegionsReferences02(): Bool =
         region rc1 {
             let a = ref Array.repeat(rc1, 8, 1) @ rc1;
@@ -1174,7 +1174,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3RegionsReferences03(): Bool =
         region rc1 {
             let a = ref Array.repeat(rc1, 8, 1) @ rc1;
@@ -1189,7 +1189,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3RegionsReferences04(): Bool =
         region rc1 {
             let a = ref Array.repeat(rc1, 8, 1) @ rc1;
@@ -1204,7 +1204,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions1NestedReferences01(): Bool =
         region rc1 {
             region rc2 {
@@ -1216,7 +1216,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions1NestedReferences02(): Bool =
         region rc1 {
             region rc2 {
@@ -1233,7 +1233,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions1NestedReferences03(): Bool =
         region _ {
             region rc2 {
@@ -1250,7 +1250,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions2NestedReferences01(): Bool =
         region rc1 {
             region rc2 {
@@ -1269,7 +1269,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions2NestedReferences02(): Bool =
         region rc1 {
             region rc2 {
@@ -1286,7 +1286,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions2NestedReferences03(): Bool =
         region rc1 {
             region rc2 {
@@ -1303,7 +1303,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions3NestedReferences01(): Bool =
         region rc1 {
             region rc2 {
@@ -1320,7 +1320,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions3NestedReferences02(): Bool =
         region rc1 {
             region rc2 {
@@ -1342,7 +1342,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions3NestedReferences03(): Bool =
         region rc1 {
             region rc2 {
@@ -1362,7 +1362,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegions3Regions3NestedReferences04(): Bool =
         region rc1 {
             region rc2 {
@@ -1383,7 +1383,7 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
+    @Test
     def testRegionExit01(): Bool \ IO = region rc1 {
         let x  = ref false @ rc1;
         region rc2 {
@@ -1392,7 +1392,7 @@ mod Test.Exp.Regions {
         deref x
     }
 
-    @test
+    @Test
     def testRegionExit02(): Bool \ IO = region rc1 {
         let x = ref false @ rc1;
         region rc2 {

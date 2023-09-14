@@ -17,79 +17,79 @@
 mod TestFromString {
     use FromString.fromString
 
-    @test
+    @Test
     def testFromStringUnitGood(): Bool = fromString("()") == Some(())
 
-    @test
+    @Test
     def testFromStringUnitBad(): Bool = fromString(")(") == None: Option[Unit]
 
-    @test
+    @Test
     def testFromStringTrueGood(): Bool = fromString("true") == Some(true)
 
-    @test
+    @Test
     def testFromStringTrueBad(): Bool = fromString("fue") == None: Option[Bool]
 
-    @test
+    @Test
     def testFromStringFalseGood(): Bool = fromString("false") == Some(false)
 
-    @test
+    @Test
     def testFromStringFalseBad(): Bool = fromString("tralse") == None: Option[Bool]
 
-    @test
+    @Test
     def testFromStringCharGood(): Bool = fromString("Q") == Some('Q')
 
-    @test
+    @Test
     def testFromStringCharBad(): Bool = fromString("ABC") == None: Option[Char]
 
-    @test
+    @Test
     def testFromStringFloat32Good(): Bool = fromString("123.0") == Some(123.0f32)
 
-    @test
+    @Test
     def testFromStringFloat32Bad(): Bool = fromString("ABC") == None: Option[Float32]
 
-    @test
+    @Test
     def testFromStringFloat64Good(): Bool = fromString("123.0") == Some(123.0f64)
 
-    @test
+    @Test
     def testFromStringFloat64Bad(): Bool = fromString("ABC") == None: Option[Float64]
 
-    @test
+    @Test
     def testFromStringBigDecimalGood(): Bool = fromString("123.0") == Some(123.0ff)
 
-    @test
+    @Test
     def testFromStringBigDecimalBad(): Bool = fromString("ABC") == None: Option[BigDecimal]
 
-    @test
+    @Test
     def testFromStringInt8Good(): Bool = fromString("123") == Some(123i8)
 
-    @test
+    @Test
     def testFromStringInt8Bad(): Bool = fromString("ABC") == None: Option[Int8]
 
-    @test
+    @Test
     def testFromStringInt16Good(): Bool = fromString("123") == Some(123i16)
 
-    @test
+    @Test
     def testFromStringInt16Bad(): Bool = fromString("ABC") == None: Option[Int16]
 
-    @test
+    @Test
     def testFromStringInt32Good(): Bool = fromString("123") == Some(123i32)
 
-    @test
+    @Test
     def testFromStringInt32Bad(): Bool = fromString("ABC") == None: Option[Int32]
 
-    @test
+    @Test
     def testFromStringInt64Good(): Bool = fromString("123") == Some(123i64)
 
-    @test
+    @Test
     def testFromStringInt64Bad(): Bool = fromString("ABC") == None: Option[Int64]
 
-    @test
+    @Test
     def testFromStringStringGood(): Bool = fromString("abcd") == Some("abcd")
 
-    @test
+    @Test
     def testFromStringBigIntGood(): Bool = fromString("123") == Some(123ii)
 
-    @test
+    @Test
     def testFromStringBigIntBad(): Bool = fromString("ABC") == None: Option[BigInt]
 
 }

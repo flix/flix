@@ -1,15 +1,15 @@
 mod Test.Equality.Bool {
 
-    @test
+    @Test
     def testEqBool01(): Bool = true == true
 
-    @test
+    @Test
     def testEqBool02(): Bool = false == false
 
-    @test
+    @Test
     def testNeqBool01(): Bool = true != false
 
-    @test
+    @Test
     def testNeqBool02(): Bool = false != true
 
 }

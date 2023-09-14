@@ -1,6 +1,6 @@
 mod Test.Term.Var.WildVar {
 
-    @test
+    @Test
     def testWildVar01(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -12,7 +12,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar02(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -24,7 +24,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar03(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -36,7 +36,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar04(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -48,7 +48,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar05(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -61,7 +61,7 @@ mod Test.Term.Var.WildVar {
         not Vector.isEmpty(m)
 
 
-    @test
+    @Test
     def testWildVar06(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -73,7 +73,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar07(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -85,7 +85,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar08(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -97,7 +97,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar09(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -109,7 +109,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar10(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -121,7 +121,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar11(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -133,7 +133,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar12(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -145,7 +145,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar13(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -157,7 +157,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar14(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -169,7 +169,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar15(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -181,7 +181,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar16(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -193,7 +193,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar17(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -205,7 +205,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar18(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -217,7 +217,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar19(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -229,7 +229,7 @@ mod Test.Term.Var.WildVar {
         let m = query p select 42 from T(), not F();
         not Vector.isEmpty(m)
 
-    @test
+    @Test
     def testWildVar20(): Bool =
         let p = #{
             A(1, 2, 3).

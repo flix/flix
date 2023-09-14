@@ -17,58 +17,58 @@
 mod TestLowerBound {
     use LowerBound.minValue
 
-    @test
+    @Test
     def testUnit(): Bool = minValue() == ()
 
-    @test
+    @Test
     def testBool(): Bool = minValue() == false
 
-    @test
+    @Test
     def testInt8(): Bool = minValue() == -128i8
 
-    @test
+    @Test
     def testInt16(): Bool = minValue() == -32_768i16
 
-    @test
+    @Test
     def testInt32(): Bool = minValue() == -2_147_483_648
 
-    @test
+    @Test
     def testInt64(): Bool = minValue() == -9_223_372_036_854_775_808i64
 
-    @test
+    @Test
     def testFloat32(): Bool = minValue() == Float32.minValue()
 
-    @test
+    @Test
     def testFloat64(): Bool = minValue() == Float64.minValue()
 
-    @test
+    @Test
     def testChar(): Bool = minValue() == Char.minValue()
 
-    @test
+    @Test
     def testTuple2(): Bool = minValue() == ('\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple3(): Bool = minValue() == ('\u0000', '\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple4(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple5(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple6(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple7(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple8(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple9(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
 
-    @test
+    @Test
     def testTuple10(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
 
 }

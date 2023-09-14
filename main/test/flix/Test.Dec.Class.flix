@@ -157,13 +157,13 @@ mod Test.Dec.Class {
             override pub def h(): Int32 = 1
         }
 
-        @test
+        @Test
         def testSigOverride01(): Bool = Test.Dec.Class.Test13.C.f() == 0
 
-        @test
+        @Test
         def testSigOverride02(): Bool = Test.Dec.Class.Test13.C.g() == 0
 
-        @test
+        @Test
         def testSigOverride03(): Bool = Test.Dec.Class.Test13.C.h() == 1
     }
 
@@ -207,6 +207,6 @@ mod Test.Dec.Class {
         }
     }
 
-    @test
+    @Test
     def empty(): Bool = true
 }

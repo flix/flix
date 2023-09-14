@@ -1,15 +1,15 @@
 mod Test.Equality.Char {
 
-    @test
+    @Test
     def testEqChar01(): Bool = 'a' == 'a'
 
-    @test
+    @Test
     def testEqChar02(): Bool = 'z' == 'z'
 
-    @test
+    @Test
     def testNeqChar01(): Bool = 'a' != 'b'
 
-    @test
+    @Test
     def testNeqChar02(): Bool = 'z' != 'w'
 
 }

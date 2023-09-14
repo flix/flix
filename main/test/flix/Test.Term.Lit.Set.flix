@@ -1,6 +1,6 @@
 mod Test.Term.Lit.Set {
 
-    @test
+    @Test
     def testLitSet01(): Bool =
         let p = #{
             A(Set#{}: Set[Int32]).
@@ -10,7 +10,7 @@ mod Test.Term.Lit.Set {
         let r = query p select x from R(x);
         Vector.memberOf(Set#{}, r)
 
-    @test
+    @Test
     def testLitSet02(): Bool =
         let p = #{
             A(Set#{1}).
@@ -20,7 +20,7 @@ mod Test.Term.Lit.Set {
         let r = query p select x from R(x);
         Vector.memberOf(Set#{1}, r)
 
-    @test
+    @Test
     def testLitSet03(): Bool =
         let p = #{
             A(Set#{1, 2}).
@@ -30,7 +30,7 @@ mod Test.Term.Lit.Set {
         let r = query p select x from R(x);
         Vector.memberOf(Set#{1, 2}, r)
 
-    @test
+    @Test
     def testLitSet04(): Bool =
         let p = #{
             A(Set#{1, 2, 3}).

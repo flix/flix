@@ -1,25 +1,25 @@
 mod Test.Term.Apply {
 
-    @test
+    @Test
     def testTermApply01(): #{ R(Int32) } = solve #{
         R(zer()).
         R(one()).
         R(two()).
     }
 
-    @test
+    @Test
     def testTermApply02(): #{ R(Int32) } = solve #{
         R(inc(1)).
         R(dec(2)).
     }
 
-    @test
+    @Test
     def testTermApply03(): #{ R(Int32) } = solve #{
         R(inc(dec(1))).
         R(dec(inc(2))).
     }
 
-    @test
+    @Test
     def testTermApply04(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
@@ -28,7 +28,7 @@ mod Test.Term.Apply {
         R(dec(x)) :- B(x).
     }
 
-    @test
+    @Test
     def testTermApply05(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
@@ -36,7 +36,7 @@ mod Test.Term.Apply {
         R(inc(dec(x))) :- A(x), B(x).
     }
 
-    @test
+    @Test
     def testTermApply06(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
@@ -44,7 +44,7 @@ mod Test.Term.Apply {
         R(add(x, y)) :- A(x), B(y).
     }
 
-    @test
+    @Test
     def testTermApply07(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
@@ -52,7 +52,7 @@ mod Test.Term.Apply {
         R(add(x)(y)) :- A(x), B(y).
     }
 
-    @test
+    @Test
     def testTermApply08(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
@@ -60,18 +60,18 @@ mod Test.Term.Apply {
         R(add(inc(x), dec(y))) :- A(x), B(y).
     }
 
-    @test
+    @Test
     def testTermApply09(): #{ R(Int32) } = solve #{
         R(identity(42)).
     }
 
-    @test
+    @Test
     def testTermApply10(): #{ R(Int32) } = solve #{
         R(fst((1, 2))).
         R(snd((1, 2))).
     }
 
-    @test
+    @Test
     def testTermApply11(): Bool =
         let f = zer;
         let p = #{
@@ -80,7 +80,7 @@ mod Test.Term.Apply {
         let m = query p select x from R(x);
         Vector.memberOf(0, m)
 
-    @test
+    @Test
     def testTermApply12(): Bool =
         let f = one;
         let p = #{
@@ -89,7 +89,7 @@ mod Test.Term.Apply {
         let m = query p select x from R(x);
         Vector.memberOf(1, m)
 
-    @test
+    @Test
     def testTermApply13(): Bool =
         let f = two;
         let p = solve #{
@@ -98,7 +98,7 @@ mod Test.Term.Apply {
         let m = query p select x from R(x);
         Vector.memberOf(2, m)
 
-    @test
+    @Test
     def testTermApply14(): Bool =
         let f = inc;
         let p = #{
@@ -108,7 +108,7 @@ mod Test.Term.Apply {
         let m = query p select x from R(x);
         Vector.memberOf(4, m)
 
-    @test
+    @Test
     def testTermApply15(): Bool =
         let f = dec;
         let p = #{
@@ -118,7 +118,7 @@ mod Test.Term.Apply {
         let m = query p select x from R(x);
         Vector.memberOf(0, m)
 
-    @test
+    @Test
     def testTermApply16(): Bool =
         let f = add;
         let p = solve #{
@@ -128,37 +128,37 @@ mod Test.Term.Apply {
         let m = query p select x from R(x);
         Vector.memberOf(6, m)
 
-    @test
+    @Test
     def testTermApply17(): Bool =
         let m = query ho1(inc) select x from R(x);
         Vector.memberOf(4, m)
 
-    @test
+    @Test
     def testTermApply18(): Bool =
         let m = query ho1(dec) select x from R(x);
         Vector.memberOf(0, m)
 
-    @test
+    @Test
     def testTermApply19(): Bool =
         let m = query ho2(add) select x from R(x);
         Vector.memberOf(6, m)
 
-    @test
+    @Test
     def testTermApply20(): Bool =
         let m = query ho3(inc) select x from P(x);
         Vector.memberOf(4, m)
 
-    @test
+    @Test
     def testTermApply21(): Bool =
         let m = query ho3(dec) select x from P(x);
         Vector.memberOf(0, m)
 
-    @test
+    @Test
     def testTermApply22(): Bool =
         let m = query ho3(_ -> true) select x from P(x);
         Vector.memberOf(true, m)
 
-    @test
+    @Test
     def testTermApply23(): Bool =
         let m = query ho3(_ -> "hello") select x from P(x);
         Vector.memberOf("hello", m)

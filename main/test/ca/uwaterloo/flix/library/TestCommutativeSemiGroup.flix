@@ -20,10 +20,10 @@ mod TestCommutativeSemiGroup {
     // Syntax                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def operator01(): Bool = (1 |+| 1) == 2
 
-    @test
+    @Test
     def operator02(): Bool = (Set#{1, 2} |+| Set#{2, 3}) == Set#{1, 2, 3}
 
 }

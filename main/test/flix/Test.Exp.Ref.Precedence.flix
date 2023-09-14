@@ -1,20 +1,20 @@
 mod Test.Exp.Ref.Precedence {
 
-    @test
+    @Test
     def testRefPrecedence01(): Bool = region reg {
         let l = ref ref 123 @ reg @ reg;
         let r = deref deref l;
         r == 123
     }
 
-    @test
+    @Test
     def testRefPrecedence02(): Bool = region reg {
         let l = ref ref ref 123 @ reg @ reg @ reg;
         let r = deref deref deref l;
         r == 123
     }
 
-    @test
+    @Test
     def testRefPrecedence03(): Bool = region reg {
         let x = ref 123 @ reg;
         let y = ref 123 @ reg;

@@ -1,11 +1,11 @@
 mod Test.Exp.Match.Unit {
 
-    @test
+    @Test
     def testMatchUnit01(): Bool = match () {
         case () => true
     }
 
-    @test
+    @Test
     def testMatchUnitVar01(): Bool = match () {
         case x => x == ()
     }

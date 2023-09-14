@@ -1,6 +1,6 @@
 mod Test.Exp.Match.Int8 {
 
-    @test
+    @Test
     def testMatchInt8_01(): Bool = match 0i8 {
         case 0i8 => true
         case 1i8 => false
@@ -8,7 +8,7 @@ mod Test.Exp.Match.Int8 {
         case _   => false
     }
 
-    @test
+    @Test
     def testMatchInt8_02(): Bool = match 1i8 {
         case 0i8 => false
         case 1i8 => true
@@ -16,7 +16,7 @@ mod Test.Exp.Match.Int8 {
         case _   => false
     }
 
-    @test
+    @Test
     def testMatchInt8_03(): Bool = match 2i8 {
         case 0i8 => false
         case 1i8 => false
@@ -24,7 +24,7 @@ mod Test.Exp.Match.Int8 {
         case _   => false
     }
 
-    @test
+    @Test
     def testMatchInt8_04(): Bool = match 3i8 {
         case 0i8 => false
         case 1i8 => false
@@ -32,12 +32,12 @@ mod Test.Exp.Match.Int8 {
         case _   => true
     }
 
-    @test
+    @Test
     def testMatchInt8Var01(): Bool = match 0i8 {
         case x => x == 0i8
     }
 
-    @test
+    @Test
     def testMatchInt8Var02(): Bool = match 2i8 {
         case 0i8 => false
         case 1i8 => false

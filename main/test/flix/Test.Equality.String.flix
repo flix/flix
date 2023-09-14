@@ -1,18 +1,18 @@
 mod Test.Equality.String {
 
-    @test
+    @Test
     def testEqString01(): Bool = "" == ""
 
-    @test
+    @Test
     def testEqString02(): Bool = "a" == "a"
 
-    @test
+    @Test
     def testEqString03(): Bool = "abc" == "abc"
 
-    @test
+    @Test
     def testNeqString01(): Bool = "" != "a"
 
-    @test
+    @Test
     def testNeqString02(): Bool = "a" != "abc"
 
 }

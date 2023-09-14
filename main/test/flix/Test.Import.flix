@@ -6,7 +6,7 @@ mod Test.Import {
   // Don't cause an error because different names from above
   import java.lang.{StringBuffer => RenamedBuffer2, CharSequence}
 
-  @test
+  @Test
   def testImport01(): Bool \ IO =
     import new java.lang.StringBuffer(String): StringBuffer as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): ASeqOfChars;
@@ -14,7 +14,7 @@ mod Test.Import {
     let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
     Assert.eq(subStr, "world")
 
-  @test
+  @Test
   def testImport02(): Bool \ IO =
     import new java.lang.StringBuffer(String): RenamedBuffer2 as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): CharSequence;
@@ -28,7 +28,7 @@ mod Test.Import {
   import java.lang.{StringBuffer => RenamedBuffer1}
   import java.lang.CharSequence
 
-  @test
+  @Test
   def testImport03(): Bool \ IO =
     import new java.lang.StringBuffer(String): RenamedBuffer1 as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): CharSequence;
@@ -36,7 +36,7 @@ mod Test.Import {
     let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
     Assert.eq(subStr, "world")
 
-  @test
+  @Test
   def testImport04(): ##java.sql.Time \ IO =
     import new java.sql.Time(Int64): ##java.sql.Time \ IO as newTime;
     newTime(1000i64)

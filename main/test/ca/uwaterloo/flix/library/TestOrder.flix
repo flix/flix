@@ -20,51 +20,51 @@ mod TestOrder {
     // fromInt                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def fromInt01(): Bool = Comparison.fromInt32(-1) == Comparison.LessThan
 
-    @test
+    @Test
     def fromInt02(): Bool = Comparison.fromInt32(0) == Comparison.EqualTo
 
-    @test
+    @Test
     def fromInt03(): Bool = Comparison.fromInt32(+1) == Comparison.GreaterThan
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def min01(): Bool = Order.min(0, 1) == 0
 
-    @test
+    @Test
     def min02(): Bool = Order.min((), ()) == ()
 
-    @test
+    @Test
     def min03(): Bool = Order.min(true, false) == false
 
-    @test
+    @Test
     def min04(): Bool = Order.min(342, 42) == 42
 
-    @test
+    @Test
     def min05(): Bool = Order.min('a', 'z') == 'a'
 
     /////////////////////////////////////////////////////////////////////////////
     // max                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def max01(): Bool = Order.max(0, 1) == 1
 
-    @test
+    @Test
     def max02(): Bool = Order.max((), ()) == ()
 
-    @test
+    @Test
     def max03(): Bool = Order.max(true, false) == true
 
-    @test
+    @Test
     def max04(): Bool = Order.max(3, -3) == 3
 
-    @test
+    @Test
     def max05(): Bool = Order.max('a', 'z') == 'z'
 
 }

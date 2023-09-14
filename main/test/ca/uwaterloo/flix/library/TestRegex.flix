@@ -20,7 +20,7 @@ mod TestRegex {
     // Regex.toString                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toString01(): Bool =
         ToString.toString(Regex.unmatchable()) != ""
 
@@ -28,7 +28,7 @@ mod TestRegex {
     // unmatchable                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unmatchable01(): Bool =
         Regex.unmatchable() |> Regex.pattern == "^\\b$"
 
@@ -36,11 +36,11 @@ mod TestRegex {
     // quote                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def quote01(): Bool =
         Regex.quote("ab") == "\\Qab\\E"
 
-    @test
+    @Test
     def quote02(): Bool =
         Regex.quote("a*b") == "\\Qa*b\\E"
 
@@ -48,11 +48,11 @@ mod TestRegex {
     // pattern                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def pattern01(): Bool =
         Regex.pattern(regex"a*b") == "a*b"
 
-    @test
+    @Test
     def pattern02(): Bool =
         Regex.pattern(regex"\\p{Blank}+") == "\\p{Blank}+"
 
@@ -60,20 +60,20 @@ mod TestRegex {
     // flags                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def flags01(): Bool =
         Result.map(Regex.flags, String.toRegex("\\p{Blank}+")) == Ok(Set#{})
 
-    @test
+    @Test
     def flags02(): Bool =
         Result.map(Regex.flags, String.toRegexWithFlags(Set#{}, "\\p{Blank}+")) == Ok(Set#{})
 
-    @test
+    @Test
     def flags03(): Bool =
         use Regex.Flag.{CaseInsenstive};
         Result.map(Regex.flags, String.toRegexWithFlags(Set#{CaseInsenstive}, "\\p{Blank}")) == Ok(Set#{CaseInsenstive})
 
-    @test
+    @Test
     def flags04(): Bool =
         use Regex.Flag.{CaseInsenstive, Multiline};
         Result.map(Regex.flags, String.toRegexWithFlags(Set#{CaseInsenstive, Multiline}, "\\p{Blank}")) == Ok(Set#{CaseInsenstive, Multiline})
@@ -82,27 +82,27 @@ mod TestRegex {
     // isMatch                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def isMatch01(): Bool =
         Regex.isMatch(regex"a+", "") == false
 
-    @test
+    @Test
     def isMatch02(): Bool =
         Regex.isMatch(regex"a*", "") == true
 
-    @test
+    @Test
     def isMatch03(): Bool =
         Regex.isMatch(regex"a*", "a") == true
 
-    @test
+    @Test
     def isMatch04(): Bool =
         Regex.isMatch(regex"a*", "aa") == true
 
-    @test
+    @Test
     def isMatch05(): Bool =
         Regex.isMatch(regex"a*", "aab") == false
 
-    @test
+    @Test
     def isMatch06(): Bool =
         Regex.isMatch(regex"a*b", "aab") == true
 
@@ -110,35 +110,35 @@ mod TestRegex {
     // isSubmatch                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def isSubmatch01(): Bool =
         Regex.isSubmatch(regex"a+", "") == false
 
-    @test
+    @Test
     def isSubmatch02(): Bool =
         Regex.isSubmatch(regex"a*", "a") == true
 
-    @test
+    @Test
     def isSubmatch03(): Bool =
         Regex.isSubmatch(regex"a*", "aa") == true
 
-    @test
+    @Test
     def isSubmatch04(): Bool =
         Regex.isSubmatch(regex"a*", "aab") == true
 
-    @test
+    @Test
     def isSubmatch05(): Bool =
         Regex.isSubmatch(regex"a*b", "aab") == true
 
-    @test
+    @Test
     def isSubmatch06(): Bool =
         Regex.isSubmatch(regex"b+", "aab") == true
 
-    @test
+    @Test
     def isSubmatch07(): Bool =
         Regex.isSubmatch(regex"b+", "bbbc") == true
 
-    @test
+    @Test
     def isSubmatch08(): Bool =
         Regex.isSubmatch(regex"b+", "aabbbc") == true
 
@@ -146,55 +146,55 @@ mod TestRegex {
     // indices                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indices01(): Bool =
         Regex.indices(substr = Regex.unmatchable(), "") == List#{}
 
-    @test
+    @Test
     def indices02(): Bool =
         Regex.indices(substr = Regex.unmatchable(), "a::b::c") == List#{}
 
-    @test
+    @Test
     def indices03(): Bool =
         Regex.indices(substr = regex":{2}", "") == List#{}
 
-    @test
+    @Test
     def indices04(): Bool =
         Regex.indices(substr = regex":{2}", "a") == List#{}
 
-    @test
+    @Test
     def indices05(): Bool =
         Regex.indices(substr = regex":{2}", "::") == List#{0}
 
-    @test
+    @Test
     def indices06(): Bool =
         Regex.indices(substr = regex":{2}", "ab") == List#{}
 
-    @test
+    @Test
     def indices07(): Bool =
         Regex.indices(substr = regex":{2}", "::a") == List#{0}
 
-    @test
+    @Test
     def indices08(): Bool =
         Regex.indices(substr = regex":{2}", "a::") == List#{1}
 
-    @test
+    @Test
     def indices09(): Bool =
         Regex.indices(substr = regex":{2}", "a::b::") == List#{1, 4}
 
-    @test
+    @Test
     def indices10(): Bool =
         Regex.indices(substr = regex":{2}", "a::b::c") == List#{1, 4}
 
-    @test
+    @Test
     def indices11(): Bool =
         Regex.indices(substr = regex":{2}", "a::b::c:") == List#{1, 4}
 
-    @test
+    @Test
     def indices12(): Bool =
         Regex.indices(substr = regex":{2}", ":a::b::c") == List#{2, 5}
 
-    @test
+    @Test
     def indices13(): Bool =
         Regex.indices(substr = regex":{2}", "::::") == List#{0, 2}
 
@@ -202,55 +202,55 @@ mod TestRegex {
     // submatches                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def submatches01(): Bool =
         Regex.submatches(substr = Regex.unmatchable(), "") == List#{}
 
-    @test
+    @Test
     def submatches02(): Bool =
         Regex.submatches(substr = Regex.unmatchable(), "a::b::c") == List#{}
 
-    @test
+    @Test
     def submatches03(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "") == List#{}
 
-    @test
+    @Test
     def submatches04(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "a") == List#{"a"}
 
-    @test
+    @Test
     def submatches05(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "::") == List#{}
 
-    @test
+    @Test
     def submatches06(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "ab") == List#{"ab"}
 
-    @test
+    @Test
     def submatches07(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "::a") == List#{"a"}
 
-    @test
+    @Test
     def submatches08(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "a::") == List#{"a"}
 
-    @test
+    @Test
     def submatches09(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "a::b::") == List#{"a", "b"}
 
-    @test
+    @Test
     def submatches10(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "a::b::c") == List#{"a", "b", "c"}
 
-    @test
+    @Test
     def submatches11(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "a::b::c:") == List#{"a", "b", "c"}
 
-    @test
+    @Test
     def submatches12(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", ":a::b::c") == List#{"a", "b", "c"}
 
-    @test
+    @Test
     def submatches13(): Bool =
         Regex.submatches(substr = regex"\\p{Alpha}+", "::::") == List#{}
 
@@ -258,55 +258,55 @@ mod TestRegex {
     // countSubmatches                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def countSubmatches01(): Bool =
         Regex.countSubmatches(substr = Regex.unmatchable(), "") == 0
 
-    @test
+    @Test
     def countSubmatches02(): Bool =
         Regex.countSubmatches(substr = Regex.unmatchable(), "a::b::c") == 0
 
-    @test
+    @Test
     def countSubmatches03(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "") == 0
 
-    @test
+    @Test
     def countSubmatches04(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "a") == 1
 
-    @test
+    @Test
     def countSubmatches05(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "::") == 0
 
-    @test
+    @Test
     def countSubmatches06(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "ab") == 1
 
-    @test
+    @Test
     def countSubmatches07(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "::a") == 1
 
-    @test
+    @Test
     def countSubmatches08(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "a::") == 1
 
-    @test
+    @Test
     def countSubmatches09(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "a::b::") == 2
 
-    @test
+    @Test
     def countSubmatches10(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "a::b::c") == 3
 
-    @test
+    @Test
     def countSubmatches11(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "a::b::c:") == 3
 
-    @test
+    @Test
     def countSubmatches12(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", ":a::b::c") == 3
 
-    @test
+    @Test
     def countSubmatches13(): Bool =
         Regex.countSubmatches(substr = regex"\\p{Alpha}+", "::::") == 0
 
@@ -314,15 +314,15 @@ mod TestRegex {
     // split                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def split01(): Bool =
         Regex.split(regex = regex"\\p{Blank}+", "A B C") == List#{"A", "B", "C"}
 
-    @test
+    @Test
     def split02(): Bool =
         Regex.split(regex = regex"\\p{Blank}+", "A  B   C") == List#{"A", "B", "C"}
 
-    @test
+    @Test
     def split03(): Bool =
         Regex.split(regex = regex"\\p{Blank}+", "ABC") == List#{"ABC"}
 
@@ -330,27 +330,27 @@ mod TestRegex {
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def replace01(): Bool =
         Regex.replace(from = regex"\\p{Blank}+", to = "_", "") == ""
 
-    @test
+    @Test
     def replace02(): Bool =
         Regex.replace(from = regex"\\p{Blank}+", to = "_", "A B C") == "A_B_C"
 
-    @test
+    @Test
     def replace03(): Bool =
         Regex.replace(from = regex"\\p{Blank}+", to = "_", "A  B   C") == "A_B_C"
 
-    @test
+    @Test
     def replace04(): Bool =
         Regex.replace(from = regex"\\p{Blank}+", to = "_", "ABC") == "ABC"
 
-    @test
+    @Test
     def replace05(): Bool =
         Regex.replace(from = regex"\\p{Blank}+", to = "__", "A B  C") == "A__B__C"
 
-    @test
+    @Test
     def replace06(): Bool =
         Regex.replace(from = regex"\\p{Blank}+", to = "__", " A B  C  ") == "__A__B__C__"
 
@@ -358,27 +358,27 @@ mod TestRegex {
     // replaceFirst                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def replaceFirst01(): Bool =
         Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "") == ""
 
-    @test
+    @Test
     def replaceFirst02(): Bool =
         Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "A B C") == "A_B C"
 
-    @test
+    @Test
     def replaceFirst03(): Bool =
         Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "A  B   C") == "A_B   C"
 
-    @test
+    @Test
     def replaceFirst04(): Bool =
         Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "ABC")  == "ABC"
 
-    @test
+    @Test
     def replaceFirst05(): Bool =
         Regex.replaceFirst(from = regex"\\p{Blank}+", to = "__", "A B  C") == "A__B  C"
 
-    @test
+    @Test
     def replaceFirst06(): Bool =
         Regex.replaceFirst(from = regex"\\p{Blank}+", to = "__", " A B  C  ") == "__A B  C  "
 
@@ -386,27 +386,27 @@ mod TestRegex {
     // startsWith                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def startsWith01(): Bool =
         Regex.startsWith(prefix = Regex.unmatchable(), "") == false
 
-    @test
+    @Test
     def startsWith02(): Bool =
         Regex.startsWith(prefix = Regex.unmatchable(), "A B C") == false
 
-    @test
+    @Test
     def startsWith03(): Bool =
         Regex.startsWith(prefix = regex"\\p{Alpha}+", "") == false
 
-    @test
+    @Test
     def startsWith04(): Bool =
         Regex.startsWith(prefix = regex"\\p{Alpha}+", "   A B C") == false
 
-    @test
+    @Test
     def startsWith05(): Bool =
         Regex.startsWith(prefix = regex"\\p{Alpha}+", "A B C") == true
 
-    @test
+    @Test
     def startsWith06(): Bool =
         Regex.startsWith(prefix = regex"\\p{Alpha}+", "AA BBB CCCC") == true
 
@@ -414,27 +414,27 @@ mod TestRegex {
     // endsWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def endsWith01(): Bool =
         Regex.endsWith(suffix = Regex.unmatchable(), "") == false
 
-    @test
+    @Test
     def endsWith02(): Bool =
         Regex.endsWith(suffix = Regex.unmatchable(), "A B C") == false
 
-    @test
+    @Test
     def endsWith03(): Bool =
         Regex.endsWith(suffix = regex"\\p{Alpha}+", "") == false
 
-    @test
+    @Test
     def endsWith04(): Bool =
         Regex.endsWith(suffix = regex"\\p{Alpha}+", "A B C  ") == false
 
-    @test
+    @Test
     def endsWith05(): Bool =
         Regex.endsWith(suffix = regex"\\p{Alpha}+", "A B C") == true
 
-    @test
+    @Test
     def endsWith06(): Bool =
         Regex.endsWith(suffix = regex"\\p{Alpha}+", "AA BBB CCCC") == true
 
@@ -442,27 +442,27 @@ mod TestRegex {
     // getPrefix                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getPrefix01(): Bool =
         Regex.getPrefix(substr = Regex.unmatchable(), "") == None
 
-    @test
+    @Test
     def getPrefix02(): Bool =
         Regex.getPrefix(substr = Regex.unmatchable(), "A B C") == None
 
-    @test
+    @Test
     def getPrefix03(): Bool =
         Regex.getPrefix(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def getPrefix04(): Bool =
         Regex.getPrefix(substr = regex"\\p{Alpha}+", "   A B C") == None
 
-    @test
+    @Test
     def getPrefix05(): Bool =
         Regex.getPrefix(substr = regex"\\p{Alpha}+", "A B C") == Some("A")
 
-    @test
+    @Test
     def getPrefix06(): Bool =
         Regex.getPrefix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("AA")
 
@@ -470,27 +470,27 @@ mod TestRegex {
     // getSuffix                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getSuffix01(): Bool =
         Regex.getSuffix(substr = Regex.unmatchable(), "") == None
 
-    @test
+    @Test
     def getSuffix02(): Bool =
         Regex.getSuffix(substr = Regex.unmatchable(), "A B C") == None
 
-    @test
+    @Test
     def getSuffix03(): Bool =
         Regex.getSuffix(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def getSuffix04(): Bool =
         Regex.getSuffix(substr = regex"\\p{Alpha}+", "A B C  ") == None
 
-    @test
+    @Test
     def getSuffix05(): Bool =
         Regex.getSuffix(substr = regex"\\p{Alpha}+", "A B C") == Some("C")
 
-    @test
+    @Test
     def getSuffix06(): Bool =
         Regex.getSuffix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("CCCC")
 
@@ -498,27 +498,27 @@ mod TestRegex {
     // stripPrefix                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def stripPrefix01(): Bool =
         Regex.stripPrefix(substr = Regex.unmatchable(), "") == None
 
-    @test
+    @Test
     def stripPrefix02(): Bool =
         Regex.stripPrefix(substr = Regex.unmatchable(), "A B C") == None
 
-    @test
+    @Test
     def stripPrefix03(): Bool =
         Regex.stripPrefix(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def stripPrefix04(): Bool =
         Regex.stripPrefix(substr = regex"\\p{Alpha}+", "   A B C") == None
 
-    @test
+    @Test
     def stripPrefix05(): Bool =
         Regex.stripPrefix(substr = regex"\\p{Alpha}+", "A B C") == Some(" B C")
 
-    @test
+    @Test
     def stripPrefix06(): Bool =
         Regex.stripPrefix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some(" BBB CCCC")
 
@@ -526,27 +526,27 @@ mod TestRegex {
     // stripSuffix                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def stripSuffix01(): Bool =
         Regex.stripSuffix(substr = Regex.unmatchable(), "") == None
 
-    @test
+    @Test
     def stripSuffix02(): Bool =
         Regex.stripSuffix(substr = Regex.unmatchable(), "A B C") == None
 
-    @test
+    @Test
     def stripSuffix03(): Bool =
         Regex.stripSuffix(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def stripSuffix04(): Bool =
         Regex.stripSuffix(substr = regex"\\p{Alpha}+", "A B C  ") == None
 
-    @test
+    @Test
     def stripSuffix05(): Bool =
         Regex.stripSuffix(substr = regex"\\p{Alpha}+", "A B C") == Some("A B ")
 
-    @test
+    @Test
     def stripSuffix06(): Bool =
         Regex.stripSuffix(substr = regex"\\p{Alpha}+", "AA BBB CCCC") == Some("AA BBB ")
 
@@ -554,39 +554,39 @@ mod TestRegex {
     // indexOfFirst                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indexOfFirst01(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def indexOfFirst02(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "_") == None
 
-    @test
+    @Test
     def indexOfFirst03(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "a") == Some(0)
 
-    @test
+    @Test
     def indexOfFirst04(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "__") == None
 
-    @test
+    @Test
     def indexOfFirst05(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "ab") == Some(0)
 
-    @test
+    @Test
     def indexOfFirst06(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "_b") == Some(1)
 
-    @test
+    @Test
     def indexOfFirst07(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "ab") == Some(0)
 
-    @test
+    @Test
     def indexOfFirst08(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "ab_") == Some(0)
 
-    @test
+    @Test
     def indexOfFirst09(): Bool =
         Regex.indexOfFirst(substr = regex"\\p{Alpha}+", "_bc") == Some(1)
 
@@ -594,39 +594,39 @@ mod TestRegex {
     // indexOfLast                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indexOfLast01(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def indexOfLast02(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}+", "_") == None
 
-    @test
+    @Test
     def indexOfLast03(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}+", "a") == Some(0)
 
-    @test
+    @Test
     def indexOfLast04(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}+", "__") == None
 
-    @test
+    @Test
     def indexOfLast05(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}+", "a_") == Some(0)
 
-    @test
+    @Test
     def indexOfLast06(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}+", "_b") == Some(1)
 
-    @test
+    @Test
     def indexOfLast07(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}+", "aa") == Some(0)
 
-    @test
+    @Test
     def indexOfLast08(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}{2}", "ab") == Some(0)
 
-    @test
+    @Test
     def indexOfLast09(): Bool =
         Regex.indexOfLast(substr = regex"\\p{Alpha}{2}", "abcd") == Some(2)
 
@@ -634,39 +634,39 @@ mod TestRegex {
     // getFirst                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getFirst01(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def getFirst02(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "_") == None
 
-    @test
+    @Test
     def getFirst03(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "a") == Some("a")
 
-    @test
+    @Test
     def getFirst04(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "__") == None
 
-    @test
+    @Test
     def getFirst05(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "ab") == Some("ab")
 
-    @test
+    @Test
     def getFirst06(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "_b") == Some("b")
 
-    @test
+    @Test
     def getFirst07(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "a_") == Some("a")
 
-    @test
+    @Test
     def getFirst08(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "ab_") == Some("ab")
 
-    @test
+    @Test
     def getFirst09(): Bool =
         Regex.getFirst(substr = regex"\\p{Alpha}+", "_bc") == Some("bc")
 
@@ -674,39 +674,39 @@ mod TestRegex {
     // getLast                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getLast01(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}+", "") == None
 
-    @test
+    @Test
     def getLast02(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}+", "_") == None
 
-    @test
+    @Test
     def getLast03(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}+", "a") == Some("a")
 
-    @test
+    @Test
     def getLast04(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}+", "__") == None
 
-    @test
+    @Test
     def getLast05(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}+", "a_") == Some("a")
 
-    @test
+    @Test
     def getLast06(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}+", "_b") == Some("b")
 
-    @test
+    @Test
     def getLast07(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}+", "aa") == Some("aa")
 
-    @test
+    @Test
     def getLast08(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}{2}", "ab") == Some("ab")
 
-    @test
+    @Test
     def getLast09(): Bool =
         Regex.getLast(substr = regex"\\p{Alpha}{2}", "abcd") == Some("cd")
 
@@ -714,47 +714,47 @@ mod TestRegex {
     // indexOfFirstWithOffset                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indexOfFirstWithOffset01(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "") == None
 
-    @test
+    @Test
     def indexOfFirstWithOffset02(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_") == None
 
-    @test
+    @Test
     def indexOfFirstWithOffset03(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "a") == Some(0)
 
-    @test
+    @Test
     def indexOfFirstWithOffset04(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "a") == None
 
-    @test
+    @Test
     def indexOfFirstWithOffset05(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab") == Some(0)
 
-    @test
+    @Test
     def indexOfFirstWithOffset06(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "aa") == Some(1)
 
-    @test
+    @Test
     def indexOfFirstWithOffset07(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_b") == Some(1)
 
-    @test
+    @Test
     def indexOfFirstWithOffset08(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab ab") == Some(0)
 
-    @test
+    @Test
     def indexOfFirstWithOffset09(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab ab") == Some(1)
 
-    @test
+    @Test
     def indexOfFirstWithOffset10(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "ab ab") == Some(3)
 
-    @test
+    @Test
     def indexOfFirstWithOffset11(): Bool =
         Regex.indexOfFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab ab") == Some(3)
 
@@ -762,55 +762,55 @@ mod TestRegex {
     // indexOfLastWithOffset                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indexOfLastWithOffset01(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "") == None
 
-    @test
+    @Test
     def indexOfLastWithOffset02(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_") == None
 
-    @test
+    @Test
     def indexOfLastWithOffset03(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "a") == Some(0)
 
-    @test
+    @Test
     def indexOfLastWithOffset04(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "a") == None
 
-    @test
+    @Test
     def indexOfLastWithOffset05(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab") == Some(1)
 
-    @test
+    @Test
     def indexOfLastWithOffset06(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "aa") == None
 
-    @test
+    @Test
     def indexOfLastWithOffset07(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab") == None
 
-    @test
+    @Test
     def indexOfLastWithOffset08(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab ab") == Some(3)
 
-    @test
+    @Test
     def indexOfLastWithOffset09(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset= 2, "ab ab") == Some(3)
 
-    @test
+    @Test
     def indexOfLastWithOffset10(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab ab") == Some(3)
 
-    @test
+    @Test
     def indexOfLastWithOffset11(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab ab") == Some(3)
 
-    @test
+    @Test
     def indexOfLastWithOffset12(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = -1, "ab ab") == None
 
-    @test
+    @Test
     def indexOfLastWithOffset13(): Bool =
         Regex.indexOfLastWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "ab __") == None
 
@@ -818,47 +818,47 @@ mod TestRegex {
     // getFirstWithOffset                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getFirstWithOffset01(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "") == None
 
-    @test
+    @Test
     def getFirstWithOffset02(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_") == None
 
-    @test
+    @Test
     def getFirstWithOffset03(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "a") == Some("a")
 
-    @test
+    @Test
     def getFirstWithOffset04(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "a") == None
 
-    @test
+    @Test
     def getFirstWithOffset05(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab") == Some("ab")
 
-    @test
+    @Test
     def getFirstWithOffset06(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "aa") == Some("a")
 
-    @test
+    @Test
     def getFirstWithOffset07(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_b") == Some("b")
 
-    @test
+    @Test
     def getFirstWithOffset08(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab cd") == Some("ab")
 
-    @test
+    @Test
     def getFirstWithOffset09(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab cd") == Some("b")
 
-    @test
+    @Test
     def getFirstWithOffset10(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "ab cd") == Some("cd")
 
-    @test
+    @Test
     def getFirstWithOffset11(): Bool =
         Regex.getFirstWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab cd") == Some("cd")
 
@@ -866,55 +866,55 @@ mod TestRegex {
     // getLastWithOffset                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getLastWithOffset01(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "") == None
 
-    @test
+    @Test
     def getLastWithOffset02(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "_") == None
 
-    @test
+    @Test
     def getLastWithOffset03(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "a") == Some("a")
 
-    @test
+    @Test
     def getLastWithOffset04(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "a") == None
 
-    @test
+    @Test
     def getLastWithOffset05(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab") == Some("b")
 
-    @test
+    @Test
     def getLastWithOffset06(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "aa") == None
 
-    @test
+    @Test
     def getLastWithOffset07(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab") == None
 
-    @test
+    @Test
     def getLastWithOffset08(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 3, "ab cd") == Some("cd")
 
-    @test
+    @Test
     def getLastWithOffset09(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset= 2, "ab cd") == Some("cd")
 
-    @test
+    @Test
     def getLastWithOffset10(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 1, "ab cd") == Some("cd")
 
-    @test
+    @Test
     def getLastWithOffset11(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 0, "ab cd") == Some("cd")
 
-    @test
+    @Test
     def getLastWithOffset12(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = -1, "ab cd") == None
 
-    @test
+    @Test
     def getLastWithOffset13(): Bool =
         Regex.getLastWithOffset(substr = regex"\\p{Alpha}+", offset = 2, "ab __") == None
 
@@ -922,35 +922,35 @@ mod TestRegex {
     // breakOnFirst                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def breakOnFirst01(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "") == ("", "")
 
-    @test
+    @Test
     def breakOnFirst02(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "aaa") == ("aaa", "")
 
-    @test
+    @Test
     def breakOnFirst03(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "::") == ("", "::")
 
-    @test
+    @Test
     def breakOnFirst04(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "::aaa") == ("", "::aaa")
 
-    @test
+    @Test
     def breakOnFirst05(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "aaa:") == ("aaa:", "")
 
-    @test
+    @Test
     def breakOnFirst06(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "aaa::") == ("aaa", "::")
 
-    @test
+    @Test
     def breakOnFirst07(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "aaa::bbb") == ("aaa", "::bbb")
 
-    @test
+    @Test
     def breakOnFirst08(): Bool =
         Regex.breakOnFirst(substr = regex":{2}", "aaa::bbb::ccc") == ("aaa", "::bbb::ccc")
 
@@ -958,35 +958,35 @@ mod TestRegex {
     // breakAfterFirst                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def breakAfterFirst01(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "") == ("", "")
 
-    @test
+    @Test
     def breakAfterFirst02(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "aaa") == ("aaa", "")
 
-    @test
+    @Test
     def breakAfterFirst03(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "::") == ("::", "")
 
-    @test
+    @Test
     def breakAfterFirst04(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "::aaa") == ("::", "aaa")
 
-    @test
+    @Test
     def breakAfterFirst05(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "aaa:") == ("aaa:", "")
 
-    @test
+    @Test
     def breakAfterFirst06(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "aaa::") == ("aaa::", "")
 
-    @test
+    @Test
     def breakAfterFirst07(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "aaa::bbb") == ("aaa::", "bbb")
 
-    @test
+    @Test
     def breakAfterFirst08(): Bool =
         Regex.breakAfterFirst(substr = regex":{2}", "aaa::bbb::ccc") == ("aaa::", "bbb::ccc")
 
@@ -994,35 +994,35 @@ mod TestRegex {
     // breakOnLast                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def breakOnLast01(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "") == ("", "")
 
-    @test
+    @Test
     def breakOnLast02(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "aaa") == ("aaa", "")
 
-    @test
+    @Test
     def breakOnLast03(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "::") == ("::", "")
 
-    @test
+    @Test
     def breakOnLast04(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "aaa") == ("aaa", "")
 
-    @test
+    @Test
     def breakOnLast05(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "aaa:") == ("aaa:", "")
 
-    @test
+    @Test
     def breakOnLast06(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "aaa::") == ("aaa::", "")
 
-    @test
+    @Test
     def breakOnLast07(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "aaa::bbb") == ("aaa::", "bbb")
 
-    @test
+    @Test
     def breakOnLast08(): Bool =
         Regex.breakOnLast(substr = regex":{2}", "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
 
@@ -1030,35 +1030,35 @@ mod TestRegex {
     // breakBeforeLast                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def breakBeforeLast01(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "") == ("", "")
 
-    @test
+    @Test
     def breakBeforeLast02(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "aaa") == ("aaa", "")
 
-    @test
+    @Test
     def breakBeforeLast03(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "::") == ("", "::")
 
-    @test
+    @Test
     def breakBeforeLast04(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "aaa") == ("aaa", "")
 
-    @test
+    @Test
     def breakBeforeLast05(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "aaa:") == ("aaa:", "")
 
-    @test
+    @Test
     def breakBeforeLast06(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "aaa::") == ("aaa", "::")
 
-    @test
+    @Test
     def breakBeforeLast07(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "aaa::bbb") == ("aaa", "::bbb")
 
-    @test
+    @Test
     def breakBeforeLast08(): Bool =
         Regex.breakBeforeLast(substr = regex":{2}", "aaa::bbb::ccc") == ("aaa::bbb", "::ccc")
 
@@ -1066,27 +1066,27 @@ mod TestRegex {
     // isMatchWithBounds                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def isMatchWithBounds01(): Bool =
         Regex.isMatchWithBounds(regex"a+", start = 0, end = 1, "") == false
 
-    @test
+    @Test
     def isMatchWithBounds02(): Bool =
         Regex.isMatchWithBounds(regex"a+", start = 0, end = 1, "a") == true
 
-    @test
+    @Test
     def isMatchWithBounds03(): Bool =
         Regex.isMatchWithBounds(regex"a+", start = 0, end = 3, "a") == false
 
-    @test
+    @Test
     def isMatchWithBounds04(): Bool =
         Regex.isMatchWithBounds(regex"a+", start = 0, end = 1, "aa") == true
 
-    @test
+    @Test
     def isMatchWithBounds05(): Bool =
         Regex.isMatchWithBounds(regex"a+", start = 2, end = 3, "aab") == false
 
-    @test
+    @Test
     def isMatchWithBounds06(): Bool =
         Regex.isMatchWithBounds(regex"b+", start = 2, end = 3, "aab") == true
 
@@ -1094,35 +1094,35 @@ mod TestRegex {
     // isSubmatchWithBounds                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def isSubmatchWithBounds01(): Bool =
         Regex.isSubmatchWithBounds(regex"a+", start = 0, end = 1, "") == false
 
-    @test
+    @Test
     def isSubmatchWithBounds02(): Bool =
         Regex.isSubmatchWithBounds(regex"a+", start = 0, end = 1, "a") == true
 
-    @test
+    @Test
     def isSubmatchWithBounds03(): Bool =
         Regex.isSubmatchWithBounds(regex"a+", start = 1, end = 2, "aa") == true
 
-    @test
+    @Test
     def isSubmatchWithBounds04(): Bool =
         Regex.isSubmatchWithBounds(regex"a+", start = -1, end = 1, "aab") == false
 
-    @test
+    @Test
     def isSubmatchWithBounds05(): Bool =
         Regex.isSubmatchWithBounds(regex"a+", start = 0, end = 2, "aab") == true
 
-    @test
+    @Test
     def isSubmatchWithBounds06(): Bool =
         Regex.isSubmatchWithBounds(regex"b+", start = 2, end = 3, "aab") == true
 
-    @test
+    @Test
     def isSubmatchWithBounds07(): Bool =
         Regex.isSubmatchWithBounds(regex"b+", start = 1, end = 2, "bbbc") == true
 
-    @test
+    @Test
     def isSubmatchWithBounds08(): Bool =
         Regex.isSubmatchWithBounds(regex"b+", start = 0, end = 5, "aabbbc") == true
 
@@ -1130,27 +1130,27 @@ mod TestRegex {
     // indicesWithBounds                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indicesWithBounds01(): Bool =
         Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 1, "") == List#{}
 
-    @test
+    @Test
     def indicesWithBounds02(): Bool =
         Regex.indicesWithBounds(substr = regex":{2}", start = -1, end = 10, "a::b::c") == List#{}
 
-    @test
+    @Test
     def indicesWithBounds03(): Bool =
         Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 7, "a::b::c") == List#{1, 4}
 
-    @test
+    @Test
     def indicesWithBounds04(): Bool =
         Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 3, "a::b::c") == List#{1}
 
-    @test
+    @Test
     def indicesWithBounds05(): Bool =
         Regex.indicesWithBounds(substr = regex":{2}", start = 3, end = 7, "a::b::c") == List#{4}
 
-    @test
+    @Test
     def indicesWithBounds06(): Bool =
         Regex.indicesWithBounds(substr = regex":{2}", start = 0, end = 3, "a:b") == List#{}
 
@@ -1158,55 +1158,55 @@ mod TestRegex {
     // submatchesWithBounds                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def submatchesWithBounds01(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == List#{}
 
-    @test
+    @Test
     def submatchesWithBounds02(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 10, "a::b::c") == List#{}
 
-    @test
+    @Test
     def submatchesWithBounds03(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "aaa") == List#{"aaa"}
 
-    @test
+    @Test
     def submatchesWithBounds04(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 10, "aaa") == List#{}
 
-    @test
+    @Test
     def submatchesWithBounds05(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "::") == List#{}
 
-    @test
+    @Test
     def submatchesWithBounds06(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "ab") == List#{"ab"}
 
-    @test
+    @Test
     def submatchesWithBounds07(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "::a") == List#{"a"}
 
-    @test
+    @Test
     def submatchesWithBounds08(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::") == List#{"a"}
 
-    @test
+    @Test
     def submatchesWithBounds09(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::b::") == List#{"a"}
 
-    @test
+    @Test
     def submatchesWithBounds10(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 2, end = 7, "a::b::c") == List#{"b", "c"}
 
-    @test
+    @Test
     def submatchesWithBounds11(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c:") == List#{"a", "b", "c"}
 
-    @test
+    @Test
     def submatchesWithBounds12(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 6, ":a::b::c") == List#{"a", "b"}
 
-    @test
+    @Test
     def submatchesWithBounds13(): Bool =
         Regex.submatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "::::") == List#{}
 
@@ -1214,55 +1214,55 @@ mod TestRegex {
     // countSubmatchesWithBounds                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def countSubmatchesWithBounds01(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == 0
 
-    @test
+    @Test
     def countSubmatchesWithBounds02(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 10, "a::b::c") == 0
 
-    @test
+    @Test
     def countSubmatchesWithBounds03(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == 3
 
-    @test
+    @Test
     def countSubmatchesWithBounds04(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "a::b::c") == 2
 
-    @test
+    @Test
     def countSubmatchesWithBounds05(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 7, "a::b::c") == 2
 
-    @test
+    @Test
     def countSubmatchesWithBounds06(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "ab") == 1
 
-    @test
+    @Test
     def countSubmatchesWithBounds07(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 3, "::a") == 1
 
-    @test
+    @Test
     def countSubmatchesWithBounds08(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "a::") == 1
 
-    @test
+    @Test
     def countSubmatchesWithBounds09(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "a::b::") == 2
 
-    @test
+    @Test
     def countSubmatchesWithBounds10(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "a::b::c") == 2
 
-    @test
+    @Test
     def countSubmatchesWithBounds11(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 4, end = 8, "a::b::c:") == 1
 
-    @test
+    @Test
     def countSubmatchesWithBounds12(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, ":a::b::c") == 1
 
-    @test
+    @Test
     def countSubmatchesWithBounds13(): Bool =
         Regex.countSubmatchesWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 4, "::::") == 0
 
@@ -1270,39 +1270,39 @@ mod TestRegex {
     // indexOfFirstWithBounds                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indexOfFirstWithBounds01(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
 
-    @test
+    @Test
     def indexOfFirstWithBounds02(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
 
-    @test
+    @Test
     def indexOfFirstWithBounds03(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some(0)
 
-    @test
+    @Test
     def indexOfFirstWithBounds04(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some(0)
 
-    @test
+    @Test
     def indexOfFirstWithBounds05(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "a::b::c") == Some(0)
 
-    @test
+    @Test
     def indexOfFirstWithBounds06(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 3, end = 7, "a::b::c") == Some(3)
 
-    @test
+    @Test
     def indexOfFirstWithBounds07(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 6, end = 7, "a::b::c") == Some(6)
 
-    @test
+    @Test
     def indexOfFirstWithBounds08(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some(3)
 
-    @test
+    @Test
     def indexOfFirstWithBounds09(): Bool =
         Regex.indexOfFirstWithBounds(substr = regex"\\p{Alpha}+", start = 7, end = 9, "a::b::c::") == None
 
@@ -1310,39 +1310,39 @@ mod TestRegex {
     // indexOfLastWithBounds                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def indexOfLastWithBounds01(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
 
-    @test
+    @Test
     def indexOfLastWithBounds02(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
 
-    @test
+    @Test
     def indexOfLastWithBounds03(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some(0)
 
-    @test
+    @Test
     def indexOfLastWithBounds04(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some(6)
 
-    @test
+    @Test
     def indexOfLastWithBounds05(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 5, end = 7, "a::b::c") == Some(6)
 
-    @test
+    @Test
     def indexOfLastWithBounds06(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 6, "a::b::c") == Some(3)
 
-    @test
+    @Test
     def indexOfLastWithBounds07(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::b::c") == Some(0)
 
-    @test
+    @Test
     def indexOfLastWithBounds08(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some(3)
 
-    @test
+    @Test
     def indexOfLastWithBounds09(): Bool =
         Regex.indexOfLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "::a::b::c") == None
 
@@ -1350,39 +1350,39 @@ mod TestRegex {
     // getFirstWithBounds                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getFirstWithBounds01(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
 
-    @test
+    @Test
     def getFirstWithBounds02(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
 
-    @test
+    @Test
     def getFirstWithBounds03(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some("a")
 
-    @test
+    @Test
     def getFirstWithBounds04(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some("a")
 
-    @test
+    @Test
     def getFirstWithBounds05(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "a::b::c") == Some("a")
 
-    @test
+    @Test
     def getFirstWithBounds06(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 3, end = 7, "a::b::c") == Some("b")
 
-    @test
+    @Test
     def getFirstWithBounds07(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 6, end = 7, "a::b::c") == Some("c")
 
-    @test
+    @Test
     def getFirstWithBounds08(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some("b")
 
-    @test
+    @Test
     def getFirstWithBounds09(): Bool =
         Regex.getFirstWithBounds(substr = regex"\\p{Alpha}+", start = 7, end = 9, "a::b::c::") == None
 
@@ -1390,39 +1390,39 @@ mod TestRegex {
     // getLastWithBounds                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def getLastWithBounds01(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "") == None
 
-    @test
+    @Test
     def getLastWithBounds02(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = -1, end = 5, "a::b") == None
 
-    @test
+    @Test
     def getLastWithBounds03(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 1, "a") == Some("a")
 
-    @test
+    @Test
     def getLastWithBounds04(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 7, "a::b::c") == Some("c")
 
-    @test
+    @Test
     def getLastWithBounds05(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 5, end = 7, "a::b::c") == Some("c")
 
-    @test
+    @Test
     def getLastWithBounds06(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 6, "a::b::c") == Some("b")
 
-    @test
+    @Test
     def getLastWithBounds07(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 3, "a::b::c") == Some("a")
 
-    @test
+    @Test
     def getLastWithBounds08(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 1, end = 6, "a::b::c") == Some("b")
 
-    @test
+    @Test
     def getLastWithBounds09(): Bool =
         Regex.getLastWithBounds(substr = regex"\\p{Alpha}+", start = 0, end = 2, "::a::b::c") == None
 

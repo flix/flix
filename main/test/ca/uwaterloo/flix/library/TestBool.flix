@@ -18,118 +18,118 @@ mod Bool {
     /////////////////////////////////////////////////////////////////////////////
     // Logical And                                                             //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+    @Test
     def mathAnd01(): Bool = (true ∧ true) == true
 
-    @test
+    @Test
     def mathAnd02(): Bool = (true ∧ false) == false
 
-    @test
+    @Test
     def mathAnd03(): Bool = (false ∧ true) == false
 
-    @test
+    @Test
     def mathAnd04(): Bool = (false ∧ false) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // Logical Or                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+    @Test
     def mathOr01(): Bool = (true ∨ true) == true
 
-    @test
+    @Test
     def mathOr02(): Bool = (true ∨ false) == true
 
-    @test
+    @Test
     def mathOr03(): Bool = (false ∨ true) == true
 
-    @test
+    @Test
     def mathOr04(): Bool = (false ∨ false) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // Logical Implication                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+    @Test
     def mathImplication01(): Bool = (true → true) == true
 
-    @test
+    @Test
     def mathImplication02(): Bool = (true → false) == false
 
-    @test
+    @Test
     def mathImplication03(): Bool = (false → true) == true
 
-    @test
+    @Test
     def mathImplication04(): Bool = (false → false) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // Logical Bi-implication                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+    @Test
     def mathBiconditional01(): Bool = (true ↔ true) == true
 
-    @test
+    @Test
     def mathBiconditional02(): Bool = (true ↔ false) == false
 
-    @test
+    @Test
     def mathBiconditional03(): Bool = (false ↔ true) == false
 
-    @test
+    @Test
     def mathBiconditional04(): Bool = (false ↔ false) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // Logical Xor                                                             //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+    @Test
     def mathXor01(): Bool = (true ⊕ true) == false
 
-    @test
+    @Test
     def mathXor02(): Bool = (true ⊕ false) == true
 
-    @test
+    @Test
     def mathXor03(): Bool = (false ⊕ true) == true
 
-    @test
+    @Test
     def mathXor04(): Bool = (false ⊕ false) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // Negation                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def notTest01(): Bool = not(true) == false
 
-    @test
+    @Test
     def notTest02(): Bool = not(false) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // Logical And (lazy)                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def andTest01(): Bool = and(false, lazy false) == false
 
-    @test
+    @Test
     def andTest02(): Bool = and(false, lazy true) == false
 
-    @test
+    @Test
     def andTest03(): Bool = and(true, lazy false) == false
 
-    @test
+    @Test
     def andTest04(): Bool = and(true, lazy true) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // Logical Or (lazy)                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def orTest01(): Bool = or(false, lazy false) == false
 
-    @test
+    @Test
     def orTest02(): Bool = or(false, lazy true) == true
 
-    @test
+    @Test
     def orTest03(): Bool = or(true, lazy false) == true
 
-    @test
+    @Test
     def orTest04(): Bool = or(true, lazy true) == true
 
 }

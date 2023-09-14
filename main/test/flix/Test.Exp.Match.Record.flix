@@ -21,147 +21,147 @@ mod Test.Exp.Match.Record {
         case B
     }
 
-    @test
+    @Test
     def testEmptyRecord01(): Bool = match { } {
         case { } => true
     }
 
-    @test
+    @Test
     def testEmptyRecord02(): Bool = match { } {
         case { } => true
         case _   => false
     }
 
-    @test
+    @Test
     def testRecordFieldValue01(): Bool = match { a = 1 } {
         case { a } => a == 1
     }
 
-    @test
+    @Test
     def testRecordFieldValue02(): Bool = match { a = 1 } {
         case { a = b } => b == 1
     }
 
-    @test
+    @Test
     def testRecordFieldValue03(): Bool = match { a = 1 } {
         case { a = 1 } => true
         case { a = _ } => false
     }
 
-    @test
+    @Test
     def testRecordFieldValue04(): Bool = match { a = 1, b = 2 } {
         case { a = 1, b = 2 } => true
         case { a = _, b = _ } => false
     }
 
-    @test
+    @Test
     def testRecordFieldValue05(): Bool = match { a = 1, b = 2 } {
         case { a = 1, b = 2 | _ } => true
         case { a = _, b = _ | _ } => false
     }
 
-    @test
+    @Test
     def testExtension01(): Bool = match { a = 1, b = 2 } {
         case { a = _ | _ } => true
     }
 
-    @test
+    @Test
     def testExtension03(): Bool = match { a = 1, b = 2 } {
         case { a = _, b = _ | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecord01(): Bool = match { a = { } } {
         case { a = { } } => true
     }
 
-    @test
+    @Test
     def testNestedRecord02(): Bool = match { a = { a = { } } } {
         case { a = { a = { } } } => true
     }
 
-    @test
+    @Test
     def testNestedRecord03(): Bool = match { a = { a = { a = { } } } } {
         case { a = { a = { a = { } } } } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension01(): Bool = match { a = { a = { } } } {
         case { a = { a = { } } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension02(): Bool = match { a = { a = { } } } {
         case { a = { a = { } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension03(): Bool = match { a = { a = { a = { } } } } {
         case { a = { a = { a = { } } } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension04(): Bool = match { a = { a = { a = { } } } } {
         case { a = { a = { a = { } } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension05(): Bool = match { a = { a = { a = { } } } } {
         case { a = { a = { a = { } | _ } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension06(): Bool = match { a = { a = { a = { } } }, b = { } } {
         case { a = { a = { a = { } | _ } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension07(): Bool = match { a = { a = { a = { } }, b = { } }, b = { } } {
         case { a = { a = { a = { } | _ } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension08(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
         case { a = { a = { a = { } | _ } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension09(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
         case { a = { a = { b = { } | _ } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension10(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
         case { a = { a = { a = { }, b = { } | _ } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension11(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
         case { a = { a = { a = { }, b = { } | _ }, b = { } | _ } | _ } => true
     }
 
-    @test
+    @Test
     def testNestedRecordExtension12(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
         case { a = { a = { a = { }, b = { } | _ }, b = { } | _ }, b = { } | _ } => true
     }
 
-    @test
+    @Test
     def testExhaustiveness01(): Bool = match { a = 1, b = 2 } {
         case { a = _, b = _ } => true
     }
-    @test
+    @Test
     def testExhaustiveness02(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { x = A.A } } {
         case { a = { a = { a = { } | _ } | _ }, b = { x = A.A } } => true
         case { a = { a = { a = { } | _ } | _ }, b = { x = A.B } } => false
     }
 
-    @test
+    @Test
     def testExhaustiveness03(): Bool = match { a = { a = { a = { }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
         case { a = { a = { a = { } | _ } | _ }, b = { x = A.A } } => true
         case { a = { a = { a = { } | _ } | _ }, b = { x = A.B } } => false
     }
 
-    @test
+    @Test
     def testExhaustiveness04(): Bool = match { a = { a = { a = { a = A.B }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
         case { a = { a = { a = { a = A.A } | _ } | _ }, b = { x = A.A } } => false
         case { a = { a = { a = { a = A.A } | _ } | _ }, b = { x = A.B } } => false
@@ -169,7 +169,7 @@ mod Test.Exp.Match.Record {
         case { a = { a = { a = { a = A.B } | _ } | _ }, b = { x = A.B } } => false
     }
 
-    @test
+    @Test
     def testExhaustiveness05(): Bool = match { a = A.A, b = A.A } {
         case { b = A.A, a = A.A } => true
         case { b = A.A, a = A.B } => false
@@ -177,7 +177,7 @@ mod Test.Exp.Match.Record {
         case { b = A.B, a = A.B } => false
     }
 
-    @test
+    @Test
     def testDuplicateFieldsExhaustiveness01(): Bool = match { a = A.A, a = A.B } {
         case { a = A.A, a = A.A } => false
         case { a = A.A, a = A.B } => true
@@ -185,7 +185,7 @@ mod Test.Exp.Match.Record {
         case { a = A.B, a = A.B } => false
     }
 
-    @test
+    @Test
     def testDuplicateFieldsExhaustiveness02(): Bool = match { a = A.B, a = A.B } {
         case { a = A.A, a = A.A } => false
         case { a = A.A, a = A.B } => false
@@ -193,7 +193,7 @@ mod Test.Exp.Match.Record {
         case { a = A.B, a = A.B } => true
     }
 
-    @test
+    @Test
     def testDuplicateFieldsExhaustiveness03(): Bool = match { a = A.B, a = A.A } {
         case { a = A.A, a = A.A } => false
         case { a = A.A, a = A.B } => false
@@ -201,63 +201,63 @@ mod Test.Exp.Match.Record {
         case { a = A.B, a = A.B } => false
     }
 
-    @test
+    @Test
     def testDuplicateFieldsExhaustiveness04(): Bool = match { a = A.B, a = A.A } {
         case { a = A.A | _ } => false
         case { a = A.B | _ } => true
     }
 
-    @test
+    @Test
     def testDuplicateFieldsExhaustiveness05(): Bool = match { a = A.B, a = A.A } {
         case { a = A.A, a = _ } => false
         case { a = A.B, a = _ } => true
     }
 
-    @test
+    @Test
     def testExhaustiveness06(): Bool = match { a = { a = { }, b = A.B }, b = A.A } {
         case { a = { a = { } | _ } | _ } => true
     }
-    @test
+    @Test
     def testExtensionFields01(): Bool = match { a = true, b = true } {
         case { a | r } => a and r.b
     }
 
-    @test
+    @Test
     def testDuplicateFields01(): Bool = match { a = false, a = true } {
         case { a = x, a = y } => (not x) and y
     }
 
-    @test
+    @Test
     def testDuplicateFields02(): Bool = match { a = true, a = 42 } {
         case { a = x, a = y } => x and y == 42
     }
 
-    @test
+    @Test
     def testRandomOrder01(): Bool = match { a = true, b = 2, a = 42 } {
         case { b, a = x, a = y } => (x and y == 42) and b == 2
     }
 
-    @test
+    @Test
     def testRandomOrder02(): Bool = match { a = true, b = 2, a = 42 } {
         case { a = x, a = y, b } => (x and y == 42) and b == 2
     }
 
-    @test
+    @Test
     def testRandomOrder03(): Bool = match { q = true, b = 2, a = 42 } {
         case { a, q, b } => (q and a == 42) and b == 2
     }
 
-    @test
+    @Test
     def testRandomOrder04(): Bool = match { q = true, b = 2, a = 42 } {
         case { b, a, q } => (q and a == 42) and b == 2
     }
 
-    @test
+    @Test
     def testDuplicateFieldsWithExtensionFields01(): Bool = match { a = false, a = true, a = 42 } {
         case { a = x, a = y | r } => ((not x) and y) and r.a == 42
     }
 
-    @test
+    @Test
     def testDuplicateFieldsWithExtensionFields02(): Bool = match { a = false, a = true, a = 42, a = 3 } {
         case { a = x, a = y | r } => ((not x) and y) and r.a == 42
     }

@@ -1,13 +1,13 @@
 mod Test.Exp.New {
 
-    @test
+    @Test
     def testNewMutList1Region04(): Unit =
         region rc {
             discard MutList.new(rc): MutList[String, rc];
             ()
         }
 
-    @test
+    @Test
     def testNewMutList1Region05(): Int32 =
         region rc {
             let l = MutList.new(rc);
@@ -18,7 +18,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNewMutList2RegionsFlat04(): Bool =
         let res1 = region rc {
             discard MutList.new(rc): MutList[String, rc];
@@ -30,7 +30,7 @@ mod Test.Exp.New {
         };
         res1 == () and res1 == res2
 
-    @test
+    @Test
     def testNewMutList2RegionsFlat05(): Bool =
         let res1 = region rc {
             let l = MutList.new(rc);
@@ -50,7 +50,7 @@ mod Test.Exp.New {
         };
         res1 + res2 == 2
 
-    @test
+    @Test
     def testNewMutList2RegionsNested02(): Int32 =
         region rc {
             region _ {
@@ -63,7 +63,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNewMutList2RegionsNested03(): Int32 =
         region _ {
             region rc2 {
@@ -76,7 +76,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutLists2NestedRegions03(): Int32 =
         region rc {
             region _ {
@@ -91,7 +91,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutLists2NestedRegions04(): Int32 =
         region rc1 {
             region rc2 {
@@ -106,7 +106,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutLists2NestedRegions05(): Int32 =
         region rc1 {
             let l1 = MutList.new(rc1);
@@ -121,7 +121,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutLists2NestedRegions06(): Int32 =
         region rc1 {
             let l1 = MutList.new(rc1);
@@ -136,14 +136,14 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNewMutMap1Region04(): Unit =
         region rc {
             discard MutMap.new(rc): MutMap[Int32, String, rc];
             ()
         }
 
-    @test
+    @Test
     def testNewMutMap1Region05(): Int32 =
         region rc {
             let m = MutMap.new(rc);
@@ -154,7 +154,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNewMutMap2RegionsFlat04(): Bool =
         let res1 = region rc {
             discard MutMap.new(rc): MutMap[Int32, String, rc];
@@ -166,7 +166,7 @@ mod Test.Exp.New {
         };
         res1 == () and res1 == res2
 
-    @test
+    @Test
     def testNewMutMap2RegionsFlat05(): Bool =
         let res1 = region rc {
             let m = MutMap.new(rc);
@@ -186,7 +186,7 @@ mod Test.Exp.New {
         };
         res1 + res2 == 2
 
-    @test
+    @Test
     def testNewMutMap2RegionsNested02(): Int32 =
         region rc {
             region _ {
@@ -199,7 +199,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNewMutMap2RegionsNested03(): Int32 =
         region _ {
             region rc2 {
@@ -212,7 +212,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutMaps2NestedRegions03(): Int32 =
         region rc {
             region _ {
@@ -227,7 +227,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutMaps2NestedRegions04(): Int32 =
         region rc1 {
             region rc2 {
@@ -242,7 +242,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutMaps2NestedRegions05(): Int32 =
         region rc1 {
             let m1 = MutMap.new(rc1);
@@ -257,7 +257,7 @@ mod Test.Exp.New {
             }
         }
 
-    @test
+    @Test
     def testNew2MutMaps2NestedRegions06(): Int32 =
         region rc1 {
             let m1 = MutMap.new(rc1);

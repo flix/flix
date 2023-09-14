@@ -17,13 +17,13 @@ mod Test.Integ.Class.Schema {
         }
     }
 
-    @test
+    @Test
     def testSchemaInSig01(): Bool = {
         let _ = Test.Integ.Class.Schema.C.f(5);
         true
     }
 
-    @test
+    @Test
     def testSchemaInSig02(): Bool = {
         let _ = Test.Integ.Class.Schema.D.f(5);
         true

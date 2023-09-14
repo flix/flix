@@ -1,58 +1,58 @@
 mod Test.Exp.Lazy {
 
-    @test
+    @Test
     def testUnitLazy01(): Lazy[Unit] =
         lazy ()
 
-    @test
+    @Test
     def testBoolLazy01(): Lazy[Bool] =
         lazy true
 
-    @test
+    @Test
     def testBoolLazy02(): Lazy[Bool] =
         lazy false
 
-    @test
+    @Test
     def testCharLazy01(): Lazy[Char] =
         lazy 'a'
 
-    @test
+    @Test
     def testFloat32Lazy01(): Lazy[Float32] =
         lazy 12.34f32
 
-    @test
+    @Test
     def testFloat64Lazy01(): Lazy[Float64] =
         lazy 12.34f64
 
-    @test
+    @Test
     def testBigDecimalLazy01(): Lazy[BigDecimal] =
         lazy 12.34ff
 
-    @test
+    @Test
     def testInt8Lazy01(): Lazy[Int8] =
         lazy 12i8
 
-    @test
+    @Test
     def testInt16Lazy01(): Lazy[Int16] =
         lazy 12i16
 
-    @test
+    @Test
     def testInt32Lazy01(): Lazy[Int32] =
         lazy 12i32
 
-    @test
+    @Test
     def testInt64Lazy01(): Lazy[Int64] =
         lazy 12i64
 
-    @test
+    @Test
     def testBigIntLazy01(): Lazy[BigInt] =
         lazy 12ii
 
-    @test
+    @Test
     def testStringLazy01(): Lazy[String] =
         lazy "string"
 
-    @test
+    @Test
     def testArrayOfIntLazy01(): Unit = region rc {
         discard {
             let array = Array#{1, 2} @ rc;
@@ -60,7 +60,7 @@ mod Test.Exp.Lazy {
         }
     }
 
-    @test
+    @Test
     def testArrayOfStringLazy01(): Unit = region rc {
         discard {
             let array = Array#{"str", "str2"} @ rc;
@@ -68,44 +68,44 @@ mod Test.Exp.Lazy {
         }
     }
 
-    @test
+    @Test
     def testTupleLazy01(): Lazy[(String, String)] =
         lazy ("str", "str2")
 
-    @test
+    @Test
     def testNestedLazy01(): Lazy[Lazy[Int32]] =
         lazy (lazy 123)
 
-    @test
+    @Test
     def testNestedLazy02(): Lazy[Int32 -> Lazy[String]] =
         lazy (x -> if (x < 0) lazy "neg" else lazy "pos")
 
-    @test
+    @Test
     def testNestedLazy03(): Poly[Lazy[Int32], Lazy[String]] =
         Poly.Both(lazy 2, lazy "2")
 
-    @test
+    @Test
     def testNestedLazy04(): Poly[Lazy[Int32], Lazy[Int32]] =
         let x = lazy 15;
         Poly.Both(x, x)
 
-    @test
+    @Test
     def testNestedLazy05(): Lazy[Poly[Lazy[Int32], String]] =
         lazy (Poly.This(lazy 5))
 
-    @test
+    @Test
     def testNestedEnumLazy01(): Lazy[Card] =
         lazy Card.Card(Suit.Hearts, Rank.N(4))
 
-    @test
+    @Test
     def testPolyLazy01(): Lazy[Poly[Int32, String]] =
         lazy Poly.This(123)
 
-    @test
+    @Test
     def testPolyLazy02(): Lazy[Poly[String, String]] =
         lazy Poly.That("str")
 
-    @test
+    @Test
     def testPolyLazy03(): Lazy[Poly[String, Int32]] =
         lazy Poly.Both("str", 123)
 

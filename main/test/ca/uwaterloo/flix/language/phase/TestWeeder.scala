@@ -463,7 +463,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateAnnotation.01") {
     val input =
-      """@test @test
+      """@Test @Test
         |def foo(x: Int32): Int32 = 42
     """.stripMargin
     val result = compile(input, Options.TestWithLibNix)

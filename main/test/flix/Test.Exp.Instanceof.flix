@@ -16,48 +16,48 @@
 
 mod Test.Exp.Instanceof {
 
-    @test
+    @Test
     def testInstanceof01(): Bool = "Hello World" instanceof ##java.lang.String
 
-    @test
+    @Test
     def testInstanceof02(): Bool = "Hello World" instanceof ##java.lang.CharSequence
 
-    @test
+    @Test
     def testInstanceof03(): Bool = "Hello World" instanceof ##java.lang.Object
 
-    @test
+    @Test
     def testInstanceof04(): Bool = 100ii instanceof ##java.math.BigInteger
 
-    @test
+    @Test
     def testInstanceof05(): Bool = 100ii instanceof ##java.lang.Number
 
-    @test
+    @Test
     def testInstanceof06(): Bool = 100ii instanceof ##java.lang.Object
 
-    @test
+    @Test
     def testInstanceof07(): Bool =
         import static get java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
         get_DELETE_ON_CLOSE() instanceof ##java.nio.file.StandardOpenOption
 
-    @test
+    @Test
     def testInstanceof08(): Bool =
         import static get java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
         get_DELETE_ON_CLOSE() instanceof ##java.nio.file.OpenOption
 
-    @test
+    @Test
     def testInstanceof09(): Bool =
         import static get java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
         get_DELETE_ON_CLOSE() instanceof ##java.lang.Enum
 
-    @test
+    @Test
     def testInstanceof10(): Bool =
         import static get java.nio.file.StandardOpenOption.DELETE_ON_CLOSE: ##java.nio.file.StandardOpenOption \ {} as get_DELETE_ON_CLOSE;
         get_DELETE_ON_CLOSE() instanceof ##java.lang.Object
 
-    @test
+    @Test
     def testInstanceof11(): Bool = (100ii instanceof ##java.lang.Long) == false
 
-    @test
+    @Test
     def testInstanceof12(): Bool = ("Hello World" instanceof ##java.lang.StringBuilder) == false
 
 }

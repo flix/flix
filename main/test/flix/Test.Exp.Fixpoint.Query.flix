@@ -1,42 +1,42 @@
 mod Test.Exp.Fixpoint.Query {
 
-    @test
+    @Test
     def testQuery01(): Bool =
         query foodDb() select f from Food(f) |> Vector.toSet == Set#{"Apple", "Banana", "Burger", "Carrot", "Grapes", "Pizza", "Potato"}
 
-    @test
+    @Test
     def testQuery02(): Bool =
         query foodDb() select f from Food(f), Fastfood(f) |> Vector.toSet == Set#{"Banana", "Burger", "Pizza"}
 
-    @test
+    @Test
     def testQuery03(): Bool =
         query foodDb() select f from Food(f), Snack(f) |> Vector.toSet == Set#{"Banana", "Carrot", "Grapes"}
 
-    @test
+    @Test
     def testQuery04(): Bool =
         query foodDb() select f from Food(f), Vegetable(f) |> Vector.toSet == Set#{"Apple", "Carrot", "Grapes", "Potato"}
 
-    @test
+    @Test
     def testQuery05(): Bool =
         query foodDb() select f from Healthy(f), not Food(f) |> Vector.toSet == Set#{"Water"}
 
-    @test
+    @Test
     def testQuery06(): Bool =
         query foodDb() select f from Fastfood(f), Snack(f) |> Vector.toSet == Set#{"Banana"}
 
-    @test
+    @Test
     def testQuery07(): Bool =
         query foodDb() select f from Snack(f), Healthy(f) |> Vector.toSet == Set#{"Carrot", "Grapes"}
 
-    @test
+    @Test
     def testQuery08(): Bool =
         query foodDb() select (main, side) from Fastfood(main), Vegetable(side) |> Vector.memberOf(("Burger", "Potato"))
 
-    @test
+    @Test
     def testQuery09(): Bool =
         query foodDb() select (String.toUpperCase(main), side) from Fastfood(main), Vegetable(side) |> Vector.memberOf(("BURGER", "Potato"))
 
-    @test
+    @Test
     def testQuery10(): Bool =
         let p1 = pathDb();
         let p2 = #{
@@ -44,7 +44,7 @@ mod Test.Exp.Fixpoint.Query {
         };
         query p1, p2 select (src, dst) from Path(src, dst) |> Vector.memberOf((9, 1))
 
-    @test
+    @Test
     def testQuery11(): Bool =
         let p1 = pathDb();
         let p2 = #{
@@ -52,7 +52,7 @@ mod Test.Exp.Fixpoint.Query {
         };
         query p1, p2 select (src, dst) from Path(src, dst) |> Vector.memberOf((5, 5))
 
-    @test
+    @Test
     def testQuery12(): Bool =
         let p1 = pathDb();
         let p2 = #{

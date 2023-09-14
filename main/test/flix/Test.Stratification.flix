@@ -8,21 +8,21 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test0NonRecursiveStratification00(): #{ A000(Int32), B000(Int32), R000(Int32) } = solve #{
             A000(1). A000(2). A000(3).
             B000(3).
             R000(x) :- A000(x), not B000(x).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification01(): #{ A001(Int32), B001(Int32), R001(Int32) } = solve #{
             A001(1). A001(2). A001(3).
             B001(3).
             R001(x) :- not A001(x), B001(x).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification02(): #{ A002(Int32), B002(Int32), C002(Int32), R002(Int32) } = solve #{
             A002(1). A002(2). A002(3).
             B002(3).
@@ -30,7 +30,7 @@ mod Test.Stratification {
             R002(x) :- A002(x), not B002(x), not C002(x).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification03(): #{ A003(Int32), B003(Int32), C003(Int32), R003(Int32) } = solve #{
             A003(1). A003(2). A003(3).
             B003(3).
@@ -38,7 +38,7 @@ mod Test.Stratification {
             R003(x) :- not A003(x), B003(x), not C003(x).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification04(): #{ A004(Int32), B004(Int32), C004(Int32), R004(Int32) } = solve #{
             A004(1). A004(2).
             B004(3).
@@ -47,7 +47,7 @@ mod Test.Stratification {
             R004(x) :- C004(x), not A004(x).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification05(): #{ A005(Int32), B005(Int32), C005(Int32), D005(Int32), R005(Int32) } = solve #{
             A005(1). A005(2).
             B005(3).
@@ -57,7 +57,7 @@ mod Test.Stratification {
             R005(x) :- A005(x), not D005(x).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification06(): #{ A006(Int32), B006(Int32), C006(Int32), D006(Int32), E006(Int32), R006(Int32) } = solve #{
             A006(1). A006(2).
             B006(3).
@@ -68,7 +68,7 @@ mod Test.Stratification {
             R006(x) :- E006(x).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification07(): #{ A007(Int32), N007() } = solve #{
             A007(1).
             A007(2).
@@ -78,7 +78,7 @@ mod Test.Stratification {
             N007() :- not A007(3).
         }
 
-        @test
+        @Test
         def test0NonRecursiveStratification08(): #{ A008(Int32), B008(Int32), N008() } = solve #{
             A008(1). A008(2).
             B008(1). B008(2).
@@ -92,7 +92,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test1RuleFilteredStratification00(): Bool =
             let p1 = #{
                 B100(12). P1Diff100(12).
@@ -107,7 +107,7 @@ mod Test.Stratification {
             > 0
 
 
-        @test
+        @Test
         def test1RuleFilteredStratification01(): Bool =
             let p1 = #{
                 C101(12). B101(13).
@@ -132,7 +132,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test2ArityFilteredStratification00(): Bool =
             let p1 = #{
                 B700(17). C700(17).
@@ -146,7 +146,7 @@ mod Test.Stratification {
             (query p2 select x from B700(x, _) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test2ArityFilteredStratification01(): Bool =
             let p1 = #{
                 B701(13). C701(13).
@@ -160,7 +160,7 @@ mod Test.Stratification {
             (query p2 select x from B701(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test2ArityFilteredStratification02(): Bool =
             let p1 = #{
                 B702("s").
@@ -175,7 +175,7 @@ mod Test.Stratification {
             > 0
 
         // combined with rule based filtering
-        @test
+        @Test
         def test2ArityFilteredStratification99(): Bool =
             let p1 = #{
                 B799(12). C799(12, 13).
@@ -195,7 +195,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test3TypeFilteredStratification00(): Bool =
             // Int32 and String
             let p1 = #{
@@ -210,7 +210,7 @@ mod Test.Stratification {
             (query p2 select x from B800(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test3TypeFilteredStratification01(): Bool =
             // Option[Int32] and Option[String]
             let p1 = #{
@@ -225,7 +225,7 @@ mod Test.Stratification {
             (query p2 select x from B801(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test3TypeFilteredStratification02(): Bool =
             // Result[Int32, Int32] and Result[Int32, Int64]
             let p1 = #{
@@ -240,7 +240,7 @@ mod Test.Stratification {
             (query p2 select x from B802(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test3TypeFilteredStratification03(): Bool =
             // List[Int16] and List[Bool]
             let p1 = #{
@@ -255,7 +255,7 @@ mod Test.Stratification {
             (query p2 select x from B803(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test3TypeFilteredStratification04(): Bool =
             // List[Int8] and List[List[Int8]]
             let p1 = #{
@@ -271,7 +271,7 @@ mod Test.Stratification {
             > 0
 
         // combined with rule based filtering
-        @test
+        @Test
         def test3TypeFilteredStratification99(): Bool =
             let p1 = #{
                 B899(12). C899("string").
@@ -291,7 +291,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test4DenotationFilteredStratification00(): Bool =
             let p1 = #{
                 B400(12i64).
@@ -306,7 +306,7 @@ mod Test.Stratification {
             > 0
 
         // combined with rule based filtering
-        @test
+        @Test
         def test4DenotationFilteredStratification99(): Bool =
             let p1 = #{
                 B499(12). C499(;12).
@@ -329,7 +329,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test5NonRecursiveStratification00(): Bool =
         let res = query #{
             A500(1). A500(2). A500(3).
@@ -338,7 +338,7 @@ mod Test.Stratification {
         } select x from R500(x) |> Vector.toSet;
         res == Set#{3}
 
-        @test
+        @Test
         def test5NonRecursiveStratification01(): Bool =
         let res = query #{
             A501(1). A501(2). A501(3).
@@ -347,7 +347,7 @@ mod Test.Stratification {
         } select x from R501(x) |> Vector.toSet;
         res == Set#{3}
 
-        @test
+        @Test
         def test5NonRecursiveStratification02(): Bool =
         let res = query #{
             A502(1; 1). A502(1; 2). A502(1; 3).
@@ -355,7 +355,7 @@ mod Test.Stratification {
         } select x from B502(x) |> Vector.toSet;
         res == Set#{3}
 
-        @test
+        @Test
         def test5NonRecursiveStratification03(): Bool =
         let res = query #{
             A502(1; 1). A502(1; 2). A502(1; 3).
@@ -365,7 +365,7 @@ mod Test.Stratification {
         } select x from R502(x) |> Vector.toSet;
         res == Set#{3, 4}
 
-        @test
+        @Test
         def test5NonRecursiveStratification04(): Bool =
         let res = query #{
             A504(1). A504(2). A504(3).
@@ -374,7 +374,7 @@ mod Test.Stratification {
         } select x from R504(x) |> Vector.toSet;
         res == Set#{1, 2, 3}
 
-        @test
+        @Test
         def test5NonRecursiveStratification05(): Bool =
         let res = query #{
             A505("x"; 1). A505("x"; 2).
@@ -383,7 +383,7 @@ mod Test.Stratification {
         } select xv from R505("x", xv) |> Vector.toSet;
         res == Set#{6}
 
-        @test
+        @Test
         def test5NonRecursiveStratification06(): Bool =
         let res = query #{
             A506(1, 1). A506(2, 2). A506(3, 6).
@@ -395,7 +395,7 @@ mod Test.Stratification {
         } select x from R506(x) |> Vector.toSet;
         res == Set#{9}
 
-        @test
+        @Test
         def test5NonRecursiveStratification07(): Bool =
         let res = query #{
             A507(1). A507(2). A507(3).
@@ -413,7 +413,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test6RuleFilteredStratification00(): Bool =
             let p1 = #{
                 B600(12). P1Diff600(12).
@@ -427,7 +427,7 @@ mod Test.Stratification {
             (query p2 select x from B600(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test6RuleFilteredStratification01(): Bool =
             let p1 = #{
                 C601(12). B601(13).
@@ -452,7 +452,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test7ArityFilteredStratification00(): Bool =
             let p1 = #{
                 B700(17). C700(17).
@@ -466,7 +466,7 @@ mod Test.Stratification {
             (query p2 select x from B700(x, _) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test7ArityFilteredStratification01(): Bool =
             let p1 = #{
                 B701(13). C701(13).
@@ -480,7 +480,7 @@ mod Test.Stratification {
             (query p2 select x from B701(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test7ArityFilteredStratification02(): Bool =
             let p1 = #{
                 B702("s").
@@ -495,7 +495,7 @@ mod Test.Stratification {
             > 0
 
         // combined with rule based filtering
-        @test
+        @Test
         def test7ArityFilteredStratification99(): Bool =
             let p1 = #{
                 B799(12). C799(12, 13).
@@ -515,7 +515,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test8TypeFilteredStratification00(): Bool =
             // Int32 and String
             let p1 = #{
@@ -530,7 +530,7 @@ mod Test.Stratification {
             (query p2 select x from B800(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test8TypeFilteredStratification01(): Bool =
             // Option[Int32] and Option[String]
             let p1 = #{
@@ -545,7 +545,7 @@ mod Test.Stratification {
             (query p2 select x from B801(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test8TypeFilteredStratification02(): Bool =
             // Result[Int32, Int32] and Result[Int32, Int64]
             let p1 = #{
@@ -560,7 +560,7 @@ mod Test.Stratification {
             (query p2 select x from B802(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test8TypeFilteredStratification03(): Bool =
             // List[Int16] and List[Bool]
             let p1 = #{
@@ -575,7 +575,7 @@ mod Test.Stratification {
             (query p2 select x from B803(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test8TypeFilteredStratification04(): Bool =
             // List[Int8] and List[List[Int8]]
             let p1 = #{
@@ -591,7 +591,7 @@ mod Test.Stratification {
             > 0
 
         // combined with rule based filtering
-        @test
+        @Test
         def test8TypeFilteredStratification99(): Bool =
             let p1 = #{
                 B899(12). C899("string").
@@ -611,7 +611,7 @@ mod Test.Stratification {
         //
         //
 
-        @test
+        @Test
         def test9DenotationFilteredStratification00(): Bool =
             let p1 = #{
                 B900(12i64).
@@ -626,7 +626,7 @@ mod Test.Stratification {
             > 0
 
         // combined with rule based filtering
-        @test
+        @Test
         def test9DenotationFilteredStratification99(): Bool =
             let p1 = #{
                 B999(12). C999(;12).
@@ -640,7 +640,7 @@ mod Test.Stratification {
             (query p2 select x from B999(x) |> Vector.length)
             > 0
 
-        @test
+        @Test
         def test10MixedFix00(): Bool =
             let p = #{
                 C1000("a"; 12).

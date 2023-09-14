@@ -21,7 +21,7 @@ mod Test.Exp.Jvm.TestTryCatch {
         discard floorDiv(1, 0);
         ()
 
-    @test
+    @Test
     def testNoException01(): Bool =
         try {
             true
@@ -29,7 +29,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             case _: ##java.lang.Exception => false
         }
 
-    @test
+    @Test
     def testSimpleException01(): Bool \ IO =
         try {
             exception();
@@ -38,7 +38,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             case _: ##java.lang.Exception => true
         }
 
-    @test
+    @Test
     def testMultipleExceptions01(): Bool \ IO =
         try {
             exception();
@@ -48,7 +48,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             case _: ##java.lang.IllegalArgumentException => false
         }
 
-    @test
+    @Test
     def testMultipleExceptions02(): Bool \ IO =
         try {
             exception();
@@ -58,7 +58,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             case _: ##java.lang.ArithmeticException => true
         }
 
-    @test
+    @Test
     def testBinding01(): Bool \ IO =
         import java.lang.Object.toString(): ##java.lang.String \ IO;
         import java.lang.String.isEmpty(): Bool \ IO;
@@ -70,7 +70,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             case _: ##java.lang.Exception => false
         }
 
-    @test
+    @Test
     def testBinding02(): Bool \ IO =
         import java.lang.String.isEmpty(): Bool \ IO;
         import java.lang.Throwable.getMessage(): String \ IO;
@@ -82,7 +82,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             case _: ##java.lang.Exception => false
         }
 
-    @test
+    @Test
     def testPriority01(): Bool \ IO =
         try {
             exception();
@@ -92,7 +92,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             case _: ##java.lang.ArithmeticException => false
         }
 
-    @test
+    @Test
     def testPriority02(): Bool \ IO =
         try {
             exception();

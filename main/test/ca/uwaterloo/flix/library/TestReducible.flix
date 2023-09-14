@@ -20,35 +20,35 @@ mod TestReducible {
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduceLeft01(): Bool =
         Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def reduceLeft02(): Bool =
         Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", "b" :: Nil)) == "ab"
 
-    @test
+    @Test
     def reduceLeft03(): Bool =
         Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
 
-    @test
+    @Test
     def reduceLeft04(): Bool =
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, Nil)) == 100
 
-    @test
+    @Test
     def reduceLeft05(): Bool =
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: Nil)) == 198
 
-    @test
+    @Test
     def reduceLeft06(): Bool =
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: 2 :: Nil)) == 196
 
-    @test
+    @Test
     def reduceLeft07(): Bool =
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
-    @test
+    @Test
     def reduceLeft08(): Bool = region rc {
         let l = ref Nil @ rc;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
@@ -67,35 +67,35 @@ mod TestReducible {
     // reduceRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduceRight01(): Bool =
         Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def reduceRight02(): Bool =
         Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", "b" :: Nil)) == "ab"
 
-    @test
+    @Test
     def reduceRight03(): Bool =
         Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
 
-    @test
+    @Test
     def reduceRight04(): Bool =
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, Nil)) == 100
 
-    @test
+    @Test
     def reduceRight05(): Bool =
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 100 :: Nil)) == 198
 
-    @test
+    @Test
     def reduceRight06(): Bool =
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 2 :: 100 :: Nil)) == 194
 
-    @test
+    @Test
     def reduceRight07(): Bool =
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
 
-    @test
+    @Test
     def reduceRight08(): Bool = region rc {
         let l = ref Nil @ rc;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
@@ -114,15 +114,15 @@ mod TestReducible {
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduce01(): Bool =
         Reducible.reduce(Nel.Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def reduce02(): Bool =
         Reducible.reduce(Nel.Nel("a", "b" :: Nil)) == "ab"
 
-    @test
+    @Test
     def reduce03(): Bool =
         Reducible.reduce(Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
 
@@ -131,15 +131,15 @@ mod TestReducible {
     // reduceMap                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduceMap01(): Bool =
         Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, Nil)) == 1
 
-    @test
+    @Test
     def reduceMap02(): Bool =
         Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, 2i16 :: Nil)) == 3
 
-    @test
+    @Test
     def reduceMap03(): Bool =
         Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, 2i16 :: 3i16 :: Nil)) == 6
 
@@ -148,31 +148,31 @@ mod TestReducible {
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldLeft01(): Bool =
         Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def foldLeft02(): Bool =
         Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", "b" :: Nil)) == "ab"
 
-    @test
+    @Test
     def foldLeft03(): Bool =
         Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
 
-    @test
+    @Test
     def foldLeft04(): Bool =
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
-    @test
+    @Test
     def foldLeft05(): Bool =
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 196
 
-    @test
+    @Test
     def foldLeft06(): Bool =
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
 
-    @test
+    @Test
     def foldLeft07(): Bool = region rc {
         let l = ref Nil @ rc;
         discard Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
@@ -183,31 +183,31 @@ mod TestReducible {
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRight01(): Bool =
         Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def foldRight02(): Bool =
         Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", "b" :: Nil)) == "ab"
 
-    @test
+    @Test
     def foldRight03(): Bool =
         Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
 
-    @test
+    @Test
     def foldRight04(): Bool =
         Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
-    @test
+    @Test
     def foldRight05(): Bool =
         Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
 
-    @test
+    @Test
     def foldRight06(): Bool =
         Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
-    @test
+    @Test
     def foldRight07(): Bool = region rc {
         let l = ref Nil @ rc;
         discard Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
@@ -218,31 +218,31 @@ mod TestReducible {
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRightWithCont01(): Bool =
         Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def foldRightWithCont02(): Bool =
         Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: Nil)) == "ab"
 
-    @test
+    @Test
     def foldRightWithCont03(): Bool =
         Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
 
-    @test
+    @Test
     def foldRightWithCont04(): Bool =
         Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
-    @test
+    @Test
     def foldRightWithCont05(): Bool =
         Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
 
-    @test
+    @Test
     def foldRightWithCont06(): Bool =
         Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
-    @test
+    @Test
     def foldRightWithCont07(): Bool = region rc {
         let l = ref Nil @ rc;
         discard Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
@@ -253,15 +253,15 @@ mod TestReducible {
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def head01(): Bool =
         Reducible.head(Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def head02(): Bool =
         Reducible.head(Nel.Nel(2, 1 :: Nil)) == 2
 
-    @test
+    @Test
     def head03(): Bool =
         Reducible.head(Nel.Nel(3, 2 :: 1 :: Nil)) == 3
 
@@ -270,15 +270,15 @@ mod TestReducible {
     // last                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def last01(): Bool =
         Reducible.last(Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def last02(): Bool =
         Reducible.last(Nel.Nel(1, 2 :: Nil)) == 2
 
-    @test
+    @Test
     def last03(): Bool =
         Reducible.last(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
 
@@ -287,27 +287,27 @@ mod TestReducible {
     // init                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def init01(): Bool =
         Reducible.init(Nel.Nel(1, Nil)) == Nil
 
-    @test
+    @Test
     def init02(): Bool =
         Reducible.init(Nel.Nel(2, Nil)) == Nil
 
-    @test
+    @Test
     def init03(): Bool =
         Reducible.init(Nel.Nel(1, 2 :: Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def init04(): Bool =
         Reducible.init(Nel.Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: Nil
 
-    @test
+    @Test
     def init05(): Bool =
         Reducible.init(Nel.Nel(3, 2 :: 1 :: Nil)) == 3 :: 2 :: Nil
 
-    @test
+    @Test
     def init06(): Bool =
         Reducible.init(Nel.Nel(1, 2 :: 3 :: 4 :: Nil)) == 1 :: 2 :: 3 :: Nil
 
@@ -316,23 +316,23 @@ mod TestReducible {
     // tail                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def tail01(): Bool =
         Reducible.tail(Nel.Nel(1, Nil)) == Nil
 
-    @test
+    @Test
     def tail02(): Bool =
         Reducible.tail(Nel.Nel(2, Nil)) == Nil
 
-    @test
+    @Test
     def tail03(): Bool =
         Reducible.tail(Nel.Nel(1, 2 :: Nil)) == 2 :: Nil
 
-    @test
+    @Test
     def tail04(): Bool =
         Reducible.tail(Nel.Nel(1, 2 :: 3 :: Nil)) == 2 :: 3 :: Nil
 
-    @test
+    @Test
     def tail05(): Bool =
         Reducible.tail(Nel.Nel(3, 2 :: 1 :: Nil)) == 2 :: 1 :: Nil
 
@@ -341,15 +341,15 @@ mod TestReducible {
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reverse01(): Bool =
         Reducible.reverse(Nel.Nel(1, Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def reverse02(): Bool =
         Reducible.reverse(Nel.Nel(1, 2 :: Nil)) == 2 :: 1 :: Nil
 
-    @test
+    @Test
     def reverse03(): Bool =
         Reducible.reverse(Nel.Nel(1, 2 :: 3 :: Nil)) == 3 :: 2 :: 1 :: Nil
 
@@ -358,27 +358,27 @@ mod TestReducible {
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def count01(): Bool =
         Reducible.count(i -> i > 3, Nel.Nel(1, Nil)) == 0
 
-    @test
+    @Test
     def count02(): Bool =
         Reducible.count(i -> i > 3, Nel.Nel(4, Nil)) == 1
 
-    @test
+    @Test
     def count03(): Bool =
         Reducible.count(i -> i > 3, Nel.Nel(1, 2 :: Nil)) == 0
 
-    @test
+    @Test
     def count04(): Bool =
         Reducible.count(i -> i > 3, Nel.Nel(1, 8 :: Nil)) == 1
 
-    @test
+    @Test
     def count05(): Bool =
         Reducible.count(i -> i > 3, Nel.Nel(8, 1 :: Nil)) == 1
 
-    @test
+    @Test
     def count06(): Bool =
         Reducible.count(i -> i > 3, Nel.Nel(6, 7 :: Nil)) == 2
 
@@ -387,15 +387,15 @@ mod TestReducible {
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def length01(): Bool =
         Reducible.length(Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def length02(): Bool =
         Reducible.length(Nel.Nel(1, 2 :: Nil)) == 2
 
-    @test
+    @Test
     def length03(): Bool =
         Reducible.length(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
 
@@ -404,27 +404,27 @@ mod TestReducible {
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sum01(): Bool =
         Reducible.sum(Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def sum02(): Bool =
         Reducible.sum(Nel.Nel(1, 2 :: 3 :: Nil)) == 6
 
-    @test
+    @Test
     def sum03(): Bool =
         Reducible.sum(Nel.Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
 
-    @test
+    @Test
     def sum04(): Bool =
         Reducible.sum(Nel.Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
 
-    @test
+    @Test
     def sum05(): Bool =
         Reducible.sum(Nel.Nel(10, -10 :: Nil)) == 0
 
-    @test
+    @Test
     def sum06(): Bool = match List.range(1, 101) {
         case x :: xs => Reducible.sum(Nel.Nel(x, xs)) == 5050
         case _       => unreachable!()
@@ -435,23 +435,23 @@ mod TestReducible {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumWith01(): Bool =
         Reducible.sumWith(x -> x + 1, Nel.Nel(1, Nil)) == 2
 
-    @test
+    @Test
     def sumWith02(): Bool =
         Reducible.sumWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: Nil)) == 9
 
-    @test
+    @Test
     def sumWith03(): Bool =
         Reducible.sumWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: -3 :: Nil)) == 7
 
-    @test
+    @Test
     def sumWith04(): Bool =
         Reducible.sumWith(x -> x + 1, Nel.Nel(-1, -2 :: -3 :: -4 :: Nil)) == -6
 
-    @test
+    @Test
     def sumWith05(): Bool =
         Reducible.sumWith(x -> x + 1, Nel.Nel(10, -10 :: Nil)) == 2
 
@@ -460,19 +460,19 @@ mod TestReducible {
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def exists01(): Bool =
         Reducible.exists(x -> x == 1, Nel.Nel(1, Nil)) == true
 
-    @test
+    @Test
     def exists02(): Bool =
         Reducible.exists(x -> x == 2, Nel.Nel(1, Nil)) == false
 
-    @test
+    @Test
     def exists03(): Bool =
         Reducible.exists(x -> x == 1, Nel.Nel(1, 2 :: Nil)) == true
 
-    @test
+    @Test
     def exists04(): Bool =
         Reducible.exists(x -> x == 2, Nel.Nel(1, 2 :: Nil)) == true
 
@@ -481,23 +481,23 @@ mod TestReducible {
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forAll01(): Bool =
         Reducible.forAll(x -> x == 1, Nel.Nel(1, Nil)) == true
 
-    @test
+    @Test
     def forAll02(): Bool =
         Reducible.forAll(x -> x == 2, Nel.Nel(1, Nil)) == false
 
-    @test
+    @Test
     def forAll03(): Bool =
         Reducible.forAll(x -> x == 1, Nel.Nel(1, 1 :: Nil)) == true
 
-    @test
+    @Test
     def forAll04(): Bool =
         Reducible.forAll(x -> x == 1, Nel.Nel(1, 2 :: Nil)) == false
 
-    @test
+    @Test
     def forAll05(): Bool =
         Reducible.forAll(x -> x == 1, Nel.Nel(2, 1 :: Nil)) == false
 
@@ -506,14 +506,14 @@ mod TestReducible {
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
         Reducible.forEach(x -> ri := x, Nel.Nel(1, Nil));
         1 == deref ri
     }
 
-    @test
+    @Test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
         Reducible.forEach(x -> ri := x, Nel.Nel(1, 2 :: 3 :: Nil));
@@ -524,31 +524,31 @@ mod TestReducible {
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def findLeft01(): Bool =
         Reducible.findLeft(x -> x == 0, Nel.Nel(1, Nil)) == None
 
-    @test
+    @Test
     def findLeft02(): Bool =
         Reducible.findLeft(x -> x == 0, Nel.Nel(1, 2 :: Nil)) == None
 
-    @test
+    @Test
     def findLeft03(): Bool =
         Reducible.findLeft(x -> x == 0, Nel.Nel(1, 2 :: 3 :: Nil)) == None
 
-    @test
+    @Test
     def findLeft04(): Bool =
         Reducible.findLeft(x -> x == 1, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(1)
 
-    @test
+    @Test
     def findLeft05(): Bool =
         Reducible.findLeft(x -> x == 2, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(2)
 
-    @test
+    @Test
     def findLeft06(): Bool =
         Reducible.findLeft(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
-    @test
+    @Test
     def findLeft07(): Bool = region rc {
         let l = ref Nil @ rc;
         discard Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
@@ -559,31 +559,31 @@ mod TestReducible {
     // findRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def findRight01(): Bool =
         Reducible.findRight(x -> x == 0, Nel.Nel(1, Nil)) == None
 
-    @test
+    @Test
     def findRight02(): Bool =
         Reducible.findRight(x -> x == 0, Nel.Nel(1, 2 :: Nil)) == None
 
-    @test
+    @Test
     def findRight03(): Bool =
         Reducible.findRight(x -> x == 0, Nel.Nel(1, 2 :: 3 :: Nil)) == None
 
-    @test
+    @Test
     def findRight04(): Bool =
         Reducible.findRight(x -> x == 1, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(1)
 
-    @test
+    @Test
     def findRight05(): Bool =
         Reducible.findRight(x -> x == 2, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(2)
 
-    @test
+    @Test
     def findRight06(): Bool =
         Reducible.findRight(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
-    @test
+    @Test
     def findRight07(): Bool = region rc {
         let l = ref Nil @ rc;
         discard Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
@@ -594,27 +594,27 @@ mod TestReducible {
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def memberOf01(): Bool =
         Reducible.memberOf(0, Nel.Nel(1, Nil)) == false
 
-    @test
+    @Test
     def memberOf02(): Bool =
         Reducible.memberOf(0, Nel.Nel(1, 2 :: Nil)) == false
 
-    @test
+    @Test
     def memberOf03(): Bool =
         Reducible.memberOf(0, Nel.Nel(1, 2 :: 3 :: Nil)) == false
 
-    @test
+    @Test
     def memberOf04(): Bool =
         Reducible.memberOf(1, Nel.Nel(1, 2 :: 3 :: Nil))
 
-    @test
+    @Test
     def memberOf05(): Bool =
         Reducible.memberOf(2, Nel.Nel(1, 2 :: 3 :: Nil))
 
-    @test
+    @Test
     def memberOf06(): Bool =
         Reducible.memberOf(3, Nel.Nel(1, 2 :: 3 :: Nil))
 
@@ -623,23 +623,23 @@ mod TestReducible {
     // minimum                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def minimum01(): Bool =
         Reducible.minimum(Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def minimum02(): Bool =
         Reducible.minimum(Nel.Nel(1, 2 :: 3 :: Nil)) == 1
 
-    @test
+    @Test
     def minimum03(): Bool =
         Reducible.minimum(Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
 
-    @test
+    @Test
     def minimum04(): Bool =
         Reducible.minimum(Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def minimum05(): Bool =
         Reducible.minimum(Nel.Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
 
@@ -648,23 +648,23 @@ mod TestReducible {
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def minimumBy01(): Bool =
         Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def minimumBy02(): Bool =
         Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 3 :: Nil)) == 1
 
-    @test
+    @Test
     def minimumBy03(): Bool =
         Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
 
-    @test
+    @Test
     def minimumBy04(): Bool =
         Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def minimumBy05(): Bool =
         Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
 
@@ -673,23 +673,23 @@ mod TestReducible {
     // maximum                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def maximum01(): Bool =
         Reducible.maximum(Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def maximum02(): Bool =
         Reducible.maximum(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def maximum03(): Bool =
         Reducible.maximum(Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def maximum04(): Bool =
         Reducible.maximum(Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
 
-    @test
+    @Test
     def maximum05(): Bool =
         Reducible.maximum(Nel.Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
 
@@ -698,23 +698,23 @@ mod TestReducible {
     // maximumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def maximumBy01(): Bool =
         Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def maximumBy02(): Bool =
         Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def maximumBy03(): Bool =
         Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def maximumBy04(): Bool =
         Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
 
-    @test
+    @Test
     def maximumBy05(): Bool =
         Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
 
@@ -723,31 +723,31 @@ mod TestReducible {
     // dropWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def dropWhile01(): Bool =
         Reducible.dropWhile(a -> a > 3, Nel.Nel(1, Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def dropWhile02(): Bool =
         Reducible.dropWhile(a -> a > 3, Nel.Nel(4, Nil)) == Nil
 
-    @test
+    @Test
     def dropWhile03(): Bool =
         Reducible.dropWhile(a -> a > 3, Nel.Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
 
-    @test
+    @Test
     def dropWhile04(): Bool =
         Reducible.dropWhile(a -> a > 3, Nel.Nel(1, 5 :: Nil)) == 1 :: 5 :: Nil
 
-    @test
+    @Test
     def dropWhile05(): Bool =
         Reducible.dropWhile(a -> a > 3, Nel.Nel(5, 1 :: Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def dropWhile06(): Bool =
         Reducible.dropWhile(a -> a > 3, Nel.Nel(5, 8 :: Nil)) == Nil
 
-    @test
+    @Test
     def dropWhile07(): Bool =
         Nel.Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
             Reducible.dropWhile(a -> a > 3) == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
@@ -757,31 +757,31 @@ mod TestReducible {
     // takeWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def takeWhile01(): Bool =
         Reducible.takeWhile(a -> a > 3, Nel.Nel(1, Nil)) == Nil
 
-    @test
+    @Test
     def takeWhile02(): Bool =
         Reducible.takeWhile(a -> a > 3, Nel.Nel(4, Nil)) == 4 :: Nil
 
-    @test
+    @Test
     def takeWhile03(): Bool =
         Reducible.takeWhile(a -> a > 3, Nel.Nel(1, 2 :: Nil)) == Nil
 
-    @test
+    @Test
     def takeWhile04(): Bool =
         Reducible.takeWhile(a -> a > 3, Nel.Nel(1, 5 :: Nil)) == Nil
 
-    @test
+    @Test
     def takeWhile05(): Bool =
         Reducible.takeWhile(a -> a > 3, Nel.Nel(5, 1 :: Nil)) == 5 :: Nil
 
-    @test
+    @Test
     def takeWhile06(): Bool =
         Reducible.takeWhile(a -> a > 3, Nel.Nel(5, 8 :: Nil)) == 5 :: 8 :: Nil
 
-    @test
+    @Test
     def takeWhile07(): Bool =
         Nel.Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
             Reducible.takeWhile(a -> a > 3) == 4 :: 6 :: Nil
@@ -791,15 +791,15 @@ mod TestReducible {
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def intersperse01(): Bool =
         Reducible.intersperse(7, Nel.Nel(1, Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def intersperse02(): Bool =
         Reducible.intersperse(7, Nel.Nel(1, 2 :: Nil)) == 1 :: 7 :: 2 :: Nil
 
-    @test
+    @Test
     def intersperse03(): Bool =
         Reducible.intersperse(7, Nel.Nel(1, 2 :: 3 :: Nil)) == 1 :: 7 :: 2 :: 7 :: 3 :: Nil
 
@@ -808,17 +808,17 @@ mod TestReducible {
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toArray01(): Bool = region rc {
         Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc)
     }
 
-    @test
+    @Test
     def toArray02(): Bool = region rc {
         Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc)
     }
 
-    @test
+    @Test
     def toArray03(): Bool = region rc {
         Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc)
     }
@@ -827,15 +827,15 @@ mod TestReducible {
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toVector01(): Bool =
         Reducible.toVector(Nel.Nel(1, Nil)) == Vector#{1}
 
-    @test
+    @Test
     def toVector02(): Bool =
         Reducible.toVector(Nel.Nel(1, 2 :: 3 :: Nil)) == Vector#{1, 2, 3}
 
-    @test
+    @Test
     def toVector03(): Bool =
         Reducible.toVector(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Vector#{1, 1, 2, 3}
 
@@ -844,15 +844,15 @@ mod TestReducible {
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toList01(): Bool =
         Reducible.toList(Nel.Nel(1, Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def toList02(): Bool =
         Reducible.toList(Nel.Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
 
-    @test
+    @Test
     def toList03(): Bool =
         Reducible.toList(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == 1 :: 1 :: 2 :: 3 :: Nil
 
@@ -861,15 +861,15 @@ mod TestReducible {
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMap01(): Bool =
         Reducible.toMap(Nel.Nel((1, 1), Nil)) == Map#{1 => 1}
 
-    @test
+    @Test
     def toMap02(): Bool =
         Reducible.toMap(Nel.Nel(("a", 1), ("b", 2) :: ("c", 3) :: Nil)) == Map#{"a" => 1, "b" => 2, "c" => 3}
 
-    @test
+    @Test
     def toMap03(): Bool =
         Reducible.toMap(Nel.Nel((1, 2), (4, 3) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 => 2, 2 => 2, 3 => 3, 4 => 3}
 
@@ -878,19 +878,19 @@ mod TestReducible {
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toNel01(): Bool =
         Reducible.toNel(Nel.Nel(1, Nil)) == Nel.Nel(1, Nil)
 
-    @test
+    @Test
     def toNel02(): Bool =
         Reducible.toNel(Nel.Nel(1, 2 :: 3 :: Nil)) == Nel.Nel(1, 2 :: 3 :: Nil)
 
-    @test
+    @Test
     def toNel03(): Bool =
         Reducible.toNel(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Nel.Nel(1, 1 :: 2 :: 3 :: Nil)
 
-    @test
+    @Test
     def toNel04(): Bool =
         match List.range(0, 100) {
             case x :: xs => Reducible.toNel(Nel.Nel(x, xs)) |> Nel.toList == List.range(0, 100)
@@ -902,15 +902,15 @@ mod TestReducible {
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toSet01(): Bool =
         Reducible.toSet(Nel.Nel(1, Nil)) == Set#{1}
 
-    @test
+    @Test
     def toSet02(): Bool =
         Reducible.toSet(Nel.Nel(1, 2 :: 3 :: Nil)) == Set#{1, 2, 3}
 
-    @test
+    @Test
     def toSet03(): Bool =
         Reducible.toSet(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Set#{1, 2, 3}
 

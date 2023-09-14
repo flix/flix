@@ -17,58 +17,58 @@
 mod TestUpperBound {
     use UpperBound.maxValue
 
-    @test
+    @Test
     def testUnit(): Bool = maxValue() == ()
 
-    @test
+    @Test
     def testBool(): Bool = maxValue() == true
 
-    @test
+    @Test
     def testInt8(): Bool = maxValue() == 127i8
 
-    @test
+    @Test
     def testInt16(): Bool = maxValue() == 32_767i16
 
-    @test
+    @Test
     def testInt32(): Bool = maxValue() == 2_147_483_647
 
-    @test
+    @Test
     def testInt64(): Bool = maxValue() == 9_223_372_036_854_775_807i64
 
-    @test
+    @Test
     def testFloat32(): Bool = maxValue() == Float32.maxValue()
 
-    @test
+    @Test
     def testFloat64(): Bool = maxValue() == Float64.maxValue()
 
-    @test
+    @Test
     def testChar(): Bool = maxValue() == '\uffff'
 
-    @test
+    @Test
     def testTuple2(): Bool = maxValue() == ('\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple3(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple4(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple5(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple6(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple7(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple8(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple9(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
 
-    @test
+    @Test
     def testTuple10(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
 
 }

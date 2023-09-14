@@ -1,4 +1,4 @@
-@test
+@Test
 def testChoose01(): Option[Int32] \ NonDet =
     region rc {
         let rnd = Random.new();
@@ -6,7 +6,7 @@ def testChoose01(): Option[Int32] \ NonDet =
         Random.choose(rnd, arr)
     }
 
-@test
+@Test
 def testChoose02(): Option[String] \ NonDet =
     region rc {
         let rnd = Random.new();
@@ -14,7 +14,7 @@ def testChoose02(): Option[String] \ NonDet =
         Random.choose(rnd, arr)
     }
 
-@test
+@Test
 def testChoose03(): Option[Result[Int32, Int32]] \ NonDet =
     region rc {
         let rnd = Random.new();
@@ -22,37 +22,37 @@ def testChoose03(): Option[Result[Int32, Int32]] \ NonDet =
         Random.choose(rnd, arr)
     }
 
-@test
+@Test
 def testNextBool(): Bool \ NonDet =
     let r = Random.newWithSeed(0i64);
     Random.nextBool(r)
 
-@test
+@Test
 def testNextFloat32(): Float32 \ NonDet =
     let r = Random.new();
     Random.nextFloat32(r)
 
-@test
+@Test
 def testNextFloat64(): Float64 \ NonDet =
     let r = Random.new();
     Random.nextFloat64(r)
 
-@test
+@Test
 def testNextGaussian(): Float64 \ NonDet =
     let r = Random.new();
     Random.nextGaussian(r)
 
-@test
+@Test
 def testNextInt32(): Int32 \ NonDet =
     let r = Random.new();
     Random.nextInt32(r)
 
-@test
+@Test
 def testNextInt64(): Int64 \ NonDet =
     let r = Random.new();
     Random.nextInt64(r)
 
-@test
+@Test
 def testNextNatWithMax(): Int32 \ NonDet =
     let r = Random.new();
     Random.nextNatWithMax(r, 100)

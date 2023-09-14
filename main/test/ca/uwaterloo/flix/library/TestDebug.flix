@@ -5,116 +5,116 @@ mod TestDebug {
     // stringify                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def testUnitStringify01(): Bool = stringify(()) == "()"
 
 
-    @test
+    @Test
     def testBoolStringify01(): Bool = stringify(true) == "true"
 
-    @test
+    @Test
     def testBoolStringify02(): Bool = stringify(false) == "false"
 
 
-    @test
+    @Test
     def testCharStringify01(): Bool = stringify('a') == "\'a\'"
 
-    @test
+    @Test
     def testCharStringify02(): Bool = stringify('\u2194') == "\'\u2194\'"
 
-    @test
+    @Test
     def testCharStringify03(): Bool = stringify('\t') == "\'\\t\'"
 
 
-    @test
+    @Test
     def testFloat32Stringify01(): Bool = stringify(21.42f32) == "21.42f32"
 
 
-    @test
+    @Test
     def testInt8Stringify01(): Bool = stringify(42i8) == "42i8"
 
 
-    @test
+    @Test
     def testInt16Stringify01(): Bool = stringify(42i16) == "42i16"
 
 
-    @test
+    @Test
     def testInt32Stringify01(): Bool = stringify(42i32) == "42"
 
 
-    @test
+    @Test
     def testInt64Stringify01(): Bool = stringify(42i64) == "42i64"
 
 
-    @test
+    @Test
     def testBigIntStringify01(): Bool = stringify(42ii) == "42ii"
 
 
-    @test
+    @Test
     def testStringStringify01(): Bool = stringify("Hello World!") == "\"Hello World!\""
 
-    @test
+    @Test
     def testStringStringify02(): Bool = stringify("one\ttwo") == "\"one\\ttwo\""
 
-    @test
+    @Test
     def testStringStringify03(): Bool = stringify("\u0000") == "\"\u0000\""
 
-    @test
+    @Test
     def testStringStringify05(): Bool = stringify("\n\r\\\"\'\t\${\%{\u1234\u0000") ==
         "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
 
-    @test
+    @Test
     def testArrayOfUnitStringify01(): Bool \ IO = stringify(Array#{(), ()} @ Static) == "[(), ()]"
 
 
-    @test
+    @Test
     def testArrayOfBoolStringify01(): Bool \ IO = stringify(Array#{true, false} @ Static) == "[true, false]"
 
 
-    @test
+    @Test
     def testArrayOfCharStringify01(): Bool \ IO = stringify(Array#{'a', 'b', 'c'} @ Static) == "[a, b, c]"
 
 
-    @test
+    @Test
     def testArrayOfFloat32Stringify01(): Bool \ IO = stringify(Array#{21.42f32, 98.6f32} @ Static) == "[21.42, 98.6]"
 
 
-    @test
+    @Test
     def testArrayOfInt8Stringify01(): Bool \ IO = stringify(Array#{42i8, 43i8} @ Static) == "[42, 43]"
 
 
-    @test
+    @Test
     def testArrayOfInt16Stringify01(): Bool \ IO = stringify(Array#{42i16, 43i16} @ Static) == "[42, 43]"
 
 
-    @test
+    @Test
     def testArrayOfInt32Stringify01(): Bool \ IO = stringify(Array#{42i32, 43i32} @ Static) == "[42, 43]"
 
 
-    @test
+    @Test
     def testArrayOfInt64Stringify01(): Bool \ IO = stringify(Array#{42i64, 43i64} @ Static) == "[42, 43]"
 
 
-    @test
+    @Test
     def testArrayOfBigIntStringify01(): Bool \ IO = stringify(Array#{42ii, 43ii} @ Static) == "[42, 43]"
 
 
-    @test
+    @Test
     def testArrayOfStringStringify01(): Bool \ IO = stringify(Array#{"Hello", "World!"} @ Static) == "[Hello, World!]"
 
 
-    @test
+    @Test
     def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static) == "[[1, 2], [3, 4]]"
 
 
-    @test
+    @Test
     def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static, Array#{Array#{5, 6} @ Static, Array#{7, 8} @ Static} @ Static} @ Static) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
 
 
-    @test
+    @Test
     def testTupleStringify01(): Bool = stringify((true, 'a', "Hello World!")) == "(true, a, Hello World!)"
 
-    @test
+    @Test
     def testTupleStringify02(): Bool = stringify((false, 2, ())) == "(false, 2, ())"
 
 
@@ -130,7 +130,7 @@ mod TestDebug {
         case Card(Suit, Rank)
     }
 
-    @test
+    @Test
     def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card(Hearts, N(5))"
 
 
@@ -141,34 +141,34 @@ mod TestDebug {
         case Both(a, b)
     }
 
-    @test
+    @Test
     def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem"
 
-    @test
+    @Test
     def testPolyStringify02(): Bool = stringify(Poly.This(123)) == "This(123)"
 
-    @test
+    @Test
     def testPolyStringify03(): Bool = stringify(Poly.That("Hello World!")) == "That(Hello World!)"
 
-    @test
+    @Test
     def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both(123, Hello World!)"
 
-    @test
+    @Test
     def testRecordStringify01(): Bool = stringify({field = (1, 2)}) == "{field = (1, 2)}"
 
-    @test
+    @Test
     def testRecordStringify02(): Bool = {
         let s = stringify({something = (), other = true});
         s == "{something = (), other = true}" or s == "{other = true, something = ()}"
     }
 
-    @test
+    @Test
     def testRecordStringify03(): Bool = {
         let s = stringify({something = {}, other = {single = 8}});
         s == "{something = {}, other = {single = 8}}" or s == "{other = {single = 8}, something = {}}"
     }
 
-    @test
+    @Test
     def testFunctionStringify01(): Bool = {
         def f(x: Int32): Int32 = x;
         let s = stringify(f);
@@ -177,7 +177,7 @@ mod TestDebug {
 
     def toIntFunction(x: a, g: a -> Int32): Int32 = g(x)
 
-    @test
+    @Test
     def testFunctionStringify02(): Bool = {
         let s = stringify(toIntFunction(true));
         s == "Obj -> Int32"
@@ -185,49 +185,49 @@ mod TestDebug {
 
     def thunkFunction(x: a): String -> a = _ -> x
 
-    @test
+    @Test
     def testFunctionStringify03(): Bool = {
         let s = stringify((thunkFunction(42), thunkFunction('a')));
         s == "(Obj -> Int32, Obj -> Char)"
     }
 
-     @test
+     @Test
      def testNullStringify01(): Bool = {
          let s = stringify(null);
          s == "null"
      }
 
-     @test
+     @Test
      def testNullStringify02(): Bool = {
          let s = stringify(unchecked_cast(null as String));
          s == "null"
      }
 
-     @test
+     @Test
      def testNullStringify03(): Bool = {
          let s = stringify(unchecked_cast(null as BigInt));
          s == "null"
      }
 
-    @test
+    @Test
     def testNullStringify04(): Bool = {
         let s = stringify(Poly.This(unchecked_cast(null as String)));
         s == "This(null)"
     }
 
-    @test
+    @Test
     def testNullStringify05(): Bool = {
         let s = stringify((null, 42));
         s == "(null, 42)"
     }
 
-    @test
+    @Test
     def testNullStringify06(): Bool = region rc {
         let s = stringify(Array#{unchecked_cast(null as String), "42"} @ rc);
         s == "[null, 42]"
     }
 
-    @test
+    @Test
     def testNullStringify07(): Bool = {
         let s = stringify({field = unchecked_cast(null as String)});
         s == "{field = null}"

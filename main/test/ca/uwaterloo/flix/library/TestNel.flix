@@ -7,39 +7,39 @@ mod TestNel {
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toString01(): Bool = Nel.toString(Nel(1, Nil)) == "Nel(1, Nil)"
 
-    @test
+    @Test
     def toString02(): Bool = Nel.toString(Nel(1, 2 :: 3 :: 4 :: Nil)) == "Nel(1, 2 :: 3 :: 4 :: Nil)"
 
-    @test
+    @Test
     def toString03(): Bool = Nel.toString(Nel('a', 'b' :: Nil)) == "Nel(a, b :: Nil)"
 
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def singleton01(): Bool = Nel.singleton(1) == Nel(1, Nil)
 
-    @test
+    @Test
     def singleton02(): Bool = Nel.singleton(2) == Nel(2, Nil)
 
-    @test
+    @Test
     def singleton03(): Bool = Nel.singleton('a') == Nel('a', Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // cons                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def cons01(): Bool = Nel.cons(1, Nel.singleton(2)) == Nel(1, 2 :: Nil)
 
-    @test
+    @Test
     def cons02(): Bool = Nel.cons(1, Nel.cons(2, Nel.singleton(3))) == Nel(1, 2 :: 3 :: Nil)
 
-    @test
+    @Test
     def cons03(): Bool = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.singleton(4)))) == Nel(1, 2 :: 3 :: 4 :: Nil)
 
 
@@ -47,259 +47,259 @@ mod TestNel {
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def head01(): Bool = Nel.head(Nel(123, Nil)) == 123
 
-    @test
+    @Test
     def head02(): Bool = Nel.head(Nel(123, 1 :: Nil)) == 123
 
-    @test
+    @Test
     def head03(): Bool = Nel.head(Nel(123, 1 :: 2 :: Nil)) == 123
 
     /////////////////////////////////////////////////////////////////////////////
     // last                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def last01(): Bool = Nel.last(Nel(123, Nil)) == 123
 
-    @test
+    @Test
     def last02(): Bool = Nel.last(Nel(123, 1 :: Nil)) == 1
 
-    @test
+    @Test
     def last03(): Bool = Nel.last(Nel(123, 1 :: 2 :: Nil)) == 2
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def init01(): Bool = Nel.init(Nel(1, Nil)) == Nil
 
-    @test
+    @Test
     def init02(): Bool = Nel.init(Nel(1, 2 :: Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def init03(): Bool = Nel.init(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // tail                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def tail01(): Bool = Nel.tail(Nel(1, Nil)) == Nil
 
-    @test
+    @Test
     def tail02(): Bool = Nel.tail(Nel(1, 2 :: Nil)) == 2 :: Nil
 
-    @test
+    @Test
     def tail03(): Bool = Nel.tail(Nel(1, 2 :: 3 :: Nil)) == 2 :: 3 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def length01(): Bool = Nel.length(Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def length02(): Bool = Nel.length(Nel(1, 2 :: Nil)) == 2
 
-    @test
+    @Test
     def length03(): Bool = Nel.length(Nel(1, 2 :: 3 :: Nil)) == 3
 
     /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def append01(): Bool = Nel(1, Nil) `Nel.append` Nel(2, Nil) == Nel(1, 2 :: Nil)
 
-    @test
+    @Test
     def append02(): Bool = Nel(1, 2 :: Nil) `Nel.append` Nel(3, Nil) == Nel(1, 2 :: 3 :: Nil)
 
-    @test
+    @Test
     def append03(): Bool = Nel(1, Nil) `Nel.append` Nel(2, 3 :: Nil) == Nel(1, 2 :: 3 :: Nil)
 
-    @test
+    @Test
     def append04(): Bool = Nel(1, 2 :: Nil) `Nel.append` Nel(3, 4 :: Nil) == Nel(1, 2 :: 3 :: 4 :: Nil)
 
-    @test
+    @Test
     def append05(): Bool = Nel(1, 2 :: 3 :: Nil) `Nel.append` Nel(4, 5 :: 6 :: Nil) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def memberOf01(): Bool = Nel.memberOf(0, Nel(1, Nil)) == false
 
-    @test
+    @Test
     def memberOf02(): Bool = Nel.memberOf(0, Nel(1, 2 :: Nil)) == false
 
-    @test
+    @Test
     def memberOf03(): Bool = Nel.memberOf(0, Nel(1, 2 :: 3 :: Nil)) == false
 
-    @test
+    @Test
     def memberOf04(): Bool = Nel.memberOf(1, Nel(1, 2 :: 3 :: Nil))
 
-    @test
+    @Test
     def memberOf05(): Bool = Nel.memberOf(2, Nel(1, 2 :: 3 :: Nil))
 
-    @test
+    @Test
     def memberOf06(): Bool = Nel.memberOf(3, Nel(1, 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def findLeft01(): Bool = Nel.findLeft(x -> x == 0, Nel(1, Nil)) == None
 
-    @test
+    @Test
     def findLeft02(): Bool = Nel.findLeft(x -> x == 0, Nel(1, 2 :: Nil)) == None
 
-    @test
+    @Test
     def findLeft03(): Bool = Nel.findLeft(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
 
-    @test
+    @Test
     def findLeft04(): Bool = Nel.findLeft(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
 
-    @test
+    @Test
     def findLeft05(): Bool = Nel.findLeft(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
 
-    @test
+    @Test
     def findLeft06(): Bool = Nel.findLeft(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def findRight01(): Bool = Nel.findRight(x -> x == 0, Nel(1, Nil)) == None
 
-    @test
+    @Test
     def findRight02(): Bool = Nel.findRight(x -> x == 0, Nel(1, 2 :: Nil)) == None
 
-    @test
+    @Test
     def findRight03(): Bool = Nel.findRight(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
 
-    @test
+    @Test
     def findRight04(): Bool = Nel.findRight(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
 
-    @test
+    @Test
     def findRight05(): Bool = Nel.findRight(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
 
-    @test
+    @Test
     def findRight06(): Bool = Nel.findRight(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def map01(): Bool = Nel.map(x -> x + 1, Nel(1, Nil)) == Nel(2, Nil)
 
-    @test
+    @Test
     def map02(): Bool = Nel.map(x -> x + 1, Nel(1, 2 :: Nil)) == Nel(2, 3 :: Nil)
 
-    @test
+    @Test
     def map03(): Bool = Nel.map(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithIndex                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def mapWithIndex01(): Bool = Nel.mapWithIndex((i, _) -> i, Nel(21, Nil)) == Nel(0, Nil)
 
-    @test
+    @Test
     def mapWithIndex02(): Bool = Nel.mapWithIndex((i, _) -> i, Nel(21, 42 :: Nil)) == Nel(0, 1 :: Nil)
 
-    @test
+    @Test
     def mapWithIndex03(): Bool = Nel.mapWithIndex((i, _) -> i, Nel(21, 42 :: 84 :: Nil)) == Nel(0, 1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def ap01(): Bool = Nel.ap(Nel((x -> x+1), Nil), Nel(5, Nil)) == Nel(6, Nil)
 
-    @test
+    @Test
     def ap02(): Bool = Nel.ap(Nel((x -> x+1), Nil), Nel(0, 5 :: Nil)) == Nel(1, 6 :: Nil)
 
-    @test
+    @Test
     def ap03(): Bool = Nel.ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: Nil)) == Nel(1, 5 :: 0 :: 8 :: Nil)
 
-    @test
+    @Test
     def ap04(): Bool = Nel.ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: 8 :: Nil)) == Nel(1, 5 :: 9 :: 0 :: 8 :: 16 :: Nil)
 
-    @test
+    @Test
     def ap05(): Bool = Nel.ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: 8 :: 16 :: Nil)) == Nel(1, 5 :: 9 :: 17 :: 0 :: 8 :: 16 :: 32 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def flatMap01(): Bool = Nel.flatMap(x -> Nel(x + 1, Nil), Nel(1, Nil)) == Nel(2, Nil)
 
-    @test
+    @Test
     def flatMap02(): Bool = Nel.flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: Nil)) == Nel(2, 3 :: Nil)
 
-    @test
+    @Test
     def flatMap03(): Bool = Nel.flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
 
-    @test
+    @Test
     def flatMap04(): Bool = Nel.flatMap(x -> Nel(x, (x + 1) :: Nil), Nel(1, Nil)) == Nel(1, 2 :: Nil)
 
-    @test
+    @Test
     def flatMap05(): Bool = Nel.flatMap(x -> Nel(x, (x + 1) :: Nil), Nel(1, 4 :: Nil)) == Nel(1, 2 :: 4 :: 5 :: Nil)
 
-    @test
+    @Test
     def flatMap06(): Bool = Nel.flatMap(x -> Nel(x, (x + 1) :: Nil), Nel(1, 3 :: 5 :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reverse01(): Bool = Nel.reverse(Nel(1, Nil)) == Nel(1, Nil)
 
-    @test
+    @Test
     def reverse02(): Bool = Nel.reverse(Nel(1, 2 :: Nil)) == Nel(2, 1 :: Nil)
 
-    @test
+    @Test
     def reverse03(): Bool = Nel.reverse(Nel(1, 2 :: 3 :: Nil)) == Nel(3, 2 :: 1 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def replace01(): Bool = Nel.replace(from = 1, to = 42, Nel(1, Nil)) == Nel(42, Nil)
 
-    @test
+    @Test
     def replace02(): Bool = Nel.replace(from = 7, to = 42, Nel(1, Nil)) == Nel(1, Nil)
 
-    @test
+    @Test
     def replace03(): Bool = Nel.replace(from = 2, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
 
-    @test
+    @Test
     def replace04(): Bool = Nel.replace(from = 7, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def permutations01(): Bool = Nel.permutations(Nel(1, Nil)) == Nel(1 :: Nil, Nil)
 
-    @test
+    @Test
     def permutations02(): Bool = Nel.permutations(Nel(1, 2 :: Nil)) == Nel(1 :: 2 :: Nil, (2 :: 1 :: Nil) :: Nil)
 
-    @test
+    @Test
     def permutations03(): Bool = Nel.permutations(Nel(1, 2 :: 3 :: Nil)) == Nel(1 :: 2 :: 3 :: Nil,
                                                                            (1 :: 3 :: 2 :: Nil) ::
                                                                            (2 :: 1 :: 3 :: Nil) ::
@@ -311,13 +311,13 @@ mod TestNel {
     // subsequences                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def subsequences01(): Bool = Nel.subsequences(Nel(1, Nil)) == Nel(1 :: Nil, (Nil) :: Nil)
 
-    @test
+    @Test
     def subsequences02(): Bool = Nel.subsequences(Nel(1, 2 :: Nil)) == Nel(1 :: 2 :: Nil, (1 :: Nil) :: (2 :: Nil) :: (Nil) :: Nil)
 
-    @test
+    @Test
     def subsequences03(): Bool = Nel.subsequences(Nel(1, 2 :: 3 :: Nil)) == Nel(1 :: 2 :: 3 :: Nil,
                                                                            (1 :: 2 :: Nil) ::
                                                                            (1 :: 3 :: Nil) ::
@@ -331,87 +331,87 @@ mod TestNel {
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def intersperse01(): Bool = Nel.intersperse(7, Nel(1, Nil)) == Nel(1, Nil)
 
-    @test
+    @Test
     def intersperse02(): Bool = Nel.intersperse(7, Nel(1, 2 :: Nil)) == Nel(1, 7 :: 2 :: Nil)
 
-    @test
+    @Test
     def intersperse03(): Bool = Nel.intersperse(7, Nel(1, 2 :: 3 :: Nil)) == Nel(1, 7 :: 2 :: 7 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // fold                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def fold01(): Bool = Nel.fold(Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def fold02(): Bool = Nel.fold(Nel((), Nil)) == ()
 
-    @test
+    @Test
     def fold03(): Bool = Nel.fold(Nel("a", "b" :: "c" :: Nil)) == "abc"
 
-    @test
+    @Test
     def fold04(): Bool = Nel.fold(Nel(("a", ()), ("b", ()) :: ("c", ()) :: Nil)) == ("abc", ())
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldLeft01(): Bool = Nel.foldLeft((acc, x) -> acc - x, 0, Nel(1, Nil)) == -1
 
-    @test
+    @Test
     def foldLeft02(): Bool = Nel.foldLeft((acc, x) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
 
-    @test
+    @Test
     def foldLeft03(): Bool = Nel.foldLeft((acc, x) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRight01(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, Nil)) == -1
 
-    @test
+    @Test
     def foldRight02(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
 
-    @test
+    @Test
     def foldRight03(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRightWithCont01(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, Nil)) == -1
 
-    @test
+    @Test
     def foldRightWithCont02(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: Nil)) == -3
 
-    @test
+    @Test
     def foldRightWithCont03(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldMap01(): Bool =
         Nel.foldMap(x -> 2 * x, Nel(1, 2 :: Nil)) == 6
 
-    @test
+    @Test
     def foldMap02(): Bool =
         Nel.foldMap(x -> if (x == "a") "b" else x, Nel("a", Nil)) == "b"
 
-    @test
+    @Test
     def foldMap03(): Bool =
         Nel.foldMap(x -> if (x == "c") "b" else x, Nel("a", "b" :: "c" :: Nil)) == "abb"
 
-    @test
+    @Test
     def foldMap04(): Bool =
         Nel.foldMap(Int32.toString, Nel(1, 2 :: 3 :: Nil)) == "123"
 
@@ -419,55 +419,55 @@ mod TestNel {
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduce01(): Bool = Nel.reduce(Nel("a", Nil)) == "a"
 
-    @test
+    @Test
     def reduce02(): Bool = Nel.reduce(Nel((), Nil)) == ()
 
-    @test
+    @Test
     def reduce03(): Bool = Nel.reduce(Nel("a", "b" :: "c" :: Nil)) == "abc"
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduceLeft01(): Bool = Nel.reduceLeft((acc, x) -> acc - x, Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def reduceLeft02(): Bool = Nel.reduceLeft((acc, x) -> acc - x, Nel(1, 2 :: Nil)) == -1
 
-    @test
+    @Test
     def reduceLeft03(): Bool = Nel.reduceLeft((acc, x) -> acc - x, Nel(1, 2 :: 3 :: Nil)) == -4
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduceRight01(): Bool = Nel.reduceRight((x, acc) -> acc - x, Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def reduceRight02(): Bool = Nel.reduceRight((x, acc) -> acc - x, Nel(1, 2 :: Nil)) == 1
 
-    @test
+    @Test
     def reduceRight03(): Bool = Nel.reduceRight((x, acc) -> acc - x, Nel(1, 2 :: 3 :: Nil)) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def count01(): Bool = Nel.count(x -> x == 1, Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def count02(): Bool = Nel.count(x -> x == 2, Nel(1, Nil)) == 0
 
-    @test
+    @Test
     def count03(): Bool = Nel.count(x -> x == 2, Nel(1, 2 :: 1 :: 2 :: Nil)) == 2
 
-    @test
+    @Test
     def count04(): Bool = Nel.count(x -> x == 2, Nel(2, 2 :: 1 :: 2 :: Nil)) == 3
 
 
@@ -475,27 +475,27 @@ mod TestNel {
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sum01(): Bool =
         Nel.sum(Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def sum02(): Bool =
         Nel.sum(Nel(1, 2 :: 3 :: Nil)) == 6
 
-    @test
+    @Test
     def sum03(): Bool =
         Nel.sum(Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
 
-    @test
+    @Test
     def sum04(): Bool =
         Nel.sum(Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
 
-    @test
+    @Test
     def sum05(): Bool =
         Nel.sum(Nel(10, -10 :: Nil)) == 0
 
-    @test
+    @Test
     def sum06(): Bool = match List.range(1, 101) {
         case x :: xs => Nel.sum(Nel(x, xs)) == 5050
         case _       => unreachable!()
@@ -506,23 +506,23 @@ mod TestNel {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumWith01(): Bool =
         Nel.sumWith(x -> x + 1, Nel(1, Nil)) == 2
 
-    @test
+    @Test
     def sumWith02(): Bool =
         Nel.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 9
 
-    @test
+    @Test
     def sumWith03(): Bool =
         Nel.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == 7
 
-    @test
+    @Test
     def sumWith04(): Bool =
         Nel.sumWith(x -> x + 1, Nel(-1, -2 :: -3 :: -4 :: Nil)) == -6
 
-    @test
+    @Test
     def sumWith05(): Bool =
         Nel.sumWith(x -> x + 1, Nel(10, -10 :: Nil)) == 2
 
@@ -531,134 +531,134 @@ mod TestNel {
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def flatten01(): Bool = Nel.flatten(Nel(Nel(1, Nil), Nil)) == Nel(1, Nil)
 
-    @test
+    @Test
     def flatten02(): Bool = Nel.flatten(Nel(Nel(1, Nil), Nel(2, Nil) :: Nil)) == Nel(1, 2 :: Nil)
 
-    @test
+    @Test
     def flatten03(): Bool = Nel.flatten(Nel(Nel(1, Nil), Nel(2, Nil) :: Nel(3, Nil) :: Nil)) == Nel(1, 2 :: 3 :: Nil)
 
-    @test
+    @Test
     def flatten04(): Bool = Nel.flatten(Nel(Nel(1, Nil), Nel(2, 3 :: Nil) :: Nel(4, 5 :: Nil) :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)
 
-    @test
+    @Test
     def flatten05(): Bool = Nel.flatten(Nel(Nel(1, 2 :: 3 :: Nil), Nel(4, 5 :: Nil) :: Nel(6, 7 :: Nil) :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def exists01(): Bool = Nel.exists(x -> x == 1, Nel(1, Nil)) == true
 
-    @test
+    @Test
     def exists02(): Bool = Nel.exists(x -> x == 2, Nel(1, Nil)) == false
 
-    @test
+    @Test
     def exists03(): Bool = Nel.exists(x -> x == 1, Nel(1, 2 :: Nil)) == true
 
-    @test
+    @Test
     def exists04(): Bool = Nel.exists(x -> x == 2, Nel(1, 2 :: Nil)) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forAll01(): Bool = Nel.forAll(x -> x == 1, Nel(1, Nil)) == true
 
-    @test
+    @Test
     def forAll02(): Bool = Nel.forAll(x -> x == 2, Nel(1, Nil)) == false
 
-    @test
+    @Test
     def forAll03(): Bool = Nel.forAll(x -> x == 1, Nel(1, 1 :: Nil)) == true
 
-    @test
+    @Test
     def forAll04(): Bool = Nel.forAll(x -> x == 1, Nel(1, 2 :: Nil)) == false
 
-    @test
+    @Test
     def forAll05(): Bool = Nel.forAll(x -> x == 1, Nel(2, 1 :: Nil)) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filter01(): Bool = Nel.filter(x -> x > 0, Nel(1, Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def filter02(): Bool = Nel.filter(x -> x > 1, Nel(1, Nil)) == Nil
 
-    @test
+    @Test
     def filter03(): Bool = Nel.filter(x -> x > 0, Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
 
-    @test
+    @Test
     def filter04(): Bool = Nel.filter(x -> x > 1, Nel(1, 2 :: Nil)) == 2 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zip01(): Bool = Nel.zip(Nel(1, Nil), Nel(1, Nil)) == Nel((1, 1), Nil)
 
-    @test
+    @Test
     def zip02(): Bool = Nel.zip(Nel(1, 2 :: Nil), Nel(1, Nil)) == Nel((1, 1), Nil)
 
-    @test
+    @Test
     def zip03(): Bool = Nel.zip(Nel(1, Nil), Nel(1, 2 :: Nil)) == Nel((1, 1), Nil)
 
-    @test
+    @Test
     def zip04(): Bool = Nel.zip(Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel((1, 1), (2, 2) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWith01(): Bool = Nel.zipWith((x, y) -> x + y, Nel(1, Nil), Nel(1, Nil)) == Nel(2, Nil)
 
-    @test
+    @Test
     def zipWith02(): Bool = Nel.zipWith((x, y) -> x + y, Nel(1, 2 :: Nil), Nel(1, Nil)) == Nel(2, Nil)
 
-    @test
+    @Test
     def zipWith03(): Bool = Nel.zipWith((x, y) -> x + y, Nel(1, Nil), Nel(1, 2 :: Nil)) == Nel(2, Nil)
 
-    @test
+    @Test
     def zipWith04(): Bool = Nel.zipWith((x, y) -> x + y, Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel(2, 4 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // unzip                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unzip01(): Bool = Nel.unzip(Nel((1, 1), Nil)) == (Nel(1, Nil), Nel(1, Nil))
 
-    @test
+    @Test
     def unzip02(): Bool = Nel.unzip(Nel((1, 1), (2, 2) :: Nil)) == (Nel(1, 2 :: Nil), Nel(1, 2 :: Nil))
 
-    @test
+    @Test
     def unzip03(): Bool = Nel.unzip(Nel((1, 1), (2, 2) :: (3, 3) :: Nil)) == (Nel(1, 2 :: 3 :: Nil), Nel(1, 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWithIndex                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithIndex01(): Bool = Nel.zipWithIndex(Nel(1, Nil)) == Nel((0, 1), Nil)
 
-    @test
+    @Test
     def zipWithIndex02(): Bool = Nel.zipWithIndex(Nel(1, 2 :: Nil)) == Nel((0, 1), (1, 2) :: Nil)
 
-    @test
+    @Test
     def zipWithIndex03(): Bool = Nel.zipWithIndex(Nel(2, 1 :: Nil)) == Nel((0, 2), (1, 1) :: Nil)
 
-    @test
+    @Test
     def zipWithIndex04(): Bool = Nel.zipWithIndex(Nel(1, 2 :: 3 :: Nil)) == Nel((0, 1), (1, 2) :: (2, 3) :: Nil)
 
-    @test
+    @Test
     def zipWithIndex05(): Bool =
         Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((0, 1), (1, 2) :: (2, 3) :: (3, 4) :: (4, 5) :: Nil)
 
@@ -666,29 +666,29 @@ mod TestNel {
     // zipWithA                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithA01(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, Nil), Nel(1, Nil)) == Identity.Identity(Nel(2, Nil))
 
-    @test
+    @Test
     def zipWithA02(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, 2 :: Nil), Nel(1, Nil)) == Identity.Identity(Nel(2, Nil))
 
-    @test
+    @Test
     def zipWithA03(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, Nil), Nel(1, 2 :: Nil)) == Identity.Identity(Nel(2, Nil))
 
-    @test
+    @Test
     def zipWithA04(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Identity.Identity(Nel(2, 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toList01(): Bool = Nel.toList(Nel(1, Nil)) == 1 :: Nil
 
-    @test
+    @Test
     def toList02(): Bool = Nel.toList(Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
 
-    @test
+    @Test
     def toList03(): Bool = Nel.toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
 
 
@@ -696,25 +696,25 @@ mod TestNel {
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toArray01(): Bool = region rc {
         let a = Nel.toArray(rc, Nel.singleton(1));
         Array.sameElements(a, Array#{1} @ rc)
     }
 
-    @test
+    @Test
     def toArray02(): Bool = region rc {
         let a = Nel.toArray(rc, Nel(1, List#{2}));
         Array.sameElements(a, Array#{1, 2} @ rc)
     }
 
-    @test
+    @Test
     def toArray03(): Bool = region rc {
         let a = Nel.toArray(rc, Nel(1, List#{2, 3}));
         Array.sameElements(a, Array#{1, 2, 3} @ rc)
     }
 
-    @test
+    @Test
     def toArray04(): Bool = region rc {
         let a = Nel.toArray(rc, Nel(3, List#{2, 3}));
         Array.sameElements(a, Array#{3, 2, 3} @ rc)
@@ -724,22 +724,22 @@ mod TestNel {
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toVector01(): Bool =
         let l = Nel(1, List#{});
         Nel.toVector(l) == Vector#{1}
 
-    @test
+    @Test
     def toVector02(): Bool =
         let l = Nel(1, List#{2});
         Nel.toVector(l) == Vector#{1, 2}
 
-    @test
+    @Test
     def toVector03(): Bool =
         let l = Nel(1, List#{2, 3});
         Nel.toVector(l) == Vector#{1, 2, 3}
 
-    @test
+    @Test
     def toVector04(): Bool =
         let l = Nel(3, List#{2, 3});
         Nel.toVector(l) == Vector#{3, 2, 3}
@@ -748,7 +748,7 @@ mod TestNel {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMutDeque01(): Bool = region rc {
         let l = Nel(1, 2 :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
@@ -760,7 +760,7 @@ mod TestNel {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque02(): Bool = region rc {
         let l = Nel(3, 1 :: 2 :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
@@ -773,7 +773,7 @@ mod TestNel {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque03(): Bool = region rc {
         let l = Nel('a', 'b' :: 'c' :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
@@ -790,14 +790,14 @@ mod TestNel {
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
         Nel.forEach(x -> ri := x, Nel.singleton(1));
         1 == deref ri
     }
 
-    @test
+    @Test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
         Nel.forEach(x -> ri := x, Nel(1, 2 :: 3 :: Nil));
@@ -808,14 +808,14 @@ mod TestNel {
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
         Nel.forEachWithIndex((i, _) -> ri := i, Nel.singleton(1));
         0 == deref ri
     }
 
-    @test
+    @Test
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
         Nel.forEachWithIndex((i, _) -> ri := i, Nel(1, List#{2, 3}));
@@ -826,57 +826,57 @@ mod TestNel {
     // hash                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def hash01(): Bool = hash(Nel(1, Nil)) == hash(Nel(1, Nil))
 
-    @test
+    @Test
     def hash02(): Bool = hash(Nel(1, 2 :: 3 :: Nil)) == hash(Nel(1, 2 :: 3 :: Nil))
 
-    @test
+    @Test
     def hash03(): Bool = hash(Nel(1, 3 :: 2 :: Nil)) != hash(Nel(1, 2 :: 3 :: Nil))
 
-    @test
+    @Test
     def hash04(): Bool = hash(Nel(1, Nil)) != hash(Nel(2, Nil))
 
-    @test
+    @Test
     def hash05(): Bool = hash(Nel("c", "b" :: "a" :: Nil)) != hash(Nel("c", "a" :: "b" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def minimumBy01(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def minimumBy02(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(1, 2 :: 3 :: Nil)) == 1
 
-    @test
+    @Test
     def minimumBy03(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
 
-    @test
+    @Test
     def minimumBy04(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def minimumBy05(): Bool = Nel.minimumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def maximumBy01(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(1, Nil)) == 1
 
-    @test
+    @Test
     def maximumBy02(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(1, 2 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def maximumBy03(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
 
-    @test
+    @Test
     def maximumBy04(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
 
-    @test
+    @Test
     def maximumBy05(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
 
     /////////////////////////////////////////////////////////////////////////////
@@ -890,51 +890,51 @@ mod TestNel {
         else if (x == y) Comparison.EqualTo
         else Comparison.GreaterThan
 
-    @test
+    @Test
     def sortWith02(): Bool =
         Nel.sortWith(cmp, Nel(0, Nil)) == Nel(0, Nil)
 
-    @test
+    @Test
     def sortWith03(): Bool =
         Nel.sortWith(cmp, Nel(0, 1 :: Nil)) == Nel(0, 1 :: Nil)
 
-    @test
+    @Test
     def sortWith04(): Bool =
         Nel.sortWith(cmp, Nel(1, 0 :: Nil)) == Nel(0, 1 :: Nil)
 
-    @test
+    @Test
     def sortWith05(): Bool =
         Nel.sortWith(cmp, Nel(1, 1 :: Nil)) == Nel(1, 1 :: Nil)
 
-    @test
+    @Test
     def sortWith06(): Bool =
         Nel.sortWith(cmp, Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
-    @test
+    @Test
     def sortWith07(): Bool =
         Nel.sortWith(cmp, Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
-    @test
+    @Test
     def sortWith08(): Bool =
         Nel.sortWith(cmp, Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
-    @test
+    @Test
     def sortWith09(): Bool =
         Nel.sortWith(cmp, Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 2 :: 3 :: 4 :: Nil)
 
-    @test
+    @Test
     def sortWith10(): Bool =
         Nel.sortWith(flip(cmp), Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
-    @test
+    @Test
     def sortWith11(): Bool =
         Nel.sortWith(flip(cmp), Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
-    @test
+    @Test
     def sortWith12(): Bool =
         Nel.sortWith(flip(cmp), Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
-    @test
+    @Test
     def sortWith13(): Bool =
         Nel.sortWith(flip(cmp), Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(4, 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
 
@@ -945,28 +945,28 @@ mod TestNel {
     def testSortVsSortWith(xs: Nel[Int32]) : Bool =
         Nel.sort(xs) == Nel.sortWith(cmp, xs)
 
-    @test
+    @Test
     def sort02(): Bool = testSortVsSortWith(Nel(0, Nil))
 
-    @test
+    @Test
     def sort03(): Bool = testSortVsSortWith(Nel(0, 1 :: Nil))
 
-    @test
+    @Test
     def sort04(): Bool = testSortVsSortWith(Nel(1, 0 :: Nil))
 
-    @test
+    @Test
     def sort05(): Bool = testSortVsSortWith(Nel(1, 1 :: Nil))
 
-    @test
+    @Test
     def sort06(): Bool = testSortVsSortWith(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
-    @test
+    @Test
     def sort07(): Bool = testSortVsSortWith(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
-    @test
+    @Test
     def sort08(): Bool = testSortVsSortWith(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-    @test
+    @Test
     def sort09(): Bool = testSortVsSortWith(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -978,28 +978,28 @@ mod TestNel {
         (Nel.sortBy(x -> 4 * x + 7, a) == Nel.sort(a)) and
         (Nel.sortBy(x -> -x, a) == Nel.sortWith(flip(cmp),a))
 
-    @test
+    @Test
     def sortBy02(): Bool = testSortByVsSort(Nel(0, Nil))
 
-    @test
+    @Test
     def sortBy03(): Bool = testSortByVsSort(Nel(0, 1 :: Nil))
 
-    @test
+    @Test
     def sortBy04(): Bool = testSortByVsSort(Nel(1, 0 :: Nil))
 
-    @test
+    @Test
     def sortBy05(): Bool = testSortByVsSort(Nel(1, 1 :: Nil))
 
-    @test
+    @Test
     def sortBy06(): Bool = testSortByVsSort(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
-    @test
+    @Test
     def sortBy07(): Bool = testSortByVsSort(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
-    @test
+    @Test
     def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-    @test
+    @Test
     def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
 
@@ -1007,12 +1007,12 @@ mod TestNel {
     // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def iterator01(): Bool = region rc {
         Nel(1, 2 :: 3 :: Nil) |> Nel.iterator(rc) |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
     }
 
-    @test
+    @Test
     def iterator02(): Bool = region rc {
         Nel(-100, List.range(-99, 100)) |> Nel.iterator(rc) |> Iterator.toList == List.range(-100, 100)
     }
@@ -1021,12 +1021,12 @@ mod TestNel {
     // enumerator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def enumerator01(): Bool = region rc {
         Nel(1, 2 :: 3 :: Nil) |> Nel.enumerator(rc) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
-    @test
+    @Test
     def enumerator02(): Bool = region rc {
         Nel(-100, List.range(-99, 100)) |> Nel.enumerator(rc) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
     }
@@ -1035,17 +1035,17 @@ mod TestNel {
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sequence01(): Bool =
         let l = Nel.singleton(Identity.Identity(1));
         Nel.sequence(l) == Identity.Identity(Nel.singleton(1))
 
-    @test
+    @Test
     def sequence02(): Bool =
         let l = Nel.cons(Identity.Identity(1), Nel.singleton(Identity.Identity(2)));
         Nel.sequence(l) == Identity.Identity(Nel.cons(1, Nel.singleton(2)))
 
-    @test
+    @Test
     def sequence03(): Bool =
         let l = Nel.cons(Identity.Identity(1), Nel.cons(Identity.Identity(2), Nel.singleton(Identity.Identity(3))));
         Nel.sequence(l) == Identity.Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3))))
@@ -1054,7 +1054,7 @@ mod TestNel {
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def traverse01(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.singleton(1);
@@ -1062,7 +1062,7 @@ mod TestNel {
         ans == Identity.Identity(Nel.singleton(1)) and deref st == 1
     }
 
-    @test
+    @Test
     def traverse02(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.singleton(2));
@@ -1070,7 +1070,7 @@ mod TestNel {
         ans == Identity.Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
     }
 
-    @test
+    @Test
     def traverse03(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
@@ -1082,19 +1082,19 @@ mod TestNel {
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMapWith01(): Bool =
         Nel.toMapWith(x -> 0 * x, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 0, 3 => 0, 6 => 0, 7 => 0}
 
-    @test
+    @Test
     def toMapWith02(): Bool =
         Nel.toMapWith(x -> 2 * x, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 2, 3 => 6, 6 => 12, 7 => 14}
 
-    @test
+    @Test
     def toMapWith03(): Bool =
         Nel.toMapWith(x -> x + 10, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
 
-    @test
+    @Test
     def toMapWith04(): Bool =
         Nel.toMapWith(x -> x + 10, Nel(7, 3 :: 6 :: 1 :: Nil)) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
 
@@ -1103,15 +1103,15 @@ mod TestNel {
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def join01(): Bool =
         Nel.join(",", Nel(1, Nil)) == "1"
 
-    @test
+    @Test
     def join02(): Bool =
         Nel.join(",", Nel(1, 2 :: 3 :: Nil)) == "1,2,3"
 
-    @test
+    @Test
     def join03(): Bool =
         Nel.join(",", Nel("1", "2" :: "3" :: Nil)) == "1,2,3"
 
@@ -1120,15 +1120,15 @@ mod TestNel {
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def joinWith01(): Bool =
         Nel.joinWith(x -> "${x + 1}", ",", Nel(1, Nil)) == "2"
 
-    @test
+    @Test
     def joinWith02(): Bool =
         Nel.joinWith(x -> "${x + 1}", ",", Nel(1, 2 :: 3 :: Nil)) == "2,3,4"
 
-    @test
+    @Test
     def joinWith03(): Bool =
         Nel.joinWith(x -> x + x, ",", Nel("1", "2" :: "3" :: Nil)) == "11,22,33"
 
@@ -1136,7 +1136,7 @@ mod TestNel {
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def shuffle01(): Bool \ NonDet =
         let l = Nel.singleton(1);
         match Nel.shuffle(Random.new(), l) {
@@ -1144,7 +1144,7 @@ mod TestNel {
             case _        => false
         }
 
-    @test
+    @Test
     def shuffle02(): Bool \ NonDet =
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
         match Nel.shuffle(Random.new(), l) {
@@ -1152,7 +1152,7 @@ mod TestNel {
             case _        => false
         }
 
-    @test
+    @Test
     def shuffle03(): Bool \ NonDet =
         let l = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.cons(4, Nel.cons(5, Nel.cons(6, Nel.cons(7, Nel.singleton(8))))))));
         match Nel.shuffle(Random.new(), l) {

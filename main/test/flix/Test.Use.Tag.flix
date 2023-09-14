@@ -1,6 +1,6 @@
 mod Test.Use.Tag {
 
-    @test
+    @Test
     def testUseEnum01(): Bool =
         use Test.Use.Tag.A.Color.Red;
         match Red {
@@ -8,7 +8,7 @@ mod Test.Use.Tag {
             case _   => false
         }
 
-    @test
+    @Test
     def testUseEnum02(): Bool =
         use Test.Use.Tag.A.Color.Blu;
         match Blu {
@@ -16,7 +16,7 @@ mod Test.Use.Tag {
             case _   => false
         }
 
-    @test
+    @Test
     def testUseEnum03(): Bool =
         use Test.Use.Tag.A.Color.Red;
         use Test.Use.Tag.A.Color.Blu;
@@ -25,7 +25,7 @@ mod Test.Use.Tag {
             case Blu => true
         }
 
-    @test
+    @Test
     def testUseEnum04(): Bool =
         use Test.Use.Tag.A.Color.{Red, Blu};
         match Blu {
@@ -33,7 +33,7 @@ mod Test.Use.Tag {
             case Blu => true
         }
 
-    @test
+    @Test
     def testUseEnum05(): Bool =
         use Test.Use.Tag.A.Color.{Red => R};
         match R {
@@ -41,7 +41,7 @@ mod Test.Use.Tag {
             case _ => false
         }
 
-    @test
+    @Test
     def testUseEnum06(): Bool =
         use Test.Use.Tag.A.Color.{Blu => B};
         match B {
@@ -49,7 +49,7 @@ mod Test.Use.Tag {
             case _ => false
         }
 
-    @test
+    @Test
     def testUseEnum07(): Bool =
         use Test.Use.Tag.A.Color.{Red => R};
         use Test.Use.Tag.A.Color.{Blu => B};
@@ -58,7 +58,7 @@ mod Test.Use.Tag {
             case R => true
         }
 
-    @test
+    @Test
     def testUseEnum08(): Bool =
         use Test.Use.Tag.A.Color.{Red => R, Blu => B};
         match R {
@@ -66,7 +66,7 @@ mod Test.Use.Tag {
             case R => true
         }
 
-    @test
+    @Test
     def testUseEnum09(): Bool =
         use Test.Use.Tag.A.Color;
         match Color.Red {
@@ -74,7 +74,7 @@ mod Test.Use.Tag {
             case _         => true
         }
 
-    @test
+    @Test
     def testUseEnum10(): Bool =
         use Test.Use.Tag.A.Color;
         match Color.Blu {
@@ -82,7 +82,7 @@ mod Test.Use.Tag {
             case _         => true
         }
 
-    @test
+    @Test
     def testUseEnum11(): Bool =
         use Test.Use.Tag.A.Color;
         match Color.Red {
@@ -90,7 +90,7 @@ mod Test.Use.Tag {
             case Color.Red => true
         }
 
-    @test
+    @Test
     def testUseEnum12(): Bool =
         use Test.Use.Tag.A.B.Currency.USD;
         match USD {
@@ -98,7 +98,7 @@ mod Test.Use.Tag {
             case _   => false
         }
 
-    @test
+    @Test
     def testUseEnum13(): Bool =
         use Test.Use.Tag.A.B.Currency.CAD;
         match CAD {
@@ -106,7 +106,7 @@ mod Test.Use.Tag {
             case _   => false
         }
 
-    @test
+    @Test
     def testUseEnum14(): Bool =
         use Test.Use.Tag.A.B.Currency.USD;
         use Test.Use.Tag.A.B.Currency.CAD;
@@ -115,7 +115,7 @@ mod Test.Use.Tag {
             case CAD => false
         }
 
-    @test
+    @Test
     def testUseEnum15(): Bool =
         use Test.Use.Tag.A.B.Currency.{USD, CAD};
         match USD {
@@ -123,7 +123,7 @@ mod Test.Use.Tag {
             case CAD => false
         }
 
-    @test
+    @Test
     def testUseEnum16(): Bool =
         use Test.Use.Tag.A.B.Currency;
         match Currency.USD {
@@ -131,7 +131,7 @@ mod Test.Use.Tag {
             case _            => false
         }
 
-    @test
+    @Test
     def testUseEnum17(): Bool =
         use Test.Use.Tag.A.B.Currency;
         match Currency.CAD {
@@ -139,7 +139,7 @@ mod Test.Use.Tag {
             case _            => false
         }
 
-    @test
+    @Test
     def testUseEnum18(): Bool =
         use Test.Use.Tag.A.B.Currency;
         match Currency.USD {
@@ -162,7 +162,7 @@ mod Test.Use.Tag {
     mod C {
         use Test.Use.Tag.A.B.Currency
 
-        @test
+        @Test
         def testUseEnum19(): Bool =
             match Currency.USD {
                 case Currency.CAD => false

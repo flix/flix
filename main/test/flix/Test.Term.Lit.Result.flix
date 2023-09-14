@@ -1,6 +1,6 @@
 mod Test.Term.Lit.Result {
 
-    @test
+    @Test
     def testLitResult01(): Bool =
         let p = #{
             A(Ok(123): Result[Int32, Int32]).
@@ -10,7 +10,7 @@ mod Test.Term.Lit.Result {
         let r = query p select x from R(x);
         Vector.memberOf(Ok(123), r)
 
-    @test
+    @Test
     def testLitResult02(): Bool =
         let p = #{
             A(Ok("Hello World"): Result[Int32, String]).
@@ -20,7 +20,7 @@ mod Test.Term.Lit.Result {
         let r = query p select x from R(x);
         Vector.memberOf(Ok("Hello World"), r)
 
-    @test
+    @Test
     def testLitResult03(): Bool =
         let p = #{
             A(Ok(123)).

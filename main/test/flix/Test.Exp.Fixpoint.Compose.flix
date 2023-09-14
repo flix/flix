@@ -1,42 +1,42 @@
 mod Test.Exp.Fixpoint.Compose {
 
-    @test
+    @Test
     def testFixpointCompose01(): #{ A(Int32, Int32, Int32) } =
         let c1 = #{ A(1, 1, 1). };
         solve c1 <+> c1
 
-    @test
+    @Test
     def testFixpointCompose02(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         solve c1 <+> c1 <+> c1
 
-    @test
+    @Test
     def testFixpointCompose03(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         solve (solve c1 <+> c1) <+> (solve c1 <+> c1)
 
-    @test
+    @Test
     def testFixpointCompose04(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         let c2 = #{ A(2, 2, 2). };
         let c3 = #{ A(x, y, z) :- A(x, y, z). };
         solve c1 <+> c2 <+> c3
 
-    @test
+    @Test
     def testFixpointCompose05(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         let c2 = #{ A(2, 2, 2). };
         let c3 = #{ A(x, y, z) :- A(x, y, z). };
         solve (solve (c1 <+> c2) <+> c3)
 
-    @test
+    @Test
     def testFixpointCompose06(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         let c2 = #{ A(2, 2, 2). };
         let c3 = #{ A(x, y, z) :- A(x, y, z). };
         solve (c1 <+> solve (c2 <+> c3))
 
-    @test
+    @Test
     def testFixpointCompose07(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         let c2 = #{ A(2, 2, 2). };
@@ -44,7 +44,7 @@ mod Test.Exp.Fixpoint.Compose {
         let c4 = #{ A(z, y, x) :- A(x, y, z). };
         solve c1 <+> c2 <+> c3 <+> c4
 
-    @test
+    @Test
     def testFixpointCompose08(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         let c2 = #{ A(2, 2, 2). };
@@ -52,7 +52,7 @@ mod Test.Exp.Fixpoint.Compose {
         let c4 = #{ A(z, y, x) :- A(x, y, z). };
         solve (solve (c1 <+> c2)) <+> (c3 <+> c4)
 
-    @test
+    @Test
     def testFixpointCompose09(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #{ A(1, 1, 1). };
         let c2 = #{ A(2, 2, 2). };
@@ -60,13 +60,13 @@ mod Test.Exp.Fixpoint.Compose {
         let c4 = #{ A(z, y, x) :- A(x, y, z). };
         solve (c1 <+> c2) <+> (c2 <+> c1) <+> (c3 <+> c4) <+> (c4 <+> c3)
 
-    @test
+    @Test
     def testFixpointCompose10(): #{ P(Int32, Int32, Int32) } =
         let c1 = #{ P(1, 123, 1). };
         let c2 = #{ P(2, 123, 2). };
         solve c1 <+> c2
 
-    @test
+    @Test
     def testFixpointCompose11(): (#{ P(Int32, Int32, Int32) }, #{ P(Int32, String, Int32) }) =
         let c1 = #{ P(1, 123, 1). };
         let c2 = #{ P(2, 123, 2). };
@@ -76,7 +76,7 @@ mod Test.Exp.Fixpoint.Compose {
         let rb = solve c3 <+> c4;
         (ra, rb)
 
-    @test
+    @Test
     def testFixpointCompose12(): (#{ P(Int32, Int32, Int32) }, #{ P(Int32, String, Int32) }) =
         let c1 = #{ P(1, 123, 1). };
         let c2 = #{ P(x, 555, z) :- P(x, 555, z). };
@@ -86,7 +86,7 @@ mod Test.Exp.Fixpoint.Compose {
         let rb = solve c3 <+> c4;
         (ra, rb)
 
-    @test
+    @Test
     def testFixpointCompose13(): Bool = {
         let ans = query coolioQuack(#{Coolio("quack!").}) select s from Duck(s);
         ans == Vector#{"quack!"}
@@ -96,7 +96,7 @@ mod Test.Exp.Fixpoint.Compose {
         p <+> #{Duck(s) :- Coolio(s).}
     }
 
-    @test
+    @Test
     def testFixpointCompose14(): Bool = {
         let ans = query duckOutOfNothing(#{}) select s from Duck(s);
         ans == Vector#{"quack!"}
@@ -106,7 +106,7 @@ mod Test.Exp.Fixpoint.Compose {
         p <+> #{Duck("quack!").}
     }
 
-    @test
+    @Test
     def testFixpointCompose15(): Bool = {
         let ans = query duckVille(#{Rip(1). Rap(2). Rup(3).}) select s from Duck(s);
         ans == Vector#{"quack!"}
@@ -116,7 +116,7 @@ mod Test.Exp.Fixpoint.Compose {
         p <+> #{Duck("quack!").}
     }
 
-    @test
+    @Test
     def testFixpointCompose16(): Bool = {
         let ans = query noComparison(#{Apples(()).}, #{Oranges(()).}) select s from Apples(s);
         ans == Vector#{()}

@@ -1,68 +1,68 @@
 mod Test.Exp.String {
 
-    @test
+    @Test
     def testString01(): String = ""
 
-    @test
+    @Test
     def testString02(): String = "a"
 
-    @test
+    @Test
     def testString03(): String = "z"
 
-    @test
+    @Test
     def testString04(): String = "A"
 
-    @test
+    @Test
     def testString05(): String = "Z"
 
-    @test
+    @Test
     def testString06(): String = "\r"
 
-    @test
+    @Test
     def testString07(): String = "\n"
 
-    @test
+    @Test
     def testString08(): String = "\t"
 
-    @test
+    @Test
     def testString09(): String = "\\"
 
-    @test
+    @Test
     def testString10(): String = "\""
 
-    @test
+    @Test
     def testString11(): String = "\'"
 
-    @test
+    @Test
     def testString12(): String = "\'\t\r\n\""
 
-    @test
+    @Test
     def testString13(): String = "\uffff"
 
-    @test
+    @Test
     def testString14(): String = "十"
 
-    @test
+    @Test
     def testString15(): String = "\u200b"
 
-    @test
+    @Test
     def testString16(): Bool = "\u0041" == "A"
 
-    @test
+    @Test
     def testString17(): Bool = "\u005A" == "Z"
 
-    @test
+    @Test
     def testString18(): Bool = "\u0061" == "a"
 
-    @test
+    @Test
     def testString19(): Bool = "\u007a" == "z"
 
-    @test
+    @Test
     def testString20(): Bool = "\u2603" == "☃"
 
-    @test
+    @Test
     def testString21(): Bool = "\${" == "$" + "{"
 
-    @test
+    @Test
     def testString22(): Bool = "\%{" == "%" + "{"
 }

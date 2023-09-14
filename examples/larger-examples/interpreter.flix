@@ -83,34 +83,34 @@ def evalBExp(e: BExp): Bool = match e {
 //   $ flix <file> --main testEvalAExp1
 //
 
-@test
+@Test
 def testEvalAExp1(): Int32 = evalAExp(Cst(42))
 
-@test
+@Test
 def testEvalAExp2(): Int32 = evalAExp(Plus(Cst(42), Cst(21)))
 
-@test
+@Test
 def testEvalAExp3(): Int32 = evalAExp(Minus(Cst(42), Cst(21)))
 
-@test
+@Test
 def testEvalAExp4(): Int32 = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
 
-@test
+@Test
 def testEvalAExp5(): Int32 = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
-@test
+@Test
 def testEvalBExp1(): Bool = evalBExp(True)
 
-@test
+@Test
 def testEvalBExp2(): Bool = not evalBExp(Not(True))
 
-@test
+@Test
 def testEvalBExp3(): Bool = not evalBExp(Conj(True, False))
 
-@test
+@Test
 def testEvalBExp4(): Bool = evalBExp(Disj(True, False))
 
-@test
+@Test
 def testEvalBExp5(): Bool = evalBExp(Neq(Cst(1), Cst(2)))
 
 //
@@ -207,34 +207,34 @@ def compileBExp(e: BExp): List[Inst] = match e {
 //
 // We test each compiler by writing some tests:
 //
-@test
+@Test
 def testCompileAExp1(): List[Inst] = compileAExp(Cst(42))
 
-@test
+@Test
 def testCompileAExp2(): List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
 
-@test
+@Test
 def testCompileAExp3(): List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
 
-@test
+@Test
 def testCompileAExp4(): List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
 
-@test
+@Test
 def testCompileAExp5(): List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
-@test
+@Test
 def testCompileBExp1(): List[Inst] = compileBExp(True)
 
-@test
+@Test
 def testCompileBExp2(): List[Inst] = compileBExp(Not(True))
 
-@test
+@Test
 def testCompileBExp3(): List[Inst] = compileBExp(Conj(True, False))
 
-@test
+@Test
 def testCompileBExp4(): List[Inst] = compileBExp(Disj(True, False))
 
-@test
+@Test
 def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 
 //
@@ -277,20 +277,20 @@ def evalInst(instructions: List[Inst], stack: List[Int32]): Int32 = match (instr
 //
 // and we can test the compiler and interpreter:
 //
-@test
+@Test
 def testCompileAndEval1(): Int32 = evalInst(compileAExp(Cst(42)), Nil)
 
-@test
+@Test
 def testCompileAndEval2(): Int32 = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
 
-@test
+@Test
 def testCompileAndEval3(): Int32 = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
 
-@test
+@Test
 def testCompileAndEval4(): Int32 = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
 
-@test
+@Test
 def testCompileAndEval5(): Int32 = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
 
-@test
+@Test
 def testCompileAndEval6(): Int32 = evalInst(compileAExp(IfThenElse(Eq(Cst(1), Cst(2)), Cst(42), Times(Cst(21), Cst(82)))), Nil)

@@ -15,67 +15,67 @@
  */
 mod TestEnvironment {
 
-    @test
+    @Test
     def testGetEnv01(): Bool =
         not Map.isEmpty(Environment.getEnv())
 
-    @test
+    @Test
     def testGetVar01(): Bool =
         not Option.isEmpty(Environment.getVar("PATH"))
 
-    @test
+    @Test
     def testGetVar02(): Bool =
         Option.isEmpty(Environment.getVar("UNKNOWN"))
 
-    @test
+    @Test
     def testGetProp02(): Bool =
         Option.isEmpty(Environment.getProp("UNKNOWN"))
 
-    @test
+    @Test
     def testGetOsName(): Bool =
         not Option.isEmpty(Environment.getOsName())
 
-    @test
+    @Test
     def testGetOsArch(): Bool =
         not Option.isEmpty(Environment.getOsArch())
 
-    @test
+    @Test
     def testGetOsVersion(): Bool =
         not Option.isEmpty(Environment.getOsVersion())
 
-    @test
+    @Test
     def testGetFileSeparator(): Bool =
         not String.isEmpty(Environment.getFileSeparator())
 
-    @test
+    @Test
     def testGetPathSeparator(): Bool =
         not String.isEmpty(Environment.getPathSeparator())
 
-    @test
+    @Test
     def testGetLineSeparator(): Bool =
         not String.isEmpty(Environment.getLineSeparator())
 
-    @test
+    @Test
     def testGetCurrentWorkingDirectory(): Bool =
         not Option.isEmpty(Environment.getCurrentWorkingDirectory())
 
-    @test
+    @Test
     def testGetTemporaryDirectory(): Bool =
         not Option.isEmpty(Environment.getTemporaryDirectory())
 
-    @test
+    @Test
     def testGetUserName(): Bool =
         not Option.isEmpty(Environment.getUserName())
 
-    @test
+    @Test
     def testGetUserHomeDirectory(): Bool =
         not Option.isEmpty(Environment.getUserHomeDirectory())
 
-    @test
+    @Test
     def testGetVirtualProcessors(): Bool =
         Environment.getVirtualProcessors() > 0
 
-    @test
+    @Test
     def testGetArgs(): List[String] = Environment.getArgs()
 
 }

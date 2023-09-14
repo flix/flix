@@ -1,48 +1,48 @@
 mod Test.Exp.Ascribe {
 
-    @test
+    @Test
     def testAscribe01(): Unit = () : Unit
 
-    @test
+    @Test
     def testAscribe02(): Bool = true : Bool
 
-    @test
+    @Test
     def testAscribe03(): Bool = not false : Bool
 
-    @test
+    @Test
     def testAscribe04(): Char = 'a' : Char
 
-    @test
+    @Test
     def testAscribe05(): Float32 = 0.0f32 : Float32
 
-    @test
+    @Test
     def testAscribe06(): Float64 = 0.0f64 : Float64
 
-    @test
+    @Test
     def testAscribe07(): Int8 = 0i8 : Int8
 
-    @test
+    @Test
     def testAscribe08(): Int16 = 0i16 : Int16
 
-    @test
+    @Test
     def testAscribe09(): Int32 = 0i32 : Int32
 
-    @test
+    @Test
     def testAscribe10(): Int64 = 0i64 : Int64
 
-    @test
+    @Test
     def testAscribe11(): BigInt = 0ii : BigInt
 
-    @test
+    @Test
     def testAscribe12(): BigDecimal = 0.0ff : BigDecimal
 
-    @test
+    @Test
     def testAscribe13(): String = "hello world" : String
 
-    @test
+    @Test
     def testAscribe14(): (Int32, Int32, Int32) = (1, 2, 3) : (Int32, Int32, Int32)
 
-    @test
+    @Test
     def testAscribe15(): Option[Int32] = Some(42) : Option[Int32]
 
 }

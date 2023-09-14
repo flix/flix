@@ -1,6 +1,6 @@
 mod Test.Exp.Match.Char {
 
-    @test
+    @Test
     def testMatchChar01(): Bool = match 'a' {
         case 'a' => true
         case 'b' => false
@@ -8,7 +8,7 @@ mod Test.Exp.Match.Char {
         case _   => false
     }
 
-    @test
+    @Test
     def testMatchChar02(): Bool = match 'b' {
         case 'a' => false
         case 'b' => true
@@ -16,7 +16,7 @@ mod Test.Exp.Match.Char {
         case _   => false
     }
 
-    @test
+    @Test
     def testMatchChar03(): Bool = match 'c' {
         case 'a' => false
         case 'b' => false
@@ -24,7 +24,7 @@ mod Test.Exp.Match.Char {
         case _   => false
     }
 
-    @test
+    @Test
     def testMatchChar04(): Bool = match 'd' {
         case 'a' => false
         case 'b' => false
@@ -32,7 +32,7 @@ mod Test.Exp.Match.Char {
         case _   => true
     }
 
-    @test
+    @Test
     def testMatchChar05(): Bool = match '\n' {
         case '\n' => true
         case '\r' => false
@@ -40,7 +40,7 @@ mod Test.Exp.Match.Char {
         case _    => false
     }
 
-    @test
+    @Test
     def testMatchChar06(): Bool = match '\r' {
         case '\n' => false
         case '\r' => true
@@ -48,7 +48,7 @@ mod Test.Exp.Match.Char {
         case _    => false
     }
 
-    @test
+    @Test
     def testMatchChar07(): Bool = match '\t' {
         case '\n' => false
         case '\r' => false
@@ -56,7 +56,7 @@ mod Test.Exp.Match.Char {
         case _    => false
     }
 
-    @test
+    @Test
     def testMatchChar08(): Bool = match '\u0040' {
         case '\n' => false
         case '\r' => false
@@ -64,7 +64,7 @@ mod Test.Exp.Match.Char {
         case _    => true
     }
 
-    @test
+    @Test
     def testMatchChar09(): Bool = match '\u0040' {
         case '\u0040' => true
         case '\u0041' => true
@@ -72,7 +72,7 @@ mod Test.Exp.Match.Char {
         case _        => false
     }
 
-    @test
+    @Test
     def testMatchChar10(): Bool = match '\u0041' {
         case '\u0040' => false
         case '\u0041' => true
@@ -80,7 +80,7 @@ mod Test.Exp.Match.Char {
         case _        => false
     }
 
-    @test
+    @Test
     def testMatchChar11(): Bool = match '\u0042' {
         case '\u0040' => false
         case '\u0041' => false
@@ -88,7 +88,7 @@ mod Test.Exp.Match.Char {
         case _        => false
     }
 
-    @test
+    @Test
     def testMatchChar12(): Bool = match '\u0043' {
         case '\u0040' => false
         case '\u0041' => false
@@ -96,12 +96,12 @@ mod Test.Exp.Match.Char {
         case _        => true
     }
 
-    @test
+    @Test
     def testMatchCharVar01(): Bool = match 'a' {
         case x => x == 'a'
     }
 
-    @test
+    @Test
     def testMatchCharVar02(): Bool = match 'c' {
         case 'a' => false
         case 'b' => false

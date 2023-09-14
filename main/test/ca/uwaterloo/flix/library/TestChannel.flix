@@ -25,31 +25,31 @@
     use Concurrent.Channel.put
     use Concurrent.Channel.selectFrom
 
-    @test
+    @Test
     def testNew01(): Mpmc[Int32] \ IO = newChannel(0)
 
-    @test
+    @Test
     def testNew02(): Mpmc[Result[String, a]] \ IO = newChannel(32)
 
-    @test
+    @Test
     def testGetPut01(): Bool \ IO =
         let c = newChannel(1);
         put(true, c);
         get(c)
 
-    @test
+    @Test
     def testGetPut02(): Bool \ IO =
         let c = newChannel(1);
         put(123, c);
         get(c) == 123
 
-    @test
+    @Test
     def testGetPut03(): Bool \ IO =
         let c = newChannel(1);
         put("Hello World!", c);
         get(c) == "Hello World!"
 
-    @test
+    @Test
     def testSelect01(): Bool \ IO =
         let c = newChannel(1);
         put(2, c);
@@ -60,7 +60,7 @@
             case _ => unreachable!()
         }
 
-    @test
+    @Test
     def testSelect02(): Bool \ IO =
         let c = newChannel(1);
         match selectFrom(mpmcAdmin(c) :: Nil, false) {
@@ -72,7 +72,7 @@
             case _ => unreachable!()
         }
 
-    @test
+    @Test
     def testSelect03(): Bool \ IO =
         let c1: Mpmc[Int32] = newChannel(0);
         let c2: Mpmc[String] = newChannel(10);

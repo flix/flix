@@ -5,12 +5,12 @@ mod Test.Def.Op {
 
     def |=(x: String, y: String): String = "${x} |= ${y}"
 
-    @test
+    @Test
     def testUserOp01(): Bool = "a" || "b" == "a || b"
 
-    @test
+    @Test
     def testUserOp02(): Bool = "a" && "b" == "a && b"
 
-    @test
+    @Test
     def testUserOp03(): Bool = "a" |= "b" == "a |= b"
 }

@@ -20,120 +20,120 @@ mod TestString {
 // charAt                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def charAt01(): Bool = String.charAt(0, "Hello World!") == 'H'
 
-@test
+@Test
 def charAt02(): Bool = String.charAt(1, "Hello World!") == 'e'
 
-@test
+@Test
 def charAt03(): Bool = String.charAt(2, "Hello World!") == 'l'
 
-@test
+@Test
 def charAt04(): Bool = String.charAt(3, "Hello World!") == 'l'
 
-@test
+@Test
 def charAt05(): Bool = String.charAt(4, "Hello World!") == 'o'
 
-@test
+@Test
 def charAt06(): Bool = String.charAt(5, "Hello World!") == ' '
 
 /////////////////////////////////////////////////////////////////////////////
 // nth                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def nth01(): Bool = String.nth(0, "") == None
 
-@test
+@Test
 def nth02(): Bool = String.nth(-1, "Hello World!") == None
 
-@test
+@Test
 def nth03(): Bool = String.nth(15, "Hello World!") == None
 
-@test
+@Test
 def nth04(): Bool = String.nth(0, "Hello World!") == Some('H')
 
-@test
+@Test
 def nth05(): Bool = String.nth(1, "Hello World!") == Some('e')
 
-@test
+@Test
 def nth06(): Bool = String.nth(2, "Hello World!") == Some('l')
 
-@test
+@Test
 def nth07(): Bool = String.nth(3, "Hello World!") == Some('l')
 
-@test
+@Test
 def nth08(): Bool = String.nth(4, "Hello World!") == Some('o')
 
-@test
+@Test
 def nth09(): Bool = String.nth(5, "Hello World!") == Some(' ')
 
-@test
+@Test
 def nth10(): Bool = String.nth(11, "Hello World!") == Some('!')
 
 /////////////////////////////////////////////////////////////////////////////
 // codePointAt                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def codePointAt01(): Bool = String.codePointAt(0, CodePoint.toString(0x1f3dd)) == 0x1f3dd
 
-@test
+@Test
 def codePointAt02(): Bool = String.codePointAt(2, "\uD83C\uDFDD.") == 0x002E
 
-@test
+@Test
 def codePointAt03(): Bool = String.codePointAt(1, ".\uD83C\uDFDD") == 0x1f3dd
 
 /////////////////////////////////////////////////////////////////////////////
 // nthCodePoint                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def nthCodePoint01(): Bool = String.nthCodePoint(0, "") == None
 
-@test
+@Test
 def nthCodePoint02(): Bool = String.nthCodePoint(0, CodePoint.toString(0x1f3dd)) == Some(0x1f3dd)
 
-@test
+@Test
 def nthCodePoint03(): Bool = String.nthCodePoint(2, CodePoint.toString(0x1f3dd)) == None
 
-@test
+@Test
 def nthCodePoint04(): Bool = String.nthCodePoint(2, "\uD83C\uDFDD.") == Some(0x002E)
 
-@test
+@Test
 def nthCodePoint05(): Bool = String.nthCodePoint(1, ".\uD83C\uDFDD") == Some(0x1f3dd)
 
 /////////////////////////////////////////////////////////////////////////////
 // concat                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def concat01(): Bool = "Hello World!" == "Hello World!"
 
-@test
+@Test
 def concat02(): Bool = "Hello" + " World!" == "Hello World!"
 
-@test
+@Test
 def concat03(): Bool = "Hello" + " World!" == "Hello" + " World!"
 
-@test
+@Test
 def concat04(): Bool = "Hello World!" + "" == "Hello World!"
 
-@test
+@Test
 def concat05(): Bool = "Hello" + " " + "World" + "!" == "Hello World!"
 
-@test
+@Test
 def concat06(): Bool =
     let f = x -> (x + " World!");
     f("Hello") == "Hello World!"
 
-@test
+@Test
 def concat07(): Bool =
     let f = (x, y) -> (x + y);
     f("Hello", " World!") == "Hello World!"
 
-@test
+@Test
 def concat08(): Bool =
     let f = flip((x, y) -> (x + y));
     f(" World!", "Hello") == "Hello World!"
@@ -142,31 +142,31 @@ def concat08(): Bool =
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def isEmpty01(): Bool = String.isEmpty("") == true
 
-@test
+@Test
 def isEmpty02(): Bool = String.isEmpty("Hello") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def length01(): Bool = String.length("") == 0
 
-@test
+@Test
 def length02(): Bool = String.length("0123456789") == 10
 
 /////////////////////////////////////////////////////////////////////////////
 // split                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def split01(): Bool =
    String.split({regex = "\\s+"}, "") == "" :: Nil
 
-@test
+@Test
 def split02(): Bool =
     List.length(String.split({regex = "\\s+"}, "1 3")) == 2
 
@@ -174,73 +174,73 @@ def split02(): Bool =
 // toLowerCase                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toLowerCase01(): Bool = String.toLowerCase("") == ""
 
-@test
+@Test
 def toLowerCase02(): Bool = String.toLowerCase("Hello World!") == "hello world!"
 
-@test
+@Test
 def toLowerCase03(): Bool = String.toLowerCase("â†’Hello Worldâˆ€!") == "â†’hello worldâˆ€!"
 
 /////////////////////////////////////////////////////////////////////////////
 // toUpperCase                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toUpperCase01(): Bool = String.toUpperCase("") == ""
 
-@test
+@Test
 def toUpperCase02(): Bool = String.toUpperCase("Hello World!") == "HELLO WORLD!"
 
-@test
+@Test
 def toUpperCase03(): Bool = String.toUpperCase("â†’Hello Worldâˆ€!") == "Â†’HELLO WORLDÂˆ€!"
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toList01(): Bool = String.toList("") == Nil
 
-@test
+@Test
 def toList02(): Bool = String.toList("ABC") == 'A' :: 'B' :: 'C' :: Nil
 
-@test
+@Test
 def toList03(): Bool = String.toList("1 2 3") == '1' :: ' ' :: '2' :: ' ' :: '3' :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // trim                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def trim01(): Bool = "Hello World" == String.trim("Hello World")
 
-@test
+@Test
 def trim02(): Bool = "abc" == String.trim(" abc")
 
-@test
+@Test
 def trim03(): Bool = "abc" == String.trim("abc ")
 
-@test
+@Test
 def trim04(): Bool = "abc" == String.trim(" abc ")
 
-@test
+@Test
 def trim05(): Bool = "abc" == String.trim("  abc")
 
-@test
+@Test
 def trim06(): Bool = "" == String.trim("  ")
 
 /////////////////////////////////////////////////////////////////////////////
 // lineSeparator                                                           //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def lineSeparator01(): Bool =
     let newline = String.lineSeparator();
     Char.isWhiteSpace(String.charAt(0, newline)) == true
 
-@test
+@Test
 def lineSeparator02(): Bool =
     let newline = String.lineSeparator();
     String.length(newline) == 1 or String.length(newline) == 2
@@ -249,17 +249,17 @@ def lineSeparator02(): Bool =
 // toArray                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toArray01(): Bool = region rc {
     Array.sameElements(String.toArray(rc, ""), Array#{} @ rc)
 }
 
-@test
+@Test
 def toArray02(): Bool = region rc {
     Array.sameElements(String.toArray(rc, "ABC"), Array#{'A', 'B', 'C'} @ rc)
 }
 
-@test
+@Test
 def toArray03(): Bool = region rc {
     Array.sameElements(String.toArray(rc, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ rc)
 }
@@ -268,15 +268,15 @@ def toArray03(): Bool = region rc {
 // toVector                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toVector01(): Bool =
     String.toVector("") == Vector#{}
 
-@test
+@Test
 def toVector02(): Bool =
     String.toVector("ABC") == Vector#{'A', 'B', 'C'}
 
-@test
+@Test
 def toVector03(): Bool =
     String.toVector("1 2 3") == Vector#{'1', ' ', '2', ' ', '3'}
 
@@ -284,11 +284,11 @@ def toVector03(): Bool =
 // toRegex                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toRegex01(): Bool =
     String.toRegex("\\p{Alpha}+") |> Result.isOk
 
-@test
+@Test
 def toRegex02(): Bool =
     String.toRegex("\\p{Alpha+") |> Result.isErr
 
@@ -296,18 +296,18 @@ def toRegex02(): Bool =
 // toRegexWithFlags                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def compileWithFlags01(): Bool =
     use Regex.Flag.{CaseInsenstive};
     String.toRegexWithFlags(Set#{CaseInsenstive}, "\\p{Alpha}+") |> Result.isOk
 
-@test
+@Test
 def compileWithFlags02(): Bool =
     use Regex.Flag.{CaseInsenstive};
     String.toRegexWithFlags(Set#{CaseInsenstive}, "\\p{Alpha+") |> Result.isErr
 
 
-@test
+@Test
 def compileWithFlags03(): Bool =
     use Regex.Flag.{CaseInsenstive, Multiline};
     String.toRegexWithFlags(Set#{CaseInsenstive, Multiline}, "\\p{Alpha}+") |> Result.isOk
@@ -316,19 +316,19 @@ def compileWithFlags03(): Bool =
 // init                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def init01(): Bool = String.init(_ -> 'A', 0) == ""
 
-@test
+@Test
 def init02(): Bool = String.init(_ -> 'A', -1) == ""
 
-@test
+@Test
 def init03(): Bool = String.init(_ -> 'A', 1) == "A"
 
-@test
+@Test
 def init04(): Bool = String.init(_ -> 'A', 2) == "AA"
 
-@test
+@Test
 def init05(): Bool =
     let s = String.init(_ -> 'A', 50);
     String.length(s) == 50
@@ -337,176 +337,176 @@ def init05(): Bool =
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def flatten01(): Bool = String.flatten(Nil) == ""
 
-@test
+@Test
 def flatten02(): Bool = String.flatten("" :: Nil) == ""
 
-@test
+@Test
 def flatten03(): Bool = String.flatten("a" :: Nil) == "a"
 
-@test
+@Test
 def flatten04(): Bool = String.flatten("ab" :: Nil) == "ab"
 
-@test
+@Test
 def flatten05(): Bool = String.flatten("" :: "" :: Nil) == ""
 
-@test
+@Test
 def flatten06(): Bool = String.flatten("a" :: "" :: Nil) == "a"
 
-@test
+@Test
 def flatten07(): Bool = String.flatten("" :: "a" :: Nil) == "a"
 
-@test
+@Test
 def flatten08(): Bool = String.flatten("a" :: "b" :: Nil) == "ab"
 
-@test
+@Test
 def flatten09(): Bool = String.flatten("ab" :: "cde" :: Nil) == "abcde"
 
-@test
+@Test
 def flatten10(): Bool = String.flatten("a" :: "bc" :: "d" :: Nil) == "abcd"
 
 /////////////////////////////////////////////////////////////////////////////
 // intercalate                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def intercalate01(): Bool = String.intercalate("-", Nil) == ""
 
-@test
+@Test
 def intercalate02(): Bool = String.intercalate("-", "" :: Nil) == ""
 
-@test
+@Test
 def intercalate03(): Bool = String.intercalate("-", "a" :: Nil) == "a"
 
-@test
+@Test
 def intercalate04(): Bool = String.intercalate("-", "ab" :: Nil) == "ab"
 
-@test
+@Test
 def intercalate05(): Bool = String.intercalate("-", "" :: "" :: Nil) == "-"
 
-@test
+@Test
 def intercalate06(): Bool = String.intercalate("-", "a" :: "" :: Nil) == "a-"
 
-@test
+@Test
 def intercalate07(): Bool = String.intercalate("-", "" :: "a" :: Nil) == "-a"
 
-@test
+@Test
 def intercalate08(): Bool = String.intercalate("-", "a" :: "b" :: Nil) == "a-b"
 
-@test
+@Test
 def intercalate09(): Bool = String.intercalate("-", "ab" :: "cde" :: Nil) == "ab-cde"
 
-@test
+@Test
 def intercalate10(): Bool = String.intercalate("-", "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
 
-@test
+@Test
 def intercalate11(): Bool = String.intercalate("", "a" :: "bc" :: "d" :: Nil) == "abcd"
 
-@test
+@Test
 def intercalate12(): Bool = String.intercalate("<>", "a" :: "bc" :: "d" :: Nil) == "a<>bc<>d"
 
 /////////////////////////////////////////////////////////////////////////////
 // intercalateChar                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def intercalateChar01(): Bool = String.intercalateChar('-', Nil) == ""
 
-@test
+@Test
 def intercalateChar02(): Bool = String.intercalateChar('-', "" :: Nil) == ""
 
-@test
+@Test
 def intercalateChar03(): Bool = String.intercalateChar('-', "a" :: Nil) == "a"
 
-@test
+@Test
 def intercalateChar04(): Bool = String.intercalateChar('-', "ab" :: Nil) == "ab"
 
-@test
+@Test
 def intercalateChar05(): Bool = String.intercalateChar('-', "" :: "" :: Nil) == "-"
 
-@test
+@Test
 def intercalateChar06(): Bool = String.intercalateChar('-', "a" :: "" :: Nil) == "a-"
 
-@test
+@Test
 def intercalateChar07(): Bool = String.intercalateChar('-', "" :: "a" :: Nil) == "-a"
 
-@test
+@Test
 def intercalateChar08(): Bool = String.intercalateChar('-', "a" :: "b" :: Nil) == "a-b"
 
-@test
+@Test
 def intercalateChar09(): Bool = String.intercalateChar('-', "ab" :: "cde" :: Nil) == "ab-cde"
 
-@test
+@Test
 def intercalateChar10(): Bool = String.intercalateChar('-', "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
 
-@test
+@Test
 def intercalateChar11(): Bool = String.intercalateChar(' ', "a" :: "bc" :: "d" :: Nil) == "a bc d"
 
-@test
+@Test
 def intercalateChar12(): Bool = String.intercalateChar('/', "a" :: "bc" :: "d" :: Nil) == "a/bc/d"
 
 /////////////////////////////////////////////////////////////////////////////
 // map                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def map01(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "") == ""
 
-@test
+@Test
 def map02(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "a") == "f"
 
-@test
+@Test
 def map03(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "A") == "t"
 
-@test
+@Test
 def map04(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "ab") == "ff"
 
-@test
+@Test
 def map05(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "aB") == "ft"
 
-@test
+@Test
 def map06(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "Ab") == "tf"
 
-@test
+@Test
 def map07(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "AB") == "tt"
 
 /////////////////////////////////////////////////////////////////////////////
 // mapWithIndex                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def mapWithIndex01(): Bool =
     let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "") == ""
 
-@test
+@Test
 def mapWithIndex02(): Bool =
     let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "a") == "f"
 
-@test
+@Test
 def mapWithIndex03(): Bool =
     let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "A") == "t"
 
-@test
+@Test
 def mapWithIndex04(): Bool =
     let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "aB") == "fT"
 
-@test
+@Test
 def mapWithIndex05(): Bool =
     let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "ab") == "fF"
 
-@test
+@Test
 def mapWithIndex06(): Bool =
     let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "AB") == "tT"
 
-@test
+@Test
 def mapWithIndex07(): Bool =
     let test = (i, c) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "Ab") == "tF"
@@ -515,23 +515,23 @@ def mapWithIndex07(): Bool =
 // reverse                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def reverse01(): Bool =
     String.reverse("") == ""
 
-@test
+@Test
 def reverse02(): Bool =
     String.reverse("A") == "A"
 
-@test
+@Test
 def reverse03(): Bool =
     String.reverse("Hello World") == "dlroW olleH"
 
-@test
+@Test
 def reverse04(): Bool =
     String.reverse("Hello World!") == "!dlroW olleH"
 
-@test
+@Test
 def reverse05(): Bool =
     String.reverse("Hello World!") != "!dlroW OLLEH"
 
@@ -539,416 +539,416 @@ def reverse05(): Bool =
 // rotateLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def rotateLeft01(): Bool = String.rotateLeft(0, "") == ""
 
-@test
+@Test
 def rotateLeft02(): Bool = String.rotateLeft(1, "") == ""
 
-@test
+@Test
 def rotateLeft03(): Bool = String.rotateLeft(0, "a") == "a"
 
-@test
+@Test
 def rotateLeft04(): Bool = String.rotateLeft(0, "ab") == "ab"
 
-@test
+@Test
 def rotateLeft05(): Bool = String.rotateLeft(1, "ab") == "ba"
 
-@test
+@Test
 def rotateLeft06(): Bool = String.rotateLeft(2, "ab") == "ab"
 
-@test
+@Test
 def rotateLeft07(): Bool = String.rotateLeft(3, "ab") == "ba"
 
-@test
+@Test
 def rotateLeft08(): Bool = String.rotateLeft(-1, "ab") == "ba"
 
-@test
+@Test
 def rotateLeft09(): Bool = String.rotateLeft(0, "abc") == "abc"
 
-@test
+@Test
 def rotateLeft10(): Bool = String.rotateLeft(1, "abc") == "bca"
 
-@test
+@Test
 def rotateLeft11(): Bool = String.rotateLeft(2, "abc") == "cab"
 
 /////////////////////////////////////////////////////////////////////////////
 // rotateRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def rotateRight01(): Bool = String.rotateRight(0, "") == ""
 
-@test
+@Test
 def rotateRight02(): Bool = String.rotateRight(1, "") == ""
 
-@test
+@Test
 def rotateRight03(): Bool = String.rotateRight(0, "a") == "a"
 
-@test
+@Test
 def rotateRight04(): Bool = String.rotateRight(0, "ab") == "ab"
 
-@test
+@Test
 def rotateRight05(): Bool = String.rotateRight(1, "ab") == "ba"
 
-@test
+@Test
 def rotateRight06(): Bool = String.rotateRight(2, "ab") == "ab"
 
-@test
+@Test
 def rotateRight07(): Bool = String.rotateRight(3, "ab") == "ba"
 
-@test
+@Test
 def rotateRight08(): Bool = String.rotateRight(-1, "ab") == "ba"
 
-@test
+@Test
 def rotateRight09(): Bool = String.rotateRight(0, "abc") == "abc"
 
-@test
+@Test
 def rotateRight10(): Bool = String.rotateRight(1, "abc") == "cab"
 
-@test
+@Test
 def rotateRight11(): Bool = String.rotateRight(2, "abc") == "bca"
 
 /////////////////////////////////////////////////////////////////////////////
 // isMatch                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def isMatch01(): Bool = String.isMatch({regex = ".*"}, "") == true
 
-@test
+@Test
 def isMatch02(): Bool = String.isMatch({regex = ".+"}, "") == false
 
-@test
+@Test
 def isMatch03(): Bool = String.isMatch({regex = "[a]*"}, "") == true
 
-@test
+@Test
 def isMatch04(): Bool = String.isMatch({regex = "[a]+"}, "") == false
 
-@test
+@Test
 def isMatch05(): Bool = String.isMatch({regex = "[a]*"}, "a") == true
 
-@test
+@Test
 def isMatch06(): Bool = String.isMatch({regex = "[a]*"}, "aa") == true
 
-@test
+@Test
 def isMatch07(): Bool = String.isMatch({regex = "[a]*"}, "aab") == false
 
-@test
+@Test
 def isMatch08(): Bool = String.isMatch({regex = "[a]*b"}, "aab") == true
 
-@test
+@Test
 def isSMatch09(): Bool = String.isMatch({regex = "[b]+"}, "aab") == false
 
-@test
+@Test
 def isMatch10(): Bool = String.isMatch({regex = "[b]+"}, "bbbc") == false
 
-@test
+@Test
 def isMatch11(): Bool = String.isMatch({regex = "[b]+"}, "aabbbc") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // isSubmatch                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def isSubmatch01(): Bool = String.isSubmatch({regex = ".*"}, "") == true
 
-@test
+@Test
 def isSubmatch02(): Bool = String.isSubmatch({regex = ".+"}, "") == false
 
-@test
+@Test
 def isSubmatch03(): Bool = String.isSubmatch({regex = "[a]*"}, "") == true
 
-@test
+@Test
 def isSubmatch04(): Bool = String.isSubmatch({regex = "[a]+"}, "") == false
 
-@test
+@Test
 def isSubmatch05(): Bool = String.isSubmatch({regex = "[a]*"}, "a") == true
 
-@test
+@Test
 def isSubmatch06(): Bool = String.isSubmatch({regex = "[a]*"}, "aa") == true
 
-@test
+@Test
 def isSubmatch07(): Bool = String.isSubmatch({regex = "[a]*"}, "aab") == true
 
-@test
+@Test
 def isSubmatch08(): Bool = String.isSubmatch({regex = "[a]*b"}, "aab") == true
 
-@test
+@Test
 def isSubmatch09(): Bool = String.isSubmatch({regex = "[b]+"}, "aab") == true
 
-@test
+@Test
 def isSubmatch10(): Bool = String.isSubmatch({regex = "[b]+"}, "bbbc") == true
 
-@test
+@Test
 def isSubmatch11(): Bool = String.isSubmatch({regex = "[b]+"}, "aabbbc") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // slice                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def slice01(): Bool = String.slice(start = 0, end = 1, "") == ""
 
-@test
+@Test
 def slice02(): Bool = String.slice(start = 0, end = 1, "a") == "a"
 
-@test
+@Test
 def slice03(): Bool = String.slice(start = 1, end = 2, "a") == ""
 
-@test
+@Test
 def slice04(): Bool = String.slice(start = 0, end = 2, "a") == ""
 
-@test
+@Test
 def slice05(): Bool = String.slice(start = -1, end = 0, "a") == ""
 
-@test
+@Test
 def slice06(): Bool = String.slice(start = 0, end = 1, "ab") == "a"
 
-@test
+@Test
 def slice07(): Bool = String.slice(start = 1, end = 2, "ab") == "b"
 
-@test
+@Test
 def slice08(): Bool = String.slice(start = 0, end = 2, "ab") == "ab"
 
-@test
+@Test
 def slice09(): Bool = String.slice(start = 0, end = 3, "ab") == ""
 
-@test
+@Test
 def slice10(): Bool = String.slice(start = -1, end = 2, "ab") == ""
 
-@test
+@Test
 def slice11(): Bool = String.slice(start = 0, end = 1, "abc") == "a"
 
-@test
+@Test
 def slice12(): Bool = String.slice(start = 1, end = 2, "abc") == "b"
 
-@test
+@Test
 def slice13(): Bool = String.slice(start = 2, end = 3, "abc") == "c"
 
-@test
+@Test
 def slice14(): Bool = String.slice(start = 0, end = 2, "abc") == "ab"
 
-@test
+@Test
 def slice15(): Bool = String.slice(start = 1, end = 3, "abc") == "bc"
 
-@test
+@Test
 def slice16(): Bool = String.slice(start = 0, end = 3, "abc") == "abc"
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceLeft                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def sliceLeft01(): Bool = String.sliceLeft(end = 0, "") == ""
 
-@test
+@Test
 def sliceLeft02(): Bool = String.sliceLeft(end = 1, "") == ""
 
-@test
+@Test
 def sliceLeft03(): Bool = String.sliceLeft(end = 1, "a") == "a"
 
-@test
+@Test
 def sliceLeft04(): Bool = String.sliceLeft(end = 0, "a") == ""
 
-@test
+@Test
 def sliceLeft05(): Bool = String.sliceLeft(end = 2, "a") == ""
 
-@test
+@Test
 def sliceLeft06(): Bool = String.sliceLeft(end = 1, "ab") == "a"
 
-@test
+@Test
 def sliceLeft07(): Bool = String.sliceLeft(end = 2, "ab") == "ab"
 
-@test
+@Test
 def sliceLeft08(): Bool = String.sliceLeft(end = 0, "ab") == ""
 
-@test
+@Test
 def sliceLeft09(): Bool = String.sliceLeft(end = 3, "ab") == ""
 
-@test
+@Test
 def sliceLeft10(): Bool = String.sliceLeft(end = -1, "ab") == ""
 
-@test
+@Test
 def sliceLeft11(): Bool = String.sliceLeft(end = 1, "abc") == "a"
 
-@test
+@Test
 def sliceLeft12(): Bool = String.sliceLeft(end = 2, "abc") == "ab"
 
-@test
+@Test
 def sliceLeft13(): Bool = String.sliceLeft(end = 3, "abc") == "abc"
 
-@test
+@Test
 def sliceLeft14(): Bool = String.sliceLeft(end = 0, "abc") == ""
 
-@test
+@Test
 def sliceLeft15(): Bool = String.sliceLeft(end = 4, "abc") == ""
 
-@test
+@Test
 def sliceLeft16(): Bool = String.sliceLeft(end = -1, "abc") == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceRight                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def sliceRight01(): Bool = String.sliceRight(start = 0, "") == ""
 
-@test
+@Test
 def sliceRight02(): Bool = String.sliceRight(start = 1, "") == ""
 
-@test
+@Test
 def sliceRight03(): Bool = String.sliceRight(start = 1, "a") == ""
 
-@test
+@Test
 def sliceRight04(): Bool = String.sliceRight(start = 0, "a") == "a"
 
-@test
+@Test
 def sliceRight05(): Bool = String.sliceRight(start = 1, "a") == ""
 
-@test
+@Test
 def sliceRight06(): Bool = String.sliceRight(start = 0, "ab") == "ab"
 
-@test
+@Test
 def sliceRight07(): Bool = String.sliceRight(start = 1, "ab") == "b"
 
-@test
+@Test
 def sliceRight08(): Bool = String.sliceRight(start = -1, "ab") == ""
 
-@test
+@Test
 def sliceRight09(): Bool = String.sliceRight(start = 2, "ab") == ""
 
-@test
+@Test
 def sliceRight10(): Bool = String.sliceRight(start = 0, "abc") == "abc"
 
-@test
+@Test
 def sliceRight11(): Bool = String.sliceRight(start = 1, "abc") == "bc"
 
-@test
+@Test
 def sliceRight12(): Bool = String.sliceRight(start = 2, "abc") == "c"
 
-@test
+@Test
 def sliceRight13(): Bool = String.sliceRight(start = 3, "abc") == ""
 
-@test
+@Test
 def sliceRight14(): Bool = String.sliceRight(start = -1, "abc") == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndexOfLeft                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def findIndexOfLeft01(): Bool = String.findIndexOfLeft(Char.isUpperCase, "") == None
 
-@test
+@Test
 def findIndexOfLeft02(): Bool = String.findIndexOfLeft(Char.isUpperCase, "a") == None
 
-@test
+@Test
 def findIndexOfLeft03(): Bool = String.findIndexOfLeft(Char.isUpperCase, "A") == Some(0)
 
-@test
+@Test
 def findIndexOfLeft04(): Bool = String.findIndexOfLeft(Char.isUpperCase, "ab") == None
 
-@test
+@Test
 def findIndexOfLeft05(): Bool = String.findIndexOfLeft(Char.isUpperCase, "Ab") == Some(0)
 
-@test
+@Test
 def findIndexOfLeft06(): Bool = String.findIndexOfLeft(Char.isUpperCase, "aB") == Some(1)
 
-@test
+@Test
 def findIndexOfLeft07(): Bool = String.findIndexOfLeft(Char.isUpperCase, "AB") == Some(0)
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndexOfRight                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def findIndexOfRight01(): Bool = String.findIndexOfRight(Char.isUpperCase, "") == None
 
-@test
+@Test
 def findIndexOfRight02(): Bool = String.findIndexOfRight(Char.isUpperCase, "a") == None
 
-@test
+@Test
 def findIndexOfRight03(): Bool = String.findIndexOfRight(Char.isUpperCase, "A") == Some(0)
 
-@test
+@Test
 def findIndexOfRight04(): Bool = String.findIndexOfRight(Char.isUpperCase, "ab") == None
 
-@test
+@Test
 def findIndexOfRight05(): Bool = String.findIndexOfRight(Char.isUpperCase, "Ab") == Some(0)
 
-@test
+@Test
 def findIndexOfRight06(): Bool = String.findIndexOfRight(Char.isUpperCase, "aB") == Some(1)
 
-@test
+@Test
 def findIndexOfRight07(): Bool = String.findIndexOfRight(Char.isUpperCase, "AB") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndices                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def findIndices01(): Bool = String.findIndices(Char.isDigit, "") == Nil
 
-@test
+@Test
 def findIndices02(): Bool = String.findIndices(Char.isDigit, "a") == Nil
 
-@test
+@Test
 def findIndices03(): Bool = String.findIndices(Char.isDigit, "1") == 0 :: Nil
 
-@test
+@Test
 def findIndices04(): Bool = String.findIndices(Char.isDigit, "ab") == Nil
 
-@test
+@Test
 def findIndices05(): Bool = String.findIndices(Char.isDigit, "1b") == 0 :: Nil
 
-@test
+@Test
 def findIndices06(): Bool = String.findIndices(Char.isDigit, "a2") == 1 :: Nil
 
-@test
+@Test
 def findIndices07(): Bool = String.findIndices(Char.isDigit, "12") == 0 :: 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // indices                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def indices01(): Bool = String.indices({substr = ""}, "") == Nil
 
-@test
+@Test
 def indices02(): Bool = String.indices({substr = ""}, "a::b::c") == Nil
 
-@test
+@Test
 def indices03(): Bool = String.indices({substr = "::"}, "") == Nil
 
-@test
+@Test
 def indices04(): Bool = String.indices({substr = "::"}, "a") == Nil
 
-@test
+@Test
 def indices05(): Bool = String.indices({substr = "::"}, "::") == 0 :: Nil
 
-@test
+@Test
 def indices06(): Bool = String.indices({substr = "::"}, "ab") == Nil
 
-@test
+@Test
 def indices07(): Bool = String.indices({substr = "::"}, "::a") == 0 :: Nil
 
-@test
+@Test
 def indices08(): Bool = String.indices({substr = "::"}, "a::") == 1 :: Nil
 
-@test
+@Test
 def indices09(): Bool = String.indices({substr = "::"}, "a::b::") == 1 :: 4 :: Nil
 
-@test
+@Test
 def indices10(): Bool = String.indices({substr = "::"}, "a::b::c") == 1 :: 4 :: Nil
 
-@test
+@Test
 def indices11(): Bool = String.indices({substr = "::"}, "a::b::c:") == 1 :: 4 :: Nil
 
-@test
+@Test
 def indices12(): Bool = String.indices({substr = "::"}, ":a::b::c") == 2 :: 5 :: Nil
 
-@test
+@Test
 def indices13(): Bool = String.indices({substr = "::"}, "::::") == 0 :: 2 :: Nil
 
 
@@ -956,565 +956,565 @@ def indices13(): Bool = String.indices({substr = "::"}, "::::") == 0 :: 2 :: Nil
 // take                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def take01(): Bool = String.take(-1, "") == ""
 
-@test
+@Test
 def take02(): Bool = String.take(0, "") == ""
 
-@test
+@Test
 def take03(): Bool = String.take(1, "") == ""
 
-@test
+@Test
 def take04(): Bool = String.take(-1, "a") == ""
 
-@test
+@Test
 def take05(): Bool = String.take(0, "a") == ""
 
-@test
+@Test
 def take06(): Bool = String.take(1, "a") == "a"
 
-@test
+@Test
 def take07(): Bool = String.take(2, "a") == "a"
 
-@test
+@Test
 def take08(): Bool = String.take(0, "ab") == ""
 
-@test
+@Test
 def take09(): Bool = String.take(1, "ab") == "a"
 
-@test
+@Test
 def take10(): Bool = String.take(2, "ab") == "ab"
 
-@test
+@Test
 def take11(): Bool = String.take(2, "abcdef") == "ab"
 
-@test
+@Test
 def take12(): Bool = String.take(4, "abcdef") == "abcd"
 
-@test
+@Test
 def take13(): Bool = String.take(10, "abcdef") == "abcdef"
 
 /////////////////////////////////////////////////////////////////////////////
 // takeLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def takeLeft01(): Bool = String.takeLeft(-1, "") == ""
 
-@test
+@Test
 def takeLeft02(): Bool = String.takeLeft(0, "") == ""
 
-@test
+@Test
 def takeLeft03(): Bool = String.takeLeft(1, "") == ""
 
-@test
+@Test
 def takeLeft04(): Bool = String.takeLeft(-1, "a") == ""
 
-@test
+@Test
 def takeLeft05(): Bool = String.takeLeft(0, "a") == ""
 
-@test
+@Test
 def takeLeft06(): Bool = String.takeLeft(1, "a") == "a"
 
-@test
+@Test
 def takeLeft07(): Bool = String.takeLeft(2, "a") == "a"
 
-@test
+@Test
 def takeLeft08(): Bool = String.takeLeft(0, "ab") == ""
 
-@test
+@Test
 def takeLeft09(): Bool = String.takeLeft(1, "ab") == "a"
 
-@test
+@Test
 def takeLeft10(): Bool = String.takeLeft(2, "ab") == "ab"
 
-@test
+@Test
 def takeLeft11(): Bool = String.takeLeft(2, "abcdef") == "ab"
 
-@test
+@Test
 def takeLeft12(): Bool = String.takeLeft(4, "abcdef") == "abcd"
 
-@test
+@Test
 def takeLeft13(): Bool = String.takeLeft(10, "abcdef") == "abcdef"
 
 /////////////////////////////////////////////////////////////////////////////
 // takeRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def takeRight01(): Bool = String.takeRight(-1, "") == ""
 
-@test
+@Test
 def takeRight02(): Bool = String.takeRight(0, "") == ""
 
-@test
+@Test
 def takeRight03(): Bool = String.takeRight(1, "") == ""
 
-@test
+@Test
 def takeRight04(): Bool = String.takeRight(-1, "a") == ""
 
-@test
+@Test
 def takeRight05(): Bool = String.takeRight(0, "a") == ""
 
-@test
+@Test
 def takeRight06(): Bool = String.takeRight(1, "a") == "a"
 
-@test
+@Test
 def takeRight07(): Bool = String.takeRight(2, "a") == "a"
 
-@test
+@Test
 def takeRight08(): Bool = String.takeRight(0, "ab") == ""
 
-@test
+@Test
 def takeRight09(): Bool = String.takeRight(1, "ab") == "b"
 
-@test
+@Test
 def takeRight10(): Bool = String.takeRight(2, "ab") == "ab"
 
-@test
+@Test
 def takeRight11(): Bool = String.takeRight(2, "abcdef") == "ef"
 
-@test
+@Test
 def takeRight12(): Bool = String.takeRight(4, "abcdef") == "cdef"
 
-@test
+@Test
 def takeRight13(): Bool = String.takeRight(10, "abcdef") == "abcdef"
 
 /////////////////////////////////////////////////////////////////////////////
 // drop                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def drop01(): Bool = String.drop(-1, "") == ""
 
-@test
+@Test
 def drop02(): Bool = String.drop(0, "") == ""
 
-@test
+@Test
 def drop03(): Bool = String.drop(1, "") == ""
 
-@test
+@Test
 def drop04(): Bool = String.drop(-1, "a") == "a"
 
-@test
+@Test
 def drop05(): Bool = String.drop(0, "a") == "a"
 
-@test
+@Test
 def drop06(): Bool = String.drop(1, "a") == ""
 
-@test
+@Test
 def drop07(): Bool = String.drop(2, "a") == ""
 
-@test
+@Test
 def drop08(): Bool = String.drop(0, "ab") == "ab"
 
-@test
+@Test
 def drop09(): Bool = String.drop(1, "ab") == "b"
 
-@test
+@Test
 def drop10(): Bool = String.drop(2, "ab") == ""
 
-@test
+@Test
 def drop11(): Bool = String.drop(2, "abcdef") == "cdef"
 
-@test
+@Test
 def drop12(): Bool = String.drop(4, "abcdef") == "ef"
 
 /////////////////////////////////////////////////////////////////////////////
 // dropLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def dropLeft01(): Bool = String.dropLeft(-1, "") == ""
 
-@test
+@Test
 def dropLeft02(): Bool = String.dropLeft(0, "") == ""
 
-@test
+@Test
 def dropLeft03(): Bool = String.dropLeft(1, "") == ""
 
-@test
+@Test
 def dropLeft04(): Bool = String.dropLeft(-1, "a") == "a"
 
-@test
+@Test
 def dropLeft05(): Bool = String.dropLeft(0, "a") == "a"
 
-@test
+@Test
 def dropLeft06(): Bool = String.dropLeft(1, "a") == ""
 
-@test
+@Test
 def dropLeft07(): Bool = String.dropLeft(2, "a") == ""
 
-@test
+@Test
 def dropLeft08(): Bool = String.dropLeft(0, "ab") == "ab"
 
-@test
+@Test
 def dropLeft09(): Bool = String.dropLeft(1, "ab") == "b"
 
-@test
+@Test
 def dropLeft10(): Bool = String.dropLeft(2, "ab") == ""
 
-@test
+@Test
 def dropLeft11(): Bool = String.dropLeft(2, "abcdef") == "cdef"
 
-@test
+@Test
 def dropLeft12(): Bool = String.dropLeft(4, "abcdef") == "ef"
 
 /////////////////////////////////////////////////////////////////////////////
 // dropRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def dropRight01(): Bool = String.dropRight(-1, "") == ""
 
-@test
+@Test
 def dropRight02(): Bool = String.dropRight(0, "") == ""
 
-@test
+@Test
 def dropRight03(): Bool = String.dropRight(1, "") == ""
 
-@test
+@Test
 def dropRight04(): Bool = String.dropRight(-1, "a") == "a"
 
-@test
+@Test
 def dropRight05(): Bool = String.dropRight(0, "a") == "a"
 
-@test
+@Test
 def dropRight06(): Bool = String.dropRight(1, "a") == ""
 
-@test
+@Test
 def dropRight07(): Bool = String.dropRight(2, "a") == ""
 
-@test
+@Test
 def dropRight08(): Bool = String.dropRight(0, "ab") == "ab"
 
-@test
+@Test
 def dropRight09(): Bool = String.dropRight(1, "ab") == "a"
 
-@test
+@Test
 def dropRight10(): Bool = String.dropRight(2, "ab") == ""
 
-@test
+@Test
 def dropRight11(): Bool = String.dropRight(2, "abcdef") == "abcd"
 
-@test
+@Test
 def dropRight12(): Bool = String.dropRight(4, "abcdef") == "ab"
 
 /////////////////////////////////////////////////////////////////////////////
 // takeWhile                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def takeWhile01(): Bool = String.takeWhile(Char.isUpperCase, "") == ""
 
-@test
+@Test
 def takeWhile02(): Bool = String.takeWhile(Char.isUpperCase, "a") == ""
 
-@test
+@Test
 def takeWhile03(): Bool = String.takeWhile(Char.isUpperCase, "A") == "A"
 
-@test
+@Test
 def takeWhile04(): Bool = String.takeWhile(Char.isUpperCase, "ab") == ""
 
-@test
+@Test
 def takeWhile05(): Bool = String.takeWhile(Char.isUpperCase, "aB") == ""
 
-@test
+@Test
 def takeWhile06(): Bool = String.takeWhile(Char.isUpperCase, "Ab") == "A"
 
-@test
+@Test
 def takeWhile07(): Bool = String.takeWhile(Char.isUpperCase, "AB") == "AB"
 
-@test
+@Test
 def takeWhile08(): Bool = String.takeWhile(Char.isUpperCase, "ABcDefgHIjK") == "AB"
 
 /////////////////////////////////////////////////////////////////////////////
 // takeWhileLeft                                                           //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def takeWhileLeft01(): Bool = String.takeWhileLeft(Char.isUpperCase, "") == ""
 
-@test
+@Test
 def takeWhileLeft02(): Bool = String.takeWhileLeft(Char.isUpperCase, "a") == ""
 
-@test
+@Test
 def takeWhileLeft03(): Bool = String.takeWhileLeft(Char.isUpperCase, "A") == "A"
 
-@test
+@Test
 def takeWhileLeft04(): Bool = String.takeWhileLeft(Char.isUpperCase, "ab") == ""
 
-@test
+@Test
 def takeWhileLeft05(): Bool = String.takeWhileLeft(Char.isUpperCase, "aB") == ""
 
-@test
+@Test
 def takeWhileLeft06(): Bool = String.takeWhileLeft(Char.isUpperCase, "Ab") == "A"
 
-@test
+@Test
 def takeWhileLeft07(): Bool = String.takeWhileLeft(Char.isUpperCase, "AB") == "AB"
 
-@test
+@Test
 def takeWhileLeft08(): Bool = String.takeWhileLeft(Char.isUpperCase, "ABcDefgHIjK") == "AB"
 
 /////////////////////////////////////////////////////////////////////////////
 // takeWhileRight                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def takeWhileRight01(): Bool = String.takeWhileRight(Char.isUpperCase, "") == ""
 
-@test
+@Test
 def takeWhileRight02(): Bool = String.takeWhileRight(Char.isUpperCase, "a") == ""
 
-@test
+@Test
 def takeWhileRight03(): Bool = String.takeWhileRight(Char.isUpperCase, "A") == "A"
 
-@test
+@Test
 def takeWhileRight04(): Bool = String.takeWhileRight(Char.isUpperCase, "ab") == ""
 
-@test
+@Test
 def takeWhileRight05(): Bool = String.takeWhileRight(Char.isUpperCase, "aB") == "B"
 
-@test
+@Test
 def takeWhileRight06(): Bool = String.takeWhileRight(Char.isUpperCase, "Ab") == ""
 
-@test
+@Test
 def takeWhileRight07(): Bool = String.takeWhileRight(Char.isUpperCase, "AB") == "AB"
 
-@test
+@Test
 def takeWhileRight08(): Bool = String.takeWhileRight(Char.isUpperCase, "ABcDefgHIjK") == "K"
 
 /////////////////////////////////////////////////////////////////////////////
 // dropWhile                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def dropWhile01(): Bool = String.dropWhile(Char.isUpperCase, "") == ""
 
-@test
+@Test
 def dropWhile02(): Bool = String.dropWhile(Char.isUpperCase, "a") == "a"
 
-@test
+@Test
 def dropWhile03(): Bool = String.dropWhile(Char.isUpperCase, "A") == ""
 
-@test
+@Test
 def dropWhile04(): Bool = String.dropWhile(Char.isUpperCase, "ab") == "ab"
 
-@test
+@Test
 def dropWhile05(): Bool = String.dropWhile(Char.isUpperCase, "aB") == "aB"
 
-@test
+@Test
 def dropWhile06(): Bool = String.dropWhile(Char.isUpperCase, "Ab") == "b"
 
-@test
+@Test
 def dropWhile07(): Bool = String.dropWhile(Char.isUpperCase, "AB") == ""
 
-@test
+@Test
 def dropWhile08(): Bool = String.dropWhile(Char.isUpperCase, "ABcDefgHIjK") == "cDefgHIjK"
 
 /////////////////////////////////////////////////////////////////////////////
 // dropWhileLeft                                                           //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def dropWhileLeft01(): Bool = String.dropWhileLeft(Char.isUpperCase, "") == ""
 
-@test
+@Test
 def dropWhileLeft02(): Bool = String.dropWhileLeft(Char.isUpperCase, "a") == "a"
 
-@test
+@Test
 def dropWhileLeft03(): Bool = String.dropWhileLeft(Char.isUpperCase, "A") == ""
 
-@test
+@Test
 def dropWhileLeft04(): Bool = String.dropWhileLeft(Char.isUpperCase, "ab") == "ab"
 
-@test
+@Test
 def dropWhileLeft05(): Bool = String.dropWhileLeft(Char.isUpperCase, "aB") == "aB"
 
-@test
+@Test
 def dropWhileLeft06(): Bool = String.dropWhileLeft(Char.isUpperCase, "Ab") == "b"
 
-@test
+@Test
 def dropWhileLeft07(): Bool = String.dropWhileLeft(Char.isUpperCase, "AB") == ""
 
-@test
+@Test
 def dropWhileLeft08(): Bool = String.dropWhileLeft(Char.isUpperCase, "ABcDefgHIjK") == "cDefgHIjK"
 
 /////////////////////////////////////////////////////////////////////////////
 // dropWhileRight                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def dropWhileRight01(): Bool = String.dropWhileRight(Char.isUpperCase, "") == ""
 
-@test
+@Test
 def dropWhileRight02(): Bool = String.dropWhileRight(Char.isUpperCase, "a") == "a"
 
-@test
+@Test
 def dropWhileRight03(): Bool = String.dropWhileRight(Char.isUpperCase, "A") == ""
 
-@test
+@Test
 def dropWhileRight04(): Bool = String.dropWhileRight(Char.isUpperCase, "ab") == "ab"
 
-@test
+@Test
 def dropWhileRight05(): Bool = String.dropWhileRight(Char.isUpperCase, "aB") == "a"
 
-@test
+@Test
 def dropWhileRight06(): Bool = String.dropWhileRight(Char.isUpperCase, "Ab") == "Ab"
 
-@test
+@Test
 def dropWhileRight07(): Bool = String.dropWhileRight(Char.isUpperCase, "AB") == ""
 
-@test
+@Test
 def dropWhileRight08(): Bool = String.dropWhileRight(Char.isUpperCase, "ABcDefgHIjK") == "ABcDefgHIj"
 
 /////////////////////////////////////////////////////////////////////////////
 // dropWhileAround                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def dropWhileAround01(): Bool = String.dropWhileRight(Char.isUpperCase, "") == ""
 
-@test
+@Test
 def dropWhileAround02(): Bool = String.dropWhileAround(Char.isUpperCase, "a") == "a"
 
-@test
+@Test
 def dropWhileAround03(): Bool = String.dropWhileAround(Char.isUpperCase, "A") == ""
 
-@test
+@Test
 def dropWhileAround04(): Bool = String.dropWhileAround(Char.isUpperCase, "ab") == "ab"
 
-@test
+@Test
 def dropWhileAround05(): Bool = String.dropWhileAround(Char.isUpperCase, "aB") == "a"
 
-@test
+@Test
 def dropWhileAround06(): Bool = String.dropWhileAround(Char.isUpperCase, "Ab") == "b"
 
-@test
+@Test
 def dropWhileAround07(): Bool = String.dropWhileAround(Char.isUpperCase, "AB") == ""
 
-@test
+@Test
 def dropWhileAround08(): Bool = String.dropWhileAround(Char.isUpperCase, "ABcDefgHIjK") == "cDefgHIj"
 
 /////////////////////////////////////////////////////////////////////////////
 // splitAt                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def splitAt01(): Bool = String.splitAt(0, "") == ("", "")
 
-@test
+@Test
 def splitAt02(): Bool = String.splitAt(1, "") == ("", "")
 
-@test
+@Test
 def splitAt03(): Bool = String.splitAt(-1, "") == ("", "")
 
-@test
+@Test
 def splitAt04(): Bool = String.splitAt(0, "a") == ("", "a")
 
-@test
+@Test
 def splitAt05(): Bool = String.splitAt(1, "a") == ("a", "")
 
-@test
+@Test
 def splitAt06(): Bool = String.splitAt(-1, "a") == ("", "a")
 
-@test
+@Test
 def splitAt07(): Bool = String.splitAt(0, "ab") == ("", "ab")
 
-@test
+@Test
 def splitAt08(): Bool = String.splitAt(1, "ab") == ("a", "b")
 
-@test
+@Test
 def splitAt09(): Bool = String.splitAt(2, "ab") == ("ab", "")
 
-@test
+@Test
 def splitAt10(): Bool = String.splitAt(-1, "ab") == ("", "ab")
 
-@test
+@Test
 def splitAt11(): Bool = String.splitAt(3, "ab") == ("ab", "")
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def foldLeft01(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "", "")  == ""
 
-@test
+@Test
 def foldLeft02(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "a") == "a"
 
-@test
+@Test
 def foldLeft03(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "ab") == "ab"
 
-@test
+@Test
 def foldLeft04(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abc") == "abc"
 
-@test
+@Test
 def foldLeft05(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abcd") == "abcd"
 
-@test
+@Test
 def foldLeft06(): Bool = String.foldLeft((ac, c) -> ac + Char.toString(c), "",  "abcde") == "abcde"
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def foldRight01(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "", "")  == ""
 
-@test
+@Test
 def foldRight02(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "", "a") == "a"
 
-@test
+@Test
 def foldRight03(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "", "ab") == "ab"
 
-@test
+@Test
 def foldRight04(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abc") == "abc"
 
-@test
+@Test
 def foldRight05(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abcd") == "abcd"
 
-@test
+@Test
 def foldRight06(): Bool = String.foldRight((c, ac) -> Char.toString(c) + ac, "",  "abcde") == "abcde"
 
 /////////////////////////////////////////////////////////////////////////////
 // foldLeft2                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def foldLeft201(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "", "") == ""
 
-@test
+@Test
 def foldLeft202(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "a", "_") == "a"
 
-@test
+@Test
 def foldLeft203(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "a", "A") == "A"
 
-@test
+@Test
 def foldLeft204(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "__") == "ab"
 
-@test
+@Test
 def foldLeft205(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "A_") == "Ab"
 
-@test
+@Test
 def foldLeft206(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "AB") == "AB"
 
-@test
+@Test
 def foldLeft207(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "") == ""
 
-@test
+@Test
 def foldLeft208(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "_") == "a"
 
-@test
+@Test
 def foldLeft209(): Bool =
     String.foldLeft2((ac, a, b) -> if (Char.isUpperCase(b)) ac + Char.toString(b) else ac + Char.toString(a), "", "ab", "A") == "A"
 
@@ -1522,39 +1522,39 @@ def foldLeft209(): Bool =
 // foldRight2                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def foldRight201(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "", "") == ""
 
-@test
+@Test
 def foldRight202(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "a", "_") == "a"
 
-@test
+@Test
 def foldRight203(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "a", "A") == "A"
 
-@test
+@Test
 def foldRight204(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "__") == "ab"
 
-@test
+@Test
 def foldRight205(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "A_") == "Ab"
 
-@test
+@Test
 def foldRight206(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "AB") == "AB"
 
-@test
+@Test
 def foldRight207(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "") == ""
 
-@test
+@Test
 def foldRight208(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "_") == "b"
 
-@test
+@Test
 def foldRight209(): Bool =
     String.foldRight2((a, b, ac) -> if (Char.isUpperCase(b)) Char.toString(b) + ac else Char.toString(a) + ac, "", "ab", "B") == "B"
 
@@ -1562,35 +1562,35 @@ def foldRight209(): Bool =
 // unfold                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def unfold01(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, 0) == "aaaaa"
 
-@test
+@Test
 def unfold02(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, 1) == "aaaa"
 
-@test
+@Test
 def unfold03(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, 2) == "aaa"
 
-@test
+@Test
 def unfold04(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, 3) == "aa"
 
-@test
+@Test
 def unfold05(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, 4) == "a"
 
-@test
+@Test
 def unfold06(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, 5) == ""
 
-@test
+@Test
 def unfold07(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, 6) == ""
 
-@test
+@Test
 def unfold08(): Bool =
     String.unfold(x -> if (x < 5) Some('a', x+1) else None, -1) == "aaaaaa"
 
@@ -1657,7 +1657,7 @@ def toChar(step: Int32): Char = match step {
     case _   => bug!("toChar called with bad input!")
 }
 
-@test
+@Test
 def unfoldWithIter01(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1671,7 +1671,7 @@ def unfoldWithIter01(): Bool = region rc {
     String.unfoldWithIter(step) == ""
 }
 
-@test
+@Test
 def unfoldWithIter02(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1685,7 +1685,7 @@ def unfoldWithIter02(): Bool = region rc {
     String.unfoldWithIter(step) == "a"
 }
 
-@test
+@Test
 def unfoldWithIter03(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1699,7 +1699,7 @@ def unfoldWithIter03(): Bool = region rc {
     String.unfoldWithIter(step) == "ab"
 }
 
-@test
+@Test
 def unfoldWithIter04(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1713,7 +1713,7 @@ def unfoldWithIter04(): Bool = region rc {
     String.unfoldWithIter(step) == "abcdefghij"
 }
 
-@test
+@Test
 def unfoldWithIter05(): Bool = region rc {
     let x = ref 5 @ rc;
     let step = () ->
@@ -1727,7 +1727,7 @@ def unfoldWithIter05(): Bool = region rc {
     String.unfoldWithIter(step) == "fghij"
 }
 
-@test
+@Test
 def unfoldWithIter06(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1745,35 +1745,35 @@ def unfoldWithIter06(): Bool = region rc {
 // unfoldString                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def unfoldString01(): Bool =
     String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 0) == "ab.ab.ab.ab.ab."
 
-@test
+@Test
 def unfoldString02(): Bool =
     String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 1) == "ab.ab.ab.ab."
 
-@test
+@Test
 def unfoldString03(): Bool =
     String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 2) == "ab.ab.ab."
 
-@test
+@Test
 def unfoldString04(): Bool =
     String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 3) == "ab.ab."
 
-@test
+@Test
 def unfoldString05(): Bool =
     String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 4) == "ab."
 
-@test
+@Test
 def unfoldString06(): Bool =
     String.unfoldString(x -> if (x < 5) Some("", x+1) else None, 5) == ""
 
-@test
+@Test
 def unfoldString07(): Bool =
     String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, 6) == ""
 
-@test
+@Test
 def unfoldString08(): Bool =
     String.unfoldString(x -> if (x < 5) Some("ab.", x+1) else None, -1) == "ab.ab.ab.ab.ab.ab."
 
@@ -1782,7 +1782,7 @@ def unfoldString08(): Bool =
 // unfoldStringWithIter                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def unfoldStringWithIter01(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1798,7 +1798,7 @@ def unfoldStringWithIter01(): Bool = region rc {
     String.unfoldStringWithIter(step) == ""
 }
 
-@test
+@Test
 def unfoldStringWithIter02(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1814,7 +1814,7 @@ def unfoldStringWithIter02(): Bool = region rc {
     String.unfoldStringWithIter(step) == "Aa."
 }
 
-@test
+@Test
 def unfoldStringWithIter03(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1830,7 +1830,7 @@ def unfoldStringWithIter03(): Bool = region rc {
     String.unfoldStringWithIter(step) == "Aa.Bb."
 }
 
-@test
+@Test
 def unfoldStringWithIter04(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1846,7 +1846,7 @@ def unfoldStringWithIter04(): Bool = region rc {
     String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
 }
 
-@test
+@Test
 def unfoldStringWithIter05(): Bool = region rc {
     let x = ref 5 @ rc;
     let step = () ->
@@ -1862,7 +1862,7 @@ def unfoldStringWithIter05(): Bool = region rc {
     String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
 }
 
-@test
+@Test
 def unfoldStringWithIter06(): Bool = region rc {
     let x = ref 0 @ rc;
     let step = () ->
@@ -1882,164 +1882,164 @@ def unfoldStringWithIter06(): Bool = region rc {
 // exists                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def exists01(): Bool = String.exists(Char.isUpperCase, "") == false
 
-@test
+@Test
 def exists02(): Bool = String.exists(Char.isUpperCase, "a") == false
 
-@test
+@Test
 def exists03(): Bool = String.exists(Char.isUpperCase, "A") == true
 
-@test
+@Test
 def exists04(): Bool = String.exists(Char.isUpperCase, "ab") == false
 
-@test
+@Test
 def exists05(): Bool = String.exists(Char.isUpperCase, "aB") == true
 
-@test
+@Test
 def exists06(): Bool = String.exists(Char.isUpperCase, "Ab") == true
 
-@test
+@Test
 def exists07(): Bool = String.exists(Char.isUpperCase, "AB") == true
 
-@test
+@Test
 def exists08(): Bool = String.exists(Char.isUpperCase, "a*c") == false
 
-@test
+@Test
 def exists09(): Bool = String.exists(Char.isUpperCase, "aBc") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // forAll                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def forAll01(): Bool = String.forAll(Char.isUpperCase, "") == true
 
-@test
+@Test
 def forAll02(): Bool = String.forAll(Char.isUpperCase, "a") == false
 
-@test
+@Test
 def forAll03(): Bool = String.forAll(Char.isUpperCase, "A") == true
 
-@test
+@Test
 def forAll04(): Bool = String.forAll(Char.isUpperCase, "a") == false
 
-@test
+@Test
 def forAll05(): Bool = String.forAll(Char.isUpperCase, "aB") == false
 
-@test
+@Test
 def forAll06(): Bool = String.forAll(Char.isUpperCase, "Ab") == false
 
-@test
+@Test
 def forAll07(): Bool = String.forAll(Char.isUpperCase, "AB") == true
 
-@test
+@Test
 def forAll08(): Bool = String.forAll(Char.isUpperCase, "a*b") == false
 
-@test
+@Test
 def forAll09(): Bool = String.forAll(Char.isUpperCase, "aBc") == false
 
-@test
+@Test
 def forAll10(): Bool = String.forAll(Char.isUpperCase, "ABC") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // isAscii                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def isAscii01(): Bool = String.isAscii("") == true
 
-@test
+@Test
 def isAscii02(): Bool = String.isAscii("a") == true
 
-@test
+@Test
 def isAscii03(): Bool = String.isAscii("A") == true
 
-@test
+@Test
 def isAscii04(): Bool = String.isAscii("0") == true
 
-@test
+@Test
 def isAscii05(): Bool = String.isAscii("~") == true
 
-@test
+@Test
 def isAscii06(): Bool = String.isAscii("Â") == false
 
-@test
+@Test
 def isAscii07(): Bool = String.isAscii("†") == false
 
-@test
+@Test
 def isAscii08(): Bool = String.isAscii("ab") == true
 
-@test
+@Test
 def isAscii09(): Bool = String.isAscii("a†") == false
 
-@test
+@Test
 def isAscii10(): Bool = String.isAscii("†b") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // isWhiteSpace                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def isWhiteSpace01(): Bool = String.isWhiteSpace("") == true
 
-@test
+@Test
 def isWhiteSpace02(): Bool = String.isWhiteSpace(" ") == true
 
-@test
+@Test
 def isWhiteSpace03(): Bool = String.isWhiteSpace("A") == false
 
-@test
+@Test
 def isWhiteSpace04(): Bool = String.isWhiteSpace("0") == false
 
-@test
+@Test
 def isWhiteSpace05(): Bool = String.isWhiteSpace("~") == false
 
-@test
+@Test
 def isWhiteSpace06(): Bool = String.isWhiteSpace(String.lineSeparator()) == true
 
-@test
+@Test
 def isWhiteSpace07(): Bool = String.isWhiteSpace("  ") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // trimLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def trimLeft01(): Bool = String.trimLeft("") == ""
 
-@test
+@Test
 def trimLeft02(): Bool = String.trimLeft(" ") == ""
 
-@test
+@Test
 def trimLeft03(): Bool = String.trimLeft("a") == "a"
 
-@test
+@Test
 def trimLeft04(): Bool = String.trimLeft(" a") == "a"
 
-@test
+@Test
 def trimLeft05(): Bool = String.trimLeft("a ") == "a "
 
-@test
+@Test
 def trimLeft06(): Bool = String.trimLeft("aa") == "aa"
 
-@test
+@Test
 def trimLeft07(): Bool = String.trimLeft("  aa") == "aa"
 
-@test
+@Test
 def trimLeft08(): Bool = String.trimLeft("aa  ") == "aa  "
 
-@test
+@Test
 def trimLeft09(): Bool = String.trimLeft(" aa ") == "aa "
 
-@test
+@Test
 def trimLeft10(): Bool = String.trimLeft("  aa  ") == "aa  "
 
-@test
+@Test
 def trimLeft11(): Bool = String.trimLeft(" a a ") == "a a "
 
-@test
+@Test
 def trimLeft12(): Bool = String.trimLeft(String.lineSeparator() + "aa") == "aa"
 
 
@@ -2047,492 +2047,492 @@ def trimLeft12(): Bool = String.trimLeft(String.lineSeparator() + "aa") == "aa"
 // trimRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def trimRight01(): Bool = String.trimRight("") == ""
 
-@test
+@Test
 def trimRight02(): Bool = String.trimRight(" ") == ""
 
-@test
+@Test
 def trimRight03(): Bool = String.trimRight("a") == "a"
 
-@test
+@Test
 def trimRight04(): Bool = String.trimRight(" a") == " a"
 
-@test
+@Test
 def trimRight05(): Bool = String.trimRight("a ") == "a"
 
-@test
+@Test
 def trimRight06(): Bool = String.trimRight("aa") == "aa"
 
-@test
+@Test
 def trimRight07(): Bool = String.trimRight("  aa") == "  aa"
 
-@test
+@Test
 def trimRight08(): Bool = String.trimRight("aa  ") == "aa"
 
-@test
+@Test
 def trimRight09(): Bool = String.trimRight(" aa ") == " aa"
 
-@test
+@Test
 def trimRight10(): Bool = String.trimRight("  aa  ") == "  aa"
 
-@test
+@Test
 def trimRight11(): Bool = String.trimRight(" a a ") == " a a"
 
-@test
+@Test
 def trimRight12(): Bool = String.trimRight("aa" + String.lineSeparator()) == "aa"
 
 /////////////////////////////////////////////////////////////////////////////
 // repeat                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def repeat01(): Bool = String.repeat(-1, "a") == ""
 
-@test
+@Test
 def repeat02(): Bool = String.repeat(0, "a") == ""
 
-@test
+@Test
 def repeat03(): Bool = String.repeat(1, "a") == "a"
 
-@test
+@Test
 def repeat04(): Bool = String.repeat(2, "a") == "aa"
 
-@test
+@Test
 def repeat05(): Bool = String.repeat(3, "a") == "aaa"
 
-@test
+@Test
 def repeat06(): Bool = String.repeat(0, "ab") == ""
 
-@test
+@Test
 def repeat07(): Bool = String.repeat(1, "ab") == "ab"
 
-@test
+@Test
 def repeat08(): Bool = String.repeat(2, "ab") == "abab"
 
-@test
+@Test
 def repeat09(): Bool = String.repeat(3, "ab") == "ababab"
 
 /////////////////////////////////////////////////////////////////////////////
 // padLeft                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def padLeft01(): Bool = String.padLeft(0, ' ', "") == ""
 
-@test
+@Test
 def padLeft02(): Bool = String.padLeft(1, ' ', "") == " "
 
-@test
+@Test
 def padLeft03(): Bool = String.padLeft(2, ' ', "") == "  "
 
-@test
+@Test
 def padLeft04(): Bool = String.padLeft(3, ' ', "") == "   "
 
-@test
+@Test
 def padLeft05(): Bool = String.padLeft(0, ' ', "a") == "a"
 
-@test
+@Test
 def padLeft06(): Bool = String.padLeft(1, ' ', "a") == "a"
 
-@test
+@Test
 def padLeft07(): Bool = String.padLeft(2, ' ', "a") == " a"
 
-@test
+@Test
 def padLeft08(): Bool = String.padLeft(3, ' ', "a") == "  a"
 
-@test
+@Test
 def padLeft09(): Bool = String.padLeft(0, ' ', "ab") == "ab"
 
-@test
+@Test
 def padLeft10(): Bool = String.padLeft(1, ' ', "ab") == "ab"
 
-@test
+@Test
 def padLeft11(): Bool = String.padLeft(2, ' ', "ab") == "ab"
 
-@test
+@Test
 def padLeft12(): Bool = String.padLeft(3, ' ', "ab") == " ab"
 
-@test
+@Test
 def padLeft13(): Bool = String.padLeft(3, '_', "a") == "__a"
 
-@test
+@Test
 def padLeft14(): Bool = String.padLeft(3, '_', "ab") == "_ab"
 
-@test
+@Test
 def padLeft15(): Bool = String.padLeft(3, '_', "abc") == "abc"
 
 /////////////////////////////////////////////////////////////////////////////
 // padRight                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def padRight01(): Bool = String.padRight(0, ' ', "") == ""
 
-@test
+@Test
 def padRight02(): Bool = String.padRight(1, ' ', "") == " "
 
-@test
+@Test
 def padRight03(): Bool = String.padRight(2, ' ', "") == "  "
 
-@test
+@Test
 def padRight04(): Bool = String.padRight(3, ' ', "") == "   "
 
-@test
+@Test
 def padRight05(): Bool = String.padRight(0, ' ', "a") == "a"
 
-@test
+@Test
 def padRight06(): Bool = String.padRight(1, ' ', "a") == "a"
 
-@test
+@Test
 def padRight07(): Bool = String.padRight(2, ' ', "a") == "a "
 
-@test
+@Test
 def padRight08(): Bool = String.padRight(3, ' ', "a") == "a  "
 
-@test
+@Test
 def padRight09(): Bool = String.padRight(0, ' ', "ab") == "ab"
 
-@test
+@Test
 def padRight10(): Bool = String.padRight(1, ' ', "ab") == "ab"
 
-@test
+@Test
 def padRight11(): Bool = String.padRight(2, ' ', "ab") == "ab"
 
-@test
+@Test
 def padRight12(): Bool = String.padRight(3, ' ', "ab") == "ab "
 
-@test
+@Test
 def padRight13(): Bool = String.padRight(3, '_', "a") == "a__"
 
-@test
+@Test
 def padRight14(): Bool = String.padRight(3, '_', "ab") == "ab_"
 
-@test
+@Test
 def padRight15(): Bool = String.padRight(3, '_', "abc") == "abc"
 
 /////////////////////////////////////////////////////////////////////////////
 // center                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def center01(): Bool = String.center(0, ' ', "") == ""
 
-@test
+@Test
 def center02(): Bool = String.center(1, ' ', "") == " "
 
-@test
+@Test
 def center03(): Bool = String.center(2, ' ', "") == "  "
 
-@test
+@Test
 def center04(): Bool = String.center(3, ' ', "") == "   "
 
-@test
+@Test
 def center05(): Bool = String.center(0, ' ', "a") == "a"
 
-@test
+@Test
 def center06(): Bool = String.center(1, ' ', "a") == "a"
 
-@test
+@Test
 def center07(): Bool = String.center(2, ' ', "a") == "a "
 
-@test
+@Test
 def center08(): Bool = String.center(3, ' ', "a") == " a "
 
-@test
+@Test
 def center09(): Bool = String.center(0, ' ', "ab") == "ab"
 
-@test
+@Test
 def center10(): Bool = String.center(1, ' ', "ab") == "ab"
 
-@test
+@Test
 def center11(): Bool = String.center(2, ' ', "ab") == "ab"
 
-@test
+@Test
 def center12(): Bool = String.center(3, ' ', "ab") == "ab "
 
-@test
+@Test
 def center13(): Bool = String.center(3, '_', "a") == "_a_"
 
-@test
+@Test
 def center14(): Bool = String.center(3, '_', "ab") == "ab_"
 
-@test
+@Test
 def center15(): Bool = String.center(3, '_', "abc") == "abc"
 
-@test
+@Test
 def center16(): Bool = String.center(7, '_', "abc") == "__abc__"
 
-@test
+@Test
 def center17(): Bool = String.center(8, '_', "abc") == "__abc___"
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def replace01(): Bool = String.replace({from = "c"}, {to = "d"}, "") == ""
 
-@test
+@Test
 def replace02(): Bool = String.replace({from = "c"}, {to = "d"}, "a") == "a"
 
-@test
+@Test
 def replace03(): Bool = String.replace({from = "c"}, {to = "d"}, "c") == "d"
 
-@test
+@Test
 def replace04(): Bool = String.replace({from = "c"}, {to = "d"}, "d") == "d"
 
-@test
+@Test
 def replace05(): Bool = String.replace({from = "c"}, {to = "d"}, "ab") == "ab"
 
-@test
+@Test
 def replace06(): Bool = String.replace({from = "c"}, {to = "d"}, "abc") == "abd"
 
-@test
+@Test
 def replace07(): Bool = String.replace({from = "c"}, {to = "d"}, "cd") == "dd"
 
-@test
+@Test
 def replace08(): Bool = String.replace({from = "c"}, {to = "d"}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceChar                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def replaceChar01(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "") == ""
 
-@test
+@Test
 def replaceChar02(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "a") == "a"
 
-@test
+@Test
 def replaceChar03(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "c") == "d"
 
-@test
+@Test
 def replaceChar04(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "d") == "d"
 
-@test
+@Test
 def replaceChar05(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "ab") == "ab"
 
-@test
+@Test
 def replaceChar06(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "abc") == "abd"
 
-@test
+@Test
 def replaceChar07(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cd") == "dd"
 
-@test
+@Test
 def replaceChar08(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceMatches                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def replaceMatches01(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "") == ""
 
-@test
+@Test
 def replaceMatches02(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "a") == "a"
 
-@test
+@Test
 def replaceMatches03(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "c") == "d"
 
-@test
+@Test
 def replaceMatches04(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "d") == "d"
 
-@test
+@Test
 def replaceMatches05(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "ab") == "ab"
 
-@test
+@Test
 def replaceMatches06(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "abc") == "abd"
 
-@test
+@Test
 def replaceMatches07(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cd") == "dd"
 
-@test
+@Test
 def replaceMatches08(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceFirstMatch                                                       //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def replaceFirstMatch01(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "") == ""
 
-@test
+@Test
 def replaceFirstMatch02(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "a") == "a"
 
-@test
+@Test
 def replaceFirstMatch03(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "c") == "d"
 
-@test
+@Test
 def replaceFirstMatch04(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "d") == "d"
 
-@test
+@Test
 def replaceFirstMatch05(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "ab") == "ab"
 
-@test
+@Test
 def replaceFirstMatch06(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "abc") == "abd"
 
-@test
+@Test
 def replaceFirstMatch07(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cd") == "dd"
 
-@test
+@Test
 def replaceFirstMatch08(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cc") == "dc"
 
 /////////////////////////////////////////////////////////////////////////////
 // update                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def update01(): Bool = String.update(0, 'b', "") == ""
 
-@test
+@Test
 def update02(): Bool = String.update(-1, 'b', "a") == "a"
 
-@test
+@Test
 def update03(): Bool = String.update(0, 'b', "a") == "b"
 
-@test
+@Test
 def update04(): Bool = String.update(1, 'b', "a") == "a"
 
-@test
+@Test
 def update05(): Bool = String.update(0, 'e', "ab") == "eb"
 
-@test
+@Test
 def update06(): Bool = String.update(1, 'e', "ab") == "ae"
 
-@test
+@Test
 def update07(): Bool = String.update(2, 'e', "ab") == "ab"
 
 /////////////////////////////////////////////////////////////////////////////
 // patch                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def patch01(): Bool = String.patch(0, 0, "", "") == ""
 
-@test
+@Test
 def patch02(): Bool = String.patch(0, 2, "ab", "") == ""
 
-@test
+@Test
 def patch03(): Bool = String.patch(0, 2, "", "ab") == "ab"
 
-@test
+@Test
 def patch04(): Bool = String.patch(-3, 3, "abd", "ab") == "ab"
 
-@test
+@Test
 def patch05(): Bool = String.patch(2, 3, "abd", "ab") == "ab"
 
-@test
+@Test
 def patch06(): Bool = String.patch(0, 0, "", "a") == "a"
 
-@test
+@Test
 def patch07(): Bool = String.patch(1, 0, "b", "a") == "a"
 
-@test
+@Test
 def patch08(): Bool = String.patch(0, 1, "b", "a") == "b"
 
-@test
+@Test
 def patch09(): Bool = String.patch(0, 2, "bd", "a") == "b"
 
-@test
+@Test
 def patch10(): Bool = String.patch(-1, 2, "bd", "a") == "d"
 
-@test
+@Test
 def patch11(): Bool = String.patch(-1, 2, "cd", "ab") == "db"
 
-@test
+@Test
 def patch12(): Bool = String.patch(1, 2, "cd", "ab") == "ac"
 
-@test
+@Test
 def patch13(): Bool = String.patch(-2, 2, "cd", "ab") == "ab"
 
-@test
+@Test
 def patch14(): Bool = String.patch(2, 2, "cd", "ab") == "ab"
 
-@test
+@Test
 def patch15(): Bool = String.patch(1, 1, "c", "ab") == "ac"
 
-@test
+@Test
 def patch16(): Bool = String.patch(0, 2, "cd", "ab") == "cd"
 
-@test
+@Test
 def patch17(): Bool = String.patch(0, 1, "d", "abc") == "dbc"
 
-@test
+@Test
 def patch18(): Bool = String.patch(1, 1, "d", "abc") == "adc"
 
-@test
+@Test
 def patch19(): Bool = String.patch(2, 1, "d", "abc") == "abd"
 
-@test
+@Test
 def patch20(): Bool = String.patch(0, 2, "de", "abc") == "dec"
 
-@test
+@Test
 def patch21(): Bool = String.patch(1, 2, "de", "abc") == "ade"
 
-@test
+@Test
 def patch22(): Bool = String.patch(0, 2, "def", "abc") == "dec"
 
-@test
+@Test
 def patch23(): Bool = String.patch(0, 3, "def", "abc") == "def"
 
-@test
+@Test
 def patch24(): Bool = String.patch(2, 4, "nopq", "abcdefg") == "abnopqg"
 
-@test
+@Test
 def patch25(): Bool = String.patch(-2, 4, "nopq", "abcdefg") == "pqcdefg"
 
-@test
+@Test
 def patch26(): Bool = String.patch(4, 5, "nopq", "abcdefg") == "abcdnop"
 
-@test
+@Test
 def patch27(): Bool = String.patch(4, 2, "nopq", "abcdefg") == "abcdnog"
 
-@test
+@Test
 def patch28(): Bool = String.patch(-1, 10, "ABCDEFGH", "abcdefg") == "BCDEFGH"
 
 /////////////////////////////////////////////////////////////////////////////
 // indent                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def indent01(): Bool =
     String.indent(3, "") == ""
 
-@test
+@Test
 def indent02(): Bool =
     String.indent(3, String.unlines("abc" :: Nil)) == String.unlines("   abc" :: Nil)
 
-@test
+@Test
 def indent03(): Bool =
     String.indent(3, String.unlines("abc" :: "def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
 
-@test
+@Test
 def indent04(): Bool =
     String.indent(3, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
 
-@test
+@Test
 def indent05(): Bool =
     String.indent(1, String.unlines("abc" :: Nil)) == String.unlines(" abc" :: Nil)
 
-@test
+@Test
 def indent06(): Bool =
     String.indent(1, String.unlines("abc" :: "def" :: Nil)) == String.unlines(" abc" :: " def" :: Nil)
 
-@test
+@Test
 def indent07(): Bool =
     String.indent(1, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines(" ab" :: " cd" :: " ef" :: Nil)
 
-@test
+@Test
 def indent08(): Bool =
     String.indent(0, String.unlines("abc" :: Nil)) == String.unlines("abc" :: Nil)
 
-@test
+@Test
 def indent09(): Bool =
     String.indent(0, String.unlines("abc" :: "def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
 
-@test
+@Test
 def indent10(): Bool =
     String.indent(0, String.unlines("ab" :: "cd" :: "ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
 
@@ -2540,43 +2540,43 @@ def indent10(): Bool =
 // stripIndent                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def stripIndent01(): Bool =
     String.stripIndent(3, "") == ""
 
-@test
+@Test
 def stripIndent02(): Bool =
     String.stripIndent(3, String.unlines("   abc" :: Nil)) == String.unlines("abc" :: Nil)
 
-@test
+@Test
 def stripIndent03(): Bool =
     String.stripIndent(3, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("abc" :: "def" :: Nil)
 
-@test
+@Test
 def stripIndent04(): Bool =
     String.stripIndent(3, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("ab" :: "cd" :: "ef" :: Nil)
 
-@test
+@Test
 def stripIndent05(): Bool =
     String.stripIndent(1, String.unlines("   abc" :: Nil)) == String.unlines("  abc" :: Nil)
 
-@test
+@Test
 def stripIndent06(): Bool =
     String.stripIndent(1, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("  abc" :: "  def" :: Nil)
 
-@test
+@Test
 def stripIndent07(): Bool =
     String.stripIndent(1, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("  ab" :: "  cd" :: "  ef" :: Nil)
 
-@test
+@Test
 def stripIndent08(): Bool =
     String.stripIndent(0, String.unlines("   abc" :: Nil)) == String.unlines("   abc" :: Nil)
 
-@test
+@Test
 def stripIndent09(): Bool =
     String.stripIndent(0, String.unlines("   abc" :: "   def" :: Nil)) == String.unlines("   abc" :: "   def" :: Nil)
 
-@test
+@Test
 def stripIndent10(): Bool  =
     String.stripIndent(0, String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)) == String.unlines("   ab" :: "   cd" :: "   ef" :: Nil)
 
@@ -2584,59 +2584,59 @@ def stripIndent10(): Bool  =
 // lines                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def lines01(): Bool = String.lines("") == Nil
 
-@test
+@Test
 def lines02(): Bool = String.lines("a")  == "a" :: Nil
 
-@test
+@Test
 def lines03(): Bool = String.lines("a" + String.lineSeparator()) == "a" :: Nil
 
-@test
+@Test
 def lines04(): Bool = String.lines(String.lineSeparator() + "a") == "" :: "a" :: Nil
 
-@test
+@Test
 def lines05(): Bool = String.lines("a" + String.lineSeparator() + "b") == "a" :: "b" :: Nil
 
-@test
+@Test
 def lines06(): Bool = String.lines("a" + Char.toString('\n') + "b") == "a" :: "b" :: Nil
 
-@test
+@Test
 def lines07(): Bool = String.lines("a" + Char.toString('\r') + Char.toString('\n') + "b") ==  "a" :: "b" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unlines                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def unlines01(): Bool = String.unlines(Nil) == ""
 
-@test
+@Test
 def unlines02(): Bool =
     String.unlines("" :: Nil) == String.lineSeparator()
 
-@test
+@Test
 def unlines03(): Bool =
     String.unlines("a" :: Nil) == "a" + String.lineSeparator()
 
-@test
+@Test
 def unlines04(): Bool =
     String.unlines("a" :: "" :: Nil) == "a" + String.lineSeparator() + String.lineSeparator()
 
-@test
+@Test
 def unlines05(): Bool =
     String.unlines("" :: "b" :: Nil) == String.lineSeparator() + "b" + String.lineSeparator()
 
-@test
+@Test
 def unlines06(): Bool =
     String.unlines("a" :: "b" :: Nil) == "a" + String.lineSeparator() + "b" + String.lineSeparator()
 
-@test
+@Test
 def unlines07(): Bool =
     String.unlines("a" :: String.lineSeparator() :: Nil) == "a" + String.lineSeparator() + String.lineSeparator() + String.lineSeparator()
 
-@test
+@Test
 def unlines08(): Bool =
     String.unlines(String.lineSeparator() :: "b" :: Nil) ==  String.lineSeparator() + String.lineSeparator() + "b" + String.lineSeparator()
 
@@ -2644,307 +2644,307 @@ def unlines08(): Bool =
 // words                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def words01(): Bool = String.words("") == Nil
 
-@test
+@Test
 def words02(): Bool = String.words("a") == "a" :: Nil
 
-@test
+@Test
 def words03(): Bool = String.words("a ") == "a" :: Nil
 
-@test
+@Test
 def words04(): Bool = String.words(" a") == "a" :: Nil
 
-@test
+@Test
 def words05(): Bool = String.words("a b") == "a" :: "b" :: Nil
 
-@test
+@Test
 def words06(): Bool = String.words("a  b") == "a" :: "b" :: Nil
 
-@test
+@Test
 def words07(): Bool = String.words("a" + Char.toString('\t') + "b") == "a" :: "b" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unwords                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def unwords01(): Bool = String.unwords(Nil) == ""
 
-@test
+@Test
 def unwords02(): Bool = String.unwords("" :: Nil) == ""
 
-@test
+@Test
 def unwords03(): Bool = String.unwords("a" :: Nil) == "a"
 
-@test
+@Test
 def unwords04(): Bool = String.unwords("a" :: "" :: Nil) == "a "
 
-@test
+@Test
 def unwords05(): Bool = String.unwords("" :: "b" :: Nil) == " b"
 
-@test
+@Test
 def unwords06(): Bool = String.unwords("a" :: "b" :: Nil) == "a b"
 
-@test
+@Test
 def unwords07(): Bool = String.unwords("a" :: String.lineSeparator() :: Nil) == "a " + String.lineSeparator()
 
-@test
+@Test
 def unwords08(): Bool = String.unwords(String.lineSeparator() :: "b" :: Nil) ==  String.lineSeparator() + " b"
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOf                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def indexOf01(): Bool = String.indexOf({substr = "a"}, "") == None
 
-@test
+@Test
 def indexOf02(): Bool = String.indexOf({substr = "a"}, "A") == None
 
-@test
+@Test
 def indexOf03(): Bool = String.indexOf({substr = "a"}, "a") == Some(0)
 
-@test
+@Test
 def indexOf04(): Bool = String.indexOf({substr = "a"}, "AB") == None
 
-@test
+@Test
 def indexOf05(): Bool = String.indexOf({substr = "a"}, "ab") == Some(0)
 
-@test
+@Test
 def indexOf06(): Bool = String.indexOf({substr = "b"}, "ab") == Some(1)
 
-@test
+@Test
 def indexOf07(): Bool = String.indexOf({substr = "a"}, "aa") == Some(0)
 
-@test
+@Test
 def indexOf08(): Bool = String.indexOf({substr = "ab"}, "ab") == Some(0)
 
-@test
+@Test
 def indexOf09(): Bool = String.indexOf({substr = "bc"}, "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfLeft                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def indexOfLeft01(): Bool = String.indexOfLeft({substr = "a"}, "") == None
 
-@test
+@Test
 def indexOfLeft02(): Bool = String.indexOfLeft({substr = "a"}, "A") == None
 
-@test
+@Test
 def indexOfLeft03(): Bool = String.indexOfLeft({substr = "a"}, "a") == Some(0)
 
-@test
+@Test
 def indexOfLeft04(): Bool = String.indexOfLeft({substr = "a"}, "AB") == None
 
-@test
+@Test
 def indexOfLeft05(): Bool = String.indexOfLeft({substr = "a"}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfLeft06(): Bool = String.indexOfLeft({substr = "b"}, "ab") == Some(1)
 
-@test
+@Test
 def indexOfLeft07(): Bool = String.indexOfLeft({substr = "a"}, "aa") == Some(0)
 
-@test
+@Test
 def indexOfLeft08(): Bool = String.indexOfLeft({substr = "ab"}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfLeft09(): Bool = String.indexOfLeft({substr = "bc"}, "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfRight                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def indexOfRight01(): Bool = String.indexOfRight({substr = "a"}, "") == None
 
-@test
+@Test
 def indexOfRight02(): Bool = String.indexOfRight({substr = "a"}, "A") == None
 
-@test
+@Test
 def indexOfRight03(): Bool = String.indexOfRight({substr = "a"}, "a") == Some(0)
 
-@test
+@Test
 def indexOfRight04(): Bool = String.indexOfRight({substr = "a"}, "AB") == None
 
-@test
+@Test
 def indexOfRight05(): Bool = String.indexOfRight({substr = "a"}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfRight06(): Bool = String.indexOfRight({substr = "b"}, "ab") == Some(1)
 
-@test
+@Test
 def indexOfRight07(): Bool = String.indexOfRight({substr = "a"}, "aa") == Some(1)
 
-@test
+@Test
 def indexOfRight08(): Bool = String.indexOfRight({substr = "ab"}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfRight09(): Bool = String.indexOfRight({substr = "bc"}, "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // startsWith                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def startsWith01(): Bool = String.startsWith({prefix = ""}, "") == true
 
-@test
+@Test
 def startsWith02(): Bool = String.startsWith({prefix = ""}, "a") == true
 
-@test
+@Test
 def startsWith03(): Bool = String.startsWith({prefix = ""}, "abc") == true
 
-@test
+@Test
 def startsWith04(): Bool = String.startsWith({prefix = "a"}, "") == false
 
-@test
+@Test
 def startsWith05(): Bool = String.startsWith({prefix = "a"}, "a") == true
 
-@test
+@Test
 def startsWith06(): Bool = String.startsWith({prefix = "a"}, "b") == false
 
-@test
+@Test
 def startsWith07(): Bool = String.startsWith({prefix = "a"}, "aa") == true
 
-@test
+@Test
 def startsWith08(): Bool = String.startsWith({prefix = "ab"}, "ab") == true
 
-@test
+@Test
 def startsWith09(): Bool = String.startsWith({prefix = "bs"}, "abc") == false
 
-@test
+@Test
 def startsWith10(): Bool = String.startsWith({prefix = ""}, "Hello World!") == true
 
-@test
+@Test
 def startsWith11(): Bool = String.startsWith({prefix = "Hello"}, "Hello World!") == true
 
-@test
+@Test
 def startsWith12(): Bool = String.startsWith({prefix = "HELLO"}, "Hello World!") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // contains                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def contains01(): Bool = String.contains({substr = ""}, "") == true
 
-@test
+@Test
 def contains02(): Bool = String.contains({substr = ""}, "a") == true
 
-@test
+@Test
 def contains03(): Bool = String.contains({substr = ""}, "abc") == true
 
-@test
+@Test
 def contains04(): Bool = String.contains({substr = "a"}, "") == false
 
-@test
+@Test
 def contains05(): Bool = String.contains({substr = "a"}, "a") == true
 
-@test
+@Test
 def contains06(): Bool = String.contains({substr = "a"}, "b") == false
 
-@test
+@Test
 def contains07(): Bool = String.contains({substr = "a"}, "aa") == true
 
-@test
+@Test
 def contains08(): Bool = String.contains({substr = "ab"}, "ab") == true
 
-@test
+@Test
 def contains09(): Bool = String.contains({substr = "ab"}, "abc") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // endsWith                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def endsWith01(): Bool = String.endsWith({suffix = ""}, "") == true
 
-@test
+@Test
 def endsWith02(): Bool = String.endsWith({suffix = ""}, "a") == true
 
-@test
+@Test
 def endsWith03(): Bool = String.endsWith({suffix = ""}, "abc") == true
 
-@test
+@Test
 def endsWith04(): Bool = String.endsWith({suffix = "a"}, "") == false
 
-@test
+@Test
 def endsWith05(): Bool = String.endsWith({suffix = "a"}, "a") == true
 
-@test
+@Test
 def endsWith06(): Bool = String.endsWith({suffix = "a"}, "b") == false
 
-@test
+@Test
 def endsWith07(): Bool = String.endsWith({suffix = "a"}, "aa") == true
 
-@test
+@Test
 def endsWith08(): Bool = String.endsWith({suffix = "ab"}, "ab") == true
 
-@test
+@Test
 def endsWith09(): Bool = String.endsWith({suffix = "bc"}, "abc") == true
 
-@test
+@Test
 def endsWith10(): Bool = String.endsWith({suffix = "ab"}, "abc") == false
 
-@test
+@Test
 def endsWith11(): Bool = String.endsWith({suffix = ""}, "Hello World!") == true
 
-@test
+@Test
 def endsWith12(): Bool = String.endsWith({suffix = "World!"}, "Hello World!") == true
 
-@test
+@Test
 def endsWith13(): Bool = String.endsWith({suffix = "WORLD!"}, "Hello World!") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // commonPrefix                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def commonPrefix01(): Bool =
     String.commonPrefix("", "") == ""
 
-@test
+@Test
 def commonPrefix02(): Bool =
     String.commonPrefix("a", "") == ""
 
-@test
+@Test
 def commonPrefix03(): Bool =
     String.commonPrefix("", "a") == ""
 
-@test
+@Test
 def commonPrefix04(): Bool =
     String.commonPrefix("a", "a") == "a"
 
-@test
+@Test
 def commonPrefix05(): Bool =
     String.commonPrefix("a", "b") == ""
 
-@test
+@Test
 def commonPrefix06(): Bool =
     String.commonPrefix("ab", "bc") == ""
 
-@test
+@Test
 def commonPrefix07(): Bool =
     String.commonPrefix("ab", "ac") == "a"
 
-@test
+@Test
 def commonPrefix08(): Bool =
     String.commonPrefix("ab", "ab") == "ab"
 
-@test
+@Test
 def commonPrefix09(): Bool =
     String.commonPrefix("abc", "ABC") == ""
 
-@test
+@Test
 def commonPrefix10(): Bool =
     String.commonPrefix("abc", "abcd") == "abc"
 
-@test
+@Test
 def commonPrefix11(): Bool =
     String.commonPrefix("abcd", "abc") == "abc"
 
@@ -2952,47 +2952,47 @@ def commonPrefix11(): Bool =
 // commonSuffix                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def commonSuffix01(): Bool =
     String.commonSuffix("", "") == ""
 
-@test
+@Test
 def commonSuffix02(): Bool =
     String.commonSuffix("a", "") == ""
 
-@test
+@Test
 def commonSuffix03(): Bool =
     String.commonSuffix("", "a") == ""
 
-@test
+@Test
 def commonSuffix04(): Bool =
     String.commonSuffix("a", "a") == "a"
 
-@test
+@Test
 def commonSuffix05(): Bool =
     String.commonSuffix("a", "b") == ""
 
-@test
+@Test
 def commonSuffix06(): Bool =
     String.commonSuffix("ab", "bc") == ""
 
-@test
+@Test
 def commonSuffix07(): Bool =
     String.commonSuffix("ab", "_b") == "b"
 
-@test
+@Test
 def commonSuffix08(): Bool =
     String.commonSuffix("ab", "ab") == "ab"
 
-@test
+@Test
 def commonSuffix09(): Bool =
     String.commonSuffix("abc", "ABC") == ""
 
-@test
+@Test
 def commonSuffix10(): Bool =
     String.commonSuffix("bcd", "abcd") == "bcd"
 
-@test
+@Test
 def commonSuffix11(): Bool =
     String.commonSuffix("abcd", "bcd") == "bcd"
 
@@ -3000,63 +3000,63 @@ def commonSuffix11(): Bool =
 // abbreviateLeft                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def abbreviateLeft01(): Bool =
     String.abbreviateLeft(0, "") == ""
 
-@test
+@Test
 def abbreviateLeft02(): Bool =
     String.abbreviateLeft(0, "a") == ""
 
-@test
+@Test
 def abbreviateLeft03(): Bool =
     String.abbreviateLeft(0, "abcde") == ""
 
-@test
+@Test
 def abbreviateLeft04(): Bool =
     String.abbreviateLeft(1, "") == ""
 
-@test
+@Test
 def abbreviateLeft05(): Bool =
     String.abbreviateLeft(1, "a") == ""
 
-@test
+@Test
 def abbreviateLeft06(): Bool =
     String.abbreviateLeft(1, "abcde") == ""
 
-@test
+@Test
 def abbreviateLeft07(): Bool =
     String.abbreviateLeft(3, "") == ""
 
-@test
+@Test
 def abbreviateLeft08(): Bool =
     String.abbreviateLeft(3, "a") == "a"
 
-@test
+@Test
 def abbreviateLeft09(): Bool =
     String.abbreviateLeft(3, "abcde") == "..."
 
-@test
+@Test
 def abbreviateLeft10(): Bool =
     String.abbreviateLeft(4, "") == ""
 
-@test
+@Test
 def abbreviateLeft11(): Bool =
     String.abbreviateLeft(4, "a") == "a"
 
-@test
+@Test
 def abbreviateLeft12(): Bool =
     String.abbreviateLeft(4, "abcde") == "...e"
 
-@test
+@Test
 def abbreviateLeft13(): Bool =
     String.abbreviateLeft(5, "") == ""
 
-@test
+@Test
 def abbreviateLeft14(): Bool =
     String.abbreviateLeft(5, "a") == "a"
 
-@test
+@Test
 def abbreviateLeft15(): Bool =
     String.abbreviateLeft(5, "abcde") == "...de"
 
@@ -3065,63 +3065,63 @@ def abbreviateLeft15(): Bool =
 // abbreviateRight                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def abbreviateRight01(): Bool =
     String.abbreviateRight(0, "") == ""
 
-@test
+@Test
 def abbreviateRight02(): Bool =
     String.abbreviateRight(0, "a") == ""
 
-@test
+@Test
 def abbreviateRight03(): Bool =
     String.abbreviateRight(0, "abcde") == ""
 
-@test
+@Test
 def abbreviateRight04(): Bool =
     String.abbreviateRight(1, "") == ""
 
-@test
+@Test
 def abbreviateRight05(): Bool =
     String.abbreviateRight(1, "a") == ""
 
-@test
+@Test
 def abbreviateRight06(): Bool =
     String.abbreviateRight(1, "abcde") == ""
 
-@test
+@Test
 def abbreviateRight07(): Bool =
     String.abbreviateRight(3, "") == ""
 
-@test
+@Test
 def abbreviateRight08(): Bool =
     String.abbreviateRight(3, "a") == "a"
 
-@test
+@Test
 def abbreviateRight09(): Bool =
     String.abbreviateRight(3, "abcde") == "..."
 
-@test
+@Test
 def abbreviateRight10(): Bool =
     String.abbreviateRight(4, "") == ""
 
-@test
+@Test
 def abbreviateRight11(): Bool =
     String.abbreviateRight(4, "a") == "a"
 
-@test
+@Test
 def abbreviateRight12(): Bool =
     String.abbreviateRight(4, "abcde") == "a..."
 
-@test
+@Test
 def abbreviateRight13(): Bool =
     String.abbreviateRight(5, "") == ""
 
-@test
+@Test
 def abbreviateRight14(): Bool =
     String.abbreviateRight(5, "a") == "a"
 
-@test
+@Test
 def abbreviateRight15(): Bool =
     String.abbreviateRight(5, "abcde") == "ab..."
 
@@ -3129,31 +3129,31 @@ def abbreviateRight15(): Bool =
 // levenshteinDistance                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def levenshteinDistance01(): Bool =
     String.levenshteinDistance("", "") == 0
 
-@test
+@Test
 def levenshteinDistance02(): Bool =
     String.levenshteinDistance("A", "") == 1
 
-@test
+@Test
 def levenshteinDistance03(): Bool =
     String.levenshteinDistance("", "A") == 1
 
-@test
+@Test
 def levenshteinDistance04(): Bool =
     String.levenshteinDistance("A", "A") == 0
 
-@test
+@Test
 def levenshteinDistance05(): Bool =
     String.levenshteinDistance("kitten", "sitting") == 3
 
-@test
+@Test
 def levenshteinDistance06(): Bool =
     String.levenshteinDistance("Saturday", "Sunday") == 3
 
-@test
+@Test
 def levenshteinDistance07(): Bool =
     String.levenshteinDistance("Gumbo", "Gambol") == 2
 
@@ -3161,31 +3161,31 @@ def levenshteinDistance07(): Bool =
 // zip                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def zip01(): Bool =
     String.zip("", "") == Nil: List[(Char,Char)]
 
-@test
+@Test
 def zip02(): Bool =
     String.zip("a", "") == Nil: List[(Char, Char)]
 
-@test
+@Test
 def zip03(): Bool =
     String.zip("", "1") == Nil: List[(Char, Char)]
 
-@test
+@Test
 def zip04(): Bool =
     String.zip("a", "1") == ('a', '1') :: Nil
 
-@test
+@Test
 def zip05(): Bool =
     String.zip("ab", "12") == ('a', '1') :: ('b', '2') :: Nil
 
-@test
+@Test
 def zip06(): Bool =
     String.zip("abc", "123") == ('a', '1') :: ('b', '2') :: ('c', '3') :: Nil
 
-@test
+@Test
 def zip07(): Bool =
     String.zip("abcd", "1234") == ('a', '1') :: ('b', '2') :: ('c', '3') :: ('d', '4') :: Nil
 
@@ -3193,42 +3193,42 @@ def zip07(): Bool =
 // zipWith                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def zipWith01(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "", "");
     s == ""
 
-@test
+@Test
 def zipWith02(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "a", "");
     s == ""
 
-@test
+@Test
 def zipWith03(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "", "1");
     s == ""
 
-@test
+@Test
 def zipWith04(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_", "1");
     s == "1"
 
-@test
+@Test
 def zipWith05(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "a", "1");
     s == "a"
 
-@test
+@Test
 def zipWith06(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fgh", "12345678");
     s == "1bc45fgh"
 
-@test
+@Test
 def zipWith07(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fghijkl", "12345678");
     s == "1bc45fgh"
 
-@test
+@Test
 def zipWith08(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fgh", "1234567890");
     s == "1bc45fgh"
@@ -3237,321 +3237,321 @@ def zipWith08(): Bool =
 // splitOn                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def splitOn01(): Bool = String.splitOn({substr = ""}, "") == "" :: Nil
 
-@test
+@Test
 def splitOn02(): Bool = String.splitOn({substr = ""}, "a::b") == "a::b" :: Nil
 
-@test
+@Test
 def splitOn03(): Bool = String.splitOn({substr = "::"}, "") == "" :: Nil
 
-@test
+@Test
 def splitOn04(): Bool = String.splitOn({substr = "::"}, "a") == "a" :: Nil
 
-@test
+@Test
 def splitOn05(): Bool = String.splitOn({substr = "::"}, "a:b") == "a:b" :: Nil
 
-@test
+@Test
 def splitOn06(): Bool = String.splitOn({substr = "::"}, "a::b") == "a" :: "b" :: Nil
 
-@test
+@Test
 def splitOn07(): Bool = String.splitOn({substr = "::"}, "::a::b") == "" :: "a" :: "b" :: Nil
 
-@test
+@Test
 def splitOn08(): Bool = String.splitOn({substr = "::"}, "a::b::") == "a" :: "b" :: "" :: Nil
 
-@test
+@Test
 def splitOn09(): Bool = String.splitOn({substr = "::"}, "::a::b::") == "" :: "a" :: "b" :: "" :: Nil
 
-@test
+@Test
 def splitOn10(): Bool = String.splitOn({substr = "::"}, "a:b::c") == "a:b" :: "c" :: Nil
 
-@test
+@Test
 def splitOn11(): Bool = String.splitOn({substr = "::"}, "a::b:c") == "a" :: "b:c" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfLeftWithOffset                                                   //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def indexOfLeftWithOffset01(): Bool = String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, "") == None
 
-@test
+@Test
 def indexOfLeftWithOffset02(): Bool = String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, "a") == None
 
-@test
+@Test
 def indexOfLeftWithOffset03(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "a") == Some(0)
 
-@test
+@Test
 def indexOfLeftWithOffset04(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "a") == None
 
-@test
+@Test
 def indexOfLeftWithOffset05(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfLeftWithOffset06(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "aa") == Some(1)
 
-@test
+@Test
 def indexOfLeftWithOffset07(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfLeftWithOffset08(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "abab") == Some(0)
 
-@test
+@Test
 def indexOfLeftWithOffset09(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 1}, "abab") == Some(2)
 
-@test
+@Test
 def indexOfLeftWithOffset10(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 2}, "abab") == Some(2)
 
-@test
+@Test
 def indexOfLeftWithOffset11(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 3}, "abab") == None
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfRightWithOffset                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def indexOfRightWithOffset01(): Bool = String.indexOfRightWithOffset({substr = ""}, {offset = 0}, "") == None
 
-@test
+@Test
 def indexOfRightWithOffset02(): Bool = String.indexOfRightWithOffset({substr = ""}, {offset = 0}, "a") == None
 
-@test
+@Test
 def indexOfRightWithOffset03(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 0}, "a") == Some(0)
 
-@test
+@Test
 def indexOfRightWithOffset04(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 1}, "a") == Some(0)
 
-@test
+@Test
 def indexOfRightWithOffset05(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfRightWithOffset06(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "aa") == Some(1)
 
-@test
+@Test
 def indexOfRightWithOffset07(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "ab") == Some(0)
 
-@test
+@Test
 def indexOfRightWithOffset08(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 3}, "abab") == Some(2)
 
-@test
+@Test
 def indexOfRightWithOffset09(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "abab") == Some(2)
 
-@test
+@Test
 def indexOfRightWithOffset10(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 1}, "abab") == Some(0)
 
-@test
+@Test
 def indexOfRightWithOffset11(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 0}, "abab") == Some(0)
 
-@test
+@Test
 def indexOfRightWithOffset12(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = -1}, "abab") == None
 
 /////////////////////////////////////////////////////////////////////////////
 // toChunks                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toChunks01(): Bool = String.toChunks(0, "") == Nil
 
-@test
+@Test
 def toChunks02(): Bool = String.toChunks(0, "aaa") == Nil
 
-@test
+@Test
 def toChunks03(): Bool = String.toChunks(3, "") == Nil
 
-@test
+@Test
 def toChunks04(): Bool = String.toChunks(3, "a") == "a" :: Nil
 
-@test
+@Test
 def toChunks05(): Bool = String.toChunks(3, "aa") == "aa" :: Nil
 
-@test
+@Test
 def toChunks06(): Bool = String.toChunks(3, "aaa") == "aaa" :: Nil
 
-@test
+@Test
 def toChunks07(): Bool = String.toChunks(3, "aaab") == "aaa" :: "b" :: Nil
 
-@test
+@Test
 def toChunks08(): Bool = String.toChunks(3, "aaabb") == "aaa" :: "bb" :: Nil
 
-@test
+@Test
 def toChunks09(): Bool = String.toChunks(3, "aaabbb") == "aaa" :: "bbb" :: Nil
 
-@test
+@Test
 def toChunks10(): Bool = String.toChunks(3, "aaabbbc") == "aaa" :: "bbb" :: "c" :: Nil
 
-@test
+@Test
 def toChunks11(): Bool = String.toChunks(1, "aaabbbc") == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: "c" :: Nil
 
-@test
+@Test
 def toChunks12(): Bool = String.toChunks(2, "aaabbbc") == "aa" :: "ab" :: "bb" :: "c" :: Nil
 
-@test
+@Test
 def toChunks13(): Bool = String.toChunks(4, "aaabbbc") == "aaab" :: "bbc" :: Nil
 
-@test
+@Test
 def toChunks14(): Bool = String.toChunks(10, "aaabbbc") == "aaabbbc" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // breakOnLeft                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def breakOnLeft01(): Bool = String.breakOnLeft({substr = ""}, "") == ("", "")
 
-@test
+@Test
 def breakOnLeft02(): Bool = String.breakOnLeft({substr = ""}, "aaa") == ("aaa", "")
 
-@test
+@Test
 def breakOnLeft03(): Bool = String.breakOnLeft({substr = "::"}, "") == ("", "")
 
-@test
+@Test
 def breakOnLeft04(): Bool = String.breakOnLeft({substr = "::"}, "aaa") == ("aaa", "")
 
-@test
+@Test
 def breakOnLeft05(): Bool = String.breakOnLeft({substr = "::"}, "aaa:") == ("aaa:", "")
 
-@test
+@Test
 def breakOnLeft06(): Bool = String.breakOnLeft({substr = "::"}, "aaa::") == ("aaa", "::")
 
-@test
+@Test
 def breakOnLeft07(): Bool = String.breakOnLeft({substr = "::"}, "aaa::bbb") == ("aaa", "::bbb")
 
-@test
+@Test
 def breakOnLeft08(): Bool = String.breakOnLeft({substr = "::"}, "aaa::bbb::ccc") == ("aaa", "::bbb::ccc")
 
 /////////////////////////////////////////////////////////////////////////////
 // breakOnRight                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def breakOnRight01(): Bool = String.breakOnRight({substr = ""}, "") == ("", "")
 
-@test
+@Test
 def breakOnRight02(): Bool = String.breakOnRight({substr = ""}, "aaa") == ("aaa", "")
 
-@test
+@Test
 def breakOnRight03(): Bool = String.breakOnRight({substr = "::"}, "") == ("", "")
 
-@test
+@Test
 def breakOnRight04(): Bool = String.breakOnRight({substr = "::"}, "aaa") == ("aaa", "")
 
-@test
+@Test
 def breakOnRight05(): Bool = String.breakOnRight({substr = "::"}, "aaa:") == ("aaa:", "")
 
-@test
+@Test
 def breakOnRight06(): Bool = String.breakOnRight({substr = "::"}, "aaa::") == ("aaa::", "")
 
-@test
+@Test
 def breakOnRight07(): Bool = String.breakOnRight({substr = "::"}, "aaa::bbb") == ("aaa::", "bbb")
 
-@test
+@Test
 def breakOnRight08(): Bool = String.breakOnRight({substr = "::"}, "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
 
 /////////////////////////////////////////////////////////////////////////////
 // countSubstring                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def countSubstring01(): Bool = String.countSubstring({substr = ""}, "") == 0
 
-@test
+@Test
 def countSubstring02(): Bool = String.countSubstring({substr = ""}, "abc abc") == 0
 
-@test
+@Test
 def countSubstring03(): Bool = String.countSubstring({substr = "abc"}, "") == 0
 
-@test
+@Test
 def countSubstring04(): Bool = String.countSubstring({substr = "abc"}, "abc") == 1
 
-@test
+@Test
 def countSubstring05(): Bool = String.countSubstring({substr = "abc"}, "aabc") == 1
 
-@test
+@Test
 def countSubstring06(): Bool = String.countSubstring({substr = "abc"}, "abcc") == 1
 
-@test
+@Test
 def countSubstring07(): Bool = String.countSubstring({substr = "abc"}, "abc def ") == 1
 
-@test
+@Test
 def countSubstring08(): Bool = String.countSubstring({substr = "abc"}, " abc def") == 1
 
-@test
+@Test
 def countSubstring09(): Bool = String.countSubstring({substr = "abc"}, " abc abc") == 2
 
-@test
+@Test
 def countSubstring10(): Bool = String.countSubstring({substr = "abc"}, " abc ABC abc") == 2
 
-@test
+@Test
 def countSubstring11(): Bool = String.countSubstring({substr = "abc"}, "ABC abc def abc") == 2
 
-@test
+@Test
 def countSubstring12(): Bool = String.countSubstring({substr = "abc"}, "aBC::abc::AbC::abc::Abc") == 2
 
 /////////////////////////////////////////////////////////////////////////////
 // stripMargin                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def stripMargin01(): Bool = String.stripMargin("") == ""
 
-@test
+@Test
 def stripMargin02(): Bool = String.stripMargin("abc") == "abc"
 
-@test
+@Test
 def stripMargin03(): Bool = String.stripMargin("${'\t'}") == "${'\t'}"
 
-@test
+@Test
 def stripMargin04(): Bool = String.stripMargin("    |abc") == "abc"
 
-@test
+@Test
 def stripMargin05(): Bool = String.stripMargin("${'\t'} |abc") == "abc"
 
-@test
+@Test
 def stripMargin06(): Bool = String.stripMargin(" | abc") == " abc"
 
-@test
+@Test
 def stripMargin07(): Bool = String.stripMargin(" ||abc") == "|abc"
 
-@test
+@Test
 def stripMargin08(): Bool = String.stripMargin(String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
 
-@test
+@Test
 def stripMargin09(): Bool = String.stripMargin(String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // stripMarginWith                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def stripMarginWith01(): Bool = String.stripMarginWith({margin = "|"}, "") == ""
 
-@test
+@Test
 def stripMarginWith02(): Bool = String.stripMarginWith({margin = "|"}, "abc") == "abc"
 
-@test
+@Test
 def stripMarginWith03(): Bool = String.stripMarginWith({margin = "|"}, "${'\t'}") == "${'\t'}"
 
-@test
+@Test
 def stripMarginWith04(): Bool = String.stripMarginWith({margin = "|"}, "    |abc") == "abc"
 
-@test
+@Test
 def stripMarginWith05(): Bool = String.stripMarginWith({margin = "|"}, "${'\t'} |abc") == "abc"
 
-@test
+@Test
 def stripMarginWith06(): Bool = String.stripMarginWith({margin = "|"}, " | abc") == " abc"
 
-@test
+@Test
 def stripMarginWith07(): Bool = String.stripMarginWith({margin = "|"}, " ||abc") == "|abc"
 
-@test
+@Test
 def stripMarginWith08(): Bool = String.stripMarginWith({margin = "| "}, " | abc") == "abc"
 
-@test
+@Test
 def stripMarginWith09(): Bool = String.stripMarginWith({margin = "|"}, String.intercalate("\n", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\n", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
 
-@test
+@Test
 def stripMarginWith10(): Bool = String.stripMarginWith({margin = "|"}, String.intercalate("\u000D\u000A", " |abc" :: "${'\t'}def" :: "${'\t'}|ghi" :: Nil)) == String.intercalate("\u000D\u000A", "abc" :: "${'\t'}def" :: "ghi" :: Nil)
 
 
@@ -3559,87 +3559,87 @@ def stripMarginWith10(): Bool = String.stripMarginWith({margin = "|"}, String.in
 // stripPrefix                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def stripPrefix01(): Bool = String.stripPrefix({substr = ""}, "") == Some("")
 
-@test
+@Test
 def stripPrefix02(): Bool = String.stripPrefix({substr = ""}, "abc") == Some("abc")
 
-@test
+@Test
 def stripPrefix03(): Bool = String.stripPrefix({substr = "abc"}, "") == None
 
-@test
+@Test
 def stripPrefix04(): Bool = String.stripPrefix({substr = "abc"}, "abc") == Some("")
 
-@test
+@Test
 def stripPrefix05(): Bool = String.stripPrefix({substr = "abc"}, "abcdef") == Some("def")
 
-@test
+@Test
 def stripPrefix06(): Bool = String.stripPrefix({substr = "def"}, "abcdef") == None
 
-@test
+@Test
 def stripPrefix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 /////////////////////////////////////////////////////////////////////////////
 // stripSuffix                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def stripSuffix01(): Bool = String.stripSuffix({substr = ""}, "") == Some("")
 
-@test
+@Test
 def stripSuffix02(): Bool = String.stripSuffix({substr = ""}, "abc") == Some("abc")
 
-@test
+@Test
 def stripSuffix03(): Bool = String.stripSuffix({substr = "abc"}, "") == None
 
-@test
+@Test
 def stripSuffix04(): Bool = String.stripSuffix({substr = "abc"}, "abc") == Some("")
 
-@test
+@Test
 def stripSuffix05(): Bool = String.stripSuffix({substr = "abc"}, "abcdef") == None
 
-@test
+@Test
 def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == Some("abc")
 
-@test
+@Test
 def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 /////////////////////////////////////////////////////////////////////////////
 // wrap                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def wrap01(): Bool = String.wrap(0, "a") == ""
 
-@test
+@Test
 def wrap02(): Bool = String.wrap(1, "a") == "a"
 
-@test
+@Test
 def wrap03(): Bool = String.wrap(2, "a") == "a"
 
-@test
+@Test
 def wrap04(): Bool = String.wrap(2, "ab") == "ab"
 
-@test
+@Test
 def wrap05(): Bool = String.wrap(1, "ab") == "a" + String.lineSeparator() + "b"
 
-@test
+@Test
 def wrap06(): Bool = String.wrap(2, "a b") == "a" + String.lineSeparator() + "b"
 
-@test
+@Test
 def wrap07(): Bool = String.wrap(2, "a b c") == "a" + String.lineSeparator() + "b" + String.lineSeparator() + "c"
 
-@test
+@Test
 def wrap08(): Bool = String.wrap(2, "ab   cd") == "ab" + String.lineSeparator() + "cd"
 
-@test
+@Test
 def wrap09(): Bool = String.wrap(3, "ab   cd") == "ab" + String.lineSeparator() + "cd"
 
-@test
+@Test
 def wrap10(): Bool = String.wrap(5, "ab   cd") == "ab" + String.lineSeparator() + "cd"
 
-@test
+@Test
 def wrap11(): Bool =
     String.wrap(5, "Lorem ipsum dolor sitamet")
         == "Lorem" + String.lineSeparator()
@@ -3652,50 +3652,50 @@ def wrap11(): Bool =
 // unwrap                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def unwrap01(): Bool = String.unwrap("") == ""
 
-@test
+@Test
 def unwrap02(): Bool = String.unwrap("a\nb") == "a b"
 
-@test
+@Test
 def unwrap03(): Bool = String.unwrap("a\nb\nc") == "a b c"
 
-@test
+@Test
 def unwrap04(): Bool = String.unwrap("ab\nc\nd") == "ab c d"
 
-@test
+@Test
 def unwrap05(): Bool = String.unwrap("a\rb") == "a b"
 
-@test
+@Test
 def unwrap06(): Bool = String.unwrap("a\rb\rc") == "a b c"
 
-@test
+@Test
 def unwrap07(): Bool = String.unwrap("ab\rc\rd") == "ab c d"
 
-@test
+@Test
 def unwrap08(): Bool = String.unwrap("a\r\nb") == "a b"
 
-@test
+@Test
 def unwrap09(): Bool = String.unwrap("a\r\nb\r\nc") == "a b c"
 
-@test
+@Test
 def unwrap10(): Bool = String.unwrap("ab\r\nc\r\nd") == "ab c d"
 
 /////////////////////////////////////////////////////////////////////////////
 // escapeInterpolation                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def escapeInterpolation01(): Bool = "\${" == ("$" + "{")
 
-@test
+@Test
 def escapeInterpolation02(): Bool = "\${1 + {2}" == ("$" + "{1 + {2}")
 
-@test
+@Test
 def escapeInterpolation03(): Bool = "\${}" == ("$" + "{}")
 
-@test
+@Test
 def escapeInterpolation04(): String = "$"
 
 
@@ -3703,12 +3703,12 @@ def escapeInterpolation04(): String = "$"
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def iterator01(): Bool = region rc {
         String.iterator(rc, "") |> Iterator.toList == Nil
     }
 
-    @test
+    @Test
     def iterator02(): Bool = region rc {
         String.iterator(rc, "abc") |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
     }
@@ -3718,12 +3718,12 @@ def escapeInterpolation04(): String = "$"
     // enumerator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def enumerator01(): Bool = region rc {
         String.enumerator(rc, "") |> Iterator.toList == Nil
     }
 
-    @test
+    @Test
     def enumerator02(): Bool = region rc {
         String.enumerator(rc, "abc") |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
     }

@@ -45,64 +45,64 @@ mod Test.Dec.TypeAlias {
      */
     type alias E[a] = Result[String, a]
 
-    @test
+    @Test
     def testTypeAlias01(): Celsius = 123
 
-    @test
+    @Test
     def testTypeAlias02(): Fahrenheit = 123
 
-    @test
+    @Test
     def testTypeAlias03(): Int32 = (123: Celsius) + (123: Fahrenheit)
 
-    @test
+    @Test
     def testTypeAlias04(): USD = 123.456
 
-    @test
+    @Test
     def testTypeAlias05(): CAD = 123.456
 
-    @test
+    @Test
     def testTypeAlias06(): Float64 = (123.456: USD) + (123.456: CAD)
 
-    @test
+    @Test
     def testTypeAlias07(): A = None
 
-    @test
+    @Test
     def testTypeAlias08(): A = Some(123)
 
-    @test
+    @Test
     def testTypeAlias09(): B = Ok(true)
 
-    @test
+    @Test
     def testTypeAlias10(): B = Err(123)
 
-    @test
+    @Test
     def testTypeAlias11(): C[Bool] = None
 
-    @test
+    @Test
     def testTypeAlias12(): C[Bool] = Some(true)
 
-    @test
+    @Test
     def testTypeAlias13(): C[Int32] = None
 
-    @test
+    @Test
     def testTypeAlias14(): C[Int32] = Some(123)
 
-    @test
+    @Test
     def testTypeAlias15(): D[Bool, Int32] = Ok(123)
 
-    @test
+    @Test
     def testTypeAlias16(): D[Bool, Int32] = Err(true)
 
-    @test
+    @Test
     def testTypeAlias17(): E[Bool] = Ok(true)
 
-    @test
+    @Test
     def testTypeAlias18(): E[Int32] = Ok(123)
 
-    @test
+    @Test
     def testTypeAlias19(): E[Bool] = Err("Hello World")
 
-    @test
+    @Test
     def testTypeAlias20(): E[Int32] = Err("Hello World")
 
     /**
@@ -135,25 +135,25 @@ mod Test.Dec.TypeAlias {
      */
     type alias W[a, b] = Z[a, b]
 
-    @test
+    @Test
     def testTypeAlias21(): U = X.X(123)
 
-    @test
+    @Test
     def testTypeAlias22(): V[Bool] = Y.Y(None)
 
-    @test
+    @Test
     def testTypeAlias23(): V[Bool] = Y.Y(Some(true))
 
-    @test
+    @Test
     def testTypeAlias24(): V[Int32] = Y.Y(None)
 
-    @test
+    @Test
     def testTypeAlias25(): V[Int32] = Y.Y(Some(123))
 
-    @test
+    @Test
     def testTypeAlias26(): W[Bool, Int32] = Z.Z(Ok(123))
 
-    @test
+    @Test
     def testTypeAlias27(): W[Bool, Int32] = Z.Z(Err(true))
 
     ///
@@ -166,6 +166,6 @@ mod Test.Dec.TypeAlias {
     ///
     type alias P[_: Bool] = String
 
-    @test
+    @Test
     def testTypeAlias28(): P[If[true, true, false]] = "xyz": P[true]
 }

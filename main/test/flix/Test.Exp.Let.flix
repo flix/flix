@@ -1,24 +1,24 @@
 mod Test.Exp.Let {
 
-    @test
+    @Test
     def testLet01(): Bool =
         let x = 1;
         x == 1
 
-    @test
+    @Test
     def testLet02(): Bool =
         let x = 1;
         let y = 2;
         x + y == 1 + 2
 
-    @test
+    @Test
     def testLet03(): Bool =
         let x = 1;
         let y = 2;
         let z = 3;
         x + y + z == 1 + 2 + 3
 
-    @test
+    @Test
     def testLet04(): Bool =
         let x = {
             let x1 = 1;
@@ -30,7 +30,7 @@ mod Test.Exp.Let {
         };
         x + y == 1 + 2
 
-    @test
+    @Test
     def testLet05(): Bool =
         let x = {
             let x1 = 1;
@@ -44,11 +44,11 @@ mod Test.Exp.Let {
         };
         x + y == 1 + 2 + 3 + 4
 
-    @test
+    @Test
     def testLet06(): Bool =
         if (let x = true; x) true else false
 
-    @test
+    @Test
     def testLet07(): Bool =
         if (true) {
             let x = 1;
@@ -57,7 +57,7 @@ mod Test.Exp.Let {
             false
         }
 
-    @test
+    @Test
     def testLet08(): Bool =
         if (false) {
             false
@@ -66,57 +66,57 @@ mod Test.Exp.Let {
             x == 1
         }
 
-    @test
+    @Test
     def testLetUnit01(): Bool =
         let x = ();
         x == ()
 
-    @test
+    @Test
     def testLetBool01(): Bool =
         let x = true;
         x == true
 
-    @test
+    @Test
     def testLetBool02(): Bool =
         let x = false;
         x == false
 
-    @test
+    @Test
     def testLetChar01(): Bool =
         let x = 'a';
         x == 'a'
 
-    @test
+    @Test
     def testLetFloat3201(): Bool =
         let x = 123.456f32;
         x == 123.456f32
 
-    @test
+    @Test
     def testLetFloat6401(): Bool =
         let x = 123.456f64;
         x == 123.456f64
 
-    @test
+    @Test
     def testLetInt8(): Bool =
         let x = 123i8;
         x == 123i8
 
-    @test
+    @Test
     def testLetInt16(): Bool =
         let x = 123i16;
         x == 123i16
 
-    @test
+    @Test
     def testLetInt32(): Bool =
         let x = 123i32;
         x == 123i32
 
-    @test
+    @Test
     def testLetInt64(): Bool =
         let x = 123i64;
         x == 123i64
 
-    @test
+    @Test
     def testLetString01(): Bool =
         let x = "Hello World!";
         x == "Hello World!"

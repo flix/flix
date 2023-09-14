@@ -2,31 +2,31 @@ mod Test.Exp.Effect {
 
     // no test annotations for now
     // just making it public for redundancy purposes
-    // @test
+    // @Test
     pub def handleEff01(): Bool = {
         try true with Fail {
             def fail(_) = false
         }
     }
 
-    // @test
+    // @Test
     pub def handleEff02(): Unit = {
         try () with Fail {
             def fail(_) = resume()
         }
     }
 
-    // @test
+    // @Test
     pub def handleEff03(): Bool = {
         try true with Empty
     }
 
-    // @test
+    // @Test
     pub def perform01(): Unit \ Fail = {
         do Test.Exp.Effect.Fail.fail(":(")
     }
 
-    // @test
+    // @Test
     pub def perform02(): Bool = {
         try {
             do Test.Exp.Effect.Console.println("hi");
@@ -37,14 +37,14 @@ mod Test.Exp.Effect {
         }
     }
 
-    // @test
+    // @Test
     pub def handlePerform01(): Unit = {
         try do Test.Exp.Effect.Fail.fail("rats") with Fail {
             def fail(_) = ()
         }
     }
 
-    // @test
+    // @Test
     pub def handlePerform02(): Bool = {
         try {
             let _ = do Test.Exp.Effect.Console.println("It was the best of times");

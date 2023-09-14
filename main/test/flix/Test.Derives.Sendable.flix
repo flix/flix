@@ -10,18 +10,18 @@ mod Test.Derives.Sendable {
 
     def requiresSendable(x: a): a with Sendable[a] = x
 
-    @test
+    @Test
     def testSendable01(): Enum1 = requiresSendable(Enum1.Enum1(42))
 
-    @test
+    @Test
     def testSendable02(): Enum2 = requiresSendable(Enum2.Enum2(42, true))
 
-    @test
+    @Test
     def testSendable03(): PolyEnum1[Int32] = requiresSendable(PolyEnum1.PolyEnum1(42))
 
-    @test
+    @Test
     def testSendable04(): PolyEnum1[Enum1] = requiresSendable(PolyEnum1.PolyEnum1(Enum1.Enum1(42)))
 
-    @test
+    @Test
     def testSendable05(): PolyEnum2[Int32, Bool] = requiresSendable(PolyEnum2.PolyEnum2(42, true))
 }

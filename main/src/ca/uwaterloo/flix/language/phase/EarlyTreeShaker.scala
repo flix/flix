@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.ParOps
   *
   * (a) The main function is always reachable.
   *
-  * (b) A function marked with @benchmark or @test is reachable.
+  * (b) A function marked with @benchmark or @Test is reachable.
   *
   * (c) Appears in a function which itself is reachable.
   *
@@ -71,7 +71,7 @@ object EarlyTreeShaker {
     reachable = reachable ++ root.entryPoint.map(ReachableSym.DefnSym)
 
     //
-    // (b) A function annotated with @benchmark or @test is always reachable.
+    // (b) A function annotated with @benchmark or @Test is always reachable.
     //
     for ((sym, defn) <- root.defs) {
       if (isBenchmark(defn) || isTest(defn)) {
@@ -87,7 +87,7 @@ object EarlyTreeShaker {
   private def isBenchmark(defn: LoweredAst.Def): Boolean = defn.spec.ann.isBenchmark
 
   /**
-    * Returns `true` if `defn` is annotated with `@test`
+    * Returns `true` if `defn` is annotated with `@Test`
     */
   private def isTest(defn: LoweredAst.Def): Boolean = defn.spec.ann.isTest
 

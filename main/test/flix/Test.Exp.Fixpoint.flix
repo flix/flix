@@ -1,6 +1,6 @@
 mod Test.Exp.Fixpoint {
 
-    @test
+    @Test
     def testSemiNaive01(): Bool =
         let db = #{
             Goal("x").

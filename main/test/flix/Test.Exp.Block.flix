@@ -1,15 +1,15 @@
 mod Test.Exp.Block {
 
-    @test
+    @Test
     def testBlock01(): Int32 = {42}
 
-    @test
+    @Test
     def testBlock02(): Int32 = {{42}}
 
-    @test
+    @Test
     def testBlock03(): Int32 = {{{42}}}
 
-    @test
+    @Test
     def testBlock04(): Int32 = {
         let x = {
             let y = 42;
@@ -18,7 +18,7 @@ mod Test.Exp.Block {
         x + 1
     }
 
-    @test
+    @Test
     def testBlock05(): Int32 = {
         let x = {
             let y = 42;
@@ -28,7 +28,7 @@ mod Test.Exp.Block {
         x + 1
     }
 
-    @test
+    @Test
     def testBlock06(): Int32 = {
         let x = {
             let y = 42;
@@ -43,14 +43,14 @@ mod Test.Exp.Block {
         x + w
     }
 
-    @test
+    @Test
     def testBlock07(): Int32 = {
         let x = {42};
         let y = {21};
             x + y
     }
 
-    @test
+    @Test
     def testBlock08(): Int32 = {
         let x = {42};
         let y = {
@@ -61,7 +61,7 @@ mod Test.Exp.Block {
             x + y
     }
 
-    @test
+    @Test
     def testBlock09(): Int32 = {
         let x = {42};
         let y = {

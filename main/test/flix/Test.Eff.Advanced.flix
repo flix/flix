@@ -3,46 +3,46 @@ mod Test.Eff.Advanced {
     // NB: Due to monomorphization some of these test cases are erased and never executed.
     // That is acceptable; we just want to ensure that they type check.
 
-    @test
+    @Test
     def testAdvanced01(): Unit = requiresPure(pure)
 
-    @test
+    @Test
     def testAdvanced02(): Unit = requiresImpure(impure)
 
-    @test
+    @Test
     def testAdvanced03(): Unit = requiresPureAndImpure1(pure, impure)
 
-    @test
+    @Test
     def testAdvanced04(): Unit = requiresPureAndImpure1(impure, pure)
 
-    @test
+    @Test
     def testAdvanced05(): Unit = requiresPureAndImpure2(pure, impure)
 
-    @test
+    @Test
     def testAdvanced06(): Unit = requiresPureAndImpure2(impure, pure)
 
-    @test
+    @Test
     def testAdvanced07(): Unit = requiresAtmostOnePure1(impure, impure)
 
-    @test
+    @Test
     def testAdvanced08(): Unit = requiresAtmostOnePure1(pure, impure)
 
-    @test
+    @Test
     def testAdvanced09(): Unit = requiresAtmostOnePure1(impure, pure)
 
-    @test
+    @Test
     def testAdvanced10(): Unit = requiresAtmostOnePure2(impure, impure)
 
-    @test
+    @Test
     def testAdvanced11(): Unit = requiresAtmostOnePure2(pure, impure)
 
-    @test
+    @Test
     def testAdvanced12(): Unit = requiresAtmostOnePure2(impure, pure)
 
-    @test
+    @Test
     def testAdvanced13(): Unit = requiresTwoAndOne(pure, impure, pure)
 
-    @test
+    @Test
     def testAdvanced14(): Unit = requiresTwoAndOne(impure, pure, impure)
 
     /// A pure function from Unit -> Unit.
@@ -75,7 +75,7 @@ mod Test.Eff.Advanced {
     // A unSAT instance.
     //pub def yikes(_f: a -> b \ {{(x \/ y \/ z) /\ (x \/ y \/ not z) /\ (x \/ not y \/ z) /\ (x \/ not y \/ not z) /\ (not x \/ y \/ z) /\ (not x \/ y \/ not z) /\ (not x \/ not y \/ z) /\ (not x \/ not y \/ not z)}}): Unit = ()
 
-    //@test
+    //@Test
     //def testYikes(): Unit = yikes(pure)
 
 }

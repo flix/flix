@@ -1,74 +1,74 @@
 mod Test.Exp.Ref.Ref {
 
-    @test
+    @Test
     def testRef01(): Unit = region rc { discard ref () @ rc }
 
-    @test
+    @Test
     def testRef02(): Unit = region rc { discard ref true @ rc }
 
-    @test
+    @Test
     def testRef03(): Unit = region rc { discard ref false @ rc }
 
-    @test
+    @Test
     def testRef04(): Unit = region rc { discard ref 'a' @ rc }
 
-    @test
+    @Test
     def testRef05(): Unit = region rc { discard ref 0.0f32 @ rc }
 
-    @test
+    @Test
     def testRef06(): Unit = region rc { discard ref 0.0f64 @ rc }
 
-    @test
+    @Test
     def testRef07(): Unit = region rc { discard ref 0i8 @ rc }
 
-    @test
+    @Test
     def testRef08(): Unit = region rc { discard ref 0i16 @ rc }
 
-    @test
+    @Test
     def testRef09(): Unit = region rc { discard ref 0i32 @ rc }
 
-    @test
+    @Test
     def testRef10(): Unit = region rc { discard ref 0i64 @ rc }
 
-    @test
+    @Test
     def testRef11(): Unit = region rc { discard ref 0ii @ rc }
 
-    @test
+    @Test
     def testRef12(): Unit = region rc { discard ref 0.0ff @ rc }
 
-    @test
+    @Test
     def testRef13(): Unit = region rc { discard ref "Hello World!" @ rc }
 
-    @test
+    @Test
     def testRef14(): Unit = region rc { discard ref (1, 2, 3) @ rc }
 
-    @test
+    @Test
     def testRef15(): Unit = region rc { discard ref None : Option[Int32] @ rc }
 
-    @test
+    @Test
     def testRef16(): Unit = region rc { discard ref Some(42) @ rc }
 
-    @test
+    @Test
     def testRef17(): Unit = region rc { discard ref Ok(42): Result[String, Int32] @ rc }
 
-    @test
+    @Test
     def testRef18(): Unit = region rc { discard ref Err("Goodbye World!"): Result[String, Int32] @ rc }
 
-    @test
+    @Test
     def testRefRegion01(): Unit = // Pure
         region rc {
             let _u = ref () @ rc;
             ()
         }
 
-    @test
+    @Test
     def testRefRegion02(): Unit = // Pure
         region rc {
             let _u = ref true @ rc;
             ()
         }
 
-    @test
+    @Test
     def testRefRegion03(): Unit = // Pure
         region rc {
             let _u = ref 'a' @ rc;

@@ -1,6 +1,6 @@
 mod Test.Exp.Concurrency.Select {
 
-    @test
+    @Test
     def testSelectBuffered01(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         spawn Channel.send(1, tx1) @ rc;
@@ -9,7 +9,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectBuffered02(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
@@ -21,7 +21,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectBuffered03(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
@@ -36,7 +36,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectBuffered04(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
@@ -58,7 +58,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectBuffered05(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
@@ -80,7 +80,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectBuffered06(): Bool \ IO = region rc {
         let (_, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
@@ -95,7 +95,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectBuffered07(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
@@ -113,7 +113,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectDefault01(): Bool = region rc {
         select {
             case x <- recv({let (_, rx) = Channel.buffered(rc, 1); rx}) => x
@@ -121,7 +121,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectDefault02(): Bool = region rc {
         (1 + select {
             case _ <- recv({let (_, rx) = Channel.buffered(rc, 2); rx}) => 2
@@ -141,12 +141,12 @@ mod Test.Exp.Concurrency.Select {
       recvWithDefault(rx)
     }
 
-    @test
+    @Test
     def testSelectDefault03(): Unit \ IO =
       // This test is from a bug report so its form is subtle and intentional
       unchecked_cast(println(mainx()) as _ \ IO)
 
-    @test
+    @Test
     def testSelectRandom01(): Unit \ IO = region rc {
         let (tx9, rx9) = Channel.buffered(rc, 0);
         let (tx10, rx10) = Channel.buffered(rc, 0);
@@ -180,7 +180,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom02(): Unit \ IO = region rc {
         let (tx10, rx10) = Channel.buffered(rc, 0);
         let (tx11, rx11) = Channel.buffered(rc, 0);
@@ -194,7 +194,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom03(): Unit \ IO = region rc {
         let (tx14, rx14) = Channel.buffered(rc, 0);
         let (tx15, rx15) = Channel.buffered(rc, 0);
@@ -229,7 +229,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom04(): Unit \ IO = region rc {
         let (tx10, rx10) = Channel.buffered(rc, 0);
         let (tx11, rx11) = Channel.buffered(rc, 0);
@@ -253,7 +253,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom05(): Unit \ IO = region rc {
         let (tx14, rx14) = Channel.buffered(rc, 0);
         let (tx15, rx15) = Channel.buffered(rc, 0);
@@ -290,7 +290,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom06(): Unit \ IO = region rc {
         let (tx2, rx2) = Channel.buffered(rc, 0);
         let (tx3, rx3) = Channel.buffered(rc, 0);
@@ -305,7 +305,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom07(): Unit \ IO = region rc {
         let (tx12, rx12) = Channel.buffered(rc, 0);
         let (tx13, rx13) = Channel.buffered(rc, 0);
@@ -337,7 +337,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom08(): Unit \ IO = region rc {
         let (tx15, rx15) = Channel.buffered(rc, 0);
         let (tx16, rx16) = Channel.buffered(rc, 0);
@@ -374,7 +374,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom09(): Unit \ IO = region rc {
         let (tx6, rx6) = Channel.buffered(rc, 0);
         let (tx7, rx7) = Channel.buffered(rc, 0);
@@ -390,7 +390,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectRandom10(): Unit \ IO = region rc {
         let (tx10, rx10) = Channel.buffered(rc, 0);
         let (tx11, rx11) = Channel.buffered(rc, 0);
@@ -408,7 +408,7 @@ mod Test.Exp.Concurrency.Select {
         ()
     }
 
-    @test
+    @Test
     def testSelectSideEffecting01(): Bool = region rc {
         def mkChan(): Receiver[Int32, rc] = {
             let (tx, rx) = Channel.buffered(rc, 1);
@@ -421,7 +421,7 @@ mod Test.Exp.Concurrency.Select {
         }
     }
 
-    @test
+    @Test
     def testSelectSideEffecting02(): Bool = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 10);
         let (tx2, rx2) = Channel.buffered(rc, 10);
@@ -436,7 +436,7 @@ mod Test.Exp.Concurrency.Select {
 
     type alias MyReceiver[a: Type, r: Region] = Receiver[a, r]
 
-    @test
+    @Test
     def testSelectAliasedChannel(): Bool = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
 
@@ -449,7 +449,7 @@ mod Test.Exp.Concurrency.Select {
         useChan(rx)
     }
 
-    @test
+    @Test
     def testSelectOptionalSyntax01(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         spawn Channel.send(1, tx1) @ rc;

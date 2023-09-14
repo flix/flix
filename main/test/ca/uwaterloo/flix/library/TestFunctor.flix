@@ -24,23 +24,23 @@ mod TestFunctor {
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def map01(): Bool =
         map(x -> x + 1, None) == None
 
-    @test
+    @Test
     def map02(): Bool =
         map(x -> x + 1, Some(1)) == Some(2)
 
-    @test
+    @Test
     def map03(): Bool =
         map(x -> x + 1, Nil) == Nil
 
-    @test
+    @Test
     def map04(): Bool =
         map(x -> x + 1, 1 :: Nil) == 2 :: Nil
 
-    @test
+    @Test
     def map05(): Bool =
         map(x -> x + 1, 1 :: 2 :: Nil) == 2 :: 3 :: Nil
 
@@ -48,23 +48,23 @@ mod TestFunctor {
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def replace01(): Bool =
         Functor.replace(None, 'A') == None
 
-    @test
+    @Test
     def replace02(): Bool =
         Functor.replace(Some(1), 'A') == Some('A')
 
-    @test
+    @Test
     def replace03(): Bool =
         Functor.replace(Nil, 'A') == Nil
 
-    @test
+    @Test
     def replace04(): Bool =
         Functor.replace(1 :: Nil, 'A') == 'A' :: Nil
 
-    @test
+    @Test
     def replace05(): Bool =
         Functor.replace(1 :: 2 :: Nil, 'A') == 'A' :: 'A' :: Nil
 
@@ -72,23 +72,23 @@ mod TestFunctor {
     // ignore                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def ignore01(): Bool =
         ignore(None) == None
 
-    @test
+    @Test
     def ignore02(): Bool =
         ignore(Some(1)) == Some(())
 
-    @test
+    @Test
     def ignore03(): Bool =
         ignore(Nil) == Nil
 
-    @test
+    @Test
     def ignore04(): Bool =
         ignore(1 :: Nil) == () :: Nil
 
-    @test
+    @Test
     def ignore05(): Bool =
         ignore(1 :: 2 :: Nil) == () :: () :: Nil
 
@@ -96,11 +96,11 @@ mod TestFunctor {
     // symMap (<$>)                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symMap01(): Bool =
         (x -> x + 1) <$> None == None
 
-    @test
+    @Test
     def symMap02(): Bool =
         (x -> x + 1) <$> Some(1) == Some(2)
 
@@ -108,11 +108,11 @@ mod TestFunctor {
     // symFlippedMap (<$$>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symFilppedMap01(): Bool =
         None <$$> (x -> x + 1) == None
 
-    @test
+    @Test
     def symFlippedMap02(): Bool =
         Some(1) <$$> (x -> x + 1) == Some(2)
 
@@ -120,11 +120,11 @@ mod TestFunctor {
     // symAs (<$)                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symAs01(): Bool =
         () <$ None == None
 
-    @test
+    @Test
     def symAs02(): Bool =
         () <$ Some(1) == Some(())
 
@@ -132,11 +132,11 @@ mod TestFunctor {
     // symFlippedAs ($>)                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symFlippedAs01(): Bool =
         None $> () == None
 
-    @test
+    @Test
     def symFlippedAs02(): Bool =
         Some(1) $> () == Some(())
 

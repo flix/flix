@@ -1,117 +1,117 @@
 mod Test.Eff.Polymorphism {
 
-    @test
+    @Test
     def testEffPoly01(): Bool =
         let f = flip((x, y) -> x and y);
         f(true, true)
 
-    @test
+    @Test
     def testEffPoly02(): Bool \ IO =
         let f = flip((x, y) -> {impure(); x and y});
         f(true, true)
 
-    @test
+    @Test
     def testEffPoly03(): Bool =
         let f = flip(flip((x, y) -> x and y));
         f(true, true)
 
-    @test
+    @Test
     def testEffPoly04(): Bool \ IO =
         let f = flip(flip((x, y) -> {discard Array#{1, 2, 3} @ Static; x and y}));
         f(true, true)
 
-    @test
+    @Test
     def testEffPoly05(): Bool =
         let f = x -> y -> x and y;
         let g = f(true);
         g(true)
 
-    @test
+    @Test
     def testEffPoly06(): Bool \ IO =
         let f = x -> y -> {impure(); x and y};
         let g = f(true);
         g(true)
 
-    @test
+    @Test
     def testEffPoly07(): Bool =
         let f = x -> y -> {impure(); x and y};
         let _ = f(true);
         true
 
-    @test
+    @Test
     def testEffPoly08(): Bool \ IO =
         let f = x -> {impure(); y -> x and y};
         discard f(true);
         true
 
-    @test
+    @Test
     def testEffPoly09(): Bool \ IO =
         let f = x -> {impure(); y -> x and y};
         let g = f(true);
         g(true)
 
-    @test
+    @Test
     def testEffPoly10(): Bool =
         let f = x -> x;
         let g = y -> y;
         (f >> g)(true)
 
-    @test
+    @Test
     def testEffPoly11(): Bool \ IO =
         let f = x -> {impure(); x};
         let g = y -> y;
         (f >> g)(true)
 
-    @test
+    @Test
     def testEffPoly12(): Bool \ IO =
         let f = x -> x;
         let g = y -> {impure(); y};
         (f >> g)(true)
 
-    @test
+    @Test
     def testEffPoly13(): Bool \ IO =
         let f = x -> {impure(); x};
         let g = y -> {impure(); y};
         (f >> g)(true)
 
-    @test
+    @Test
     def testEffPoly14(): Bool =
         let f = x -> {impure(); x};
         let g = y -> {impure(); y};
         let _ = f >> g;
         true
 
-    @test
+    @Test
     def testEffPoly15(): Bool =
         let hof = f -> f(true);
         hof(x -> x)
 
-    @test
+    @Test
     def testEffPoly16(): Bool \ IO =
         let hof = f -> {impure(); f(true)};
         hof(x -> x)
 
-    @test
+    @Test
     def testEffPoly17(): Bool -> Bool =
         x -> not x
 
-    @test
+    @Test
     def testEffPoly18(): Bool -> Bool \ IO =
         x -> {impure(); not x}
 
-    @test
+    @Test
     def testEffPoly19(): Bool -> Bool -> Bool =
         x -> y -> x and y
 
-    @test
+    @Test
     def testEffPoly20(): Bool -> (Bool -> Bool \ IO) =
         x -> y -> {impure(); x and y}
 
-    @test
+    @Test
     def testEffPoly21(): Bool -> (Bool -> Bool) \ IO =
         x -> {impure(); y -> x and y}
 
-    @test
+    @Test
     def testEffPoly22(): Bool -> (Bool -> Bool \ IO) \ IO =
         x -> {impure(); y -> {impure(); x and y}}
 

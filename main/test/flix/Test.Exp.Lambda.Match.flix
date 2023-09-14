@@ -6,52 +6,52 @@ mod Test.Exp.Lambda.Match {
     enum EU(Celsius)
     enum US(Fahrenheit)
 
-    @test
+    @Test
     def testLambdaMatch01(): Int32 -> Int32 = match x -> x
 
-    @test
+    @Test
     def testLambdaMatch02(): ((Int32, Int32)) -> Int32 = match (x, y) -> (x + y) : Int32
 
-    @test
+    @Test
     def testLambdaMatch03(): ((Int32, Int32, Int32)) -> Int32 = match (x, y, z) -> (x + y + z) : Int32
 
-    @test
+    @Test
     def testLambdaMatch04(): (((Int32, Int32), (Int32, Int32))) -> Int32 = match ((x, y), (z, w)) -> (x + y + z + w) : Int32
 
-    @test
+    @Test
     def testLambdaMatch05(): Celsius -> Int32 = match Celsius.Celsius(x) -> x
 
-    @test
+    @Test
     def testLambdaMatch06(): Fahrenheit -> Int32 = match Fahrenheit.Fahrenheit(x) -> x
 
-    @test
+    @Test
     def testLambdaMatch07(): EU -> Int32 = match EU.EU(Celsius.Celsius(x)) -> x
 
-    @test
+    @Test
     def testLambdaMatch08(): US -> Int32 = match US.US(Fahrenheit.Fahrenheit(x)) -> x
 
-    @test
+    @Test
     def testLambdaMatch09(): Int32 = (match x -> x)(1)
 
-    @test
+    @Test
     def testLambdaMatch10(): Int32 = (match (x, y) -> x + y)((1, 2))
 
-    @test
+    @Test
     def testLambdaMatch11(): Int32 = (match (x, y, z) -> x + y + z)(((1, 2, 3)))
 
-    @test
+    @Test
     def testLambdaMatch12(): Int32 = (match ((x, y), (z, w)) -> x + y + z + w)(((1, 2), (3, 4)))
 
-    @test
+    @Test
     def testLambdaMatch13(): Int32 = (match Celsius.Celsius(x) -> x)(Celsius.Celsius(42))
 
-    @test
+    @Test
     def testLambdaMatch14(): Int32 = (match Fahrenheit.Fahrenheit(x) -> x)(Fahrenheit.Fahrenheit(42))
 
-    @test
+    @Test
     def testLambdaMatch15(): Int32 = (match EU.EU(Celsius.Celsius(x)) -> x)(EU.EU(Celsius.Celsius(42)))
 
-    @test
+    @Test
     def testLambdaMatch16(): Int32 = (match US.US(Fahrenheit.Fahrenheit(x)) -> x)(US.US(Fahrenheit.Fahrenheit(42)))
 
 }

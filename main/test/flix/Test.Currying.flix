@@ -1,51 +1,51 @@
 mod Test.Currying {
 
-    @test
+    @Test
     def testCurry01(): Bool = f(1, 2) == f(1)(2)
 
-    @test
+    @Test
     def testCurry02(): Bool = g(1, 2, 3) == g(1)(2)(3)
 
-    @test
+    @Test
     def testCurry03(): Bool = g(1, 2, 3) == g(1, 2)(3)
 
-    @test
+    @Test
     def testCurry04(): Bool = g(1, 2, 3) == g(1)(2, 3)
 
-    @test
+    @Test
     def testCurry05(): Bool = h(1, 2, 3, 4) == h(1)(2)(3)(4)
 
-    @test
+    @Test
     def testCurry06(): Bool = h(1, 2, 3, 4) == h(1, 2)(3)(4)
 
-    @test
+    @Test
     def testCurry07(): Bool = h(1, 2, 3, 4) == h(1)(2, 3)(4)
 
-    @test
+    @Test
     def testCurry08(): Bool = h(1, 2, 3, 4) == h(1)(2)(3, 4)
 
-    @test
+    @Test
     def testCurry09(): Bool = h(1, 2, 3, 4) == h(1, 2)(3, 4)
 
-    @test
+    @Test
     def testCurry10(): Bool = h(1, 2, 3, 4) == h(1, 2, 3)(4)
 
-    @test
+    @Test
     def testCurry11(): Bool = h(1, 2, 3, 4) == h(1)(2, 3, 4)
 
-    @test
+    @Test
     def testCurry12(): Bool = i(1, 2) == i(1)(2)
 
-    @test
+    @Test
     def testCurry13(): Bool = j(1, 2, 3) == j(1)(2)(3)
 
-    @test
+    @Test
     def testCurry14(): Bool = j(1, 2, 3) == j(1, 2)(3)
 
-    @test
+    @Test
     def testCurry15(): Bool = j(1, 2, 3) == j(1)(2, 3)
 
-    @test
+    @Test
     def testCurry16(): Bool = k(x -> x, 42) == k(x -> x)(42)
 
     ///

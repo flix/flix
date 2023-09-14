@@ -1,9 +1,9 @@
 mod Test.Exp.Unit {
 
-    @test
+    @Test
     def testUnit01(): Unit = ()
 
-    @test
+    @Test
     def testUnit02(): Unit =
         let f = () -> ();
         f()

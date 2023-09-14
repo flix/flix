@@ -20,7 +20,7 @@ mod TestStringBuilder {
     // new                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def new01(): StringBuilder[Static] \ IO =
         StringBuilder.new(Static) // Must be Impure, otherwise the StringBuilder would escape its region
 
@@ -29,14 +29,14 @@ mod TestStringBuilder {
     // appendString!                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def appendString01!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("hello", sb);
         StringBuilder.toString(sb) == "hello"
     }
 
-    @test
+    @Test
     def appendString02!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("hello", sb);
@@ -44,7 +44,7 @@ mod TestStringBuilder {
         StringBuilder.toString(sb) == "hello!"
     }
 
-    @test
+    @Test
     def appendString03!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("hello", sb);
@@ -57,14 +57,14 @@ mod TestStringBuilder {
     // appendCodePoint!                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def appendCodePoint01!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendCodePoint!(0x1f3dd, sb);
         StringBuilder.toString(sb) == CodePoint.toString(0x1f3dd)
     }
 
-    @test
+    @Test
     def appendCodePoint02!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendCodePoint!(0x1f3dd, sb);
@@ -72,7 +72,7 @@ mod TestStringBuilder {
         StringBuilder.toString(sb) == "\uD83C\uDFDD "
     }
 
-    @test
+    @Test
     def appendCodePoint03!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendCodePoint!(0x0020, sb);
@@ -86,14 +86,14 @@ mod TestStringBuilder {
     // append! (Char)                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def appendChar01!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.append!('A', sb);
         StringBuilder.toString(sb) == "A"
     }
 
-    @test
+    @Test
     def appendChar02!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.append!('A', sb);
@@ -101,7 +101,7 @@ mod TestStringBuilder {
         StringBuilder.toString(sb) == "AB"
     }
 
-    @test
+    @Test
     def appendChar03!(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.append!('A', sb);
@@ -114,35 +114,35 @@ mod TestStringBuilder {
 /////////////////////////////////////////////////////////////////////////////
 // append! (Int8)                                                          //
 /////////////////////////////////////////////////////////////////////////////
-@test
+@Test
 def appendInt801!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(0i8, sb);
     StringBuilder.toString(sb) == "0"
 }
 
-@test
+@Test
 def appendInt802!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(1i8, sb);
     StringBuilder.toString(sb) == "1"
 }
 
-@test
+@Test
 def appendInt803!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(-1i8, sb);
     StringBuilder.toString(sb) == "-1"
 }
 
-@test
+@Test
 def appendInt804!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(127i8, sb);
     StringBuilder.toString(sb) == "127"
 }
 
-@test
+@Test
 def appendInt805!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(-127i8, sb);
@@ -153,21 +153,21 @@ def appendInt805!(): Bool = region rc {
 // append! (Int16)                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendInt1601!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(0i16, sb);
     StringBuilder.toString(sb) == "0"
 }
 
-@test
+@Test
 def appendInt1602!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(1i16, sb);
     StringBuilder.toString(sb) == "1"
 }
 
-@test
+@Test
 def appendInt1603!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(-1i16, sb);
@@ -178,21 +178,21 @@ def appendInt1603!(): Bool = region rc {
 // append! (Int32)                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendInt3201!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(0, sb);
     StringBuilder.toString(sb) == "0"
 }
 
-@test
+@Test
 def appendInt3202!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(1, sb);
     StringBuilder.toString(sb) == "1"
 }
 
-@test
+@Test
 def appendInt3203!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(-1, sb);
@@ -203,21 +203,21 @@ def appendInt3203!(): Bool = region rc {
 // append! (Int64)                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendInt6401!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(0i64, sb);
     StringBuilder.toString(sb) == "0"
 }
 
-@test
+@Test
 def appendInt6402!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(1i64, sb);
     StringBuilder.toString(sb) == "1"
 }
 
-@test
+@Test
 def appendInt6403!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(-1i64, sb);
@@ -228,21 +228,21 @@ def appendInt6403!(): Bool = region rc {
 // append! (BigInt)                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendBigInt01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(0ii, sb);
     StringBuilder.toString(sb) == "0"
 }
 
-@test
+@Test
 def appendBigInt02!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(1ii, sb);
     StringBuilder.toString(sb) == "1"
 }
 
-@test
+@Test
 def appendBigInt03!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(-1ii, sb);
@@ -253,28 +253,28 @@ def appendBigInt03!(): Bool = region rc {
 // appendFloat32!                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendFloat3201!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(0.0f32, sb);
     StringBuilder.toString(sb) == "0.0"
 }
 
-@test
+@Test
 def appendFloat3202!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(Float32.nan(), sb);
     StringBuilder.toString(sb) == "NaN"
 }
 
-@test
+@Test
 def appendFloat3203!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(Float32.positiveInfinity(), sb);
     StringBuilder.toString(sb) == "Infinity"
 }
 
-@test
+@Test
 def appendFloat3204!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(Float32.negativeInfinity(), sb);
@@ -285,28 +285,28 @@ def appendFloat3204!(): Bool = region rc {
 // appendFloat64!                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendFloat6401!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(0.0f64, sb);
     StringBuilder.toString(sb) == "0.0"
 }
 
-@test
+@Test
 def appendFloat6402!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(Float64.nan(), sb);
     StringBuilder.toString(sb) == "NaN"
 }
 
-@test
+@Test
 def appendFloat6403!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(Float64.positiveInfinity(), sb);
     StringBuilder.toString(sb) == "Infinity"
 }
 
-@test
+@Test
 def appendFloat6404!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!(Float64.negativeInfinity(), sb);
@@ -317,14 +317,14 @@ def appendFloat6404!(): Bool = region rc {
 // appendLineSeparator!                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendLineSeparator01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLineSeparator!(sb);
     StringBuilder.toString(sb) == String.lineSeparator()
 }
 
-@test
+@Test
 def appendLineSeparator02!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!('A', sb);
@@ -338,14 +338,14 @@ def appendLineSeparator02!(): Bool = region rc {
 // appendLine!                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendLine01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLine!("", sb);
     StringBuilder.toString(sb) == String.lineSeparator()
 }
 
-@test
+@Test
 def appendLine02!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLine!("A", sb);
@@ -353,7 +353,7 @@ def appendLine02!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLine03!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLine!("A", sb);
@@ -362,7 +362,7 @@ def appendLine03!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLine04!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLine!("A", sb);
@@ -376,7 +376,7 @@ def appendLine04!(): Bool = region rc {
 // appendLineWith!                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendLineWith01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLineWith!(Int32.toString, 1, sb);
@@ -384,7 +384,7 @@ def appendLineWith01!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLineWith02!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLineWith!(Int32.toString, 1, sb);
@@ -393,7 +393,7 @@ def appendLineWith02!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLineWith03!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLineWith!(Int32.toString, 1, sb);
@@ -403,7 +403,7 @@ def appendLineWith03!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLineWith04!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLineWith!(Int32.toString, 1, sb);
@@ -418,14 +418,14 @@ def appendLineWith04!(): Bool = region rc {
 // appendLines                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendLines01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLines!(Array#{} @ rc, sb);
     StringBuilder.toString(sb) == ""
 }
 
-@test
+@Test
 def appendLines02!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLines!(Array#{"A"} @ rc, sb);
@@ -433,7 +433,7 @@ def appendLines02!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLines03!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLines!(Array#{"A", "B"} @ rc, sb);
@@ -441,7 +441,7 @@ def appendLines03!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLines04!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLines!(Array#{"A", "B", "C"} @ rc, sb);
@@ -453,14 +453,14 @@ def appendLines04!(): Bool = region rc {
 // appendLinesWith                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendLinesWith01(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith(Int32.toString, Nil, sb);
     StringBuilder.toString(sb) == ""
 }
 
-@test
+@Test
 def appendLinesWith02(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith(Int32.toString, Set#{1}, sb);
@@ -468,7 +468,7 @@ def appendLinesWith02(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLinesWith03(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith(Int32.toString, List.toChain(1 :: 2 :: Nil), sb);
@@ -476,7 +476,7 @@ def appendLinesWith03(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLinesWith04(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith(Int32.toString, 1 :: 2 :: 3 :: Nil, sb);
@@ -488,14 +488,14 @@ def appendLinesWith04(): Bool = region rc {
 // appendLinesWith!                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def appendLinesWith01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith!(Int32.toString, (Array#{} @ rc): Array[Int32, _], sb);
     StringBuilder.toString(sb) == ""
 }
 
-@test
+@Test
 def appendLinesWith02!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith!(Int32.toString, Array#{1} @ rc, sb);
@@ -503,7 +503,7 @@ def appendLinesWith02!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLinesWith03!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith!(Int32.toString, Array#{1, 2} @ rc, sb);
@@ -511,7 +511,7 @@ def appendLinesWith03!(): Bool = region rc {
     StringBuilder.toString(sb) == s1
 }
 
-@test
+@Test
 def appendLinesWith04!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendLinesWith!(Int32.toString, Array#{1, 2, 3} @ rc, sb);
@@ -523,42 +523,42 @@ def appendLinesWith04!(): Bool = region rc {
 // intercalate!                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def intercalate01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.intercalate!("", Array#{} @ rc, sb);
     StringBuilder.toString(sb) == ""
 }
 
-@test
+@Test
 def intercalate02!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.intercalate!("::", Array#{} @ rc, sb);
     StringBuilder.toString(sb) == ""
 }
 
-@test
+@Test
 def intercalate03!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.intercalate!("", Array#{"abc", "def"} @ rc, sb);
     StringBuilder.toString(sb) == "abcdef"
 }
 
-@test
+@Test
 def intercalate04!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.intercalate!("::", Array#{"abc"} @ rc, sb);
     StringBuilder.toString(sb) == "abc"
 }
 
-@test
+@Test
 def intercalate05!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.intercalate!("::", Array#{"abc", "def"} @ rc, sb);
     StringBuilder.toString(sb) == "abc::def"
 }
 
-@test
+@Test
 def intercalate06!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.intercalate!("::", Array#{"abc", "def", "ghi"} @ rc, sb);
@@ -570,13 +570,13 @@ def intercalate06!(): Bool = region rc {
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def iterator01(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.iterator(rc, sb) |> Iterator.toList == Nil
     }
 
-    @test
+    @Test
     def iterator02(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("abc", sb);
@@ -588,13 +588,13 @@ def intercalate06!(): Bool = region rc {
     // enumerator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def enumerator01(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.enumerator(rc, sb) |> Iterator.toList == Nil
     }
 
-    @test
+    @Test
     def enumerator02(): Bool = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("abc", sb);
@@ -606,20 +606,20 @@ def intercalate06!(): Bool = region rc {
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def length01(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.length(sb) == 0
 }
 
-@test
+@Test
 def length02(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!('A', sb);
     StringBuilder.length(sb) == 1
 }
 
-@test
+@Test
 def length03(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.append!('A', sb);
@@ -627,7 +627,7 @@ def length03(): Bool = region rc {
     StringBuilder.length(sb) == 2
 }
 
-@test
+@Test
 def length04(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendString!("A", sb);
@@ -635,7 +635,7 @@ def length04(): Bool = region rc {
     StringBuilder.length(sb) == 2
 }
 
-@test
+@Test
 def length05(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendString!("Hello", sb);
@@ -649,20 +649,20 @@ def length05(): Bool = region rc {
 // toString                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def toString01(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.toString(sb) == ""
 }
 
-@test
+@Test
 def toString02(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendString!("", sb);
     StringBuilder.toString(sb) == ""
 }
 
-@test
+@Test
 def toString03(): Bool = region rc {
     let sb = StringBuilder.new(rc);
     StringBuilder.appendString!("abcdefghijklmnopqrstuvwxyz", sb);

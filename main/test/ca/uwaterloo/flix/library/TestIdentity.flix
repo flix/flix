@@ -22,7 +22,7 @@ mod TestIdentity {
     // SemiGroup                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def combine01(): Bool =
         SemiGroup.combine(Identity(1 :: Nil), Identity(2 :: Nil)) == Identity(1 :: 2 :: Nil)
 
@@ -30,7 +30,7 @@ mod TestIdentity {
     // Monoid                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def empty01(): Bool =
         Identity(Monoid.empty() : List[Int32]) == Identity(Nil): Identity[List[Int32]]
 
@@ -38,7 +38,7 @@ mod TestIdentity {
     // Functor                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def map01(): Bool =
         Functor.map(x -> x + 1, Identity(0)) == Identity(1)
 
@@ -46,11 +46,11 @@ mod TestIdentity {
     // Applicative                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def point01(): Bool =
         Applicative.point(1) : Identity[Int32] == Identity(1)
 
-    @test
+    @Test
     def ap01(): Bool =
         Applicative.ap(Identity(x -> x+ 1), Identity(1)) == Identity(2)
 
@@ -58,7 +58,7 @@ mod TestIdentity {
     // Monad                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def flatMap01(): Bool =
         Monad.flatMap(x -> Identity(x+1), Identity(1)) == Identity(2)
 
@@ -66,11 +66,11 @@ mod TestIdentity {
     // Foldable                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldLeft01(): Bool =
         Foldable.foldLeft((s, x) -> s+x, 100, Identity(1)) == 101
 
-    @test
+    @Test
     def foldRight01(): Bool =
         Foldable.foldRight((x, acc) -> acc + x, 100, Identity(1)) == 101
 
@@ -78,11 +78,11 @@ mod TestIdentity {
     // Traversable                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def traverse01(): Bool =
         Traversable.traverse(x -> x :: Nil, Identity(1)) == Identity(1) :: Nil
 
-    @test
+    @Test
     def sequence01(): Bool =
         Traversable.sequence(Identity(1 :: 2 :: Nil)) == Identity(1) :: Identity(2) :: Nil
 
@@ -90,7 +90,7 @@ mod TestIdentity {
     // Add                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def add01(): Bool =
         Identity(1) + Identity(2) == Identity(3)
 
@@ -98,7 +98,7 @@ mod TestIdentity {
     // Sub                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sub01(): Bool =
         Identity(3) - Identity(2) == Identity(1)
 
@@ -106,7 +106,7 @@ mod TestIdentity {
     // Mul                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def mul01(): Bool =
         Identity(3) * Identity(2) == Identity(6)
 
@@ -114,7 +114,7 @@ mod TestIdentity {
     // Div                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def div01(): Bool =
         Identity(6) / Identity(2) == Identity(3)
 
@@ -122,11 +122,11 @@ mod TestIdentity {
     // Neg                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def neg01(): Bool =
         Neg.neg(Identity(1)) == Identity(-1)
 
-    @test
+    @Test
     def neg02(): Bool =
         Neg.neg(Identity(-1)) == Identity(1)
 

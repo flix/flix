@@ -20,7 +20,7 @@ mod Test.Exp.ApplicativeFor {
     // List                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def testApplicativeFor01(): List[String] =
         forA (
             x <- "Hello" :: Nil
@@ -28,7 +28,7 @@ mod Test.Exp.ApplicativeFor {
             "${x} world"
         }
 
-    @test
+    @Test
     def testApplicativeFor02(): Bool =
         let res = forA (
             x <- "Hello" :: Nil
@@ -37,7 +37,7 @@ mod Test.Exp.ApplicativeFor {
         };
         res == "Hello world" :: Nil
 
-    @test
+    @Test
     def testApplicativeFor03(): List[String] =
         forA (
             x <- "Hello" :: Nil;
@@ -46,7 +46,7 @@ mod Test.Exp.ApplicativeFor {
             "${x} ${y}"
         }
 
-    @test
+    @Test
     def testApplicativeFor04(): Bool =
         let res = forA (
             x <- "Hello" :: Nil;
@@ -56,7 +56,7 @@ mod Test.Exp.ApplicativeFor {
         };
         res == "Hello world" :: Nil
 
-    @test
+    @Test
     def testApplicativeFor05(): Bool =
         let res = forA (
             (a, b) <- (1, 2) :: Nil;
@@ -64,7 +64,7 @@ mod Test.Exp.ApplicativeFor {
         ) yield (a + b) * c + d;
         res == ((1 + 2) * 3 + 4) :: Nil
 
-    @test
+    @Test
     def testApplicativeFor06(): Bool =
         let res = forA (
             x <- "Hello" :: Nil;
@@ -74,7 +74,7 @@ mod Test.Exp.ApplicativeFor {
         };
         res == "Hello world" :: "Hello a" :: "Hello b" :: "Hello c" :: Nil
 
-    @test
+    @Test
     def testApplicativeFor07(): Bool =
         let res = forA (
             x <- "1" :: "2" :: "3" :: Nil;
@@ -86,7 +86,7 @@ mod Test.Exp.ApplicativeFor {
                "2 a" :: "2 b" :: "2 c" ::
                "3 a" :: "3 b" :: "3 c" :: Nil
 
-    @test
+    @Test
     def testApplicativeFor08(): Bool =
         let res = forA (
             (a, b) <- ("1", "1") :: ("2", "2") :: ("3", "3") :: Nil;
@@ -98,7 +98,7 @@ mod Test.Exp.ApplicativeFor {
                "2a2" :: "2b2" :: "2c2" ::
                "3a3" :: "3b3" :: "3c3" :: Nil
 
-    @test
+    @Test
     def testApplicativeFor09(): Bool =
         let res = forA (
             x <- "1" :: "2" :: "3" :: Nil;
@@ -117,7 +117,7 @@ mod Test.Exp.ApplicativeFor {
                "3bx" :: "3by" :: "3bz" ::
                "3cx" :: "3cy" :: "3cz" :: Nil
 
-    @test
+    @Test
     def testApplicativeFor10(): Bool =
         let res = forA (
             x <- "1" :: "2" :: "3" :: Nil;
@@ -142,7 +142,7 @@ mod Test.Exp.ApplicativeFor {
     // Validation                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def testApplicativeFor11(): Bool =
         let res = forA (
             x <- s("Hello"): Validation[Int32, String]
@@ -151,7 +151,7 @@ mod Test.Exp.ApplicativeFor {
         };
         res == s("Hello world")
 
-    @test
+    @Test
     def testApplicativeFor12(): Bool =
         let res = forA (
             x <- s("Hello"): Validation[Int32, String];
@@ -161,7 +161,7 @@ mod Test.Exp.ApplicativeFor {
         };
         res == s("Hello world")
 
-    @test
+    @Test
     def testApplicativeFor13(): Bool =
         let res = forA (
             (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];
@@ -169,7 +169,7 @@ mod Test.Exp.ApplicativeFor {
         ) yield (a + b) * c + d;
         res == s((1 + 2) * 3 + 4)
 
-    @test
+    @Test
     def testApplicativeFor14(): Bool =
         let res = forA (
             (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];
@@ -177,7 +177,7 @@ mod Test.Exp.ApplicativeFor {
         ) yield (a + b) * c + d;
         res == f("err")
 
-    @test
+    @Test
     def testApplicativeFor15(): Bool =
         let res = forA (
             (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];
@@ -186,7 +186,7 @@ mod Test.Exp.ApplicativeFor {
         ) yield (a + b) * c + d;
         res == fs("err1" :: "err2" :: Nil)
 
-    @test
+    @Test
     def testApplicativeFor16(): Bool =
         let res = forA (
             a <- s("a"): Validation[Bool, String];
@@ -195,7 +195,7 @@ mod Test.Exp.ApplicativeFor {
         ) yield "${a}${b}${c}";
         res == s("a1x")
 
-    @test
+    @Test
     def testApplicativeFor17(): Bool =
         let res = forA (
             a <- s("a"): Validation[Bool, String];
@@ -207,7 +207,7 @@ mod Test.Exp.ApplicativeFor {
         };
         res == s(s("a1x"))
 
-    @test
+    @Test
     def testApplicativeFor18(): Bool =
         let res = forA (
             (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];

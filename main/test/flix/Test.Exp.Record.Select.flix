@@ -1,26 +1,26 @@
 mod Test.Exp.Record.Select {
 
-    @test
+    @Test
     def testRecordSelect01(): String =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         r.fstName
 
-    @test
+    @Test
     def testRecordSelect02(): String =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         r.lstName
 
-    @test
+    @Test
     def testRecordSelect03(): Int32 =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         r.age
 
-    @test
+    @Test
     def testRecordSelect04(): Bool =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         r.cowboy
 
-    @test
+    @Test
     def testRecordMultiSelect01(): Unit =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         let _fstName = r.fstName;
@@ -29,7 +29,7 @@ mod Test.Exp.Record.Select {
         let _cowboy = r.cowboy;
         ()
 
-    @test
+    @Test
     def testRecordMultiSelect02(): Unit =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         let _cowboy = r.cowboy;
@@ -38,7 +38,7 @@ mod Test.Exp.Record.Select {
         let _fstName = r.fstName;
         ()
 
-    @test
+    @Test
     def testRecordMultiSelect03(): Unit =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         let _fstName1 = r.fstName;
@@ -47,7 +47,7 @@ mod Test.Exp.Record.Select {
         let _lstName2 = r.lstName;
         ()
 
-    @test
+    @Test
     def testRecordMultiSelect04(): Unit =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         let _lstName1 = r.lstName;
@@ -56,7 +56,7 @@ mod Test.Exp.Record.Select {
         let _fstName2 = r.fstName;
         ()
 
-    @test
+    @Test
     def testNestedSelect01(): Unit =
         let r = { a = { x = 1, y = 2}, b = { x = 1, y = 4 } };
         let _ax = r.a.x;
@@ -65,7 +65,7 @@ mod Test.Exp.Record.Select {
         let _by = r.b.y;
         ()
 
-    @test
+    @Test
     def testNestedSelect02(): Unit =
         let r = { a = { b = { c = { d = 42 } } } };
         let _a = r.a;
@@ -74,7 +74,7 @@ mod Test.Exp.Record.Select {
         let _d = r.a.b.c.d;
         ()
 
-    @test
+    @Test
     def testSelectDuplicateLabels01(): Int32 =
         let r = { a = 21, a = 42, a = 84};
         let a1 = r.a;
@@ -82,7 +82,7 @@ mod Test.Exp.Record.Select {
         let a3 = { -a, -a | r }.a;
         a1 + a2 + a3
 
-    @test
+    @Test
     def testSelectDuplicateLabels02(): Int32 =
         let r = { a = 21, b = true, a = 42, b = false, a = 84};
         let a1 = r.a;
@@ -90,12 +90,12 @@ mod Test.Exp.Record.Select {
         let a3 = { -a, -a | r }.a;
         a1 + a2 + a3
 
-    @test
+    @Test
     def testSelectDuplicateLabels03(): String =
         let r = { a = true, a = "hello world", a = 84};
         { -a | r }.a
 
-    @test
+    @Test
     def testSelectDuplicateLabels04(): Int32 =
         let r = { a = true, a = "hello world", a = 84};
         { -a, -a | r }.a

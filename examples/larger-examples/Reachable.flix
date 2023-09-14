@@ -47,7 +47,7 @@ namespace Reachable/Imperative {
             MutSet.toSet(reachable)
         }
 
-    @test
+    @Test
     pub def test(): Bool = Graphs.validate(reachable)
 }
 
@@ -71,7 +71,7 @@ namespace Reachable/Functional {
         };
         dfs(origin :: Nil, Set.empty())
 
-    @test
+    @Test
     pub def test(): Bool = Graphs.validate(reachable)
 }
 
@@ -85,7 +85,7 @@ namespace Reachable/Logic {
         };
         query edgeFacts, reachable select x from Reachable(x) |> List.toSet
 
-    @test
+    @Test
     pub def test(): Bool = Graphs.validate(reachable)
 }
 

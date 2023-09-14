@@ -1,21 +1,21 @@
 mod Test.Exp.Infix {
 
-    @test
+    @Test
     def testInfix01(): Bool = 1 `add` 2 == 1 + 2
 
-    @test
+    @Test
     def testInfix02(): Bool = 1 `sub` 2 == 1 - 2
 
-    @test
+    @Test
     def testInfix03(): Bool = 1 `add` 2 `add` 3 == (1 + 2) + 3
 
-    @test
+    @Test
     def testInfix04(): Bool = 1 `add` 2 `sub` 3 == (1 + 2) - 3
 
-    @test
+    @Test
     def testInfix05(): Bool = 2 `Test.Exp.Infix.A.mul` 3 == 2 * 3
 
-    @test
+    @Test
     def testInfix06(): Bool = 3 `Test.Exp.Infix.Divisible.div` 2 == 3 / 2
 
     def add(x: Int32, y: Int32): Int32 = x + y

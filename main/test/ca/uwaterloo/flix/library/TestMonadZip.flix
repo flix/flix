@@ -28,7 +28,7 @@ mod TestMonadZip {
     // zipWithIdentity.Identity                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithIdentity01(): Bool =
         MonadZip.zipWith(Int32.max, Identity.Identity(1), Identity.Identity(10)) == Identity.Identity(10)
 
@@ -36,7 +36,7 @@ mod TestMonadZip {
     // zipWithAIdentity.Identity                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithAIdentity01(): Bool =
         MonadZip.zipWithA((x, y) -> Identity.Identity(Int32.max(x, y)), Identity.Identity(1), Identity.Identity(10)) == Identity.Identity(Identity.Identity(10))
 
@@ -45,7 +45,7 @@ mod TestMonadZip {
     // zipIdentity.Identity                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipIdentity01(): Bool =
         MonadZip.zip(Identity.Identity(1), Identity.Identity(10)) == Identity.Identity((1, 10))
 
@@ -53,7 +53,7 @@ mod TestMonadZip {
     // unzipIdentity.Identity                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unzipIdentity01(): Bool =
         MonadZip.unzip(Identity.Identity((1, 10))) == (Identity.Identity(1), Identity.Identity(10))
 
@@ -62,7 +62,7 @@ mod TestMonadZip {
     // zipWithList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithList01(): Bool =
         MonadZip.zipWith(Int32.max, 1 :: 2 :: Nil, 10 :: 11 :: Nil) == 10 :: 11 :: Nil
 
@@ -70,7 +70,7 @@ mod TestMonadZip {
     // zipWithAList                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithAList01(): Bool =
         MonadZip.zipWithA((x, y) -> Identity.Identity(Int32.max(x, y)), 1 :: 2 :: Nil, 10 :: 11 :: Nil) == Identity.Identity(10 :: 11 :: Nil)
 
@@ -78,7 +78,7 @@ mod TestMonadZip {
     // zipList                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipList01(): Bool =
         MonadZip.zip(1 :: 2 :: Nil, 10 :: Nil) == (1, 10) :: Nil
 
@@ -86,7 +86,7 @@ mod TestMonadZip {
     // unzipList                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unzipList01(): Bool =
         MonadZip.unzip((1, 10) :: (2, 11) :: Nil) == (1 :: 2 :: Nil, 10 :: 11 :: Nil)
 
@@ -95,11 +95,11 @@ mod TestMonadZip {
     // zipWithOption                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithOption01(): Bool =
         MonadZip.zipWith(Int32.max, Some(1), None) == None
 
-    @test
+    @Test
     def zipWithOption02(): Bool =
         MonadZip.zipWith(Int32.max, Some(1), Some(10)) == Some(10)
 
@@ -107,11 +107,11 @@ mod TestMonadZip {
     // zipWithAOption                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithAOption01(): Bool =
         MonadZip.zipWithA((x, y) -> Identity.Identity(Int32.max(x, y)), Some(1), None) == Identity.Identity(None)
 
-    @test
+    @Test
     def zipWithAOption02(): Bool =
         MonadZip.zipWithA((x, y) -> Identity.Identity(Int32.max(x, y)), Some(1), Some(10)) == Identity.Identity(Some(10))
 
@@ -119,11 +119,11 @@ mod TestMonadZip {
     // zipOption                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipOption01(): Bool =
         MonadZip.zip(Some(1), None: Option[Int32]) == None
 
-    @test
+    @Test
     def zipOption02(): Bool =
         MonadZip.zip(Some(1), Some(10)) == Some((1, 10))
 
@@ -132,11 +132,11 @@ mod TestMonadZip {
     // unzipOption                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unzipOption01(): Bool =
         MonadZip.unzip(None: Option[(Int32, Int32)]) == (None, None)
 
-    @test
+    @Test
     def unzipOption02(): Bool =
         MonadZip.unzip(Some((1, 10))) == (Some(1), Some(10))
 
@@ -144,7 +144,7 @@ mod TestMonadZip {
     // zipWithChain                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithChain01(): Bool =
         MonadZip.zipWith(Int32.max, List.toChain(1 :: 2 :: Nil), List.toChain(10 :: 11 :: Nil)) == List.toChain(10 :: 11 :: Nil)
 
@@ -152,7 +152,7 @@ mod TestMonadZip {
     // zipWithAChain                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithAChain01(): Bool =
         MonadZip.zipWithA((x, y) -> Identity.Identity(Int32.max(x, y)), List.toChain(1 :: 2 :: Nil), List.toChain(10 :: 11 :: Nil))
             == Identity.Identity(List.toChain(10 :: 11 :: Nil))
@@ -161,7 +161,7 @@ mod TestMonadZip {
     // zipChain                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipChain01(): Bool =
         MonadZip.zip(List.toChain(1 :: 2 :: Nil), Chain.singleton(10)) == Chain.singleton((1, 10))
 
@@ -169,7 +169,7 @@ mod TestMonadZip {
     // unzipChain                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unzipChain01(): Bool =
         MonadZip.unzip(List.toChain((1, 10) :: (2, 11) :: Nil)) == (List.toChain(1 :: 2 :: Nil), List.toChain(10 :: 11 :: Nil))
 
@@ -177,7 +177,7 @@ mod TestMonadZip {
     // zipWithNel                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithNel01(): Bool =
         MonadZip.zipWith(Int32.max, Nel.Nel(1, 2 :: Nil), Nel.Nel(10, 11 :: Nil)) == Nel.Nel(10, 11 :: Nil)
 
@@ -185,7 +185,7 @@ mod TestMonadZip {
     // zipWithANel                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithANel01(): Bool =
         MonadZip.zipWithA((x, y) -> Identity.Identity(Int32.max(x, y)), Nel.Nel(1, 2 :: Nil), Nel.Nel(10, 11 :: Nil))
             == Identity.Identity(Nel.Nel(10, 11 :: Nil))
@@ -194,7 +194,7 @@ mod TestMonadZip {
     // zipNel                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipNel01(): Bool =
         MonadZip.zip(Nel.Nel(1, 2 :: Nil), Nel.Nel(10, Nil)) == Nel.Nel((1, 10), Nil)
 
@@ -202,7 +202,7 @@ mod TestMonadZip {
     // unzipNel                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unzipNel01(): Bool =
         MonadZip.unzip(Nel.Nel((1, 10), (2, 11) :: Nil)) == (Nel.Nel(1, 2 :: Nil), Nel.Nel(10, 11 :: Nil))
 
@@ -210,7 +210,7 @@ mod TestMonadZip {
     // zipWithNec                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithNec01(): Bool =
         MonadZip.zipWith(Int32.max, necOf2(1, 2), necOf2(10, 11)) == necOf2(10, 11)
 
@@ -218,7 +218,7 @@ mod TestMonadZip {
     // zipWithANec                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipWithANec01(): Bool =
         MonadZip.zipWithA((x, y) -> Identity.Identity(Int32.max(x, y)), necOf2(1, 2), necOf2(10, 11))
             == Identity.Identity(necOf2(10, 11))
@@ -227,7 +227,7 @@ mod TestMonadZip {
     // zipNec                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def zipNec01(): Bool =
         MonadZip.zip(necOf2(1, 2), Nec.singleton(10)) == Nec.singleton((1, 10))
 
@@ -235,7 +235,7 @@ mod TestMonadZip {
     // unzipNec                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def unzipNec01(): Bool =
         MonadZip.unzip(necOf2((1, 10), (2, 11))) == (necOf2(1, 2), necOf2(10, 11))
 

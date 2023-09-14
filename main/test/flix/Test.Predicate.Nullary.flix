@@ -1,6 +1,6 @@
 mod Test.Predicate.Nullary {
 
-    @test
+    @Test
     def testNullaryPredicate01(): Bool =
         let p = #{
             A(). B(). C().
@@ -8,7 +8,7 @@ mod Test.Predicate.Nullary {
         let m = query p select 42 from A();
         Vector.memberOf(42, m)
 
-    @test
+    @Test
     def testNullaryPredicate02(): Bool =
         let p = #{
             A(). B(). C().
@@ -16,7 +16,7 @@ mod Test.Predicate.Nullary {
         let m = query p select 42 from B();
         Vector.memberOf(42, m)
 
-    @test
+    @Test
     def testNullaryPredicate03(): Bool =
         let p = #{
             A(). B(). C().
@@ -24,7 +24,7 @@ mod Test.Predicate.Nullary {
         let m = query p select 42 from C();
         Vector.memberOf(42, m)
 
-    @test
+    @Test
     def testNullaryPredicate04(): Bool =
         let p = #{
             A(). B(). C().
@@ -33,7 +33,7 @@ mod Test.Predicate.Nullary {
         let m = query p select 42 from R();
         Vector.memberOf(42, m)
 
-    @test
+    @Test
     def testNullaryPredicate05(): Bool =
         let p = #{
             A(). B(). C().
@@ -42,7 +42,7 @@ mod Test.Predicate.Nullary {
         let m = query p select 42 from R();
         Vector.memberOf(42, m)
 
-    @test
+    @Test
     def testNullaryPredicate06(): Bool =
         let p = #{
             A(). B(). C().
@@ -51,7 +51,7 @@ mod Test.Predicate.Nullary {
         let m = query p select 42 from R();
         Vector.memberOf(42, m)
 
-    @test
+    @Test
     def testNullaryPredicate07(): Bool =
         let p = #{
             A(). B(). C().

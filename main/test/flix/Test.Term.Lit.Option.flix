@@ -1,6 +1,6 @@
 mod Test.Term.Lit.Option {
 
-    @test
+    @Test
     def testLitOption01(): Bool =
         let p = #{
             A(None: Option[Int32]).
@@ -10,7 +10,7 @@ mod Test.Term.Lit.Option {
         let r = query p select x from R(x);
         Vector.memberOf(None, r)
 
-    @test
+    @Test
     def testLitOption02(): Bool =
         let p = #{
             A(None: Option[String]).
@@ -20,7 +20,7 @@ mod Test.Term.Lit.Option {
         let r = query p select x from R(x);
         Vector.memberOf(None, r)
 
-    @test
+    @Test
     def testLitOption03(): Bool =
         let p = #{
             A(Some(123)).
@@ -30,7 +30,7 @@ mod Test.Term.Lit.Option {
         let r = query p select x from R(x);
         Vector.memberOf(Some(123), r)
 
-    @test
+    @Test
     def testLitOption04(): Bool =
         let p = #{
             A(Some("Hello World")).

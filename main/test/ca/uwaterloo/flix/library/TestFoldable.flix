@@ -58,15 +58,15 @@ mod TestFoldable {
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def head01(): Bool =
         Foldable.head(Nil: List[String]) == None
 
-    @test
+    @Test
     def head02(): Bool =
         Foldable.head("a" :: Nil) == Some("a")
 
-    @test
+    @Test
     def head03(): Bool =
         Foldable.head("a" :: "b" :: Nil) == Some("a")
 
@@ -74,15 +74,15 @@ mod TestFoldable {
     // last                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def last01(): Bool =
         Foldable.last(Nil: List[String]) == None
 
-    @test
+    @Test
     def last02(): Bool =
         Foldable.last("a" :: Nil) == Some("a")
 
-    @test
+    @Test
     def last03(): Bool =
         Foldable.last("a" :: "b" :: Nil) == Some("b")
 
@@ -90,19 +90,19 @@ mod TestFoldable {
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def findLeft01(): Bool =
         Foldable.findLeft(x -> x `Int32.rem` 2 == 0, Nil: List[Int32]) == None
 
-    @test
+    @Test
     def findLeft02(): Bool =
         Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: Nil) == None
 
-    @test
+    @Test
     def findLeft03(): Bool =
         Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: Nil) == Some(2)
 
-    @test
+    @Test
     def findLeft04(): Bool =
         Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
 
@@ -110,23 +110,23 @@ mod TestFoldable {
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldMap01(): Bool =
         Foldable.foldMap(x -> 2 * x, Nil) == 0
 
-    @test
+    @Test
     def foldMap02(): Bool =
         Foldable.foldMap(x -> 2 * x, 1 :: 2 :: Nil) == 6
 
-    @test
+    @Test
     def foldMap03(): Bool =
         Foldable.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil) == "b"
 
-    @test
+    @Test
     def foldMap04(): Bool =
         Foldable.foldMap(x -> if (x == "c") "b" else x, "a" :: "b" :: "c":: Nil) == "abb"
 
-    @test
+    @Test
     def foldMap05(): Bool =
         Foldable.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
 
@@ -134,15 +134,15 @@ mod TestFoldable {
     // fold                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def fold01(): Bool =
         Foldable.fold(Nil: List[String]) == ""
 
-    @test
+    @Test
     def fold02(): Bool =
         Foldable.fold("a" :: Nil) == "a"
 
-    @test
+    @Test
     def fold03(): Bool =
         Foldable.fold("a" :: "b" :: Nil) == "ab"
 
@@ -153,17 +153,17 @@ mod TestFoldable {
     def foldLeftStep(acc: Int32, a: Int32): Logger[Int32, Int32] =
         tell(a) *> point(acc+a)
 
-    @test
+    @Test
     def foldLeftM01(): Bool =
         let xs: List[Int32] = Nil;
         runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)) == (Nil, 0)
 
-    @test
+    @Test
     def foldLeftM02(): Bool =
         let xs = 1 :: 2 :: Nil;
         runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)) == (1 :: 2 :: Nil, 3)
 
-    @test
+    @Test
     def foldLeftM03(): Bool =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
         runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)) == (1 :: 2 :: 3 :: 4 :: 5 :: Nil, 15)
@@ -175,17 +175,17 @@ mod TestFoldable {
     def foldRightStep(a: Int32, acc: Int32): Logger[Int32, Int32] =
         tell(a) *> point(acc+a)
 
-    @test
+    @Test
     def foldRightM01(): Bool =
         let xs: List[Int32] = Nil;
         runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (Nil, 0)
 
-    @test
+    @Test
     def foldRightM02(): Bool =
         let xs = 1 :: 2 :: Nil;
         runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (2 :: 1 :: Nil, 3)
 
-    @test
+    @Test
     def foldRightM03(): Bool =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
         runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (5 :: 4 :: 3 :: 2 :: 1 :: Nil, 15)
@@ -194,15 +194,15 @@ mod TestFoldable {
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def length01(): Bool =
         Foldable.length(Nil: List[String]) == 0
 
-    @test
+    @Test
     def length02(): Bool =
         Foldable.length("a" :: "b" :: Nil) == 2
 
-    @test
+    @Test
     def length03(): Bool =
         Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil) == 4
 
@@ -210,12 +210,12 @@ mod TestFoldable {
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def count01(): Bool =
         let f = x -> x == "a";
         Foldable.count(f, Nil) == 0
 
-    @test
+    @Test
     def count02(): Bool =
         let xs = "a" :: "b" :: "a" :: "c" :: "a" :: Nil;
         let f = x -> x == "a";
@@ -225,16 +225,16 @@ mod TestFoldable {
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sum01(): Bool =
         Foldable.sum(None) == 0
 
-    @test
+    @Test
     def sum02(): Bool =
         let num = Some(8);
         Foldable.sum(num) == 8
 
-    @test
+    @Test
     def sum03(): Bool =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
         Foldable.sum(xs) == 15
@@ -243,17 +243,17 @@ mod TestFoldable {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumWith01(): Bool =
         let f = x -> x + 1;
         Foldable.sumWith(f, Nil) == 0
 
-    @test
+    @Test
     def sumWith02(): Bool =
         let f = x -> x + 1;
         Foldable.sumWith(f, 1 :: 2 :: 3 :: 4 :: Nil) == 14
 
-    @test
+    @Test
     def sumWith03(): Bool =
         let f = x -> match x {
             case None    => 0
@@ -265,17 +265,17 @@ mod TestFoldable {
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def exists01(): Bool =
         let f = x -> x == 3;
         Foldable.exists(f, Nil) == false
 
-    @test
+    @Test
     def exists02(): Bool =
         let f = x -> x == "d";
         Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == true
 
-    @test
+    @Test
     def exists03(): Bool =
         let f = x -> x == "f";
         Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == false
@@ -284,17 +284,17 @@ mod TestFoldable {
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forAll01(): Bool =
         let f = x -> x == 3;
         Foldable.forAll(f, Nil) == true
 
-    @test
+    @Test
     def forAll02(): Bool =
         let f = x -> x == "a";
         Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "a" :: Nil) == true
 
-    @test
+    @Test
     def forAll03(): Bool =
         let f = x -> x == "a";
         Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "b" :: Nil) == false
@@ -303,17 +303,17 @@ mod TestFoldable {
     // forEachM                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEachM01(): Bool =
         let xs: List[Int32] = Nil;
         runLogger(Foldable.forEachM(tell, xs)) == (Nil, ())
 
-    @test
+    @Test
     def forEachM02(): Bool =
         let xs = 1 :: 2 :: Nil;
         runLogger(Foldable.forEachM(tell, xs)) == (1 :: 2 :: Nil, ())
 
-    @test
+    @Test
     def forEachM03(): Bool =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
         runLogger(Foldable.forEachM(tell, xs)) == (1 :: 2 :: 3 :: 4 :: 5 :: Nil, ())
@@ -322,15 +322,15 @@ mod TestFoldable {
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toChain01(): Bool =
         Foldable.toChain(Nil: List[Int32]) == Chain.empty(): Chain[Int32]
 
-    @test
+    @Test
     def toChain02(): Bool =
         Foldable.toChain(1 :: 2 :: Nil) == List.toChain(1 :: 2 :: Nil)
 
-    @test
+    @Test
     def toChain03(): Bool =
         Foldable.toChain(Set#{0, 1, 2, 3, 4}) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
@@ -338,15 +338,15 @@ mod TestFoldable {
     // toDelayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toDelayList01(): Bool =
         Foldable.toDelayList(Nil: List[Int32]) == DelayList.empty(): DelayList[Int32]
 
-    @test
+    @Test
     def toDelayList02(): Bool =
         Foldable.toDelayList(1 :: 2 :: Nil) == List.toDelayList(1 :: 2 :: Nil)
 
-    @test
+    @Test
     def toDelayList03(): Bool =
         Foldable.toDelayList(Set#{0, 1, 2, 3, 4}) == List.toDelayList(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
@@ -354,17 +354,17 @@ mod TestFoldable {
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toArray01(): Bool = region rc {
         Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc)
     }
 
-    @test
+    @Test
     def toArray02(): Bool = region rc {
         Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc)
     }
 
-    @test
+    @Test
     def toArray03(): Bool = region rc {
         Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc)
     }
@@ -373,15 +373,15 @@ mod TestFoldable {
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toVector01(): Bool =
         Foldable.toVector(Nel.Nel(1, Nil)) == Vector#{1}
 
-    @test
+    @Test
     def toVector02(): Bool =
         Foldable.toVector(Nel.Nel(1, 2 :: 3 :: Nil)) == Vector#{1, 2, 3}
 
-    @test
+    @Test
     def toVector03(): Bool =
         Foldable.toVector(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Vector#{1, 1, 2, 3}
 
@@ -389,7 +389,7 @@ mod TestFoldable {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMutDeque01(): Bool = region rc {
         let l = Nil: List[Unit];
         let d = Foldable.toMutDeque(rc, l);
@@ -397,7 +397,7 @@ mod TestFoldable {
         l == MutDeque.toList(d)
     }
 
-    @test
+    @Test
     def toMutDeque02(): Bool = region rc {
         let l = 1 :: 2 :: Nil;
         let d = Foldable.toMutDeque(rc, l);
@@ -405,7 +405,7 @@ mod TestFoldable {
         l == MutDeque.toList(d)
     }
 
-    @test
+    @Test
     def toMutDeque03(): Bool = region rc {
         let l = 3 :: 1 :: 2 :: Nil;
         let d = Foldable.toMutDeque(rc, l);
@@ -413,7 +413,7 @@ mod TestFoldable {
         l == MutDeque.toList(d)
     }
 
-    @test
+    @Test
     def toMutDeque04(): Bool = region rc {
         let l = 'a' :: 'b' :: 'c' :: Nil;
         let d = Foldable.toMutDeque(rc, l);
@@ -425,7 +425,7 @@ mod TestFoldable {
     // toMutSet                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMutSet01(): Bool = region rc {
         let s1 = Set#{}: Set[Int32];
         let s2 = Foldable.toMutSet(rc, s1);
@@ -433,7 +433,7 @@ mod TestFoldable {
         s1 == MutSet.toSet(s2)
     }
 
-    @test
+    @Test
     def toMutSet02(): Bool = region rc {
         let s1 = Set#{1, 2};
         let s2 = Foldable.toMutSet(rc, s1);
@@ -441,7 +441,7 @@ mod TestFoldable {
         s1 == MutSet.toSet(s2)
     }
 
-    @test
+    @Test
     def toMutSet03(): Bool = region rc {
         let s1 = Set#{1, 2, 3};
         let s2 = Foldable.toMutSet(rc, s1);
@@ -449,7 +449,7 @@ mod TestFoldable {
         s1 == MutSet.toSet(s2)
     }
 
-    @test
+    @Test
     def toMutSet04(): Bool = region rc {
         let s1 = Set#{'a', 'b', 'c'};
         let s2 = Foldable.toMutSet(rc, s1);
@@ -461,23 +461,23 @@ mod TestFoldable {
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMapWith01(): Bool =
         Foldable.toMapWith(x -> 0 * x, List.toChain(Nil)) == Map#{}
 
-    @test
+    @Test
     def toMapWith02(): Bool =
         Foldable.toMapWith(x -> 0 * x, List.toChain(1 :: 2 :: Nil)) == Map#{1 => 0, 2 => 0}
 
-    @test
+    @Test
     def toMapWith03(): Bool =
         Foldable.toMapWith(x -> 2 * x, List.toChain(1 :: 2 :: Nil)) == Map#{1 => 2, 2 => 4}
 
-    @test
+    @Test
     def toMapWith04(): Bool =
         Foldable.toMapWith(x -> x + 10, List.toChain(1 :: 2 :: Nil)) == Map#{1 => 11, 2 => 12}
 
-    @test
+    @Test
     def toMapWith05(): Bool =
         Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)) == Map#{"a" => "ab", "aa" => "aab"}
 
@@ -485,19 +485,19 @@ mod TestFoldable {
     // toDelayMap                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toDelayMap01(): Bool =
         let l = Nil: List[(Int32, Int32)];
         let d1 = Foldable.toDelayMap(List.toChain(l));
         (d1 |> DelayMap.toList) == l
 
-    @test
+    @Test
     def toDelayMap02(): Bool =
         let l = (1, 2) :: (2, 3) :: (3, 4) :: Nil;
         let d1 = Foldable.toDelayMap(List.toChain(l));
         (d1 |> DelayMap.toList) == l
 
-    @test
+    @Test
     def toDelayMap03(): Bool =
         let s = Set#{(0, 2), (1, 4), (2, 6), (3, 8), (4, 10)};
         let d1 = Foldable.toDelayMap(s);
@@ -507,7 +507,7 @@ mod TestFoldable {
     // toMutMap                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMutMap01(): Bool = region rc {
         let l = Nil: List[(Unit, Unit)];
         let m = Foldable.toMutMap(rc, l);
@@ -515,7 +515,7 @@ mod TestFoldable {
         l == MutMap.toList(m)
     }
 
-    @test
+    @Test
     def toMutMap02(): Bool = region rc {
         let l = (1, 2) :: (3, 4) :: Nil;
         let m = Foldable.toMutMap(rc, l);
@@ -523,7 +523,7 @@ mod TestFoldable {
         l == MutMap.toList(m)
     }
 
-    @test
+    @Test
     def toMutMap03(): Bool = region rc {
         let l = (1, 4) :: (2, 3) :: (3, 4) :: Nil;
         let m = Foldable.toMutMap(rc, l);
@@ -531,7 +531,7 @@ mod TestFoldable {
         l == MutMap.toList(m)
     }
 
-    @test
+    @Test
     def toMutMap04(): Bool = region rc {
         let l = (1, 'a') :: (2, 'b') :: (3, 'c') :: Nil;
         let m = Foldable.toMutMap(rc, l);
@@ -543,15 +543,15 @@ mod TestFoldable {
     // toNec                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toNec01(): Bool =
         Foldable.toNec(Nil: List[Int32]) == None
 
-    @test
+    @Test
     def toNec02(): Bool =
         Foldable.toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
 
-    @test
+    @Test
     def toNec03(): Bool =
         Foldable.toNec(Set#{0, 1, 2, 3, 4}) == List.toNec(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
@@ -559,15 +559,15 @@ mod TestFoldable {
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toNel01(): Bool =
         Foldable.toNel(Nil: List[Int32]) == None
 
-    @test
+    @Test
     def toNel02(): Bool =
         Foldable.toNel(1 :: 2 :: Nil) == Some(Nel.cons(1, Nel.singleton(2)))
 
-    @test
+    @Test
     def toNel03(): Bool =
         Foldable.toNel(Set#{0, 1, 2, 3, 4}) == List.toNel(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
 
@@ -575,19 +575,19 @@ mod TestFoldable {
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def join01(): Bool =
         Foldable.join(",", Nil: List[Int32]) == ""
 
-    @test
+    @Test
     def join02(): Bool =
         Foldable.join(",", 1 :: Nil) == "1"
 
-    @test
+    @Test
     def join03(): Bool =
         Foldable.join(",", 1 :: 2 :: 3 :: Nil) == "1,2,3"
 
-    @test
+    @Test
     def join04(): Bool =
         Foldable.join(",", "1" :: "2" :: "3" :: Nil) == "1,2,3"
 
@@ -595,19 +595,19 @@ mod TestFoldable {
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def joinWith01(): Bool =
         Foldable.joinWith(x -> "${x + 1}", ",", Nil: List[Int32]) == ""
 
-    @test
+    @Test
     def joinWith02(): Bool =
         Foldable.joinWith(x -> "${x + 1}", ",", 1 :: Nil) == "2"
 
-    @test
+    @Test
     def joinWith03(): Bool =
         Foldable.joinWith(x -> "${x + 1}", ",", 1 :: 2 :: 3 :: Nil) == "2,3,4"
 
-    @test
+    @Test
     def joinWith04(): Bool =
         Foldable.joinWith(x -> x + x, ",", "1" :: "2" :: "3" :: Nil) == "11,22,33"
 

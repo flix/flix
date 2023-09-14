@@ -16,39 +16,39 @@
 
  mod Test.Exp.CheckedTypeCast {
 
-    @test
+    @Test
     def testCheckedTypeCast01(): ##java.lang.Object = checked_cast(null)
 
-    @test
+    @Test
     def testCheckedTypeCast02(): ##java.lang.String = checked_cast(null)
 
-    @test
+    @Test
     def testCheckedTypeCast03(): ##java.lang.Integer = checked_cast(null)
 
-    @test
+    @Test
     def testCheckedTypeCast04(): ##java.io.Serializable = checked_cast(null)
 
-    @test
+    @Test
     def testCheckedTypeCast05(): Array[String, Static] = checked_cast(null)
 
-    @test
+    @Test
     def testCheckedTypeCast06(): ##java.io.Serializable = region rc {
         let _ = rc;
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
         checked_cast(mkSb())
     }
 
-    @test
+    @Test
     def testCheckedTypeCast07(): ##java.lang.Object = region rc {
         let _ = rc;
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
         checked_cast(mkSb())
     }
 
-    @test
+    @Test
     def testCheckedTypeCast08(): ##java.lang.Object = checked_cast("ABC")
 
-    @test
+    @Test
     def testCheckedTypeCast09(): ##java.lang.Object = region rc {
         checked_cast(Array#{} @ rc)
     }

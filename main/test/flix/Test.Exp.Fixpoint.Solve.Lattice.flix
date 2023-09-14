@@ -77,7 +77,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         case _                  => Constant.Top
     }
 
-    @test
+    @Test
     def testFixpointLattice01(): Bool =
         let m = solve #{
             LocalVar((); Constant.Top). LocalVar((); Constant.Top). LocalVar((); Constant.Top). LocalVar((); Constant.Top).
@@ -85,7 +85,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
-    @test
+    @Test
     def testFixpointLattice02(): Bool =
         let m = solve #{
             LocalVar((); Constant.Bot). LocalVar((); Constant.Top). LocalVar((); Constant.Bot). LocalVar((); Constant.Top).
@@ -93,7 +93,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
-    @test
+    @Test
     def testFixpointLattice03(): Bool =
         let m = solve #{
             LocalVar((); Constant.Cst(39)).
@@ -101,7 +101,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
-    @test
+    @Test
     def testFixpointLattice04(): Bool =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Bot).
@@ -109,7 +109,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
-    @test
+    @Test
     def testFixpointLattice05(): Bool =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(39)).
@@ -117,7 +117,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
-    @test
+    @Test
     def testFixpointLattice06(): Bool =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(12)).
@@ -125,7 +125,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
-    @test
+    @Test
     def testFixpointLattice07(): Bool =
         let m = solve #{
             LocalVar((); Constant.Cst(39)). LocalVar((); Constant.Cst(12)). LocalVar((); Constant.Bot).
@@ -133,7 +133,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
-    @test
+    @Test
     def testFixpointLattice08(): Bool =
         let m = solve #{
             LitStm("a", 39).
@@ -142,7 +142,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39))
 
-    @test
+    @Test
     def testFixpointLattice09(): Bool =
         let m = solve #{
             LitStm("a", 39). LitStm("a", 345).
@@ -151,7 +151,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar(_; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Top)
 
-    @test
+    @Test
     def testFixpointLattice10(): Bool =
         let m = solve #{
             LitStm("a", 39).
@@ -163,7 +163,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar("r"; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39+39))
 
-    @test
+    @Test
     def testFixpointLattice11(): Bool =
         let m = solve #{
             LitStm("a", 39).

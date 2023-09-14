@@ -1,6 +1,6 @@
 mod Test.Exp.Jvm.PutField {
 
-    @test
+    @Test
     def testPutBoolField01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.boolField: Bool \ IO as getField;
@@ -9,7 +9,7 @@ mod Test.Exp.Jvm.PutField {
         o `setField` false;
         getField(o) == false
 
-    @test
+    @Test
     def testPutCharField01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.charField: Char \ IO as getField;
@@ -18,7 +18,7 @@ mod Test.Exp.Jvm.PutField {
         o `setField` 'X';
         getField(o) == 'X'
 
-    @test
+    @Test
     def testPutFloat32Field01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.float32Field: Float32 \ IO as getField;
@@ -27,7 +27,7 @@ mod Test.Exp.Jvm.PutField {
         o `setField` 21.42f32;
         getField(o) == 21.42f32
 
-    @test
+    @Test
     def testPutFloat64Field01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.float64Field: Float64 \ IO as getField;
@@ -36,7 +36,7 @@ mod Test.Exp.Jvm.PutField {
         o `setField` 21.42f64;
         getField(o) == 21.42f64
 
-    @test
+    @Test
     def testPutInt8Field01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.int8Field: Int8 \ IO as getField;
@@ -45,7 +45,7 @@ mod Test.Exp.Jvm.PutField {
         o `setField` 42i8;
         getField(o) == 42i8
 
-    @test
+    @Test
     def testPutInt16Field01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.int16Field: Int16 \ IO as getField;
@@ -54,7 +54,7 @@ mod Test.Exp.Jvm.PutField {
         setField(o, 42i16);
         getField(o) == 42i16
 
-    @test
+    @Test
     def testPutInt32Field01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.int32Field: Int32 \ IO as getField;
@@ -63,7 +63,7 @@ mod Test.Exp.Jvm.PutField {
         setField(o, 42i32);
         getField(o) == 42i32
 
-    @test
+    @Test
     def testPutInt64Field01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.int64Field: Int64 \ IO as getField;
@@ -72,7 +72,7 @@ mod Test.Exp.Jvm.PutField {
         setField(o, 42i64);
         getField(o) == 42i64
 
-    @test
+    @Test
     def testPutStringField01(): Bool \ IO =
         import new dev.flix.test.TestClass(): ##dev.flix.test.TestClass \ IO as newObject;
         import get dev.flix.test.TestClass.stringField: String \ IO as getField;
@@ -81,7 +81,7 @@ mod Test.Exp.Jvm.PutField {
         setField(o, "Goodbye World");
         getField(o) == "Goodbye World"
 
-    @test
+    @Test
     def testPutInheritedField01(): Bool \ IO =
         import new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
         import get dev.flix.test.TestClassWithInheritedMethod.m_x: Int32 \ {} as getField;

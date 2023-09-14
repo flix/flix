@@ -1,20 +1,20 @@
 mod Test.Eff.Simplification {
-    @test
+    @Test
     def testPureAndPure(): Unit \ {Pure, Pure} = pure()
 
-    @test
+    @Test
     def testPureAndImpure(): Unit \ {Pure, IO} = impure()
 
-    @test
+    @Test
     def testImpureAndImpure(): Unit \ {IO, IO} = impure()
 
-    @test
+    @Test
     def testPureOrPure(): Unit \ Pure & Pure = pure()
 
-    @test
+    @Test
     def testPureOrImpure(): Unit \ Pure & Impure = pure()
 
-    @test
+    @Test
     def testImpureOrImpure(): Unit \ Impure & Impure = impure()
 
     /// a pure function

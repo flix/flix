@@ -25,6 +25,6 @@ mod Test.Kind.TypeAlias {
         type alias TSchemaRowToStar[a: SchemaRow -> Type, r: SchemaRow] = a[r]
     }
 
-    @test
+    @Test
     def empty(): Bool = true
 }

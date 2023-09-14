@@ -7,17 +7,17 @@ mod A {
         pub def f(): Int32 = 1
     }
 
-    @test
+    @Test
     def testMod01(): Bool =
         use A.FClass.f;
         f() == 1
 
-    @test
+    @Test
     def testMod02(): Bool =
         use B.FClass.f;
         f() == 2
 
-    @test
+    @Test
     def testMod03(): Bool =
         use C.FClass.f;
         f() == 3
@@ -32,17 +32,17 @@ mod B {
         pub def f(): Int32 = 2
     }
 
-    @test
+    @Test
     def testMod04(): Bool =
         use A.FClass.{f => fa};
         fa() == 1
 
-    @test
+    @Test
     def testMod05(): Bool =
         use B.FClass.{f => fb};
         fb() == 2
 
-    @test
+    @Test
     def testMod06(): Bool =
         use C.FClass.{f => fc};
         fc() == 3
@@ -58,7 +58,7 @@ mod C {
         pub def f(): Int32 = 3
     }
 
-    @test
+    @Test
     def testMod07(): Bool =
         use A.FClass.{f => fa};
         use B.FClass.{f => fb};
@@ -72,16 +72,16 @@ mod D {
     use X.Y.GClass.g
     use X.Y.Z.GClass.{g => gz}
 
-    @test
+    @Test
     def testMod08(): Bool = f() == 1
 
-    @test
+    @Test
     def testMod09(): Bool = fb() == 2
 
-    @test
+    @Test
     def testMod10(): Bool = g() == 6
 
-    @test
+    @Test
     def testMod11(): Bool = gz() == 7
 }
 
@@ -125,22 +125,22 @@ mod X {
 
 mod Test.Use.Sig {
 
-    @test
+    @Test
     def testMod12(): Bool =
         use X.GClass.g;
         g() == 5
 
-    @test
+    @Test
     def testMod13(): Bool =
         use X.Y.GClass.g;
         g() == 6
 
-    @test
+    @Test
     def testMod14(): Bool =
         use X.Y.Z.GClass.g;
         g() == 7
 
-    @test
+    @Test
     def testMod15(): Bool =
         use X.GClass.{g => gx};
         use X.Y.GClass.{g => gxy};

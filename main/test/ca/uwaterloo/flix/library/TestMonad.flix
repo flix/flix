@@ -23,17 +23,17 @@ mod TestMonad {
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def flatten01(): Bool =
         let x: Option[Option[Int32]] = None;
         flatten(x) == None
 
-    @test
+    @Test
     def flatten02(): Bool =
         let x: Option[Option[Int32]] = Some(None);
         flatten(x) == None
 
-    @test
+    @Test
     def flatten03(): Bool =
         let x: Option[Option[Int32]] = Some(Some(1));
         flatten(x) == Some(1)
@@ -42,11 +42,11 @@ mod TestMonad {
     // kleisliLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def kleisliLeft01(): Bool =
         kleisliLeft(_ -> None: Option[Int32], x2 -> Some(ToString.toString(x2)), 1) == None
 
-    @test
+    @Test
     def kleisliLeft02(): Bool =
         kleisliLeft(x1 -> Some(x1 + 1), x2 -> Some(ToString.toString(x2)), 1) == Some("2")
 
@@ -54,11 +54,11 @@ mod TestMonad {
     // kleisliRight                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def kleisliRight01(): Bool =
         kleisliRight(x1 -> Some(ToString.toString(x1)), _ -> None: Option[Int32], 1) == None
 
-    @test
+    @Test
     def kleisliRight02(): Bool =
         kleisliRight(x1 -> Some(ToString.toString(x1)), x2 -> Some(x2 + 1), 1) == Some("2")
 
@@ -66,11 +66,11 @@ mod TestMonad {
     // symFlatMap (=<<)                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symFlatMap01(): Bool =
         (x -> Some(x + 1)) =<< None == None
 
-    @test
+    @Test
     def symFlatMap02(): Bool =
         (x -> Some(x + 1)) =<< Some(1) == Some(2)
 
@@ -78,11 +78,11 @@ mod TestMonad {
     // symBind (>>=)                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symBind01(): Bool =
         None >>= (x -> Some(x + 1)) == None
 
-    @test
+    @Test
     def symBind02(): Bool =
         Some(1) >>= (x -> Some(x + 1)) == Some(2)
 
@@ -90,12 +90,12 @@ mod TestMonad {
     // symKleisliLeft (>=>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symKleisliLeft01(): Bool =
         let mf = (_ -> None: Option[Int32]) >=> (x2 -> Some(ToString.toString(x2)));
         mf(1) == None
 
-    @test
+    @Test
     def symKleisliLeft02(): Bool =
         let mf = (x1 -> Some(x1 + 1)) >=> (x2 -> Some(ToString.toString(x2)));
         mf(1) == Some("2")
@@ -104,12 +104,12 @@ mod TestMonad {
     // symKleisliRight (<=<)                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symKleisliRight01(): Bool =
         let mf = (x1 -> Some(ToString.toString(x1))) <=< (_ -> None: Option[Int32]);
         mf(1) == None
 
-    @test
+    @Test
     def symKleisliRight02(): Bool =
         let mf = (x1 -> Some(ToString.toString(x1))) <=< (x2 -> Some(x2 + 1));
         mf(1) == Some("2")

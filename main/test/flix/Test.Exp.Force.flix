@@ -1,92 +1,92 @@
 mod Test.Exp.Force {
 
-    @test
+    @Test
     def testUnitForce01(): Bool =
         let x = lazy ();
         () == force x
 
-    @test
+    @Test
     def testBoolForce01(): Bool =
         let x = lazy true;
         true == force x
 
-    @test
+    @Test
     def testBoolForce02(): Bool =
         let x = lazy false;
         false == force x
 
-    @test
+    @Test
     def testCharForce01(): Bool =
         let x = lazy 'a';
         'a' == force x
 
-    @test
+    @Test
     def testFloat32Force01(): Bool =
         let v = 12.34f32;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testFloat64Force01(): Bool =
         let v = 12.34f64;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testBigDecimalForce01(): Bool =
         let v = 12.34ff;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testInt8Force01(): Bool =
         let v = 12i8;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testInt16Force01(): Bool =
         let v = 12i16;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testInt32Force01(): Bool =
         let v = 12i32;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testInt64Force01(): Bool =
         let v = 12i64;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testBigIntForce01(): Bool =
         let v = 12ii;
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testStringForce01(): Bool =
         let v = "string";
         let x = lazy v;
         v == force x
 
-    @test
+    @Test
     def testArrayOfIntForce01(): Bool \ IO =
         let v = Array#{1, 2} @ Static;
         let x = lazy v;
         $ARRAY_LOAD$(v, 0) == $ARRAY_LOAD$(force x, 0)
 
-    @test
+    @Test
     def testArrayOfStringForce01(): Bool \ IO =
         let v = Array#{"str", "str2"} @ Static;
         let x = lazy v;
         $ARRAY_LOAD$(v, 0) == $ARRAY_LOAD$(force x, 0)
 
-    @test
+    @Test
     def testTupleForce01(): Bool =
         let x = lazy ("str", "str2");
         let y = force x;
@@ -95,17 +95,17 @@ mod Test.Exp.Force {
             case _ => false
         }
 
-    @test
+    @Test
     def testNestedEnumForce01(): Bool =
         let x = lazy (lazy 123);
         123 == force (force x)
 
-    @test
+    @Test
     def testNestedForce02(): Bool =
         let x = lazy (n -> if ((force n) < 0) lazy "neg" else lazy "pos");
         "neg" == force ((force x)(lazy -2))
 
-    @test
+    @Test
     def testNestedForce03(): Bool =
         let x = Poly.Both(lazy 2, lazy "2");
         2 == match x {
@@ -113,12 +113,12 @@ mod Test.Exp.Force {
             case _ => 0
         }
 
-    @test
+    @Test
     def testNestedForce04(): Bool =
         let x = lazy 15;
         Poly.Both(20, 25) == Poly.Both(5 + force x, 10 + force x)
 
-    @test
+    @Test
     def testNestedForce05(): Bool =
         let x = lazy (Poly.This(lazy 5));
         5 == match (force x) {
@@ -126,7 +126,7 @@ mod Test.Exp.Force {
             case _ => -1
         }
 
-    @test
+    @Test
     def testNestedForce01(): Bool =
         let x = lazy Card.Card(Suit.Hearts, Rank.N(4));
         match (force x) {
@@ -134,7 +134,7 @@ mod Test.Exp.Force {
             case _ => false
         }
 
-    @test
+    @Test
     def testPolyForce01(): Bool =
         let x = lazy Poly.This(123);
         let y = force x;
@@ -143,7 +143,7 @@ mod Test.Exp.Force {
             case _ => false
         }
 
-    @test
+    @Test
     def testPolyForce02(): Bool =
         let x = lazy Poly.That("str");
         let y = force x;
@@ -152,7 +152,7 @@ mod Test.Exp.Force {
             case _ => false
         }
 
-    @test
+    @Test
     def testPolyForce03(): Bool =
         let x = lazy Poly.Both("str", 123);
         let y = force x;
@@ -161,31 +161,31 @@ mod Test.Exp.Force {
             case _ => false
         }
 
-    @test
+    @Test
     def testOptionForce01(): Bool =
         let x = lazy Poly.None;
         Poly.None: Poly[Unit, Unit] == force x
 
-    @test
+    @Test
     def testPrecedenceForce01(): Bool =
         let x = lazy 2;
         let y = force x + 1;
         y == 3 and force x == 2
 
-    @test
+    @Test
     def testPrecedenceForce02(): Bool =
         let x = {f = 2};
         let y = lazy x.f;
         let z = force y;
         z == 2
 
-    @test
+    @Test
     def testPrecedenceForce03(): Bool =
         let x = {l = lazy 2};
         let y = force x.l;
         y == 2
 
-    @test
+    @Test
     def testPrecedenceForce04(): Bool =
         let x = lazy 2 : Lazy[Int32];
         let y = force x : Int32;

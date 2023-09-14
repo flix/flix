@@ -1,1029 +1,1029 @@
 mod Test.Exp.Binary.Comparison {
 
-    @test
+    @Test
     def testBinaryLess01(): Bool = (120000 < 30000) == false
 
-    @test
+    @Test
     def testBinaryLess02(): Bool = 30000 < 120000
 
-    @test
+    @Test
     def testBinaryLess03(): Bool = (30000 < 30000) == false
 
-    @test
+    @Test
     def testBinaryLess04(): Bool = -120000 < -30000
 
-    @test
+    @Test
     def testBinaryLess05(): Bool = (-30000 < -120000) == false
 
-    @test
+    @Test
     def testBinaryLess06(): Bool = (-30000 < -30000) == false
 
-    @test
+    @Test
     def testBinaryLess07(): Bool = (12i8 < 3i8) == false
 
-    @test
+    @Test
     def testBinaryLess08(): Bool = 3i8 < 12i8
 
-    @test
+    @Test
     def testBinaryLess09(): Bool = (3i8 < 3i8) == false
 
-    @test
+    @Test
     def testBinaryLess10(): Bool = -12i8 < -3i8
 
-    @test
+    @Test
     def testBinaryLess11(): Bool = (-3i8 < -12i8) == false
 
-    @test
+    @Test
     def testBinaryLess12(): Bool = (-3i8 < -3i8) == false
 
-    @test
+    @Test
     def testBinaryLess13(): Bool = (1200i16 < 300i16) == false
 
-    @test
+    @Test
     def testBinaryLess14(): Bool = 300i16 < 1200i16
 
-    @test
+    @Test
     def testBinaryLess15(): Bool = (300i16 < 300i16) == false
 
-    @test
+    @Test
     def testBinaryLess16(): Bool = -1200i16 < -300i16
 
-    @test
+    @Test
     def testBinaryLess17(): Bool = (-300i16 < -1200i16) == false
 
-    @test
+    @Test
     def testBinaryLess18(): Bool = (-300i16 < -300i16) == false
 
-    @test
+    @Test
     def testBinaryLess19(): Bool = (120000i32 < 30000i32) == false
 
-    @test
+    @Test
     def testBinaryLess20(): Bool = 30000i32 < 120000i32
 
-    @test
+    @Test
     def testBinaryLess21(): Bool = (30000i32 < 30000i32) == false
 
-    @test
+    @Test
     def testBinaryLess22(): Bool = -120000i32 < -30000i32
 
-    @test
+    @Test
     def testBinaryLess23(): Bool = (-30000i32 < -120000i32) == false
 
-    @test
+    @Test
     def testBinaryLess24(): Bool = (-30000i32 < -30000i32) == false
 
-    @test
+    @Test
     def testBinaryLess25(): Bool = (12000000000i64 < 3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryLess26(): Bool = 3000000000i64 < 12000000000i64
 
-    @test
+    @Test
     def testBinaryLess27(): Bool = (3000000000i64 < 3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryLess28(): Bool = -12000000000i64 < -3000000000i64
 
-    @test
+    @Test
     def testBinaryLess29(): Bool = (-3000000000i64 < -12000000000i64) == false
 
-    @test
+    @Test
     def testBinaryLess30(): Bool = (-3000000000i64 < -3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryLess31(): Bool = (120000000000000000000000000000000000000000.0 < 30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryLess32(): Bool = 30000000000000000000000000000000000000000.0 < 120000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryLess33(): Bool = (30000000000000000000000000000000000000000.0 < 30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryLess34(): Bool = -120000000000000000000000000000000000000000.0 < -30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryLess35(): Bool = (-30000000000000000000000000000000000000000.0 < -120000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryLess36(): Bool = (-30000000000000000000000000000000000000000.0 < -30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryLess37(): Bool = (1200000000000000000000.0f32 < 300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryLess38(): Bool = 300000000000000000000.0f32 < 1200000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryLess39(): Bool = (300000000000000000000.0f32 < 300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryLess40(): Bool = -1200000000000000000000.0f32 < -300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryLess41(): Bool = (-300000000000000000000.0f32 < -1200000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryLess42(): Bool = (-300000000000000000000.0f32 < -300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryLess43(): Bool = (120000000000000000000000000000000000000000.0f64 < 30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryLess44(): Bool = 30000000000000000000000000000000000000000.0f64 < 120000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryLess45(): Bool = (30000000000000000000000000000000000000000.0f64 < 30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryLess46(): Bool = -120000000000000000000000000000000000000000.0f64 < -30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryLess47(): Bool = (-30000000000000000000000000000000000000000.0f64 < -120000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryLess48(): Bool = (-30000000000000000000000000000000000000000.0f64 < -30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryLess49(): Bool = (12000000000000000000ii < 3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryLess50(): Bool = 3000000000000000000ii < 12000000000000000000ii
 
-    @test
+    @Test
     def testBinaryLess51(): Bool = (3000000000000000000ii < 3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryLess52(): Bool = -12000000000000000000ii < -3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryLess53(): Bool = (-3000000000000000000ii < -12000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryLess54(): Bool = (-3000000000000000000ii < -3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryLess55(): Bool = ('十' < '\u0000') == false
 
-    @test
+    @Test
     def testBinaryLess56(): Bool = '\u0000' < '十'
 
-    @test
+    @Test
     def testBinaryLess57(): Bool = ('\u0000' < '\u0000') == false
 
-    @test
+    @Test
     def testBinaryLessEqual01(): Bool = (120000 <= 30000) == false
 
-    @test
+    @Test
     def testBinaryLessEqual02(): Bool = 30000 <= 120000
 
-    @test
+    @Test
     def testBinaryLessEqual03(): Bool = 30000 <= 30000
 
-    @test
+    @Test
     def testBinaryLessEqual04(): Bool = -120000 <= -30000
 
-    @test
+    @Test
     def testBinaryLessEqual05(): Bool = (-30000 <= -120000) == false
 
-    @test
+    @Test
     def testBinaryLessEqual06(): Bool = -30000 <= -30000
 
-    @test
+    @Test
     def testBinaryLessEqual07(): Bool = (12i8 <= 3i8) == false
 
-    @test
+    @Test
     def testBinaryLessEqual08(): Bool = 3i8 <= 12i8
 
-    @test
+    @Test
     def testBinaryLessEqual09(): Bool = 3i8 <= 3i8
 
-    @test
+    @Test
     def testBinaryLessEqual10(): Bool = -12i8 <= -3i8
 
-    @test
+    @Test
     def testBinaryLessEqual11(): Bool = (-3i8 <= -12i8) == false
 
-    @test
+    @Test
     def testBinaryLessEqual12(): Bool = -3i8 <= -3i8
 
-    @test
+    @Test
     def testBinaryLessEqual13(): Bool = (1200i16 <= 300i16) == false
 
-    @test
+    @Test
     def testBinaryLessEqual14(): Bool = 300i16 <= 1200i16
 
-    @test
+    @Test
     def testBinaryLessEqual15(): Bool = 300i16 <= 300i16
 
-    @test
+    @Test
     def testBinaryLessEqual16(): Bool = -1200i16 <= -300i16
 
-    @test
+    @Test
     def testBinaryLessEqual17(): Bool = (-300i16 <= -1200i16) == false
 
-    @test
+    @Test
     def testBinaryLessEqual18(): Bool = -300i16 <= -300i16
 
-    @test
+    @Test
     def testBinaryLessEqual19(): Bool = (120000i32 <= 30000i32) == false
 
-    @test
+    @Test
     def testBinaryLessEqual20(): Bool = 30000i32 <= 120000i32
 
-    @test
+    @Test
     def testBinaryLessEqual21(): Bool = 30000i32 <= 30000i32
 
-    @test
+    @Test
     def testBinaryLessEqual22(): Bool = -120000i32 <= -30000i32
 
-    @test
+    @Test
     def testBinaryLessEqual23(): Bool = (-30000i32 <= -120000i32) == false
 
-    @test
+    @Test
     def testBinaryLessEqual24(): Bool = -30000i32 <= -30000i32
 
-    @test
+    @Test
     def testBinaryLessEqual25(): Bool = (12000000000i64 <= 3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryLessEqual26(): Bool = 3000000000i64 <= 12000000000i64
 
-    @test
+    @Test
     def testBinaryLessEqual27(): Bool = 3000000000i64 <= 3000000000i64
 
-    @test
+    @Test
     def testBinaryLessEqual28(): Bool = -12000000000i64 <= -3000000000i64
 
-    @test
+    @Test
     def testBinaryLessEqual29(): Bool = (-3000000000i64 <= -12000000000i64) == false
 
-    @test
+    @Test
     def testBinaryLessEqual30(): Bool = -3000000000i64 <= -3000000000i64
 
-    @test
+    @Test
     def testBinaryLessEqual31(): Bool = (120000000000000000000000000000000000000000.0 <= 30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryLessEqual32(): Bool = 30000000000000000000000000000000000000000.0 <= 120000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryLessEqual33(): Bool = 30000000000000000000000000000000000000000.0 <= 30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryLessEqual34(): Bool = -120000000000000000000000000000000000000000.0 <= -30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryLessEqual35(): Bool = (-30000000000000000000000000000000000000000.0 <= -120000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryLessEqual36(): Bool = -30000000000000000000000000000000000000000.0 <= -30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryLessEqual37(): Bool = (1200000000000000000000.0f32 <= 300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryLessEqual38(): Bool = 300000000000000000000.0f32 <= 1200000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryLessEqual39(): Bool = 300000000000000000000.0f32 <= 300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryLessEqual40(): Bool = -1200000000000000000000.0f32 <= -300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryLessEqual41(): Bool = (-300000000000000000000.0f32 <= -1200000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryLessEqual42(): Bool = -300000000000000000000.0f32 <= -300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryLessEqual43(): Bool = (120000000000000000000000000000000000000000.0f64 <= 30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryLessEqual44(): Bool = 30000000000000000000000000000000000000000.0f64 <= 120000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryLessEqual45(): Bool = 30000000000000000000000000000000000000000.0f64 <= 30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryLessEqual46(): Bool = -120000000000000000000000000000000000000000.0f64 <= -30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryLessEqual47(): Bool = (-30000000000000000000000000000000000000000.0f64 <= -120000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryLessEqual48(): Bool = -30000000000000000000000000000000000000000.0f64 <= -30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryLessEqual49(): Bool = (12000000000000000000ii <= 3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryLessEqual50(): Bool = 3000000000000000000ii <= 12000000000000000000ii
 
-    @test
+    @Test
     def testBinaryLessEqual51(): Bool = 3000000000000000000ii <= 3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryLessEqual52(): Bool = -12000000000000000000ii <= -3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryLessEqual53(): Bool = (-3000000000000000000ii <= -12000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryLessEqual54(): Bool = -3000000000000000000ii <= -3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryLessEqual55(): Bool = ('十' <= '\u0000') == false
 
-    @test
+    @Test
     def testBinaryLessEqual56(): Bool = '\u0000' <= '十'
 
-    @test
+    @Test
     def testBinaryLessEqual57(): Bool = '\u0000' <= '\u0000'
 
-    @test
+    @Test
     def testBinaryGreater01(): Bool = 120000 > 30000
 
-    @test
+    @Test
     def testBinaryGreater02(): Bool = (30000 > 120000) == false
 
-    @test
+    @Test
     def testBinaryGreater03(): Bool = (30000 > 30000) == false
 
-    @test
+    @Test
     def testBinaryGreater04(): Bool = (-120000 > -30000) == false
 
-    @test
+    @Test
     def testBinaryGreater05(): Bool = -30000 > -120000
 
-    @test
+    @Test
     def testBinaryGreater06(): Bool = (-30000 > -30000) == false
 
-    @test
+    @Test
     def testBinaryGreater07(): Bool = 12i8 > 3i8
 
-    @test
+    @Test
     def testBinaryGreater08(): Bool = (3i8 > 12i8) == false
 
-    @test
+    @Test
     def testBinaryGreater09(): Bool = (3i8 > 3i8) == false
 
-    @test
+    @Test
     def testBinaryGreater10(): Bool = (-12i8 > -3i8) == false
 
-    @test
+    @Test
     def testBinaryGreater11(): Bool = -3i8 > -12i8
 
-    @test
+    @Test
     def testBinaryGreater12(): Bool = (-3i8 > -3i8) == false
 
-    @test
+    @Test
     def testBinaryGreater13(): Bool = 1200i16 > 300i16
 
-    @test
+    @Test
     def testBinaryGreater14(): Bool = (300i16 > 1200i16) == false
 
-    @test
+    @Test
     def testBinaryGreater15(): Bool = (300i16 > 300i16) == false
 
-    @test
+    @Test
     def testBinaryGreater16(): Bool = (-1200i16 > -300i16) == false
 
-    @test
+    @Test
     def testBinaryGreater17(): Bool = -300i16 > -1200i16
 
-    @test
+    @Test
     def testBinaryGreater18(): Bool = (-300i16 > -300i16) == false
 
-    @test
+    @Test
     def testBinaryGreater19(): Bool = 120000i32 > 30000i32
 
-    @test
+    @Test
     def testBinaryGreater20(): Bool = (30000i32 > 120000i32) == false
 
-    @test
+    @Test
     def testBinaryGreater21(): Bool = (30000i32 > 30000i32) == false
 
-    @test
+    @Test
     def testBinaryGreater22(): Bool = (-120000i32 > -30000i32) == false
 
-    @test
+    @Test
     def testBinaryGreater23(): Bool = -30000i32 > -120000i32
 
-    @test
+    @Test
     def testBinaryGreater24(): Bool = (-30000i32 > -30000i32) == false
 
-    @test
+    @Test
     def testBinaryGreater25(): Bool = 12000000000i64 > 3000000000i64
 
-    @test
+    @Test
     def testBinaryGreater26(): Bool = (3000000000i64 > 12000000000i64) == false
 
-    @test
+    @Test
     def testBinaryGreater27(): Bool = (3000000000i64 > 3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryGreater28(): Bool = (-12000000000i64 > -3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryGreater29(): Bool = -3000000000i64 > -12000000000i64
 
-    @test
+    @Test
     def testBinaryGreater30(): Bool = (-3000000000i64 > -3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryGreater31(): Bool = 120000000000000000000000000000000000000000.0 > 30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryGreater32(): Bool = (30000000000000000000000000000000000000000.0 > 120000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryGreater33(): Bool = (30000000000000000000000000000000000000000.0 > 30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryGreater34(): Bool = (-120000000000000000000000000000000000000000.0 > -30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryGreater35(): Bool = -30000000000000000000000000000000000000000.0 > -120000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryGreater36(): Bool = (-30000000000000000000000000000000000000000.0 > -30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryGreater37(): Bool = 1200000000000000000000.0f32 > 300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryGreater38(): Bool = (300000000000000000000.0f32 > 1200000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryGreater39(): Bool = (300000000000000000000.0f32 > 300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryGreater40(): Bool = (-1200000000000000000000.0f32 > -300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryGreater41(): Bool = -300000000000000000000.0f32 > -1200000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryGreater42(): Bool = (-300000000000000000000.0f32 > -300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryGreater43(): Bool = 120000000000000000000000000000000000000000.0f64 > 30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryGreater44(): Bool = (30000000000000000000000000000000000000000.0f64 > 120000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryGreater45(): Bool = (30000000000000000000000000000000000000000.0f64 > 30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryGreater46(): Bool = (-120000000000000000000000000000000000000000.0f64 > -30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryGreater47(): Bool = -30000000000000000000000000000000000000000.0f64 > -120000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryGreater48(): Bool = (-30000000000000000000000000000000000000000.0f64 > -30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryGreater49(): Bool = 12000000000000000000ii > 3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryGreater50(): Bool = (3000000000000000000ii > 12000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryGreater51(): Bool = (3000000000000000000ii > 3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryGreater52(): Bool = (-12000000000000000000ii > -3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryGreater53(): Bool = -3000000000000000000ii > -12000000000000000000ii
 
-    @test
+    @Test
     def testBinaryGreater54(): Bool = (-3000000000000000000ii > -3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryGreater55(): Bool = '十' > '\u0000'
 
-    @test
+    @Test
     def testBinaryGreater56(): Bool = ('\u0000' > '十') == false
 
-    @test
+    @Test
     def testBinaryGreater57(): Bool = ('\u0000' > '\u0000') == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual01(): Bool = 120000 >= 30000
 
-    @test
+    @Test
     def testBinaryGreaterEqual02(): Bool = (30000 >= 120000) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual03(): Bool = 30000 >= 30000
 
-    @test
+    @Test
     def testBinaryGreaterEqual04(): Bool = (-120000 >= -30000) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual05(): Bool = -30000 >= -120000
 
-    @test
+    @Test
     def testBinaryGreaterEqual06(): Bool = -30000 >= -30000
 
-    @test
+    @Test
     def testBinaryGreaterEqual07(): Bool = 12i8 >= 3i8
 
-    @test
+    @Test
     def testBinaryGreaterEqual08(): Bool = (3i8 >= 12i8) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual09(): Bool = 3i8 >= 3i8
 
-    @test
+    @Test
     def testBinaryGreaterEqual10(): Bool = (-12i8 >= -3i8) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual11(): Bool = -3i8 >= -12i8
 
-    @test
+    @Test
     def testBinaryGreaterEqual12(): Bool = -3i8 >= -3i8
 
-    @test
+    @Test
     def testBinaryGreaterEqual13(): Bool = 1200i16 >= 300i16
 
-    @test
+    @Test
     def testBinaryGreaterEqual14(): Bool = (300i16 >= 1200i16) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual15(): Bool = 300i16 >= 300i16
 
-    @test
+    @Test
     def testBinaryGreaterEqual16(): Bool = (-1200i16 >= -300i16) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual17(): Bool = -300i16 >= -1200i16
 
-    @test
+    @Test
     def testBinaryGreaterEqual18(): Bool = -300i16 >= -300i16
 
-    @test
+    @Test
     def testBinaryGreaterEqual19(): Bool = 120000i32 >= 30000i32
 
-    @test
+    @Test
     def testBinaryGreaterEqual20(): Bool = (30000i32 >= 120000i32) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual21(): Bool = 30000i32 >= 30000i32
 
-    @test
+    @Test
     def testBinaryGreaterEqual22(): Bool = (-120000i32 >= -30000i32) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual23(): Bool = -30000i32 >= -120000i32
 
-    @test
+    @Test
     def testBinaryGreaterEqual24(): Bool = -30000i32 >= -30000i32
 
-    @test
+    @Test
     def testBinaryGreaterEqual25(): Bool = 12000000000i64 >= 3000000000i64
 
-    @test
+    @Test
     def testBinaryGreaterEqual26(): Bool = (3000000000i64 >= 12000000000i64) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual27(): Bool = 3000000000i64 >= 3000000000i64
 
-    @test
+    @Test
     def testBinaryGreaterEqual28(): Bool = (-12000000000i64 >= -3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual29(): Bool = -3000000000i64 >= -12000000000i64
 
-    @test
+    @Test
     def testBinaryGreaterEqual30(): Bool = -3000000000i64 >= -3000000000i64
 
-    @test
+    @Test
     def testBinaryGreaterEqual31(): Bool = 120000000000000000000000000000000000000000.0 >= 30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryGreaterEqual32(): Bool = (30000000000000000000000000000000000000000.0 >= 120000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual33(): Bool = 30000000000000000000000000000000000000000.0 >= 30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryGreaterEqual34(): Bool = (-120000000000000000000000000000000000000000.0 >= -30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual35(): Bool = -30000000000000000000000000000000000000000.0 >= -120000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryGreaterEqual36(): Bool = -30000000000000000000000000000000000000000.0 >= -30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryGreaterEqual37(): Bool = 1200000000000000000000.0f32 >= 300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryGreaterEqual38(): Bool = (300000000000000000000.0f32 >= 1200000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual39(): Bool = 300000000000000000000.0f32 >= 300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryGreaterEqual40(): Bool = (-1200000000000000000000.0f32 >= -300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual41(): Bool = -300000000000000000000.0f32 >= -1200000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryGreaterEqual42(): Bool = -300000000000000000000.0f32 >= -300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryGreaterEqual43(): Bool = 120000000000000000000000000000000000000000.0f64 >= 30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryGreaterEqual44(): Bool = (30000000000000000000000000000000000000000.0f64 >= 120000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual45(): Bool = 30000000000000000000000000000000000000000.0f64 >= 30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryGreaterEqual46(): Bool = (-120000000000000000000000000000000000000000.0f64 >= -30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual47(): Bool =-30000000000000000000000000000000000000000.0f64 >= -120000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryGreaterEqual48(): Bool =  -30000000000000000000000000000000000000000.0f64 >= -30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryGreaterEqual49(): Bool = 12000000000000000000ii >= 3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryGreaterEqual50(): Bool = (3000000000000000000ii >= 12000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual51(): Bool = 3000000000000000000ii >= 3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryGreaterEqual52(): Bool = (-12000000000000000000ii >= -3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual53(): Bool = -3000000000000000000ii >= -12000000000000000000ii
 
-    @test
+    @Test
     def testBinaryGreaterEqual54(): Bool = -3000000000000000000ii >= -3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryGreaterEqual55(): Bool = '十' >= '\u0000'
 
-    @test
+    @Test
     def testBinaryGreaterEqual56(): Bool = ('\u0000' >= '十') == false
 
-    @test
+    @Test
     def testBinaryGreaterEqual57(): Bool = '\u0000' >= '\u0000'
 
-    @test
+    @Test
     def testBinaryEqual01(): Bool = (120000 == 30000) == false
 
-    @test
+    @Test
     def testBinaryEqual02(): Bool = (30000 == 120000) == false
 
-    @test
+    @Test
     def testBinaryEqual03(): Bool = 30000 == 30000
 
-    @test
+    @Test
     def testBinaryEqual04(): Bool = (-120000 == -30000) == false
 
-    @test
+    @Test
     def testBinaryEqual05(): Bool = (-30000 == -120000) == false
 
-    @test
+    @Test
     def testBinaryEqual06(): Bool = -30000 == -30000
 
-    @test
+    @Test
     def testBinaryEqual07(): Bool = (12i8 == 3i8) == false
 
-    @test
+    @Test
     def testBinaryEqual08(): Bool = (3i8 == 12i8) == false
 
-    @test
+    @Test
     def testBinaryEqual09(): Bool = 3i8 == 3i8
 
-    @test
+    @Test
     def testBinaryEqual10(): Bool = (-12i8 == -3i8) == false
 
-    @test
+    @Test
     def testBinaryEqual11(): Bool = (-3i8 == -12i8) == false
 
-    @test
+    @Test
     def testBinaryEqual12(): Bool = -3i8 == -3i8
 
-    @test
+    @Test
     def testBinaryEqual13(): Bool = (1200i16 == 300i16) == false
 
-    @test
+    @Test
     def testBinaryEqual14(): Bool = (300i16 == 1200i16) == false
 
-    @test
+    @Test
     def testBinaryEqual15(): Bool = 300i16 == 300i16
 
-    @test
+    @Test
     def testBinaryEqual16(): Bool = (-1200i16 == -300i16) == false
 
-    @test
+    @Test
     def testBinaryEqual17(): Bool = (-300i16 == -1200i16) == false
 
-    @test
+    @Test
     def testBinaryEqual18(): Bool = -300i16 == -300i16
 
-    @test
+    @Test
     def testBinaryEqual19(): Bool = (120000i32 == 30000i32) == false
 
-    @test
+    @Test
     def testBinaryEqual20(): Bool = (30000i32 == 120000i32) == false
 
-    @test
+    @Test
     def testBinaryEqual21(): Bool = 30000i32 == 30000i32
 
-    @test
+    @Test
     def testBinaryEqual22(): Bool = (-120000i32 == -30000i32) == false
 
-    @test
+    @Test
     def testBinaryEqual23(): Bool = (-30000i32 == -120000i32) == false
 
-    @test
+    @Test
     def testBinaryEqual24(): Bool = -30000i32 == -30000i32
 
-    @test
+    @Test
     def testBinaryEqual25(): Bool = (12000000000i64 == 3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryEqual26(): Bool = (3000000000i64 == 12000000000i64) == false
 
-    @test
+    @Test
     def testBinaryEqual27(): Bool = 3000000000i64 == 3000000000i64
 
-    @test
+    @Test
     def testBinaryEqual28(): Bool = (-12000000000i64 == -3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryEqual29(): Bool = (-3000000000i64 == -12000000000i64) == false
 
-    @test
+    @Test
     def testBinaryEqual30(): Bool = -3000000000i64 == -3000000000i64
 
-    @test
+    @Test
     def testBinaryEqual31(): Bool = (120000000000000000000000000000000000000000.0 == 30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryEqual32(): Bool = (30000000000000000000000000000000000000000.0 == 120000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryEqual33(): Bool = 30000000000000000000000000000000000000000.0 == 30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryEqual34(): Bool = (-120000000000000000000000000000000000000000.0 == -30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryEqual35(): Bool = (-30000000000000000000000000000000000000000.0 == -120000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryEqual36(): Bool = -30000000000000000000000000000000000000000.0 == -30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryEqual37(): Bool = (1200000000000000000000.0f32 == 300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryEqual38(): Bool = (300000000000000000000.0f32 == 1200000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryEqual39(): Bool = 300000000000000000000.0f32 == 300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryEqual40(): Bool = (-1200000000000000000000.0f32 == -300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryEqual41(): Bool = (-300000000000000000000.0f32 == -1200000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryEqual42(): Bool = -300000000000000000000.0f32 == -300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryEqual43(): Bool = (120000000000000000000000000000000000000000.0f64 == 30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryEqual44(): Bool = (30000000000000000000000000000000000000000.0f64 == 120000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryEqual45(): Bool = 30000000000000000000000000000000000000000.0f64 == 30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryEqual46(): Bool = (-120000000000000000000000000000000000000000.0f64 == -30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryEqual47(): Bool = (-30000000000000000000000000000000000000000.0f64 == -120000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryEqual48(): Bool =  -30000000000000000000000000000000000000000.0f64 == -30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryEqual49(): Bool = (12000000000000000000ii == 3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryEqual50(): Bool = (3000000000000000000ii == 12000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryEqual51(): Bool = 3000000000000000000ii == 3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryEqual52(): Bool = (-12000000000000000000ii == -3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryEqual53(): Bool = (-3000000000000000000ii == -12000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryEqual54(): Bool = -3000000000000000000ii == -3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryEqual55(): Bool = ('十' == '\u0000') == false
 
-    @test
+    @Test
     def testBinaryEqual56(): Bool = ('\u0000' == '十') == false
 
-    @test
+    @Test
     def testBinaryEqual57(): Bool = '\u0000' == '\u0000'
 
-    @test
+    @Test
     def testBinaryNotEqual01(): Bool = 120000 != 30000
 
-    @test
+    @Test
     def testBinaryNotEqual02(): Bool = 30000 != 120000
 
-    @test
+    @Test
     def testBinaryNotEqual03(): Bool = (30000 != 30000) == false
 
-    @test
+    @Test
     def testBinaryNotEqual04(): Bool = -120000 != -30000
 
-    @test
+    @Test
     def testBinaryNotEqual05(): Bool = -30000 != -120000
 
-    @test
+    @Test
     def testBinaryNotEqual06(): Bool = (-30000 != -30000) == false
 
-    @test
+    @Test
     def testBinaryNotEqual07(): Bool = 12i8 != 3i8
 
-    @test
+    @Test
     def testBinaryNotEqual08(): Bool = 3i8 != 12i8
 
-    @test
+    @Test
     def testBinaryNotEqual09(): Bool = (3i8 != 3i8) == false
 
-    @test
+    @Test
     def testBinaryNotEqual10(): Bool = -12i8 != -3i8
 
-    @test
+    @Test
     def testBinaryNotEqual11(): Bool = -3i8 != -12i8
 
-    @test
+    @Test
     def testBinaryNotEqual12(): Bool = (-3i8 != -3i8) == false
 
-    @test
+    @Test
     def testBinaryNotEqual13(): Bool = 1200i16 != 300i16
 
-    @test
+    @Test
     def testBinaryNotEqual14(): Bool = 300i16 != 1200i16
 
-    @test
+    @Test
     def testBinaryNotEqual15(): Bool = (300i16 != 300i16) == false
 
-    @test
+    @Test
     def testBinaryNotEqual16(): Bool = -1200i16 != -300i16
 
-    @test
+    @Test
     def testBinaryNotEqual17(): Bool = -300i16 != -1200i16
 
-    @test
+    @Test
     def testBinaryNotEqual18(): Bool = (-300i16 != -300i16) == false
 
-    @test
+    @Test
     def testBinaryNotEqual19(): Bool = 120000i32 != 30000i32
 
-    @test
+    @Test
     def testBinaryNotEqual20(): Bool = 30000i32 != 120000i32
 
-    @test
+    @Test
     def testBinaryNotEqual21(): Bool = (30000i32 != 30000i32) == false
 
-    @test
+    @Test
     def testBinaryNotEqual22(): Bool = -120000i32 != -30000i32
 
-    @test
+    @Test
     def testBinaryNotEqual23(): Bool = -30000i32 != -120000i32
 
-    @test
+    @Test
     def testBinaryNotEqual24(): Bool = (-30000i32 != -30000i32) == false
 
-    @test
+    @Test
     def testBinaryNotEqual25(): Bool = 12000000000i64 != 3000000000i64
 
-    @test
+    @Test
     def testBinaryNotEqual26(): Bool = 3000000000i64 != 12000000000i64
 
-    @test
+    @Test
     def testBinaryNotEqual27(): Bool = (3000000000i64 != 3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryNotEqual28(): Bool = -12000000000i64 != -3000000000i64
 
-    @test
+    @Test
     def testBinaryNotEqual29(): Bool = -3000000000i64 != -12000000000i64
 
-    @test
+    @Test
     def testBinaryNotEqual30(): Bool = (-3000000000i64 != -3000000000i64) == false
 
-    @test
+    @Test
     def testBinaryNotEqual31(): Bool = 120000000000000000000000000000000000000000.0 != 30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryNotEqual32(): Bool = 30000000000000000000000000000000000000000.0 != 120000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryNotEqual33(): Bool = (30000000000000000000000000000000000000000.0 != 30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryNotEqual34(): Bool = -120000000000000000000000000000000000000000.0 != -30000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryNotEqual35(): Bool = -30000000000000000000000000000000000000000.0 != -120000000000000000000000000000000000000000.0
 
-    @test
+    @Test
     def testBinaryNotEqual36(): Bool = (-30000000000000000000000000000000000000000.0 != -30000000000000000000000000000000000000000.0) == false
 
-    @test
+    @Test
     def testBinaryNotEqual37(): Bool = 1200000000000000000000.0f32 != 300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryNotEqual38(): Bool = 300000000000000000000.0f32 != 1200000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryNotEqual39(): Bool = (300000000000000000000.0f32 != 300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryNotEqual40(): Bool = -1200000000000000000000.0f32 != -300000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryNotEqual41(): Bool = -300000000000000000000.0f32 != -1200000000000000000000.0f32
 
-    @test
+    @Test
     def testBinaryNotEqual42(): Bool = (-300000000000000000000.0f32 != -300000000000000000000.0f32) == false
 
-    @test
+    @Test
     def testBinaryNotEqual43(): Bool = 120000000000000000000000000000000000000000.0f64 != 30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryNotEqual44(): Bool = 30000000000000000000000000000000000000000.0f64 != 120000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryNotEqual45(): Bool = (30000000000000000000000000000000000000000.0f64 != 30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryNotEqual46(): Bool = -120000000000000000000000000000000000000000.0f64 != -30000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryNotEqual47(): Bool = -30000000000000000000000000000000000000000.0f64 != -120000000000000000000000000000000000000000.0f64
 
-    @test
+    @Test
     def testBinaryNotEqual48(): Bool = (-30000000000000000000000000000000000000000.0f64 != -30000000000000000000000000000000000000000.0f64) == false
 
-    @test
+    @Test
     def testBinaryNotEqual49(): Bool = 12000000000000000000ii != 3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryNotEqual50(): Bool = 3000000000000000000ii != 12000000000000000000ii
 
-    @test
+    @Test
     def testBinaryNotEqual51(): Bool = (3000000000000000000ii != 3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryNotEqual52(): Bool = -12000000000000000000ii != -3000000000000000000ii
 
-    @test
+    @Test
     def testBinaryNotEqual53(): Bool = -3000000000000000000ii != -12000000000000000000ii
 
-    @test
+    @Test
     def testBinaryNotEqual54(): Bool = (-3000000000000000000ii != -3000000000000000000ii) == false
 
-    @test
+    @Test
     def testBinaryNotEqual55(): Bool = '十' != '\u0000'
 
-    @test
+    @Test
     def testBinaryNotEqual56(): Bool = '\u0000' != '十'
 
-    @test
+    @Test
     def testBinaryNotEqual57(): Bool = ('\u0000' != '\u0000') == false
 
 }

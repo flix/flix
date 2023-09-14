@@ -15,27 +15,27 @@ mod Test.Exp.Jvm.NewObject {
   def implementSerializableAgain(): ##java.io.Serializable \ IO =
     new ##java.io.Serializable { }
 
-  @test
+  @Test
   def testImplementInterface01(): Bool \ IO =
     import java.lang.Object.toString(): String \ {};
     let anon = checked_cast(implementSerializable());
     toString(anon) |> String.startsWith(prefix = "Anon")
 
-  @test
+  @Test
   def testImplementInterface02(): Bool \ IO =
     import java.lang.Object.hashCode(): Int32 \ {};
     let anon = checked_cast(implementSerializable());
     let anon2 = checked_cast(implementSerializable());
     hashCode(anon) != hashCode(anon2)
 
-  @test
+  @Test
   def testImplementInterface03(): Bool \ IO =
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
     let anon = checked_cast(implementSerializable());
     let anon2 = checked_cast(implementSerializable());
     not equals(anon, anon2)
 
-  @test
+  @Test
   def testImplementInterface04(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
@@ -43,7 +43,7 @@ mod Test.Exp.Jvm.NewObject {
     let anon2 = checked_cast(implementSerializable());
     equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
 
-  @test
+  @Test
   def testImplementInterface05(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
@@ -51,7 +51,7 @@ mod Test.Exp.Jvm.NewObject {
     let anon2 = checked_cast(implementSerializableAgain());
     not equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
 
-  @test
+  @Test
   def testVoidInterface01(): Bool \ IO =
     import static dev.flix.test.TestVoidInterface.runTest(TestVoidInterface): Bool;
     let anon = new TestVoidInterface {
@@ -59,7 +59,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testBoolInterface01(): Bool \ IO =
     import static dev.flix.test.TestBoolInterface.runTest(TestBoolInterface): Bool;
     let anon = new TestBoolInterface {
@@ -67,7 +67,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testCharInterface01(): Bool \ IO =
     import static dev.flix.test.TestCharInterface.runTest(TestCharInterface): Bool;
     let anon = new TestCharInterface {
@@ -75,7 +75,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testInt16Interface01(): Bool \ IO =
     import static dev.flix.test.TestInt16Interface.runTest(TestInt16Interface): Bool;
     let anon = new TestInt16Interface {
@@ -83,7 +83,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testInt32Interface01(): Bool \ IO =
     import static dev.flix.test.TestInt32Interface.runTest(TestInt32Interface): Bool;
     let anon = new TestInt32Interface {
@@ -91,7 +91,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testInt64Interface01(): Bool \ IO =
     import static dev.flix.test.TestInt64Interface.runTest(TestInt64Interface): Bool;
     let anon = new TestInt64Interface {
@@ -99,7 +99,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testFloat32Interface01(): Bool \ IO =
     import static dev.flix.test.TestFloat32Interface.runTest(TestFloat32Interface): Bool;
     let anon = new TestFloat32Interface {
@@ -107,7 +107,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testFloat64Interface01(): Bool \ IO =
     import static dev.flix.test.TestFloat64Interface.runTest(TestFloat64Interface): Bool;
     let anon = new TestFloat64Interface {
@@ -115,7 +115,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testBoolArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestBoolArrayInterface.runTest(TestBoolArrayInterface): Bool;
     let anon = new TestBoolArrayInterface {
@@ -124,7 +124,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testCharArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestCharArrayInterface.runTest(TestCharArrayInterface): Bool;
     let anon = new TestCharArrayInterface {
@@ -133,7 +133,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testInt8ArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestInt8ArrayInterface.runTest(TestInt8ArrayInterface): Bool;
     let anon = new TestInt8ArrayInterface {
@@ -142,7 +142,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testInt16ArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestInt16ArrayInterface.runTest(TestInt16ArrayInterface): Bool;
     let anon = new TestInt16ArrayInterface {
@@ -151,7 +151,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testInt32ArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestInt32ArrayInterface.runTest(TestInt32ArrayInterface): Bool;
     let anon = new TestInt32ArrayInterface {
@@ -160,7 +160,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testInt64ArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestInt64ArrayInterface.runTest(TestInt64ArrayInterface): Bool;
     let anon = new TestInt64ArrayInterface {
@@ -169,7 +169,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testFloat32ArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestFloat32ArrayInterface.runTest(TestFloat32ArrayInterface): Bool;
     let anon = new TestFloat32ArrayInterface {
@@ -178,7 +178,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testFloat64ArrayInterface01(): Bool \ IO =
     import static dev.flix.test.TestFloat64ArrayInterface.runTest(TestFloat64ArrayInterface): Bool;
     let anon = new TestFloat64ArrayInterface {
@@ -187,7 +187,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testStackOffsets01(): Bool \ IO =
     import static dev.flix.test.TestStackOffsets.runTest(TestStackOffsets): Bool;
     let anon = new TestStackOffsets {
@@ -196,7 +196,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testOverloadedMethods01(): Bool \ IO =
     import static dev.flix.test.TestOverloadedMethods.runTest(TestOverloadedMethods): Bool;
     let anon = new TestOverloadedMethods {
@@ -206,7 +206,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testDefaultMethods01(): Bool \ IO =
     import dev.flix.test.TestDefaultMethods.methodWithNoImplementation(Int32): Int32;
     import dev.flix.test.TestDefaultMethods.methodWithDefaultImplementation(Int32): Int32;
@@ -215,7 +215,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     methodWithNoImplementation(anon, 1) == 2 and methodWithDefaultImplementation(anon, 1) == 43
 
-  @test
+  @Test
   def testDefaultMethods02(): Bool \ IO =
     import dev.flix.test.TestDefaultMethods.methodWithNoImplementation(Int32): Int32;
     import dev.flix.test.TestDefaultMethods.methodWithDefaultImplementation(Int32): Int32;
@@ -225,7 +225,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     methodWithNoImplementation(anon, 1) == 2 and methodWithDefaultImplementation(anon, 1) == 3
 
-  @test
+  @Test
   def testGenericInterface01(): Bool \ IO =
     import static dev.flix.test.TestGenericInterface.runTest(TestGenericInterface): Bool;
     let anon = new TestGenericInterface {
@@ -235,7 +235,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testGenericMethod01(): Bool \ IO =
     import static dev.flix.test.TestGenericMethod.runTest(TestGenericMethod): Bool;
     let anon = new TestGenericMethod {
@@ -245,7 +245,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testAliasesInObject01(): Bool \ IO =
     import static dev.flix.test.TestGenericInterface.runTest(TestGenericInterface): Bool;
     let anon = new TestGenericInterface {
@@ -255,7 +255,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testVarargsInterface01(): Bool \ IO =
     import static dev.flix.test.TestVarargsInterface.runTest(TestVarargsInterface): Bool;
     let anon = new TestVarargsInterface {
@@ -264,7 +264,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testThrowingInterface01(): Bool \ IO =
     import static dev.flix.test.TestThrowingInterface.runTest(TestThrowingInterface): Bool;
     let anon = new TestThrowingInterface {
@@ -272,7 +272,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testFunctionalInterface01(): Bool \ IO =
     import static dev.flix.test.TestFunctionalInterface.runTest(TestFunctionalInterface): Bool;
     let anon = new TestFunctionalInterface {
@@ -280,7 +280,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     runTest(anon)
 
-  @test
+  @Test
   def testFunctionalInterface02(): Bool \ IO =
     import java.util.Comparator.compare(##java.lang.Object, ##java.lang.Object): Int32;
     let anon = new ##java.util.Comparator {
@@ -288,7 +288,7 @@ mod Test.Exp.Jvm.NewObject {
     };
     compare(anon, checked_cast("foo"), checked_cast("bar")) == 0
 
-  @test
+  @Test
   def testClassWithDefaultConstructor01(): Bool \ IO =
     import dev.flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
     import dev.flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
@@ -298,7 +298,7 @@ mod Test.Exp.Jvm.NewObject {
     abstractMethod(anon, 1) == 2 and
       concreteMethod(anon, "bar") == "foobar"
 
-  @test
+  @Test
   def testClassWithDefaultConstructor02(): Bool \ IO =
     import dev.flix.test.TestClassWithDefaultConstructor.abstractMethod(Int32): Int32;
     import dev.flix.test.TestClassWithDefaultConstructor.concreteMethod(String): String;
@@ -309,7 +309,7 @@ mod Test.Exp.Jvm.NewObject {
     abstractMethod(anon, 1) == 2 and
       concreteMethod(anon, "bar") == "flix: bar"
 
-  @test
+  @Test
   def testMethodClosure01(): Bool \ IO =
     import java.lang.Object.toString(): String \ {};
     let x = Array#{1, 2, 3} @ Static;
@@ -319,11 +319,11 @@ mod Test.Exp.Jvm.NewObject {
     };
     toString(anon) == "Array#{1, 2, 3, 4, 5, 6}"
 
-  @test
+  @Test
   def testStaticNestedClass01(): ##dev.flix.test.TestClassWithStaticNestedClass$NestedClass \ IO =
     new ##dev.flix.test.TestClassWithStaticNestedClass$NestedClass {}
 
-  @test
+  @Test
   def testClassWithProtectedConstructor01(): ##dev.flix.test.TestClassWithProtectedConstructor \ IO =
     new ##dev.flix.test.TestClassWithProtectedConstructor {}
 }

@@ -1,6 +1,6 @@
 mod Test.Exp.Match.Guard {
 
-    @test
+    @Test
     def testGuard01(): Bool =
         let r = match Some('a') {
             case Some(x) if x == 'a' => 1
@@ -10,7 +10,7 @@ mod Test.Exp.Match.Guard {
         };
         r == 1
 
-    @test
+    @Test
     def testGuard02(): Bool =
         let r = match Some('b') {
             case Some(x) if x == 'a' => 1
@@ -20,7 +20,7 @@ mod Test.Exp.Match.Guard {
         };
         r == 2
 
-    @test
+    @Test
     def testGuard03(): Bool =
         let r = match Some('c') {
             case Some(x) if x == 'a' => 1
@@ -30,7 +30,7 @@ mod Test.Exp.Match.Guard {
         };
         r == 3
 
-    @test
+    @Test
     def testGuard04(): Bool =
         let r = match Some('z') {
             case Some(x) if x == 'a' => 1
@@ -40,7 +40,7 @@ mod Test.Exp.Match.Guard {
         };
         r == 42
 
-    @test
+    @Test
     def testGuard05(): Bool =
         let r = match None {
             case Some(x) if x == 'a' => 1

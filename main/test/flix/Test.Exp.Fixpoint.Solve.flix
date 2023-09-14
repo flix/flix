@@ -1,6 +1,6 @@
 mod Test.Exp.Fixpoint.Solve {
 
-    @test
+    @Test
     def testFixpointSolveUnit(): Bool =
         let p = #{
             Edge((), ()). Edge((), ()). Edge((), ()). Edge((), ()).
@@ -11,7 +11,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf(((), ()), m)
 
-    @test
+    @Test
     def testFixpointSolveBool(): Bool =
         let p = #{
             Edge(true, false). Edge(false, true). Edge(true, false). Edge(false, true).
@@ -22,7 +22,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((false, true), m)
 
-    @test
+    @Test
     def testFixpointSolveChar(): Bool =
         let p = #{
             Edge('a', 'b'). Edge('b', 'c'). Edge('c', 'd'). Edge('d', 'e').
@@ -33,7 +33,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf(('d', 'b'), m)
 
-    @test
+    @Test
     def testFixpointSolveInt8(): Bool =
         let p = #{
             Edge(1i8, 2i8). Edge(2i8, 3i8). Edge(3i8, 4i8). Edge(4i8, 5i8).
@@ -44,7 +44,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((4i8, 3i8), m)
 
-    @test
+    @Test
     def testFixpointSolveInt16(): Bool =
         let p = #{
             Edge(1i16, 2i16). Edge(2i16, 3i16). Edge(3i16, 4i16). Edge(4i16, 5i16).
@@ -55,7 +55,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((4i16, 3i16), m)
 
-    @test
+    @Test
     def testFixpointSolveInt32(): Bool =
         let p = #{
             Edge(1i32, 2i32). Edge(2i32, 3i32). Edge(3i32, 4i32). Edge(4i32, 5i32).
@@ -66,7 +66,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((4i32, 3i32), m)
 
-    @test
+    @Test
     def testFixpointSolveInt64(): Bool =
         let p = #{
             Edge(1i64, 2i64). Edge(2i64, 3i64). Edge(3i64, 4i64). Edge(4i64, 5i64).
@@ -77,7 +77,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((4i64, 3i64), m)
 
-    @test
+    @Test
     def testFixpointSolveBigInt(): Bool =
         let p = #{
             Edge(1ii, 2ii). Edge(2ii, 3ii). Edge(3ii, 4ii). Edge(4ii, 5ii).
@@ -88,7 +88,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((4ii, 3ii), m)
 
-    @test
+    @Test
     def testFixpointSolveString(): Bool =
         let p = #{
             Edge("a", "b"). Edge("b", "c"). Edge("c", "d"). Edge("d", "e").
@@ -99,7 +99,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf(("d", "b"), m)
 
-    @test
+    @Test
     def testFixpointOption(): Bool =
         let p = #{
             Edge(Some("a"), Some("b")). Edge(Some("b"), Some("c")). Edge(Some("c"), Some("d")). Edge(Some("d"), Some("e")).
@@ -112,7 +112,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((Some("d"), Some("b")), m)
 
-    @test
+    @Test
     def testFixpointSolveResult(): Bool =
         let p = #{
             Edge(Ok("a"), Ok("b")). Edge(Ok("b"), Ok("c")). Edge(Ok("c"), Ok("d")). Edge(Ok("d"), Ok("e")).
@@ -125,7 +125,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((Ok("d"), Ok("b")), m)
 
-    @test
+    @Test
     def testFixpointSolvePoly01(): Bool =
         let p = closure() <+> #{
             Edge(1i32, 2i32). Edge(2i32, 3i32). Edge(3i32, 4i32). Edge(4i32, 5i32).
@@ -133,7 +133,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((4i32, 2i32), m)
 
-    @test
+    @Test
     def testFixpointSolvePoly02(): Bool =
         let p = closure() <+> #{
             Edge(1i64, 2i64). Edge(2i64, 3i64). Edge(3i64, 4i64). Edge(4i64, 5i64).
@@ -141,7 +141,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         Vector.memberOf((4i64, 2i64), m)
 
-    @test
+    @Test
     def testFixpointSolvePoly03(): Bool =
         let p = closure() <+> #{
             Edge("a", "b"). Edge("b", "c"). Edge("c", "d"). Edge("d", "e").
@@ -155,7 +155,7 @@ mod Test.Exp.Fixpoint.Solve {
         Path(x, z) :- Path(x, y), Edge(y, z).
     }
 
-    @test
+    @Test
     def testFixpointSolveArity1(): Bool =
         let p = #{
             One("one").
@@ -164,7 +164,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select x from Last(x);
         m == Vector#{"one"}
 
-    @test
+    @Test
     def testFixpointSolveArity5(): Bool =
         let p = #{
             Five("one", "two", "three", "four", "five").
@@ -173,7 +173,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select x from Last(x);
         m == Vector#{"five"}
 
-    @test
+    @Test
     def testFixpointSolveArity10(): Bool =
         let p = #{
             Ten("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten").
@@ -183,7 +183,7 @@ mod Test.Exp.Fixpoint.Solve {
         m == Vector#{"ten"}
 
 
-    @test
+    @Test
     def testFixpointSolveArity15(): Bool =
         let p = #{
             Fifteen("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen").

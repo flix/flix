@@ -1,18 +1,18 @@
 mod Test.Equality.BigInt {
 
-    @test
+    @Test
     def testEqBigInt01(): Bool = 0ii == 0ii
 
-    @test
+    @Test
     def testEqBigInt02(): Bool = +1ii == +1ii
 
-    @test
+    @Test
     def testEqBigInt03(): Bool = -1ii == -1ii
 
-    @test
+    @Test
     def testNeqBigInt01(): Bool = -1ii != +1ii
 
-    @test
+    @Test
     def testNeqBigInt02(): Bool = +1ii != -1ii
 
 }

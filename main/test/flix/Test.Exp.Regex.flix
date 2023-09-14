@@ -16,50 +16,50 @@
 
 mod Test.Exp.Regex {
 
-    @test
+    @Test
     def testRegex01(): Regex = regex""
 
-    @test
+    @Test
     def testRegex02(): Regex = regex".*"
 
     // Double-quote is not a special regex character so it only needs a single slash
-    @test
+    @Test
     def testRegex03(): Regex = regex"\"{3}"
 
-    @test
+    @Test
     def testRegex04(): Bool =
         Regex.isMatch(regex"\"{3}", "\"\"\"")
 
-    @test
+    @Test
     def testRegex05(): Bool =
         Regex.isMatch(regex"\"a*b\"", "\"aaaab\"")
 
     // Open-square-bracket is a special regex character so it need double slash to escape
-    @test
+    @Test
     def testRegex06(): Bool =
         Regex.isMatch(regex"\\[{3}", "[[[")
 
-    @test
+    @Test
     def testRegex07(): Bool =
         Regex.isMatch(regex"\\[a*b\\]", "[aaaab]")
 
-    @test
+    @Test
     def testRegex08(): Bool =
         Regex.isMatch(regex"\\[+a*b\\]+", "[[[[aaaab]]")
 
-    @test
+    @Test
     def testRegex09(): Bool =
         Regex.isMatch(regex"\\[+\"a*b\"\\]+", "[[[[\"aaaab\"]]")
 
-    @test
+    @Test
     def testRegex10(): Bool =
         Regex.isMatch(regex"\\[+\\{a*b\\}\\]+", "[[[[{aaaab}]]")
 
-    @test
+    @Test
     def testRegex11(): Bool =
         Regex.isMatch(regex"\\[+\\{+a*b\\}+\\]+", "[[[[{{aaaab}}]]")
 
-    @test
+    @Test
     def testRegex12(): Bool =
         Regex.isMatch(regex"\\[+\\{+\"+a*b\"+\\}+\\]+", "[[[[{{\"\"\"aaaab\"\"\"}}]]")
 }

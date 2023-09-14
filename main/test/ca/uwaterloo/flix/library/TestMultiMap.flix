@@ -26,75 +26,75 @@ mod TestMultiMap {
     // ToString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toString01(): Bool = ToString.toString(empty(): MultiMap[Int32, Int32]) == "MultiMap#{}"
 
-    @test
+    @Test
     def toString02(): Bool = ToString.toString(singleton(1, 1)) == "MultiMap#{1 => Set#{1}}"
 
-    @test
+    @Test
     def toString03(): Bool = ToString.toString(singleton(1, 1) |> insert(1, 2)) == "MultiMap#{1 => Set#{1, 2}}"
 
-    @test
+    @Test
     def toString04(): Bool = ToString.toString(singleton(1, 1) |> insert(2, 2)) == "MultiMap#{1 => Set#{1}, 2 => Set#{2}}"
 
     /////////////////////////////////////////////////////////////////////////////
     // Eq                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def eq01(): Bool = empty(): MultiMap[Int32, Char] == empty(): MultiMap[Int32, Char]
 
-    @test
+    @Test
     def eq02(): Bool = singleton(1, 'a') != empty()
 
-    @test
+    @Test
     def eq03(): Bool = empty() != singleton(1, 'a')
 
-    @test
+    @Test
     def eq04(): Bool = singleton(1, 'a') != singleton(1, 'b')
 
-    @test
+    @Test
     def eq05(): Bool = singleton(1, 'a') == singleton(1, 'a')
 
-    @test
+    @Test
     def eq06(): Bool = singleton(1, 'a') |> insert(1, 'b') == singleton(1, 'a') |> insert(1, 'b')
 
     /// Insert order doesn't matter for MultiMap
-    @test
+    @Test
     def eq07(): Bool = singleton(1, 'b') |> insert(1, 'a') == singleton(1, 'a') |> insert(1, 'b')
 
     /////////////////////////////////////////////////////////////////////////////
     // Order (compare)                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def compare01(): Bool = Order.compare(empty(): MultiMap[Int32, Char], empty(): MultiMap[Int32, Char]) == Comparison.EqualTo
 
-    @test
+    @Test
     def compare02(): Bool = Order.compare(singleton(1, 'a'), empty()) == Comparison.GreaterThan
 
-    @test
+    @Test
     def compare03(): Bool = Order.compare(empty(), singleton(1, 'a')) == Comparison.LessThan
 
-    @test
+    @Test
     def compare04(): Bool = Order.compare(singleton(1, 'b'), singleton(1, 'a')) == Comparison.GreaterThan
 
-    @test
+    @Test
     def compare05(): Bool = Order.compare(singleton(1, 'a'), singleton(1, 'b')) == Comparison.LessThan
 
     /////////////////////////////////////////////////////////////////////////////
     // empty                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def empty01(): Bool = MultiMap.isEmpty(empty())
 
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def singleton01(): Bool =
         MultiMap.singleton(1, 'a') |> MultiMap.toList |> List.sort == (1, 'a') :: Nil
 
@@ -102,11 +102,11 @@ mod TestMultiMap {
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def isEmpty01(): Bool =
         MultiMap.isEmpty(empty()) == true
 
-    @test
+    @Test
     def isEmpty02(): Bool =
         MultiMap.isEmpty(singleton(1, 'a')) == false
 
@@ -114,19 +114,19 @@ mod TestMultiMap {
     // get                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def get01(): Bool =
         MultiMap.get(1, empty(): MultiMap[Int32, Char]) == Set#{}
 
-    @test
+    @Test
     def get02(): Bool =
         MultiMap.get(1, singleton(1, 'a')) == Set#{'a'}
 
-    @test
+    @Test
     def get03(): Bool =
         MultiMap.get(1, singleton(1, 'a') |> insert(2, 'b')) == Set#{'a'}
 
-    @test
+    @Test
     def get04(): Bool =
         MultiMap.get(1, singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c')) == Set#{'a', 'c'}
 
@@ -134,33 +134,33 @@ mod TestMultiMap {
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def memberOf01(): Bool =
         not MultiMap.memberOf(1, empty(): MultiMap[Int32, Char])
 
-    @test
+    @Test
     def memberOf02(): Bool = MultiMap.memberOf(1, singleton(1, 'a'))
 
-    @test
+    @Test
     def memberOf03(): Bool = not MultiMap.memberOf(1, singleton(2, 'b'))
 
-    @test
+    @Test
     def memberOf04(): Bool = MultiMap.memberOf(1, singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c'))
 
     /////////////////////////////////////////////////////////////////////////////
     // keysOf                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def keysOf01(): Bool = MultiMap.keysOf(empty(): MultiMap[Int32, Char]) == Set#{}
 
-    @test
+    @Test
     def keysOf02(): Bool = MultiMap.keysOf(singleton(1, 'a')) == Set#{1}
 
-    @test
+    @Test
     def keysOf03(): Bool = MultiMap.keysOf(singleton(2, 'b')) == Set#{2}
 
-    @test
+    @Test
     def keysOf04(): Bool =
         MultiMap.keysOf(singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c')) == Set#{1, 2}
 
@@ -169,21 +169,21 @@ mod TestMultiMap {
     // valuesOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def valuesOf01(): Bool = MultiMap.valuesOf(empty(): MultiMap[Int32, Char]) == Nil
 
-    @test
+    @Test
     def valuesOf02(): Bool = MultiMap.valuesOf(singleton(1, 'a')) |> List.sort == 'a' :: Nil
 
-    @test
+    @Test
     def valuesOf03(): Bool = MultiMap.valuesOf(singleton(2, 'b')) |> List.sort == 'b' :: Nil
 
-    @test
+    @Test
     def valuesOf04(): Bool =
         MultiMap.valuesOf(singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c'))
             |> List.sort == 'a' :: 'b' :: 'c' :: Nil
 
-    @test
+    @Test
     def valuesOf05(): Bool =
         MultiMap.valuesOf(singleton(1, 'a') |> insert(2, 'b') |> insert(1, 'c') |> insert(3, 'a'))
             |> List.sort == 'a' :: 'a' :: 'b' :: 'c' :: Nil
@@ -192,21 +192,21 @@ mod TestMultiMap {
     // insert                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def insert01(): Bool =
         MultiMap.insert(1, 'a', empty()) |> toAssocList == (1, Set#{'a'}) :: Nil
 
-    @test
+    @Test
     def insert02(): Bool =
         empty() |> MultiMap.insert(1, 'a') |> MultiMap.insert(2, 'b')
             |> toAssocList == (1, Set#{'a'}) :: (2, Set#{'b'}) :: Nil
 
-    @test
+    @Test
     def insert03(): Bool =
         empty() |> MultiMap.insert(1, 'a') |> MultiMap.insert(2, 'b') |> MultiMap.insert(1, 'c')
             |> toAssocList == (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: Nil
 
-    @test
+    @Test
     def insert04(): Bool =
         empty() |> MultiMap.insert(1, 'a') |> MultiMap.insert(2, 'b') |> MultiMap.insert(1, 'c') |> MultiMap.insert(3, 'b')
             |> toAssocList == (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: (3, Set#{'b'}) :: Nil
@@ -215,20 +215,20 @@ mod TestMultiMap {
     // insertAll                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def insertAll01(): Bool =
         MultiMap.insertAll(1, Nil: List[Char], empty()) == empty()
 
-    @test
+    @Test
     def insertAll02(): Bool =
         empty() |> MultiMap.insertAll(1, 'a' :: Nil)|> toAssocList == (1, Set#{'a'}) :: Nil
 
-    @test
+    @Test
     def insertAll03(): Bool =
         empty() |> MultiMap.insertAll(1, 'a' :: 'c' :: Nil) |> MultiMap.insertAll(2, 'b' :: Nil)
             |> toAssocList == (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: Nil
 
-    @test
+    @Test
     def insertAll04(): Bool =
         empty() |> MultiMap.insertAll(1, 'a' :: 'c' :: Nil) |> MultiMap.insertAll(2, 'b' :: Nil) |> MultiMap.insertAll(3, 'b' :: Nil)
             |> toAssocList == (1, Set#{'a', 'c'}) :: (2, Set#{'b'}) :: (3, Set#{'b'}) :: Nil
@@ -237,23 +237,23 @@ mod TestMultiMap {
     // adjust                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def adjust01(): Bool = MultiMap.adjust(v -> 2*v, 1, empty()) == empty()
 
-    @test
+    @Test
     def adjust02(): Bool =
         MultiMap.adjust(v -> 2*v, 1, MultiMap.singleton(1, 4)) |> toAssocList == (1, Set#{8}) :: Nil
 
-    @test
+    @Test
     def adjust03(): Bool =
         MultiMap.adjust(v -> 2*v, 3, singleton(1, 4)) |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def adjust04(): Bool =
         MultiMap.adjust(v -> 2*v, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{8, 10}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def adjust05(): Bool =
         MultiMap.adjust(v -> 2*v, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: (2, Set#{8}) :: Nil
@@ -262,25 +262,25 @@ mod TestMultiMap {
     // adjustWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def adjustWithKey01(): Bool = MultiMap.adjustWithKey((k, v) -> k+v, 1, empty()) == empty()
 
-    @test
+    @Test
     def adjustWithKey02(): Bool =
         MultiMap.adjustWithKey((k, v) -> k+v, 1, singleton(1, 4))
             |> toAssocList == (1, Set#{5}) :: Nil
 
-    @test
+    @Test
     def adjustWithKey03(): Bool =
         MultiMap.adjustWithKey((k, v) -> k+v, 3, singleton(1, 4))
             |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def adjustWithKey04(): Bool =
         MultiMap.adjustWithKey((k, v) -> k+v, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{5, 6}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def adjustWithKey05(): Bool =
         MultiMap.adjustWithKey((k, v) -> k+v, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: (2, Set#{6}) :: Nil
@@ -289,25 +289,25 @@ mod TestMultiMap {
     // update                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def update01(): Bool = MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 1, empty()) == empty()
 
-    @test
+    @Test
     def update02(): Bool =
         MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 1, singleton(1, 4))
             |> toAssocList == (1, Set#{8}) :: Nil
 
-    @test
+    @Test
     def update03(): Bool =
         MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 3, singleton(1, 4))
             |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def update04(): Bool =
         MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{5, 8}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def update05(): Bool =
         MultiMap.update(v -> if (isEven(v)) Some(2*v) else None, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: (2, Set#{8}) :: Nil
@@ -316,45 +316,45 @@ mod TestMultiMap {
     // updateWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def updateWithKey01(): Bool = MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 1, empty()) == empty()
 
-    @test
+    @Test
     def updateWithKey02(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 1, singleton(1, 4))
             |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def updateWithKey03(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 1, singleton(1, 4))
             |> toAssocList == (1, Set#{5}) :: Nil
 
-    @test
+    @Test
     def updateWithKey04(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 3, singleton(1, 4))
             |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def updateWithKey05(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 3, singleton(1, 4))
             |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def updateWithKey06(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def updateWithKey07(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{5, 6}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def updateWithKey08(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isEven(k)) Some(k+v) else None, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: (2, Set#{6}) :: Nil
 
-    @test
+    @Test
     def updateWithKey09(): Bool =
         MultiMap.updateWithKey((k, v) -> if (isOdd(k)) Some(k+v) else None, 2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: (2, Set#{4}) :: Nil
@@ -363,20 +363,20 @@ mod TestMultiMap {
     // remove                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def remove01(): Bool = MultiMap.remove(1, empty(): MultiMap[Int32, Int32]) == empty()
 
-    @test
+    @Test
     def remove02(): Bool = MultiMap.remove(1, singleton(1, 4)) |> toAssocList == Nil
 
-    @test
+    @Test
     def remove03(): Bool = MultiMap.remove(3, singleton(1, 4)) |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def remove04(): Bool =
         MultiMap.remove(1, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList == (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def remove05(): Bool =
         MultiMap.remove(2, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) |> toAssocList == (1, Set#{4, 5}) :: Nil
 
@@ -384,27 +384,27 @@ mod TestMultiMap {
     // removeWithValue                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def removeWithValue01(): Bool = MultiMap.removeWithValue(1, 4, empty(): MultiMap[Int32, Int32]) == empty()
 
-    @test
+    @Test
     def removeWithValue02(): Bool =
         MultiMap.removeWithValue(1, 4, singleton(1, 4)) |> toAssocList == Nil
 
-    @test
+    @Test
     def removeWithValue03(): Bool = MultiMap.removeWithValue(1, 1, singleton(1, 4)) |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def removeWithValue04(): Bool =
         MultiMap.removeWithValue(1, 4, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{5}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def removeWithValue05(): Bool =
         MultiMap.removeWithValue(2, 4, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: Nil
 
-    @test
+    @Test
     def removeWithValue06(): Bool =
         MultiMap.removeWithValue(2, 0, singleton(1, 4) |> insert(2, 4) |> insert(1, 5))
             |> toAssocList == (1, Set#{4, 5}) :: (2, Set#{4}) :: Nil
@@ -413,20 +413,20 @@ mod TestMultiMap {
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def find01(): Bool = MultiMap.find((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == None
 
-    @test
+    @Test
     def find02(): Bool = MultiMap.find((k, v) -> k == v, singleton(1, 2)) == None
 
-    @test
+    @Test
     def find03(): Bool = MultiMap.find((k, v) -> k == v, singleton(1, 1)) == Some((1, 1))
 
-    @test
+    @Test
     def find04(): Bool =
         MultiMap.find((k, v) -> k == v, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) == None
 
-    @test
+    @Test
     def find05(): Bool =
         MultiMap.find((k, v) -> k == v, singleton(1, 4) |> insert(2, 2) |> insert(3, 3)) == Some((2,2))
 
@@ -434,20 +434,20 @@ mod TestMultiMap {
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def findLeft01(): Bool = MultiMap.findLeft((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == None
 
-    @test
+    @Test
     def findLeft02(): Bool = MultiMap.findLeft((k, v) -> k == v, singleton(1, 2)) == None
 
-    @test
+    @Test
     def findLeft03(): Bool = MultiMap.findLeft((k, v) -> k == v, singleton(1, 1)) == Some((1, 1))
 
-    @test
+    @Test
     def findLeft04(): Bool =
         MultiMap.findLeft((k, v) -> k == v, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) == None
 
-    @test
+    @Test
     def findLeft05(): Bool =
         MultiMap.findLeft((k, v) -> k == v, singleton(1, 4) |> insert(2, 2) |> insert(3, 3)) == Some((2, 2))
 
@@ -455,20 +455,20 @@ mod TestMultiMap {
     // findRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def findRight01(): Bool = MultiMap.findRight((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == None
 
-    @test
+    @Test
     def findRight02(): Bool = MultiMap.findRight((k, v) -> k == v, singleton(1, 2)) == None
 
-    @test
+    @Test
     def findRight03(): Bool = MultiMap.findRight((k, v) -> k == v, singleton(1, 1)) == Some((1, 1))
 
-    @test
+    @Test
     def findRight04(): Bool =
         MultiMap.findRight((k, v) -> k == v, singleton(1, 4) |> insert(2, 4) |> insert(1, 5)) == None
 
-    @test
+    @Test
     def findRight05(): Bool =
         MultiMap.findRight((k, v) -> k == v, singleton(1, 4) |> insert(2, 2) |> insert(3, 3)) == Some((3, 3))
 
@@ -476,22 +476,22 @@ mod TestMultiMap {
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filter01(): Bool =
         MultiMap.filter(isEven, empty(): MultiMap[Int32, Int32]) == empty()
 
-    @test
+    @Test
     def filter02(): Bool = MultiMap.filter(isEven, singleton(1, 2)) |> toAssocList == (1, Set#{2}) :: Nil
 
-    @test
+    @Test
     def filter03(): Bool = MultiMap.filter(isEven, singleton(1, 1)) == empty()
 
-    @test
+    @Test
     def filter04(): Bool =
         MultiMap.filter(isEven, singleton(1, 4) |> insert(2, 4))
             |> toAssocList == (1, Set#{4}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def filter05(): Bool =
         MultiMap.filter(isEven, singleton(1, 4) |> insert(2, 2) |> insert(1, 3))
             |> toAssocList == (1, Set#{4}) :: (2, Set#{2}) :: Nil
@@ -501,22 +501,22 @@ mod TestMultiMap {
     // filterWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterWithKey01(): Bool =
         MultiMap.filterWithKey((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == empty()
 
-    @test
+    @Test
     def filterWithKey02(): Bool = MultiMap.filterWithKey((k, v) -> k == v, singleton(1, 2)) == empty()
 
-    @test
+    @Test
     def filterWithKey03(): Bool =
         MultiMap.filterWithKey((k, v) -> k == v, singleton(1, 1)) |> toAssocList == (1, Set#{1}) :: Nil
 
-    @test
+    @Test
     def filterWithKey04(): Bool =
         MultiMap.filterWithKey((k, v) -> k == v, singleton(1, 4) |> insert(2, 4)) == empty()
 
-    @test
+    @Test
     def filterWithKey05(): Bool =
         MultiMap.filterWithKey((k, v) -> k == v, singleton(1, 4) |> insert(2, 2) |> insert(1, 1))
             |> toAssocList == (1, Set#{1}) :: (2, Set#{2}) :: Nil
@@ -525,23 +525,23 @@ mod TestMultiMap {
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def map01(): Bool = MultiMap.map(v -> v*3, empty(): MultiMap[Int32, Int32]) == empty()
 
-    @test
+    @Test
     def map02(): Bool =
         MultiMap.map(v -> v*3, singleton(1, 2)) |> toAssocList == (1, Set#{6}) :: Nil
 
-    @test
+    @Test
     def map03(): Bool =
         MultiMap.map(v -> v*3, singleton(1, 1)) |> toAssocList == (1, Set#{3}) :: Nil
 
-    @test
+    @Test
     def map04(): Bool =
         MultiMap.map(v -> v*3, singleton(1, 4) |> insert(2, 4))
             |> toAssocList == (1, Set#{12}) :: (2, Set#{12}) :: Nil
 
-    @test
+    @Test
     def map05(): Bool =
         MultiMap.map(v -> v*3, singleton(1, 4) |> insert(2, 2) |> insert(1, 1))
             |> toAssocList == (1, Set#{3, 12}) :: (2, Set#{6}) :: Nil
@@ -551,24 +551,24 @@ mod TestMultiMap {
     // mapWithKey                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def mapWithKey01(): Bool =
         MultiMap.mapWithKey((k, v) -> v*3+k, empty(): MultiMap[Int32, Int32]) == empty()
 
-    @test
+    @Test
     def mapWithKey02(): Bool =
         MultiMap.mapWithKey((k, v) -> v*3+k, singleton(1, 2)) |> toAssocList == (1, Set#{7}) :: Nil
 
-    @test
+    @Test
     def mapWithKey03(): Bool =
         MultiMap.mapWithKey((k, v) -> v*3+k, singleton(1, 1)) |> toAssocList == (1, Set#{4}) :: Nil
 
-    @test
+    @Test
     def mapWithKey04(): Bool =
         MultiMap.mapWithKey((k, v) -> v*3+k, singleton(1, 4) |> insert(2, 4))
             |> toAssocList == (1, Set#{13}) :: (2, Set#{14}) :: Nil
 
-    @test
+    @Test
     def mapWithKey05(): Bool =
         MultiMap.mapWithKey((k, v) -> v*3+k, singleton(1, 4) |> insert(2, 2) |> insert(1, 1))
             |> toAssocList == (1, Set#{4, 13}) :: (2, Set#{8}) :: Nil
@@ -577,24 +577,24 @@ mod TestMultiMap {
     // foldWithKey                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldWithKey01(): Bool =
         MultiMap.foldWithKey((acc, k, v) -> acc + k + v, 0, empty(): MultiMap[Int32, Int32]) == 0
 
-    @test
+    @Test
     def foldWithKey02(): Bool =
         MultiMap.foldWithKey((acc, k, v) -> acc + k + v, 0, singleton(1, 2)) == 3
 
-    @test
+    @Test
     def foldWithKey03(): Bool =
         MultiMap.foldWithKey((acc, k, v) -> acc + k + v, 0, singleton(1, 4) |> insert(2, 4)) == 11
 
-    @test
+    @Test
     def foldWithKey04(): Bool =
         MultiMap.foldWithKey((acc, k, v) -> acc + k + v, 0,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 11
 
-    @test
+    @Test
     def foldWithKey05(): Bool =
         MultiMap.foldWithKey((acc, k, v) -> acc + k + v, 0,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 17
@@ -603,24 +603,24 @@ mod TestMultiMap {
     // foldLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldLeft01(): Bool =
         MultiMap.foldLeft((acc, v) -> v :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
 
-    @test
+    @Test
     def foldLeft02(): Bool =
         MultiMap.foldLeft((acc, v) -> v :: acc, Nil, singleton(1, 2)) == 2 :: Nil
 
-    @test
+    @Test
     def foldLeft03(): Bool =
         MultiMap.foldLeft((acc, v) -> v :: acc, Nil, singleton(1, 4) |> insert(2, 5)) == 5 :: 4 :: Nil
 
-    @test
+    @Test
     def foldLeft04(): Bool =
         MultiMap.foldLeft((acc, v) -> v :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 2 :: 4 :: 1 :: Nil
 
-    @test
+    @Test
     def foldLeft05(): Bool =
         MultiMap.foldLeft((acc, v) -> v :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 3 :: 2 :: 4 :: 1 :: Nil
@@ -630,30 +630,30 @@ mod TestMultiMap {
     // foldLeftWithKey                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldLeftWithKey01(): Bool =
         MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
 
-    @test
+    @Test
     def foldLeftWithKey02(): Bool =
         MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, singleton(1, 2)) == (1, 2) :: Nil
 
-    @test
+    @Test
     def foldLeftWithKey03(): Bool =
         MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 5)) == (2, 5) :: (1, 4) :: Nil
 
-    @test
+    @Test
     def foldLeftWithKey04(): Bool =
         MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == (2, 2) :: (1, 4) :: (1, 1) :: Nil
 
-    @test
+    @Test
     def foldLeftWithKey05(): Bool =
         MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == (3, 3) :: (2, 2) :: (1, 4) :: (1, 1) :: Nil
 
-    @test
+    @Test
     def foldLeftWithKey06(): Bool =
         MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3) |> insert(1, 2)) == (3, 3) :: (2, 2) :: (1, 4) :: (1, 2) :: (1, 1) :: Nil
@@ -662,24 +662,24 @@ mod TestMultiMap {
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRight01(): Bool =
         MultiMap.foldRight((v, acc) -> v :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
 
-    @test
+    @Test
     def foldRight02(): Bool =
         MultiMap.foldRight((v, acc) -> v :: acc, Nil, singleton(1, 2)) == 2 :: Nil
 
-    @test
+    @Test
     def foldRight03(): Bool =
         MultiMap.foldRight((v, acc) -> v :: acc, Nil, singleton(1, 4) |> insert(2, 5)) == 4 :: 5 :: Nil
 
-    @test
+    @Test
     def foldRight04(): Bool =
         MultiMap.foldRight((v, acc) -> v :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 1 :: 4 :: 2 :: Nil
 
-    @test
+    @Test
     def foldRight05(): Bool =
         MultiMap.foldRight((v, acc) -> v :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 1 :: 4 :: 2 :: 3 :: Nil
@@ -688,30 +688,30 @@ mod TestMultiMap {
     // foldRightWithKey                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRightWithKey01(): Bool =
         MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
 
-    @test
+    @Test
     def foldRightWithKey02(): Bool =
         MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, singleton(1, 2)) == (1, 2) :: Nil
 
-    @test
+    @Test
     def foldRightWithKey03(): Bool =
         MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 5)) == (1, 4) :: (2, 5) :: Nil
 
-    @test
+    @Test
     def foldRightWithKey04(): Bool =
         MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == (1, 1) :: (1, 4) :: (2, 2) :: Nil
 
-    @test
+    @Test
     def foldRightWithKey05(): Bool =
         MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == (1, 1) :: (1, 4) :: (2, 2) :: (3, 3) :: Nil
 
-    @test
+    @Test
     def foldRightWithKey06(): Bool =
         MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3) |> insert(1, 2)) == (1, 1) :: (1, 2) :: (1, 4) :: (2, 2) :: (3, 3) :: Nil
@@ -720,23 +720,23 @@ mod TestMultiMap {
     // foldMapWithKey                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldMapWithKey01(): Bool =
         MultiMap.foldMapWithKey((k, v) -> k + v, MultiMap(Map#{})) == 0
 
-    @test
+    @Test
     def foldMapWithKey02(): Bool =
         MultiMap.foldMapWithKey((k, v) -> k + v, MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (1 + 2 + 3 + 5)
 
-    @test
+    @Test
     def foldMapWithKey03(): Bool =
         MultiMap.foldMapWithKey((k, v) -> k + v, MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == (1 + 2 + 1 + 3 + 4 + 5)
 
-    @test
+    @Test
     def foldMapWithKey04(): Bool =
         MultiMap.foldMapWithKey((k, v) -> 2 * (k + v), MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (2 * (1 + 2) + 2 * (3 + 5))
 
-    @test
+    @Test
     def foldMapWithKey05(): Bool =
         MultiMap.foldMapWithKey((k, v) -> 2 * (k + v), MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == ((2 * (1 + 2)) + (2 * (1 + 3)) + 2 * (4 + 5))
 
@@ -745,23 +745,23 @@ mod TestMultiMap {
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldMap01(): Bool =
         MultiMap.foldMap(v -> v + 1, MultiMap(Map#{})) == 0
 
-    @test
+    @Test
     def foldMap02(): Bool =
         MultiMap.foldMap(v -> v + 1, MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (2 + 1) + (5 + 1)
 
-    @test
+    @Test
     def foldMap03(): Bool =
         MultiMap.foldMap(v -> v + 1, MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == (2 + 1) + (3 + 1) + (5 + 1)
 
-    @test
+    @Test
     def foldMap04(): Bool =
         MultiMap.foldMap(v -> 2 * v, MultiMap(Map#{1 => Set#{2}, 3 => Set#{5}})) == (2 * 2) + (2 * 5)
 
-    @test
+    @Test
     def foldMap05(): Bool =
         MultiMap.foldMap(v -> 2 * v, MultiMap(Map#{1 => Set#{2, 3}, 4 => Set#{5}})) == (2 * 2) + (2 * 3) + (2 * 5)
 
@@ -770,38 +770,38 @@ mod TestMultiMap {
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduceLeft01(): Bool =
         MultiMap.reduceLeft((acc, v) -> acc - v, empty(): MultiMap[Int32, Int32]) == None
 
-    @test
+    @Test
     def reduceLeft02(): Bool =
         MultiMap.reduceLeft((acc, v) -> acc - v, singleton(1, 2)) == Some(2)
 
-    @test
+    @Test
     def reduceLeft03(): Bool =
         MultiMap.reduceLeft((acc, v) -> acc - v, singleton(1, 4) |> insert(2, 5)) == Some(-1)
 
     /// 1 - 4 - 2
-    @test
+    @Test
     def reduceLeft04(): Bool =
         MultiMap.reduceLeft((acc, v) -> acc - v,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == Some(-5)
 
     /// 1 - 4 - 2 - 3
-    @test
+    @Test
     def reduceLeft05(): Bool =
         MultiMap.reduceLeft((acc, v) -> acc - v,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == Some(-8)
 
     /// First value
-    @test
+    @Test
     def reduceLeft06(): Bool =
         MultiMap.reduceLeft((v1, _) -> v1,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == Some(1)
 
     /// Last value
-    @test
+    @Test
     def reduceLeft07(): Bool =
         MultiMap.reduceLeft((_, v2) -> v2,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == Some(3)
@@ -813,24 +813,24 @@ mod TestMultiMap {
 
     /// Leftmost key, rightmost value
 
-    @test
+    @Test
     def reduceLeftWithKey01(): Bool =
         MultiMap.reduceLeftWithKey((k1, _, _, v2) -> (k1, v2), empty(): MultiMap[Int32, Int32]) == None
 
-    @test
+    @Test
     def reduceLeftWithKey02(): Bool =
         MultiMap.reduceLeftWithKey((k1, _, _, v2) -> (k1, v2), singleton(1, 2)) == Some((1, 2))
 
-    @test
+    @Test
     def reduceLeftWithKey03(): Bool =
         MultiMap.reduceLeftWithKey((k1, _, _, v2) -> (k1, v2), singleton(1, 1)) == Some((1, 1))
 
-    @test
+    @Test
     def reduceLeftWithKey04(): Bool =
         MultiMap.reduceLeftWithKey((k1, _, _, v2) -> (k1, v2),
             singleton(1, 4) |> insert(2, 5)) == Some((1, 5))
 
-    @test
+    @Test
     def reduceLeftWithKey05(): Bool =
         MultiMap.reduceLeftWithKey((k1, _, _, v2) -> (k1, v2),
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == Some((1, 2))
@@ -839,37 +839,37 @@ mod TestMultiMap {
     // reduceRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def reduceRight01(): Bool =
         MultiMap.reduceRight((v, acc) -> acc - v, empty(): MultiMap[Int32, Int32]) == None
 
-    @test
+    @Test
     def reduceRight02(): Bool =
         MultiMap.reduceRight((v, acc) -> acc - v, singleton(1, 2)) == Some(2)
 
-    @test
+    @Test
     def reduceRight03(): Bool =
         MultiMap.reduceRight((v, acc) -> acc - v, singleton(1, 4) |> insert(2, 5)) == Some(1)
 
-    @test
+    @Test
     def reduceRight04(): Bool =
         MultiMap.reduceRight((v, acc) -> acc - v,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == Some(-3)
 
     /// 3 - 2 - 4 - 1
-    @test
+    @Test
     def reduceRight05(): Bool =
         MultiMap.reduceRight((v, acc) -> acc - v,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == Some(-4)
 
     /// First value
-    @test
+    @Test
     def reduceRight06(): Bool =
         MultiMap.reduceRight((_, acc) -> acc,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == Some(3)
 
     /// Last value
-    @test
+    @Test
     def reduceRight07(): Bool =
         MultiMap.reduceRight((v, _) -> v,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == Some(1)
@@ -881,25 +881,25 @@ mod TestMultiMap {
 
     /// Rightmost key, leftmost value
 
-    @test
+    @Test
     def reduceRightWithKey01(): Bool =
         MultiMap.reduceRightWithKey((_, v1, k2, _) -> (k2, v1), empty(): MultiMap[Int32, Int32]) == None
 
-    @test
+    @Test
     def reduceRightWithKey02(): Bool =
         MultiMap.reduceRightWithKey((_, v1, k2, _) -> (k2, v1), singleton(1, 2)) == Some((1, 2))
 
-    @test
+    @Test
     def reduceRightWithKey03(): Bool =
         MultiMap.reduceRightWithKey((_, v1, k2, _) -> (k2, v1),
             singleton(1, 4) |> insert(2, 5)) == Some((2, 4))
 
-    @test
+    @Test
     def reduceRightWithKey04(): Bool =
         MultiMap.reduceRightWithKey((_, v1, k2, _) -> (k2, v1),
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == Some((2, 1))
 
-    @test
+    @Test
     def reduceRightWithKey05(): Bool =
         MultiMap.reduceRightWithKey((_, v1, k2, _) -> (k2, v1),
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == Some((3, 1))
@@ -908,24 +908,24 @@ mod TestMultiMap {
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def count01(): Bool =
         MultiMap.count((k, v) -> v > k, empty(): MultiMap[Int32, Int32]) == 0
 
-    @test
+    @Test
     def count02(): Bool =
         MultiMap.count((k, v) -> v > k, singleton(1, 2)) == 1
 
-    @test
+    @Test
     def count03(): Bool =
         MultiMap.count((k, v) -> v > k, singleton(1, 4) |> insert(2, 4)) == 2
 
-    @test
+    @Test
     def count04(): Bool =
         MultiMap.count((k, v) -> v > k,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 1
 
-    @test
+    @Test
     def count05(): Bool =
         MultiMap.count((k, v) -> v > k,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 1
@@ -935,20 +935,20 @@ mod TestMultiMap {
     // sumKeys                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumKeys01(): Bool = MultiMap.sumKeys(empty(): MultiMap[Int32, Int32]) == 0
 
-    @test
+    @Test
     def sumKeys02(): Bool = MultiMap.sumKeys(singleton(1, 2)) == 1
 
-    @test
+    @Test
     def sumKeys03(): Bool = MultiMap.sumKeys(singleton(1, 4) |> insert(2, 4)) == 3
 
-    @test
+    @Test
     def sumKeys04(): Bool =
         MultiMap.sumKeys(singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 4
 
-    @test
+    @Test
     def sumKeys05(): Bool =
         MultiMap.sumKeys(singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 7
 
@@ -956,20 +956,20 @@ mod TestMultiMap {
     // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumValues01(): Bool = MultiMap.sumValues(empty(): MultiMap[Int32, Int32]) == 0
 
-    @test
+    @Test
     def sumValues02(): Bool = MultiMap.sumValues(singleton(1, 2)) == 2
 
-    @test
+    @Test
     def sumValues03(): Bool = MultiMap.sumValues(singleton(1, 4) |> insert(2, 4)) == 8
 
-    @test
+    @Test
     def sumValues04(): Bool =
         MultiMap.sumValues(singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 7
 
-    @test
+    @Test
     def sumValues05(): Bool =
         MultiMap.sumValues(singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 10
 
@@ -977,22 +977,22 @@ mod TestMultiMap {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumWith01(): Bool = MultiMap.sumWith((k, v) -> if (v > k) 10 else 0, empty(): MultiMap[Int32, Int32]) == 0
 
-    @test
+    @Test
     def sumWith02(): Bool = MultiMap.sumWith((k, v) -> if (v > k) 10 else 0, singleton(1, 2)) == 10
 
-    @test
+    @Test
     def sumWith03(): Bool =
         MultiMap.sumWith((k, v) -> if (v > k) 10 else 0, singleton(1, 4) |> insert(2, 4)) == 20
 
-    @test
+    @Test
     def sumWith04(): Bool =
         MultiMap.sumWith((k, v) -> if (v > k) 10 else 0,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 10
 
-    @test
+    @Test
     def sumWith05(): Bool =
         MultiMap.sumWith((k, v) -> if (v > k) 10 else 0,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 10
@@ -1002,20 +1002,20 @@ mod TestMultiMap {
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def exists01(): Bool = not MultiMap.exists((k, v) -> v > k, empty(): MultiMap[Int32, Int32])
 
-    @test
+    @Test
     def exists02(): Bool = MultiMap.exists((k, v) -> v > k, singleton(1, 2))
 
-    @test
+    @Test
     def exists03(): Bool = MultiMap.exists((k, v) -> v > k, singleton(1, 4) |> insert(2, 4))
 
-    @test
+    @Test
     def exists04(): Bool =
         MultiMap.exists((k, v) -> v > k, singleton(1, 4) |> insert(2, 2) |> insert(1, 1))
 
-    @test
+    @Test
     def exists05(): Bool =
         MultiMap.exists((k, v) -> v > k, singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3))
 
@@ -1023,56 +1023,56 @@ mod TestMultiMap {
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forAll01(): Bool = MultiMap.forAll((k, v) -> v > k, empty(): MultiMap[Int32, Int32])
 
-    @test
+    @Test
     def forAll02(): Bool = MultiMap.forAll((k, v) -> v > k, singleton(1, 2))
 
-    @test
+    @Test
     def forAll03(): Bool = MultiMap.forAll((k, v) -> v > k, singleton(1, 4) |> insert(2, 4))
 
-    @test
+    @Test
     def forAll04(): Bool =
         not MultiMap.forAll((k, v) -> v > k, singleton(1, 4) |> insert(2, 2) |> insert(1, 1))
 
-    @test
+    @Test
     def forAll05(): Bool =
         not MultiMap.forAll((k, v) -> v > k, singleton(1, 4) |> insert(2, 2) |> insert(1, 1)  |> insert(3, 3))
 
-    @test
+    @Test
     def forAll06(): Bool =
         MultiMap.forAll((k, v) -> v > k, singleton(1, 4) |> insert(2, 3) |> insert(1, 2)  |> insert(3, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // union                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+    @Test
     def union01(): Bool = MultiMap.union(empty(): MultiMap[Int32, Int32], empty()) == empty()
 
-    @test
+    @Test
     def union02(): Bool = MultiMap.union(singleton(1, 2), empty()) == singleton(1, 2)
 
-    @test
+    @Test
     def union03(): Bool = MultiMap.union(empty(), singleton(1, 2)) == singleton(1, 2)
 
-    @test
+    @Test
     def union04(): Bool =
         MultiMap.union(empty(), singleton(1, 2) |> insert(2, 4)) |> toAssocList == (1, Set#{2}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def union05(): Bool =
         MultiMap.union(singleton(1, 2) |> insert(2, 4), empty()) |> toAssocList == (1, Set#{2}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def union06(): Bool =
         MultiMap.union(singleton(1, 2), singleton(2, 4)) |> toAssocList == (1, Set#{2}) :: (2, Set#{4}) :: Nil
 
-    @test
+    @Test
     def union07(): Bool =
         MultiMap.union(singleton(1, 2), singleton(1, 3)) |> toAssocList == (1, Set#{2, 3}) :: Nil
 
-    @test
+    @Test
     def union08(): Bool =
         MultiMap.union(singleton(1, 4), singleton(1, 2) |> insert(2, 3))
             |> toAssocList == (1, Set#{2, 4}) :: (2, Set#{3}) :: Nil
@@ -1081,31 +1081,31 @@ mod TestMultiMap {
     // intersection                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def intersection01(): Bool = MultiMap.intersection(empty(): MultiMap[Int32, Int32], empty()) == empty()
 
-    @test
+    @Test
     def intersection02(): Bool = MultiMap.intersection(singleton(1, 2), empty()) == empty()
 
-    @test
+    @Test
     def intersection03(): Bool = MultiMap.intersection(empty(), singleton(1, 2)) == empty()
 
-    @test
+    @Test
     def intersection04(): Bool = MultiMap.intersection(singleton(1, 2), singleton(1, 3)) == empty()
 
-    @test
+    @Test
     def intersection05(): Bool = MultiMap.intersection(singleton(1, 2), singleton(1, 2)) == singleton(1, 2)
 
-    @test
+    @Test
     def intersection06(): Bool =
         MultiMap.intersection(singleton(1, 2) |> insert(1, 3), singleton(1, 2) |> insert(1, 4)) == singleton(1, 2)
 
-    @test
+    @Test
     def intersection07(): Bool =
         MultiMap.intersection(singleton(1, 2) |> insert(1, 4), singleton(1, 2) |> insert(1, 4))
             |> toAssocList == (1, Set#{2, 4}) :: Nil
 
-    @test
+    @Test
     def intersection08(): Bool =
         MultiMap.intersection(singleton(1, 2) |> insert(1, 4), singleton(1, 4) |> insert(1, 2) |> insert(1, 3))
             |> toAssocList == (1, Set#{2, 4}) :: Nil
@@ -1114,41 +1114,41 @@ mod TestMultiMap {
     // difference                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def difference01(): Bool = MultiMap.difference(empty(): MultiMap[Int32, Int32], empty()) == empty()
 
-    @test
+    @Test
     def difference02(): Bool = MultiMap.difference(singleton(1, 2), empty()) == singleton(1, 2)
 
-    @test
+    @Test
     def difference03(): Bool =
         MultiMap.difference(empty(), singleton(1, 2)) == empty()
 
-    @test
+    @Test
     def difference04(): Bool =
         MultiMap.difference(singleton(1, 2), singleton(1, 3)) |> toAssocList == (1 , Set#{2}) :: Nil
 
-    @test
+    @Test
     def difference05(): Bool = MultiMap.difference(singleton(1, 2), singleton(1, 2)) == empty()
 
-    @test
+    @Test
     def difference06(): Bool =
         MultiMap.difference(singleton(1, 2) |> insert(1, 3), singleton(1, 2) |> insert(1, 4)) == singleton(1, 3)
 
-    @test
+    @Test
     def difference07(): Bool =
         MultiMap.difference(singleton(1, 2) |> insert(1, 4), singleton(1, 2) |> insert(1, 4)) == empty()
 
-    @test
+    @Test
     def difference08(): Bool =
         MultiMap.difference(singleton(1, 2) |> insert(1, 4), singleton(1, 4) |> insert(1, 2) |> insert(1, 3)) == empty()
 
-    @test
+    @Test
     def difference09(): Bool =
         MultiMap.difference(singleton(1, 2) |> insert(1, 4) |> insert(1, 3), singleton(1, 4) |> insert(1, 2))
             |> toAssocList == (1, Set#{3}) :: Nil
 
-    @test
+    @Test
     def difference10(): Bool =
         MultiMap.difference(singleton(1, 2) |> insert(1, 4) |> insert(1, 3) |> insert(2, 2), singleton(1, 4) |> insert(1, 2))
             |> toAssocList == (1, Set#{3}) :: (2, Set#{2}) :: Nil
@@ -1157,20 +1157,20 @@ mod TestMultiMap {
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toList01(): Bool = MultiMap.toList(empty(): MultiMap[Int32, Int32]) == Nil
 
-    @test
+    @Test
     def toList02(): Bool = MultiMap.toList(singleton(1, 4)) == (1, 4) ::  Nil
 
-    @test
+    @Test
     def toList03(): Bool = MultiMap.toList(singleton(1, 4) |> insert(2, 4)) == (1, 4) :: (2, 4) :: Nil
 
-    @test
+    @Test
     def toList04(): Bool =
         MultiMap.toList(singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == (1, 1) :: (1, 4) :: (2, 2) :: Nil
 
-    @test
+    @Test
     def toList05(): Bool =
         MultiMap.toList(singleton(1, 4) |> insert(2, 2) |> insert(1, 1)  |> insert(3, 3)) == (1, 1) :: (1, 4) :: (2, 2) :: (3, 3) :: Nil
 
@@ -1178,20 +1178,20 @@ mod TestMultiMap {
     // toAscList                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toAscList01(): Bool = MultiMap.toAscList(empty(): MultiMap[Int32, Int32]) == Nil
 
-    @test
+    @Test
     def toAscList02(): Bool = MultiMap.toAscList(singleton(1, 4)) == (1, 4) ::  Nil
 
-    @test
+    @Test
     def toAscList03(): Bool = MultiMap.toAscList(singleton(1, 4) |> insert(2, 4)) == (1, 4) :: (2, 4) :: Nil
 
-    @test
+    @Test
     def toAscList04(): Bool =
         MultiMap.toAscList(singleton(1, 4) |> insert(2, 4) |> insert(1, 1)) == (1, 1) :: (1, 4) :: (2, 4) :: Nil
 
-    @test
+    @Test
     def toAscList05(): Bool =
         MultiMap.toAscList(singleton(1, 4) |> insert(2, 4) |> insert(1, 1)  |> insert(3, 3)) == (1, 1) :: (1, 4) :: (2, 4) :: (3, 3) :: Nil
 
@@ -1199,20 +1199,20 @@ mod TestMultiMap {
     // toDescList                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toDescList01(): Bool = MultiMap.toDescList(empty(): MultiMap[Int32, Int32]) == Nil
 
-    @test
+    @Test
     def toDescList02(): Bool = MultiMap.toDescList(singleton(1, 4)) == (1, 4) ::  Nil
 
-    @test
+    @Test
     def toDescList03(): Bool = MultiMap.toDescList(singleton(1, 4) |> insert(2, 4)) == (2, 4) :: (1, 4) :: Nil
 
-    @test
+    @Test
     def toDescList04(): Bool =
         MultiMap.toDescList(singleton(1, 4) |> insert(2, 4) |> insert(1, 1)) == (2, 4) :: (1, 4) :: (1, 1) :: Nil
 
-    @test
+    @Test
     def toDescList05(): Bool =
         MultiMap.toDescList(singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3))
             == (3, 3) :: (2, 4) :: (1, 4) :: (1, 1) :: Nil
@@ -1221,20 +1221,20 @@ mod TestMultiMap {
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMap01(): Bool = MultiMap.toMap(empty(): MultiMap[Int32, Int32]) == Map#{}
 
-    @test
+    @Test
     def toMap02(): Bool = MultiMap.toMap(singleton(1, 4)) == Map#{1 => Set#{4}}
 
-    @test
+    @Test
     def toMap03(): Bool = MultiMap.toMap(singleton(1, 4) |> insert(2, 4)) == Map#{1 => Set#{4}, 2 => Set#{4}}
 
-    @test
+    @Test
     def toMap04(): Bool =
         MultiMap.toMap(singleton(1, 4) |> insert(2, 4) |> insert(1, 1)) == Map#{1 => Set#{1, 4}, 2 => Set#{4}}
 
-    @test
+    @Test
     def toMap05(): Bool =
         MultiMap.toMap(singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3))
             == Map#{1 => Set#{1, 4}, 2 => Set#{4}, 3 => Set#{3}}
@@ -1243,7 +1243,7 @@ mod TestMultiMap {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMutDeque01(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, empty(): MultiMap[Int32, Int32]);
         let d2 = MutDeque.new(rc);
@@ -1251,7 +1251,7 @@ mod TestMultiMap {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque02(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4));
 
@@ -1261,7 +1261,7 @@ mod TestMultiMap {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque03(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4));
 
@@ -1272,7 +1272,7 @@ mod TestMultiMap {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque04(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4) |> insert(1, 1));
 
@@ -1283,7 +1283,7 @@ mod TestMultiMap {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque05(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3));
 
@@ -1299,7 +1299,7 @@ mod TestMultiMap {
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEach01(): Bool =
         region rc {
             let rk = ref 0 @ rc;
@@ -1309,7 +1309,7 @@ mod TestMultiMap {
             deref rk == 0 and deref rv == 0
         }
 
-    @test
+    @Test
     def forEach02(): Bool =
         region rc {
             let rk = ref 0 @ rc;
@@ -1319,7 +1319,7 @@ mod TestMultiMap {
             deref rk == 1 and deref rv == 4
         }
 
-    @test
+    @Test
     def forEach03(): Bool =
         region rc {
             let rk = ref 0 @ rc;
@@ -1329,7 +1329,7 @@ mod TestMultiMap {
             deref rk == 2 and deref rv == 4
         }
 
-    @test
+    @Test
     def forEach04(): Bool =
         region rc {
             let rk = ref 0 @ rc;
@@ -1339,7 +1339,7 @@ mod TestMultiMap {
             deref rk == 2 and deref rv == 4
         }
 
-    @test
+    @Test
     def forEach05(): Bool =
         region rc {
             let rk = ref 0 @ rc;
@@ -1353,7 +1353,7 @@ mod TestMultiMap {
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEachWithIndex01(): Bool =
         region rc {
             let ri = ref 0 @ rc;
@@ -1364,7 +1364,7 @@ mod TestMultiMap {
             deref ri == 0 and deref rk == 0 and deref rv == 0
         }
 
-    @test
+    @Test
     def forEachWithIndex02(): Bool =
         region rc {
             let ri = ref 0 @ rc;
@@ -1375,7 +1375,7 @@ mod TestMultiMap {
             deref ri == 0 and deref rk == 1 and deref rv == 4
         }
 
-    @test
+    @Test
     def forEachWithIndex03(): Bool =
         region rc {
             let ri = ref 0 @ rc;
@@ -1386,7 +1386,7 @@ mod TestMultiMap {
             deref ri == 1 and deref rk == 2 and deref rv == 4
         }
 
-    @test
+    @Test
     def forEachWithIndex04(): Bool =
         region rc {
             let ri = ref 0 @ rc;
@@ -1397,7 +1397,7 @@ mod TestMultiMap {
             deref ri == 2 and deref rk == 2 and deref rv == 4
         }
 
-    @test
+    @Test
     def forEachWithIndex05(): Bool =
         region rc {
             let ri = ref 0 @ rc;

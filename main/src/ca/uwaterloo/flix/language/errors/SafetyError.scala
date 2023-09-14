@@ -555,7 +555,7 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a function marked with the `@test` annotation
+    * An error raised to indicate that a function marked with the `@Test` annotation
     * has at least one non-unit parameter.
     *
     * @param loc the source location of the parameter.
@@ -584,12 +584,12 @@ object SafetyError {
          |
          |Example
          |
-         |    @test
+         |    @Test
          |    def test01(x: Int32): Int32 = x + 1
          |
          |Should be
          |
-         |    @test
+         |    @Test
          |    def test01(): Int32 = testHelper(1)
          |
          |    def testHelper(x: Int32): Int32 = x + 1

@@ -1,39 +1,39 @@
 mod Test.Exp.Apply.Tail {
 
-    @test
+    @Test
     def testApplyTail01(): Bool = odd(1)
 
-    @test
+    @Test
     def testApplyTail02(): Bool = even(12)
 
-    @test
+    @Test
     def testApplyTail03(): Bool = odd(123)
 
-    @test
+    @Test
     def testApplyTail04(): Bool = even(1234)
 
-    @test
+    @Test
     def testApplyTail05(): Bool = odd(12345)
 
-    @test
+    @Test
     def testApplyTail06(): Bool = even(123456)
 
-    @test
+    @Test
     def testApplyTail07(): Bool = odd(1234567)
 
-    @test
+    @Test
     def testApplyTail08(): Bool = a(42)
 
-    @test
+    @Test
     def testApplyTail09(): Bool = a1(42, z -> z + 1)
 
-    @test
+    @Test
     def testApplyTail10(): Int32 =  ping(123, x -> x)
 
-    @test
+    @Test
     def testApplyTail11(): Int32 =  ping(12345, x -> x)
 
-    @test
+    @Test
     def testApplyTail12(): Int32 =  ping(1234567, x -> x)
 
     def odd(n: Int32): Bool = match n {

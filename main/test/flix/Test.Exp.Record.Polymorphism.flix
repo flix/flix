@@ -1,6 +1,6 @@
 mod Test.Exp.Record.Polymorphism {
 
-    @test
+    @Test
     def testRecordNonPolyExtend01(): Unit =
         let p1 = { x = 0, y = 0 };
         let p2 = { x = 1, y = 2 };
@@ -13,7 +13,7 @@ mod Test.Exp.Record.Polymorphism {
     def withZ(rec: { x = Int32, y = Int32 }, z: Int32): { x = Int32, y = Int32, z = Int32 } =
         { +z = z | rec }
 
-    @test
+    @Test
     def testRecordNonPolyExtend02(): Unit =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = { fstName = "Lucky", lstName = "Luke" };
@@ -26,7 +26,7 @@ mod Test.Exp.Record.Polymorphism {
     def withAge(rec: { fstName = String, lstName = String }, age: Int32): { fstName = String, lstName = String, age = Int32 } =
         { +age = age | rec }
 
-    @test
+    @Test
     def testRecordPolyExtend01(): Unit =
         let p1 = { x = 0, y = 0 };
         let p2 = { x = 0, y = 0, z = 0};
@@ -41,7 +41,7 @@ mod Test.Exp.Record.Polymorphism {
     def withColor(rec: {| r}, col: String): { color = String | r } =
         { +color = col | rec }
 
-    @test
+    @Test
     def testRecordPolyExtend02(): Unit =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = { fstName = "Lucky", lstName = "Luke" };
@@ -56,34 +56,34 @@ mod Test.Exp.Record.Polymorphism {
     def withAgeAndSex(age: Int32, sex: String, rec: {| r}): { age = Int32, sex = String | r } =
         { +age = age, +sex = sex | rec }
 
-    @test
+    @Test
     def testRecordPolySelect01(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         withAgeAndSex(21, "m", p1).fstName == "Luke"
 
-    @test
+    @Test
     def testRecordPolySelect02(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         withAgeAndSex(21, "m", p1).lstName == "Skywalker"
 
-    @test
+    @Test
     def testRecordPolySelect03(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         withAgeAndSex(21, "m", p1).age == 21
 
-    @test
+    @Test
     def testRecordPolySelect04(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         withAgeAndSex(21, "m", p1).sex == "m"
 
-    @test
+    @Test
     def testRecordPolySelectDuplicate01(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = p1 |> withAgeAndSex(21, "m");
         let p3 = p2 |> withAgeAndSex(22, "f");
         p3.age == 22 and p3.sex == "f"
 
-    @test
+    @Test
     def testRecordPolySelectDuplicate02(): Bool =
         let p1 = { fstName = "Luke", lstName = "Skywalker" };
         let p2 = p1 |> withAgeAndSex(21, "m");

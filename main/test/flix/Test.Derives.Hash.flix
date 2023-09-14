@@ -42,105 +42,105 @@ mod Test.Derives.Hash {
 
     pub enum OpaqueType(Int32) with Hash
 
-    @test
+    @Test
     def testHashEq01(): Bool = hash(Enum.EmptyCase) == hash(Enum.EmptyCase)
 
-    @test
+    @Test
     def testHashEq02(): Bool = hash(Enum.SingletonCase(123)) == hash(Enum.SingletonCase(123))
 
-    @test
+    @Test
     def testHashEq03(): Bool = hash(Enum.TupleCase(123, true)) == hash(Enum.TupleCase(123, true))
 
-    @test
+    @Test
     def testHashEq04(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[Int32]) == hash(PolyEnum.EmptyCase: PolyEnum[Int32])
 
-    @test
+    @Test
     def testHashEq05(): Bool = hash(PolyEnum.SingletonCase(123)) == hash(PolyEnum.SingletonCase(123))
 
-    @test
+    @Test
     def testHashEq06(): Bool = hash(PolyEnum.TupleCase(123, 123)) == hash(PolyEnum.TupleCase(123, 123))
 
-    @test
+    @Test
     def testHashEq07(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[Enum]) == hash(PolyEnum.EmptyCase: PolyEnum[Enum])
 
-    @test
+    @Test
     def testHashEq08(): Bool = hash(PolyEnum.SingletonCase(Enum.EmptyCase)) == hash(PolyEnum.SingletonCase(Enum.EmptyCase))
 
-    @test
+    @Test
     def testHashEq09(): Bool = hash(PolyEnum.SingletonCase(Enum.SingletonCase(123))) == hash(PolyEnum.SingletonCase(Enum.SingletonCase(123)))
 
-    @test
+    @Test
     def testHashEq10(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]]) == hash(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]])
 
-    @test
+    @Test
     def testHashEq11(): Bool = hash(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]) == hash(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]])
 
-    @test
+    @Test
     def testHashEq12(): Bool = hash(PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))) == hash(PolyEnum.SingletonCase(PolyEnum.SingletonCase(123)))
 
-    @test
+    @Test
     def testHashEq13(): Bool = hash(RecursiveEnum.EmptyCase) == hash(RecursiveEnum.EmptyCase)
 
-    @test
+    @Test
     def testHashEq14(): Bool = hash(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)) == hash(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase))
 
-    @test
+    @Test
     def testHashEq15(): Bool = hash(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool]) == hash(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool])
 
-    @test
+    @Test
     def testHashEq16(): Bool = hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]) == hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool])
 
-    @test
+    @Test
     def testHashEq17(): Bool = hash(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]) == hash(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool])
 
-    @test
+    @Test
     def testHashEq18(): Bool = hash(PolyMultiEnum.BothCase(123, true)) == hash(PolyMultiEnum.BothCase(123, true))
 
-    @test
+    @Test
     def testHashEq19(): Bool = hash(PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]) == hash(PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure])
 
-    @test
+    @Test
     def testHashEq20(): Bool = hash(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]) == hash(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure])
 
-    @test
+    @Test
     def testHashEq21(): Bool = hash(MutRecursiveEnum1.EmptyCase) == hash(MutRecursiveEnum1.EmptyCase)
 
-    @test
+    @Test
     def testHashEq22(): Bool = hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)) == hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase))
 
-    @test
+    @Test
     def testHashEq23(): Bool = hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))) == hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)))
 
-    @test
+    @Test
     def testHashEq24(): Bool = hash(OpaqueType.OpaqueType(123)) == hash(OpaqueType.OpaqueType(123))
 
-    @test
+    @Test
     def testHashNeq01(): Bool = hash(Enum.EmptyCase) != hash(Enum.SingletonCase(123))
 
-    @test
+    @Test
     def testHashNeq02(): Bool = hash(Enum.SingletonCase(123)) != hash(Enum.SingletonCase(456))
 
-    @test
+    @Test
     def testHashNeq03(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[Int32]) != hash(PolyEnum.SingletonCase(123))
 
-    @test
+    @Test
     def testHashNeq04(): Bool = hash(PolyEnum.SingletonCase(123)) != hash(PolyEnum.SingletonCase(456))
 
-    @test
+    @Test
     def testHashNeq05(): Bool = hash(PolyEnum.SingletonCase(Enum.EmptyCase)) != hash(PolyEnum.SingletonCase(Enum.SingletonCase(123)))
 
-    @test
+    @Test
     def testHashNeq06(): Bool = hash(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)) != hash(RecursiveEnum.RecursiveCase(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)))
 
-    @test
+    @Test
     def testHashNeq07(): Bool = hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Int32]) != hash(PolyMultiEnum.RightCase(123): PolyMultiEnum[Int32, Int32])
 
-    @test
+    @Test
     def testHashNeq08(): Bool = hash(PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]) != hash(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure])
 
-    @test
+    @Test
     def testHashNeq09(): Bool = hash(MutRecursiveEnum1.EmptyCase) != hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase))
 
-    @test
+    @Test
     def testHashNeq10(): Bool = hash(OpaqueType.OpaqueType(123)) != hash(OpaqueType.OpaqueType(456))
 }

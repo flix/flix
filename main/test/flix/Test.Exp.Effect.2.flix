@@ -18,82 +18,82 @@ mod Test.Exp.Effect {
 //        pub def ding(): Unit
 //    }
 
-    @test
+    @Test
     def testInferEffect01(): Unit \ Print = {
         do Print.println()
     }
 
-    @test
+    @Test
     def testInferEffect02(): Unit \ Print = {
         do Print.print("hello");
         do Print.println()
     }
 
-    @test
+    @Test
     def testInferEffect03(): Unit \ {Print, Throw} = {
         do Print.println();
         do Throw.throw()
     }
 
-    @test
+    @Test
     def testInferEffect04(): Unit \ {Print, Throw} = {
         do Throw.throw();
         do Print.print("hello")
     }
 
-    @test
+    @Test
     def testInferEffect05(): Unit \ {Print, Throw} = {
         do Throw.throw() without Print;
         do Print.println() without Throw
     }
 
 // TODO EFF-MIGRATION temporarily disabled
-//    @test
+//    @Test
 //    def testWithout01(): Unit = {
 //        () without Print
 //    }
 //
-//    @test
+//    @Test
 //    def testWithout02(): Unit = {
 //        () without {Print, Throw}
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect01(): Unit = {
 //        noPrint(x -> x)
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect02(): Unit \ Throw = {
 //        noPrint(_ -> do Throw.throw())
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect03(): Unit = {
 //        noPrintNoThrow(x -> x)
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect04(): Unit = {
 //        disjoint(x -> x, x -> x)
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect05(): Unit \ {Print, Throw} = {
 //        disjoint(_ -> do Print.println(), _ -> do Throw.throw())
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect06(): Unit \ Print = {
 //        yesPrint(_ -> do Print.println())
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect07(): Unit \ {Print, Throw} = {
 //        yesPrint(_ -> { do Print.println(); do Throw.throw() })
 //    }
 //
-//    @test
+//    @Test
 //    def testHofEffect08(): Unit \ {Print, Ding} = {
 //        yesPrintNoThrow(_ -> { do Print.println(); do ding() })
 //    }
@@ -118,16 +118,16 @@ mod Test.Exp.Effect {
 //        f() without Throw
 //    }
 
-    // @test
+    // @Test
     pub def compose(f: a -> a \ ef, g: a -> a \ ef): (a -> a \ ef) = x -> f(g(x))
 
-    // @test
+    // @Test
     pub def compose3(f: a -> b \ ef, g: b -> a \ ef): (a -> a \ ef) = x -> g(f(x))
 
-    // @test
+    // @Test
     pub def doBoth(f: Unit -> Unit \ ef, g: Unit -> Unit \ ef): Unit \ ef = f(); g()
 
-    // @test
+    // @Test
 // TODO EFF-MIGRATION temporarily disabled
 //    pub def doBoth2(f: Unit -> Unit \ ef - Print, g: Unit -> Unit \ ef - Throw): Unit \ ef = f(); g()
 }

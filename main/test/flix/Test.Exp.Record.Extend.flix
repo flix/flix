@@ -1,19 +1,19 @@
 mod Test.Exp.Record.Extend {
 
-    @test
+    @Test
     def testRecordExtend01(): { fstName = String } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
         r1
 
-    @test
+    @Test
     def testRecordExtend02(): { fstName = String, lstName = String } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
         let r2 = { +lstName = "Luke" | r1 };
         r2
 
-    @test
+    @Test
     def testRecordExtend03(): { fstName = String, lstName = String, age = Int32 } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
@@ -21,7 +21,7 @@ mod Test.Exp.Record.Extend {
         let r3 = { +age = 42 | r2 };
         r3
 
-    @test
+    @Test
     def testRecordExtend04(): { fstName = String, lstName = String, age = Int32, cowboy = Bool } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
@@ -30,7 +30,7 @@ mod Test.Exp.Record.Extend {
         let r4 = { +cowboy = true | r3 };
         r4
 
-    @test
+    @Test
     def testRecordForkExtend01(): Unit =
         let r = { lstName = "Lannister" };
         let _ = { +fstName = "Tywin" | r };
@@ -39,7 +39,7 @@ mod Test.Exp.Record.Extend {
         let _ = { +lstName = "Tyrion" | r };
         ()
 
-    @test
+    @Test
     def testRecordForkExtend02(): Unit =
         let r0 = { x = 0, y = 0 };
         let r1 = { +z = 0 | r0 };
@@ -47,21 +47,21 @@ mod Test.Exp.Record.Extend {
         let _ = { +color = "blu" | r1 };
         ()
 
-    @test
+    @Test
     def testRecordDuplicateExtend01(): { x = Bool, x = Int32, x = String } =
         let r0 = { +x = "ab" | {} };
         let r1 = { +x = 1234 | r0 };
         let r2 = { +x = true | r1 };
             r2
 
-    @test
+    @Test
     def testRecordDuplicateExtend02(): { x = Int32, x = Int32, x = Int32 } =
         let r0 = { +x = 123 | {} };
         let r1 = { +x = 456 | r0 };
         let r2 = { +x = 789 | r1 };
             r2
 
-    @test
+    @Test
     def testRecordDuplicateExtend03(): { x = Int32, y = Char, x = Int32, y = Char, x = Int32 } =
         let r0 = { +x = 123 | {} };
         let r1 = { +y = 'a' | r0 };
@@ -70,7 +70,7 @@ mod Test.Exp.Record.Extend {
         let r4 = { +x = 789 | r3 };
             r4
 
-    @test
+    @Test
     def testRecordDuplicateExtend04(): Bool =
         let r0 = { +x = 123 | {} };
         let r1 = { +x = "abc" | r0 };

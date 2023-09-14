@@ -139,6 +139,6 @@ mod Test.Kind.Def {
         }
     }
 
-    @test
+    @Test
     def empty(): Bool = true
 }

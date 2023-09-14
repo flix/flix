@@ -1,63 +1,63 @@
 mod Test.Exp.Char {
 
-    @test
+    @Test
     def testChar01(): Char = 'a'
 
-    @test
+    @Test
     def testChar02(): Char = 'b'
 
-    @test
+    @Test
     def testChar03(): Char = 'c'
 
-    @test
+    @Test
     def testChar04(): Char = ' '
 
-    @test
+    @Test
     def testChar05(): Char = '\r'
 
-    @test
+    @Test
     def testChar06(): Char = '\n'
 
-    @test
+    @Test
     def testChar07(): Char = '\t'
 
-    @test
+    @Test
     def testChar08(): Char = '\\'
 
-    @test
+    @Test
     def testChar09(): Char = '\''
 
-    @test
+    @Test
     def testChar10(): Char = '0'
 
-    @test
+    @Test
     def testChar11(): Char = '\u0000'
 
-    @test
+    @Test
     def testChar12(): Char = '\u007f'
 
-    @test
+    @Test
     def testChar13(): Char = '\uffff'
 
-    @test
+    @Test
     def testChar14(): Char = '十'
 
-    @test
+    @Test
     def testChar15(): Char = '\u200b'
 
-    @test
+    @Test
     def testChar16(): Bool = '\u0041' == 'A'
 
-    @test
+    @Test
     def testChar17(): Bool = '\u005A' == 'Z'
 
-    @test
+    @Test
     def testChar18(): Bool = '\u0061' == 'a'
 
-    @test
+    @Test
     def testChar19(): Bool = '\u007a' == 'z'
 
-    @test
+    @Test
     def testChar20(): Bool = '\u2603' == '☃'
 
 }

@@ -20,20 +20,20 @@ mod TestMutSet {
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toString01(): Bool = region rc {
         let s: MutSet[Int32, rc] = MutSet.new(rc);
         MutSet.toString(s) == "MutSet#{}"
     }
 
-    @test
+    @Test
     def toString02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
         MutSet.toString(s) == "MutSet#{1}"
     }
 
-    @test
+    @Test
     def toString03(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -48,14 +48,14 @@ mod TestMutSet {
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sameElements01(): Bool = region rc {
         let s1 = MutSet.new(rc): MutSet[Int32, _];
         let s2 = MutSet.new(rc): MutSet[Int32, _];
         MutSet.sameElements(s1, s2)
     }
 
-    @test
+    @Test
     def sameElements02(): Bool = region rc {
         let s1 = MutSet.new(rc);
         MutSet.add!(1, s1);
@@ -66,7 +66,7 @@ mod TestMutSet {
         MutSet.sameElements(s1, s2)
     }
 
-    @test
+    @Test
     def sameElements03(): Bool = region rc {
         let s1 = MutSet.new(rc);
         MutSet.add!(1, s1);
@@ -77,7 +77,7 @@ mod TestMutSet {
         not MutSet.sameElements(s1, s2)
     }
 
-    @test
+    @Test
     def sameElements04(): Bool = region rc {
         let s1 = MutSet.new(rc);
         MutSet.add!(1, s1);
@@ -92,7 +92,7 @@ mod TestMutSet {
         MutSet.sameElements(s1, s2)
     }
 
-    @test
+    @Test
     def sameElements05(): Bool = region rc {
         let s1 = MutSet.new(rc);
         MutSet.add!("a", s1);
@@ -107,7 +107,7 @@ mod TestMutSet {
         MutSet.sameElements(s1, s2)
     }
 
-    @test
+    @Test
     def setSameElements06(): Bool = region rc {
         let s1 = MutSet.new(rc);
         MutSet.add!("a", s1);
@@ -131,7 +131,7 @@ mod TestMutSet {
     //  2. to test the use of mulitple regions.
     // Thus not all tests end with a simple comparison of two sets.
 
-    @test
+    @Test
     def addAll01(): Bool = region rc {
         let s1 = MutSet.new(rc): MutSet[Int32, _];
         let s2 = MutSet.new(rc): MutSet[Int32, _];
@@ -139,7 +139,7 @@ mod TestMutSet {
         MutSet.isEmpty(s2)
     }
 
-    @test
+    @Test
     def addAll02(): Bool = region rc {
         let s1 = MutSet.new(rc);
         let s2 = MutSet.new(rc);
@@ -149,7 +149,7 @@ mod TestMutSet {
         MutSet.sameElements(s1, s2)
     }
 
-    @test
+    @Test
     def addAll03(): Bool = region rc {
         let s1 = MutSet.new(rc);
         let s2 = MutSet.new(rc);
@@ -159,7 +159,7 @@ mod TestMutSet {
         MutSet.foldLeft((acc, a) -> acc + a, 0, s2) == 3
     }
 
-    @test
+    @Test
     def addAll04(): Bool = region rc {
         let s1 = MutSet.new(rc);
         let s2 = MutSet.new(rc);
@@ -170,7 +170,7 @@ mod TestMutSet {
         MutSet.foldLeft((acc, a) -> acc + a, 0, s2) == 6
     }
 
-    @test
+    @Test
     def addAll05(): Bool = region rc1 {
         let s1 = MutSet.new(rc1);
         MutSet.add!("a", s1);
@@ -184,7 +184,7 @@ mod TestMutSet {
         }
     }
 
-    @test
+    @Test
     def addAll06(): Bool = region rc {
         let s1 = MutSet.new(rc);
         MutSet.add!("a", s1);
@@ -203,19 +203,19 @@ mod TestMutSet {
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sum01(): Bool = region rc {
         MutSet.new(rc) |> MutSet.sum == 0
     }
 
-    @test
+    @Test
     def sum02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
         MutSet.sum(s) == 1
     }
 
-    @test
+    @Test
     def sum03(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -224,7 +224,7 @@ mod TestMutSet {
         MutSet.sum(s) == 6
     }
 
-    @test
+    @Test
     def sum04(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -234,7 +234,7 @@ mod TestMutSet {
         MutSet.sum(s) == 3
     }
 
-    @test
+    @Test
     def sum05(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -244,7 +244,7 @@ mod TestMutSet {
         MutSet.sum(s) == -4
     }
 
-    @test
+    @Test
     def sum06(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(10, s);
@@ -257,19 +257,19 @@ mod TestMutSet {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def sumWith01(): Bool = region rc {
         MutSet.new(rc) |> MutSet.sumWith(x -> x + 1) == 0
     }
 
-    @test
+    @Test
     def sumWith02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
         MutSet.sumWith(x -> x + 1, s) == 2
     }
 
-    @test
+    @Test
     def sumWith03(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -278,7 +278,7 @@ mod TestMutSet {
         MutSet.sumWith(x -> x + 1, s) == 9
     }
 
-    @test
+    @Test
     def sumWith04(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -288,7 +288,7 @@ mod TestMutSet {
         MutSet.sumWith(x -> x + 1, s) == 7
     }
 
-    @test
+    @Test
     def sumWith05(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(-1, s);
@@ -298,7 +298,7 @@ mod TestMutSet {
         MutSet.sumWith(x -> x + 1, s) == -6
     }
 
-    @test
+    @Test
     def sumWith06(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(10, s);
@@ -311,20 +311,20 @@ mod TestMutSet {
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def join01(): Bool = region rc {
         let s: MutSet[Int32, _] = MutSet.new(rc);
         MutSet.join(",", s) == ""
     }
 
-    @test
+    @Test
     def join02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
         MutSet.join(",", s) == "1"
     }
 
-    @test
+    @Test
     def join03(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -333,7 +333,7 @@ mod TestMutSet {
         MutSet.join(",", s) == "1,2,3"
     }
 
-    @test
+    @Test
     def join04(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!("1", s);
@@ -347,19 +347,19 @@ mod TestMutSet {
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRight01(): Bool = region rc {
         MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, MutSet.new(rc)) == 100
     }
 
-    @test
+    @Test
     def foldRight02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
         MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, s) == 198
     }
 
-    @test
+    @Test
     def foldRight03(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(2, s);
@@ -367,7 +367,7 @@ mod TestMutSet {
         MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, s) == 194
     }
 
-    @test
+    @Test
     def foldRight04(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(3, s);
@@ -380,19 +380,19 @@ mod TestMutSet {
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldRightWithCont01(): Bool = region rc {
         MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, MutSet.new(rc)) == 100
     }
 
-    @test
+    @Test
     def foldRightWithCont02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
         MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, s) == 198
     }
 
-    @test
+    @Test
     def foldRightWithCont03(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(2, s);
@@ -400,7 +400,7 @@ mod TestMutSet {
         MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, s) == 194
     }
 
-    @test
+    @Test
     def foldRightWithCont04(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(3, s);
@@ -413,12 +413,12 @@ mod TestMutSet {
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def foldMap01(): Bool = region rc {
         MutSet.foldMap(x -> 2 * x, MutSet.new(rc): MutSet[Int32, _]) == 0
     }
 
-    @test
+    @Test
     def foldMap02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -426,14 +426,14 @@ mod TestMutSet {
         MutSet.foldMap(x -> 2 * x, s) == 6
     }
 
-    @test
+    @Test
     def foldMap03(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!("a", s);
         MutSet.foldMap(x -> if (x == "a") "b" else x, s) == "b"
     }
 
-    @test
+    @Test
     def foldMap04(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!("a", s);
@@ -442,7 +442,7 @@ mod TestMutSet {
         MutSet.foldMap(x -> if (x == "c") "b" else x, s) == "abb"
     }
 
-    @test
+    @Test
     def foldMap05(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
@@ -456,7 +456,7 @@ mod TestMutSet {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def toMutDeque01(): Bool = region rc {
         let s: Set[Int32] = Set#{};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
@@ -466,7 +466,7 @@ mod TestMutSet {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque02(): Bool = region rc {
         let s = Set#{1};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
@@ -477,7 +477,7 @@ mod TestMutSet {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque03(): Bool = region rc {
         let s = Set#{1, 3, 6};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
@@ -490,7 +490,7 @@ mod TestMutSet {
         d1 `MutDeque.sameElements` d2
     }
 
-    @test
+    @Test
     def toMutDeque04(): Bool = region rc {
         let s = Set#{7, 1, 3, 6};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
@@ -508,7 +508,7 @@ mod TestMutSet {
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEach01(): Bool = region rc {
         let s = MutSet.new(rc);
         let ri = ref 21 @ rc;
@@ -516,7 +516,7 @@ mod TestMutSet {
         21 == deref ri
     }
 
-    @test
+    @Test
     def forEach02(): Bool = region rc {
         let s = MutSet.new(rc);
         let ri = ref 21 @ rc;
@@ -525,7 +525,7 @@ mod TestMutSet {
         0 == deref ri
     }
 
-    @test
+    @Test
     def forEach03(): Bool = region rc {
         let s = MutSet.new(rc);
         let ri = ref 21 @ rc;
@@ -540,7 +540,7 @@ mod TestMutSet {
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def forEachWithIndex01(): Bool = region rc {
         let s = MutSet.new(rc);
         let ri = ref 21 @ rc;
@@ -548,7 +548,7 @@ mod TestMutSet {
         21 == deref ri
     }
 
-    @test
+    @Test
     def forEachWithIndex02(): Bool = region rc {
         let s = MutSet.new(rc);
         let ri = ref 21 @ rc;
@@ -557,7 +557,7 @@ mod TestMutSet {
         0 == deref ri
     }
 
-    @test
+    @Test
     def forEachWithIndex03(): Bool = region rc {
         let s = MutSet.new(rc);
         let ri = ref 21 @ rc;

@@ -45,101 +45,101 @@ mod Test.Dec.Enum.Singleton {
      */
     enum D[a, b, c](Result[Result[c, b], a])
 
-    @test
+    @Test
     def testOpaqueType01(): Celsius = Celsius.Celsius(123)
 
-    @test
+    @Test
     def testOpaqueType02(): Bool = match Celsius.Celsius(123) {
         case Celsius.Celsius(x) => x == 123
     }
 
-    @test
+    @Test
     def testOpaqueType03(): Fahrenheit = Fahrenheit.Fahrenheit(123)
 
-    @test
+    @Test
     def testOpaqueType04(): Bool = match Fahrenheit.Fahrenheit(123) {
         case Fahrenheit.Fahrenheit(x) => x == 123
     }
 
-    @test
+    @Test
     def testOpaqueType05(): USD = USD.USD(123.456)
 
-    @test
+    @Test
     def testOpaqueType06(): Bool = match USD.USD(123.456) {
         case USD.USD(x) => x == 123.456
     }
 
-    @test
+    @Test
     def testOpaqueType07(): CAD = CAD.CAD(123.456)
 
-    @test
+    @Test
     def testOpaqueType08(): Bool = match CAD.CAD(123.456) {
         case CAD.CAD(x) => x == 123.456
     }
 
-    @test
+    @Test
     def testOpaqueType09(): A = A.A(None)
 
-    @test
+    @Test
     def testOpaqueType10(): A = A.A(Some(123))
 
-    @test
+    @Test
     def testOpaqueType11(): Bool = match A.A(None) {
         case A.A(x) => x == None
     }
 
-    @test
+    @Test
     def testOpaqueType12(): Bool = match A.A(Some(123)) {
         case A.A(x) => x == Some(123)
     }
 
-    @test
+    @Test
     def testOpaqueType13(): B = B.B(Ok(123))
 
-    @test
+    @Test
     def testOpaqueType14(): B = B.B(Err("Hello World"))
 
-    @test
+    @Test
     def testOpaqueType15(): Bool = match B.B(Ok(123)) {
         case B.B(x) => x == Ok(123)
     }
 
-    @test
+    @Test
     def testOpaqueType16(): Bool = match B.B(Err("Hello World")) {
         case B.B(x) => x == Err("Hello World")
     }
 
-    @test
+    @Test
     def testOpaqueType17(): Pair[Int32, Int32] = Pair.Pair((21, 42))
 
-    @test
+    @Test
     def testOpaqueType18(): Bool = match Pair.Pair((21, 42)) {
         case Pair.Pair(x) => x == (21, 42)
     }
 
-    @test
+    @Test
     def testOpaqueType19(): Pair[Bool, Int32] = Pair.Pair((true, 42))
 
-    @test
+    @Test
     def testOpaqueType20(): Bool = match Pair.Pair((true, 42)) {
         case Pair.Pair(x) => x == (true, 42)
     }
 
-    @test
+    @Test
     def testOpaqueType21(): C[Bool] = C.C(Ok(true))
 
-    @test
+    @Test
     def testOpaqueType22(): Bool = match C.C(Ok(true)) {
         case C.C(x) => x == Ok(true)
     }
 
-    @test
+    @Test
     def testOpaqueType23(): D[Bool, Int32, String] = D.D(Ok(true))
 
-    @test
+    @Test
     def testOpaqueType24(): D[Bool, Int32, String] = D.D(Err(Ok(123)))
 
-    @test
+    @Test
     def testOpaqueType25(): D[Bool, Int32, String] = D.D(Err(Err("hello")))
 
     /**
@@ -167,34 +167,34 @@ mod Test.Dec.Enum.Singleton {
      */
     enum V(Result[X, Y])
 
-    @test
+    @Test
     def testOpaqueType26(): U = U.U(None)
 
-    @test
+    @Test
     def testOpaqueType27(): Bool = match U.U(None) {
         case U.U(x) => x == None
     }
 
-    @test
+    @Test
     def testOpaqueType28(): U = U.U(Some(true))
 
-    @test
+    @Test
     def testOpaqueType29(): Bool = match U.U(Some(true)) {
         case U.U(x) => x == Some(true)
     }
 
-    @test
+    @Test
     def testOpaqueType30(): V = V.V(Err(true))
 
-    @test
+    @Test
     def testOpaqueType31(): Bool = match V.V(Err(true)) {
         case V.V(x) => x == Err(true)
     }
 
-    @test
+    @Test
     def testOpaqueType32(): V = V.V(Ok(123))
 
-    @test
+    @Test
     def testOpaqueType33(): Bool = match V.V(Ok(123)) {
         case V.V(x) => x == Ok(123)
     }

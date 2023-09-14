@@ -1,17 +1,17 @@
 mod A {
     pub def f(): Int32 = 1
 
-    @test
+    @Test
     def testMod01(): Bool =
         use A.f;
         f() == 1
 
-    @test
+    @Test
     def testMod02(): Bool =
         use B.f;
         f() == 2
 
-    @test
+    @Test
     def testMod03(): Bool =
         use C.f;
         f() == 3
@@ -20,17 +20,17 @@ mod A {
 mod B {
     pub def f(): Int32 = 2
 
-    @test
+    @Test
     def testMod04(): Bool =
         use A.{f => fa};
         fa() == 1
 
-    @test
+    @Test
     def testMod05(): Bool =
         use B.{f => fb};
         fb() == 2
 
-    @test
+    @Test
     def testMod06(): Bool =
         use C.{f => fc};
         fc() == 3
@@ -40,7 +40,7 @@ mod B {
 mod C {
     pub def f(): Int32 = 3
 
-    @test
+    @Test
     def testMod07(): Bool =
         use A.{f => fa};
         use B.{f => fb};
@@ -54,16 +54,16 @@ mod D {
     use X.Y.g
     use X.Y.Z.{g => gz}
 
-    @test
+    @Test
     def testMod08(): Bool = f() == 1
 
-    @test
+    @Test
     def testMod09(): Bool = fb() == 2
 
-    @test
+    @Test
     def testMod10(): Bool = g() == 6
 
-    @test
+    @Test
     def testMod11(): Bool = gz() == 7
 }
 
@@ -78,22 +78,22 @@ mod X {
     }
 }
 
-@test
+@Test
 def testMod12(): Bool =
     use X.g;
     g() == 5
 
-@test
+@Test
 def testMod13(): Bool =
     use X.Y.g;
     g() == 6
 
-@test
+@Test
 def testMod14(): Bool =
     use X.Y.Z.g;
     g() == 7
 
-@test
+@Test
 def testMod15(): Bool =
     use X.{g => gx};
     use X.Y.{g => gxy};
@@ -107,22 +107,22 @@ mod Op {
 
 mod Test.Use.Def {
 
-    @test
+    @Test
     def testMod16(): Bool =
         use Op.{<><};
         "one" <>< "two" == "one fish two"
 
-    @test
+    @Test
     def testMod17(): Bool =
         use Op.{<>< => ><>};
         "one" ><> "two" == "one fish two"
 
-    @test
+    @Test
     def testMod18(): Bool =
         use Op.{<>< => fish};
         fish("one", "two") == "one fish two"
 
-    @test
+    @Test
     def testMod19(): Bool =
         use Op.{prefish => ><>};
         "one" ><> "two" == "one fish two"

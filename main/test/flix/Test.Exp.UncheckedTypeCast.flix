@@ -16,26 +16,26 @@
 
  mod Test.Exp.UncheckedTypeCast {
 
-    @test
+    @Test
     def testUncheckedTypeCast01(): ##java.lang.Object = unchecked_cast(null as ##java.lang.Object)
 
-    @test
+    @Test
     def testUncheckedTypeCast02(): ##java.lang.String = unchecked_cast(null as ##java.lang.String)
 
-    @test
+    @Test
     def testUncheckedTypeCast03(): ##java.lang.Integer = unchecked_cast(null as ##java.lang.Integer)
 
-    @test
+    @Test
     def testUncheckedTypeCast04(): ##java.io.Serializable = unchecked_cast(null as ##java.io.Serializable)
 
-    @test
+    @Test
     def testUncheckedTypeCast05(): ##java.io.Serializable = region rc {
         let _ = rc;
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;
         unchecked_cast(mkSb() as ##java.io.Serializable)
     }
 
-    @test
+    @Test
     def testUncheckedTypeCast06(): ##java.lang.Object = region rc {
         let _ = rc;
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ rc as mkSb;

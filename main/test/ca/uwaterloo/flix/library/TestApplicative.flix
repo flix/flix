@@ -23,27 +23,27 @@ mod TestApplicative {
     // product                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def product01(): Bool =
         product(None: Option[Int32], Some(2)) == None
 
-    @test
+    @Test
     def product02(): Bool =
         product(Some(1), None: Option[Int32]) == None
 
-    @test
+    @Test
     def product03(): Bool =
         product(Some(1), Some(2)) == Some(1, 2)
 
-    @test
+    @Test
     def product04(): Bool =
         product(Nil: List[Int32], 2 :: Nil) == Nil
 
-    @test
+    @Test
     def product05(): Bool =
         product(1 :: Nil, Nil: List[Int32]) == Nil
 
-    @test
+    @Test
     def product06(): Bool =
         product(1 :: Nil, 2 :: Nil) == (1, 2) :: Nil
 
@@ -51,27 +51,27 @@ mod TestApplicative {
     // productLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def productLeft01(): Bool =
         productLeft(None: Option[Int32], Some(2)) == None
 
-    @test
+    @Test
     def productLeft02(): Bool =
         productLeft(Some(1), None) == None
 
-    @test
+    @Test
     def productLeft03(): Bool =
         productLeft(Some(1), Some(2)) == Some(1)
 
-    @test
+    @Test
     def productLeft04(): Bool =
         productLeft(Nil: List[Int32], 2 :: Nil) == Nil
 
-    @test
+    @Test
     def productLeft05(): Bool =
         productLeft(1 :: Nil, Nil) == Nil
 
-    @test
+    @Test
     def productLeft06(): Bool =
         productLeft(1 :: Nil, 2 :: Nil) == 1 :: Nil
 
@@ -79,27 +79,27 @@ mod TestApplicative {
     // productRight                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def productRight01(): Bool =
         productRight(None, Some(2)) == None
 
-    @test
+    @Test
     def productRight02(): Bool =
         productRight(Some(1), None: Option[Int32]) == None
 
-    @test
+    @Test
     def productRight03(): Bool =
         productRight(Some(1), Some(2)) == Some(2)
 
-    @test
+    @Test
     def productRight04(): Bool =
         productRight(Nil: List[Int32], 2 :: Nil) == Nil
 
-    @test
+    @Test
     def productRight05(): Bool =
         productRight(1 :: Nil, Nil: List[Int32]) == Nil
 
-    @test
+    @Test
     def productRight06(): Bool =
         productRight(1 :: Nil, 2 :: Nil) == 2 :: Nil
 
@@ -107,19 +107,19 @@ mod TestApplicative {
     // product3                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def product301(): Bool =
         product3(None: Option[Int32], None: Option[Int32], None: Option[Int32]) == None
 
-    @test
+    @Test
     def product302(): Bool =
         product3(None: Option[Int32], Some(2), Some(3)) == None
 
-    @test
+    @Test
     def product303(): Bool =
         product3(Some(1), Some(2), None: Option[Int32]) == None
 
-    @test
+    @Test
     def product304(): Bool =
         product3(Some(1), Some(2), Some(3)) == Some((1, 2, 3))
 
@@ -127,19 +127,19 @@ mod TestApplicative {
     // product4                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def product401(): Bool =
         product4(None: Option[Int32], None: Option[Int32], None: Option[Int32], None: Option[Int32]) == None
 
-    @test
+    @Test
     def product402(): Bool =
         product4(None: Option[Int32], Some(2), Some(3), Some(4)) == None
 
-    @test
+    @Test
     def product403(): Bool =
         product4(Some(1), Some(2), Some(3), None: Option[Int32]) == None
 
-    @test
+    @Test
     def product404(): Bool =
         product4(Some(1), Some(2), Some(3), Some(4)) == Some((1, 2, 3, 4))
 
@@ -147,19 +147,19 @@ mod TestApplicative {
     // product5                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def product501(): Bool =
         product5(None: Option[Int32], None: Option[Int32], None: Option[Int32], None: Option[Int32], None: Option[Int32]) == None
 
-    @test
+    @Test
     def product502(): Bool =
         product5(None: Option[Int32], Some(2), Some(3), Some(4), Some(5)) == None
 
-    @test
+    @Test
     def product503(): Bool =
         product5(Some(1), Some(2), Some(3), Some(4), None: Option[Int32]) == None
 
-    @test
+    @Test
     def product504(): Bool =
         product5(Some(1), Some(2), Some(3), Some(4), Some(5)) == Some((1, 2, 3, 4, 5))
 
@@ -167,15 +167,15 @@ mod TestApplicative {
     // symAp (<*>)                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symAp01(): Bool =
         None: Option[Int32 -> Int32] <*> None: Option[Int32] == None
 
-    @test
+    @Test
     def symAp02(): Bool =
         Some(x -> x+1) <*> None == None
 
-    @test
+    @Test
     def symAp03(): Bool =
         Some(x -> x+1) <*> Some(1) == Some(2)
 
@@ -183,15 +183,15 @@ mod TestApplicative {
     // symReversedAp (<**>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symReversedAp01(): Bool =
         None: Option[Int32] <**> None: Option[Int32 -> Int32] == None
 
-    @test
+    @Test
     def symReversedAp02(): Bool =
         None <**> Some(x -> x+1) == None
 
-    @test
+    @Test
     def symReversedAp03(): Bool =
         Some(1) <**> Some(x -> x+1) == Some(2)
 
@@ -199,15 +199,15 @@ mod TestApplicative {
     // symProductLeft (<*)                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symProductLeft01(): Bool =
         None: Option[Int32] <* Some(2) == None
 
-    @test
+    @Test
     def symProductLeft02(): Bool =
         Some(1) <* None == None
 
-    @test
+    @Test
     def symProductLeft03(): Bool =
         Some(1) <* Some(2) == Some(1)
 
@@ -215,15 +215,15 @@ mod TestApplicative {
     // symProductRight (*>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def symProductRight01(): Bool =
         None *> Some(2) == None
 
-    @test
+    @Test
     def symProductRight02(): Bool =
         Some(1) *> None: Option[Int32] == None
 
-    @test
+    @Test
     def symProductRight03(): Bool =
         Some(1) *> Some(2) == Some(2)
 

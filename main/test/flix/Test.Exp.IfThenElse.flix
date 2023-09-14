@@ -1,12 +1,12 @@
 mod Test.Exp.IfThenElse {
 
-    @test
+    @Test
     def testIfThenElse01(): Bool = if (true) true else false
 
-    @test
+    @Test
     def testIfThenElse02(): Bool = if (false) false else true
 
-    @test
+    @Test
     def testIfThenElseThreeWay01(): Bool =
         let x = 0;
         let r =
@@ -18,7 +18,7 @@ mod Test.Exp.IfThenElse {
                 2;
         r == 0
 
-    @test
+    @Test
     def testIfThenElseThreeWay02(): Bool =
         let x = 1;
         let r =
@@ -30,7 +30,7 @@ mod Test.Exp.IfThenElse {
                 2;
         r == 1
 
-    @test
+    @Test
     def testIfThenElseThreeWay03(): Bool =
         let x = 2;
         let r =
@@ -42,7 +42,7 @@ mod Test.Exp.IfThenElse {
                 2;
         r == 2
 
-    @test
+    @Test
     def testIfThenElseFourWay01(): Bool =
         let x = 0;
         let r =
@@ -56,7 +56,7 @@ mod Test.Exp.IfThenElse {
                 3;
         r == 0
 
-    @test
+    @Test
     def testIfThenElseFourWay02(): Bool =
         let x = 1;
         let r =
@@ -70,7 +70,7 @@ mod Test.Exp.IfThenElse {
                 3;
         r == 1
 
-    @test
+    @Test
     def testIfThenElseFourWay03(): Bool =
         let x = 2;
         let r =
@@ -84,7 +84,7 @@ mod Test.Exp.IfThenElse {
                 3;
         r == 2
 
-    @test
+    @Test
     def testIfThenElseFourWay04(): Bool =
         let x = 3;
         let r =
@@ -98,21 +98,21 @@ mod Test.Exp.IfThenElse {
                 3;
         r == 3
 
-    @test
+    @Test
     def testIfThenElseNested01(): Bool =
         if (true)
             if (true) true else false
         else
             false
 
-    @test
+    @Test
     def testIfThenElseNested02(): Bool =
         if (false)
             false
         else
             (if (true) true else false)
 
-    @test
+    @Test
     def testIfThenElseBooleanFolding01(): Bool = region rc {
         let y = ref 1 @ rc;
         let r =
@@ -123,7 +123,7 @@ mod Test.Exp.IfThenElse {
         r == 2
     }
 
-    @test
+    @Test
     def testIfThenElseBooleanFolding02(): Bool = region rc {
         let y = ref 1 @ rc;
         let r =

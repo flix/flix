@@ -17,34 +17,34 @@
 /////////////////////////////////////////////////////////////////////////////
 // identity                                                                //
 /////////////////////////////////////////////////////////////////////////////
-@test
+@Test
 def identity01(): Bool = identity(5) == 5
 
-@test
+@Test
 def identity02(): Bool = identity(true) == true
 
-@test
+@Test
 def identity03(): Bool = identity(6ii) == 6ii
 
 /////////////////////////////////////////////////////////////////////////////
 // flip                                                                    //
 /////////////////////////////////////////////////////////////////////////////
-@test
+@Test
 def flip01(): Bool =
     let f = flip((x, y) -> x - y);
     f(5, 4) == -1
 
-@test
+@Test
 def flip02(): Bool =
     let f = flip((x, y) -> x - y);
     f(4, 5) == 1
 
-@test
+@Test
 def flip03(): Bool =
     let f = flip((x, y) -> x / y);
     f(10, 3) == 0
 
-@test
+@Test
 def flip04(): Bool =
     let f = flip((x, y) -> x / y);
     f(3, 10) == 3
@@ -52,48 +52,48 @@ def flip04(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 // fst                                                                     //
 /////////////////////////////////////////////////////////////////////////////
-@test
+@Test
 def fst01(): Bool = fst((5, 0.0f32)) == 5
 
-@test
+@Test
 def fst02(): Bool = fst((0.0f32, 5)) == 0.0f32
 
 /////////////////////////////////////////////////////////////////////////////
 // snd                                                                     //
 /////////////////////////////////////////////////////////////////////////////
-@test
+@Test
 def snd01(): Bool = snd((5, 0.0f32)) == 0.0f32
 
-@test
+@Test
 def snd02(): Bool = snd((0.0f32, 5)) == 5
 
 /////////////////////////////////////////////////////////////////////////////
 // swap                                                                    //
 /////////////////////////////////////////////////////////////////////////////
-@test
+@Test
 def swap01(): Bool = swap((5, 0.0f32)) == (0.0f32, 5)
 
-@test
+@Test
 def swap02(): Bool = swap((0.0f32, 5)) == (5, 0.0f32)
 
 /////////////////////////////////////////////////////////////////////////////
 // Function Composition                                                    //
 /////////////////////////////////////////////////////////////////////////////
-@test
+@Test
 def forwardComposition01(): Bool =
     let f = x -> x + 1;
     let g = x -> x * 2;
     let h = f >> g;
         h(0) == 2 // (0 + 1) * 2
 
-@test
+@Test
 def forwardPipe01(): Bool =
     let f = x -> x + 1;
     let g = x -> x * 2;
     let r = 0 |> f |> g;
         r == 2 // (0 + 1) * 2
 
-@test
+@Test
 def forwardPipe02(): Bool =
     let f = match (x, y) -> x + y;
     let r = (1, 2) |> f;
@@ -103,34 +103,34 @@ def forwardPipe02(): Bool =
 // ||> (doublePipe)                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def doublePipe01(): Bool = ((1, 2) ||> Add.add) == 3
 
-@test
+@Test
 def doublePipe02(): Bool = (("a", "b") ||> Add.add) == "ab"
 
-@test
+@Test
 def doublePipe03(): Bool = (("abc", "def") ||> String.concat) == "abcdef"
 
-@test
+@Test
 def doublePipe04(): Bool =
     ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
-@test
+@Test
 def doublePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // !> (imperativePipe)                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def imperativePipe01(): Bool = region rc {
     let m: MutList[Int32, _] = MutList.new(rc);
     let f = (x) -> MutList.push!(x, m);
     (4 !> f) == 4 and not MutList.isEmpty(m)
 }
 
-@test
+@Test
 def imperativePipe02(): Bool = region rc {
     let m: MutList[Int32, _] = MutList.new(rc);
     let f = (x) -> MutList.push!(x, m);
@@ -141,14 +141,14 @@ def imperativePipe02(): Bool = region rc {
     a == 4 and b == 5 and c == 7 and MutList.length(m) == 3
 }
 
-@test
+@Test
 def imperativePipe03(): Bool = region rc {
     let a = ref 8 @ rc;
     let f = (x) -> a := x;
     (2 !> f) == 2 and deref a == 2
 }
 
-@test
+@Test
 def imperativePipe04(): Bool = region rc {
     let a = ref 8 @ rc;
     let f = (x) -> a := x;

@@ -26,15 +26,15 @@ mod TestFilterable {
     // filterChain                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterChain01(): Bool =
         filter(isOdd, Chain.empty(): Chain[Int32]) |> Chain.toList == Nil
 
-    @test
+    @Test
     def filterChain02(): Bool =
         filter(isOdd, Chain.singleton(1)) |> Chain.toList == 1 :: Nil
 
-    @test
+    @Test
     def filterChain03(): Bool =
         filter(isOdd, List.toChain(1 :: 2 :: 3 :: 4 :: Nil)) |> Chain.toList == 1 :: 3 :: Nil
 
@@ -42,15 +42,15 @@ mod TestFilterable {
     // filterMapChain                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterMapChain01(): Bool =
         filterMap(oddPlus10, Chain.empty(): Chain[Int32]) |> Chain.toList == Nil
 
-    @test
+    @Test
     def filterMapChain02(): Bool =
         filterMap(oddPlus10, Chain.singleton(1)) |> Chain.toList == 11 :: Nil
 
-    @test
+    @Test
     def filterMapChain03(): Bool =
         filterMap(oddPlus10, List.toChain(1 :: 2 :: 3 :: 4 :: Nil)) |> Chain.toList == 11 :: 13 :: Nil
 
@@ -59,15 +59,15 @@ mod TestFilterable {
     // filterDelayList                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterDelayList01(): Bool =
         filter(isOdd, DelayList.empty(): DelayList[Int32]) |> DelayList.toList == Nil
 
-    @test
+    @Test
     def filterDelayList02(): Bool =
         filter(isOdd, DelayList.range(1, 2)) |> DelayList.toList == 1 :: Nil
 
-    @test
+    @Test
     def filterDelayList03(): Bool =
         filter(isOdd, DelayList.range(1, 5))  |> DelayList.toList == 1 :: 3 :: Nil
 
@@ -75,15 +75,15 @@ mod TestFilterable {
     // filterMapDelayList                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterMapDelayList01(): Bool =
         filterMap(oddPlus10, DelayList.empty(): DelayList[Int32]) |> DelayList.toList == Nil
 
-    @test
+    @Test
     def filterMapDelayList02(): Bool =
         filterMap(oddPlus10, DelayList.range(1, 2)) |> DelayList.toList == 11 :: Nil
 
-    @test
+    @Test
     def filterMapDelayList03(): Bool =
         filterMap(oddPlus10, DelayList.range(1, 5)) |> DelayList.toList == 11 :: 13 :: Nil
 
@@ -91,39 +91,39 @@ mod TestFilterable {
     // filterList                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterList01(): Bool = filter(isOdd, Nil: List[Int32]) == Nil
 
-    @test
+    @Test
     def filterList02(): Bool = filter(isOdd, 1 :: Nil) == 1 :: Nil
 
-    @test
+    @Test
     def filterList03(): Bool = filter(isOdd, 1 :: 2 :: 3 :: 4 :: Nil) == 1 :: 3 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMapList                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterMapList01(): Bool = filterMap(oddPlus10, Nil: List[Int32]) == Nil
 
-    @test
+    @Test
     def filterMapList02(): Bool = filterMap(oddPlus10, 1 :: Nil) == 11 :: Nil
 
-    @test
+    @Test
     def filterMapList03(): Bool = filterMap(oddPlus10, 1 :: 2 :: 3 :: 4:: Nil) == 11 :: 13 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMap                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterMap01(): Bool = filter(isOdd, Map.empty(): Map[Int32, Int32]) == Map#{}
 
-    @test
+    @Test
     def filterMap02(): Bool = filter(isOdd, Map#{1 => 1}) == Map#{1 => 1}
 
-    @test
+    @Test
     def filterMap03(): Bool = filter(isOdd, Map#{1 => 1, 2 => 2, 3 => 3, 4 => 4}) == Map#{1 => 1, 3 => 3}
 
 
@@ -131,55 +131,55 @@ mod TestFilterable {
     // filterMapMap                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterMapMap01(): Bool = filterMap(oddPlus10, Map.empty(): Map[Int32, Int32]) == Map#{}
 
-    @test
+    @Test
     def filterMapMap02(): Bool = filterMap(oddPlus10, Map#{1 => 1}) == Map#{1 => 11}
 
-    @test
+    @Test
     def filterMapMap03(): Bool = filterMap(oddPlus10, Map#{1 => 1, 2 => 2, 3 => 3, 4 => 4}) == Map#{1 => 11, 3 => 13}
 
     /////////////////////////////////////////////////////////////////////////////
     // filterOption                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterOption01(): Bool = filter(isOdd, None: Option[Int32]) == None
 
-    @test
+    @Test
     def filterOption02(): Bool = filter(isOdd, Some(1)) == Some(1)
 
-    @test
+    @Test
     def filterOption03(): Bool = filter(isOdd, Some(2)) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMapOption                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterMapOption01(): Bool = filterMap(oddPlus10, None: Option[Int32]) == None
 
-    @test
+    @Test
     def filterMapOption02(): Bool = filterMap(oddPlus10, Some(1)) == Some(11)
 
-    @test
+    @Test
     def filterMapOption03(): Bool = filterMap(oddPlus10, Some(2)) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // filterRedBlackTree                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterRedBlackTree01(): Bool =
         filter(isOdd, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
 
-    @test
+    @Test
     def filterRedBlackTree02(): Bool =
         filter(isOdd, RedBlackTree.empty() |> RedBlackTree.insert(1, 1))
             |> RedBlackTree.toList == (1, 1) :: Nil
 
-    @test
+    @Test
     def filterRedBlackTree03(): Bool =
         filter(isOdd, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
             |> RedBlackTree.toList |> List.sort == (1, 1) :: (3, 3) :: Nil
@@ -188,16 +188,16 @@ mod TestFilterable {
     // filterMapRedBlackTree                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def filterMapRedBlackTree01(): Bool =
         filterMap(oddPlus10, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
 
-    @test
+    @Test
     def filterMapMapRedBlackTree02(): Bool =
         filterMap(oddPlus10, RedBlackTree.empty() |> RedBlackTree.insert(1, 1))
             |> RedBlackTree.toList |> List.sort == (1, 11) :: Nil
 
-    @test
+    @Test
     def filterMapRedBlackTree03(): Bool =
         filterMap(oddPlus10, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
             |> RedBlackTree.toList |> List.sort == (1, 11) :: (3, 13) :: Nil

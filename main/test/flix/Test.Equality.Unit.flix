@@ -1,9 +1,9 @@
 mod Test.Equality.Unit {
 
-    @test
+    @Test
     def testEqUnit01(): Bool = () == ()
 
-    @test
+    @Test
     def testEqUnit02(): Bool = (() != ()) == false
 
 }

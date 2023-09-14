@@ -1,6 +1,6 @@
 mod Test.Term.Var.QuantVar {
 
-    @test
+    @Test
     def testQuantVar01(): Bool =
         let p = #{
             A(1).
@@ -10,7 +10,7 @@ mod Test.Term.Var.QuantVar {
         Vector.memberOf(1, r)
 
 
-    @test
+    @Test
     def testQuantVar02(): Bool =
         let p = #{
             A(1, 2).
@@ -20,7 +20,7 @@ mod Test.Term.Var.QuantVar {
         Vector.memberOf((1, 2), r)
 
 
-    @test
+    @Test
     def testQuantVar03(): Bool =
         let p = #{
             A(1, 2, 3).
@@ -30,7 +30,7 @@ mod Test.Term.Var.QuantVar {
         Vector.memberOf((1, 2, 3), r)
 
 
-    @test
+    @Test
     def testQuantVar04(): Bool =
         let p = #{
             A(1, 2, 3, 4).
@@ -39,7 +39,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y, z, w) from R(x, y, z, w);
         Vector.memberOf((1, 2, 3, 4), r)
 
-    @test
+    @Test
     def testQuantVarOverlap01(): Bool =
         let p = #{
             A(1, 2, 3, 4).
@@ -51,7 +51,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y, z, w) from R(x, y, z, w);
         Vector.memberOf((1, 1, 1, 1), r) and not Vector.memberOf((1, 2, 3, 4), r)
 
-    @test
+    @Test
     def testQuantVarOverlap02(): Bool =
         let p = #{
             A(1, 2, 3, 4).
@@ -63,7 +63,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y, z, w) from R(x, y, z, w);
         Vector.memberOf((1, 1, 1, 1), r) and not Vector.memberOf((1, 2, 3, 4), r)
 
-    @test
+    @Test
     def testQuantVarOverlap03(): Bool =
         let p = #{
             A(1, 2, 3, 4).
@@ -75,7 +75,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y, z, w) from R(x, y, z, w);
         Vector.memberOf((1, 1, 1, 1), r) and not Vector.memberOf((1, 2, 3, 4), r)
 
-    @test
+    @Test
     def testQuantVarOverlap04(): Bool =
         let p = #{
             A(1, 2, 3, 4).
@@ -87,7 +87,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y, z, w) from R(x, y, z, w);
         Vector.memberOf((1, 1, 1, 1), r) and not Vector.memberOf((1, 2, 3, 4), r)
 
-    @test
+    @Test
     def testQuantVarOverlap05(): Bool =
         let p = #{
             A(1, 2, 3, 4).
@@ -99,7 +99,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y, z, w) from R(x, y, z, w);
         Vector.memberOf((1, 1, 1, 1), r) and not Vector.memberOf((1, 2, 3, 4), r)
 
-    @test
+    @Test
     def testQuantVarOverlap06(): Bool =
         let p = #{
             A(1, 2, 3, 4).
@@ -111,7 +111,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y, z, w) from R(x, y, z, w);
         Vector.memberOf((1, 1, 1, 1), r) and not Vector.memberOf((1, 2, 3, 4), r)
 
-    @test
+    @Test
     def testQuantVarMultiOverlap01(): Bool =
         let p = #{
             A(1, 3).
@@ -125,7 +125,7 @@ mod Test.Term.Var.QuantVar {
         let r = query p select (x, y) from R(x, y);
         Vector.memberOf((1, 1), r) and not Vector.memberOf((1, 3), r)
 
-    @test
+    @Test
     def testQuantVarMultiOverlap02(): Bool =
         let p = #{
             A(1, 3).

@@ -57,6 +57,6 @@ mod Test.Kind.Enum {
         }
     }
 
-    @test
+    @Test
     def empty(): Bool = true
 }
