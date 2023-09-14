@@ -753,7 +753,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |@Tailrec
         |def f(): Int32 =
         | let x = g();
-        | 1 + f()
+        | x + f()
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
