@@ -756,6 +756,16 @@ class TestSafety extends AnyFunSuite with TestUtils {
         | x + f()
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.NonTailRecursiveFunction](result)
+  }
+
+  test("NonTailRecursiveFunction.05") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 \ IO = { println("") ; f() }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
   }
 
