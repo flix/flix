@@ -37,15 +37,6 @@ object FormatType {
     formatTypeWithOptions(renamed, flix.getFormatOptions)
   }
 
-  def formatTypeMappingNames(tpe: Type)(mapName: SimpleType.Name => String)(implicit flix: Flix): String = {
-    try {
-      val fmt = flix.getFormatOptions
-      format(SimpleType.fromWellKindedType(tpe)(fmt))(mapName)(fmt)
-    } catch {
-      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
-    }
-  }
-
   /**
     * Renames all flexible variables in the given `tpe` to fresh consecutively numbered variables.
     *
@@ -106,6 +97,15 @@ object FormatType {
     */
   def formatSimpleTypeWithOptions(tpe: SimpleType, fmt: FormatOptions): String =
     format(tpe)(_.name)(fmt)
+
+  /**
+    * Transforms the given simple type into a string,
+    * with the representation of [[SimpleType.Name]] being determined by the `mapName` function.
+    */
+  def formatSimpleTypeMappingNames(tpe: SimpleType)(mapName: SimpleType.Name => String)(implicit flix: Flix): String = {
+      val fmt = flix.getFormatOptions
+      format(tpe)(mapName)(fmt)
+  }
 
   /**
     * Transforms the given type into a string.

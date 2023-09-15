@@ -632,10 +632,7 @@ object HtmlDocumentor {
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>(")
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
-        case SimpleType.Tuple(fields) =>
-          docList(fields) { t =>
-            sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
-          }
+        case SimpleType.Tuple(fields) => docList(fields)(docSimpleType)
         case _ => docType(c.tpe)
       }
 
@@ -755,9 +752,17 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit =
+    docSimpleType(SimpleType.fromWellKindedType(tpe)(flix.getFormatOptions))
+
+  /**
+    * Document the the given `SimpleType`, `tpe`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docSimpleType(tpe: SimpleType)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='type'>")
-    sb.append(FormatType.formatTypeMappingNames(tpe) { nameType =>
+    sb.append(FormatType.formatSimpleTypeMappingNames(tpe) { nameType =>
       val href = nameType.sym.map {
         case e: Symbol.EnumSym => s"${moduleFileName(Symbol.mkModuleSym(e.namespace))}.html#enum-${e.name}"
         case _ => ""
