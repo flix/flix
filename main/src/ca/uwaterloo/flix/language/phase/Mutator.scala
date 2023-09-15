@@ -144,6 +144,6 @@ object Mutator {
     case Expr.Error(m, tpe, eff) => ???
   }
 
-  private def random[A](l: List[A]): A = ??? // TODO
+  private def random[A](l: List[A]): A = random(l)
 
 }
