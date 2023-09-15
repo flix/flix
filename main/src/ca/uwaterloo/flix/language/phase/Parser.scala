@@ -1122,12 +1122,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RecordLiteral: Rule1[ParsedAst.Expression] = {
-      def FieldLit: Rule1[ParsedAst.RecordField] = rule {
-        SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
+      def LabelLit: Rule1[ParsedAst.RecordLabel] = rule {
+        SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordLabel
       }
 
       rule {
-        SP ~ "{" ~ optWS ~ zeroOrMore(FieldLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
+        SP ~ "{" ~ optWS ~ zeroOrMore(LabelLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
       }
     }
 
@@ -1337,12 +1337,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Record: Rule1[ParsedAst.Pattern] = {
-      def RecordFieldPattern: Rule1[ParsedAst.Pattern.RecordFieldPattern] = rule {
-        SP ~ Names.Field ~ optWS ~ optional("=" ~ optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.RecordFieldPattern
+      def RecordLabelPattern: Rule1[ParsedAst.Pattern.RecordLabelPattern] = rule {
+        SP ~ Names.Field ~ optWS ~ optional("=" ~ optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.RecordLabelPattern
       }
 
       rule {
-        SP ~ "{" ~ optWS ~ zeroOrMore(RecordFieldPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Pattern) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
+        SP ~ "{" ~ optWS ~ zeroOrMore(RecordLabelPattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional("|" ~ optWS ~ Pattern) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
       }
     }
 
@@ -1533,15 +1533,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Record: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
+      SP ~ "{" ~ optWS ~ zeroOrMore(RecordLabelType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
     }
 
     def RecordRow: Rule1[ParsedAst.Type] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
+      SP ~ "(" ~ optWS ~ zeroOrMore(RecordLabelType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
     }
 
-    private def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
-      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+    private def RecordLabelType: Rule1[ParsedAst.RecordLabelType] = rule {
+      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordLabelType
     }
 
     def Schema: Rule1[ParsedAst.Type] = rule {

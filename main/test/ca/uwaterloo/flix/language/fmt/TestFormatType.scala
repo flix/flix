@@ -30,7 +30,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   )
 
   test("FormatType.Type.Record.External.01") {
-    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Label("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
     val expected = "{ x = Int32, y = String }"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
@@ -40,7 +40,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
 
   test("FormatType.Record.External.02") {
     val rest = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
-    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x = Int32 | r0! }"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
@@ -49,7 +49,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   }
 
   test("FormatType.Type.RecordRow.External.01") {
-    val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc)
+    val tpe = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Label("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc)
 
     val expected = "( x = Int32, y = String )"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
@@ -59,7 +59,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
 
   test("FormatType.RecordRow.External.02") {
     val rest = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
-    val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc)
+    val tpe = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, rest, loc)
 
     val expected = "( x = Int32 | r0! )"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
@@ -73,7 +73,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
     val alias = Type.Alias(Ast.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
 
-    val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, alias, loc)
+    val tpe = Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, alias, loc)
 
     val expected = "( x = Int32 | MyEmptyRecordRow )"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
@@ -246,7 +246,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   }
 
   test("FormatType.Type.Record.Internal.01") {
-    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Label("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
     val expected = "{ x = Int32, y = String }"
     val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)
@@ -256,7 +256,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
 
   test("FormatType.Record.Internal.02") {
     val rest = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
-    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Label("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x = Int32 | r0! }"
     val actual = FormatType.formatTypeWithOptions(tpe, FormatOptions.Internal)

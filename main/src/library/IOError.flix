@@ -13,6 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-pub enum IOError {
+pub enum IOError with ToString {
     case Generic(String)
+}
+
+mod IOError {
+
+    use IOError.Generic
+
+    ///
+    /// A version of Result.tryCatch that runs an IO based operation and returns
+    /// an IOError on failure.
+    ///
+    /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
+    ///
+    /// If `f` throws a Java `Exception`, `Err(e)` is returned
+    /// where `e` is the error message.
+    ///
+    pub def tryCatch(f: Unit -> a \ IO): Result[IOError, a] \ IO =
+        try {
+            Ok(f())
+        } catch {
+            case e: ##java.lang.Exception =>
+                import java.lang.Throwable.getMessage(): String \ {};
+                Err(Generic(getMessage(e)))
+        }
+
 }

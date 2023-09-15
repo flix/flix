@@ -715,7 +715,7 @@ object Safety {
   /**
     * Helper function for [[visitPat]].
     */
-  private def visitRecordPattern(pats: List[Pattern.Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
+  private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
     visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
   }
 

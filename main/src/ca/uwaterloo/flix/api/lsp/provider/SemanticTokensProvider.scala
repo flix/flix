@@ -388,16 +388,16 @@ object SemanticTokensProvider {
 
     case Expr.RecordEmpty(_, _) => Iterator.empty
 
-    case Expr.RecordSelect(exp, field, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+    case Expr.RecordSelect(exp, label, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expr.RecordExtend(field, exp1, exp2, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+    case Expr.RecordExtend(label, exp1, exp2, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp2) ++ visitExp(exp1)
 
-    case Expr.RecordRestrict(field, exp, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+    case Expr.RecordRestrict(label, exp, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.ArrayLit(exps, exp, _, _, _) =>
@@ -595,7 +595,7 @@ object SemanticTokensProvider {
 
     case Pattern.Record(pats, pat, tpe, loc) =>
       val patsVal = pats.flatMap {
-        case Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
+        case Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
           val f = SemanticToken(SemanticTokenType.Property, Nil, loc1)
           Iterator(f) ++ visitType(tpe1) ++ visitPat(pat1)
       }.iterator

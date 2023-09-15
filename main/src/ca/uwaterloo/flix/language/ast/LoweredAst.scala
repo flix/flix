@@ -161,12 +161,12 @@ object LoweredAst {
 
     case class Tuple(elms: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Pattern.Record.RecordFieldPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Record(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordFieldPattern(field: Name.Field, tpe: Type, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Label, tpe: Type, pat: Pattern, loc: SourceLocation)
     }
   }
 
