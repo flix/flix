@@ -242,7 +242,7 @@ object SimpleType {
   /**
     * A simple named type (e.g., enum or type alias).
     */
-  case class Name(name: String) extends SimpleType
+  case class Name(name: String, sym: Option[Symbol]) extends SimpleType
 
   /**
     * A type applied to one or more types.
@@ -299,9 +299,9 @@ object SimpleType {
       case Type.Var(sym, _) =>
         mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
-        mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
+        mkApply(Name(cst.sym.name, Some(cst.sym)), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
-        mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
+        mkApply(Name(cst.sym.name, Some(cst.sym)), (arg :: t.typeArguments).map(visit))
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Unit => Unit
         case TypeConstructor.Null => Null
@@ -410,9 +410,9 @@ object SimpleType {
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
-        case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Native(clazz) => Name(clazz.getName)
+        case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name, Some(sym)), t.typeArguments.map(visit))
+        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name, Some(sym)), t.typeArguments.map(visit))
+        case TypeConstructor.Native(clazz) => Name(clazz.getName, None)
         case TypeConstructor.Ref => mkApply(Ref, t.typeArguments.map(visit))
         case TypeConstructor.Tuple(l) =>
           val tpes = t.typeArguments.map(visit).padTo(l, Hole)
@@ -505,7 +505,7 @@ object SimpleType {
           }
 
         case TypeConstructor.CaseSet(syms, _) =>
-          val names = syms.toList.map(sym => SimpleType.Name(sym.name))
+          val names = syms.toList.map(sym => SimpleType.Name(sym.name, Some(sym)))
           val set = SimpleType.Union(names)
           mkApply(set, t.typeArguments.map(visit))
 
@@ -532,7 +532,7 @@ object SimpleType {
             case _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name, Some(sym)), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
       }
     }

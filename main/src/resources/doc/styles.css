@@ -11,6 +11,7 @@
     --light-keyword-color: #030303;
     --light-name-color: #b12250;
     --light-type-color: #3061c4;
+    --light-type-color-highlight: #4176e0;
     --light-kind-color: #8a8a8a;
     --light-effect-color: #d4671e;
     --light-doc-code-color: #d63384;
@@ -37,6 +38,7 @@
     --dark-keyword-color: #fcfcfc;
     --dark-name-color: #ff6696;
     --dark-type-color: #6699ff;
+    --dark-type-color-highlight: #8fb2f7;
     --dark-kind-color: #999999;
     --dark-effect-color: #ff944d;
     --dark-doc-code-color: #ff66b3;
@@ -63,6 +65,7 @@
     --keyword-color: var(--light-keyword-color);
     --name-color: var(--light-name-color);
     --type-color: var(--light-type-color);
+    --type-color-highlight: var(--light-type-color-highlight);
     --kind-color: var(--light-kind-color);
     --effect-color: var(--light-effect-color);
     --doc-code-color: var(--light-doc-code-color);
@@ -92,6 +95,7 @@
         --keyword-color: var(--dark-keyword-color);
         --name-color: var(--dark-name-color);
         --type-color: var(--dark-type-color);
+        --type-color-highlight: var(--dark-type-color-highlight);
         --kind-color: var(--dark-kind-color);
         --effect-color: var(--dark-effect-color);
         --doc-code-color: var(--dark-doc-code-color);
@@ -563,6 +567,12 @@ code .name {
 }
 code .type {
     color: var(--type-color);
+}
+code .type a {
+    color: var(--type-color);
+}
+code .type a:hover {
+    color: var(--type-color-highlight);
 }
 code .kind {
     color: var(--kind-color);

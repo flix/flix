@@ -37,6 +37,15 @@ object FormatType {
     formatTypeWithOptions(renamed, flix.getFormatOptions)
   }
 
+  def formatTypeMappingNames(tpe: Type)(mapName: SimpleType.Name => String)(implicit flix: Flix): String = {
+    try {
+      val fmt = flix.getFormatOptions
+      format(SimpleType.fromWellKindedType(tpe)(fmt))(mapName)(fmt)
+    } catch {
+      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+    }
+  }
+
   /**
     * Renames all flexible variables in the given `tpe` to fresh consecutively numbered variables.
     *
@@ -65,7 +74,7 @@ object FormatType {
     */
   def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
     try {
-      format(SimpleType.fromWellKindedType(tpe)(fmt))(fmt)
+      format(SimpleType.fromWellKindedType(tpe)(fmt))(_.name)(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
@@ -96,12 +105,12 @@ object FormatType {
     * Transforms the given simple type into a string, using the given format options.
     */
   def formatSimpleTypeWithOptions(tpe: SimpleType, fmt: FormatOptions): String =
-    format(tpe)(fmt)
+    format(tpe)(_.name)(fmt)
 
   /**
     * Transforms the given type into a string.
     */
-  private def format(tpe00: SimpleType)(implicit fmt: FormatOptions): String = {
+  private def format(tpe00: SimpleType)(mapName: SimpleType.Name => String)(implicit fmt: FormatOptions): String = {
 
     /**
       * Wraps the given type with parentheses.
@@ -199,7 +208,7 @@ object FormatType {
       case SimpleType.LatticeConstructor => true
       case SimpleType.Lattice(_, _) => true
       case SimpleType.TagConstructor(_) => true
-      case SimpleType.Name(_) => true
+      case SimpleType.Name(_, _) => true
       case SimpleType.Apply(_, _) => true
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
@@ -317,7 +326,7 @@ object FormatType {
         val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString \\ $effString"
       case SimpleType.TagConstructor(name) => name
-      case SimpleType.Name(name) => name
+      case name: SimpleType.Name => mapName(name)
       case SimpleType.Apply(tpe, tpes) =>
         val string = visit(tpe, Mode.Type)
         val strings = tpes.map(visit(_, Mode.Type))

@@ -757,7 +757,16 @@ object HtmlDocumentor {
     */
   private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='type'>")
-    sb.append(esc(FormatType.formatType(tpe)))
+    sb.append(FormatType.formatTypeMappingNames(tpe) { nameType =>
+      val href = nameType.sym.map {
+        case e: Symbol.EnumSym => s"${moduleFileName(Symbol.mkModuleSym(e.namespace))}.html#enum-${e.name}"
+        case _ => ""
+      }
+      href match {
+        case Some(r) => s"<a href=$r>${nameType.name}</a>"
+        case None => nameType.name
+      }
+    })
     sb.append("</span>")
   }
 
