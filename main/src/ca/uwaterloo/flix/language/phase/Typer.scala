@@ -253,7 +253,7 @@ object Typer {
       flix.subtask(sym.toString, sample = true)
 
       mapN(typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, eqEnv, sym.loc)) {
-        case (spec, impl) => TypedAst.Def(sym, spec, impl)
+        case (spec, exp) => TypedAst.Def(sym, spec, exp)
       } recoverOne {
         case err: TypeError =>
           //
@@ -265,8 +265,7 @@ object Typer {
           val eff = spec0.eff
           val exp = TypedAst.Expr.Error(err, tpe, eff)
           val spec = visitSpec(spec0, root, Substitution.empty)
-          val impl = TypedAst.Impl(exp, spec.declaredScheme)
-          TypedAst.Def(sym, spec, impl)
+          TypedAst.Def(sym, spec, exp)
       }
   }
 
@@ -329,7 +328,7 @@ object Typer {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expr, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expr, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Expr), TypeError] = spec0 match {
     case KindedAst.Spec(_, _, _, _, fparams0, sc, tpe, eff, _, _, _) =>
 
       ///
@@ -448,19 +447,7 @@ object Typer {
               val exp = reassembleExp(exp0, root, subst)
               val spec = visitSpec(spec0, root, subst)
 
-              ///
-              /// Compute a type scheme that matches the type variables that appear in the expression body.
-              ///
-              /// NB: It is very important to understand that: The type scheme a function is declared with must match the inferred type scheme.
-              /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
-              /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
-              ///
-              val finalInferredType = subst(partialType)
-              val finalInferredTconstrs = partialTconstrs.map(subst.apply)
-              val finalInferredEconstrs = partialEconstrs.map(subst.apply)
-              val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredEconstrs, finalInferredType)
-
-              (spec, TypedAst.Impl(exp, inferredScheme)).toSuccess
+              (spec, exp).toSuccess
 
             case Err(e) => Validation.Failure(LazyList(e))
           }

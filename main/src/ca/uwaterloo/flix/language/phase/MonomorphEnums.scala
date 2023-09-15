@@ -103,10 +103,10 @@ object MonomorphEnums {
     * Returns a [[LoweredAst.Def]] with specialized enums and without aliases in its types.
     */
   private def visitDef(defn: LoweredAst.Def)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Def = defn match {
-    case LoweredAst.Def(sym, spec, impl) =>
+    case LoweredAst.Def(sym, spec, exp) =>
       val s = visitSpec(spec)
-      val i = visitImpl(impl)
-      LoweredAst.Def(sym, s, i)
+      val e = visitExp(exp)
+      LoweredAst.Def(sym, s, e)
   }
 
   /**
@@ -119,16 +119,6 @@ object MonomorphEnums {
       val rt = visitType(retTpe)
       val p = visitType(eff)
       LoweredAst.Spec(doc, ann, mod, tparams, fs, ds, rt, p, tconstrs, loc)
-  }
-
-  /**
-    * Returns a [[LoweredAst.Impl]] with specialized enums and without aliases in its types.
-    */
-  private def visitImpl(impl: LoweredAst.Impl)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Impl = impl match {
-    case LoweredAst.Impl(exp, inferredScheme) =>
-      val e = visitExp(exp)
-      val is = visitScheme(inferredScheme)
-      LoweredAst.Impl(e, is)
   }
 
   /**

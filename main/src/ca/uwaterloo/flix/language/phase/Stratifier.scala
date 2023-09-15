@@ -86,8 +86,8 @@ object Stratifier {
     * Performs stratification of the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
-    visitExp(def0.impl.exp) map {
-      case e => def0.copy(impl = def0.impl.copy(exp = e))
+    visitExp(def0.exp) map {
+      case e => def0.copy(exp = e)
     }
 
   /**
@@ -544,7 +544,7 @@ object Stratifier {
     * Returns the labelled graph of the given definition `def0`.
     */
   private def labelledGraphOfDef(def0: Def): LabelledGraph =
-    labelledGraphOfExp(def0.impl.exp)
+    labelledGraphOfExp(def0.exp)
 
   /**
     * Returns the labelled graph of the given expression `exp0`.

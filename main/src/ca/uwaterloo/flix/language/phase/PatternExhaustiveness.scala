@@ -109,26 +109,16 @@ object PatternExhaustiveness {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
     flix.phase("PatternExhaustiveness") {
-      val defErrs = root.defs.values.flatMap(defn => visitImpl(defn.impl, root))
-      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitImpl(defn.impl, root))
+      val defErrs = root.defs.values.flatMap(defn => visitExp(defn.exp, root))
+      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitExp(defn.exp, root))
       // Only need to check sigs with implementations
-      val sigsErrs = root.sigs.values.flatMap(_.impl).flatMap(visitImpl(_, root))
+      val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp(_, root))
 
       (defErrs ++ instanceDefErrs ++ sigsErrs).toList match {
         case Nil => Validation.Success(root)
         case errs => Validation.SoftFailure(root, LazyList.from(errs))
       }
     }
-
-  /**
-    * Check that all patterns in an implementation are exhaustive
-    *
-    * @param impl The implementation to check
-    * @param root The AST root
-    */
-  private def visitImpl(impl: TypedAst.Impl, root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = {
-    visitExp(impl.exp, root)
-  }
 
   /**
     * Check that all patterns in an expression are exhaustive

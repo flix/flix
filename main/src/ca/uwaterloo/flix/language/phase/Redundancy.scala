@@ -84,14 +84,14 @@ object Redundancy {
   private def visitSig(sig: Sig)(implicit root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the signature.
-    val usedExp = sig.impl match {
+    val usedExp = sig.exp match {
       case None => Used.empty
-      case Some(impl) =>
-        visitExp(impl.exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
+      case Some(exp) =>
+        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
     }
 
     // Check for unused parameters and remove all variable symbols.
-    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
+    val unusedFormalParams = sig.exp.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
     val unusedTypeParams = findUnusedTypeParameters(sig.spec)
 
     val usedAll = (usedExp ++
@@ -112,7 +112,7 @@ object Redundancy {
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the definition.
-    val usedExp = visitExp(defn.impl.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
+    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
 
     val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)

@@ -50,7 +50,7 @@ object Instances {
       // Case 1: lawful class
       case TypedAst.Class(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
-          case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
+          case (acc, TypedAst.Def(_, _, exp)) => acc ++ TypedAstOps.sigSymsOf(exp)
         }
         val unusedSigs = sigs.map(_.sym).toSet.removedAll(usedSigs)
         unusedSigs.toList.map {
@@ -144,7 +144,7 @@ object Instances {
       // Step 1: check that each signature has an implementation.
       val sigMatchVal = clazz.signatures.flatMap {
         sig =>
-          (inst.defs.find(_.sym.name == sig.sym.name), sig.impl) match {
+          (inst.defs.find(_.sym.name == sig.sym.name), sig.exp) match {
             // Case 1: there is no definition with the same name, and no default implementation
             case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.clazz.loc))
             // Case 2: there is no definition with the same name, but there is a default implementation

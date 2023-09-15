@@ -163,7 +163,7 @@ object HtmlDocumentor {
   private def mkClass(sym: Symbol.ClassSym, root: TypedAst.Root): Class = root.classes(sym) match {
     case TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs0, laws, loc) =>
 
-      val (sigs, defs) = sigs0.partition(_.impl.isEmpty)
+      val (sigs, defs) = sigs0.partition(_.exp.isEmpty)
       val instances = root.instances.getOrElse(sym, Nil)
 
       Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, defs, laws, instances, loc)

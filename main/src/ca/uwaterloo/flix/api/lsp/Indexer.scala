@@ -41,10 +41,10 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = def0 match {
-    case Def(_, spec, impl) =>
+    case Def(_, spec, exp) =>
       val idx0 = Index.occurrenceOf(def0)
       val idx1 = visitSpec(spec)
-      val idx2 = visitImpl(impl)
+      val idx2 = visitExp(exp)
       idx0 ++ idx1 ++ idx2
   }
 
@@ -52,18 +52,11 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, spec, impl) =>
+    case Sig(_, spec, exp) =>
       val idx0 = Index.occurrenceOf(sig0)
       val idx1 = visitSpec(spec)
-      val idx2 = traverse(impl)(visitImpl)
+      val idx2 = traverse(exp)(visitExp)
       idx0 ++ idx1 ++ idx2
-  }
-
-  /**
-    * Returns a reverse index for the given `impl`.
-    */
-  private def visitImpl(impl: Impl): Index = impl match {
-    case Impl(exp, _) => visitExp(exp)
   }
 
   /**
