@@ -224,7 +224,8 @@ object Monomorph {
        */
       for ((sym, defn) <- nonParametricDefns) {
 
-        val subst = StrictSubstitution(Substitution.empty, ListMap.empty) // MATT refactor
+        // We use an empty to perform type reductions.
+        val subst = StrictSubstitution(Substitution.empty, root.eqEnv)
 
         // Specialize the formal parameters to obtain fresh local variable symbols for them.
         val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
