@@ -102,7 +102,7 @@ object BytecodeInstructions {
   }
 
   // TODO: do this for methods
-  class Variable(tpe: BackendType, index: Int) {
+  class Variable(val tpe: BackendType, index: Int) {
     def load(): InstructionSet = xLoad(tpe, index)
 
     def store(): InstructionSet = xStore(tpe, index)
@@ -174,6 +174,26 @@ object BytecodeInstructions {
 
   def DUP(): InstructionSet = f => {
     f.visitInstruction(Opcodes.DUP)
+    f
+  }
+
+  def DUP_X1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP_X1)
+    f
+  }
+
+  def DUP_X2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP_X2)
+    f
+  }
+
+  def DUP2_X1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP2_X1)
+    f
+  }
+
+  def DUP2_X2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP2_X2)
     f
   }
 
@@ -337,6 +357,11 @@ object BytecodeInstructions {
     f
   }
 
+  def SWAP(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.SWAP)
+    f
+  }
+
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
@@ -460,6 +485,13 @@ object BytecodeInstructions {
     case BackendType.Float32 => FSTORE(index)
     case BackendType.Float64 => DSTORE(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
+  }
+
+  def xSwap(lower: BackendType, higher: BackendType): InstructionSet = (lower.is64BitWidth, higher.is64BitWidth) match {
+    case (true, true) => DUP2_X2() ~ POP2()
+    case (true, false) => DUP_X2() ~ POP()
+    case (false, true) => DUP2_X1() ~ POP2()
+    case (false, false) => SWAP()
   }
 
   /**

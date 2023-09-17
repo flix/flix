@@ -51,9 +51,9 @@ object Name {
   def mkQName(ident: Ident): QName = QName(ident.sp1, RootNS, ident, ident.sp2)
 
   /**
-    * Converts the given identifier `ident` to a field name.
+    * Converts the given identifier `ident` to a label.
     */
-  def mkField(ident: Ident): Field = Field(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
+  def mkLabel(ident: Ident): Label = Label(ident.name, SourceLocation.mk(ident.sp1, ident.sp2))
 
   /**
     * Converts the given identifier `ident` to a predicate name.
@@ -253,22 +253,22 @@ object Name {
   }
 
   /**
-    * The name of a field.
+    * The name of a label.
     *
-    * @param name the name of the field.
+    * @param name the name of the label.
     * @param loc  the specific occurrence of the name.
     */
-  case class Field(name: String, loc: SourceLocation) {
+  case class Label(name: String, loc: SourceLocation) {
     /**
-      * Two predicate names are equal if their names are the same.
+      * Two label names are equal if their names are the same.
       */
     override def hashCode(): Int = name.hashCode
 
     /**
-      * Two predicate names are equal if their names are the same.
+      * Two label names are equal if their names are the same.
       */
     override def equals(o: Any): Boolean = o match {
-      case that: Field => this.name == that.name
+      case that: Label => this.name == that.name
       case _ => false
     }
 

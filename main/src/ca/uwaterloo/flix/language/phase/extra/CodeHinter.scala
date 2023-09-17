@@ -71,7 +71,7 @@ object CodeHinter {
     * Computes code quality hints for the given definition `def0`.
     */
   private def visitDef(def0: TypedAst.Def)(implicit root: Root, flix: Flix): List[CodeHint] = {
-    visitExp(def0.impl.exp)
+    visitExp(def0.exp)
   }
 
   /**

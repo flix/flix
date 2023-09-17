@@ -124,11 +124,11 @@ object KindedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, field: Name.Field, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, value: Expr, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -240,12 +240,12 @@ object KindedAst {
 
     case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Record.RecordFieldPattern], pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
+    case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordFieldPattern(field: Name.Field, tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Label, tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)
     }
   }
 

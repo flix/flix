@@ -210,8 +210,8 @@ object Unification {
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, renv, loc))
 
-        case Result.Err(UnificationError.UndefinedField(fieldName, fieldType, recordType)) =>
-          Err(TypeError.UndefinedField(fieldName, fieldType, recordType, renv, loc))
+        case Result.Err(UnificationError.UndefinedLabel(labelName, labelType, recordType)) =>
+          Err(TypeError.UndefinedLabel(labelName, labelType, recordType, renv, loc))
 
         case Result.Err(UnificationError.NonRecordType(tpe)) =>
           Err(TypeError.NonRecordType(tpe, renv, loc))

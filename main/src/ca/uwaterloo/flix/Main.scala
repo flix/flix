@@ -166,6 +166,7 @@ object Main {
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
               bootstrap.build(loadClasses = false)
           } match {
             case Validation.Success(_) => System.exit(0)

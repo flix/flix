@@ -560,11 +560,6 @@ object Ast {
   case class Stratification(m: Map[Name.Pred, Int])
 
   /**
-    * A hole context consists of a hole symbol and its type together with the local environment.
-    */
-  case class HoleContext(sym: Symbol.HoleSym, tpe: Type, env: Map[Symbol.VarSym, Type])
-
-  /**
     * Represents that the annotated element is introduced by the class `clazz`.
     */
   case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation

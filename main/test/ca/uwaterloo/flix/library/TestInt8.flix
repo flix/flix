@@ -1081,4 +1081,45 @@ mod TestInt8 {
     @test
     def toBigDecimal05(): Bool = Int8.toBigDecimal(-128i8) == -128.0ff
 
+    /////////////////////////////////////////////////////////////////////////////
+    // byteValue                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def byteValue01(): Bool =
+        let i = Int8.valueOf(0i8);
+        Int8.byteValue(i) == 0i8
+
+    @test
+    def byteValue02(): Bool =
+        let i = Int8.valueOf(1i8);
+        Int8.byteValue(i) == 1i8
+
+    @test
+    def byteValue03(): Bool =
+        let i = Int8.valueOf(-1i8);
+        Int8.byteValue(i) == -1i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valueOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def valueOf01(): Bool =
+        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
+        let i = Int8.valueOf(0i8);
+        equals(i, checked_cast(Int8.valueOf(0i8)))
+
+    @test
+    def valueOf02(): Bool =
+        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
+        let i = Int8.valueOf(1i8);
+        equals(i, checked_cast(Int8.valueOf(1i8)))
+
+    @test
+    def valueOf03(): Bool =
+        import java.lang.Byte.equals(##java.lang.Object): Bool \ {};
+        let i = Int8.valueOf(-1i8);
+        equals(i, checked_cast(Int8.valueOf(-1i8)))
+
 }

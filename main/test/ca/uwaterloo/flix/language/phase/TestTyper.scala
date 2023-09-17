@@ -1871,7 +1871,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UndefinedField](result)
+    expectError[TypeError.UndefinedLabel](result)
   }
 
   test("TestRecordPattern.03") {
@@ -1883,7 +1883,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UndefinedField](result)
+    expectError[TypeError.UndefinedLabel](result)
   }
 
   test("TestRecordPattern.04") {
@@ -1895,6 +1895,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UndefinedField](result)
+    expectError[TypeError.UndefinedLabel](result)
   }
 }

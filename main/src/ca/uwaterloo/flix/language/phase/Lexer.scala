@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, LexerErr, ReadAst, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, TokenErrorKind, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
@@ -33,10 +34,10 @@ object Lexer {
     flix.phase("Lexer") {
 
       // TODO: Remove this debug printing
-//      val state = new State(root.sources.head._1)
-//      val stats = tokenStats()(state)
-//      val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
-//      println(f"${"%34s".format("filename")}${s}")
+      //      val state = new State(root.sources.head._1)
+      //      val stats = tokenStats()(state)
+      //      val s = stats.toSeq.sortBy(_._1).map(k => "%5s".format(k._1)).mkString("")
+      //      println(f"${"%34s".format("filename")}${s}")
 
       // Lex each source file in parallel.
       val results = ParOps.parMap(root.sources) {
@@ -64,17 +65,25 @@ object Lexer {
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
     // TODO: Remove this debug printing
-//    val stats = tokenStats()
-//    val debug = stats.toSeq.sortBy(_._1).map(v => "%5d".format(v._2)).mkString("")
-//    println(f"${"%34s".format(src.name)}${debug}")
+    //    val stats = tokenStats()
+    //    val debug = stats.toSeq.sortBy(_._1).map(v => "%5d".format(v._2)).mkString("")
+    //    println(f"${"%34s".format(src.name)}${debug}")
 
 
-    //    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
-    s.tokens.toArray.toSuccess // TODO: Return failures
+    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
+    if (hasErrors) {
+      Validation.SoftFailure(s.tokens.toArray, LazyList.from(s.tokens).collect {
+        case Token(TokenKind.Err(e), t, l, c) => tokenErrToCompilationMessage(e, t, l, c)
+      })
+    } else {
+      s.tokens.toArray.toSuccess
+    }
   }
 
-  // Advances state one char forward returning the char it was previously sitting on
-  // keeps track of line and column numbers too
+  /**
+   * Advances state one char forward returning the char it was previously sitting on.
+   * Keeps track of line and column numbers too.
+   */
   private def advance()(implicit s: State): Char = {
     val c = s.src.data(s.current.offset)
     s.current.offset += 1
@@ -88,8 +97,10 @@ object Lexer {
     c
   }
 
-  // Retreats state one char backwards returning the char it was previously sitting on
-  // keeps track of line and column numbers too
+  /**
+   * Retreats state one char backwards returning the char it was previously sitting on.
+   * Keeps track of line and column numbers too.
+   */
   private def retreat()(implicit s: State): Char = {
     val c = s.src.data(s.current.offset)
     s.current.offset -= 1
@@ -103,12 +114,16 @@ object Lexer {
     c
   }
 
-  // Peeks the character that state is currently sitting on without advancing
+  /**
+   * Peeks the character that state is currently sitting on without advancing.
+   */
   private def peek()(implicit s: State): Char = {
     s.src.data(s.current.offset)
   }
 
-  // Peeks the character after the one that state is sitting on if available
+  /**
+   * Peeks the character after the one that state is sitting on if available.
+   */
   private def peekPeek()(implicit s: State): Option[Char] = {
     if (s.current.offset >= s.src.data.length) {
       None
@@ -117,25 +132,24 @@ object Lexer {
     }
   }
 
-  // Returns whether state is at the end of its input
   private def isAtEnd()(implicit s: State): Boolean = {
     s.current.offset == s.src.data.length
   }
 
-  // Scans for the next token in input
   private def scanToken()(implicit s: State): Unit = {
     val c = advance()
 
     val kind = c match {
-      case '(' => TokenKind.LParen
-      case ')' => TokenKind.RParen
-      case '{' => TokenKind.LCurly
-      case '}' => TokenKind.RCurly
-      case '[' => TokenKind.LBracket
-      case ']' => TokenKind.RBracket
+      case '(' => TokenKind.ParenL
+      case ')' => TokenKind.ParenR
+      case '{' => TokenKind.CurlyL
+      case '}' => TokenKind.CurlyR
+      case '[' => TokenKind.BracketL
+      case ']' => TokenKind.BracketR
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
       case '_' => TokenKind.Underscore
+      case '.' => TokenKind.Dot
       case '#' => if (peek() == '#') {
         javaName()
       } else {
@@ -148,12 +162,6 @@ object Lexer {
         blockComment()
       } else {
         TokenKind.Slash
-      }
-      case '.' => if (peek() == '.') {
-        advance()
-        TokenKind.DotDot
-      } else {
-        TokenKind.Dot
       }
       case ':' => if (peek() == ':') {
         advance()
@@ -169,105 +177,72 @@ object Lexer {
       } else {
         TokenKind.At
       }
-      case _ if keyword("???") => TokenKind.AnonymousHole
+      case _ if keyword("???") => TokenKind.HoleAnonymous
       case '?' if (peek().isLetter) => namedHole()
       case _ if keyword("**") => TokenKind.StarStar
       case _ if keyword("<-") => TokenKind.BackArrow
       case _ if keyword("=>") => TokenKind.Arrow
-      case _ if keyword("<=") => TokenKind.LAngleEqual
-      case _ if keyword(">=") => TokenKind.RAngleEqual
+      case _ if keyword("<=") => TokenKind.AngleLEqual
+      case _ if keyword(">=") => TokenKind.AngleREqual
       case _ if keyword("==") => TokenKind.EqualEqual
       case _ if keyword("&&&") => TokenKind.TripleAmpersand
-      case _ if keyword("<<<") => TokenKind.TripleLAngle
-      case _ if keyword(">>>") => TokenKind.TripleRAngle
+      case _ if keyword("<<<") => TokenKind.TripleAngleL
+      case _ if keyword(">>>") => TokenKind.TripleAngleR
       case _ if keyword("^^^") => TokenKind.TripleCaret
       case _ if keyword("|||") => TokenKind.TripleBar
       case _ if keyword("~~~") => TokenKind.TripleTilde
       case _ if keyword("<+>") => TokenKind.AngledPlus
       case _ if keyword("<=>") => TokenKind.AngledEqual
-      case _ if keyword("<==>") => TokenKind.AngledEqualEqual
-      case _ if keyword("and") => TokenKind.AndKeyword
-      case _ if keyword("as") => TokenKind.AsKeyword
-      case _ if keyword("or") => TokenKind.OrKeyword
-      case _ if keyword("mod") => TokenKind.ModKeyword
-      case _ if keyword("foreach") => TokenKind.ForeachKeyword
-      case _ if keyword("forM") => TokenKind.ForMKeyword
-      case _ if keyword("forA") => TokenKind.ForAKeyword
-      case _ if keyword("not") => TokenKind.NotKeyword
-      case _ if keyword("rem") => TokenKind.RemKeyword
-      case _ if keyword("Absent") => TokenKind.AbsentKeyword
-      case _ if keyword("Unit") => TokenKind.UnitKeyword
-      case _ if keyword("Bool") => TokenKind.BoolKeyword
-      case _ if keyword("Char") => TokenKind.CharKeyword
-      case _ if keyword("String") => TokenKind.StringKeyword
-      case _ if keyword("Float32") => TokenKind.Float32Keyword
-      case _ if keyword("Float64") => TokenKind.Float64Keyword
-      case _ if keyword("Int8") => TokenKind.Int8Keyword
-      case _ if keyword("Int16") => TokenKind.Int16Keyword
-      case _ if keyword("Int32") => TokenKind.Int32Keyword
-      case _ if keyword("Int64") => TokenKind.Int64Keyword
-      case _ if keyword("BigInt") => TokenKind.BigIntKeyword
-      case _ if keyword("BigDecimal") => TokenKind.BigDecimalKeyword
-      case _ if keyword("Impure") => TokenKind.ImpureKeyword
-      case _ if keyword("Nil") => TokenKind.NilKeyword
-      case _ if keyword("Predicate") => TokenKind.PredicateKeyword
-      case _ if keyword("Present") => TokenKind.PresentKeyword
-      case _ if keyword("Pure") => TokenKind.PureKeyword
-      case _ if keyword("Read") => TokenKind.ReadKeyword
-      case _ if keyword("RecordRow") => TokenKind.RecordRowKeyword
-      case _ if keyword("Region") => TokenKind.UppercaseRegionKeyword
-      case _ if keyword("SchemaRow") => TokenKind.SchemaRowKeyword
-      case _ if keyword("Type") => TokenKind.UppercaseTypeKeyword
-      case _ if keyword("Write") => TokenKind.WriteKeyword
-      case _ if keyword("alias") => TokenKind.AliasKeyword
-      case _ if keyword("case") => TokenKind.CaseKeyword
-      case _ if keyword("catch") => TokenKind.CatchKeyword
-      case _ if keyword("chan") => TokenKind.ChanKeyword
-      case _ if keyword("class") => TokenKind.ClassKeyword
-      case _ if keyword("def") => TokenKind.DefKeyword
-      case _ if keyword("deref") => TokenKind.DerefKeyword
-      case _ if keyword("else") => TokenKind.ElseKeyword
-      case _ if keyword("enum") => TokenKind.EnumKeyword
-      case _ if keyword("false") => TokenKind.FalseKeyword
-      case _ if keyword("fix") => TokenKind.FixKeyword
-      case _ if keyword("force") => TokenKind.ForceKeyword
-      case _ if keyword("if") => TokenKind.IfKeyword
-      case _ if keyword("import") => TokenKind.ImportKeyword
-      case _ if keyword("inline") => TokenKind.InlineKeyword
-      case _ if keyword("instance") => TokenKind.InstanceKeyword
-      case _ if keyword("into") => TokenKind.IntoKeyword
-      case _ if keyword("lat") => TokenKind.LatKeyword
-      case _ if keyword("law") => TokenKind.LawKeyword
-      case _ if keyword("lawful") => TokenKind.LawfulKeyword
-      case _ if keyword("lazy") => TokenKind.LazyKeyword
-      case _ if keyword("let") => TokenKind.LetKeyword
-      case _ if keyword("match") => TokenKind.MatchKeyword
-      case _ if keyword("typematch") => TokenKind.TypeMatchKeyword
-      case _ if keyword("namespace") => TokenKind.NamespaceKeyword
-      case _ if keyword("null") => TokenKind.NullKeyword
-      case _ if keyword("opaque") => TokenKind.OpaqueKeyword
-      case _ if keyword("override") => TokenKind.OverrideKeyword
-      case _ if keyword("pub") => TokenKind.PubKeyword
-      case _ if keyword("ref") => TokenKind.RefKeyword
-      case _ if keyword("region") => TokenKind.RegionKeyword
-      case _ if keyword("reify") => TokenKind.ReifyKeyword
-      case _ if keyword("reifyBool") => TokenKind.ReifyBoolKeyword
-      case _ if keyword("reifyEff") => TokenKind.ReifyEffKeyword
-      case _ if keyword("reifyType") => TokenKind.ReifyTypeKeyword
-      case _ if keyword("rel") => TokenKind.RelKeyword
-      case _ if keyword("sealed") => TokenKind.SealedKeyword
-      case _ if keyword("set") => TokenKind.SetKeyword
-      case _ if keyword("spawn") => TokenKind.SpawnKeyword
-      case _ if keyword("Static") => TokenKind.StaticKeyword
-      case _ if keyword("true") => TokenKind.TrueKeyword
-      case _ if keyword("type") => TokenKind.TypeKeyword
-      case _ if keyword("use") => TokenKind.UseKeyword
-      case _ if keyword("where") => TokenKind.WhereKeyword
-      case _ if keyword("with") => TokenKind.WithKeyword
-      case _ if keyword("discard") => TokenKind.DiscardKeyword
-      case _ if keyword("object") => TokenKind.ObjectKeyword
-      case _ if keyword("par") => TokenKind.ParKeyword
-      case _ if keyword("yield") => TokenKind.YieldKeyword
+      case _ if keyword("and") => TokenKind.KeywordAnd
+      case _ if keyword("as") => TokenKind.KeywordAs
+      case _ if keyword("or") => TokenKind.KeywordOr
+      case _ if keyword("mod") => TokenKind.KeywordMod
+      case _ if keyword("foreach") => TokenKind.KeywordForeach
+      case _ if keyword("forM") => TokenKind.KeywordForM
+      case _ if keyword("forA") => TokenKind.KeywordForA
+      case _ if keyword("not") => TokenKind.KeywordNot
+      case _ if keyword("Absent") => TokenKind.KeywordAbsent
+      case _ if keyword("Impure") => TokenKind.KeywordImpure
+      case _ if keyword("Present") => TokenKind.KeywordPresent
+      case _ if keyword("Pure") => TokenKind.KeywordPure
+      case _ if keyword("alias") => TokenKind.KeywordAlias
+      case _ if keyword("case") => TokenKind.KeywordCase
+      case _ if keyword("catch") => TokenKind.KeywordCatch
+      case _ if keyword("class") => TokenKind.KeywordClass
+      case _ if keyword("def") => TokenKind.KeywordDef
+      case _ if keyword("deref") => TokenKind.KeywordDeref
+      case _ if keyword("else") => TokenKind.KeywordElse
+      case _ if keyword("enum") => TokenKind.KeywordEnum
+      case _ if keyword("false") => TokenKind.KeywordFalse
+      case _ if keyword("fix") => TokenKind.KeywordFix
+      case _ if keyword("force") => TokenKind.KeywordForce
+      case _ if keyword("if") => TokenKind.KeywordIf
+      case _ if keyword("import") => TokenKind.KeywordImport
+      case _ if keyword("inline") => TokenKind.KeywordInline
+      case _ if keyword("instance") => TokenKind.KeywordInstance
+      case _ if keyword("into") => TokenKind.KeywordInto
+      case _ if keyword("law") => TokenKind.KeywordLaw
+      case _ if keyword("lawful") => TokenKind.KeywordLawful
+      case _ if keyword("lazy") => TokenKind.KeywordLazy
+      case _ if keyword("let") => TokenKind.KeywordLet
+      case _ if keyword("match") => TokenKind.KeywordMatch
+      case _ if keyword("typematch") => TokenKind.KeywordTypeMatch
+      case _ if keyword("null") => TokenKind.KeywordNull
+      case _ if keyword("override") => TokenKind.KeywordOverride
+      case _ if keyword("pub") => TokenKind.KeywordPub
+      case _ if keyword("ref") => TokenKind.KeywordRef
+      case _ if keyword("region") => TokenKind.KeywordRegion
+      case _ if keyword("sealed") => TokenKind.KeywordSealed
+      case _ if keyword("spawn") => TokenKind.KeywordSpawn
+      case _ if keyword("Static") => TokenKind.KeywordStatic
+      case _ if keyword("true") => TokenKind.KeywordTrue
+      case _ if keyword("type") => TokenKind.KeywordType
+      case _ if keyword("use") => TokenKind.KeywordUse
+      case _ if keyword("where") => TokenKind.KeywordWhere
+      case _ if keyword("with") => TokenKind.KeywordWith
+      case _ if keyword("discard") => TokenKind.KeywordDiscard
+      case _ if keyword("par") => TokenKind.KeywordPar
+      case _ if keyword("yield") => TokenKind.KeywordYield
       case _ if isMathNameChar(c) => mathName()
       case _ if isGreekNameChar(c) => greekName()
 
@@ -289,7 +264,7 @@ object Lexer {
       case '\"' => string()
       case '\'' => char()
       case '`' => infixFunction()
-      case _ => TokenKind.Err(LexerErr.UnexpectedChar)
+      case _ => TokenKind.Err(TokenErrorKind.UnexpectedChar)
     }
 
     addToken(kind)
@@ -341,9 +316,9 @@ object Lexer {
   // Advances state past a name returning the name kind
   private def name(isUpper: Boolean)(implicit s: State): TokenKind = {
     val kind = if (isUpper) {
-      TokenKind.UppercaseName
+      TokenKind.NameUpperCase
     } else {
-      TokenKind.LowercaseName
+      TokenKind.NameLowerCase
     }
     while (!isAtEnd()) {
       val c = peek()
@@ -352,7 +327,7 @@ object Lexer {
       }
       if (c == '?') {
         advance()
-        return TokenKind.VariableHole
+        return TokenKind.HoleVariable
       }
 
       advance()
@@ -369,13 +344,13 @@ object Lexer {
         advance()
         return TokenKind.BuiltIn
       } else if (!c.isLetter && c != '_') {
-        return TokenKind.JavaName
+        return TokenKind.NameJava
       }
 
       advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedBuiltIn)
+    TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
   }
 
   // Advances state past a java name
@@ -384,44 +359,46 @@ object Lexer {
     while (!isAtEnd()) {
       val c = peek()
       if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
-        return TokenKind.JavaName
+        return TokenKind.NameJava
       }
 
       advance()
     }
 
-    TokenKind.JavaName
+    TokenKind.NameJava
   }
 
-  // Advances state past a greek name
   private def greekName()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!isGreekNameChar(peek())) {
-        return TokenKind.GreekName
+        return TokenKind.NameGreek
       }
       advance()
     }
-    TokenKind.GreekName
+    TokenKind.NameGreek
   }
 
-  // Advances state past a math name
   private def mathName()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!isMathNameChar(peek())) {
-        return TokenKind.MathName
+        return TokenKind.NameMath
       }
       advance()
     }
-    TokenKind.MathName
+    TokenKind.NameMath
   }
 
-  // Checks whether c lies in unicode range U+2190 to U+22FF
+  /**
+   * Checks whether `c` lies in unicode range U+2190 to U+22FF
+   */
   private def isMathNameChar(c: Char): Boolean = {
     val i = c.toInt
     i >= 8592 && i <= 8959
   }
 
-  // Checks whether c lies in unicode range U+0370 to U+03FF
+  /**
+   * Checks whether `c` lies in unicode range U+0370 to U+03FF
+   */
   private def isGreekNameChar(c: Char): Boolean = {
     val i = c.toInt
     i >= 880 && i <= 1023
@@ -430,16 +407,15 @@ object Lexer {
   private def namedHole()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
-        return TokenKind.NamedHole
+        return TokenKind.HoleNamed
       }
 
       advance()
     }
 
-    TokenKind.NamedHole
+    TokenKind.HoleNamed
   }
 
-  // Advances state past an infix function
   private def infixFunction()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       val c = peek()
@@ -450,10 +426,9 @@ object Lexer {
       advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedInfixFunction)
+    TokenKind.Err(TokenErrorKind.UnterminatedInfixFunction)
   }
 
-  // Advances state past a user defined operator
   private def userDefinedOp()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!validUserOpTokens.contains(peek())) {
@@ -465,7 +440,6 @@ object Lexer {
     TokenKind.UserDefinedOperator
   }
 
-  // Advances state past a string
   private def string()(implicit s: State): TokenKind = {
     var prev = ' '
     while (!isAtEnd()) {
@@ -473,29 +447,27 @@ object Lexer {
       // Check for termination while handling escaped '\"'
       if (c == '\"' && prev != '\\') {
         advance()
-        return TokenKind.String
+        return TokenKind.LiteralString
       }
       prev = advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedString)
+    TokenKind.Err(TokenErrorKind.UnterminatedString)
   }
 
-  // Advances state past a char
   private def char()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       val c = peek()
       if (c == '\'') {
         advance()
-        return TokenKind.Char
+        return TokenKind.LiteralChar
       }
       advance()
     }
 
-    TokenKind.Err(LexerErr.UnterminatedChar)
+    TokenKind.Err(TokenErrorKind.UnterminatedChar)
   }
 
-  // Advances state past a number of any type
   private def number()(implicit s: State): TokenKind = {
     var isDecimal = false
     while (!isAtEnd()) {
@@ -507,37 +479,36 @@ object Lexer {
         // Dots mark a decimal but are otherwise ignored
         case '.' => {
           if (isDecimal) {
-            return TokenKind.Err(LexerErr.DoubleDottedNumber)
+            return TokenKind.Err(TokenErrorKind.DoubleDottedNumber)
           }
           isDecimal = true
           advance()
         }
         // If this is reached an explicit number type might occur next
         case _ => return advance() match {
-          case _ if keyword("f32") => TokenKind.Float32
-          case _ if keyword("f64") => TokenKind.Float64
-          case _ if keyword("i8") => TokenKind.Int8
-          case _ if keyword("i16") => TokenKind.Int16
-          case _ if keyword("i32") => TokenKind.Int32
-          case _ if keyword("i64") => TokenKind.Int64
-          case _ if keyword("ii") => TokenKind.BigInt
-          case _ if keyword("ff") => TokenKind.BigDecimal
+          case _ if keyword("f32") => TokenKind.LiteralFloat32
+          case _ if keyword("f64") => TokenKind.LiteralFloat64
+          case _ if keyword("i8") => TokenKind.LiteralInt8
+          case _ if keyword("i16") => TokenKind.LiteralInt16
+          case _ if keyword("i32") => TokenKind.LiteralInt32
+          case _ if keyword("i64") => TokenKind.LiteralInt64
+          case _ if keyword("ii") => TokenKind.LiteralBigInt
+          case _ if keyword("ff") => TokenKind.LiteralBigDecimal
           case _ => {
             retreat()
             if (isDecimal) {
-              TokenKind.Float64
+              TokenKind.LiteralFloat64
             } else {
-              TokenKind.Int32
+              TokenKind.LiteralInt32
             }
           }
         }
       }
     }
 
-    TokenKind.Err(LexerErr.MalformedNumber)
+    TokenKind.Err(TokenErrorKind.DoubleDottedNumber)
   }
 
-  // Advances state past a decorator by looking for the next non-letter character
   private def annotation()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
@@ -550,20 +521,18 @@ object Lexer {
     TokenKind.Annotation
   }
 
-  // Advances state past a line comment by looking for the next newline
   private def lineComment()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (peek() == '\n') {
-        return TokenKind.LineComment
+        return TokenKind.CommentLine
       } else {
         advance()
       }
     }
 
-    TokenKind.LineComment
+    TokenKind.CommentLine
   }
 
-  // Advances state past a block-comment. Supports nested block comments by maintaining a level counter.
   private def blockComment()(implicit s: State): TokenKind = {
     var l = 1
     while (!isAtEnd()) {
@@ -571,7 +540,7 @@ object Lexer {
         case ('/', Some('*')) => {
           l += 1
           if (l >= 32) {
-            return TokenKind.Err(LexerErr.BlockCommentTooDeep)
+            return TokenKind.Err(TokenErrorKind.BlockCommentTooDeep)
           }
           advance()
         }
@@ -580,14 +549,14 @@ object Lexer {
           advance()
           advance()
           if (l == 0) {
-            return TokenKind.BlockComment
+            return TokenKind.CommentBlock
           }
         }
         case _ => advance()
       }
     }
 
-    TokenKind.Err(LexerErr.UnterminatedBlockComment)
+    TokenKind.Err(TokenErrorKind.UnterminatedBlockComment)
   }
 
   private class Position(var line: Int, var column: Int, var offset: Int)
@@ -602,32 +571,58 @@ object Lexer {
     '+' -> TokenKind.Plus,
     '-' -> TokenKind.Minus,
     '*' -> TokenKind.Star,
-    '<' -> TokenKind.LAngle,
-    '>' -> TokenKind.RAngle,
+    '<' -> TokenKind.AngleL,
+    '>' -> TokenKind.AngleR,
     '=' -> TokenKind.Equal,
     '!' -> TokenKind.Bang,
     '&' -> TokenKind.Ampersand,
     '|' -> TokenKind.Bar,
     '^' -> TokenKind.Caret,
-    '$' -> TokenKind.Dollar
   )
 
-  private def tokenStats()(implicit s: State): Map[String, Int] = {
-    def isKind(k: TokenKind)(t: Token) = t.kind == k
+  // TODO: Remove this debug function
+  //  private def tokenStats()(implicit s: State): Map[String, Int] = {
+  //    def isKind(k: TokenKind)(t: Token) = t.kind == k
+  //
+  //    Map(
+  //      "def" -> s.tokens.count(isKind(TokenKind.KeywordDef)),
+  //      "class" -> s.tokens.count(isKind(TokenKind.KeywordClass)),
+  //      "//" -> s.tokens.count(isKind(TokenKind.CommentLine)),
+  //      "/%" -> s.tokens.count(isKind(TokenKind.CommentBlock)),
+  //      "(" -> s.tokens.count(isKind(TokenKind.ParenL)),
+  //      ")" -> s.tokens.count(isKind(TokenKind.ParenR)),
+  //      "[" -> s.tokens.count(isKind(TokenKind.BracketL)),
+  //      "]" -> s.tokens.count(isKind(TokenKind.BracketR)),
+  //      "{" -> s.tokens.count(isKind(TokenKind.CurlyL)),
+  //      "}" -> s.tokens.count(isKind(TokenKind.CurlyR)),
+  //      "err" -> s.tokens.count(t => t.kind.isInstanceOf[TokenKind.Err]),
+  //    )
+  //  }
 
-    Map(
-      "def" -> s.tokens.count(isKind(TokenKind.DefKeyword)),
-      "class" -> s.tokens.count(isKind(TokenKind.ClassKeyword)),
-      "//" -> s.tokens.count(isKind(TokenKind.LineComment)),
-      "/%" -> s.tokens.count(isKind(TokenKind.BlockComment)),
-      "(" -> s.tokens.count(isKind(TokenKind.LParen)),
-      ")" -> s.tokens.count(isKind(TokenKind.RParen)),
-      "[" -> s.tokens.count(isKind(TokenKind.LBracket)),
-      "]" -> s.tokens.count(isKind(TokenKind.RBracket)),
-      "{" -> s.tokens.count(isKind(TokenKind.LCurly)),
-      "}" -> s.tokens.count(isKind(TokenKind.RCurly)),
-      "err" -> s.tokens.count(t => t.kind.isInstanceOf[TokenKind.Err]),
-    )
+  /**
+   * Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
+   * Why is this necessary? We would like the lexer to capture as many errors as possible before terminating.
+   * To do this, the lexer will produce error tokens instead of halting,
+   * each holding a kind of the simple type `ErrKind`.
+   * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
+   */
+  private def tokenErrToCompilationMessage(e: TokenErrorKind, t: String, l: Int, c: Int)(implicit s: State): CompilationMessage = {
+    val o = e match {
+      case TokenErrorKind.UnexpectedChar | TokenErrorKind.DoubleDottedNumber => t.length
+      case TokenErrorKind.BlockCommentTooDeep => 2
+      case _ => 1
+    }
+
+    val loc = SourceLocation(None, s.src, SourceKind.Real, l, c, l, c + o)
+    e match {
+      case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
+      case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
+      case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
+      case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
+      case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
+      case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)
+      case TokenErrorKind.UnterminatedInfixFunction => LexerError.UnterminatedInfixFunction(loc)
+      case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
+    }
   }
-
 }

@@ -137,7 +137,7 @@ object Summary {
     root.classes.collect {
       case (sym, clazz) if sym.loc.source == source =>
         clazz.signatures.collect {
-          case sig if sig.impl.nonEmpty => sig.spec
+          case sig if sig.exp.nonEmpty => sig.spec
         }
     }.flatten
 

@@ -518,29 +518,29 @@ object TypeError {
   }
 
   /**
-    * Undefined field error.
+    * Undefined label error.
     *
-    * @param field      the name of the missing field.
-    * @param fieldType  the type of the missing field.
-    * @param recordType the record type where the field is missing.
+    * @param label      the name of the missing label.
+    * @param labelType  the type of the missing label.
+    * @param recordType the record type where the label is missing.
     * @param renv       the rigidity environment.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Missing field '$field' of type '$fieldType'."
+  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Missing label '$label' of type '$labelType'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Missing field '${red(field.name)}' of type '${cyan(formatType(fieldType, Some(renv)))}'.
+         |>> Missing label '${red(label.name)}' of type '${cyan(formatType(labelType, Some(renv)))}'.
          |
-         |${code(loc, "missing field.")}
+         |${code(loc, "missing label.")}
          |
          |The record type:
          |
          |  ${formatType(recordType, Some(renv))}
          |
-         |does not contain the field '${red(field.name)}' of type ${cyan(formatType(fieldType, Some(renv)))}.
+         |does not contain the label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
          |""".stripMargin
     }
 

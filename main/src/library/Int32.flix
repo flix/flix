@@ -476,4 +476,24 @@ mod Int32 {
         let maxi32 = Int16.toInt32(max.max);
         (valueOf(clamp(min = mini32, max = maxi32, x)) |> shortValue)
 
+    ///
+    /// Get the primitive Int32 value from its object representation (i.e. ##java.lang.Integer).
+    ///
+    /// This function is expected to be used when marshaling Int32s from Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Integer`.
+    ///
+    pub def intValue(i: ##java.lang.Integer): Int32 =
+        import java.lang.Integer.intValue(): Int32 \ {};
+        intValue(i)
+
+    ///
+    /// Convert an Int32 value to its object representation (i.e. ##java.lang.Integer).
+    ///
+    /// This function is expected to be used when marshaling Int32s to Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Integer`.
+    ///
+    pub def valueOf(i: Int32): ##java.lang.Integer =
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
+        valueOf(i)
+
 }

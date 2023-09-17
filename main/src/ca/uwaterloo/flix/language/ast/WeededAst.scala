@@ -127,11 +127,11 @@ object WeededAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, field: Name.Field, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, exp: Expr, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
@@ -243,12 +243,12 @@ object WeededAst {
 
     case class Tuple(elms: scala.List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordFieldPattern(field: Name.Field, pat: Option[Pattern], loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
     }
 
   }
@@ -322,7 +322,7 @@ object WeededAst {
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
-    case class RecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation) extends Type
+    case class RecordRowExtend(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation) extends Type
 
     case class Record(row: Type, loc: SourceLocation) extends Type
 

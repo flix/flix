@@ -81,13 +81,13 @@ object UnificationError {
   case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
 
   /**
-    * An unification error due the field `fieldName` of type `fieldType` missing from the type `recordType`.
+    * An unification error due the label `labelName` of type `labelType` missing from the type `recordType`.
     *
-    * @param field      the name of the missing field.
-    * @param fieldType  the type of the missing field.
-    * @param recordType the record type where the field is missing.
+    * @param label      the name of the missing label.
+    * @param labelType  the type of the missing label.
+    * @param recordType the record type where the label is missing.
     */
-  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type) extends UnificationError
+  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type) extends UnificationError
 
   /**
     * An unification error due the predicate `pred` of type `predType` missing from the type `schemaType`.

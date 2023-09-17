@@ -36,7 +36,7 @@ object MonoTypePrinter {
     case MonoType.Int32 => Type.Int32
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
-    case MonoType.Str => Type.Str
+    case MonoType.String => Type.Str
     case MonoType.Regex => Type.Regex
     case MonoType.Region => Type.Region
     case MonoType.Array(tpe) => Type.Array(print(tpe))
@@ -46,7 +46,7 @@ object MonoTypePrinter {
     case MonoType.Enum(sym) => Type.Enum(sym, Nil)
     case MonoType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))
     case MonoType.RecordEmpty => Type.RecordEmpty
-    case MonoType.RecordExtend(field, value, rest) => Type.RecordExtend(field, print(value), print(rest))
+    case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, print(value), print(rest))
     case MonoType.SchemaEmpty => Type.SchemaEmpty
     case MonoType.SchemaExtend(name, tpe, rest) => Type.SchemaExtend(name, print(tpe), print(rest))
     case MonoType.Native(clazz) => Type.Native(clazz)
