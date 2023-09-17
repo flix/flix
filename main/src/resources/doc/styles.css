@@ -17,6 +17,8 @@
     --light-show-hide-color: #0d6efd;
     --light-show-hide-hover-color: #0a58ca;
     --light-module-color: #a0a5ff;
+    --light-signature-color: #dfa0ff;
+    --light-class-def-color: #bfb280;
     --light-classes-color: #fc9d9a;
     --light-enum-color: #c8c8a9;
     --light-eff-color: #ffaefa;
@@ -43,6 +45,8 @@
     --dark-show-hide-color: #68a4fd;
     --dark-show-hide-hover-color: #3c86f6;
     --dark-module-color: #a0a5ff;
+    --dark-signature-color: #dfa0ff;
+    --dark-class-def-color: #bfb280;
     --dark-classes-color: #fc9d9a;
     --dark-enum-color: #c8c8a9;
     --dark-eff-color: #ffaefa;
@@ -69,6 +73,8 @@
     --show-hide-color: var(--light-show-hide-color);
     --show-hide-hover-color: var(--light-show-hide-hover-color);
     --module-color: var(--light-module-color);
+    --signature-color: var(--light-signature-color);
+    --class-def-color: var(--light-class-def-color);
     --classes-color: var(--light-classes-color);
     --enum-color: var(--light-enum-color);
     --eff-color: var(--light-eff-color);
@@ -98,6 +104,8 @@
         --show-hide-color: var(--dark-show-hide-color);
         --show-hide-hover-color: var(--dark-show-hide-hover-color);
         --module-color: var(--dark-module-color);
+        --signature-color: var(--dark-signature-color);
+        --class-def-color: var(--dark-class-def-color);
         --classes-color: var(--dark-classes-color);
         --enum-color: var(--dark-enum-color);
         --eff-color: var(--dark-eff-color);
@@ -370,6 +378,12 @@ nav li::before {
 nav .Modules li::before {
     color: var(--module-color)
 }
+nav .Signatures li::before {
+    color: var(--signature-color)
+}
+nav .Class-Definitions li::before {
+    color: var(--class-def-color)
+}
 nav .Classes li::before {
     color: var(--classes-color)
 }
@@ -382,7 +396,8 @@ nav .Effects li::before {
 nav .Type-Aliases li::before {
     color: var(--type-alias-color)
 }
-nav .Definitions li::before {
+nav .Definitions li::before, 
+nav .Module-Definitions li::before {
     color: var(--def-color)
 }
 
