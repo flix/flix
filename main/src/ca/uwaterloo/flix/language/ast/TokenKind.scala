@@ -172,7 +172,7 @@ object TokenKind {
 
   case object KeywordLet extends TokenKind
 
-  case object KeywordMasked_cast extends TokenKind
+  case object KeywordMaskedCast extends TokenKind
 
   case object KeywordMatch extends TokenKind
 
@@ -186,7 +186,7 @@ object TokenKind {
 
   case object KeywordOpen extends TokenKind
 
-  case object KeywordOpen_as extends TokenKind
+  case object KeywordOpenAs extends TokenKind
 
   case object KeywordOr extends TokenKind
 
@@ -208,7 +208,7 @@ object TokenKind {
 
   case object KeywordRegion extends TokenKind
 
-  case object KeywordRelational_choose extends TokenKind
+  case object KeywordRelationalChoose extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
 
@@ -232,7 +232,7 @@ object TokenKind {
 
   case object KeywordTypeMatch extends TokenKind
 
-  case object KeywordUnchecked_cast extends TokenKind
+  case object KeywordUncheckedCast extends TokenKind
 
   case object KeywordUse extends TokenKind
 
@@ -305,8 +305,6 @@ object TokenKind {
   case object TripleBar extends TokenKind
 
   case object TripleCaret extends TokenKind
-
-  case object TripleQuestionMark extends TokenKind
 
   case object TripleTilde extends TokenKind
 
