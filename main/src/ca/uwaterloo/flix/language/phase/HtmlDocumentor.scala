@@ -379,9 +379,16 @@ object HtmlDocumentor {
   private def documentClass(clazz: Class)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val mod = clazz.companionMod
+    val sortedSigs = clazz.signatures.sortBy(_.sym.name)
+    val sortedClassDefs = clazz.defs.sortBy(_.sym.name)
 
+    val mod = clazz.companionMod
     val sortedMods = mod.map(_.submodules).getOrElse(Nil).sortBy(_.sym.ns.last)
+    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
     sb.append(mkHead(className(clazz.sym)))
     sb.append("<body class='no-script'>")
@@ -412,6 +419,14 @@ object HtmlDocumentor {
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
     sb.append("</div>")
     sb.append("</section>")
+
+    docSection("Signatures", sortedSigs, docSignature)
+    docSection("Class Definitions", sortedClassDefs, docSignature)
+
+    docSection("Effects", sortedEffs, docEffect)
+    docSection("Enums", sortedEnums, docEnum)
+    docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
+    docSection("Module Definitions", sortedModuleDefs, docDef)
 
     sb.append("</main>")
 
@@ -645,8 +660,8 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append("<div>")
-    docSpec(sig.sym.name, sig.spec, None)
+    sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
+    docSpec(sig.sym.name, sig.spec, Some(s"sig-${esc(sig.sym.name)}"))
     sb.append("</div>")
   }
 
