@@ -332,7 +332,7 @@ object HtmlDocumentor {
     docSideBarSection(
       "Classes",
       sortedClasses,
-      (c: Class) => sb.append(s"<a href='#class-${escUrl(c.sym.name)}'>${esc(c.sym.name)}</a>"),
+      (c: Class) => sb.append(s"<a href='${c.sym.toString}.html'>${esc(c.sym.name)}</a>"),
     )
     docSideBarSection(
       "Effects",
@@ -359,7 +359,6 @@ object HtmlDocumentor {
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(moduleName(mod.sym))}</h1>")
-    docSection("Classes", sortedClasses, docClass)
     docSection("Effects", sortedEffs, docEffect)
     docSection("Enums", sortedEnums, docEnum)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
@@ -467,19 +466,6 @@ object HtmlDocumentor {
     sb.append("</section>")
   }
 
-  private def docMainItem(mainItem: Option[MainItem])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    mainItem match {
-      case None => // No-op
-      case Some(mi) =>
-        sb.append("<section>")
-        mi match {
-          case Enum(e) => docEnum(e)
-          case c: Class => docClass(c)
-        }
-        sb.append("</section>")
-    }
-  }
-
   /**
     * Documents a collapsable subsection, (Signatures, Instances, etc.), containing a `group` of items.
     *
@@ -503,30 +489,6 @@ object HtmlDocumentor {
       docElt(e)
     }
     sb.append("</details>")
-  }
-
-  /**
-    * Documents the given `Class`, `clazz`.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    */
-  private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
-    docAnnotations(clazz.ann)
-    sb.append("<div class='decl'>")
-    sb.append("<code>")
-    sb.append("<span class='keyword'>class</span> ")
-    sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
-    docTypeParams(List(clazz.tparam))
-    docTypeConstraints(clazz.superClasses)
-    sb.append("</code>")
-    docActions(Some(s"class-${clazz.sym.name}"), clazz.loc)
-    sb.append("</div>")
-    docDoc(clazz.doc)
-    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
-    docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature, open = true)
-    docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
-    sb.append("</div>")
   }
 
   /**
