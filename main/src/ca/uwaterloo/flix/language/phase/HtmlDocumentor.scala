@@ -85,7 +85,7 @@ object HtmlDocumentor {
 
     def visitClass(clazz: Class): Unit = {
       val out = documentClass(clazz)
-      writeDocFile(clazz.sym.toString, out)
+      writeDocFile(classFileName(clazz.sym), out)
 
       clazz.companionMod.foreach {
         _.submodules.foreach(visitMod)
@@ -106,7 +106,19 @@ object HtmlDocumentor {
   /**
     * Get the file name of the module.
     */
-  private def moduleFileName(sym: Symbol.ModuleSym): String = if (sym.isRoot) RootFileName else sym.toString
+  private def moduleFileName(sym: Symbol.ModuleSym): String = s"${if (sym.isRoot) RootFileName else sym.toString}.html"
+
+  /**
+    * Get the display name of the class.
+    *
+    * See also `classFileName` for the file name of the class.
+    */
+  private def className(sym: Symbol.ClassSym): String = sym.toString
+
+  /**
+    * Get the file name of the class, excluding extension.
+    */
+  private def classFileName(sym: Symbol.ClassSym): String = s"${sym.toString}.html"
 
   /**
     * Splits the modules present in the root into a tree of `HtmlDocumentor.Module`s, making them easier to work with.
@@ -325,14 +337,14 @@ object HtmlDocumentor {
     sb.append("<h2><a href='index.html'>flix</a></h2>")
     sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
     mod.parent.map {
-      mod => sb.append(s"<a class='back' href=${moduleFileName(mod)}.html>${moduleName(mod)}</a>")
+      mod => sb.append(s"<a class='back' href='${esc(moduleFileName(mod))}'>${moduleName(mod)}</a>")
     }
     sb.append("</div>")
     docSubModules(sortedMods)
     docSideBarSection(
       "Classes",
       sortedClasses,
-      (c: Class) => sb.append(s"<a href='${c.sym.toString}.html'>${esc(c.sym.name)}</a>"),
+      (c: Class) => sb.append(s"<a href='${esc(classFileName(c.sym))}'>${esc(c.sym.name)}</a>"),
     )
     docSideBarSection(
       "Effects",
@@ -374,7 +386,7 @@ object HtmlDocumentor {
     * Documents the given `Class`, `clazz`, returning a string of HTML.
     */
   private def documentClass(clazz: Class): String = {
-    clazz.sym.toString
+    className(clazz.sym)
   }
 
   /**
@@ -435,7 +447,7 @@ object HtmlDocumentor {
     sb.append("<ul class='Modules'>")
     for (m <- submodules) {
       sb.append("<li>")
-      sb.append(s"<a href='${esc(moduleFileName(m.sym))}.html'>${esc(m.sym.ns.last)}</a>")
+      sb.append(s"<a href='${esc(moduleFileName(m.sym))}'>${esc(m.sym.ns.last)}</a>")
       sb.append("</li>")
     }
     sb.append("</ul>")
@@ -862,7 +874,7 @@ object HtmlDocumentor {
     * Write the documentation output string into the output directory with the given `name`.
     */
   private def writeDocFile(name: String, output: String): Unit = {
-    writeFile(s"$name.html", output.getBytes)
+    writeFile(s"$name", output.getBytes)
   }
 
   /**
