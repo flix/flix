@@ -144,7 +144,7 @@ object Instances {
       // Step 1: check that each signature has an implementation.
       val sigMatchVal = clazz.signatures.flatMap {
         sig =>
-          (inst.defs.find(_.sym.name == sig.sym.name), sig.exp) match {
+          (inst.defs.find(_.sym.text == sig.sym.name), sig.exp) match {
             // Case 1: there is no definition with the same name, and no default implementation
             case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.clazz.loc))
             // Case 2: there is no definition with the same name, but there is a default implementation
@@ -168,7 +168,7 @@ object Instances {
       // Step 2: check that there are no extra definitions
       val extraDefVal = inst.defs.flatMap {
         defn =>
-          clazz.signatures.find(_.sym.name == defn.sym.name) match {
+          clazz.signatures.find(_.sym.name == defn.sym.text) match {
             case None => List(InstanceError.ExtraneousDefinition(defn.sym, defn.sym.loc))
             case _ => Nil
           }
