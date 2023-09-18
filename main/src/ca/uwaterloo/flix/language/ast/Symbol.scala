@@ -109,6 +109,13 @@ object Symbol {
   }
 
   /**
+    * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkDefnSym(ns: NName, ident: Ident, id: Option[Int]): DefnSym = {
+    new DefnSym(id, ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the definition symbol for the given fully qualified name.
     */
   def mkDefnSym(fqn: String): DefnSym = split(fqn) match {
