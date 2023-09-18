@@ -243,7 +243,7 @@ object HtmlDocumentor {
         sym,
         parent,
         uses,
-        submodules,
+        submodules.map(filterItems),
         classes.filter(c => c.inner.mod.isPublic && !c.inner.ann.isInternal).map(filterClass),
         enums.filter(e => e.inner.mod.isPublic && !e.inner.ann.isInternal).map(filterEnum),
         effects.filter(e => e.mod.isPublic && !e.ann.isInternal),
