@@ -15,14 +15,15 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-/* Tokens are named for 'what they are' rather than 'what they represent'.
+sealed trait TokenKind
+
+/**
+ * Tokens are named for 'what they are' rather than 'what they represent'.
  * So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
  *
  * Tokens belonging to some conceptual group should have the group name as prefix.
  * So 'LiteralInt32' is preferred over 'Int32Literal'
  */
-sealed trait TokenKind
-
 object TokenKind {
   case object Ampersand extends TokenKind
 

@@ -23,7 +23,38 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
+/**
+ * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
+ * This lexer is resilient, meaning that when an unrecognized character is encountered,
+ * the lexer will simply produce a token of kind `TokenKind.Err` an move on instead of halting.
+ * There are some unrecoverable errors though, for example unterminated block-comments or unclosed string literals.
+ * In these cases a `TokenKind.Err` will still be produced but it will contain the rest of the source text.
+ * See `LexerError` for all error states.
+ */
 object Lexer {
+  /**
+   * The internal state of the lexer as it tokenizes a single source.
+   * At any point execution `start` represents the start of the token currently being considered,
+   * while `current` is the current read head of the lexer.
+   * So for instance while lexing "main" in __s__tart and __c__urrent will be placed like so:
+   * def main(): Unit = ()
+   *     |  |
+   *     s  c
+   * Note that both start and current are `Position`s since they are not necessarily on the same line.
+   * `current` will always be on the same character as or past `start`.
+   *
+   * As tokens are produced they are placed in `tokens`.
+   */
+  private class State(val src: Ast.Source) {
+    var start: Position = new Position(0, 0, 0)
+    val current: Position = new Position(0, 0, 0)
+    val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
+  }
+
+  /**
+   * A source position keeping track of both line, column as well as absolute character offset.
+   */
+  private class Position(var line: Int, var column: Int, var offset: Int)
 
   def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     if (!flix.options.xparser) {
@@ -42,6 +73,9 @@ object Lexer {
     }
   }
 
+  /**
+   * Lexes a single source (file) into an array of tokens.
+   */
   private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
     while (!isAtEnd()) {
@@ -61,14 +95,13 @@ object Lexer {
         case Token(TokenKind.Err(e), t, l, c) => tokenErrToCompilationMessage(e, t, l, c)
       })
     } else {
-      printf(s.tokens.mkString("\n"))
       s.tokens.toArray.toSuccess
     }
   }
 
   /**
-   * Advances state one char forward returning the char it was previously sitting on.
-   * Keeps track of line and column numbers too.
+   * Advances current position one char forward, returning the char it was previously sitting on,
+   * while keeping track of line and column numbers too.
    */
   private def advance()(implicit s: State): Char = {
     val c = s.src.data(s.current.offset)
@@ -79,13 +112,12 @@ object Lexer {
     } else {
       s.current.column += 1
     }
-
     c
   }
 
   /**
-   * Retreats state one char backwards returning the char it was previously sitting on.
-   * Keeps track of line and column numbers too.
+   * Retreats current position one char backwards returning the char it was previously sitting on,
+   * while keeping track of line and column numbers too.
    */
   private def retreat()(implicit s: State): Char = {
     val c = s.src.data(s.current.offset)
@@ -118,13 +150,27 @@ object Lexer {
     }
   }
 
+  /**
+   * Checks if the current position has passed the end of the source
+   */
   private def isAtEnd()(implicit s: State): Boolean = {
-    s.current.offset == s.src.data.length
+    s.current.offset >= s.src.data.length
   }
 
+  /**
+   * Scans the source for the next available token.
+   * This is the heart of the lexer implementation.
+   * `scanToken` determines what TokenKind the next
+   * available token should be by looking at the coming character in source.
+   * This requires potentially infinite look-ahead for things like block-comments and formatted strings,
+   * but in many cases one or two characters is enough.
+   * Finally `addToken` is called to actually consume the token from source.
+   */
   private def scanToken()(implicit s: State): Unit = {
     val c = advance()
 
+    // Beware that the order of these match cases affect both behaviour and performance.
+    // If the order needs to change, make sure to run tests and benchmarks.
     val kind = c match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
@@ -268,7 +314,7 @@ object Lexer {
           userDefinedOp()
         } else if (c == '-' && p.isDigit) {
           number() // negative numbers
-        }  else {
+        } else {
           validUserOpTokens.apply(c)
         }
       case c if c.isLetter => name(c.isUpper)
@@ -283,6 +329,10 @@ object Lexer {
     addToken(kind)
   }
 
+  /**
+   * Consumes the text between `s.start` and `s.offset` to produce a token.
+   * Afterwards `s.start` is reset to the next position after the previous token.
+   */
   private def addToken(k: TokenKind)(implicit s: State): Unit = {
     val t = s.src.data.slice(s.start.offset, s.current.offset).mkString("")
     s.tokens += Token(k, t, s.start.line, s.start.column)
@@ -290,7 +340,7 @@ object Lexer {
   }
 
   /**
-   * Checks whether the following substring matches a keyword. Note that *comparison includes current*
+   * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
    */
   private def keyword(k: String)(implicit s: State): Boolean = {
     // check if the keyword can appear before eof
@@ -317,6 +367,9 @@ object Lexer {
     matches
   }
 
+  /**
+   * Moves current position past all whitespace characters.
+   */
   private def whitespace()(implicit s: State): Unit = {
     while (!isAtEnd()) {
       if (!peek().isWhitespace) {
@@ -326,6 +379,11 @@ object Lexer {
     }
   }
 
+  /**
+   * Moves current position past a name (both upper- and lower-case).
+   * There is an edge case of variable holes, IE. "x?",
+   * which is the reason this function will return a `TokenKind`.
+   */
   private def name(isUpper: Boolean)(implicit s: State): TokenKind = {
     val kind = if (isUpper) {
       TokenKind.NameUpperCase
@@ -348,12 +406,16 @@ object Lexer {
     kind
   }
 
+  /**
+   * Moves current position past a built-in function, IE. "$BUILT_IN$".
+   */
   private def builtIn()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       val c = peek()
       if (c == '$') {
         advance()
         return TokenKind.BuiltIn
+        // TODO: Is this case necessary?
       } else if (!c.isLetter && c != '_') {
         return TokenKind.NameJava
       }
@@ -364,6 +426,9 @@ object Lexer {
     TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
   }
 
+  /**
+   * Moves current position past a java name. IE. "##java"
+   */
   private def javaName()(implicit s: State): TokenKind = {
     advance()
     while (!isAtEnd()) {
@@ -378,6 +443,11 @@ object Lexer {
     TokenKind.NameJava
   }
 
+  /**
+   * Moves current position past a greek name.
+   * Greek names must lie in the unicode range U+0370 to U+03FF.
+   * IE. "Χαίρετε"
+   */
   private def greekName()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!isGreekNameChar(peek())) {
@@ -388,6 +458,19 @@ object Lexer {
     TokenKind.NameGreek
   }
 
+  /**
+   * Checks whether `c` lies in unicode range U+0370 to U+03FF
+   */
+  private def isGreekNameChar(c: Char): Boolean = {
+    val i = c.toInt
+    i >= 880 && i <= 1023
+  }
+
+  /**
+   * Moves current position past a math name.
+   * Math names must lie in the unicode range U+2190 to U+22FF
+   * IE. "⊆"
+   */
   private def mathName()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!isMathNameChar(peek())) {
@@ -407,13 +490,8 @@ object Lexer {
   }
 
   /**
-   * Checks whether `c` lies in unicode range U+0370 to U+03FF
+   * Moves current position past a named hole. IE. "?foo".
    */
-  private def isGreekNameChar(c: Char): Boolean = {
-    val i = c.toInt
-    i >= 880 && i <= 1023
-  }
-
   private def namedHole()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
@@ -426,6 +504,10 @@ object Lexer {
     TokenKind.HoleNamed
   }
 
+
+  /**
+   * Moves current position past an infix function.
+   */
   private def infixFunction()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       val c = peek()
@@ -439,6 +521,11 @@ object Lexer {
     TokenKind.Err(TokenErrorKind.UnterminatedInfixFunction)
   }
 
+  /**
+   * Moves current position past a user defined operator. IE. "<*>".
+   * A user defined operator may be any combination of length 2 or more
+   * of the characters in `validUserOpTokens`.
+   */
   private def userDefinedOp()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!validUserOpTokens.contains(peek())) {
@@ -450,6 +537,26 @@ object Lexer {
     TokenKind.UserDefinedOperator
   }
 
+  /**
+   * The characters allowed in a user defined operator mapped to their `TokenKind`s
+   */
+  private val validUserOpTokens = Map(
+    '+' -> TokenKind.Plus,
+    '-' -> TokenKind.Minus,
+    '*' -> TokenKind.Star,
+    '<' -> TokenKind.AngleL,
+    '>' -> TokenKind.AngleR,
+    '=' -> TokenKind.Equal,
+    '!' -> TokenKind.Bang,
+    '&' -> TokenKind.Ampersand,
+    '|' -> TokenKind.Bar,
+    '^' -> TokenKind.Caret,
+  )
+
+  /**
+   * Moves current position past a string literal.
+   * If the string is unterminated a `TokenKind.Err` is returned.
+   */
   private def string()(implicit s: State): TokenKind = {
     var prev = ' '
     while (!isAtEnd()) {
@@ -465,6 +572,10 @@ object Lexer {
     TokenKind.Err(TokenErrorKind.UnterminatedString)
   }
 
+  /**
+   * Moves current position past a char literal.
+   * If the char is unterminated a `TokenKind.Err` is returned
+   */
   private def char()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       val c = peek()
@@ -478,6 +589,11 @@ object Lexer {
     TokenKind.Err(TokenErrorKind.UnterminatedChar)
   }
 
+  /**
+   * Moves current position past a number literal. IE. "123i32" or "456.78f32"
+   * It is optional to have a trailing type indicator on number literals.
+   * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
+   */
   private def number()(implicit s: State): TokenKind = {
     var isDecimal = false
     while (!isAtEnd()) {
@@ -514,9 +630,12 @@ object Lexer {
       }
     }
 
-    TokenKind.Err(TokenErrorKind.DoubleDottedNumber)
+    TokenKind.Err(TokenErrorKind.UnexpectedChar)
   }
 
+  /**
+   * Moves current position past an annotation. IE. "@Test".
+   */
   private def annotation()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
@@ -529,6 +648,9 @@ object Lexer {
     TokenKind.Annotation
   }
 
+  /**
+   * Moves current position past a line-comment
+   */
   private def lineComment()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (peek() == '\n') {
@@ -541,21 +663,34 @@ object Lexer {
     TokenKind.CommentLine
   }
 
+  /**
+   * The maximal allowed nesting level of block-comments.
+   */
+  private val MAX_BLOCK_COMMENT_NESTING_LEVEL = 32
+
+  /**
+   * Moves current position past a block-comment.
+   * Note that block-comments can be nested, in which case we need to handle multiple terminating "* /".
+   * This is done be counting the nesting level and enforcing a max nesting level.
+   * If this level is reached a `TokenKind.Err` is returned.
+   * A block-comment might also be unterminated if there is less terminations than levels of nesting.
+   * In this case a `TokenKind.Err` is returned as well.
+   */
   private def blockComment()(implicit s: State): TokenKind = {
-    var l = 1
+    var level = 1
     while (!isAtEnd()) {
       (peek(), peekPeek()) match {
         case ('/', Some('*')) =>
-          l += 1
-          if (l >= 32) {
+          level += 1
+          if (level >= MAX_BLOCK_COMMENT_NESTING_LEVEL) {
             return TokenKind.Err(TokenErrorKind.BlockCommentTooDeep)
           }
           advance()
         case ('*', Some('/')) =>
-          l -= 1
+          level -= 1
           advance()
           advance()
-          if (l == 0) {
+          if (level == 0) {
             return TokenKind.CommentBlock
           }
         case _ => advance()
@@ -564,27 +699,6 @@ object Lexer {
 
     TokenKind.Err(TokenErrorKind.UnterminatedBlockComment)
   }
-
-  private class Position(var line: Int, var column: Int, var offset: Int)
-
-  private class State(val src: Ast.Source) {
-    var start: Position = new Position(0, 0, 0)
-    val current: Position = new Position(0, 0, 0)
-    val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
-  }
-
-  private val validUserOpTokens = Map(
-    '+' -> TokenKind.Plus,
-    '-' -> TokenKind.Minus,
-    '*' -> TokenKind.Star,
-    '<' -> TokenKind.AngleL,
-    '>' -> TokenKind.AngleR,
-    '=' -> TokenKind.Equal,
-    '!' -> TokenKind.Bang,
-    '&' -> TokenKind.Ampersand,
-    '|' -> TokenKind.Bar,
-    '^' -> TokenKind.Caret,
-  )
 
   /**
    * Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
