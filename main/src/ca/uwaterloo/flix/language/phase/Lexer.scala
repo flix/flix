@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
-// TODO: Make sure java names are working properly
 // TODO: Format strings
 
 /**
@@ -62,55 +61,6 @@ object Lexer {
    * Run the lexer on multiple `Ast.Source`s in parallel.
    */
   def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
-    if (!flix.options.xparser) {
-      // New lexer and parser disabled. Return immediately.
-      return Map.empty[Ast.Source, Array[Token]].toSuccess
-    }
-
-  /**
-   * The characters allowed in a user defined operator mapped to their `TokenKind`s
-   */
-  private val ValidUserOpTokens = Map(
-    '+' -> TokenKind.Plus,
-    '-' -> TokenKind.Minus,
-    '*' -> TokenKind.Star,
-    '<' -> TokenKind.AngleL,
-    '>' -> TokenKind.AngleR,
-    '=' -> TokenKind.Equal,
-    '!' -> TokenKind.Bang,
-    '&' -> TokenKind.Ampersand,
-    '|' -> TokenKind.Bar,
-    '^' -> TokenKind.Caret,
-  )
-
-  /**
-   * The internal state of the lexer as it tokenizes a single source.
-   * At any point execution `start` represents the start of the token currently being considered,
-   * while `current` is the current read head of the lexer.
-   * Note that both start and current are `Position`s since they are not necessarily on the same line.
-   * `current` will always be on the same character as or past `start`.
-   * As tokens are produced they are placed in `tokens`.
-   */
-  private class State(val src: Ast.Source) {
-    var start: Position = new Position(0, 0, 0)
-    val current: Position = new Position(0, 0, 0)
-    val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
-    var interpolationNestingLevel: Int = 0
-    // Compute a `ParserInput` when initializing a state for lexing a source.
-    // This is necessary to display source code in error messages.
-    // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
-    val parserInput: ParserInput = ParserInput.apply(src.data)
-  }
-
-  /**
-   * A source position keeping track of both line, column as well as absolute character offset.
-   */
-  private class Position(var line: Int, var column: Int, var offset: Int)
-
-  /**
-   * Run the lexer on multiple `Ast.Source`s in parallel.
-   */
-  def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     flix.phase("Lexer") {
       // Lex each source file in parallel.
       val results = ParOps.parMap(root.sources) {
@@ -143,6 +93,10 @@ object Lexer {
 
     // Add a virtual eof token at the last position.
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
+
+    if (src.name == "foo.flix") {
+      println(s.tokens.mkString("\n"))
+    }
 
     val errorTokens = s.tokens.collect {
       case Token(TokenKind.Err(err), text, line, col) => tokenErrToCompilationMessage(err, text, line, col)
@@ -183,7 +137,6 @@ object Lexer {
     } else {
       s.current.column -= 1
     }
-
     c
   }
 
@@ -425,6 +378,20 @@ object Lexer {
   }
 
   /**
+   * Moves current position past a built-in function, IE. "$BUILT_IN$".
+   */
+  private def builtIn()(implicit s: State): TokenKind = {
+    while (!isAtEnd()) {
+      if (peek() == '$') {
+        advance()
+        return TokenKind.BuiltIn
+      }
+      advance()
+    }
+    TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
+  }
+
+  /**
    * Moves current position past all whitespace characters.
    */
   private def whitespace()(implicit s: State): Unit = {
@@ -438,46 +405,31 @@ object Lexer {
 
   /**
    * Moves current position past a name (both upper- and lower-case).
-   * There is an edge case of variable holes, IE. "x?",
+   * There are edge cases of variable holes, IE. "x?", and java names like "Map$Entry",
    * which is the reason this function will return a `TokenKind`.
    */
   private def name(isUpper: Boolean)(implicit s: State): TokenKind = {
-    val kind = if (isUpper) {
-      TokenKind.UppercaseName
+    var kind = if (isUpper) {
+      TokenKind.NameUpperCase
     } else {
       TokenKind.LowercaseName
     }
     while (!isAtEnd()) {
-      val c = peek()
-      if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
-        return kind
-      }
-      if (c == '?') {
+      val p = peek()
+      if (p == '$' && peekPeek().exists(_.isLetter)) {
+        // Java names can have "$" in them. IE. "Map$Entry"
+        kind = TokenKind.NameJava
+      } else if (p == '?') {
         advance()
-        return TokenKind.VariableHole
+        return TokenKind.HoleVariable
+      } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
+        return kind
       }
       advance()
     }
     kind
   }
 
-  /**
-   * Moves current position past a built-in function, IE. "$BUILT_IN$".
-   */
-  private def builtIn()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
-      val c = peek()
-      if (c == '$') {
-        advance()
-        return TokenKind.BuiltIn
-        // TODO: Is this case necessary?
-      } else if (!c.isLetter && c != '_') {
-        return TokenKind.JavaName
-      }
-      advance()
-    }
-    TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
-  }
 
   /**
    * Moves current position past a java name. IE. "##java"
@@ -485,9 +437,9 @@ object Lexer {
   private def javaName()(implicit s: State): TokenKind = {
     advance()
     while (!isAtEnd()) {
-      val c = peek()
-      if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
-        return TokenKind.JavaName
+      val p = peek()
+      if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
+        return TokenKind.NameJava
       }
       advance()
     }
@@ -557,8 +509,7 @@ object Lexer {
    */
   private def infixFunction()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
-      val c = peek()
-      if (c == '`') {
+      if (peek() == '`') {
         advance()
         return TokenKind.InfixFunction
       }
@@ -606,9 +557,9 @@ object Lexer {
   private def string()(implicit s: State): TokenKind = {
     var prev = ' '
     while (!isAtEnd()) {
-      val c = peek()
+      val p = peek()
       // Check for termination while handling escaped '\"'
-      if (c == '\"' && prev != '\\') {
+      if (p == '\"' && prev != '\\') {
         advance()
         return TokenKind.String
       }
@@ -624,8 +575,7 @@ object Lexer {
    */
   private def char()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
-      val c = peek()
-      if (c == '\'') {
+      if (peek() == '\'') {
         advance()
         return TokenKind.Char
       }
