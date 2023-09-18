@@ -716,6 +716,7 @@ object HtmlDocumentor {
     sb.append(": ")
     docType(spec.retTpe)
     docEffectType(spec.eff)
+    docTypeConstraints(spec.tconstrs)
     sb.append("</code>")
     docActions(linkId, spec.loc)
     sb.append("</div>")
