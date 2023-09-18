@@ -23,6 +23,9 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
+// TODO: Make sure java names are working properly
+// TODO: Format strings
+
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
  * This lexer is resilient, meaning that when an unrecognized character is encountered,
@@ -33,16 +36,16 @@ import scala.collection.mutable
  */
 object Lexer {
   /**
+   * The maximal allowed nesting level of block-comments.
+   */
+  private val MAX_BLOCK_COMMENT_NESTING_LEVEL = 32
+
+  /**
    * The internal state of the lexer as it tokenizes a single source.
    * At any point execution `start` represents the start of the token currently being considered,
    * while `current` is the current read head of the lexer.
-   * So for instance while lexing "main" in __s__tart and __c__urrent will be placed like so:
-   * def main(): Unit = ()
-   *     |  |
-   *     s  c
    * Note that both start and current are `Position`s since they are not necessarily on the same line.
    * `current` will always be on the same character as or past `start`.
-   *
    * As tokens are produced they are placed in `tokens`.
    */
   private class State(val src: Ast.Source) {
@@ -56,6 +59,9 @@ object Lexer {
    */
   private class Position(var line: Int, var column: Int, var offset: Int)
 
+  /**
+   * Run the lexer on multiple `Ast.Source`s in parallel.
+   */
   def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     if (!flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
@@ -86,14 +92,14 @@ object Lexer {
       }
     }
 
-    // Add a virtual eof token at the last position
+    // Add a virtual eof token at the last position.
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
-    val hasErrors = s.tokens.exists(t => t.kind.isInstanceOf[TokenKind.Err])
-    if (hasErrors) {
-      Validation.SoftFailure(s.tokens.toArray, LazyList.from(s.tokens).collect {
-        case Token(TokenKind.Err(e), t, l, c) => tokenErrToCompilationMessage(e, t, l, c)
-      })
+    val errorTokens = s.tokens.collect {
+      case Token(TokenKind.Err(err), text, line, col) => tokenErrToCompilationMessage(err, text, line, col)
+    }
+    if (errorTokens.nonEmpty) {
+      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errorTokens))
     } else {
       s.tokens.toArray.toSuccess
     }
@@ -155,6 +161,16 @@ object Lexer {
    */
   private def isAtEnd()(implicit s: State): Boolean = {
     s.current.offset >= s.src.data.length
+  }
+
+  /**
+   * Consumes the text between `s.start` and `s.offset` to produce a token.
+   * Afterwards `s.start` is reset to the next position after the previous token.
+   */
+  private def addToken(kind: TokenKind)(implicit s: State): Unit = {
+    val text = s.src.data.slice(s.start.offset, s.current.offset).mkString("")
+    s.tokens += Token(kind, text, s.start.line, s.start.column)
+    s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
   /**
@@ -307,13 +323,13 @@ object Lexer {
       case _ if keyword("Vector#") => TokenKind.VectorHash
       case _ if isMathNameChar(c) => mathName()
       case _ if isGreekNameChar(c) => greekName()
-      // User defined operators
+      // User defined operators.
       case _ if validUserOpTokens.contains(c) =>
         val p = peek()
         if (validUserOpTokens.contains(p)) {
           userDefinedOp()
         } else if (c == '-' && p.isDigit) {
-          number() // negative numbers
+          number() // negative numbers.
         } else {
           validUserOpTokens.apply(c)
         }
@@ -330,16 +346,6 @@ object Lexer {
   }
 
   /**
-   * Consumes the text between `s.start` and `s.offset` to produce a token.
-   * Afterwards `s.start` is reset to the next position after the previous token.
-   */
-  private def addToken(k: TokenKind)(implicit s: State): Unit = {
-    val t = s.src.data.slice(s.start.offset, s.current.offset).mkString("")
-    s.tokens += Token(k, t, s.start.line, s.start.column)
-    s.start = new Position(s.current.line, s.current.column, s.current.offset)
-  }
-
-  /**
    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
    */
   private def keyword(k: String)(implicit s: State): Boolean = {
@@ -350,12 +356,12 @@ object Lexer {
 
     val start = s.current.offset - 1
     var matches = true
-    var o = 0
-    while (matches && o < k.length) {
-      if (s.src.data(start + o) != k(o)) {
+    var offset = 0
+    while (matches && offset < k.length) {
+      if (s.src.data(start + offset) != k(offset)) {
         matches = false
       } else {
-        o += 1
+        offset += 1
       }
     }
     if (matches) {
@@ -399,10 +405,8 @@ object Lexer {
         advance()
         return TokenKind.HoleVariable
       }
-
       advance()
     }
-
     kind
   }
 
@@ -419,10 +423,8 @@ object Lexer {
       } else if (!c.isLetter && c != '_') {
         return TokenKind.NameJava
       }
-
       advance()
     }
-
     TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
   }
 
@@ -436,10 +438,8 @@ object Lexer {
       if (!c.isLetter && !c.isDigit && c != '_' && c != '!') {
         return TokenKind.NameJava
       }
-
       advance()
     }
-
     TokenKind.NameJava
   }
 
@@ -497,10 +497,8 @@ object Lexer {
       if (!peek().isLetter) {
         return TokenKind.HoleNamed
       }
-
       advance()
     }
-
     TokenKind.HoleNamed
   }
 
@@ -517,7 +515,6 @@ object Lexer {
       }
       advance()
     }
-
     TokenKind.Err(TokenErrorKind.UnterminatedInfixFunction)
   }
 
@@ -629,7 +626,6 @@ object Lexer {
         }
       }
     }
-
     TokenKind.Err(TokenErrorKind.UnexpectedChar)
   }
 
@@ -644,7 +640,6 @@ object Lexer {
         advance()
       }
     }
-
     TokenKind.Annotation
   }
 
@@ -659,14 +654,8 @@ object Lexer {
         advance()
       }
     }
-
     TokenKind.CommentLine
   }
-
-  /**
-   * The maximal allowed nesting level of block-comments.
-   */
-  private val MAX_BLOCK_COMMENT_NESTING_LEVEL = 32
 
   /**
    * Moves current position past a block-comment.
@@ -696,7 +685,6 @@ object Lexer {
         case _ => advance()
       }
     }
-
     TokenKind.Err(TokenErrorKind.UnterminatedBlockComment)
   }
 
