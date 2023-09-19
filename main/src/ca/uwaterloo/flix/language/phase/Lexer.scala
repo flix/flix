@@ -771,7 +771,7 @@ object Lexer {
    * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
    */
   private def tokenErrToCompilationMessage(e: TokenErrorKind, token: Token)(implicit s: State): CompilationMessage = {
-    val t = token.text()
+    val t = token.text
 
     val offset = e match {
       case TokenErrorKind.UnexpectedChar | TokenErrorKind.DoubleDottedNumber => t.length
