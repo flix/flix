@@ -257,6 +257,10 @@ object TokenKind {
 
   case object LiteralString extends TokenKind
 
+  case object LiteralStringInterpolationL extends TokenKind
+
+  case object LiteralStringInterpolationR extends TokenKind
+
   case object MapHash extends TokenKind
 
   case object Minus extends TokenKind
