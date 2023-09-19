@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
-// TODO: Format strings
+// TODO: string interpolation
 
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
@@ -37,7 +37,23 @@ object Lexer {
   /**
    * The maximal allowed nesting level of block-comments.
    */
-  private val MAX_BLOCK_COMMENT_NESTING_LEVEL = 32
+  private val BlockCommentMaxNestingLevel = 32
+
+  /**
+   * The characters allowed in a user defined operator mapped to their `TokenKind`s
+   */
+  private val ValidUserOpTokens = Map(
+    '+' -> TokenKind.Plus,
+    '-' -> TokenKind.Minus,
+    '*' -> TokenKind.Star,
+    '<' -> TokenKind.AngleL,
+    '>' -> TokenKind.AngleR,
+    '=' -> TokenKind.Equal,
+    '!' -> TokenKind.Bang,
+    '&' -> TokenKind.Ampersand,
+    '|' -> TokenKind.Bar,
+    '^' -> TokenKind.Caret,
+  )
 
   /**
    * The internal state of the lexer as it tokenizes a single source.
@@ -89,7 +105,7 @@ object Lexer {
     // Add a virtual eof token at the last position.
     s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
 
-    if (src.name == "foo.flix") {
+    if (src.name == "Fixpoint/Ram/RamStmt.flix") {
       println(s.tokens.mkString("\n"))
     }
 
@@ -197,14 +213,14 @@ object Lexer {
       case '.' => TokenKind.Dot
       case '\\' => TokenKind.Backslash
       case '#' => if (peek() == '#') {
-        javaName()
+        acceptJavaName()
       } else {
         TokenKind.Hash
       }
       case '/' => if (peek() == '/') {
-        lineComment()
+        acceptLineComment()
       } else if (peek() == '*') {
-        blockComment()
+        acceptBlockComment()
       } else {
         TokenKind.Slash
       }
@@ -218,124 +234,124 @@ object Lexer {
         TokenKind.Colon
       }
       case '@' => if (peek().isUpper) {
-        annotation()
+        acceptAnnotation()
       } else {
         TokenKind.At
       }
-      case _ if keyword("???") => TokenKind.HoleAnonymous
-      case '?' if peek().isLetter => namedHole()
-      case _ if keyword("**") => TokenKind.StarStar
-      case _ if keyword("<-") => TokenKind.BackArrow
-      case _ if keyword("=>") => TokenKind.Arrow
-      case _ if keyword("<=") => TokenKind.AngleLEqual
-      case _ if keyword(">=") => TokenKind.AngleREqual
-      case _ if keyword("==") => TokenKind.EqualEqual
-      case _ if keyword("&&&") => TokenKind.TripleAmpersand
-      case _ if keyword("<<<") => TokenKind.TripleAngleL
-      case _ if keyword(">>>") => TokenKind.TripleAngleR
-      case _ if keyword("^^^") => TokenKind.TripleCaret
-      case _ if keyword("|||") => TokenKind.TripleBar
-      case _ if keyword("~~~") => TokenKind.TripleTilde
-      case _ if keyword("<+>") => TokenKind.AngledPlus
-      case _ if keyword("<=>") => TokenKind.AngledEqual
-      case _ if keyword("absent") => TokenKind.KeywordAbsent
-      case _ if keyword("alias") => TokenKind.KeywordAlias
-      case _ if keyword("and") => TokenKind.KeywordAnd
-      case _ if keyword("as") => TokenKind.KeywordAs
-      case _ if keyword("case") => TokenKind.KeywordCase
-      case _ if keyword("catch") => TokenKind.KeywordCatch
-      case _ if keyword("checked_cast") => TokenKind.KeywordCheckedCast
-      case _ if keyword("checked_ecast") => TokenKind.KeywordCheckedECast
-      case _ if keyword("choose") => TokenKind.KeywordChoose
-      case _ if keyword("class") => TokenKind.KeywordClass
-      case _ if keyword("debug") => TokenKind.KeywordDebug
-      case _ if keyword("def") => TokenKind.KeywordDef
-      case _ if keyword("deref") => TokenKind.KeywordDeref
-      case _ if keyword("discard") => TokenKind.KeywordDiscard
-      case _ if keyword("do") => TokenKind.KeywordDo
-      case _ if keyword("eff") => TokenKind.KeywordEff
-      case _ if keyword("else") => TokenKind.KeywordElse
-      case _ if keyword("enum") => TokenKind.KeywordEnum
-      case _ if keyword("false") => TokenKind.KeywordFalse
-      case _ if keyword("fix") => TokenKind.KeywordFix
-      case _ if keyword("for") => TokenKind.KeywordFor
-      case _ if keyword("forA") => TokenKind.KeywordForA
-      case _ if keyword("forall") => TokenKind.KeywordForall
-      case _ if keyword("force") => TokenKind.KeywordForce
-      case _ if keyword("foreach") => TokenKind.KeywordForeach
-      case _ if keyword("forM") => TokenKind.KeywordForM
-      case _ if keyword("from") => TokenKind.KeywordFrom
-      case _ if keyword("get") => TokenKind.KeywordGet
-      case _ if keyword("if") => TokenKind.KeywordIf
-      case _ if keyword("import") => TokenKind.KeywordImport
-      case _ if keyword("impure") => TokenKind.KeywordImpure
-      case _ if keyword("inject") => TokenKind.KeywordInject
-      case _ if keyword("inline") => TokenKind.KeywordInline
-      case _ if keyword("instance") => TokenKind.KeywordInstance
-      case _ if keyword("into") => TokenKind.KeywordInto
-      case _ if keyword("law") => TokenKind.KeywordLaw
-      case _ if keyword("lawful") => TokenKind.KeywordLawful
-      case _ if keyword("lazy") => TokenKind.KeywordLazy
-      case _ if keyword("let") => TokenKind.KeywordLet
-      case _ if keyword("masked_cast") => TokenKind.KeywordMaskedCast
-      case _ if keyword("match") => TokenKind.KeywordMatch
-      case _ if keyword("mod") => TokenKind.KeywordMod
-      case _ if keyword("new") => TokenKind.KeywordNew
-      case _ if keyword("not") => TokenKind.KeywordNot
-      case _ if keyword("null") => TokenKind.KeywordNull
-      case _ if keyword("open") => TokenKind.KeywordOpen
-      case _ if keyword("open_as") => TokenKind.KeywordOpenAs
-      case _ if keyword("or") => TokenKind.KeywordOr
-      case _ if keyword("override") => TokenKind.KeywordOverride
-      case _ if keyword("par") => TokenKind.KeywordPar
-      case _ if keyword("present") => TokenKind.KeywordPresent
-      case _ if keyword("project") => TokenKind.KeywordProject
-      case _ if keyword("pub") => TokenKind.KeywordPub
-      case _ if keyword("pure") => TokenKind.KeywordPure
-      case _ if keyword("query") => TokenKind.KeywordQuery
-      case _ if keyword("ref") => TokenKind.KeywordRef
-      case _ if keyword("region") => TokenKind.KeywordRegion
-      case _ if keyword("relational_choose") => TokenKind.KeywordRelationalChoose
-      case _ if keyword("restrictable") => TokenKind.KeywordRestrictable
-      case _ if keyword("resume") => TokenKind.KeywordResume
-      case _ if keyword("sealed") => TokenKind.KeywordSealed
-      case _ if keyword("select") => TokenKind.KeywordSelect
-      case _ if keyword("solve") => TokenKind.KeywordSolve
-      case _ if keyword("spawn") => TokenKind.KeywordSpawn
-      case _ if keyword("static") => TokenKind.KeywordStatic
-      case _ if keyword("true") => TokenKind.KeywordTrue
-      case _ if keyword("try") => TokenKind.KeywordTry
-      case _ if keyword("type") => TokenKind.KeywordType
-      case _ if keyword("typematch") => TokenKind.KeywordTypeMatch
-      case _ if keyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
-      case _ if keyword("use") => TokenKind.KeywordUse
-      case _ if keyword("where") => TokenKind.KeywordWhere
-      case _ if keyword("with") => TokenKind.KeywordWith
-      case _ if keyword("without") => TokenKind.KeywordWithout
-      case _ if keyword("yield") => TokenKind.KeywordYield
-      case _ if keyword("Set#") => TokenKind.SetHash
-      case _ if keyword("Array#") => TokenKind.ArrayHash
-      case _ if keyword("Map#") => TokenKind.MapHash
-      case _ if keyword("List#") => TokenKind.ListHash
-      case _ if keyword("Vector#") => TokenKind.VectorHash
-      case _ if isMathNameChar(c) => mathName()
-      case _ if isGreekNameChar(c) => greekName()
+      case _ if isKeyword("???") => TokenKind.HoleAnonymous
+      case '?' if peek().isLetter => acceptNamedHole()
+      case _ if isKeyword("**") => TokenKind.StarStar
+      case _ if isKeyword("<-") => TokenKind.BackArrow
+      case _ if isKeyword("=>") => TokenKind.Arrow
+      case _ if isKeyword("<=") => TokenKind.AngleLEqual
+      case _ if isKeyword(">=") => TokenKind.AngleREqual
+      case _ if isKeyword("==") => TokenKind.EqualEqual
+      case _ if isKeyword("&&&") => TokenKind.TripleAmpersand
+      case _ if isKeyword("<<<") => TokenKind.TripleAngleL
+      case _ if isKeyword(">>>") => TokenKind.TripleAngleR
+      case _ if isKeyword("^^^") => TokenKind.TripleCaret
+      case _ if isKeyword("|||") => TokenKind.TripleBar
+      case _ if isKeyword("~~~") => TokenKind.TripleTilde
+      case _ if isKeyword("<+>") => TokenKind.AngledPlus
+      case _ if isKeyword("<=>") => TokenKind.AngledEqual
+      case _ if isKeyword("absent") => TokenKind.KeywordAbsent
+      case _ if isKeyword("alias") => TokenKind.KeywordAlias
+      case _ if isKeyword("and") => TokenKind.KeywordAnd
+      case _ if isKeyword("as") => TokenKind.KeywordAs
+      case _ if isKeyword("case") => TokenKind.KeywordCase
+      case _ if isKeyword("catch") => TokenKind.KeywordCatch
+      case _ if isKeyword("checked_cast") => TokenKind.KeywordCheckedCast
+      case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
+      case _ if isKeyword("choose") => TokenKind.KeywordChoose
+      case _ if isKeyword("class") => TokenKind.KeywordClass
+      case _ if isKeyword("debug") => TokenKind.KeywordDebug
+      case _ if isKeyword("def") => TokenKind.KeywordDef
+      case _ if isKeyword("deref") => TokenKind.KeywordDeref
+      case _ if isKeyword("discard") => TokenKind.KeywordDiscard
+      case _ if isKeyword("do") => TokenKind.KeywordDo
+      case _ if isKeyword("eff") => TokenKind.KeywordEff
+      case _ if isKeyword("else") => TokenKind.KeywordElse
+      case _ if isKeyword("enum") => TokenKind.KeywordEnum
+      case _ if isKeyword("false") => TokenKind.KeywordFalse
+      case _ if isKeyword("fix") => TokenKind.KeywordFix
+      case _ if isKeyword("for") => TokenKind.KeywordFor
+      case _ if isKeyword("forA") => TokenKind.KeywordForA
+      case _ if isKeyword("forall") => TokenKind.KeywordForall
+      case _ if isKeyword("force") => TokenKind.KeywordForce
+      case _ if isKeyword("foreach") => TokenKind.KeywordForeach
+      case _ if isKeyword("forM") => TokenKind.KeywordForM
+      case _ if isKeyword("from") => TokenKind.KeywordFrom
+      case _ if isKeyword("get") => TokenKind.KeywordGet
+      case _ if isKeyword("if") => TokenKind.KeywordIf
+      case _ if isKeyword("import") => TokenKind.KeywordImport
+      case _ if isKeyword("impure") => TokenKind.KeywordImpure
+      case _ if isKeyword("inject") => TokenKind.KeywordInject
+      case _ if isKeyword("inline") => TokenKind.KeywordInline
+      case _ if isKeyword("instance") => TokenKind.KeywordInstance
+      case _ if isKeyword("into") => TokenKind.KeywordInto
+      case _ if isKeyword("law") => TokenKind.KeywordLaw
+      case _ if isKeyword("lawful") => TokenKind.KeywordLawful
+      case _ if isKeyword("lazy") => TokenKind.KeywordLazy
+      case _ if isKeyword("let") => TokenKind.KeywordLet
+      case _ if isKeyword("masked_cast") => TokenKind.KeywordMaskedCast
+      case _ if isKeyword("match") => TokenKind.KeywordMatch
+      case _ if isKeyword("mod") => TokenKind.KeywordMod
+      case _ if isKeyword("new") => TokenKind.KeywordNew
+      case _ if isKeyword("not") => TokenKind.KeywordNot
+      case _ if isKeyword("null") => TokenKind.KeywordNull
+      case _ if isKeyword("open") => TokenKind.KeywordOpen
+      case _ if isKeyword("open_as") => TokenKind.KeywordOpenAs
+      case _ if isKeyword("or") => TokenKind.KeywordOr
+      case _ if isKeyword("override") => TokenKind.KeywordOverride
+      case _ if isKeyword("par") => TokenKind.KeywordPar
+      case _ if isKeyword("present") => TokenKind.KeywordPresent
+      case _ if isKeyword("project") => TokenKind.KeywordProject
+      case _ if isKeyword("pub") => TokenKind.KeywordPub
+      case _ if isKeyword("pure") => TokenKind.KeywordPure
+      case _ if isKeyword("query") => TokenKind.KeywordQuery
+      case _ if isKeyword("ref") => TokenKind.KeywordRef
+      case _ if isKeyword("region") => TokenKind.KeywordRegion
+      case _ if isKeyword("relational_choose") => TokenKind.KeywordRelationalChoose
+      case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
+      case _ if isKeyword("resume") => TokenKind.KeywordResume
+      case _ if isKeyword("sealed") => TokenKind.KeywordSealed
+      case _ if isKeyword("select") => TokenKind.KeywordSelect
+      case _ if isKeyword("solve") => TokenKind.KeywordSolve
+      case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
+      case _ if isKeyword("static") => TokenKind.KeywordStatic
+      case _ if isKeyword("true") => TokenKind.KeywordTrue
+      case _ if isKeyword("try") => TokenKind.KeywordTry
+      case _ if isKeyword("type") => TokenKind.KeywordType
+      case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
+      case _ if isKeyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
+      case _ if isKeyword("use") => TokenKind.KeywordUse
+      case _ if isKeyword("where") => TokenKind.KeywordWhere
+      case _ if isKeyword("with") => TokenKind.KeywordWith
+      case _ if isKeyword("without") => TokenKind.KeywordWithout
+      case _ if isKeyword("yield") => TokenKind.KeywordYield
+      case _ if isKeyword("Set#") => TokenKind.SetHash
+      case _ if isKeyword("Array#") => TokenKind.ArrayHash
+      case _ if isKeyword("Map#") => TokenKind.MapHash
+      case _ if isKeyword("List#") => TokenKind.ListHash
+      case _ if isKeyword("Vector#") => TokenKind.VectorHash
+      case _ if isMathNameChar(c) => acceptMathName()
+      case _ if isGreekNameChar(c) => acceptGreekName()
       // User defined operators.
-      case _ if validUserOpTokens.contains(c) =>
+      case _ if ValidUserOpTokens.contains(c) =>
         val p = peek()
-        if (validUserOpTokens.contains(p)) {
-          userDefinedOp()
+        if (ValidUserOpTokens.contains(p)) {
+          acceptUserDefinedOp()
         } else if (c == '-' && p.isDigit) {
-          number() // negative numbers.
+          acceptNumber() // negative numbers.
         } else {
-          validUserOpTokens.apply(c)
+          ValidUserOpTokens.apply(c)
         }
-      case c if c.isLetter => name(c.isUpper)
-      case c if c.isDigit => number()
-      case '$' => builtIn()
-      case '\"' => string()
-      case '\'' => char()
-      case '`' => infixFunction()
+      case c if c.isLetter => acceptName(c.isUpper)
+      case c if c.isDigit => acceptNumber()
+      case '$' => acceptBuiltIn()
+      case '\"' => acceptString()
+      case '\'' => acceptChar()
+      case '`' => acceptInfixFunction()
       case _ => TokenKind.Err(TokenErrorKind.UnexpectedChar)
     }
 
@@ -345,7 +361,7 @@ object Lexer {
   /**
    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
    */
-  private def keyword(k: String)(implicit s: State): Boolean = {
+  private def isKeyword(k: String)(implicit s: State): Boolean = {
     // check if the keyword can appear before eof
     if (s.current.offset + k.length > s.src.data.length) {
       return false
@@ -373,7 +389,7 @@ object Lexer {
   /**
    * Moves current position past a built-in function, IE. "$BUILT_IN$".
    */
-  private def builtIn()(implicit s: State): TokenKind = {
+  private def acceptBuiltIn()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (peek() == '$') {
         advance()
@@ -401,7 +417,7 @@ object Lexer {
    * There are edge cases of variable holes, IE. "x?", and java names like "Map$Entry",
    * which is the reason this function will return a `TokenKind`.
    */
-  private def name(isUpper: Boolean)(implicit s: State): TokenKind = {
+  private def acceptName(isUpper: Boolean)(implicit s: State): TokenKind = {
     var kind = if (isUpper) {
       TokenKind.NameUpperCase
     } else {
@@ -427,7 +443,7 @@ object Lexer {
   /**
    * Moves current position past a java name. IE. "##java"
    */
-  private def javaName()(implicit s: State): TokenKind = {
+  private def acceptJavaName()(implicit s: State): TokenKind = {
     advance()
     while (!isAtEnd()) {
       val p = peek()
@@ -444,7 +460,7 @@ object Lexer {
    * Greek names must lie in the unicode range U+0370 to U+03FF.
    * IE. "Χαίρετε"
    */
-  private def greekName()(implicit s: State): TokenKind = {
+  private def acceptGreekName()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!isGreekNameChar(peek())) {
         return TokenKind.NameGreek
@@ -459,7 +475,7 @@ object Lexer {
    */
   private def isGreekNameChar(c: Char): Boolean = {
     val i = c.toInt
-    i >= 880 && i <= 1023
+    0x0370 <= i && i <= 0x03FF
   }
 
   /**
@@ -467,7 +483,7 @@ object Lexer {
    * Math names must lie in the unicode range U+2190 to U+22FF
    * IE. "⊆"
    */
-  private def mathName()(implicit s: State): TokenKind = {
+  private def acceptMathName()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!isMathNameChar(peek())) {
         return TokenKind.NameMath
@@ -482,13 +498,13 @@ object Lexer {
    */
   private def isMathNameChar(c: Char): Boolean = {
     val i = c.toInt
-    i >= 8592 && i <= 8959
+    0x2190 <= i && i <= 0x22FF
   }
 
   /**
    * Moves current position past a named hole. IE. "?foo".
    */
-  private def namedHole()(implicit s: State): TokenKind = {
+  private def acceptNamedHole()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
         return TokenKind.HoleNamed
@@ -502,7 +518,7 @@ object Lexer {
   /**
    * Moves current position past an infix function.
    */
-  private def infixFunction()(implicit s: State): TokenKind = {
+  private def acceptInfixFunction()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (peek() == '`') {
         advance()
@@ -518,9 +534,9 @@ object Lexer {
    * A user defined operator may be any combination of length 2 or more
    * of the characters in `validUserOpTokens`.
    */
-  private def userDefinedOp()(implicit s: State): TokenKind = {
+  private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
-      if (!validUserOpTokens.contains(peek())) {
+      if (!ValidUserOpTokens.contains(peek())) {
         return TokenKind.UserDefinedOperator
       } else {
         advance()
@@ -530,26 +546,10 @@ object Lexer {
   }
 
   /**
-   * The characters allowed in a user defined operator mapped to their `TokenKind`s
-   */
-  private val validUserOpTokens = Map(
-    '+' -> TokenKind.Plus,
-    '-' -> TokenKind.Minus,
-    '*' -> TokenKind.Star,
-    '<' -> TokenKind.AngleL,
-    '>' -> TokenKind.AngleR,
-    '=' -> TokenKind.Equal,
-    '!' -> TokenKind.Bang,
-    '&' -> TokenKind.Ampersand,
-    '|' -> TokenKind.Bar,
-    '^' -> TokenKind.Caret,
-  )
-
-  /**
    * Moves current position past a string literal.
    * If the string is unterminated a `TokenKind.Err` is returned.
    */
-  private def string()(implicit s: State): TokenKind = {
+  private def acceptString()(implicit s: State): TokenKind = {
     var prev = ' '
     while (!isAtEnd()) {
       val p = peek()
@@ -568,7 +568,7 @@ object Lexer {
    * Moves current position past a char literal.
    * If the char is unterminated a `TokenKind.Err` is returned
    */
-  private def char()(implicit s: State): TokenKind = {
+  private def acceptChar()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (peek() == '\'') {
         advance()
@@ -585,7 +585,7 @@ object Lexer {
    * It is optional to have a trailing type indicator on number literals.
    * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
    */
-  private def number()(implicit s: State): TokenKind = {
+  private def acceptNumber()(implicit s: State): TokenKind = {
     var isDecimal = false
     while (!isAtEnd()) {
       peek() match {
@@ -602,14 +602,14 @@ object Lexer {
 
         // If this is reached an explicit number type might occur next
         case _ => return advance() match {
-          case _ if keyword("f32") => TokenKind.LiteralFloat32
-          case _ if keyword("f64") => TokenKind.LiteralFloat64
-          case _ if keyword("i8") => TokenKind.LiteralInt8
-          case _ if keyword("i16") => TokenKind.LiteralInt16
-          case _ if keyword("i32") => TokenKind.LiteralInt32
-          case _ if keyword("i64") => TokenKind.LiteralInt64
-          case _ if keyword("ii") => TokenKind.LiteralBigInt
-          case _ if keyword("ff") => TokenKind.LiteralBigDecimal
+          case _ if isKeyword("f32") => TokenKind.LiteralFloat32
+          case _ if isKeyword("f64") => TokenKind.LiteralFloat64
+          case _ if isKeyword("i8") => TokenKind.LiteralInt8
+          case _ if isKeyword("i16") => TokenKind.LiteralInt16
+          case _ if isKeyword("i32") => TokenKind.LiteralInt32
+          case _ if isKeyword("i64") => TokenKind.LiteralInt64
+          case _ if isKeyword("ii") => TokenKind.LiteralBigInt
+          case _ if isKeyword("ff") => TokenKind.LiteralBigDecimal
           case _ =>
             retreat()
             if (isDecimal) {
@@ -626,7 +626,7 @@ object Lexer {
   /**
    * Moves current position past an annotation. IE. "@Test".
    */
-  private def annotation()(implicit s: State): TokenKind = {
+  private def acceptAnnotation()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (!peek().isLetter) {
         return TokenKind.Annotation
@@ -640,7 +640,7 @@ object Lexer {
   /**
    * Moves current position past a line-comment
    */
-  private def lineComment()(implicit s: State): TokenKind = {
+  private def acceptLineComment()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
       if (peek() == '\n') {
         return TokenKind.CommentLine
@@ -659,13 +659,13 @@ object Lexer {
    * A block-comment might also be unterminated if there is less terminations than levels of nesting.
    * In this case a `TokenKind.Err` is returned as well.
    */
-  private def blockComment()(implicit s: State): TokenKind = {
+  private def acceptBlockComment()(implicit s: State): TokenKind = {
     var level = 1
     while (!isAtEnd()) {
       (peek(), peekPeek()) match {
         case ('/', Some('*')) =>
           level += 1
-          if (level >= MAX_BLOCK_COMMENT_NESTING_LEVEL) {
+          if (level >= BlockCommentMaxNestingLevel) {
             return TokenKind.Err(TokenErrorKind.BlockCommentTooDeep)
           }
           advance()
