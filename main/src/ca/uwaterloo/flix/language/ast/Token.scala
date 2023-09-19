@@ -15,4 +15,9 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-case class Token(kind: TokenKind, text: String, line: Int, col: Int)
+case class Token(kind: TokenKind, src: Array[Char], startOffset: Int, endOffset: Int, line: Int, col: Int) {
+  /**
+   * Computes the lexeme that the token refers to by slicing it from `src`.
+   */
+  def text(): String = src.slice(startOffset, endOffset).mkString("")
+}

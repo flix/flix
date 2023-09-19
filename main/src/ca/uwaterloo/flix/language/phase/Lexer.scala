@@ -108,14 +108,14 @@ object Lexer {
     }
 
     // Add a virtual eof token at the last position.
-    s.tokens += Token(TokenKind.Eof, "<eof>", s.current.line, s.current.column)
+    addToken(TokenKind.Eof)
 
     if (src.name == "Fixpoint/Ram/RamStmt.flix") {
       println(s.tokens.mkString("\n"))
     }
 
     val errorTokens = s.tokens.collect {
-      case Token(TokenKind.Err(err), text, line, col) => tokenErrToCompilationMessage(err, text, line, col)
+      case t@Token(TokenKind.Err(err), _, _, _, _, _) => tokenErrToCompilationMessage(err, t)
     }
     if (errorTokens.nonEmpty) {
       Validation.SoftFailure(s.tokens.toArray, LazyList.from(errorTokens))
@@ -182,8 +182,7 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    val text = s.src.data.slice(s.start.offset, s.current.offset).mkString("")
-    s.tokens += Token(kind, text, s.start.line, s.start.column)
+    s.tokens += Token(kind, s.src.data, s.start.line, s.start.column, s.start.offset, s.current.offset)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
@@ -368,28 +367,37 @@ object Lexer {
   /**
    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
    */
-  private def isKeyword(k: String)(implicit s: State): Boolean = {
-    // check if the keyword can appear before eof
-    if (s.current.offset + k.length > s.src.data.length) {
+  private def isMatch(keyword: String)(implicit s: State): Boolean = {
+    // Check if the keyword can appear before eof.
+    if (s.current.offset + keyword.length > s.src.data.length) {
       return false
     }
 
+    // Check if the next n characters in source matches those of keyword one at a time.
     val start = s.current.offset - 1
     var matches = true
     var offset = 0
-    while (matches && offset < k.length) {
-      if (s.src.data(start + offset) != k(offset)) {
+    while (matches && offset < keyword.length) {
+      if (s.src.data(start + offset) != keyword(offset)) {
         matches = false
       } else {
         offset += 1
       }
     }
+    matches
+  }
+
+  /**
+   * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match
+   */
+  private def isKeyword(keyword: String)(implicit s: State): Boolean = {
+    val matches = isMatch(keyword)
     if (matches) {
-      for (_ <- 1 until k.length) {
+      for (_ <- 1 until keyword.length) {
         advance()
       }
     }
-
     matches
   }
 
@@ -694,14 +702,15 @@ object Lexer {
    * each holding a kind of the simple type `ErrKind`.
    * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
    */
-  private def tokenErrToCompilationMessage(e: TokenErrorKind, t: String, l: Int, c: Int)(implicit s: State): CompilationMessage = {
-    val o = e match {
+  private def tokenErrToCompilationMessage(e: TokenErrorKind, token: Token)(implicit s: State): CompilationMessage = {
+    val t = token.text()
+    val offset = e match {
       case TokenErrorKind.UnexpectedChar | TokenErrorKind.DoubleDottedNumber => t.length
       case TokenErrorKind.BlockCommentTooDeep => 2
       case _ => 1
     }
 
-    val loc = SourceLocation(None, s.src, SourceKind.Real, l, c, l, c + o)
+    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + offset)
     e match {
       case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
       case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
