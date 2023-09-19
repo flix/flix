@@ -49,16 +49,6 @@ object TypeReconstruction {
   }
 
   /**
-    * Applies the given function `f` to each value in the map `m` in parallel.
-    */
-    // TODO should be in ParOps
-  @inline
-  def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
-    ParOps.parMap(m) {
-      case (k, v) => (k, f(v))
-    }.toMap
-
-  /**
     * Creates a class environment from the classes and instances in the root.
     */
   private def mkClassEnv(classes0: Map[Symbol.ClassSym, KindedAst.Class], instances0: Map[Symbol.ClassSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.ClassSym, Ast.ClassContext] =
@@ -153,7 +143,7 @@ object TypeReconstruction {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    parMapValues(root.defs) {
+    ParOps.mapValues(root.defs) {
       case defn => visitDef(defn, root, substs(defn.sym))
     }
   }
@@ -162,14 +152,14 @@ object TypeReconstruction {
     * Reconstructs types in the given classes.
     */
   private def visitClasses(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, TypedAst.Class] = {
-    parMapValues(root.classes)(visitClass(_, root, defSubsts, sigSubsts))
+    ParOps.mapValues(root.classes)(visitClass(_, root, defSubsts, sigSubsts))
   }
 
   /**
     * Reconstructs types in the given instances.
     */
   private def visitInstances(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, List[TypedAst.Instance]] = {
-    parMapValues(root.instances) {
+    ParOps.mapValues(root.instances) {
       case insts => insts.map(visitInstance(_, root, substs))
     }
   }
