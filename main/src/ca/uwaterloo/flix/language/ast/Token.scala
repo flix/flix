@@ -31,7 +31,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, line: 
   /**
    * Computes the lexeme that the token refers to by slicing it from `src`.
    */
-  def text(): String = src.slice(start, end).mkString("")
+  lazy val text: String = src.slice(start, end).mkString("")
 
-  override def toString: String = s"Token($kind, ${text()}, $line, $col)"
+  override def toString: String = s"Token($kind, $text, $line, $col)"
 }
