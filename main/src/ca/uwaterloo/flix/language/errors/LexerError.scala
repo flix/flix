@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.language.phase.Lexer.{InterpolatedStringMaxNestingLevel, BlockCommentMaxNestingLevel}
 
 sealed trait LexerError extends CompilationMessage {
   val kind = "Lexer Error"
@@ -44,7 +45,7 @@ object LexerError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Ensure that block-comments are not nested more than 32 levels deep."
+      s"${underline("Tip:")} Ensure that block-comments are not nested more than $BlockCommentMaxNestingLevel levels deep."
     })
   }
 
@@ -158,7 +159,7 @@ object LexerError {
   /**
    * An error raised when an unterminated infix function is encountered.
    *
-   * @param loc The location of the opening '`'.
+   * @param loc The location of the opening '&#96;'.
    */
   case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated infix function."
@@ -196,5 +197,49 @@ object LexerError {
 
     override def explain(formatter: Formatter): Option[String] = None
   }
-}
 
+  /**
+   * An error raised when an unterminated string is encountered.
+   *
+   * @param loc The location of the opening `{`.
+   */
+  case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated string interpolation."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unterminated string interpolation.
+         |
+         |${code(loc, "Interpolation starts here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when block-comments are nested too deep.
+   *
+   * @param loc The location of the opening "${".
+   */
+  case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"String interpolation nested too deep."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> String interpolation  nested too deep.
+         |
+         |${code(loc, "Interpolation starts here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that string interpolations are not nested more than $InterpolatedStringMaxNestingLevel levels deep."
+    })
+  }
+}

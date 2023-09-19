@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
-// TODO: string interpolation
-
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
  * This lexer is resilient, meaning that when an unrecognized character is encountered,
@@ -37,7 +35,12 @@ object Lexer {
   /**
    * The maximal allowed nesting level of block-comments.
    */
-  private val BlockCommentMaxNestingLevel = 32
+  val BlockCommentMaxNestingLevel = 32
+
+  /**
+   * The maximal allowed nesting level of string interpolation.
+   */
+  val InterpolatedStringMaxNestingLevel = 32
 
   /**
    * The characters allowed in a user defined operator mapped to their `TokenKind`s
@@ -67,6 +70,7 @@ object Lexer {
     var start: Position = new Position(0, 0, 0)
     val current: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
+    var interpolationNestingLevel: Int = 0
   }
 
   /**
@@ -98,7 +102,7 @@ object Lexer {
       whitespace()
       if (!isAtEnd()) {
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
-        scanToken()
+        addToken(scanToken())
       }
     }
 
@@ -193,14 +197,13 @@ object Lexer {
    * available token should be by looking at the coming character in source.
    * This requires potentially infinite look-ahead for things like block-comments and formatted strings,
    * but in many cases one or two characters is enough.
-   * Finally `addToken` is called to actually consume the token from source.
    */
-  private def scanToken()(implicit s: State): Unit = {
+  private def scanToken()(implicit s: State): TokenKind = {
     val c = advance()
 
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
-    val kind = c match {
+    c match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
@@ -354,8 +357,6 @@ object Lexer {
       case '`' => acceptInfixFunction()
       case _ => TokenKind.Err(TokenErrorKind.UnexpectedChar)
     }
-
-    addToken(kind)
   }
 
   /**
@@ -560,17 +561,83 @@ object Lexer {
    */
   private def acceptString()(implicit s: State): TokenKind = {
     var prev = ' '
+    var kind: TokenKind = TokenKind.LiteralString
     while (!isAtEnd()) {
-      val p = peek()
-      // Check for termination while handling escaped '\"'
+      var p = peek()
+
+      // Check for the beginning of an string interpolation.
+      if (prev == '$' && p == '{') {
+        acceptStringInterpolation() match {
+          case e@TokenKind.Err(_) => return e
+          case k =>
+            // Resume regular string literal tokenization by resetting p and prev.
+            kind = k
+            p = peek()
+            prev = ' '
+        }
+      }
+
+      // Check for termination while handling escaped '\"'.
       if (p == '\"' && prev != '\\') {
         advance()
-        return TokenKind.LiteralString
+        return kind
       }
       prev = advance()
     }
 
     TokenKind.Err(TokenErrorKind.UnterminatedString)
+  }
+
+  /**
+   * Moves current position past an interpolated expression within a string. IE. "Hi ${name}!".
+   * Note that this function works a little differently to the other `accept*` functions
+   * since it will produce a number of tokens before returning.
+   * This is necessary since it must be able to move past any expressions,
+   * including nested string literals, which might also include interpolation.
+   * This is done by calling `scanToken` and `addToken` manually like in the top-most `lex` function,
+   * while looking for the terminating '}'.
+   * A max nesting level is enforced via `state.interpolationNestingLevel` to avoid blowing the stack.
+   *
+   * Some tricky but valid strings include:
+   * "Hello ${" // "} world!"
+   * "My favorite number is ${ {40 + 2} }!"
+   * "${"${}"}"
+   */
+  private def acceptStringInterpolation()(implicit s: State): TokenKind = {
+    // Handle max nesting level
+    s.interpolationNestingLevel += 1
+    if (s.interpolationNestingLevel > InterpolatedStringMaxNestingLevel) {
+      s.interpolationNestingLevel = 0
+      return TokenKind.Err(TokenErrorKind.StringInterpolationTooDeep)
+    }
+
+    advance() // Consume '{'.
+    addToken(TokenKind.LiteralStringInterpolationL)
+    // consume tokens until a terminating '}' is found
+    var blockNestingLevel = 0
+    while (!isAtEnd()) {
+      whitespace()
+      if (!isAtEnd()) {
+        s.start = new Position(s.current.line, s.current.column, s.current.offset)
+        val kind = scanToken()
+
+        // Handle nested block expressions like `"my favorite number is ${ {40 + 2} }!"`.
+        if (kind == TokenKind.CurlyL) {
+          blockNestingLevel += 1
+        }
+
+        // Check for the terminating '}'.
+        if (kind == TokenKind.CurlyR) {
+          if (blockNestingLevel == 0) {
+            s.interpolationNestingLevel -= 1
+            return TokenKind.LiteralStringInterpolationR
+          }
+          blockNestingLevel -= 1
+        }
+        addToken(kind)
+      }
+    }
+    TokenKind.Err(TokenErrorKind.UnterminatedStringInterpolation)
   }
 
   /**
@@ -717,6 +784,8 @@ object Lexer {
       case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)
       case TokenErrorKind.UnterminatedInfixFunction => LexerError.UnterminatedInfixFunction(loc)
       case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
+      case TokenErrorKind.UnterminatedStringInterpolation => LexerError.UnterminatedStringInterpolation(loc)
+      case TokenErrorKind.StringInterpolationTooDeep => LexerError.StringInterpolationTooDeep(loc)
     }
   }
 }
