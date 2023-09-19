@@ -23,6 +23,10 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
+// TODO: Char hex codes '\u0000'
+// TODO: Unicode chars
+// TODO: Out of bounds errors on peek
+
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
  * This lexer is resilient, meaning that when an unrecognized character is encountered,
@@ -214,6 +218,7 @@ object Lexer {
       case ',' => TokenKind.Comma
       case '_' => TokenKind.Underscore
       case '.' => TokenKind.Dot
+      case '~' => TokenKind.Tilde
       case '\\' => TokenKind.Backslash
       case '#' => if (peek() == '#') {
         acceptJavaName()
@@ -745,6 +750,7 @@ object Lexer {
             return TokenKind.Err(TokenErrorKind.BlockCommentTooDeep)
           }
           advance()
+        case _ => advance()
         case ('*', Some('/')) =>
           level -= 1
           advance()
@@ -752,7 +758,6 @@ object Lexer {
           if (level == 0) {
             return TokenKind.CommentBlock
           }
-        case _ => advance()
       }
     }
     TokenKind.Err(TokenErrorKind.UnterminatedBlockComment)

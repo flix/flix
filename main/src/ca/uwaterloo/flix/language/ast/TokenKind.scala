@@ -301,6 +301,8 @@ object TokenKind {
 
   case object StarStar extends TokenKind
 
+  case object Tilde extends TokenKind
+
   case object TripleAmpersand extends TokenKind
 
   case object TripleAngleL extends TokenKind
