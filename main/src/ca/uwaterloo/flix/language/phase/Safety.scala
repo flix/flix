@@ -75,7 +75,7 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root)
+    visitTestEntryPoint(def0) ::: visitExp(def0.exp, renv, root)
   }
 
   /**
@@ -715,7 +715,7 @@ object Safety {
   /**
     * Helper function for [[visitPat]].
     */
-  private def visitRecordPattern(pats: List[Pattern.Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
+  private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
     visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
   }
 

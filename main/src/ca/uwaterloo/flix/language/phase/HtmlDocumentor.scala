@@ -26,7 +26,6 @@ import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
 
 import java.net.URLEncoder
-import scala.collection.mutable
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -63,18 +62,37 @@ object HtmlDocumentor {
   val Script: String = "/doc/index.js"
 
   /**
+    * The path to the the icon directory, relative to the resources folder.
+    */
+  val Icons: String = "/doc/icons"
+
+  /**
     * The root of the link to each file of the standard library.
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
-    val modules = splitModules(root)
-    val filteredModules = filterModules(modules)
-    filteredModules.foreach {
-      case (_, mod) =>
-        val out = documentModule(mod)
-        writeModule(mod, out)
+    val modulesRoot = splitModules(root)
+    val filteredModulesRoot = filterModules(modulesRoot)
+
+    def visitMod(mod: Module): Unit = {
+      val out = documentModule(mod)
+      writeDocFile(moduleFileName(mod.sym), out)
+
+      mod.submodules.foreach(visitMod)
+      mod.classes.foreach(visitClass)
     }
+
+    def visitClass(clazz: Class): Unit = {
+      val out = documentClass(clazz)
+      writeDocFile(classFileName(clazz.sym), out)
+
+      clazz.companionMod.foreach {
+        _.submodules.foreach(visitMod)
+      }
+    }
+
+    visitMod(filteredModulesRoot)
     writeAssets()
   }
 
@@ -88,99 +106,113 @@ object HtmlDocumentor {
   /**
     * Get the file name of the module.
     */
-  private def moduleFileName(sym: Symbol.ModuleSym): String = if (sym.isRoot) RootFileName else sym.toString
+  private def moduleFileName(sym: Symbol.ModuleSym): String = s"${if (sym.isRoot) RootFileName else sym.toString}.html"
 
   /**
-    * Splits the modules present in the root into a set of `HtmlDocumentor.Module`s, making them easier to work with.
+    * Get the display name of the class.
+    *
+    * See also `classFileName` for the file name of the class.
     */
-  private def splitModules(root: TypedAst.Root): Map[Symbol.ModuleSym, Module] = {
-    val noParents = root.modules.map {
-      case (sym, mod) =>
-        val uses = root.uses.getOrElse(sym, Nil)
+  private def className(sym: Symbol.ClassSym): String = sym.toString
 
-        var submodules: List[Symbol.ModuleSym] = Nil
-        var classes: List[Class] = Nil
-        var enums: List[TypedAst.Enum] = Nil
-        var effects: List[TypedAst.Effect] = Nil
-        var typeAliases: List[TypedAst.TypeAlias] = Nil
-        var defs: List[TypedAst.Def] = Nil
-        mod.foreach {
-          case sym: Symbol.ModuleSym => submodules = sym :: submodules
-          case sym: Symbol.ClassSym => classes = mkClass(sym, root) :: classes
-          case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
-          case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
-          case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
-          case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
-          case _ => // No op
-        }
+  /**
+    * Get the file name of the class, excluding extension.
+    */
+  private def classFileName(sym: Symbol.ClassSym): String = s"${sym.toString}.html"
 
-        sym -> Module(
-          sym,
-          parent = None,
-          uses,
-          submodules,
-          classes,
-          enums,
-          effects,
-          typeAliases,
-          defs,
-        )
-    }
+  /**
+    * Splits the modules present in the root into a tree of `HtmlDocumentor.Module`s, making them easier to work with.
+    */
+  private def splitModules(root: TypedAst.Root): Module = {
 
-    val children = noParents.flatMap {
-      case (parentSym, mod) => mod.submodules.map {
-        subSym =>
-          val Module(_, _, uses, submodules, classes, enums, effects, typeAliases, defs) = noParents(subSym)
-          subSym -> Module(
-            subSym,
-            parent = Some(parentSym),
-            uses,
-            submodules,
-            classes,
-            enums,
-            effects,
-            typeAliases,
-            defs,
-          )
+    /**
+      * Visits a module and all of its submodules
+      */
+    def visitMod(moduleSym: Symbol.ModuleSym, parent: Option[Symbol.ModuleSym]): Module = {
+      val mod = root.modules(moduleSym)
+      val uses = root.uses.getOrElse(moduleSym, Nil)
+
+      /** Modules that should not be included as a submodule */
+      var companionMods: List[Symbol.ModuleSym] = Nil
+
+      var submodules: List[Symbol.ModuleSym] = Nil
+      var classes: List[Class] = Nil
+      var enums: List[TypedAst.Enum] = Nil
+      var effects: List[TypedAst.Effect] = Nil
+      var typeAliases: List[TypedAst.TypeAlias] = Nil
+      var defs: List[TypedAst.Def] = Nil
+      mod.foreach {
+        case sym: Symbol.ModuleSym => submodules = sym :: submodules
+        case sym: Symbol.ClassSym =>
+          val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
+          companionMod.foreach(m => companionMods = m.sym :: companionMods)
+          classes = mkClass(sym, moduleSym, companionMod, root) :: classes
+        case sym: Symbol.EnumSym => enums = root.enums(sym) :: enums
+        case sym: Symbol.EffectSym => effects = root.effects(sym) :: effects
+        case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
+        case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
+        case _ => // No op
       }
+
+      submodules = submodules.filterNot(companionMods.contains)
+
+      Module(
+        moduleSym,
+        parent,
+        uses,
+        submodules.map(visitMod(_, Some(moduleSym))),
+        classes,
+        enums,
+        effects,
+        typeAliases,
+        defs,
+      )
     }
 
-    val rootSym = Symbol.mkModuleSym(Nil)
-    val rootMod = noParents(rootSym)
-    children + (rootSym -> rootMod)
+    /**
+      * Get the optional companion module for the item with the given `namespace`.
+      * `namespace` should include the name of the item itself.
+      */
+    def companionModule(namespace: List[String], parent: Symbol.ModuleSym, root: TypedAst.Root): Option[Module] = {
+      val sym = Symbol.mkModuleSym(namespace)
+      if (root.modules.contains(sym)) Some(visitMod(sym, Some(parent)))
+      else None
+    }
+
+    visitMod(Symbol.mkModuleSym(Nil), None)
   }
 
   /**
     * Extracts all relevant information about the given `ClassSym` from the root, into a `HtmlDocumentor.Class`.
     */
-  private def mkClass(sym: Symbol.ClassSym, root: TypedAst.Root): Class = root.classes(sym) match {
+  private def mkClass(sym: Symbol.ClassSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = root.classes(sym) match {
     case TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs0, laws, loc) =>
 
-      val (sigs, defs) = sigs0.partition(_.impl.isEmpty)
+      val (sigs, defs) = sigs0.partition(_.exp.isEmpty)
       val instances = root.instances.getOrElse(sym, Nil)
 
-      Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, defs, laws, instances, loc)
+      Class(doc, ann, mod, sym, parent, tparam, superClasses, assocs, sigs, defs, laws, instances, companionMod, loc)
   }
 
   /**
-    * Filter the map of modules, removing all items and empty modules, which shouldn't appear in the documentation.
+    * Filter the module, `mod`, and its children, removing all items and empty modules, which shouldn't appear in the documentation.
     */
-  private def filterModules(mods: Map[Symbol.ModuleSym, HtmlDocumentor.Module]): Map[Symbol.ModuleSym, Module] = {
-    filterEmpty(filterItems(mods))
+  private def filterModules(mod: Module): Module = {
+    filterEmpty(filterItems(mod))
   }
 
   /**
-    * Returns a map of modules corresponding to the given input,
+    * Returns a tree of modules corresponding to the given input,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterItems(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = mods.map {
-    case (sym, Module(_, parent, uses, submodules, classes, enums, effects, typeAliases, defs)) =>
-      sym -> Module(
+  private def filterItems(mod: Module): Module = mod match {
+    case Module(sym, parent, uses, submodules, classes, enums, effects, typeAliases, defs) =>
+      Module(
         sym,
         parent,
         uses,
-        submodules,
-        classes.filter(c => c.mod.isPublic && !c.ann.isInternal).map(filterClass),
+        submodules.map(filterItems),
+        classes.filter(c => c.modifiers.isPublic && !c.ann.isInternal).map(filterClass),
         enums.filter(e => e.mod.isPublic && !e.ann.isInternal),
         effects.filter(e => e.mod.isPublic && !e.ann.isInternal),
         typeAliases.filter(t => t.mod.isPublic),
@@ -194,12 +226,13 @@ object HtmlDocumentor {
     * but with all items that shouldn't appear in the documentation removed.
     */
   private def filterClass(clazz: Class): Class = clazz match {
-    case Class(doc, ann, mod, sym, tparam, superClasses, assoc, signatures, defs, laws, instances, loc) =>
+    case Class(doc, ann, mod, sym, parent, tparam, superClasses, assoc, signatures, defs, laws, instances, companionMod, loc) =>
       Class(
         doc,
         ann,
         mod,
         sym,
+        parent,
         tparam,
         superClasses,
         assoc.filter(a => a.mod.isPublic),
@@ -207,46 +240,74 @@ object HtmlDocumentor {
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         laws.filter(l => l.spec.mod.isPublic && !l.spec.ann.isInternal),
         instances.filter(i => !i.ann.isInternal),
+        companionMod.map(filterItems),
         loc,
       )
   }
 
   /**
     * Remove any modules and references to them if they:
-    *   1. Contain no public items
-    *   1. Contain no submodules with any public items
+    *   1. Contain no items
+    *   1. Contain no submodules with any items
     */
-  private def filterEmpty(mods: Map[Symbol.ModuleSym, Module]): Map[Symbol.ModuleSym, Module] = {
-    val modMap: mutable.Map[Symbol.ModuleSym, Module] = mutable.Map(mods.toSeq: _*)
-
+  private def filterEmpty(mod: Module): Module = {
     /**
       * Recursively walks the module tree removing empty modules.
       * These modules are removed from the map, and from the `submodules` field.
       *
       * Returns a boolean, describing whether or not this module is included.
       */
-    def checkMod(sym: Symbol.ModuleSym): Boolean = {
-      modMap(sym) match {
-        case Module(_, parent, uses, submodules, classes, enums, effects, typeAliases, defs) =>
-          val filteredSubMods = submodules.filter(checkMod)
+    def visitMod(mod: Module): Option[Module] = {
+      mod match {
+        case Module(sym, parent, uses, submodules, classes, enums, effects, typeAliases, defs) =>
+          val filteredSubMods = submodules.flatMap(visitMod)
+          val filteredClasses = classes.map {
+            case Class(doc, ann, modifiers, sym, parent, tparam, superClasses, assocs, signatures, defs, laws, instances, companionMod, loc) =>
+              Class(
+                doc,
+                ann,
+                modifiers,
+                sym,
+                parent,
+                tparam,
+                superClasses,
+                assocs,
+                signatures,
+                defs,
+                laws,
+                instances,
+                companionMod.flatMap(visitMod),
+                loc
+              )
+          }
 
-          val isEmpty = filteredSubMods.isEmpty &&
+          val isEmpty = {
+            filteredSubMods.isEmpty &&
             classes.isEmpty &&
             enums.isEmpty &&
             effects.isEmpty &&
             typeAliases.isEmpty &&
             defs.isEmpty
+          }
 
-          if (isEmpty) modMap.remove(sym)
-          else modMap += sym -> Module(sym, parent, uses, filteredSubMods, classes, enums, effects, typeAliases, defs)
-
-          !isEmpty
+          if (isEmpty) None
+          else Some(
+            Module(
+              sym,
+              parent,
+              uses,
+              filteredSubMods,
+              filteredClasses,
+              enums,
+              effects,
+              typeAliases,
+              defs
+            )
+          )
       }
     }
 
-    val root = Symbol.mkModuleSym(Nil)
-    checkMod(root)
-    Map(modMap.toSeq: _*)
+    visitMod(mod).get
   }
 
   /**
@@ -255,7 +316,7 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val sortedMods = mod.submodules.sortBy(_.ns.last)
+    val sortedMods = mod.submodules.sortBy(_.sym.ns.last)
     val sortedClasses = mod.classes.sortBy(_.sym.name)
     val sortedEnums = mod.enums.sortBy(_.sym.name)
     val sortedEffs = mod.effects.sortBy(_.sym.name)
@@ -265,58 +326,143 @@ object HtmlDocumentor {
     sb.append(mkHead(moduleName(mod.sym)))
     sb.append("<body class='no-script'>")
 
-    sb.append("<button id='theme-toggle' disabled aria-label='Toggle theme' aria-describedby='no-script'>")
-    sb.append("<span>Toggle theme.</span>")
-    sb.append("<span role='tooltip' id='no-script'>Requires JavaScript</span>")
-    sb.append("</button>")
+    docThemeToggle()
 
-    sb.append("<nav>")
-    sb.append("<input type='checkbox' id='menu-toggle' aria-label='Show/hide sidebar menu'>")
-    sb.append("<label for='menu-toggle'>Toggle the menu</label>")
-    sb.append("<div>")
-    sb.append("<div class='flix'>")
-    sb.append("<h2><a href='index.html'>flix</a></h2>")
-    sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
-    mod.parent.map {
-      sym => sb.append(s"<a class='back' href=${moduleFileName(sym)}.html>${moduleName(sym)}</a>")
+    docSideBar { () =>
+      mod.parent.map {
+        mod => sb.append(s"<a class='back' href='${esc(moduleFileName(mod))}'>${moduleName(mod)}</a>")
+      }
+      docSubModules(sortedMods)
+      docSideBarSection(
+        "Classes",
+        sortedClasses,
+        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.sym))}'>${esc(c.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Effects",
+        sortedEffs,
+        (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Enums",
+        sortedEnums,
+        (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Type Aliases",
+        sortedTypeAliases,
+        (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Definitions",
+        sortedDefs,
+        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+      )
     }
-    sb.append("</div>")
-    docSubModules(sortedMods)
-    docSideBarSection(
-      "Classes",
-      sortedClasses,
-      (c: Class) => sb.append(s"<a href='#class-${escUrl(c.sym.name)}'>${esc(c.sym.name)}</a>"),
-    )
-    docSideBarSection(
-      "Effects",
-      sortedEffs,
-      (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
-    )
-    docSideBarSection(
-      "Enums",
-      sortedEnums,
-      (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
-    )
-    docSideBarSection(
-      "Type Aliases",
-      sortedTypeAliases,
-      (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
-    )
-    docSideBarSection(
-      "Definitions",
-      sortedDefs,
-      (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
-    )
-    sb.append("</div>")
-    sb.append("</nav>")
 
     sb.append("<main>")
     sb.append(s"<h1>${esc(moduleName(mod.sym))}</h1>")
-    docSection("Classes", sortedClasses, docClass)
     docSection("Effects", sortedEffs, docEffect)
     docSection("Enums", sortedEnums, docEnum)
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
+    sb.append("</main>")
+
+    sb.append("</body>")
+
+    sb.toString()
+  }
+
+  /**
+    * Documents the given `Class`, `clazz`, returning a string of HTML.
+    */
+  private def documentClass(clazz: Class)(implicit flix: Flix): String = {
+    implicit val sb: StringBuilder = new StringBuilder()
+
+    val sortedSigs = clazz.signatures.sortBy(_.sym.name)
+    val sortedClassDefs = clazz.defs.sortBy(_.sym.name)
+
+    val mod = clazz.companionMod
+    val sortedMods = mod.map(_.submodules).getOrElse(Nil).sortBy(_.sym.ns.last)
+    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
+    val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
+
+    sb.append(mkHead(className(clazz.sym)))
+    sb.append("<body class='no-script'>")
+
+    docThemeToggle()
+
+    docSideBar { () =>
+      sb.append(s"<a class='back' href='${esc(moduleFileName(clazz.parent))}'>${moduleName(clazz.parent)}</a>")
+      docSubModules(sortedMods)
+      docSideBarSection(
+        "Signatures",
+        sortedSigs,
+        (s: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(s.sym.name)}'>${esc(s.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Class Definitions",
+        sortedClassDefs,
+        (d: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Classes",
+        sortedClasses,
+        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.sym))}'>${esc(c.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Effects",
+        sortedEffs,
+        (e: TypedAst.Effect) => sb.append(s"<a href='#eff-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Enums",
+        sortedEnums,
+        (e: TypedAst.Enum) => sb.append(s"<a href='#enum-${escUrl(e.sym.name)}'>${esc(e.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Type Aliases",
+        sortedTypeAliases,
+        (t: TypedAst.TypeAlias) => sb.append(s"<a href='#ta-${escUrl(t.sym.name)}'>${esc(t.sym.name)}</a>"),
+      )
+      docSideBarSection(
+        "Module Definitions",
+        sortedModuleDefs,
+        (d: TypedAst.Def) => sb.append(s"<a href='#def-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
+      )
+    }
+
+    sb.append("<main>")
+    sb.append(s"<h1>${esc(className(clazz.sym))}</h1>")
+
+    sb.append("<section>")
+    sb.append(s"<div class='box'>")
+    docAnnotations(clazz.ann)
+    sb.append("<div class='decl'>")
+    sb.append("<code>")
+    sb.append("<span class='keyword'>class</span> ")
+    sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
+    docTypeParams(List(clazz.tparam))
+    docTypeConstraints(clazz.superClasses)
+    sb.append("</code>")
+    docActions(None, clazz.loc)
+    sb.append("</div>")
+    docDoc(clazz.doc)
+    docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
+    sb.append("</div>")
+    sb.append("</section>")
+
+    docSection("Signatures", sortedSigs, docSignature)
+    docSection("Class Definitions", sortedClassDefs, docSignature)
+
+    docSection("Effects", sortedEffs, docEffect)
+    docSection("Enums", sortedEnums, docEnum)
+    docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
+    docSection("Module Definitions", sortedModuleDefs, docDef)
+
     sb.append("</main>")
 
     sb.append("</body>")
@@ -347,6 +493,37 @@ object HtmlDocumentor {
   }
 
   /**
+    * Generate the theme toggle button.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docThemeToggle()(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<button id='theme-toggle' disabled aria-label='Toggle theme' aria-describedby='no-script'>")
+    sb.append("<span>Toggle theme.</span>")
+    sb.append("<span role='tooltip' id='no-script'>Requires JavaScript</span>")
+    sb.append("</button>")
+  }
+
+  /**
+    * Generate the side bar with the contents specified by `docContents`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docSideBar(docContents: () => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<nav>")
+    sb.append("<input type='checkbox' id='menu-toggle' aria-label='Show/hide sidebar menu'>")
+    sb.append("<label for='menu-toggle'>Toggle the menu</label>")
+    sb.append("<div>")
+    sb.append("<div class='flix'>")
+    sb.append("<h2><a href='index.html'>flix</a></h2>")
+    sb.append(s"<span class='version'>${Version.CurrentVersion}</span>")
+    sb.append("</div>")
+    docContents()
+    sb.append("</div>")
+    sb.append("</nav>")
+  }
+
+  /**
     * Documents a section in the side bar, (Modules, Classes, Enums, etc.), containing a `group` of items.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
@@ -373,7 +550,7 @@ object HtmlDocumentor {
     sb.append("</ul>")
   }
 
-  private def docSubModules(submodules: List[Symbol.ModuleSym])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubModules(submodules: List[Module])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (submodules.isEmpty) {
       return
     }
@@ -382,7 +559,7 @@ object HtmlDocumentor {
     sb.append("<ul class='Modules'>")
     for (m <- submodules) {
       sb.append("<li>")
-      sb.append(s"<a href='${esc(m.toString)}.html'>${esc(m.ns.last)}</a>")
+      sb.append(s"<a href='${esc(moduleFileName(m.sym))}'>${esc(m.sym.ns.last)}</a>")
       sb.append("</li>")
     }
     sb.append("</ul>")
@@ -430,34 +607,12 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append(s"<details ${if (open) "open" else ""}>")
+    sb.append(s"<details class='subsection' ${if (open) "open" else ""}>")
     sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
     for (e <- group) {
       docElt(e)
     }
     sb.append("</details>")
-  }
-
-  /**
-    * Documents the given `Class`, `clazz`.
-    *
-    * The result will be appended to the given `StringBuilder`, `sb`.
-    */
-  private def docClass(clazz: Class)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<div class='box' id='class-${esc(clazz.sym.name)}'>")
-    docAnnotations(clazz.ann)
-    sb.append("<code>")
-    sb.append("<span class='keyword'>class</span> ")
-    sb.append(s"<span class='name'>${esc(clazz.sym.name)}</span>")
-    docTypeParams(List(clazz.tparam))
-    docTypeConstraints(clazz.superClasses)
-    sb.append("</code>")
-    docSourceLocation(clazz.loc)
-    docDoc(clazz.doc)
-    docSubSection("Signatures", clazz.signatures.sortBy(_.sym.name), docSignature, open = true)
-    docSubSection("Definitions", clazz.defs.sortBy(_.sym.name), docSignature)
-    docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
-    sb.append("</div>")
   }
 
   /**
@@ -468,13 +623,15 @@ object HtmlDocumentor {
   private def docEnum(enm: TypedAst.Enum)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='enum-${esc(enm.sym.name)}'>")
     docAnnotations(enm.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
     sb.append(s"<span class='name'>${esc(enm.sym.name)}</span>")
     docTypeParams(enm.tparams)
     docDerivations(enm.derives)
     sb.append("</code>")
-    docSourceLocation(enm.loc)
+    docActions(Some(s"enum-${esc(enm.sym.name)}"), enm.loc)
+    sb.append("</div>")
     docCases(enm.cases.values.toList)
     docDoc(enm.doc)
     sb.append("</div>")
@@ -488,12 +645,14 @@ object HtmlDocumentor {
   private def docEffect(eff: TypedAst.Effect)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='eff-${esc(eff.sym.name)}'>")
     docAnnotations(eff.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
     sb.append(s"<span class='name'>${esc(eff.sym.name)}</span>")
     sb.append("</code>")
-    docSourceLocation(eff.loc)
-    docSubSection("Operations", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec), open = true)
+    docActions(Some(s"eff-${esc(eff.sym.name)}"), eff.loc)
+    sb.append("</div>")
+    docSubSection("Operations", eff.ops, (o: TypedAst.Op) => docSpec(o.sym.name, o.spec, None), open = true)
     docDoc(eff.doc)
     sb.append("</div>")
   }
@@ -505,6 +664,7 @@ object HtmlDocumentor {
     */
   private def docTypeAlias(ta: TypedAst.TypeAlias)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='ta-${esc(ta.sym.name)}'>")
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>type alias</span> ")
     sb.append(s"<span class='name'>${esc(ta.sym.name)}</span>")
@@ -512,7 +672,8 @@ object HtmlDocumentor {
     sb.append(" = ")
     docType(ta.tpe)
     sb.append("</code>")
-    docSourceLocation(ta.loc)
+    docActions(Some(s"ta-${esc(ta.sym.name)}"), ta.loc)
+    sb.append("</div>")
     docDoc(ta.doc)
     sb.append("</div>")
   }
@@ -524,7 +685,7 @@ object HtmlDocumentor {
     */
   private def docDef(defn: TypedAst.Def)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='def-${esc(defn.sym.name)}'>")
-    docSpec(defn.sym.name, defn.spec)
+    docSpec(defn.sym.name, defn.spec, Some(s"def-${esc(defn.sym.name)}"))
     sb.append("</div>")
   }
 
@@ -533,8 +694,11 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit =
-    docSpec(sig.sym.name, sig.spec)
+  private def docSignature(sig: TypedAst.Sig)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<div class='box' id='sig-${esc(sig.sym.name)}'>")
+    docSpec(sig.sym.name, sig.spec, Some(s"sig-${esc(sig.sym.name)}"))
+    sb.append("</div>")
+  }
 
   /**
     * Documents the given `Spec`, `spec`, with the given `name`.
@@ -542,8 +706,9 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSpec(name: String, spec: TypedAst.Spec, linkId: Option[String])(implicit flix: Flix, sb: StringBuilder): Unit = {
     docAnnotations(spec.ann)
+    sb.append("<div class='decl'>")
     sb.append(s"<code>")
     sb.append("<span class='keyword'>def</span> ")
     sb.append(s"<span class='name'>${esc(name)}</span>")
@@ -551,8 +716,10 @@ object HtmlDocumentor {
     sb.append(": ")
     docType(spec.retTpe)
     docEffectType(spec.eff)
+    docTypeConstraints(spec.tconstrs)
     sb.append("</code>")
-    docSourceLocation(spec.loc)
+    docActions(linkId, spec.loc)
+    sb.append("</div>")
     docDoc(spec.doc)
   }
 
@@ -562,14 +729,18 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docInstance(instance: TypedAst.Instance)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div>")
     docAnnotations(instance.ann)
+    sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>instance</span> ")
     docType(instance.tpe)
     docTypeConstraints(instance.tconstrs)
     sb.append("</code>")
-    docSourceLocation(instance.loc)
+    docActions(None, instance.loc)
+    sb.append("</div>")
     docDoc(instance.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -627,8 +798,8 @@ object HtmlDocumentor {
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>(")
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
-        case SimpleType.Tuple(fields) =>
-          docList(fields) { t =>
+        case SimpleType.Tuple(elms) =>
+          docList(elms) { t =>
             sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
           }
         case _ => docType(c.tpe)
@@ -692,12 +863,38 @@ object HtmlDocumentor {
   }
 
   /**
+    * Appends a 'copy link' button the the given `StringBuilder`.
+    * This creates a link to the given ID on the current URL.
+    */
+  private def docLink(id: String)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append(s"<a href='#$id' class='copy-link' aria-label='Link'>")
+    inlineIcon("link")
+    sb.append("</a> ")
+  }
+
+  /**
     * Document the given `SourceLocation`, `loc`, in the form of a link.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<a class='source' target='_blank' href='${esc(createLink(loc))}'>Source</a>")
+  }
+
+  /**
+    * Document the right hand actions.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * @param linkId An optional ID in the document, that the 'copy link' button will refer to.
+    *               If `None`, the button will not be included.
+    * @param loc    The source location that the 'source' button will refer to.
+    */
+  private def docActions(linkId: Option[String], loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='actions'>")
+    linkId.foreach(docLink)
+    docSourceLocation(loc)
+    sb.append("</span>")
   }
 
   /**
@@ -778,10 +975,19 @@ object HtmlDocumentor {
   }
 
   /**
-    * Write the documentation output string of the `Module`, `mod`, into the output directory with a suitable name.
+    * Append the contents of the SVG file with the given `name` to the given `StringBuilder`.
+    *
+    * By inlining the icon into the HTML itself, it can inherit the `color` of its parent.
     */
-  private def writeModule(mod: Module, output: String): Unit = {
-    writeFile(s"${moduleFileName(mod.sym)}.html", output.getBytes)
+  private def inlineIcon(name: String)(implicit sb: StringBuilder): Unit = {
+    sb.append(readResourceString(s"$Icons/$name.svg"))
+  }
+
+  /**
+    * Write the documentation output string into the output directory with the given `name`.
+    */
+  private def writeDocFile(name: String, output: String): Unit = {
+    writeFile(s"$name", output.getBytes)
   }
 
   /**
@@ -808,6 +1014,13 @@ object HtmlDocumentor {
   }
 
   /**
+    * Reads the given resource as a string.
+    *
+    * @param path The path of the resource, relative to the resources folder.
+    */
+  private def readResourceString(path: String): String = LocalResource.get(path)
+
+  /**
     * Create a raw link to the given `SourceLocation`.
     */
   private def createLink(loc: SourceLocation): String = {
@@ -831,7 +1044,7 @@ object HtmlDocumentor {
   private case class Module(sym: Symbol.ModuleSym,
                             parent: Option[Symbol.ModuleSym],
                             uses: List[Ast.UseOrImport],
-                            submodules: List[Symbol.ModuleSym],
+                            submodules: List[Module],
                             classes: List[Class],
                             enums: List[TypedAst.Enum],
                             effects: List[TypedAst.Effect],
@@ -839,12 +1052,20 @@ object HtmlDocumentor {
                             defs: List[TypedAst.Def])
 
   /**
+    * A trait describing all types that can be contained as the main item of a module.
+    */
+  private sealed trait MainItem
+
+  private case class Enum(enm: TypedAst.Enum) extends MainItem
+
+  /**
     * A represention of a class that's easier to work with while generating documention.
     */
   private case class Class(doc: Ast.Doc,
                            ann: Ast.Annotations,
-                           mod: Ast.Modifiers,
+                           modifiers: Ast.Modifiers,
                            sym: Symbol.ClassSym,
+                           parent: Symbol.ModuleSym,
                            tparam: TypedAst.TypeParam,
                            superClasses: List[Ast.TypeConstraint],
                            assocs: List[TypedAst.AssocTypeSig],
@@ -852,5 +1073,6 @@ object HtmlDocumentor {
                            defs: List[TypedAst.Sig],
                            laws: List[TypedAst.Def],
                            instances: List[TypedAst.Instance],
-                           loc: SourceLocation)
+                           companionMod: Option[Module],
+                           loc: SourceLocation) extends MainItem
 }
