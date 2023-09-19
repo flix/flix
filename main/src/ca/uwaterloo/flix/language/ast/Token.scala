@@ -15,9 +15,23 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-case class Token(kind: TokenKind, src: Array[Char], startOffset: Int, endOffset: Int, line: Int, col: Int) {
+/**
+ * A Token holding a kind, line and column.
+ * Token does not hold its lexeme directly to avoid duplication of common keywords like "def".
+ * Instead it holds a pointer to its source along with start and end offsets.
+ *
+ * @param kind  The kind of token this instance represents
+ * @param src   A pointer to the source that this lexeme stems from
+ * @param start The absolute character offset into `src` of the beginning of the lexeme
+ * @param end   The absolute character offset into `src` of the end of the lexeme
+ * @param line  The line that the lexeme __starts__ on
+ * @param col   The column that the lexeme __starts__ on
+ */
+case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, line: Int, col: Int) {
   /**
    * Computes the lexeme that the token refers to by slicing it from `src`.
    */
-  def text(): String = src.slice(startOffset, endOffset).mkString("")
+  def text(): String = src.slice(start, end).mkString("")
+
+  override def toString: String = s"Token($kind, ${text()}, $line, $col)"
 }

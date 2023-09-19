@@ -94,9 +94,6 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
-      xparser = cmdOpts.xparser,
-      XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
     )
 
     // Don't use progress bar if benchmarking.
@@ -296,9 +293,6 @@ object Main {
                      xnooptimizer: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
-                     xparser: Boolean = false,
-                     XPerfN: Option[Int] = None,
-                     XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -488,10 +482,6 @@ object Main {
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
-
-      // Xparser
-      opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
-        text("[experimental] disables new experimental lexer and parser.")
 
       note("")
 

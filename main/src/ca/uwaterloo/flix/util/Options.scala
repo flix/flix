@@ -47,10 +47,8 @@ object Options {
     xnooptimizer = false,
     xprintphase = Set.empty,
     xnoqmc = false,
-    xsummary = false,
-    xparser = false,
-    XPerfN = None,
-    XPerfFrontend = false
+    xflexibleregions = false,
+    xsummary = false
   )
 
   /**
@@ -98,7 +96,6 @@ object Options {
   * @param xstrictmono         enables strict monomorphization.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
-  * @param xparser             disables new lexer and parser.
   */
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
@@ -122,10 +119,9 @@ case class Options(lib: LibLevel,
                    xstrictmono: Boolean,
                    xnooptimizer: Boolean,
                    xprintphase: Set[String],
-                   xsummary: Boolean,
-                   xparser: Boolean,
-                   XPerfFrontend: Boolean,
-                   XPerfN: Option[Int],
+                   xprintboolunif: Boolean,
+                   xflexibleregions: Boolean,
+                   xsummary: Boolean
                   )
 
 /**

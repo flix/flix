@@ -110,7 +110,8 @@ object Lexer {
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-    if (src.name == "Fixpoint/Ram/RamStmt.flix") {
+    //    if (src.name == "Fixpoint/Ram/RamStmt.flix") {
+    if (src.name == "foo.flix") {
       println(s.tokens.mkString("\n"))
     }
 
@@ -182,7 +183,7 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.line, s.start.column, s.start.offset, s.current.offset)
+    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
@@ -704,6 +705,7 @@ object Lexer {
    */
   private def tokenErrToCompilationMessage(e: TokenErrorKind, token: Token)(implicit s: State): CompilationMessage = {
     val t = token.text()
+
     val offset = e match {
       case TokenErrorKind.UnexpectedChar | TokenErrorKind.DoubleDottedNumber => t.length
       case TokenErrorKind.BlockCommentTooDeep => 2
