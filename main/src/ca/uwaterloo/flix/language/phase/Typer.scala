@@ -133,19 +133,15 @@ object Typer {
   private def visitInstances(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, Substitution], TypeError] =
     flix.subphase("Instances") {
 
-      // TODO ASSOC-TYPES par
-      //      val results = ParOps.parMap(root.instances.values.flatten)(visitInstance(_, root, classEnv, eqEnv))
-      //      Validation.sequence(results) map {
-      //        insts => insts.groupBy(inst => inst.clazz.sym)
-      //      }
-      Validation.fold(root.instances, Map.empty[Symbol.DefnSym, Substitution]) { // TODO ASSOC-TYPES clean up
-        case (acc, (sym, insts)) => Validation.fold(insts, Map.empty[Symbol.DefnSym, Substitution]) {
-          case (acc, inst) => mapN(visitInstance(inst, root, classEnv, eqEnv)) {
-            case subst => acc ++ subst
-          }
-        } map {
-          case subst => acc ++ subst
-        }
+      val instances = for {
+        (_, insts) <- root.instances
+        inst <- insts
+      } yield inst
+
+      val results = ParOps.parMap(instances)(visitInstance(_, root, classEnv, eqEnv))
+
+      Validation.sequence(results).map {
+        case substs => substs.fold(Map.empty)(_ ++ _)
       }
     }
 
@@ -154,11 +150,10 @@ object Typer {
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, Substitution], TypeError] = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs0, defs0, ns, loc) =>
-      Validation.fold(defs0, Map.empty[Symbol.DefnSym, Substitution]) {
-        case (acc, defn) => mapN(visitDefn(defn, tconstrs, root, classEnv, eqEnv)) {
-          case subst => acc + (defn.sym -> subst)
-        }
-      }
+      val defs = defs0.map {
+        case defn => defn.sym -> defn
+      }.toMap
+      Validation.traverseValues(defs)(visitDefn(_, tconstrs, root, classEnv, eqEnv))
   }
 
   /**
@@ -216,9 +211,14 @@ object Typer {
       //        visitDefn(_, Nil, root, classEnv, eqEnv)
       //      }
 
-      val results = ParOps.parMapValues(root.defs.values)(visitDefn(_, Nil, root, classEnv, eqEnv))
+
+      val results = ParOps.parMap(root.defs) {
+        case (sym, defn) => visitDefn(defn, Nil, root, classEnv, eqEnv).map {
+          case subst => sym -> subst
+        }
+      }
       Validation.sequence(results).map {
-        case substs => substs.fold(Map.empty)(_ ++ _)
+        case substs => substs.toMap
       }
 
       // TODO ASSOC-TYPES cached
