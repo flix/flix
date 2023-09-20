@@ -696,7 +696,7 @@ object TypeReconstruction {
       val e = visitExp(exp)
       val rs = rules map {
         case KindedAst.HandlerRule(op, fparams, hexp, htvar) =>
-          val fps = fparams.map(visitFormalParam)
+          val fps = fparams.map(visitFormalParam(_, root, subst))
           val he = visitExp(hexp)
           TypedAst.HandlerRule(op, fps, he)
       }
@@ -883,7 +883,7 @@ object TypeReconstruction {
   /**
     * Applies the substitution to the given constraint.
     */
-  private def visitConstraint(c0: KindedAst.Constraint)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.Constraint = {
+  private def visitConstraint(c0: KindedAst.Constraint)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Constraint = {
     // Pattern match on the constraint.
     val KindedAst.Constraint(cparams0, head0, body0, loc) = c0
 
@@ -894,7 +894,7 @@ object TypeReconstruction {
     // Reassemble the constraint parameters.
     val cparams = cparams0.map {
       case KindedAst.ConstraintParam(sym, l) =>
-        TypedAst.ConstraintParam(sym, subst0(sym.tvar), l)
+        TypedAst.ConstraintParam(sym, subst(sym.tvar), l)
     }
 
     // Reassemble the constraint.
@@ -904,16 +904,16 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given predicate param.
     */
-  private def visitPredicateParam(pparam: KindedAst.PredicateParam)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.PredicateParam =
-    TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
+  private def visitPredicateParam(pparam: KindedAst.PredicateParam)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.PredicateParam =
+    TypedAst.PredicateParam(pparam.pred, subst(pparam.tpe), pparam.loc)
 
   /**
     * Reconstructs types in the given JVM method.
     */
-  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.JvmMethod = {
+  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.JvmMethod = {
     method match {
       case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
-        val fparams = fparams0.map(visitFormalParam)
+        val fparams = fparams0.map(visitFormalParam(_, root, subst))
         val exp = visitExp(exp0)
         TypedAst.JvmMethod(ident, fparams, exp, tpe, eff, loc)
     }
@@ -922,12 +922,12 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given pattern.
     */
-  private def visitPattern(pat0: KindedAst.Pattern)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.Pattern = pat0 match {
-    case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
-    case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
+  private def visitPattern(pat0: KindedAst.Pattern)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Pattern = pat0 match {
+    case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst(tvar), loc)
+    case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, constantType(cst), loc)
 
-    case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst0(tvar), loc)
+    case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
 
     case KindedAst.Pattern.Tuple(elms, loc) =>
       val es = elms.map(visitPattern)
@@ -937,10 +937,10 @@ object TypeReconstruction {
     case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
       val ps = pats.map {
         case KindedAst.Pattern.Record.RecordLabelPattern(field, tvar1, pat1, loc1) =>
-          TypedAst.Pattern.Record.RecordLabelPattern(field, subst0(tvar1), visitPattern(pat1), loc1)
+          TypedAst.Pattern.Record.RecordLabelPattern(field, subst(tvar1), visitPattern(pat1), loc1)
       }
       val p = visitPattern(pat)
-      TypedAst.Pattern.Record(ps, p, subst0(tvar), loc)
+      TypedAst.Pattern.Record(ps, p, subst(tvar), loc)
 
     case KindedAst.Pattern.RecordEmpty(loc) =>
       TypedAst.Pattern.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
@@ -950,20 +950,20 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given head predicate.
     */
-  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
+  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Predicate.Head = head0 match {
     case KindedAst.Predicate.Head.Atom(pred, den0, terms, tvar, loc) =>
       val ts = terms.map(t => visitExp(t))
-      TypedAst.Predicate.Head.Atom(pred, den0, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(pred, den0, ts, subst(tvar), loc)
   }
 
 
   /**
     * Reconstructs types in the given body predicate.
     */
-  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
+  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Predicate.Body = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
       val ts = terms.map(t => visitPattern(t))
-      TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst(tvar), loc)
 
     case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
       val e = visitExp(exp)
