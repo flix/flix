@@ -30,7 +30,7 @@ object TypeReconstruction {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phase("Typer") {
+  def run(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.subphase("TypeReconstruction") {
     val classes = visitClasses(root, defSubsts, sigSubsts, oldRoot, changeSet)
     val instances = visitInstances(root, defSubsts)
     val defs = visitDefs(root, defSubsts, oldRoot, changeSet)
@@ -143,26 +143,32 @@ object TypeReconstruction {
     * Reconstructs types in the given defs.
     */
   private def visitDefs(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-    ParOps.mapValues(staleDefs) {
-      case defn => visitDef(defn, root, substs(defn.sym))
-    } ++ freshDefs
+    flix.subphase("Defs") {
+      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
+      ParOps.mapValues(staleDefs) {
+        case defn => visitDef(defn, root, substs(defn.sym))
+      } ++ freshDefs
+    }
   }
 
   /**
     * Reconstructs types in the given classes.
     */
   private def visitClasses(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.ClassSym, TypedAst.Class] = {
-    val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-    ParOps.mapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
+    flix.subphase("Classes") {
+      val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
+      ParOps.mapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
+    }
   }
 
   /**
     * Reconstructs types in the given instances.
     */
   private def visitInstances(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, List[TypedAst.Instance]] = {
-    ParOps.mapValues(root.instances) {
-      case insts => insts.map(visitInstance(_, root, substs))
+    flix.subphase("Instances") {
+      ParOps.mapValues(root.instances) {
+        case insts => insts.map(visitInstance(_, root, substs))
+      }
     }
   }
 
@@ -288,7 +294,7 @@ object TypeReconstruction {
     * Reconstructs types in the given restrictable enums.
     */
   private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] =
-    flix.subphase("Restrictable Enums") {
+    flix.subphase("RestrictableEnums") {
       // Visit every restrictable enum in the ast.
       val result = root.restrictableEnums.toList.map {
         case (_, re) => visitRestrictableEnum(re, root)
@@ -331,8 +337,10 @@ object TypeReconstruction {
     * Reconstructs types in the given effects.
     */
   private def visitEffs(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EffectSym, TypedAst.Effect] = {
-    root.effects.map {
-      case (sym, eff) => sym -> visitEff(eff, root)
+    flix.subphase("Effs") {
+      root.effects.map {
+        case (sym, eff) => sym -> visitEff(eff, root)
+      }
     }
   }
 
