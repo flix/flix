@@ -401,7 +401,7 @@ object TypeReconstruction {
       TypedAst.Expr.Apply(e, es, subst(tvar), subst(pvar), loc)
 
     case KindedAst.Expr.Lambda(fparam, exp, loc) =>
-      val p = visitFormalParam(fparam)
+      val p = visitFormalParam(fparam, root, subst)
       val e = visitExp(exp)
       val t = Type.mkArrowWithEffect(p.tpe, e.eff, e.tpe, loc)
       TypedAst.Expr.Lambda(p, e, t, loc)
@@ -900,12 +900,6 @@ object TypeReconstruction {
     // Reassemble the constraint.
     TypedAst.Constraint(cparams, head, body, loc)
   }
-
-  /**
-    * Reconstructs types in the given formal param.
-    */
-  private def visitFormalParam(fparam: KindedAst.FormalParam)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.FormalParam =
-    TypedAst.FormalParam(fparam.sym, fparam.mod, subst0(fparam.tpe), fparam.src, fparam.loc)
 
   /**
     * Reconstructs types in the given predicate param.
