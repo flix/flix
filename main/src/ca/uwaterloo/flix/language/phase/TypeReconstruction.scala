@@ -365,7 +365,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given expression.
     */
-  private def visitExp(exp0: KindedAst.Expr)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Expr = {
+  private def visitExp(exp0: KindedAst.Expr)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Expr = exp0 match {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 

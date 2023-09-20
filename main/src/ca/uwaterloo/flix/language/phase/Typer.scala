@@ -16,23 +16,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation}
-import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
-import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
-import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
-import ca.uwaterloo.flix.language.phase.unification.Unification._
-import ca.uwaterloo.flix.language.phase.unification._
-import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse, traverseValues}
+import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.ListMap
-
-import java.io.PrintWriter
-import scala.annotation.tailrec
 
 object Typer {
 
