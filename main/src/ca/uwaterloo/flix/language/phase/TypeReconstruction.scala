@@ -883,7 +883,7 @@ object TypeReconstruction {
   /**
     * Applies the substitution to the given constraint.
     */
-  def visitConstraint(c0: KindedAst.Constraint)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.Constraint = {
+  private def visitConstraint(c0: KindedAst.Constraint)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.Constraint = {
     // Pattern match on the constraint.
     val KindedAst.Constraint(cparams0, head0, body0, loc) = c0
 
@@ -904,19 +904,19 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given formal param.
     */
-  def visitFormalParam(fparam: KindedAst.FormalParam)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.FormalParam =
+  private def visitFormalParam(fparam: KindedAst.FormalParam)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.FormalParam =
     TypedAst.FormalParam(fparam.sym, fparam.mod, subst0(fparam.tpe), fparam.src, fparam.loc)
 
   /**
     * Reconstructs types in the given predicate param.
     */
-  def visitPredicateParam(pparam: KindedAst.PredicateParam)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.PredicateParam =
+  private def visitPredicateParam(pparam: KindedAst.PredicateParam)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.PredicateParam =
     TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
 
   /**
     * Reconstructs types in the given JVM method.
     */
-  def visitJvmMethod(method: KindedAst.JvmMethod)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.JvmMethod = {
+  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit root: KindedAst.Root, subst0: Substitution): TypedAst.JvmMethod = {
     method match {
       case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
         val fparams = fparams0.map(visitFormalParam)
