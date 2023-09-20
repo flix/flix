@@ -1955,20 +1955,6 @@ object TypeInference {
   }
 
   /**
-    * Returns the typed version of the given type parameters `tparams0`.
-    */
-  private def getTypeParams(tparams0: List[KindedAst.TypeParam]): List[TypedAst.TypeParam] = tparams0.map {
-    case KindedAst.TypeParam(name, sym, loc) => TypedAst.TypeParam(name, sym, loc)
-  }
-
-  /**
-    * Returns the typed version of the given formal parameters `fparams0`.
-    */
-  private def getFormalParams(fparams0: List[KindedAst.FormalParam], subst0: Substitution): List[TypedAst.FormalParam] = fparams0.map {
-    case KindedAst.FormalParam(sym, mod, tpe, src, loc) => TypedAst.FormalParam(sym, mod, subst0(tpe), src, sym.loc)
-  }
-
-  /**
     * Returns an open schema type.
     */
   private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
