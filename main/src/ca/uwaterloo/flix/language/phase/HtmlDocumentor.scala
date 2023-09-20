@@ -86,7 +86,7 @@ object HtmlDocumentor {
 
     def visitClass(clazz: Class): Unit = {
       val out = documentClass(clazz)
-      writeDocFile(classFileName(clazz.inner.sym), out)
+      writeDocFile(classFileName(clazz.decl.sym), out)
 
       clazz.companionMod.foreach {
         _.submodules.foreach(visitMod)
@@ -95,7 +95,7 @@ object HtmlDocumentor {
 
     def visitEnum(enm: Enum): Unit = {
       val out = documentEnum(enm)
-      writeDocFile(enumFileName(enm.inner.sym), out)
+      writeDocFile(enumFileName(enm.decl.sym), out)
 
       enm.companionMod.foreach {
         _.submodules.foreach(visitMod)
@@ -211,12 +211,12 @@ object HtmlDocumentor {
     * Extracts all relevant information about the given `ClassSym` from the root, into a `HtmlDocumentor.Class`.
     */
   private def mkClass(sym: Symbol.ClassSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
-    val inner = root.classes(sym)
+    val decl = root.classes(sym)
 
-    val (sigs, defs) = inner.signatures.partition(_.exp.isEmpty)
+    val (sigs, defs) = decl.signatures.partition(_.exp.isEmpty)
     val instances = root.instances.getOrElse(sym, Nil)
 
-    Class(inner, sigs, defs, instances, parent, companionMod)
+    Class(decl, sigs, defs, instances, parent, companionMod)
   }
 
   /**
@@ -244,8 +244,8 @@ object HtmlDocumentor {
         parent,
         uses,
         submodules.map(filterItems),
-        classes.filter(c => c.inner.mod.isPublic && !c.inner.ann.isInternal).map(filterClass),
-        enums.filter(e => e.inner.mod.isPublic && !e.inner.ann.isInternal).map(filterEnum),
+        classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(filterClass),
+        enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(filterEnum),
         effects.filter(e => e.mod.isPublic && !e.ann.isInternal),
         typeAliases.filter(t => t.mod.isPublic),
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
@@ -305,12 +305,12 @@ object HtmlDocumentor {
         case Module(sym, parent, uses, submodules, classes, enums, effects, typeAliases, defs) =>
           val filteredSubMods = submodules.flatMap(visitMod)
           val filteredClasses = classes.map {
-            case Class(inner, signatures, defs, instances, parent, companionMod) =>
-              Class(inner, signatures, defs, instances, parent, companionMod.flatMap(visitMod))
+            case Class(decl, signatures, defs, instances, parent, companionMod) =>
+              Class(decl, signatures, defs, instances, parent, companionMod.flatMap(visitMod))
           }
           val filteredEnums = enums.map {
-            case Enum(inner, parent, companionMod) =>
-              Enum(inner, parent, companionMod.flatMap(visitMod))
+            case Enum(decl, parent, companionMod) =>
+              Enum(decl, parent, companionMod.flatMap(visitMod))
           }
 
           val isEmpty = {
@@ -349,8 +349,8 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val sortedMods = mod.submodules.sortBy(_.sym.ns.last)
-    val sortedClasses = mod.classes.sortBy(_.inner.sym.name)
-    val sortedEnums = mod.enums.sortBy(_.inner.sym.name)
+    val sortedClasses = mod.classes.sortBy(_.decl.sym.name)
+    val sortedEnums = mod.enums.sortBy(_.decl.sym.name)
     val sortedEffs = mod.effects.sortBy(_.sym.name)
     val sortedTypeAliases = mod.typeAliases.sortBy(_.sym.name)
     val sortedDefs = mod.defs.sortBy(_.sym.name)
@@ -368,7 +368,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.inner.sym))}'>${esc(c.inner.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -378,7 +378,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.inner.sym))}'>${esc(e.inner.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -415,13 +415,13 @@ object HtmlDocumentor {
 
     val mod = clazz.companionMod
     val sortedMods = mod.map(_.submodules).getOrElse(Nil).sortBy(_.sym.ns.last)
-    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.inner.sym.name)
-    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.inner.sym.name)
+    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.sym.name)
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(className(clazz.inner.sym)))
+    sb.append(mkHead(className(clazz.decl.sym)))
     sb.append("<body class='no-script'>")
 
     docThemeToggle()
@@ -442,7 +442,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.inner.sym))}'>${esc(c.inner.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -452,7 +452,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.inner.sym))}'>${esc(e.inner.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -467,21 +467,21 @@ object HtmlDocumentor {
     }
 
     sb.append("<main>")
-    sb.append(s"<h1>${esc(className(clazz.inner.sym))}</h1>")
+    sb.append(s"<h1>${esc(className(clazz.decl.sym))}</h1>")
 
     sb.append("<section>")
     sb.append(s"<div class='box'>")
-    docAnnotations(clazz.inner.ann)
+    docAnnotations(clazz.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
-    sb.append(s"<span class='name'>${esc(clazz.inner.sym.name)}</span>")
-    docTypeParams(List(clazz.inner.tparam))
-    docTypeConstraints(clazz.inner.superClasses)
+    sb.append(s"<span class='name'>${esc(clazz.decl.sym.name)}</span>")
+    docTypeParams(List(clazz.decl.tparam))
+    docTypeConstraints(clazz.decl.superClasses)
     sb.append("</code>")
-    docActions(None, clazz.inner.loc)
+    docActions(None, clazz.decl.loc)
     sb.append("</div>")
-    docDoc(clazz.inner.doc)
+    docDoc(clazz.decl.doc)
     docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
     sb.append("</div>")
     sb.append("</section>")
@@ -508,13 +508,13 @@ object HtmlDocumentor {
 
     val mod = enm.companionMod
     val sortedMods = mod.map(_.submodules).getOrElse(Nil).sortBy(_.sym.ns.last)
-    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.inner.sym.name)
-    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.inner.sym.name)
+    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.sym.name)
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(enumName(enm.inner.sym)))
+    sb.append(mkHead(enumName(enm.decl.sym)))
     sb.append("<body class='no-script'>")
 
     docThemeToggle()
@@ -525,7 +525,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.inner.sym))}'>${esc(c.inner.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -535,7 +535,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.inner.sym))}'>${esc(e.inner.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -550,22 +550,22 @@ object HtmlDocumentor {
     }
 
     sb.append("<main>")
-    sb.append(s"<h1>${esc(enumName(enm.inner.sym))}</h1>")
+    sb.append(s"<h1>${esc(enumName(enm.decl.sym))}</h1>")
 
     sb.append("<section>")
-    sb.append(s"<div class='box' id='enum-${esc(enm.inner.sym.name)}'>")
-    docAnnotations(enm.inner.ann)
+    sb.append(s"<div class='box' id='enum-${esc(enm.decl.sym.name)}'>")
+    docAnnotations(enm.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
-    sb.append(s"<span class='name'>${esc(enm.inner.sym.name)}</span>")
-    docTypeParams(enm.inner.tparams)
-    docDerivations(enm.inner.derives)
+    sb.append(s"<span class='name'>${esc(enm.decl.sym.name)}</span>")
+    docTypeParams(enm.decl.tparams)
+    docDerivations(enm.decl.derives)
     sb.append("</code>")
-    docActions(Some(s"enum-${esc(enm.inner.sym.name)}"), enm.inner.loc)
+    docActions(Some(s"enum-${esc(enm.decl.sym.name)}"), enm.decl.loc)
     sb.append("</div>")
-    docCases(enm.inner.cases.values.toList)
-    docDoc(enm.inner.doc)
+    docCases(enm.decl.cases.values.toList)
+    docDoc(enm.decl.doc)
     sb.append("</div>")
     sb.append("</section>")
 
@@ -1141,7 +1141,7 @@ object HtmlDocumentor {
   /**
     * A represention of a class that's easier to work with while generating documention.
     */
-  private case class Class(inner: TypedAst.Class,
+  private case class Class(decl: TypedAst.Class,
                            signatures: List[TypedAst.Sig],
                            defs: List[TypedAst.Sig],
                            instances: List[TypedAst.Instance],
@@ -1151,7 +1151,7 @@ object HtmlDocumentor {
   /**
     * A represention of an enum that's easier to work with while generating documention.
     */
-  private case class Enum(inner: TypedAst.Enum,
+  private case class Enum(decl: TypedAst.Enum,
                           parent: Symbol.ModuleSym,
                           companionMod: Option[Module])
 }
