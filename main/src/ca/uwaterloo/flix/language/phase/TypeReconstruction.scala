@@ -28,7 +28,13 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 object TypeReconstruction {
 
   /**
-    * Type checks the given AST root.
+    * Reconstructs a type-checked AST.
+    *
+    * @param root      the untyped root
+    * @param defSubsts a map from definition symbols to inferred type substitutions
+    * @param sigSubsts a map from signature symbols to infered type substitutions
+    * @param oldRoot   a cached TypedAst root
+    * @param changeSet the change set representing changed sources since compiling the old root
     */
   def run(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.subphase("TypeReconstruction") {
     val classes = visitClasses(root, defSubsts, sigSubsts, oldRoot, changeSet)
@@ -164,10 +170,10 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given instances.
     */
-  private def visitInstances(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, List[TypedAst.Instance]] = {
+  private def visitInstances(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, List[TypedAst.Instance]] = {
     flix.subphase("Instances") {
       ParOps.mapValues(root.instances) {
-        case insts => insts.map(visitInstance(_, root, substs))
+        case insts => insts.map(visitInstance(_, root, defSubsts))
       }
     }
   }
@@ -884,20 +890,16 @@ object TypeReconstruction {
     * Applies the substitution to the given constraint.
     */
   private def visitConstraint(c0: KindedAst.Constraint)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Constraint = {
-    // Pattern match on the constraint.
     val KindedAst.Constraint(cparams0, head0, body0, loc) = c0
 
-    // Unification was successful. Reassemble the head and body predicates.
     val head = visitHeadPredicate(head0)
     val body = body0.map(b => visitBodyPredicate(b))
 
-    // Reassemble the constraint parameters.
     val cparams = cparams0.map {
       case KindedAst.ConstraintParam(sym, l) =>
         TypedAst.ConstraintParam(sym, subst(sym.tvar), l)
     }
 
-    // Reassemble the constraint.
     TypedAst.Constraint(cparams, head, body, loc)
   }
 
