@@ -45,12 +45,12 @@ object Typer {
     val eqEnv = mkEqualityEnv(root.classes, root.instances)
     val classesVal = visitClasses(root, classEnv, eqEnv, oldRoot, changeSet)
     val instancesVal = visitInstances(root, classEnv, eqEnv)
-    val defsVal = visitDefs(root, classEnv, eqEnv)
+    val defsVal = visitDefs(root, classEnv, eqEnv, oldRoot, changeSet)
 
     flatMapN(classesVal, instancesVal, defsVal) {
       case ((sigSubsts, defSubsts1), defSubsts2, defSubsts3) =>
         val defSubsts = defSubsts1 ++ defSubsts2 ++ defSubsts3
-        TypeReconstruction.run(root, defSubsts, sigSubsts) // should not have to be validaiton
+        TypeReconstruction.run(root, defSubsts, sigSubsts, oldRoot, changeSet) // should not have to be validaiton
     }
   }
 
@@ -96,16 +96,14 @@ object Typer {
     */
   private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[(Map[Symbol.SigSym, Substitution], Map[Symbol.DefnSym, Substitution]), TypeError] =
     flix.subphase("Classes") {
-      val results = ParOps.parMap(root.classes.values)(visitClass(_, root, classEnv, eqEnv))
+      // Don't bother to infer the fresh classes
+      val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
+      val results = ParOps.parMap(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
       Validation.sequence(results).map {
         case substs =>
           val (sigSubsts, defSubsts) = substs.unzip
           (sigSubsts.fold(Map.empty)(_ ++ _), defSubsts.fold(Map.empty)(_ ++ _))
       }
-
-      // TODO ASSOC-TYPES cached
-      //      // Compute the stale and fresh classes.
-      //      val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
     }
 
   /**
@@ -196,23 +194,12 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, Substitution], TypeError] =
+  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, Substitution], TypeError] =
     flix.subphase("Defs") {
-      // TODO ASSOC-TYPES cached
-      //      // Compute the stale and fresh definitions.
-      //      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-      //
-      //      // println(s"Stale = ${staleDefs.keySet}")
-      //      // println(s"Fresh = ${freshDefs.keySet.size}")
-      //
-      //      // Process the stale defs in parallel.
-      //      ParOps.parMap(staleDefs.values) {
-      //        case def =>
-      //        visitDefn(_, Nil, root, classEnv, eqEnv)
-      //      }
+      // only infer the stale defs
+      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-
-      val results = ParOps.parMap(root.defs) {
+      val results = ParOps.parMap(staleDefs) {
         case (sym, defn) => visitDefn(defn, Nil, root, classEnv, eqEnv).map {
           case subst => sym -> subst
         }
@@ -220,14 +207,6 @@ object Typer {
       Validation.sequence(results).map {
         case substs => substs.toMap
       }
-
-      // TODO ASSOC-TYPES cached
-      // Sequence the results using the freshDefs as the initial value.
-      //      Validation.sequence(results) map {
-      //        case xs => xs.foldLeft(freshDefs) {
-      //          case (acc, defn) => acc ++
-      //        }
-      //      }
     }
 
   /**

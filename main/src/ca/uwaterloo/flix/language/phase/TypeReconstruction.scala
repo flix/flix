@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, Stratification}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -30,10 +30,10 @@ object TypeReconstruction {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution])(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phase("Typer") {
-    val classes = visitClasses(root, defSubsts, sigSubsts)
+  def run(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phase("Typer") {
+    val classes = visitClasses(root, defSubsts, sigSubsts, oldRoot, changeSet)
     val instances = visitInstances(root, defSubsts)
-    val defs = visitDefs(root, defSubsts)
+    val defs = visitDefs(root, defSubsts, oldRoot, changeSet)
     val enums = visitEnums(root)
     val restrictableEnums = visitRestrictableEnums(root)
     val effs = visitEffs(root)
@@ -142,17 +142,19 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given defs.
     */
-  private def visitDefs(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    ParOps.mapValues(root.defs) {
+  private def visitDefs(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
+    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
+    ParOps.mapValues(staleDefs) {
       case defn => visitDef(defn, root, substs(defn.sym))
-    }
+    } ++ freshDefs
   }
 
   /**
     * Reconstructs types in the given classes.
     */
-  private def visitClasses(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, TypedAst.Class] = {
-    ParOps.mapValues(root.classes)(visitClass(_, root, defSubsts, sigSubsts))
+  private def visitClasses(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.ClassSym, TypedAst.Class] = {
+    val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
+    ParOps.mapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
   }
 
   /**
