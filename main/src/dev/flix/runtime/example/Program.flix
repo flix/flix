@@ -4,6 +4,7 @@ eff Con {
 }
 
 def main(): Int32 =
+    //let _ = f();
     try {
         u()
     } with Con {
