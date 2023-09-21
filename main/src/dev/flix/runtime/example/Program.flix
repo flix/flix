@@ -1,13 +1,13 @@
-eff Console {
-    pub def read(): Int32
+eff Con {
+    pub def read(): Unit
     pub def print(s: String): Unit
 }
 
 def main(): Int32 =
     try {
         u()
-    } with Console {
-        def read() = resume(42)
+    } with Con {
+        def read() = resume(21)
         def print(s) = ___PRINT___(s); resume() // actually print to terminal
     }
 
@@ -17,10 +17,10 @@ def g(): Int32 = h(1)
 
 def h(x: Int32): Int32 = x + 1
 
-def u(): Int32 \ Console =
+def u(): Int32 \ Con =
     let name = v();
     let greetings = "Hello ${name}";
-    do Console.print(greetings);
+    do Con.print(greetings);
     String.length("${name}")
 
-def v(): String \ Console = do Console.read()
+def v(): String \ Con = do Con.read()
