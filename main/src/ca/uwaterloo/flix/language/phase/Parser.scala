@@ -28,6 +28,16 @@ import scala.annotation.tailrec
 
 /**
   * A phase to transform source files into abstract syntax trees.
+  *
+  * ---
+  *
+  * INVARIANT: No rule should comsume trailing whitespace
+  *
+  * REASON: Consuming trailing whitespace might consume the documentation of the
+  *         next def/class/etc.
+  *
+  * EXAMPLE: Do not write `... ~ optWS ~ optional(":" ~ optWS ~ Type)`,
+  *          instead write `... ~ optional(optWS ~ ":" ~ optWS ~ Type)`.
   */
 object Parser {
 
@@ -228,7 +238,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def UsesOrImports: Rule1[Seq[ParsedAst.UseOrImport]] = rule {
-    // It is important for documentation comments that whitespace is not consumed if no uses are present
     oneOrMore(optWS ~ (Use | Import) ~ ((optWS ~ ";") | WS)) | push(Seq.empty)
   }
 
@@ -317,7 +326,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def AssocTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ optional(":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
     }
 
     def AssocTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
@@ -334,7 +343,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("ClassBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssocTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ zeroOrMore(Declarations.AssocTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
       }
 
       rule {
