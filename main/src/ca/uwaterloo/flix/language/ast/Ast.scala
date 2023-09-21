@@ -159,7 +159,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class Deprecated(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Deprecated"
+      override def toString: String = "@deprecated"
     }
 
     /**
@@ -271,7 +271,7 @@ object Ast {
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
-      * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
+      * Returns `true` if `this` sequence contains the `@deprecated` annotation.
       */
     def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
 
