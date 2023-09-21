@@ -22,25 +22,25 @@ mod Time.Duration {
     ///
     /// Returns a duration of `n` nano seconds.
     ///
-    @Experimental
+    @experimental
     pub def fromNanoSeconds(n: Int32): Duration = Duration(toInt64(n))
 
     ///
     /// Returns a duration of `n` micro seconds.
     ///
-    @Experimental
+    @experimental
     pub def fromMicroSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000i64)
 
     ///
     /// Returns a duration of `n` milli seconds.
     ///
-    @Experimental
+    @experimental
     pub def fromMilliSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000_000i64)
 
     ///
     /// Returns a duration of `n` seconds.
     ///
-    @Experimental
+    @experimental
     pub def fromSeconds(n: Int32): Duration = Duration(toInt64(n) * 1_000_000_000i64)
 
 }

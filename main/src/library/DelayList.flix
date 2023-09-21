@@ -130,7 +130,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("DelayList(", sb);
@@ -147,7 +147,7 @@ mod DelayList {
     ///
     /// Returns an empty DelayList.
     ///
-    @Experimental
+    @experimental
     pub def empty(): DelayList[a] = ENil
 
     ///
@@ -155,7 +155,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental
+    @experimental
     pub def isEmpty(l: DelayList[a]): Bool = match l {
         case ENil      => true
         case LList(xs) => isEmpty(force xs)
@@ -169,7 +169,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental
+    @experimental
     pub def head(l: DelayList[a]): Option[a] = match l {
         case ENil        => None
         case ECons(x, _) => Some(x)
@@ -184,7 +184,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def last(l: DelayList[a]): Option[a] = match l {
         case ENil         => None
         case ECons(x, xs) => if (isEmpty(      xs)) Some(x) else last(      xs)
@@ -197,7 +197,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def tail(l: DelayList[a]): DelayList[a] = match l {
         case ENil         => ENil
         case ECons(_, xs) => xs
@@ -210,7 +210,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def length(l: DelayList[a]): Int32 =
         def loop(ll, acc) = match ll {
             case ENil         => acc
@@ -225,7 +225,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l1`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def append(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = match l1 {
         case ENil         => l2
         case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
@@ -238,7 +238,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def count(f: a -> Bool \ ef, l: DelayList[a]): Int32 \ ef =
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
@@ -247,7 +247,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def sum(l: DelayList[Int32]): Int32 =
         Foldable.sum(l)
 
@@ -256,7 +256,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def sumWith(f: a -> Int32 \ ef, l: DelayList[a]): Int32 \ ef =
         Foldable.sumWith(f ,l)
 
@@ -265,7 +265,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def flatten(l: DelayList[DelayList[a]]): DelayList[a] = match l {
         case ENil         => ENil
         case ECons(x, xs) => append(x, LList(lazy flatten(      xs)))
@@ -280,7 +280,7 @@ mod DelayList {
     ///
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
-    @Experimental
+    @experimental
     pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
         case ENil         => false
         case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
@@ -295,7 +295,7 @@ mod DelayList {
     ///
     /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
     ///
-    @Experimental
+    @experimental
     pub def forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = match l {
         case ENil         => true
         case ECons(x, xs) => if (f(x)) forAll(f,       xs) else false
@@ -308,7 +308,7 @@ mod DelayList {
     ///
     /// Forces elements until `x` is found.
     ///
-    @Experimental
+    @experimental
     pub def memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = match l {
         case ENil          => false
         case ECons(x1, xs) => if (x1 == x) true else memberOf(x,       xs)
@@ -323,7 +323,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def minimum(l: DelayList[a]): Option[a] with Order[a] =
         reduceLeft(Order.min, l)
 
@@ -334,7 +334,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def minimumBy(cmp: (a, a) -> Comparison, l: DelayList[a]): Option[a] =
         reduceLeft(Order.minBy(cmp), l)
 
@@ -345,7 +345,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def maximum(l: DelayList[a]): Option[a] with Order[a] =
         reduceLeft(Order.max, l)
 
@@ -356,7 +356,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def maximumBy(cmp: (a, a) -> Comparison, l: DelayList[a]): Option[a] =
         reduceLeft(Order.maxBy(cmp), l)
 
@@ -365,7 +365,7 @@ mod DelayList {
     ///
     /// Returns an empty `DelayList` if `b >= e`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def range(b: Int32, e: Int32): DelayList[Int32] =
         def loop(i) = {
             if (i >= e)
@@ -378,14 +378,14 @@ mod DelayList {
     ///
     /// Returns an infinite DelayList of repeating `x`s.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def repeat(x: a): DelayList[a] =
         LCons(x, lazy repeat(x))
 
     ///
     /// Returns an infinite sequence of integers starting from and including `n`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def from(n: Int32): DelayList[Int32] =
         def loop(i) = LCons(i, lazy loop(i + 1));
         LList(lazy loop(n))
@@ -398,7 +398,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: a -> b \ {} => mapL(g, l)
@@ -448,7 +448,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: (Int32, a) -> b \ {} => mapWithIndexL(g, l)
@@ -497,7 +497,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: a -> DelayList[b] \ {} => flatMapL(g, l)
@@ -539,7 +539,7 @@ mod DelayList {
     ///
     /// Return the singleton list with element `x`.
     ///
-    @Experimental
+    @experimental
     pub def singleton(x: a): DelayList[a] = ECons(x, ENil)
 
     ///
@@ -554,7 +554,7 @@ mod DelayList {
     ///
     /// Note that this implies that ALL functions in `f` must be pure to avoid forcing `l`.
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef =
         flatMap(g -> map(g, l), f)
 
@@ -563,7 +563,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def reverse(l: DelayList[a]): DelayList[a] =
         def loop(ll, acc) = match ll {
             case ENil         => acc
@@ -578,7 +578,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def replace(from: {from = a}, to: {to = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
         map(e -> if (from.from == e) to.to else e, l)
 
@@ -589,7 +589,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = match l {
         case ENil         => s
         case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
@@ -604,7 +604,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k(s)
@@ -623,7 +623,7 @@ mod DelayList {
     ///
     /// Calling the continuation forces the list `l`.
     ///
-    @Experimental
+    @experimental
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: DelayList[a]): b \ ef =
         def loop(ll) = match ll {
             case ENil         => z
@@ -644,7 +644,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = match l {
         case ENil         => ()
         case ECons(x, xs) => f(x); forEach(f,       xs)
@@ -657,7 +657,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region rc {
         let ix = ref 0 @ rc;
         let f1 = x -> {let i = deref ix; f(i, x); ix := i+1};
@@ -673,7 +673,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def reduceLeft(f: (a, a) -> a \ ef, l: DelayList[a]): Option[a] \ ef = match l {
         case ENil         => None
         case ECons(x, xs) => Some(foldLeft(f, x,       xs))
@@ -690,7 +690,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def reduceRight(f: (a, a) -> a \ ef, l: DelayList[a]): Option[a] \ ef =
         def loop(ll, k) = match ll {
             case ECons(x, xs) => if (isEmpty(      xs)) k(x) else loop(      xs, ks -> k(f(x, ks)))
@@ -708,7 +708,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def filter(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
             case g: a -> Bool \ {} => filterL(g, l)
@@ -751,7 +751,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def filterMap(f: a -> Option[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: a -> Option[b] \ {} => filterMapL(g, l)
@@ -811,7 +811,7 @@ mod DelayList {
     ///
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
-    @Experimental
+    @experimental
     pub def findLeft(f: a -> Bool \ ef, l: DelayList[a]): Option[a] \ ef = match l {
         case ENil         => None
         case ECons(x, xs) => if (f(x)) Some(x) else findLeft(f,       xs)
@@ -824,7 +824,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def findRight(f: a -> Bool \ ef, l: DelayList[a]): Option[a] \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k()
@@ -841,7 +841,7 @@ mod DelayList {
     ///
     /// Forces elements of `l` until `f(x)` returns `Some(v)`.
     ///
-    @Experimental
+    @experimental
     pub def findMap(f: a -> Option[b] \ ef, l: DelayList[a]): Option[b] \ ef = match l {
         case ENil         => None
         case ECons(x, xs) => match f(x) {
@@ -860,7 +860,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def intersperse(x: a, l: DelayList[a]): DelayList[a] = match l {
         case ENil           => ENil
         case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
@@ -876,7 +876,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l2`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def intercalate(l1: DelayList[a], l2: DelayList[DelayList[a]]): DelayList[a] = match l2 {
         case ENil           => ENil
         case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), intercalate(l1,       xs))
@@ -891,7 +891,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def partition(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         def loop(ll, k) = match ll {
             case ENil         => k((ENil, ENil))
@@ -919,7 +919,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def span(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         typematch f {
             case g: a -> Bool \ {} => spanL(g, l)
@@ -980,7 +980,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def drop(n: Int32, l: DelayList[a]): DelayList[a] =
         def loop(i, ll) = { // Inner function used here to allow for early termination
             if (i < 1)
@@ -1003,7 +1003,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def dropWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
             case g: a -> Bool \ {} => dropWhileL(g, l)
@@ -1047,7 +1047,7 @@ mod DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def take(n: Int32, l: DelayList[a]): DelayList[a] =
         def loop(i, ll) = { // Inner function used here to allow for early termination
             if (i <= 0)
@@ -1070,7 +1070,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def takeWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
             case g: a -> Bool \ {} => takeWhileL(g, l)
@@ -1119,7 +1119,7 @@ mod DelayList {
     ///
     /// Does not force the tail of either `l1` or `l2`.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def zip(l1: DelayList[a], l2: DelayList[b]): DelayList[(a, b)] =
         def loop(ll1, ll2) = match (ll1, ll2) { // Inner function used here to allow for early termination
             case (ENil, _) => ENil
@@ -1149,7 +1149,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tails are not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. both lists `l1` and `l2` are forced).
     ///
-    @Experimental @LazyWhenPure
+    @experimental @LazyWhenPure
     pub def zipWith(f: (a, b) -> c \ ef, l1: DelayList[a], l2: DelayList[b]): DelayList[c] \ ef =
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
 
@@ -1173,7 +1173,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def toArray(rc: Region[r], l: DelayList[a]): Array[a, r] \ r =
         let a = Array.new(rc, length(l));
         forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
@@ -1184,7 +1184,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def toVector(l: DelayList[a]): Vector[a] = region rc {
         let arr = Array.new(rc, length(l));
         forEach(match (i, x) -> Array.put(x, i, arr), zipWithIndex(l));
@@ -1196,7 +1196,7 @@ mod DelayList {
     ///
     /// Does not force any elements of the list.
     ///
-    @Experimental @Lazy
+    @experimental @Lazy
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r =
         let cursor = ref l @ rc;
         let next = () -> match head(deref cursor) {
@@ -1219,7 +1219,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def toList(l: DelayList[a]): List[a] =
         def loop(ll, k) = match ll {
             case ENil         => k(Nil)
@@ -1234,7 +1234,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def toMutList(rc: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
         Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
@@ -1255,7 +1255,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def toMap(l: DelayList[(a, b)]): Map[a, b] with Order[a] =
         def loop(ll, acc) = match ll {
             case ENil              => acc
@@ -1270,7 +1270,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def toSet(l: DelayList[a]): Set[a] with Order[a] =
         def loop(ll, acc) = match ll {
             case ENil         => acc
@@ -1286,7 +1286,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def join(sep: String, l: DelayList[a]): String with ToString[a] =
         Foldable.join(sep, l)
 
@@ -1296,7 +1296,7 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
+    @experimental
     pub def joinWith(f: a -> String \ ef, sep: String, l: DelayList[a]): String \ ef =
         Foldable.joinWith(f, sep, l)
 
@@ -1306,14 +1306,14 @@ mod DelayList {
     /// Builds an "applicative DelayList" from a head of one applicative action and an
     /// applicative DelayList of the tail.
     ///
-    @Experimental
+    @experimental
     def consA(mx: f[a], ml: f[DelayList[a]]): f[DelayList[a]] with Applicative[f] =
         (((x, xs) -> ECons(x, xs)) `Functor.map` mx) `Applicative.ap` ml
 
     ///
     /// Returns the result of running all the actions in the DelayList `l`.
     ///
-    @Experimental
+    @experimental
     pub def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] =
         def loop(ll, k) = match ll {
             case ENil          => k(Applicative.point(ENil))
@@ -1327,7 +1327,7 @@ mod DelayList {
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// DelayList `l`.
     ///
-    @Experimental
+    @experimental
     pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] =
         def loop(ll, k) = match ll {
             case ENil         => k(Applicative.point(ENil))

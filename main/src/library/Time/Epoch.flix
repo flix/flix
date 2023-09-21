@@ -19,7 +19,7 @@ mod Time.Epoch {
     ///
     /// Returns the number of nano seconds since the Unix epoch.
     ///
-    @Experimental
+    @experimental
     pub def nanoseconds(): Int64 \ IO =
         import static java.lang.System.nanoTime(): Int64 \ IO;
         nanoTime()
@@ -27,19 +27,19 @@ mod Time.Epoch {
     ///
     /// Returns the number of micro seconds since the Unix epoch.
     ///
-    @Experimental
+    @experimental
     pub def microseconds(): Int64 \ IO = nanoseconds() / 1000i64
 
     ///
     /// Returns the number of milli seconds since the Unix epoch.
     ///
-    @Experimental
+    @experimental
     pub def milliseconds(): Int64 \ IO = microseconds() / 1000i64
 
     ///
     /// Returns the number of seconds since the Unix epoch.
     ///
-    @Experimental
+    @experimental
     pub def seconds(): Int64 \ IO = milliseconds() / 1000i64
 
 }

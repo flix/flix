@@ -168,7 +168,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class Experimental(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Experimental"
+      override def toString: String = "@experimental"
     }
 
     /**
@@ -276,7 +276,7 @@ object Ast {
     def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
 
     /**
-      * Returns `true` if `this` sequence contains the `@Experimental` annotation.
+      * Returns `true` if `this` sequence contains the `@experimental` annotation.
       */
     def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
 

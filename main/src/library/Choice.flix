@@ -30,7 +30,7 @@ mod Choice {
     ///
     /// Always returns `true`.
     ///
-    @Experimental
+    @experimental
     pub def assertAbsent(c: Choice[s, true, false]): Bool = relational_choose c {
         case Absent => true
     }
@@ -40,7 +40,7 @@ mod Choice {
     ///
     /// Always returns `true`.
     ///
-    @Experimental
+    @experimental
     pub def assertPresent(c: Choice[s, false, true]): Bool = relational_choose c {
         case Present(_) => true
     }
@@ -48,7 +48,7 @@ mod Choice {
     ///
     /// Returns `true` if `c` is `Absent`.
     ///
-    @Experimental
+    @experimental
     pub def isAbsent(c: Choice[s, pres, abs]): Bool = relational_choose c {
         case Absent     => true
         case Present(_) => false
@@ -57,7 +57,7 @@ mod Choice {
     ///
     /// Returns `true` if `c` is `Present`.
     ///
-    @Experimental
+    @experimental
     pub def isPresent(c: Choice[s, pres, abs]): Bool = relational_choose c {
         case Absent     => false
         case Present(_) => true
@@ -66,7 +66,7 @@ mod Choice {
     ///
     /// Returns `v` where `c` must be `Present(v)`.
     ///
-    @Experimental
+    @experimental
     pub def unbox(c: Choice[s, false, true]): s =
         relational_choose c {
             case Present(x) => x
@@ -75,7 +75,7 @@ mod Choice {
     ///
     /// Returns `v` if `o` is `Present(v).` Otherwise returns `d`.
     ///
-    @Experimental
+    @experimental
     pub def getWithDefault(d: s, c: Choice[s, pres, abs]): s =
         relational_choose c {
             case Absent     => d
@@ -85,7 +85,7 @@ mod Choice {
     ///
     /// Returns `c` if it is `Present(v)`. Otherwise returns `default`.
     ///
-    @Experimental
+    @experimental
     pub def withDefault[s : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
                        (default: {default = Choice[s, a2, p2]}, c: Choice[s, a1, p1]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
         relational_choose* c {
@@ -98,7 +98,7 @@ mod Choice {
     ///
     /// The function `f` must be pure.
     ///
-    @Experimental
+    @experimental
     pub def filter[t : Type, a : Bool, p : Bool]
                   (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a or p, p] =
         relational_choose* c {
@@ -109,7 +109,7 @@ mod Choice {
     ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    @Experimental
+    @experimental
     pub def map[s: Type, t: Type, a: Bool, p: Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
         relational_choose* c {
             case Absent     => Absent
@@ -119,7 +119,7 @@ mod Choice {
     ///
     /// Returns `f(v)` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    @Experimental
+    @experimental
     pub def flatMap[s : Type, t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
                    (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 or (p1 and a2), p1 and p2] =
         relational_choose* c {
@@ -130,7 +130,7 @@ mod Choice {
     ///
     /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
-    @Experimental
+    @experimental
     pub def flatten[t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
         (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, (a1 and p2) or a2, p1 and p2] =
         relational_choose* c {
@@ -141,7 +141,7 @@ mod Choice {
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
     ///
-    @Experimental
+    @experimental
     pub def invert[s: Type, a: Bool, p: Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = relational_choose* c {
         case Absent     => Present(v)
         case Present(_) => Absent

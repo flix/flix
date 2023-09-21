@@ -30,7 +30,7 @@ mod Time {
         ///
         /// Returns the current time from the system clock.
         ///
-        @Experimental
+        @experimental
         pub def now(): Time.Instant \ IO =
             import static java.time.Instant.now(): ##java.time.Instant \ IO;
             Time.Instant.Instant(now())
@@ -38,7 +38,7 @@ mod Time {
         ///
         /// Returns `true` if `x` is before `y`.
         ///
-        @Experimental
+        @experimental
         pub def before(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isBefore(##java.time.Instant): Bool \ {};
             let Time.Instant.Instant(t1) = x;
@@ -48,7 +48,7 @@ mod Time {
         ///
         /// Returns `true` if `x` is after `y`.
         ///
-        @Experimental
+        @experimental
         pub def after(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isAfter(##java.time.Instant): Bool \ {};
             let Time.Instant.Instant(t1) = x;
@@ -58,7 +58,7 @@ mod Time {
         ///
         /// Returns the given instant `x` plus `d` number of nano seconds.
         ///
-        @Experimental
+        @experimental
         pub def plus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.plusNanos(Int64): ##java.time.Instant \ {};
             let Time.Instant.Instant(t) = x;
@@ -67,7 +67,7 @@ mod Time {
         ///
         /// Returns the given instant `x` minus `d` number of nano seconds.
         ///
-        @Experimental
+        @experimental
         pub def minus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.minusNanos(Int64): ##java.time.Instant \ {};
             let Time.Instant.Instant(t) = x;
@@ -76,7 +76,7 @@ mod Time {
         ///
         /// Returns `x` as a string using the ISO-8601 representation.
         ///
-        @Experimental
+        @experimental
         pub def toString(x: Time.Instant): String =
             import java.time.Instant.toString(): String \ {} as str;
             let Time.Instant.Instant(t) = x;

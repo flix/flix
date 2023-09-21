@@ -46,7 +46,7 @@ mod Benchmark {
     ///
     /// A smart constructor for a benchmark.
     ///
-    @Experimental
+    @experimental
     pub def defBenchmark(name: String, f: Unit -> a \ ef): Benchmark =
         let fn = () -> {
             let _ = unchecked_cast(f() as _ \ IO);
@@ -62,7 +62,7 @@ mod Benchmark {
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` nanoseconds.
     /// One seconds is `1_000_000_000i64`.
     ///
-    @Experimental
+    @experimental
     pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region rc {
         if (Array.length(bs) == 0) {
             println("No benchmarks");

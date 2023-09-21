@@ -2578,7 +2578,7 @@ object Weeder {
     case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
     case "test" => Ast.Annotation.Test(ident.loc).toSuccess
     case "deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
-    case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
+    case "experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
     case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
     case "Parallel" => Ast.Annotation.Parallel(ident.loc).toSuccess
     case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
