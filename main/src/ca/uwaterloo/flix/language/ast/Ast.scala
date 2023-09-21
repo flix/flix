@@ -214,7 +214,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class LazyWhenPure(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@LazyWhenPure"
+      override def toString: String = "@lazywhenpure"
     }
 
     /**
@@ -291,7 +291,7 @@ object Ast {
     def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])
 
     /**
-      * Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation.
+      * Returns `true` if `this` sequence contains the `@lazywhenpure` annotation.
       */
     def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
 

@@ -398,7 +398,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: a -> b \ {} => mapL(g, l)
@@ -448,7 +448,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: (Int32, a) -> b \ {} => mapWithIndexL(g, l)
@@ -497,7 +497,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def flatMap(f: a -> DelayList[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: a -> DelayList[b] \ {} => flatMapL(g, l)
@@ -554,7 +554,7 @@ mod DelayList {
     ///
     /// Note that this implies that ALL functions in `f` must be pure to avoid forcing `l`.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def ap(f: DelayList[a -> b \ ef], l: DelayList[a]): DelayList[b] \ ef =
         flatMap(g -> map(g, l), f)
 
@@ -708,7 +708,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def filter(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
             case g: a -> Bool \ {} => filterL(g, l)
@@ -751,7 +751,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def filterMap(f: a -> Option[b] \ ef, l: DelayList[a]): DelayList[b] \ ef =
         typematch f {
             case g: a -> Option[b] \ {} => filterMapL(g, l)
@@ -919,7 +919,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def span(f: a -> Bool \ ef, l: DelayList[a]): (DelayList[a], DelayList[a]) \ ef =
         typematch f {
             case g: a -> Bool \ {} => spanL(g, l)
@@ -1003,7 +1003,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def dropWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
             case g: a -> Bool \ {} => dropWhileL(g, l)
@@ -1070,7 +1070,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def takeWhile(f: a -> Bool \ ef, l: DelayList[a]): DelayList[a] \ ef =
         typematch f {
             case g: a -> Bool \ {} => takeWhileL(g, l)
@@ -1149,7 +1149,7 @@ mod DelayList {
     /// - If `f` is pure then it is applied lazily (i.e. the tails are not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. both lists `l1` and `l2` are forced).
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def zipWith(f: (a, b) -> c \ ef, l1: DelayList[a], l2: DelayList[b]): DelayList[c] \ ef =
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
 

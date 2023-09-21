@@ -348,7 +348,7 @@ mod DelayMap {
     ///
     /// Otherwise, updates `m` with `k => v`.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def insertWith(f: (v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
 
@@ -357,7 +357,7 @@ mod DelayMap {
     ///
     /// Otherwise, updates `m` with `k => v`.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         typematch f {
             case g: (k, v, v) -> v \ {} => insertWithKeyL(g, k, v, m)
@@ -392,7 +392,7 @@ mod DelayMap {
     ///  - Runs in parallel when given a pure function `f`.
     ///  - Applies `f` lazily if `f` is pure.
     ///
-    @experimental @parallelwhenpure @LazyWhenPure
+    @experimental @parallelwhenpure @lazywhenpure
     pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         mapWithKey((_, v) -> f(v), m)
 
@@ -403,7 +403,7 @@ mod DelayMap {
     ///  - Runs in parallel when given a pure function `f`.
     ///  - Applies `f` lazily if `f` is pure.
     ///
-    @experimental @parallelwhenpure @LazyWhenPure
+    @experimental @parallelwhenpure @lazywhenpure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         typematch f {
             case g: (k, v1) -> v2 \ {} => mapWithKeyL(g, m)
@@ -505,7 +505,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def unionWith(f: (v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
@@ -514,7 +514,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         typematch f {
             case g: (k, v, v) -> v \ {} => unionWithKeyL(g, m1, m2)
@@ -686,7 +686,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def adjust(f: v -> v \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         adjustWithKey((_, v1) -> f(v1), k, m)
 
@@ -695,7 +695,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
@@ -704,7 +704,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def update(f: v -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         updateWithKey((_, v1) -> f(v1), k, m)
 
@@ -713,7 +713,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
-    @experimental @LazyWhenPure
+    @experimental @lazywhenpure
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         typematch f {
             case g: (k, v) -> Option[v] \ {} => updateWithKeyL(g, k, m)
