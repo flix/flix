@@ -252,19 +252,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ WithClause ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ WithClause ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ WithClause ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
     def Op: Rule1[ParsedAst.Declaration.Op] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ WithClause ~ SP ~> ParsedAst.Declaration.Op
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ SP ~> ParsedAst.Declaration.Op
     }
 
     def Enum: Rule1[ParsedAst.Declaration] = {
@@ -335,7 +335,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ optWS ~ WithClause
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ WithClause
       }
 
       def EmptyBody = namedRule("ClassBody") {
@@ -356,7 +356,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def WithClause: Rule1[Seq[ParsedAst.TypeConstraint]] = rule {
-      optional(keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
+      optional(optWS ~ keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
     }
 
     def EqualityConstraint: Rule1[ParsedAst.EqualityConstraint] = rule {
@@ -369,7 +369,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Instance: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ optWS ~ WithClause
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ WithClause
       }
 
       def EmptyBody = namedRule("InstanceBody") {
