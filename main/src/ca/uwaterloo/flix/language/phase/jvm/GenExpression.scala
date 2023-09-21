@@ -1462,6 +1462,21 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
+    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
+    case Expr.Do(op, exps, tpe, purity, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
+    case Expr.Resume(exp, tpe, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
