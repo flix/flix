@@ -17,7 +17,7 @@
 ///
 /// The Validation type.
 ///
-@MustUse
+@mustuse
 pub enum Validation[e, t] with Eq, Order, ToString, Sendable {
     case Success(t),
     case Failure(Nec[e])

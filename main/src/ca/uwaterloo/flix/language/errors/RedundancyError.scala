@@ -469,12 +469,12 @@ object RedundancyError {
     * @param loc the location of the expression.
     */
   case class MustUse(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Unused value but its type is marked as @MustUse"
+    def summary: String = "Unused value but its type is marked as @mustuse"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unused value but its type is marked as @MustUse.
+         |>> Unused value but its type is marked as @mustuse.
          |
          |${code(loc, "unused value.")}
          |

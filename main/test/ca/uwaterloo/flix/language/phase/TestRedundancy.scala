@@ -1721,7 +1721,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("MustUse.01") {
     val input =
       """
-        |@MustUse
+        |@mustuse
         |enum A {
         |    case A
         |}

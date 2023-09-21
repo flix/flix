@@ -2584,7 +2584,7 @@ object Weeder {
     case "parallelwhenpure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
     case "lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
     case "lazywhenpure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
-    case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
+    case "mustuse" => Ast.Annotation.MustUse(ident.loc).toSuccess
     case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
     case name => WeederError.UndefinedAnnotation(name, ident.loc).toFailure
   }

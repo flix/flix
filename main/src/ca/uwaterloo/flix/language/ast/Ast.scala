@@ -223,7 +223,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class MustUse(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@MustUse"
+      override def toString: String = "@mustuse"
     }
 
     /**
@@ -296,7 +296,7 @@ object Ast {
     def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
 
     /**
-      * Returns `true` if `this` sequence contains the `@MustUse` annotation.
+      * Returns `true` if `this` sequence contains the `@mustuse` annotation.
       */
     def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])
 

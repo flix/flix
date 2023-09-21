@@ -1020,7 +1020,7 @@ object Redundancy {
     isMustUseType(exp.tpe) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
 
   /**
-    * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
+    * Returns `true` if the given type `tpe` is marked as `@mustuse` or is intrinsically `@mustuse`.
     */
   private def isMustUseType(tpe: Type)(implicit root: Root): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Arrow(_)) => true
