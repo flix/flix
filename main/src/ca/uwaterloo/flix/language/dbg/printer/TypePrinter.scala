@@ -45,12 +45,12 @@ object TypePrinter {
   }
 
   /**
-    * Returns the [[DocAst.Effect]] representation of `tpe`.
+    * Returns the [[DocAst.Eff]] representation of `tpe`.
     */
-  def printAsEffect(tpe: Type): DocAst.Effect = tpe match {
-    case Type.Cst(TypeConstructor.Pure, _) => DocAst.Effect.Pure
-    case Type.Cst(TypeConstructor.EffUniv, _) => DocAst.Effect.Impure
-    case _ => DocAst.Effect.AsIs(typeToString(tpe))
+  def printAsEffect(tpe: Type): DocAst.Eff = tpe match {
+    case Type.Cst(TypeConstructor.Pure, _) => DocAst.Eff.Pure
+    case Type.Cst(TypeConstructor.EffUniv, _) => DocAst.Eff.Impure
+    case _ => DocAst.Eff.AsIs(typeToString(tpe))
   }
 
   /** Print type without formatting as-is */

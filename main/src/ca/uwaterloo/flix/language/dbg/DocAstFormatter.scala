@@ -431,10 +431,10 @@ object DocAstFormatter {
     chase(tpe, List())
   }
 
-  private def formatEffect(effect: Effect, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
-    case Effect.Pure => empty
-    case Effect.Impure => text(" ") :: text("\\") +: text("IO")
-    case Effect.AsIs(s) => text(" ") :: text("\\") +: text(s)
+  private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
+    case Eff.Pure => empty
+    case Eff.Impure => text(" ") :: text("\\") +: text("IO")
+    case Eff.AsIs(s) => text(" ") :: text("\\") +: text(s)
   }
 
 }

@@ -24,7 +24,7 @@ sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expression.Ascription], resType: Type, effect: Effect, body: Expression)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expression.Ascription], resType: Type, effect: Eff, body: Expression)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
@@ -358,15 +358,15 @@ object DocAst {
     def Var(id: Int): Type = AsIs(s"var$id")
   }
 
-  sealed trait Effect
+  sealed trait Eff
 
-  object Effect {
+  object Eff {
 
-    case object Pure extends Effect
+    case object Pure extends Eff
 
-    case object Impure extends Effect
+    case object Impure extends Eff
 
-    case class AsIs(s: String) extends Effect
+    case class AsIs(s: String) extends Eff
 
   }
 
