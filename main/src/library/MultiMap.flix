@@ -255,7 +255,7 @@ mod MultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def map(f: v1 -> v2 \ ef, m: MultiMap[k, v1]): MultiMap[k, v2] \ ef with Order[v2] =
         mapWithKey((_, v) -> f(v), m)
 
@@ -264,7 +264,7 @@ mod MultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: MultiMap[k, v1]): MultiMap[k, v2] \ ef with Order[v2] =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.map(f(k), vs);
@@ -399,7 +399,7 @@ mod MultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def count(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Int32 \ ef =
         sumWith((k, v) -> if (f(k,v)) 1 else 0, m)
 
@@ -420,7 +420,7 @@ mod MultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: MultiMap[k, v]): Int32 \ ef =
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.sumWith(v -> f(k, v), vs);

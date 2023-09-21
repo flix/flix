@@ -151,7 +151,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @experimental @ParallelWhenPure
+    @experimental @parallelwhenpure
     pub def count(f: (k, v) -> Bool \ ef, m: DelayMap[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         typematch f {
@@ -194,7 +194,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @experimental @ParallelWhenPure
+    @experimental @parallelwhenpure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -228,7 +228,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @experimental @ParallelWhenPure
+    @experimental @parallelwhenpure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -267,7 +267,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @experimental @ParallelWhenPure
+    @experimental @parallelwhenpure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -302,7 +302,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @experimental @ParallelWhenPure
+    @experimental @parallelwhenpure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -392,7 +392,7 @@ mod DelayMap {
     ///  - Runs in parallel when given a pure function `f`.
     ///  - Applies `f` lazily if `f` is pure.
     ///
-    @experimental @ParallelWhenPure @LazyWhenPure
+    @experimental @parallelwhenpure @LazyWhenPure
     pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         mapWithKey((_, v) -> f(v), m)
 
@@ -403,7 +403,7 @@ mod DelayMap {
     ///  - Runs in parallel when given a pure function `f`.
     ///  - Applies `f` lazily if `f` is pure.
     ///
-    @experimental @ParallelWhenPure @LazyWhenPure
+    @experimental @parallelwhenpure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         typematch f {
             case g: (k, v1) -> v2 \ {} => mapWithKeyL(g, m)
@@ -416,7 +416,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure @Lazy
+    @parallelwhenpure @Lazy
     def mapWithKeyL(f: (k, v1) -> v2, m: DelayMap[k, v1]): DelayMap[k, v2] =
         let DMap(t) = m;
         let g = (k, v) -> lazy f(k, force v);
@@ -844,7 +844,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @experimental @ParallelWhenPure
+    @experimental @parallelwhenpure
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: DelayMap[k, v]): Int32 \ ef =
         let DMap(t) = m;
         def sw() = {

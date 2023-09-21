@@ -618,7 +618,7 @@ mod RedBlackTree {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
         typematch f {
             case g: (k, v1) -> v2 \ {} =>

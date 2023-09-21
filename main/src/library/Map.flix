@@ -213,7 +213,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -244,7 +244,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -275,7 +275,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -306,7 +306,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
@@ -459,7 +459,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = mapWithKey((_, v) -> f(v), m)
 
     ///
@@ -467,7 +467,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef =
         let Map(t) = m;
         Map(RedBlackTree.mapWithKey(f, t))
@@ -589,7 +589,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def count(f: (k, v) -> Bool \ ef, m: Map[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         typematch f {
@@ -620,7 +620,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: Map[k, v]): Int32 \ ef =
         let Map(t) = m;
         def sw() = RedBlackTree.sumWith(f, t);
@@ -641,7 +641,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def exists(f: (k, v) -> Bool \ ef, m: Map[k, v]): Bool \ ef =
         let Map(t) = m;
         def e() = RedBlackTree.exists(f, t);
@@ -662,7 +662,7 @@ mod Map {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def forAll(f: (k, v) -> Bool \ ef, m: Map[k, v]): Bool \ ef =
         let Map(t) = m;
         def fa() = RedBlackTree.forAll(f, t);

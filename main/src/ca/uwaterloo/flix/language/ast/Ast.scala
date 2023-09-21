@@ -196,7 +196,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@ParallelWhenPure"
+      override def toString: String = "@parallelwhenpure"
     }
 
     /**
@@ -306,7 +306,7 @@ object Ast {
     def isParallel: Boolean = annotations exists (_.isInstanceOf[Annotation.Parallel])
 
     /**
-      * Returns `true` if `this` sequence contains the `@ParallelWhenPure` annotation.
+      * Returns `true` if `this` sequence contains the `@parallelwhenpure` annotation.
       */
     def isParallelWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.ParallelWhenPure])
 

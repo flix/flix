@@ -2581,7 +2581,7 @@ object Weeder {
     case "experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
     case "internal" => Ast.Annotation.Internal(ident.loc).toSuccess
     case "Parallel" => Ast.Annotation.Parallel(ident.loc).toSuccess
-    case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
+    case "parallelwhenpure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
     case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
     case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess

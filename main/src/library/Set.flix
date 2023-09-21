@@ -71,7 +71,7 @@ instance UnorderedFoldable[Set] {
     override pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
     override pub def forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
 
-    @ParallelWhenPure
+    @parallelwhenpure
     override pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef = Set.count(f, s)
 }
 
@@ -215,7 +215,7 @@ mod Set {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
         typematch cmp {
@@ -247,7 +247,7 @@ mod Set {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
         typematch cmp {
@@ -354,7 +354,7 @@ mod Set {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
         typematch f {
             case g: a -> Bool \ {} =>
@@ -379,7 +379,7 @@ mod Set {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
+    @parallelwhenpure
     pub def sumWith(f: a -> Int32 \ ef, s: Set[a]): Int32 \ ef =
         let Set(t) = s;
         def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
