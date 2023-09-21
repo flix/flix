@@ -8,7 +8,7 @@ def main(): Int32 =
         u()
     } with Con {
         def read() = resume(21)
-        def print(s) = ___PRINT___(s); resume() // actually print to terminal
+        def print(s) = ___PRINT___(s); resume() //actually print to terminal
     }
 
 def f(): Int32 = g() + 1
