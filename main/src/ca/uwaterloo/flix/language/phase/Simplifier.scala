@@ -42,13 +42,13 @@ object Simplifier {
       * Translates the given definition `def0` to the SimplifiedAst.
       */
     def visitDef(defn: LoweredAst.Def): SimplifiedAst.Def = defn match {
-      case LoweredAst.Def(sym, spec, impl) =>
+      case LoweredAst.Def(sym, spec, exp) =>
         val fs = spec.fparams.map(visitFormalParam)
-        val exp = visitExp(impl.exp)
-        val funType = impl.inferredScheme.base
+        val e = visitExp(exp)
+        val funType = spec.declaredScheme.base
         val retType = visitType(funType.arrowResultType)
         val eff = visitType(funType.arrowEffectType)
-        SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, exp, retType, eff, sym.loc)
+        SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
     }
 
     /**
@@ -298,7 +298,7 @@ object Simplifier {
 
             case TypeConstructor.Arrow(_) => MonoType.Arrow(args.drop(1).init, args.last) // Erase the purity
 
-            case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+            case TypeConstructor.RecordRowExtend(label) => MonoType.RecordExtend(label.name, args.head, args(1))
 
             case TypeConstructor.Record => args.head
 
@@ -478,10 +478,10 @@ object Simplifier {
       // Create a branch for each rule.
       val branches = (ruleLabels zip rules) map {
         // Process each (label, rule) pair.
-        case (field, LoweredAst.MatchRule(pat, guard, body)) =>
+        case (label, LoweredAst.MatchRule(pat, guard, body)) =>
           // Retrieve the label of the next rule.
           // If this rule is the last, the next label is the default label.
-          val next = nextLabel(field)
+          val next = nextLabel(label)
 
           // Success case: evaluate the match body.
           val success = visitExp(body)
@@ -490,7 +490,7 @@ object Simplifier {
           val failure = SimplifiedAst.Expr.JumpTo(next, t, jumpPurity, loc)
 
           // Return the branch with its label.
-          field -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(LoweredAst.Expr.Cst(Ast.Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure
+          label -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(LoweredAst.Expr.Cst(Ast.Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure
           )
       }
       // Construct the error branch.
@@ -610,22 +610,22 @@ object Simplifier {
           * Matching a record may succeed or fail.
           *
           * We generate a fresh variable and let-binding for each component of the
-          * record (field or extension) and then we recurse on the nested patterns
+          * record (label or extension) and then we recurse on the nested patterns
           * and freshly generated variables.
           */
         case (LoweredAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
-          val freshVars = pats.map(_ => Symbol.freshVarSym("innerField" + Flix.Delimiter, BoundBy.Let, loc))
-          val fieldPats = pats.map(_.pat)
+          val freshVars = pats.map(_ => Symbol.freshVarSym("innerLabel" + Flix.Delimiter, BoundBy.Let, loc))
+          val labelPats = pats.map(_.pat)
           val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
-          val zero = patternMatchList(fieldPats ::: ps, freshVars ::: vs, guard, succ, fail)
+          val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
           // Note that we reverse pats and freshVars because we still want to fold right
           // but we want to restrict the record / matchVar from left to right
           val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
-            case ((LoweredAst.Pattern.Record.RecordFieldPattern(field, _, pat, loc1), name), (exp, matchVarExp)) =>
-              val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(matchVarExp), visitType(pat.tpe), Pure, loc1)
-              val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(matchVarExp), mkRecordRestrict(field, varExp.tpe), matchVarExp.purity, loc1)
-              val fieldLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
-              (fieldLetBinding, restrictedMatchVarExp)
+            case ((LoweredAst.Pattern.Record.RecordLabelPattern(label, _, pat, loc1), name), (exp, matchVarExp)) =>
+              val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(pat.tpe), Pure, loc1)
+              val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, varExp.tpe), matchVarExp.purity, loc1)
+              val labelLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
+              (labelLetBinding, restrictedMatchVarExp)
           }
           pat match {
             case LoweredAst.Pattern.Var(sym, _, varLoc) =>
@@ -778,16 +778,16 @@ object Simplifier {
   }
 
   /**
-    * Performs record restriction on `tpe` by removing the first occurrence of `RecordRowExtend(field)` from `tpe`.
+    * Performs record restriction on `tpe` by removing the first occurrence of `RecordRowExtend(label)` from `tpe`.
     *
-    * @param field the field / record row to remove from `tpe`.
+    * @param label the label / record row to remove from `tpe`.
     * @param tpe   the record type.
     */
-  private def mkRecordRestrict(field: Name.Field, tpe: MonoType): MonoType = {
+  private def mkRecordRestrict(label: Name.Label, tpe: MonoType): MonoType = {
 
     @tailrec
     def visit(t: MonoType, cont: MonoType => MonoType): MonoType = t match {
-      case MonoType.RecordExtend(f, _, tail) if field.name == f =>
+      case MonoType.RecordExtend(f, _, tail) if label.name == f =>
         cont(tail)
 
       case MonoType.RecordExtend(f, tp, tail) =>

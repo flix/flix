@@ -44,6 +44,15 @@ object ParOps {
   }
 
   /**
+    * Apply the given function `f` to each value in the map `m` in parallel.
+    */
+  @inline
+  def mapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
+    parMap(m) {
+      case (k, v) => (k, f(v))
+    }.toMap
+
+  /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.
     */
   @inline
@@ -105,5 +114,4 @@ object ParOps {
     // Return the set of reachable Ts.
     reach
   }
-
 }

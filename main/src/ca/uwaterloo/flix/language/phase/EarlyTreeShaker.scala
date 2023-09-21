@@ -105,16 +105,16 @@ object EarlyTreeShaker {
     */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
     case ReachableSym.DefnSym(defnSym) =>
-      visitExp(root.defs(defnSym).impl.exp)
+      visitExp(root.defs(defnSym).exp)
 
     case ReachableSym.SigSym(sigSym) =>
       val sig = root.sigs(sigSym)
       Set(ReachableSym.ClassSym(sig.sym.clazz)) ++
-        sig.impl.map(_.exp).map(visitExp).getOrElse(Set.empty)
+        sig.exp.map(visitExp).getOrElse(Set.empty)
 
     case ReachableSym.ClassSym(classSym) =>
       root.instances(classSym).foldLeft(Set.empty[ReachableSym]) {
-        case (acc, s) => visitExps(s.defs.map(_.impl.exp)) ++ acc
+        case (acc, s) => visitExps(s.defs.map(_.exp)) ++ acc
       }
   }
 

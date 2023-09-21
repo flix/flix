@@ -218,14 +218,9 @@ object EntryPoint {
     val printFunc = TypedAst.Expr.Def(printSym, printTpe, SourceLocation.Unknown)
     val print = TypedAst.Expr.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
 
-    val impl = TypedAst.Impl(
-      exp = print,
-      inferredScheme = EntryPointScheme
-    )
-
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
-    TypedAst.Def(sym, spec, impl)
+    TypedAst.Def(sym, spec, print)
   }
 }
 
