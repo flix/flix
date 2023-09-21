@@ -799,4 +799,16 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectSuccess(result)
   }
 
+  test("NonTailRecursiveFunction.08") {
+    val input =
+      """
+        |def g(x: Int32): Int32 = 1 + x
+        |
+        |@Tailrec
+        |def f(x: Int32): Int32 = f(g(1))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
 }
