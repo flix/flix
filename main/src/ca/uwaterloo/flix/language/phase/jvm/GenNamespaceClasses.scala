@@ -77,9 +77,6 @@ object GenNamespaceClasses {
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
 
-    // Jvm type of method args
-    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
-
     // Erased argument and result type.
     val erasedArgs = defn.arrowType.args.map(JvmOps.getErasedJvmType)
     val erasedResult = JvmOps.getErasedJvmType(defn.tpe)
@@ -109,7 +106,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    method.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName, backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
+    BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(defn.tpe))(new BytecodeInstructions.F(method))
     // no erasure here because the ns function works on erased values
 
     // Return
