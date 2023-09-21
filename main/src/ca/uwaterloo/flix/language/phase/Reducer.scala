@@ -76,8 +76,8 @@ object Reducer {
 
     case LiftedAst.Expr.ApplySelfTail(sym, formals, exps, tpe, purity, loc) =>
       val fs = formals.map(visitFormalParam)
-      val as = exps.map(visitExpr)
-      ReducedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
+      val es = exps.map(visitExpr)
+      ReducedAst.Expr.ApplySelfTail(sym, fs, es, tpe, purity, loc)
 
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
@@ -119,16 +119,22 @@ object Reducer {
       ReducedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
     case LiftedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      // TODO AE erasing to unit for now
-      ReducedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
+      val e = visitExpr(exp)
+      val rs = rules.map{
+        case LiftedAst.HandlerRule(op, fparams, exp) =>
+          val fps = fparams.map(visitFormalParam)
+          val e = visitExpr(exp)
+          ReducedAst.HandlerRule(op, fps, e)
+      }
+      ReducedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
     case LiftedAst.Expr.Do(op, exps, tpe, purity, loc) =>
-      // TODO AE erasing to unit for now
-      ReducedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
+      val es = exps.map(visitExpr)
+      ReducedAst.Expr.Do(op, es, tpe, purity, loc)
 
     case LiftedAst.Expr.Resume(exp, tpe, loc) =>
-      // TODO AE erasing to unit for now
-      ReducedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
+      val e = visitExpr(exp)
+      ReducedAst.Expr.Resume(e, tpe, loc)
 
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val es = methods.map(m => visitExpr(m.clo))

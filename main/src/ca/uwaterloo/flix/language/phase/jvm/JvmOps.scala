@@ -558,6 +558,12 @@ object JvmOps {
 
       case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
+      case Expr.TryWith(exp, _, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+      case Expr.Do(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
+
+      case Expr.Resume(exp, tpe, _) => visitExp(exp) ++ Set(tpe)
+
       case Expr.NewObject(_, _, _, _, _, exps, _) =>
         visitExps(exps)
 
