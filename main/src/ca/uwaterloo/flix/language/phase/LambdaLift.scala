@@ -57,10 +57,10 @@ object LambdaLift {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = liftExp(exp, sym, m)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, e.purity, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
   }
 
   /**
