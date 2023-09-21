@@ -124,6 +124,14 @@ object Symbol {
   }
 
   /**
+    * Returns the definition symbol for the given fully qualified name and ID.
+    */
+  def mkDefnSym(fqn: String, id: Option[Int]): DefnSym = split(fqn) match {
+    case None => new DefnSym(id, Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new DefnSym(id, ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {

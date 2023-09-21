@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.inference
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.language.phase.Typer.inferExp
 import ca.uwaterloo.flix.language.phase.unification.InferMonad
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.traverseM
@@ -91,7 +90,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, eff) <- inferExp(exp0, root)
           patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -136,7 +135,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, eff) <- Typer.inferExp(exp0, root)
+          (constrs, tpe, eff) <- inferExp(exp0, root)
           patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -233,7 +232,7 @@ object RestrictableChooseInference {
       //
       for {
         // Γ ⊢ e: τ
-        (constrs, tpe, eff) <- Typer.inferExp(exp, root)
+        (constrs, tpe, eff) <- inferExp(exp, root)
         _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
         _ <- traverseM(targs.zip(targsOut)) { case (targ, targOut) => unifyTypeM(targ, targOut, loc) }
         _ <- indexUnification
@@ -263,7 +262,7 @@ object RestrictableChooseInference {
 
       for {
         // infer the inner expression type τ
-        (constrs, tpe, eff) <- Typer.inferExp(exp, root)
+        (constrs, tpe, eff) <- inferExp(exp, root)
 
         // make sure the expression has type EnumType[s][α1 ... αn]
         _ <- expectTypeM(expected = enumType, actual = tpe, loc)
