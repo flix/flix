@@ -103,12 +103,6 @@ object GenFunctionClasses {
   private def compileInvokeMethod(visitor: ClassWriter,
                                   classType: JvmType.Reference,
                                   defn: Def)(implicit root: Root, flix: Flix): Unit = {
-    // Continuation class
-//    val continuationType = JvmOps.getContinuationInterfaceType(defn.arrowType)
-
-    // previous JvmOps function are already partial pattern matches
-//    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
-
     // Method header
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
