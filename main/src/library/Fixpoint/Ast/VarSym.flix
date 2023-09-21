@@ -16,7 +16,7 @@
 
 mod Fixpoint.Ast {
 
-    @Internal
+    @internal
     pub enum VarSym with Eq, Order, ToString {
         case VarSym(String)
     }

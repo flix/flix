@@ -81,7 +81,7 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift1(f: t1 -> t): Boxed -> Boxed with Order[t1], Order[t] =
         (b1: Boxed) -> box(f(unbox(b1)))
 
@@ -90,7 +90,7 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift2(f: t1 -> t2 -> t): Boxed -> Boxed -> Boxed with Order[t1], Order[t2], Order[t] =
         (b1: Boxed) -> (b2: Boxed) -> box(f(unbox(b1), unbox(b2)))
 
@@ -99,7 +99,7 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift3(f: t1 -> t2 -> t3 -> t): Boxed -> Boxed -> Boxed -> Boxed with Order[t1], Order[t2], Order[t3], Order[t] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> box(f(unbox(b1), unbox(b2), unbox(b3)))
 
@@ -108,7 +108,7 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift4(f: t1 -> t2 -> t3 -> t4 -> t): Boxed -> Boxed -> Boxed -> Boxed -> Boxed with Order[t1], Order[t2], Order[t3], Order[t4], Order[t] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> box(f(unbox(b1), unbox(b2), unbox(b3), unbox(b4)))
 
@@ -117,14 +117,14 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> t): Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> (b5: Boxed) -> box(f(unbox(b1), unbox(b2), unbox(b3), unbox(b4), unbox(b5)))
 
     ///
     /// Lifts the given Boolean-valued function `f` to operate on boxed values.
     ///
-    @Internal
+    @internal
     pub def lift1b(f: t1 -> Bool): Boxed -> Bool with Order[t1] =
         (b1: Boxed) -> f(unbox(b1))
 
@@ -133,7 +133,7 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift2b(f: t1 -> t2 -> Bool): Boxed -> Boxed -> Bool with Order[t1], Order[t2] =
         (b1: Boxed) -> (b2: Boxed) -> f(unbox(b1), unbox(b2))
 
@@ -142,7 +142,7 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift3b(f: t1 -> t2 -> t3 -> Bool): Boxed -> Boxed -> Boxed -> Bool with Order[t1], Order[t2], Order[t3] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3))
 
@@ -151,7 +151,7 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift4b(f: t1 -> t2 -> t3 -> t4 -> Bool): Boxed -> Boxed -> Boxed -> Boxed -> Bool with Order[t1], Order[t2], Order[t3], Order[t4] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4))
 
@@ -160,179 +160,179 @@ mod Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
-    @Internal
+    @internal
     pub def lift5b(f: t1 -> t2 -> t3 -> t4 -> t5 -> Bool): Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Bool with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> (b5: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4), unbox(b5))
 
-    @Internal
+    @internal
     pub def lift1X1(f: i1 -> Vector[(o1)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[o1] =
         (v: Vector[Boxed]) ->
             let g = match (o1) -> Vector#{box(o1)};
             Vector.map(g, f(unbox(get(0, v))))
 
-    @Internal
+    @internal
     pub def lift1X2(f: i1 -> Vector[(o1, o2)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[o1], Order[o2] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2) -> Vector#{box(o1), box(o2)};
             Vector.map(g, f(unbox(get(0, v))))
 
-    @Internal
+    @internal
     pub def lift1X3(f: i1 -> Vector[(o1, o2, o3)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[o1], Order[o2], Order[o3] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3) -> Vector#{box(o1), box(o2), box(o3)};
             Vector.map(g, f(unbox(get(0, v))))
 
-    @Internal
+    @internal
     pub def lift1X4(f: i1 -> Vector[(o1, o2, o3, o4)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[o1], Order[o2], Order[o3], Order[o4] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4) -> Vector#{box(o1), box(o2), box(o3), box(o4)};
             Vector.map(g, f(unbox(get(0, v))))
 
-    @Internal
+    @internal
     pub def lift1X5(f: i1 -> Vector[(o1, o2, o3, o4, o5)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[o1], Order[o2], Order[o3], Order[o4], Order[o5] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4, o5) -> Vector#{box(o1), box(o2), box(o3), box(o4), box(o5)};
             Vector.map(g, f(unbox(get(0, v))))
 
-    @Internal
+    @internal
     pub def lift2X1(f: i1 -> i2 -> Vector[(o1)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[o1] =
         (v: Vector[Boxed]) ->
             let g = match (o1) -> Vector#{box(o1)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v))))
 
-    @Internal
+    @internal
     pub def lift2X2(f: i1 -> i2 -> Vector[(o1, o2)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[o1], Order[o2] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2) -> Vector#{box(o1), box(o2)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v))))
 
-    @Internal
+    @internal
     pub def lift2X3(f: i1 -> i2 -> Vector[(o1, o2, o3)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[o1], Order[o2], Order[o3] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3) -> Vector#{box(o1), box(o2), box(o3)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v))))
 
-    @Internal
+    @internal
     pub def lift2X4(f: i1 -> i2 -> Vector[(o1, o2, o3, o4)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[o1], Order[o2], Order[o3], Order[o4] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4) -> Vector#{box(o1), box(o2), box(o3), box(o4)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v))))
 
-    @Internal
+    @internal
     pub def lift2X5(f: i1 -> i2 -> Vector[(o1, o2, o3, o4, o5)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[o1], Order[o2], Order[o3], Order[o4], Order[o5] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4, o5) -> Vector#{box(o1), box(o2), box(o3), box(o4), box(o5)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v))))
 
-    @Internal
+    @internal
     pub def lift3X1(f: i1 -> i2 -> i3 -> Vector[(o1)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[o1] =
         (v: Vector[Boxed]) ->
             let g = match (o1) -> Vector#{box(o1)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v))))
 
-    @Internal
+    @internal
     pub def lift3X2(f: i1 -> i2 -> i3 -> Vector[(o1, o2)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[o1], Order[o2] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2) -> Vector#{box(o1), box(o2)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v))))
 
-    @Internal
+    @internal
     pub def lift3X3(f: i1 -> i2 -> i3 -> Vector[(o1, o2, o3)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[o1], Order[o2], Order[o3] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3) -> Vector#{box(o1), box(o2), box(o3)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v))))
 
-    @Internal
+    @internal
     pub def lift3X4(f: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, o4)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[o1], Order[o2], Order[o3], Order[o4] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4) -> Vector#{box(o1), box(o2), box(o3), box(o4)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v))))
 
-    @Internal
+    @internal
     pub def lift3X5(f: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, o4, o5)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[o1], Order[o2], Order[o3], Order[o4], Order[o5] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4, o5) -> Vector#{box(o1), box(o2), box(o3), box(o4), box(o5)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v))))
 
-    @Internal
+    @internal
     pub def lift4X1(f: i1 -> i2 -> i3 -> i4 -> Vector[(o1)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[o1] =
         (v: Vector[Boxed]) ->
             let g = match (o1) -> Vector#{box(o1)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v))))
 
-    @Internal
+    @internal
     pub def lift4X2(f: i1 -> i2 -> i3 -> i4 -> Vector[(o1, o2)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[o1], Order[o2] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2) -> Vector#{box(o1), box(o2)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v))))
 
-    @Internal
+    @internal
     pub def lift4X3(f: i1 -> i2 -> i3 -> i4 -> Vector[(o1, o2, o3)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[o1], Order[o2], Order[o3] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3) -> Vector#{box(o1), box(o2), box(o3)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v))))
 
-    @Internal
+    @internal
     pub def lift4X4(f: i1 -> i2 -> i3 -> i4 -> Vector[(o1, o2, o3, o4)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[o1], Order[o2], Order[o3], Order[o4] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4) -> Vector#{box(o1), box(o2), box(o3), box(o4)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v))))
 
-    @Internal
+    @internal
     pub def lift4X5(f: i1 -> i2 -> i3 -> i4 -> Vector[(o1, o2, o3, o4, o5)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[o1], Order[o2], Order[o3], Order[o4], Order[o5] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4, o5) -> Vector#{box(o1), box(o2), box(o3), box(o4), box(o5)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v))))
 
-    @Internal
+    @internal
     pub def lift5X1(f: i1 -> i2 -> i3 -> i4 -> i5 -> Vector[(o1)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[i5], Order[o1] =
         (v: Vector[Boxed]) ->
             let g = match (o1) -> Vector#{box(o1)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v)), unbox(get(4, v))))
 
-    @Internal
+    @internal
     pub def lift5X2(f: i1 -> i2 -> i3 -> i4 -> i5 -> Vector[(o1, o2)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[i5], Order[o1], Order[o2] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2) -> Vector#{box(o1), box(o2)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v)), unbox(get(4, v))))
 
-    @Internal
+    @internal
     pub def lift5X3(f: i1 -> i2 -> i3 -> i4 -> i5 -> Vector[(o1, o2, o3)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[i5], Order[o1], Order[o2], Order[o3] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3) -> Vector#{box(o1), box(o2), box(o3)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v)), unbox(get(4, v))))
 
-    @Internal
+    @internal
     pub def lift5X4(f: i1 -> i2 -> i3 -> i4 -> i5 -> Vector[(o1, o2, o3, o4)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[i5], Order[o1], Order[o2], Order[o3], Order[o4] =
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4) -> Vector#{box(o1), box(o2), box(o3), box(o4)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v)), unbox(get(4, v))))
 
-    @Internal
+    @internal
     pub def lift5X5(f: i1 -> i2 -> i3 -> i4 -> i5 -> Vector[(o1, o2, o3, o4, o5)]): Vector[Boxed] -> Vector[Vector[Boxed]]
         with Order[i1], Order[i2], Order[i3], Order[i4], Order[i5], Order[o1], Order[o2], Order[o3], Order[o4], Order[o5] =
         (v: Vector[Boxed]) ->

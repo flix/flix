@@ -23,7 +23,7 @@ mod Fixpoint {
     ///
     /// Invoked before the fixpoint computation.
     ///
-    @Internal
+    @internal
     pub def notifyPreSolve(d: Datalog[v], _stf: Map[PredSym, Int32]): Unit \ IO with Order[v] = {
         if (enableDebugging()) {
             println(String.repeat(80, "*"));
@@ -38,7 +38,7 @@ mod Fixpoint {
     ///
     /// Invoked with the minimal model of the fixpoint computation.
     ///
-    @Internal
+    @internal
     pub def notifyPostSolve(d: Datalog[v]): Unit \ IO with Order[v] = {
         if (enableDebugging()) {
             println(String.repeat(80, "*"));
@@ -53,7 +53,7 @@ mod Fixpoint {
     ///
     /// Invoked before the fixpoint computation.
     ///
-    @Internal
+    @internal
     pub def notifyPreInterpret(s: RamStmt[v]): Unit \ IO with Order[v] = {
         if (enableDebugging()) {
             println(String.repeat(80, "*"));

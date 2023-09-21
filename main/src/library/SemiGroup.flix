@@ -135,7 +135,7 @@ instance SemiGroup[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with SemiGroup[a1]
 
 mod SemiGroup {
 
-    @Internal
+    @internal
     pub enum Any(Bool)
 
     instance SemiGroup[Any] {
@@ -151,7 +151,7 @@ mod SemiGroup {
     instance CommutativeMonoid[Any]
 
 
-    @Internal
+    @internal
     pub enum All(Bool)
 
     instance SemiGroup[All] {

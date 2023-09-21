@@ -20,7 +20,7 @@ mod Fixpoint.Ast {
     use Fixpoint.SubstitutePredSym
     use Fixpoint.Shared.PredSym
 
-    @Internal
+    @internal
     pub enum HeadPredicate[v] {
         case HeadAtom(PredSym, Denotation[v], Vector[HeadTerm[v]])
     }

@@ -78,14 +78,14 @@ mod Concurrent.Channel {
     /// non-polymorphic aspects relevant to select is split into its own
     /// structure on which select can operate.
     ///
-    @Internal
+    @internal
     pub enum Mpmc[a](
         MpmcAdmin, // admin
         MutDeque[a, Static] // elementDeque
     )
 
     /// Returns the `MpmcAdmin` of `c`.
-    @Internal
+    @internal
     pub def mpmcAdmin(c: Mpmc[a]): MpmcAdmin = {
         let Mpmc.Mpmc(admin, _) = c;
         admin
@@ -134,7 +134,7 @@ mod Concurrent.Channel {
     /// negative. A channel with `bufferSize` zero means that sending and
     /// receiving is syncronized.
     ///
-    @Internal
+    @internal
     pub def newChannel(bufferSize: Int32): Mpmc[a] \ IO =
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
@@ -158,7 +158,7 @@ mod Concurrent.Channel {
     ///
     /// Creates a new channel tuple (sender, receiver)
     ///
-    @Internal
+    @internal
     pub def newChannelTuple(bufferSize: Int32): (Mpmc[a], Mpmc[a]) \ IO =
         let c = newChannel(bufferSize);
         (c, c)
@@ -169,7 +169,7 @@ mod Concurrent.Channel {
     ///
     /// Implements the expression `c <- e`.
     ///
-    @Internal
+    @internal
     pub def put(e: a, c: Mpmc[a]): Unit \ IO =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
@@ -198,7 +198,7 @@ mod Concurrent.Channel {
     ///
     /// Implements to the expression `<- c`.
     ///
-    @Internal
+    @internal
     pub def get(c: Mpmc[a]): a \ IO =
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
@@ -211,7 +211,7 @@ mod Concurrent.Channel {
     /// Retrieves an element from the channel `c` and unlocks `locks` after doing so.
     /// Assumes the channel to be non-empty.
     ///
-    @Internal
+    @internal
     pub def unsafeGetAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
@@ -250,7 +250,7 @@ mod Concurrent.Channel {
     ///      returned list of locks post call.
     ///      In the non-blocking case, selectFrom unlocks all locks first
     ///
-    @Internal
+    @internal
     pub def selectFrom(
         channels: List[MpmcAdmin],
         blocking: Bool
@@ -276,7 +276,7 @@ mod Concurrent.Channel {
     /// Wait for the channel to have available space.
     /// The channel lock is expected to be held.
     ///
-    @Internal
+    @internal
     def awaitAvailableSpace(c: MpmcAdmin): Unit \ IO =
         let MpmcAdmin.MpmcAdmin(_, _, _, maxSize, size, _, _, waitingPutters) = c;
         if ((deref size) == maxSize) {

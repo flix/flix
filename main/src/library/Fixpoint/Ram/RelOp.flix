@@ -16,7 +16,7 @@
 
 mod Fixpoint.Ram {
 
-    @Internal
+    @internal
     pub enum RelOp[v] {
         case Search(RowVar, RamSym[v], RelOp[v])
         case Query(RowVar, RamSym[v], Vector[(Int32, RamTerm[v])], RelOp[v])

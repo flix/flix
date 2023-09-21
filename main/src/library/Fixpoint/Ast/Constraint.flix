@@ -22,7 +22,7 @@ mod Fixpoint.Ast {
     use Fixpoint.SubstitutePredSym.substitute
     use Fixpoint.Shared.PredSym
 
-    @Internal
+    @internal
     pub enum Constraint[v] {
         case Constraint(HeadPredicate[v], Vector[BodyPredicate[v]])
     }

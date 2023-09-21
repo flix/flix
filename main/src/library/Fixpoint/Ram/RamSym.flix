@@ -22,7 +22,7 @@ mod Fixpoint.Ram {
     use Fixpoint.Ast.Denotation
     use Fixpoint.Shared.PredSym
 
-    @Internal
+    @internal
     pub enum RamSym[v] {
         case Full(PredSym, Int32, Denotation[v])
         case Delta(PredSym, Int32, Denotation[v])
@@ -88,14 +88,14 @@ mod Fixpoint.Ram {
         }
     }
 
-    @Internal
+    @internal
     pub def arityOf(ramSym: RamSym[v]): Int32 = match ramSym {
         case RamSym.Full(_, arity, _) => arity
         case RamSym.Delta(_, arity, _) => arity
         case RamSym.New(_, arity, _) => arity
     }
 
-    @Internal
+    @internal
     pub def toDenotation(ramSym: RamSym[v]): Denotation[v] = match ramSym {
         case RamSym.Full(_, _, den) => den
         case RamSym.Delta(_, _, den) => den

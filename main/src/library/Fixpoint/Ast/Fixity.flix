@@ -15,7 +15,7 @@
  */
 mod Fixpoint.Ast {
 
-    @Internal
+    @internal
     pub enum Fixity {
         case Loose,
         case Fixed

@@ -177,7 +177,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class Internal(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Internal"
+      override def toString: String = "@internal"
     }
 
 
@@ -281,7 +281,7 @@ object Ast {
     def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
 
     /**
-      * Returns `true` if `this` sequence contains the `@Internal` annotation.
+      * Returns `true` if `this` sequence contains the `@internal` annotation.
       */
     def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
 

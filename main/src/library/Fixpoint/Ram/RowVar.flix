@@ -16,7 +16,7 @@
 
 mod Fixpoint.Ram {
 
-    @Internal
+    @internal
     pub enum RowVar with Eq {
         case Named(String)
         case Index(Int32)

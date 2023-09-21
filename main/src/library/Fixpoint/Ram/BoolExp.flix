@@ -16,7 +16,7 @@
 
 mod Fixpoint.Ram {
 
-    @Internal
+    @internal
     pub enum BoolExp[v] {
         case Empty(RamSym[v])
         case NotMemberOf(Vector[RamTerm[v]], RamSym[v])

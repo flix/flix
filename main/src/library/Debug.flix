@@ -4,7 +4,7 @@ mod Debug {
     ///
     /// Note: For internal use only. The actual `debug(exp)` expression is parsed and ultimately rewritten to call this function.
     ///
-    @Internal
+    @internal
     pub def debugWithPrefix(prefix: String, x: a): a \ IO =
         import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
         import java.io.PrintStream.println(String): Unit \ IO;
@@ -14,7 +14,7 @@ mod Debug {
     ///
     /// Escapes the given string per Flix's escaping rules.
     ///
-    @Internal
+    @internal
     def escape(s: String): String = {
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
         def replace(from: String, to: String, subject: String): String = jReplace(subject, checked_cast(from), checked_cast(to));
@@ -31,7 +31,7 @@ mod Debug {
     ///
     /// Returns an automatic string representation of `x`.
     ///
-    @Internal
+    @internal
     pub def stringify(x: a): String = region rc {
         import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
         let _ = rc;

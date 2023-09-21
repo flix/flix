@@ -18,10 +18,10 @@ mod Fixpoint.Ast {
 
     use Fixpoint.Shared.PredSym
 
-    @Internal
+    @internal
     pub enum PrecedenceGraph(Set[PrecedenceEdge])
 
-    @Internal
+    @internal
     pub enum PrecedenceEdge with Eq, Order {
         case StrongEdge(PredSym, PredSym)
         case WeakEdge(PredSym, PredSym)

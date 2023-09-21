@@ -166,7 +166,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 ///
 /// Prints the argument unless it is ().
 ///
-@Internal
+@internal
 pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
     typematch x {
         case _: Unit => ()

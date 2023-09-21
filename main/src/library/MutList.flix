@@ -30,7 +30,7 @@ mod MutList {
     ///
     /// Constant which stores the minimum capacity of a MutList.
     ///
-    @Internal
+    @internal
     pub def minCapacity(): Int32 = 8
 
     ///

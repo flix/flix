@@ -15,7 +15,7 @@
  */
 mod Fixpoint.Shared {
 
-    @Internal
+    @internal
     pub enum PredSym with Eq, Order {
         case PredSym(String, Int64)
     }

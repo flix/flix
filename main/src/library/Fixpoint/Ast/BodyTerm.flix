@@ -15,7 +15,7 @@
  */
 mod Fixpoint.Ast {
 
-    @Internal
+    @internal
     pub enum BodyTerm[v] {
         case Wild
         case Var(VarSym)

@@ -23,7 +23,7 @@ mod Fixpoint.Ast {
     use Fixpoint.Shared.PredSym
     use Fixpoint.Ram.RamSym
 
-    @Internal
+    @internal
     pub enum Datalog[v] {
         case Datalog(Vector[Constraint[v]], Vector[Constraint[v]])
         case Model(Map[RamSym[v], Map[Vector[v], v]])

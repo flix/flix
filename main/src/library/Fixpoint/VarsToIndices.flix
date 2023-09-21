@@ -21,7 +21,7 @@ mod Fixpoint {
 
     use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
-    @Internal
+    @internal
     pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
         case RamStmt.Insert(op) => RamStmt.Insert(lowerOp(op, Map#{}, 0))
         case RamStmt.Merge(_, _) => stmt

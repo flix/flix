@@ -31,7 +31,7 @@ mod Fixpoint {
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// The stratification is computed automatically by the solver.
     ///
-    @Internal
+    @internal
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v] =
         stratify(d) |> solveWithStratification(d)
 
@@ -40,7 +40,7 @@ mod Fixpoint {
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// A stratification of `d` is given by `stf`.
     ///
-    @Internal
+    @internal
     def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
         masked_cast(notifyPreSolve(d, stf));
         let compiler = cs ->
@@ -68,7 +68,7 @@ mod Fixpoint {
     /// I.e. the facts of the union is the union of the facts and likewise for rules.
     /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
     ///
-    @Internal
+    @internal
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] with Order[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
@@ -91,7 +91,7 @@ mod Fixpoint {
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
-    @Internal
+    @internal
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
         case Datalog(facts, _) =>
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
@@ -112,7 +112,7 @@ mod Fixpoint {
     ///
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
-    @Internal
+    @internal
     pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
         use Fixpoint.PredSymsOf.predSymsOf;
         use Fixpoint.SubstitutePredSym.substitute;
@@ -156,7 +156,7 @@ mod Fixpoint {
     /// I.e. returns a Datalog program corresponding to `#{p(t1). p(t1').}`
     /// given the sequence `(t1), (t1')`.
     ///
-    @Internal
+    @internal
     pub def injectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
         Datalog[Boxed] with Order[t1], Foldable[f] =
         injectIntoX(match (v1) ->
@@ -170,7 +170,7 @@ mod Fixpoint {
     /// I.e. returns a Datalog program corresponding to `#{p(t1, t2). p(t1', t2').}`
     /// given the sequence `(t1, t2), (t1', t2')`.
     ///
-    @Internal
+    @internal
     pub def injectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
         Datalog[Boxed] with Order[t1], Order[t2], Foldable[f] =
         injectIntoX(match (v1, v2) ->
@@ -185,7 +185,7 @@ mod Fixpoint {
     /// I.e. returns a Datalog program corresponding to `#{p(t1, t2, t3). p(t1', t2', t3').}`
     /// given the sequence `(t1, t2, t3), (t1', t2', t3')`.
     ///
-    @Internal
+    @internal
     pub def injectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Foldable[f] =
         injectIntoX(match (v1, v2, v3) ->
@@ -202,7 +202,7 @@ mod Fixpoint {
     /// `#{p(t1, t2, t3, t4). p(t1', t2', t3', t4').}`
     /// given the sequence `(t1, t2, t3, t4), (t1', t2', t3', t4')`.
     ///
-    @Internal
+    @internal
     pub def injectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4) ->
@@ -220,7 +220,7 @@ mod Fixpoint {
     /// `#{p(t1, t2, t3, t4, t5). p(t1', t2', t3', t4', t5').}`
     /// given the sequence `(t1, t2, t3, t4, t5), (t1', t2', t3', t4', t5')`.
     ///
-    @Internal
+    @internal
     pub def injectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5) ->
@@ -239,7 +239,7 @@ mod Fixpoint {
     /// `#{p(t1, t2, t3, t4, t5, t6). p(t1', t2', t3', t4', t5', t6').}`
     /// given the sequence `(t1, t2, t3, t4, t5, t6), (t1', t2', t3', t4', t5', t6')`.
     ///
-    @Internal
+    @internal
     pub def injectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6) ->
@@ -259,7 +259,7 @@ mod Fixpoint {
     /// `#{p(t1, t2, t3, t4, t5, t6, t7). p(t1', t2', t3', t4', t5', t6', t7').}`
     /// given the sequence `(t1, t2, t3, t4, t5, t6, t7), (t1', t2', t3', t4', t5', t6', t7')`.
     ///
-    @Internal
+    @internal
     pub def injectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
@@ -281,7 +281,7 @@ mod Fixpoint {
     /// given the sequence
     /// `(t1, t2, t3, t4, t5, t6, t7, t8), (t1', t2', t3', t4', t5', t6', t7', t8')`.
     ///
-    @Internal
+    @internal
     pub def injectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
@@ -304,7 +304,7 @@ mod Fixpoint {
     /// given the sequence
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9), (t1', t2', t3', t4', t5', t6', t7', t8', t9')`.
     ///
-    @Internal
+    @internal
     pub def injectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
@@ -330,7 +330,7 @@ mod Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10')`.
     ///
-    @Internal
+    @internal
     pub def injectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
@@ -357,7 +357,7 @@ mod Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11')`.
     ///
-    @Internal
+    @internal
     pub def injectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
@@ -385,7 +385,7 @@ mod Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12')`.
     ///
-    @Internal
+    @internal
     pub def injectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
@@ -414,7 +414,7 @@ mod Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13')`.
     ///
-    @Internal
+    @internal
     pub def injectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
@@ -444,7 +444,7 @@ mod Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14')`.
     ///
-    @Internal
+    @internal
     pub def injectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
@@ -475,7 +475,7 @@ mod Fixpoint {
     /// `(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15),
     ///  (t1', t2', t3', t4', t5', t6', t7', t8', t9', t10', t11', t12', t13', t14', t15')`.
     ///
-    @Internal
+    @internal
     pub def injectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
         Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
@@ -513,7 +513,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): Vector[v] with Order[v] =
         // Unsafe cast is required. If a predicate is nullary then its values must be Unit.
         factsOf(_ -> unchecked_cast(() as v), p, d)
@@ -521,7 +521,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts1(p: PredSym, d: Datalog[Boxed]): Vector[v] with Order[v] =
         let f = terms -> match terms {
             case hd :: _ =>
@@ -533,7 +533,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts2(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2)] with Order[t1], Order[t2] =
         let f = terms -> match terms {
             case v0 :: v1 :: _ =>
@@ -545,7 +545,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts3(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3)] with Order[t1], Order[t2], Order[t3] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: _ =>
@@ -557,7 +557,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts4(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4)] with Order[t1], Order[t2], Order[t3], Order[t4] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: _ =>
@@ -569,7 +569,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts5(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: _ =>
@@ -581,7 +581,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts6(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: _ =>
@@ -593,7 +593,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts7(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: _ =>
@@ -605,7 +605,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts8(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: _ =>
@@ -617,7 +617,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts9(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: _ =>
@@ -629,7 +629,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts10(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: _ =>
@@ -641,7 +641,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts11(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: _ =>
@@ -653,7 +653,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts12(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: _ =>
@@ -665,7 +665,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts13(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: _ =>
@@ -677,7 +677,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts14(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: _ =>
@@ -689,7 +689,7 @@ mod Fixpoint {
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
-    @Internal
+    @internal
     pub def facts15(p: PredSym, d: Datalog[Boxed]): Vector[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: v14 :: _ =>

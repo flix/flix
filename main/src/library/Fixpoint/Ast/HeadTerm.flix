@@ -15,7 +15,7 @@
  */
 mod Fixpoint.Ast {
 
-    @Internal
+    @internal
     pub enum HeadTerm[v] {
         case Var(VarSym)
         case Lit(v)

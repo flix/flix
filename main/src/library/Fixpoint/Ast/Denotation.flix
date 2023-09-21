@@ -27,7 +27,7 @@ mod Fixpoint.Ast {
     /// - a least upper bound (a lub function).
     /// - a greatest lower bound (a glb function).
     ///
-    @Internal
+    @internal
     pub enum Denotation[v] {
         case Relational
         case Latticenal(v, v -> v -> Bool, v -> v -> v, v -> v -> v)
@@ -44,7 +44,7 @@ mod Fixpoint.Ast {
     ///
     /// Returns a latticenal denotation associated with the type `t`.
     ///
-    @Internal
+    @internal
     pub def lattice(): Denotation[t] with LowerBound[t], JoinLattice[t], MeetLattice[t] =
         // TODO: Why are these type annotations necessary?
         Denotation.Latticenal(
@@ -57,7 +57,7 @@ mod Fixpoint.Ast {
     ///
     /// Boxes the lattice components inside the given denotation `d`.
     ///
-    @Internal
+    @internal
     pub def box(d: Denotation[t]): Denotation[Boxed] with Order[t] = match d {
         case Denotation.Relational => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>

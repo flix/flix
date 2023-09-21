@@ -21,7 +21,7 @@ mod Fixpoint.Ast {
     use Fixpoint.Shared.PredSym
     use ToString.toString
 
-    @Internal
+    @internal
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, Vector[BodyTerm[v]])
         case Functional(Vector[VarSym], Vector[v] -> Vector[Vector[v]], Vector[VarSym])

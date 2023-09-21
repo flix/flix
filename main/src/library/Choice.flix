@@ -17,7 +17,7 @@
 /**
  * The Choice data type.
  */
-@Internal
+@internal
 pub enum Choice[a: Type, _isAbsent : Bool, _isPresent : Bool] {
     case Absent
     case Present(a)

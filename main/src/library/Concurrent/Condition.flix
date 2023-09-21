@@ -19,7 +19,7 @@ mod Concurrent {
     ///
     /// A wrapper around a Java Condition.
     ///
-    @Internal
+    @internal
     pub enum Condition(##java.util.concurrent.locks.Condition)
 
     mod Condition {
@@ -30,7 +30,7 @@ mod Concurrent {
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
-        @Internal
+        @internal
         pub def await(condition: Condition): Unit \ IO =
             import java.util.concurrent.locks.Condition.await(): Unit \ IO;
             let Condition(c) = condition;
@@ -41,7 +41,7 @@ mod Concurrent {
         /// time(nanos) elapses. The method returns an estimate of the number of nanoseconds remaining to wait
         /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
         ///
-        @Internal
+        @internal
         pub def awaitTimeout(condition: Condition, timeout: Int64): Int64 \ IO =
             import java.util.concurrent.locks.Condition.awaitNanos(Int64): Int64 \ IO;
             let Condition(c) = condition;
@@ -50,7 +50,7 @@ mod Concurrent {
         ///
         /// Wakes up one waiting thread.
         ///
-        @Internal
+        @internal
         pub def signal(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
             import java.util.concurrent.locks.Condition.signal(): Unit \ IO;
             let Condition(c) = condition;
@@ -63,7 +63,7 @@ mod Concurrent {
         ///
         /// Wakes up all waiting threads.
         ///
-        @Internal
+        @internal
         pub def signalAll(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
             import java.util.concurrent.locks.Condition.signalAll(): Unit \ IO;
             let Condition(c) = condition;

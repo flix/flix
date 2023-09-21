@@ -18,7 +18,7 @@ mod Fixpoint {
     ///
     /// Prints the Datalog program before the fixpoint computation.
     ///
-    @Internal
+    @internal
     pub def enableDebugging(): Bool = false
 
 }
