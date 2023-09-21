@@ -82,7 +82,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.IllegalEntryPointResult.Main.01") {
     val input =
       """
-        |def main(): a \ IO = checked_ecast(())
+        |def main(): a \ IO = checked_ecast(???)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointResult](result)

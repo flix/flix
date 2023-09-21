@@ -169,19 +169,19 @@ object Lowering {
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = defn0 match {
-    case TypedAst.Def(sym, spec0, impl0) =>
+    case TypedAst.Def(sym, spec0, exp0) =>
       val spec = visitSpec(spec0)
-      val impl = visitImpl(impl0)
-      LoweredAst.Def(sym, spec, impl)
+      val exp = visitExp(exp0)
+      LoweredAst.Def(sym, spec, exp)
   }
 
   /**
     * Lowers the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Sig = sig0 match {
-    case TypedAst.Sig(sym, spec0, impl0) =>
+    case TypedAst.Sig(sym, spec0, exp0) =>
       val spec = visitSpec(spec0)
-      val impl = impl0.map(visitImpl)
+      val impl = exp0.map(visitExp)
       LoweredAst.Sig(sym, spec, impl)
   }
 
@@ -318,16 +318,6 @@ object Lowering {
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
       LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, eff, tconstrs, loc)
-  }
-
-  /**
-    * Lowers the given `impl0`.
-    */
-  private def visitImpl(impl0: TypedAst.Impl)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Impl = impl0 match {
-    case TypedAst.Impl(exp, inferredScheme) =>
-      val e = visitExp(exp)
-      val s = visitScheme(inferredScheme)
-      LoweredAst.Impl(e, s)
   }
 
   /**
@@ -485,21 +475,21 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, t, Type.Pure, loc)
 
-    case TypedAst.Expr.RecordSelect(exp, field, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(e), t, eff, loc)
 
-    case TypedAst.Expr.RecordExtend(field, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordExtend(field), List(e1, e2), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordExtend(label), List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expr.RecordRestrict(field, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(e), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(e), t, eff, loc)
 
     case TypedAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -853,10 +843,10 @@ object Lowering {
 
     case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
       val patsVal = pats.map {
-        case TypedAst.Pattern.Record.RecordFieldPattern(field, tpe1, pat1, loc1) =>
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
           val p1 = visitPat(pat1)
           val t1 = visitType(tpe1)
-          LoweredAst.Pattern.Record.RecordFieldPattern(field, t1, p1, loc1)
+          LoweredAst.Pattern.Record.RecordLabelPattern(label, t1, p1, loc1)
       }
       val patVal = visitPat(pat)
       val t = visitType(tpe)

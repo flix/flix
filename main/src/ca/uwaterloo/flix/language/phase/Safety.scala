@@ -76,7 +76,7 @@ object Safety {
       case (acc, e) => acc.markRigid(e)
     }
     val tailpos = if (def0.spec.ann.isTailRecursive) TailPosition else NonTailPosition
-    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, tailpos, root)
+    visitTestEntryPoint(def0) ::: visitExp(def0.exp, renv, tailpos, root)
   }
 
   /**
@@ -747,7 +747,7 @@ object Safety {
   /**
     * Helper function for [[visitPat]].
     */
-  private def visitRecordPattern(pats: List[Pattern.Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
+  private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
     visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
   }
 

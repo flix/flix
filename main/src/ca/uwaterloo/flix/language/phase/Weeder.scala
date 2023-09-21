@@ -612,11 +612,11 @@ object Weeder {
           WeededAst.Expr.Ambiguous(qname, ident.loc).toSuccess
 
         // Case 2: actually a record access
-        case ident :: fields =>
+        case ident :: labels =>
           // NB: We only use the source location of the identifier itself.
           val base = WeededAst.Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
-          fields.foldLeft(base: WeededAst.Expr) {
-            case (acc, field) => WeededAst.Expr.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
+          labels.foldLeft(base: WeededAst.Expr) {
+            case (acc, label) => WeededAst.Expr.RecordSelect(acc, Name.mkLabel(label), label.loc) // TODO NS-REFACTOR should use better location
           }.toSuccess
       }
 
@@ -1505,9 +1505,9 @@ object Weeder {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
-    case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
-      val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordField(_, ident, exp, _) =>
+    case ParsedAst.Expression.RecordLit(sp1, labels, sp2) =>
+      val labelsVal = traverse(labels) {
+        case ParsedAst.RecordLabel(_, ident, exp, _) =>
           val expVal = visitExp(exp, senv)
 
           mapN(expVal, visitName(ident)) {
@@ -1515,19 +1515,19 @@ object Weeder {
           }
       }
 
-      mapN(fieldsVal) {
-        case fs =>
+      mapN(labelsVal) {
+        case ls =>
           // Rewrite into a sequence of nested record extensions.
           val zero = WeededAst.Expr.RecordEmpty(mkSL(sp1, sp2))
-          fs.foldRight(zero: WeededAst.Expr) {
-            case ((ident, e), acc) => WeededAst.Expr.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2))
+          ls.foldRight(zero: WeededAst.Expr) {
+            case ((ident, e), acc) => WeededAst.Expr.RecordExtend(Name.mkLabel(ident), e, acc, mkSL(sp1, sp2))
           }
       }
 
     case ParsedAst.Expression.RecordSelect(exp, ident, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp, senv), visitName(ident)) {
-        case (e, _) => WeededAst.Expr.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
+        case (e, _) => WeededAst.Expr.RecordSelect(e, Name.mkLabel(ident), mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordOperation(_, ops, rest, _) =>
@@ -1536,20 +1536,20 @@ object Weeder {
         case (ParsedAst.RecordOp.Extend(sp1, ident, exp, sp2), acc) =>
           mapN(visitExp(exp, senv), visitName(ident)) {
             case (e, _) =>
-              WeededAst.Expr.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2))
+              WeededAst.Expr.RecordExtend(Name.mkLabel(ident), e, acc, mkSL(sp1, sp2))
           }
 
         case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) =>
           mapN(visitName(ident)) {
-            case _ => WeededAst.Expr.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
+            case _ => WeededAst.Expr.RecordRestrict(Name.mkLabel(ident), acc, mkSL(sp1, sp2))
           }
 
         case (ParsedAst.RecordOp.Update(sp1, ident, exp, sp2), acc) =>
           mapN(visitExp(exp, senv), visitName(ident)) {
             case (e, _) =>
               // An update is a restrict followed by an extension.
-              val inner = WeededAst.Expr.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
-              WeededAst.Expr.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2))
+              val inner = WeededAst.Expr.RecordRestrict(Name.mkLabel(ident), acc, mkSL(sp1, sp2))
+              WeededAst.Expr.RecordExtend(Name.mkLabel(ident), e, inner, mkSL(sp1, sp2))
           }
       }
 
@@ -2140,7 +2140,7 @@ object Weeder {
       visitExp(exp0, senv) map {
         exp =>
           val loc = mkSL(name.sp1, sp2)
-          WeededAst.Expr.RecordExtend(Name.mkField(name), exp, WeededAst.Expr.RecordEmpty(loc), loc)
+          WeededAst.Expr.RecordExtend(Name.mkLabel(name), exp, WeededAst.Expr.RecordEmpty(loc), loc)
       }
     // Case 2: Unnamed parameter. Just return it.
     case ParsedAst.Argument.Unnamed(exp) => visitExp(exp, senv)
@@ -2426,26 +2426,26 @@ object Weeder {
             WeededAst.Pattern.Tag(qname, pat, loc)
         }
 
-      case ParsedAst.Pattern.Record(sp1, fields, rest, sp2) =>
+      case ParsedAst.Pattern.Record(sp1, pats, rest, sp2) =>
         val loc = mkSL(sp1, sp2)
-        val fsVal = traverse(fields) {
-          case ParsedAst.Pattern.RecordFieldPattern(sp11, field, pat, sp22) =>
-            flatMapN(visitName(field), traverseOpt(pat)(visit)) {
+        val fsVal = traverse(pats) {
+          case ParsedAst.Pattern.RecordLabelPattern(sp11, label, pat, sp22) =>
+            flatMapN(visitName(label), traverseOpt(pat)(visit)) {
               case (_, p) if p.isEmpty =>
-                // Check that we have not seen the field symbol in a pattern before.
-                seen.get(field.name) match {
-                  case Some(dup) => WeederError.NonLinearPattern(field.name, dup.loc, field.loc).toFailure
+                // Check that we have not seen the label symbol in a pattern before.
+                seen.get(label.name) match {
+                  case Some(dup) => WeederError.NonLinearPattern(label.name, dup.loc, label.loc).toFailure
                   case None =>
                     // It was unseen until now, so we add it to the seen variables.
-                    seen += field.name -> field
-                    val f = Name.mkField(field)
+                    seen += label.name -> label
+                    val l = Name.mkLabel(label)
                     val patLoc = mkSL(sp11, sp22)
-                    WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc).toSuccess
+                    WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc).toSuccess
                 }
               case (_, p) =>
-                val f = Name.mkField(field)
+                val l = Name.mkLabel(label)
                 val patLoc = mkSL(sp11, sp22)
-                WeededAst.Pattern.Record.RecordFieldPattern(f, p, patLoc).toSuccess
+                WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc).toSuccess
             }
         }
         val rsVal = traverseOpt(rest)(visit)
@@ -2691,14 +2691,14 @@ object Weeder {
         case elms => WeededAst.Type.Tuple(elms, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      val rowVal = buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
+    case ParsedAst.Type.Record(sp1, labels, restOpt, sp2) =>
+      val rowVal = buildRecordRow(labels, restOpt, mkSL(sp1, sp2))
       mapN(rowVal) {
         case row => WeededAst.Type.Record(row, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Type.RecordRow(sp1, fields, restOpt, sp2) =>
-      buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
+    case ParsedAst.Type.RecordRow(sp1, labels, restOpt, sp2) =>
+      buildRecordRow(labels, restOpt, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
       val rowVal = buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
@@ -2906,27 +2906,27 @@ object Weeder {
   }
 
   /**
-    * Builds a record row from the given fields and optional rest variable.
+    * Builds a record row from the given labels and optional rest variable.
     */
-  private def buildRecordRow(fields0: Seq[ParsedAst.RecordFieldType], restOpt: Option[Name.Ident], loc: SourceLocation): Validation[WeededAst.Type, WeederError] = {
+  private def buildRecordRow(labels0: Seq[ParsedAst.RecordLabelType], restOpt: Option[Name.Ident], loc: SourceLocation): Validation[WeededAst.Type, WeederError] = {
     // If rest is absent, then it is the empty record row
     val rest = restOpt match {
       case None => WeededAst.Type.RecordRowEmpty(loc)
       case Some(name) => WeededAst.Type.Var(name, name.loc)
     }
 
-    val fieldsVal = traverse(fields0) {
-      case ParsedAst.RecordFieldType(sp1, ident, tpe, sp2) =>
+    val labelsVal = traverse(labels0) {
+      case ParsedAst.RecordLabelType(sp1, ident, tpe, sp2) =>
         mapN(visitType(tpe)) {
-          case t => (Name.mkField(ident), t)
+          case t => (Name.mkLabel(ident), t)
         }
     }
 
-    mapN(fieldsVal) {
-      case fields =>
-        fields.foldRight(rest) {
-          case ((field, tpe), acc) =>
-            WeededAst.Type.RecordRowExtend(field, tpe, acc, loc)
+    mapN(labelsVal) {
+      case labels =>
+        labels.foldRight(rest) {
+          case ((label, tpe), acc) =>
+            WeededAst.Type.RecordRowExtend(label, tpe, acc, loc)
         }
     }
 

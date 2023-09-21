@@ -154,7 +154,7 @@ mod TestDebug {
     def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both(123, Hello World!)"
 
     @test
-    def testRecordStringify01(): Bool = stringify({field = (1, 2)}) == "{field = (1, 2)}"
+    def testRecordStringify01(): Bool = stringify({label = (1, 2)}) == "{label = (1, 2)}"
 
     @test
     def testRecordStringify02(): Bool = {
@@ -229,7 +229,7 @@ mod TestDebug {
 
     @test
     def testNullStringify07(): Bool = {
-        let s = stringify({field = unchecked_cast(null as String)});
-        s == "{field = null}"
+        let s = stringify({label = unchecked_cast(null as String)});
+        s == "{label = null}"
     }
 }

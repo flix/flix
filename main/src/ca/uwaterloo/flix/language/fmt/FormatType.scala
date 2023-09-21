@@ -109,10 +109,10 @@ object FormatType {
     def parenthesize(s: String): String = "(" + s + ")"
 
     /**
-      * Transforms the given record `fieldType` pair into a string.
+      * Transforms the given record `labelType` pair into a string.
       */
-    def visitRecordFieldType(fieldType: SimpleType.RecordFieldType): String = fieldType match {
-      case SimpleType.RecordFieldType(field, tpe) => s"$field = ${visit(tpe, Mode.Type)}"
+    def visitRecordLabelType(labelType: SimpleType.RecordLabelType): String = labelType match {
+      case SimpleType.RecordLabelType(label, tpe) => s"$label = ${visit(tpe, Mode.Type)}"
     }
 
     /**
@@ -250,20 +250,20 @@ object FormatType {
       }
       case SimpleType.All => "IO"
       case SimpleType.Region => "Region"
-      case SimpleType.Record(fields) =>
-        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
-        s"{ $fieldString }"
-      case SimpleType.RecordExtend(fields, rest) =>
-        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
+      case SimpleType.Record(labels) =>
+        val labelString = labels.map(visitRecordLabelType).mkString(", ")
+        s"{ $labelString }"
+      case SimpleType.RecordExtend(labels, rest) =>
+        val labelString = labels.map(visitRecordLabelType).mkString(", ")
         val restString = visit(rest, mode)
-        s"{ $fieldString | $restString }"
-      case SimpleType.RecordRow(fields) =>
-        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
-        s"( $fieldString )"
-      case SimpleType.RecordRowExtend(fields, rest) =>
-        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
+        s"{ $labelString | $restString }"
+      case SimpleType.RecordRow(labels) =>
+        val labelString = labels.map(visitRecordLabelType).mkString(", ")
+        s"( $labelString )"
+      case SimpleType.RecordRowExtend(labels, rest) =>
+        val labelString = labels.map(visitRecordLabelType).mkString(", ")
         val restString = visit(rest, Mode.Type)
-        s"( $fieldString | $restString )"
+        s"( $labelString | $restString )"
       case SimpleType.RecordConstructor(arg) => s"{ ${visit(arg, Mode.Type)} }"
       case SimpleType.Schema(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
@@ -349,8 +349,8 @@ object FormatType {
           }
         }
 
-      case SimpleType.Tuple(fields) =>
-        fields.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
+      case SimpleType.Tuple(elms) =>
+        elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
     }
 
     visit(tpe00, Mode.Type)
