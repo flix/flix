@@ -90,7 +90,7 @@ mod MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @Parallel
+    @parallel
     pub def minimumValue(m: MutMap[k, v, r]): Option[(k, v)] \ r with Order[v] =
         let MutMap(_, mm) = m;
         Map.minimumValue(deref mm)
@@ -131,7 +131,7 @@ mod MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @Parallel
+    @parallel
     pub def maximumValue(m: MutMap[k, v, r]): Option[(k, v)] \ r with Order[v] =
         let MutMap(_, mm) = m;
         Map.maximumValue(deref mm)

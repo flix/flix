@@ -233,7 +233,7 @@ mod Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @Parallel
+    @parallel
     pub def minimumValue(m: Map[k, v]): Option[(k, v)] with Order[v] =
         minimumValueBy((x, y) -> x <=> y, m)
 
@@ -295,7 +295,7 @@ mod Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @Parallel
+    @parallel
     pub def maximumValue(m: Map[k, v]): Option[(k, v)] with Order[v] =
         maximumValueBy((x, y) -> x <=> y, m)
 

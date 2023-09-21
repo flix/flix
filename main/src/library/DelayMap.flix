@@ -217,7 +217,7 @@ mod DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @experimental @Parallel
+    @experimental @parallel
     pub def minimumValue(m: DelayMap[k, v]): Option[(k, v)] with Order[v] =
         minimumValueBy((x, y) -> x <=> y, m)
 
@@ -291,7 +291,7 @@ mod DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @experimental @Parallel
+    @experimental @parallel
     pub def maximumValue(m: DelayMap[k, v]): Option[(k, v)] with Order[v] =
         maximumValueBy((x, y) -> x <=> y, m)
 
@@ -437,7 +437,7 @@ mod DelayMap {
     ///
     /// Forces `m` in parallel if it is big, otherwise returns `m`.
     ///
-    @Parallel
+    @parallel
     def parallelForce(m: DelayMap[k, v]): Unit =
         if (useParallelEvaluation(m))
             forceAll(m)
@@ -447,7 +447,7 @@ mod DelayMap {
     ///
     /// Forces **all values** in `m`.
     ///
-    @experimental @Parallel
+    @experimental @parallel
     pub def forceAll(m: DelayMap[k, v]): Unit =
         use RedBlackTree.Node;
         def seqLoop(tt) = match tt {
@@ -760,7 +760,7 @@ mod DelayMap {
     ///
     /// Returns `m` as a Map, i.e. every value is forced.
     ///
-    @experimental @Parallel
+    @experimental @parallel
     pub def toMap(m: DelayMap[k, v]): Map[k, v] =
         let _ = parallelForce(m);
         let DMap(t) = m;
@@ -769,7 +769,7 @@ mod DelayMap {
     ///
     /// Returns `m` as a mutable map.
     ///
-    @experimental @Parallel
+    @experimental @parallel
     pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
         MutMap.MutMap(rc, ref toMap(m) @ rc)
 
@@ -827,14 +827,14 @@ mod DelayMap {
     ///
     /// Returns the sum of all values in `m`.
     ///
-    @experimental @Parallel
+    @experimental @parallel
     pub def sumKeys(m: DelayMap[Int32, v]): Int32 =
         sumWith((k, _) -> k, m)
 
     ///
     /// Returns the sum of all values in `m`.
     ///
-    @experimental @Parallel
+    @experimental @parallel
     pub def sumValues(m: DelayMap[k, Int32]): Int32 =
         sumWith((_, v) -> v, m)
 

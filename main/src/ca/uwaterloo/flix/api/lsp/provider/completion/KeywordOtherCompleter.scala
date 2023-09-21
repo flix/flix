@@ -25,7 +25,7 @@ object KeywordOtherCompleter extends Completer {
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[KeywordCompletion] =
     List(
       "@deprecated",
-      "@Parallel",
+      "@parallel",
       "@parallelwhenpure",
       "@Lazy",
       "@LazyWhenPure",

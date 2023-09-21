@@ -369,7 +369,7 @@ mod RedBlackTree {
     ///
     /// Traverses the tree `t` in parallel.
     ///
-    @Parallel
+    @parallel
     pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
         if (n <= 1)
             seqExists(f, t)
@@ -420,7 +420,7 @@ mod RedBlackTree {
     ///
     /// Traverses the tree `t` in parallel.
     ///
-    @Parallel
+    @parallel
     pub def parForAll(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
         if (n <= 1)
             seqForAll(f, t)
@@ -637,7 +637,7 @@ mod RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
-    @Parallel
+    @parallel
     def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = {
         if (n <= 1)
             parSeqMapWithKey(f, t)
@@ -693,7 +693,7 @@ mod RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
-    @Parallel
+    @parallel
     pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 =
         if (n <= 1)
             seqCount(f, t)
@@ -757,7 +757,7 @@ mod RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
-    @Parallel
+    @parallel
     pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
         if (n <= 1)
             seqSumWith(f, t)
@@ -833,7 +833,7 @@ mod RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
-    @Parallel
+    @parallel
     pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), t)
 
@@ -845,7 +845,7 @@ mod RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
-    @Parallel
+    @parallel
     pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
         parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), t)
 
@@ -859,7 +859,7 @@ mod RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
-    @Parallel
+    @parallel
     def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] =
         if (n <= 0)
             seqLimitBy(cmp, t)
