@@ -492,7 +492,7 @@ object BytecodeInstructions {
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
   }
 
-  def xSwap(lower: BackendType, higher: BackendType): InstructionSet = (lower.is64BitWidth, higher.is64BitWidth) match {
+  def xSwap(lowerLarge: Boolean, higherLarge: Boolean): InstructionSet = (lowerLarge, higherLarge) match {
     case (true, true) => DUP2_X2() ~ POP2()
     case (true, false) => DUP_X2() ~ POP()
     case (false, true) => DUP2_X1() ~ POP2()
