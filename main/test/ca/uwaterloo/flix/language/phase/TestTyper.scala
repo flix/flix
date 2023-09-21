@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestTypeInferenceAndReconstruction extends AnyFunSuite with TestUtils {
+class TestTyper extends AnyFunSuite with TestUtils {
 
   test("TestLeq01") {
     val input =
