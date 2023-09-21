@@ -121,7 +121,6 @@ object GenAnonymousClasses {
       val methodType = MonoType.Arrow(fparams.map(_.tpe), tpe)
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(methodType)
       val functionInterface = JvmOps.getFunctionInterfaceType(methodType)
-//      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(method.tpe))
 
       // Create the field that will store the closure implementing the body of the method
       AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false, isVolatile = false)
@@ -149,9 +148,6 @@ object GenAnonymousClasses {
       }
 
       // Invoke the closure
-//      methodVisitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-//        backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
-      // unwind the call
       BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(methodVisitor))
 
       tpe match {
