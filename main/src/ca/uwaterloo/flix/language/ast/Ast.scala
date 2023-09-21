@@ -227,14 +227,14 @@ object Ast {
     }
 
     /**
-      * An AST node that represents a `@Skip` annotation.
+      * An AST node that represents a `@skip` annotation.
       *
       * A function marked with `Skip` is skipped by the test framework.
       *
       * @param loc the source location of the annotation.
       */
     case class Skip(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Skip"
+      override def toString: String = "@skip"
     }
 
     /**
@@ -311,7 +311,7 @@ object Ast {
     def isParallelWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.ParallelWhenPure])
 
     /**
-      * Returns `true` if `this` sequence contains the `@Skip` annotation.
+      * Returns `true` if `this` sequence contains the `@skip` annotation.
       */
     def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
 

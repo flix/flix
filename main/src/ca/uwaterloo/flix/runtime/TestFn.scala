@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
   * Represents a unit test.
   *
   * @param sym  the Flix def symbol.
-  * @param skip true if the test case is marked @Skip.
+  * @param skip true if the test case is marked @skip.
   * @param run  the function code.
   */
 case class TestFn(sym: Symbol.DefnSym, skip: Boolean, run: () => AnyRef)
