@@ -112,7 +112,7 @@ object Bootstrap {
     }
 
     newFileIfAbsent(mainTestFile) {
-      """@Test
+      """@test
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }

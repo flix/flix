@@ -20,20 +20,20 @@ mod TestMutPriorityQueue {
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testToString01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Char, rc];
         MutPriorityQueue.toString(pq) == "MutPriorityQueue {}"
     }
 
-    @Test
+    @test
     def testToString02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 3);
         MutPriorityQueue.toString(pq) == "MutPriorityQueue {3}"
     }
 
-    @Test
+    @test
     def testToString03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
@@ -46,7 +46,7 @@ mod TestMutPriorityQueue {
     // new                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testNew01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.size(pq) == 0
@@ -56,20 +56,20 @@ mod TestMutPriorityQueue {
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testSize01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.size(pq) == 0
     }
 
-    @Test
+    @test
     def testSize02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, "a" :: "b" :: "c" :: "d" :: "e" :: Nil);
         MutPriorityQueue.size(pq) == 5
     }
 
-    @Test
+    @test
     def testSize03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
@@ -81,20 +81,20 @@ mod TestMutPriorityQueue {
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testIsEmpty01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.isEmpty(pq)
     }
 
-    @Test
+    @test
     def testIsEmpty02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, "a");
         not MutPriorityQueue.isEmpty(pq)
     }
 
-    @Test
+    @test
     def testIsEmpty03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: Nil);
@@ -104,7 +104,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.isEmpty(pq)
     }
 
-    @Test def testIsEmpty04(): Bool = region rc {
+    @test def testIsEmpty04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: Nil);
         MutPriorityQueue.dequeue(pq);
@@ -117,7 +117,7 @@ mod TestMutPriorityQueue {
     // peek                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testPeek01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 3);
@@ -125,14 +125,14 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.peek(pq) == None
     }
 
-    @Test
+    @test
     def testPeek02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 1);
         MutPriorityQueue.peek(pq) == Some(1)
     }
 
-    @Test
+    @test
     def testPeek03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 9 :: 2 :: 8 :: 3 :: 7 :: Nil);
@@ -140,13 +140,13 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.peek(pq) == Some(8)
     }
 
-    @Test
+    @test
     def testPeek04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.peek(pq) == None
     }
 
-    @Test
+    @test
     def testPeek05(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 5);
@@ -159,14 +159,14 @@ mod TestMutPriorityQueue {
     // enqueue                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testEnqueue01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, "a");
         MutPriorityQueue.size(pq) == 1
     }
 
-    @Test
+    @test
     def testEnqueue02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 3);
@@ -174,7 +174,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.toString(pq) == "MutPriorityQueue {3, 2}"
     }
 
-    @Test
+    @test
     def testEnqueue03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 2);
@@ -182,7 +182,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.toString(pq) == "MutPriorityQueue {3, 2}"
     }
 
-    @Test
+    @test
     def testEnqueue04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, "a");
@@ -193,7 +193,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.peek(pq) == Some("c")
     }
 
-    @Test
+    @test
     def testEnqueue05(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 3);
@@ -212,20 +212,20 @@ mod TestMutPriorityQueue {
     // dequeue                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testDequeue01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.dequeue(pq);
         MutPriorityQueue.size(pq) == 0
     }
 
-    @Test
+    @test
     def testDequeue02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.dequeue(pq) == None
     }
 
-    @Test
+    @test
     def testDequeue03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
@@ -234,7 +234,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.size(pq) == 3
     }
 
-    @Test
+    @test
     def testDequeue04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
@@ -242,7 +242,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.dequeue(pq) == Some(4)
     }
 
-    @Test
+    @test
     def testDequeue05(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: Nil);
@@ -256,14 +256,14 @@ mod TestMutPriorityQueue {
     // enqueueAll                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testEnqueueAll01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.enqueueAll(pq, Nil);
         MutPriorityQueue.toString(pq) == "MutPriorityQueue {}"
     }
 
-    @Test
+    @test
     def testEnqueueAll02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, Nil);
@@ -271,7 +271,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.toString(pq) == "MutPriorityQueue {1}"
     }
 
-    @Test
+    @test
     def testEnqueueAll03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, Nil);
@@ -280,7 +280,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.toString(pq) == "MutPriorityQueue {6, 4, 5, 1, 3, 2}"
     }
 
-    @Test
+    @test
     def testEnqueueAll04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, Nil);
@@ -293,7 +293,7 @@ mod TestMutPriorityQueue {
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testIterator01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         let it = MutPriorityQueue.iterator(rc, pq);
@@ -302,7 +302,7 @@ mod TestMutPriorityQueue {
         deref sum == 0
     }
 
-    @Test
+    @test
     def testIterator02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: Nil);
@@ -310,7 +310,7 @@ mod TestMutPriorityQueue {
         Iterator.toList(it) == 1 :: Nil
     }
 
-    @Test
+    @test
     def testIterator03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, "a" :: "c" :: "g" :: "t" :: Nil);
@@ -324,41 +324,41 @@ mod TestMutPriorityQueue {
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testToList01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.toList(pq) == Nil
     }
 
-    @Test
+    @test
     def testToList02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 1);
         MutPriorityQueue.toList(pq) == 1 :: Nil
     }
 
-    @Test
+    @test
     def testToList03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: Nil);
         MutPriorityQueue.toList(pq) == 2 :: 1 :: Nil
     }
 
-    @Test
+    @test
     def testToList04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: Nil);
         MutPriorityQueue.toList(pq) == 2 :: 1 :: Nil
     }
 
-    @Test
+    @test
     def testToList05(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutPriorityQueue.toList(pq) == 8 :: 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil
     }
 
-    @Test
+    @test
     def testToList06(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
@@ -371,34 +371,34 @@ mod TestMutPriorityQueue {
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testToNel01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.toNel(pq) == None
     }
 
-    @Test
+    @test
     def testToNel02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueue(pq, 1);
         MutPriorityQueue.toNel(pq) == Some(Nel.Nel(1, Nil))
     }
 
-    @Test
+    @test
     def testToNel03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: Nil);
         MutPriorityQueue.toNel(pq) == Some(Nel.Nel(3, 1 :: 2 :: Nil))
     }
 
-    @Test
+    @test
     def testToNel04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutPriorityQueue.toNel(pq) == Some(Nel.Nel(8, 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil))
     }
 
-    @Test
+    @test
     def testToNel05(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc);
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
@@ -411,41 +411,41 @@ mod TestMutPriorityQueue {
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @test
     def testArray01(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         Array.toString(MutPriorityQueue.toArray(rc, pq)) == "Array#{}"
     }
 
-    @Test
+    @test
     def testArray02(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.enqueue(pq, 1);
         Array.toString(MutPriorityQueue.toArray(rc, pq)) == "Array#{1}"
     }
 
-    @Test
+    @test
     def testArray03(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: Nil);
         Array.toString(MutPriorityQueue.toArray(rc, pq)) == "Array#{2, 1}"
     }
 
-    @Test
+    @test
     def testArray04(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.enqueueAll(pq, 2 :: 1 :: Nil);
         Array.toString(MutPriorityQueue.toArray(rc, pq)) == "Array#{2, 1}"
     }
 
-    @Test
+    @test
     def testArray05(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         Array.toString(MutPriorityQueue.toArray(rc, pq)) == "Array#{8, 7, 6, 4, 3, 2, 5, 1}"
     }
 
-    @Test
+    @test
     def testArray06(): Bool = region rc {
         let pq = MutPriorityQueue.new(rc) : MutPriorityQueue[Int32, rc];
         MutPriorityQueue.enqueueAll(pq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);

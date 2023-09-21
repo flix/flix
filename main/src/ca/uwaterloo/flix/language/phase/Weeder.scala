@@ -2577,7 +2577,6 @@ object Weeder {
   private def visitAnnotation(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
     case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
     case "test" => Ast.Annotation.Test(ident.loc).toSuccess
-    case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
     case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
     case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
     case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess

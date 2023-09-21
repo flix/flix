@@ -29,7 +29,7 @@ object KeywordOtherCompleter extends Completer {
       "@ParallelWhenPure",
       "@Lazy",
       "@LazyWhenPure",
-      "@Test",
+      "@test",
       "class",
       "def",
       "eff",

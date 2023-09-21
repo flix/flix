@@ -1,6 +1,6 @@
 mod Test.Predicate.Functional {
 
-    @Test
+    @test
     def testFunctionalF1X2_01(): Bool =
     let ff = _x -> Vector#{};
         let pr = #{
@@ -10,7 +10,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{}: Vector[(Int32, Int32)], actual)
 
-    @Test
+    @test
     def testFunctionalF1X2_02(): Bool =
     let ff = x -> Vector#{(x, x)};
         let pr = #{
@@ -20,7 +20,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 1)}, actual)
 
-    @Test
+    @test
     def testFunctionalF1X2_03(): Bool =
     let ff = x -> Vector#{(x, x), (x + 1, x + 1)};
         let pr = #{
@@ -30,7 +30,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 1), (2, 2)}, actual)
 
-    @Test
+    @test
     def testFunctionalF2X1_01(): Bool =
     let ff = (_x, _y) -> Vector#{};
         let pr = #{
@@ -40,7 +40,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select x from R(x);
         Assert.eq(Vector#{}: Vector[Int32], actual)
 
-    @Test
+    @test
     def testFunctionalF2X1_02(): Bool =
     let ff = (x, _y) -> Vector#{x};
         let pr = #{
@@ -50,7 +50,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select x from R(x);
         Assert.eq(Vector#{1}, actual)
 
-    @Test
+    @test
     def testFunctionalF2X1_03(): Bool =
     let ff = (x, y) -> Vector#{x, y};
         let pr = #{
@@ -60,7 +60,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select x from R(x);
         Assert.eq(Vector#{1, 2}, actual)
 
-    @Test
+    @test
     def testFunctionalF2X2_01(): Bool =
         let ff = (_x, _y) -> Vector#{};
         let pr = #{
@@ -70,7 +70,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{}: Vector[(Int32, Int32)], actual)
 
-    @Test
+    @test
     def testFunctionalF2X2_02(): Bool =
         let ff = (x, y) -> Vector#{(x, y)};
         let pr = #{
@@ -80,7 +80,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 1)}, actual)
 
-    @Test
+    @test
     def testFunctionalF2X2_03(): Bool =
     let ff = (x, y) -> Vector#{(x, y), (x + 1, y + 1)};
         let pr = #{
@@ -90,7 +90,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 1), (2, 2)}, actual)
 
-    @Test
+    @test
     def testFunctionalF5X5_01(): Bool =
     let ff = (_x, _y, _z, _u, _v) -> Vector#{};
         let pr = #{
@@ -100,7 +100,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y, z, u, v) from R(x, y, z, u, v);
         Assert.eq(Vector#{}: Vector[(Int32, Int32, Int32, Int32, Int32)], actual)
 
-    @Test
+    @test
     def testFunctionalF5X5_02(): Bool =
     let ff = (x, y, z, u, v) -> Vector#{(x, y, z, u, v)};
         let pr = #{
@@ -110,7 +110,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y, z, u, v) from R(x, y, z, u, v);
         Assert.eq(Vector#{(1, 1, 1, 1, 1)}, actual)
 
-    @Test
+    @test
     def testFunctionalF5X5_03(): Bool =
     let ff = (x, y, z, u, v) -> Vector#{(x, y, z, u, v), (x + 1, y + 1, z + 1, u + 1, v + 1)};
         let pr = #{
@@ -121,7 +121,7 @@ mod Test.Predicate.Functional {
         Assert.eq(Vector#{(1, 1, 1, 1, 1), (2, 2, 2, 2, 2)}, actual)
 
 
-    @Test
+    @test
     def testFunctionalDelta01(): Bool =
         let ff = (x, y) -> Vector#{(x, y)};
         let pr = #{
@@ -134,7 +134,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 1), (2, 2)}, actual)
 
-    @Test
+    @test
     def testFunctionalDelta02(): Bool =
         let ff = (x, y) -> Vector#{(x, y)};
         let pr = #{
@@ -147,7 +147,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 1), (2, 2)}, actual)
 
-    @Test
+    @test
     def testFunctionalDelta03(): Bool =
         let ff = (x, y) -> Vector#{(x, y)};
         let pr = #{
@@ -161,7 +161,7 @@ mod Test.Predicate.Functional {
         Assert.eq(Vector#{(1, 1), (2, 2)}, actual)
 
 
-    @Test
+    @test
     def testFunctionalMulti01(): Bool =
         let ff = x -> Vector#{x};
         let gg = x -> Vector#{x + 1};
@@ -173,7 +173,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 2), (2, 3)}, actual)
 
-    @Test
+    @test
     def testFunctionalMulti02(): Bool =
         let ff = x -> Vector#{x};
         let gg = x -> Vector#{x + 1};
@@ -185,7 +185,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(Vector#{(1, 2), (2, 3)}, actual)
 
-    @Test
+    @test
     def testFunctionalMulti03(): Bool =
         let ff = x -> Vector#{x};
         let gg = x -> Vector#{x + 1};
@@ -198,7 +198,7 @@ mod Test.Predicate.Functional {
         Assert.eq(Vector#{(1, 2), (2, 3)}, actual)
 
 
-    @Test
+    @test
     def testFunctionalLat_01(): Bool =
         let ff = _ -> Vector#{};
         let pr = #{
@@ -208,7 +208,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x; y);
         Assert.eq(Vector#{}: Vector[(Int32, Int32)], actual)
 
-    @Test
+    @test
     def testFunctionalLat_02(): Bool =
         let ff = x -> Vector#{x + 2, x + 1};        // Deliberately out-of-order.
         let pr = #{
@@ -218,7 +218,7 @@ mod Test.Predicate.Functional {
         let actual = query pr select (x, y) from R(x; y);
         Assert.eq(Vector#{(1, 3)}, actual)
 
-    @Test
+    @test
     def testFunctionalLat_03(): Bool =
         let ff = x -> Vector#{x + 3, x + 1, x + 2}; // Deliberately out-of-order.
         let pr = #{

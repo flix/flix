@@ -238,14 +238,14 @@ object Ast {
     }
 
     /**
-      * An AST node that represents a `@Test` annotation.
+      * An AST node that represents a `@test` annotation.
       *
       * A function marked with `test` is evaluated as part of the test framework.
       *
       * @param loc the source location of the annotation.
       */
     case class Test(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Test"
+      override def toString: String = "@test"
     }
 
   }
@@ -316,7 +316,7 @@ object Ast {
     def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
 
     /**
-      * Returns `true` if `this` sequence contains the `@Test` annotation.
+      * Returns `true` if `this` sequence contains the `@test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
   }

@@ -17,7 +17,7 @@ mod Test.Exp.Closeable {
             checked_ecast(closed2 := deref closed1)
     }
 
-    @Test
+    @test
     def testCloseOnExit01(): Bool \ IO = region rc1 {
         let closed1 = ref false @ rc1;
         let closeable1 = MyCloseable(closed1);
@@ -27,7 +27,7 @@ mod Test.Exp.Closeable {
         deref closed1
     }
 
-    @Test
+    @test
     def testCloseOnExit02(): Bool \ IO = region rc1 {
         let closed1 = ref false @ rc1;
         let closeable1 = MyCloseable(closed1);

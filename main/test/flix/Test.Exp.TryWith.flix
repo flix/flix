@@ -15,7 +15,7 @@ mod Test.Exp.TryWith {
         pub def greet2(name: String): Unit
     }
 
-    @Test
+    @test
     def testTryWith01(): Unit = {
         try {
             do Test.Exp.TryWith.Print.doIt()
@@ -24,7 +24,7 @@ mod Test.Exp.TryWith {
         }
     }
 
-    @Test
+    @test
     def testTryWith02(): Unit = {
         try {
             do Test.Exp.TryWith.Print.doIt()
@@ -39,7 +39,7 @@ mod Test.Exp.TryWith {
         }
     }
 
-    @Test
+    @test
     def testTryWith03(): Unit = {
         let letsDoIt = () -> do Test.Exp.TryWith.Print.doIt();
         try {
@@ -49,7 +49,7 @@ mod Test.Exp.TryWith {
         }
     }
 
-    @Test
+    @test
     def testTryWith04(): Unit = {
         try {
             do Test.Exp.TryWith.Greet.greet("Alice")
@@ -58,7 +58,7 @@ mod Test.Exp.TryWith {
         }
     }
 
-    @Test
+    @test
     def testTryWith05(): Unit = {
         try {
             do Test.Exp.TryWith.Greet.greet("Duchess")
@@ -73,7 +73,7 @@ mod Test.Exp.TryWith {
         }
     }
 
-    @Test
+    @test
     def testTryWith06(): Unit = {
         def greetAll(names: List[String]) = match names {
             case Nil => ()
@@ -90,7 +90,7 @@ mod Test.Exp.TryWith {
         }
     }
 
-    @Test
+    @test
     def testTryWith07(): Unit = {
         try {
             try {
@@ -104,7 +104,7 @@ mod Test.Exp.TryWith {
         }
     }
 
-    @Test
+    @test
     def testTryWith08(): Unit = {
         try {
             try {

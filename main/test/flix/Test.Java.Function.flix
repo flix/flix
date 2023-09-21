@@ -20,7 +20,7 @@ mod Test.Java.Function {
     import java.util.stream.DoubleStream
     import java.util.stream.Stream
 
-    @Test
+    @test
     def testFunction(): Bool \ IO = {
         import static java.util.stream.Stream.of(Object): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
@@ -33,7 +33,7 @@ mod Test.Java.Function {
         toString(get(findFirst(stream))) == "42"
     }
 
-    @Test
+    @test
     def testConsumer(): Bool \ IO = {
         import static java.util.stream.Stream.of(Object): Stream \ IO;
         import java.util.stream.Stream.forEach(Consumer): Unit \ IO;
@@ -47,7 +47,7 @@ mod Test.Java.Function {
         deref st == "8"
     }
 
-    @Test
+    @test
     def testPredicate(): Bool \ IO = region rc {
         import static java.util.stream.Stream.of(Array[Object, rc]): Stream \ IO;
         import java.util.stream.Stream.filter(Predicate): Stream \ IO;
@@ -62,7 +62,7 @@ mod Test.Java.Function {
         toString(get(findFirst(stream1))) == "5"
     }
 
-    @Test
+    @test
     def testIntFunction(): Bool \ IO = {
         import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
         import java.util.stream.IntStream.mapToObj(IntFunction): Stream \ IO;
@@ -77,7 +77,7 @@ mod Test.Java.Function {
         toString(get(findFirst(stream1))) == "42"
     }
 
-    @Test
+    @test
     def testIntConsumer(): Bool \ IO = {
         import static java.util.stream.IntStream.range(Int32, Int32): IntStream \ IO;
         import java.util.stream.IntStream.forEach(IntConsumer): Unit \ IO;
@@ -87,7 +87,7 @@ mod Test.Java.Function {
         deref st == 8
     }
 
-    @Test
+    @test
     def testIntPredicate(): Bool \ IO = {
         import static java.util.stream.IntStream.range(Int32, Int32): IntStream \ IO;
         import java.util.stream.IntStream.filter(IntPredicate): IntStream \ IO;
@@ -97,7 +97,7 @@ mod Test.Java.Function {
         sum(stream1) == 20
     }
 
-    @Test
+    @test
     def testIntUnaryOperator(): Bool \ IO = {
         import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
         import java.util.stream.IntStream.map(IntUnaryOperator): IntStream \ IO;
@@ -107,7 +107,7 @@ mod Test.Java.Function {
         sum(stream1) == 12
     }
 
-    @Test
+    @test
     def testLongFunction(): Bool \ IO = {
         import static java.util.stream.LongStream.of(Int64): LongStream \ IO;
         import java.util.stream.LongStream.mapToObj(LongFunction): Stream \ IO;
@@ -122,7 +122,7 @@ mod Test.Java.Function {
         toString(get(findFirst(stream1))) == "42"
     }
 
-    @Test
+    @test
     def testLongConsumer(): Bool \ IO = {
         import static java.util.stream.LongStream.range(Int64, Int64): LongStream \ IO;
         import java.util.stream.LongStream.forEach(LongConsumer): Unit \ IO;
@@ -132,7 +132,7 @@ mod Test.Java.Function {
         deref st == 8i64
     }
 
-    @Test
+    @test
     def testLongPredicate(): Bool \ IO = {
         import static java.util.stream.LongStream.range(Int64, Int64): LongStream \ IO;
         import java.util.stream.LongStream.filter(LongPredicate): LongStream \ IO;
@@ -142,7 +142,7 @@ mod Test.Java.Function {
         sum(stream1) == 20i64
     }
 
-    @Test
+    @test
     def testLongUnaryOperator(): Bool \ IO = {
         import static java.util.stream.LongStream.of(Int64): LongStream \ IO;
         import java.util.stream.LongStream.map(LongUnaryOperator): LongStream \ IO;
@@ -152,7 +152,7 @@ mod Test.Java.Function {
         sum(stream1) == 12i64
     }
 
-    @Test
+    @test
     def testDoubleFunction(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Float64): DoubleStream \ IO;
         import java.util.stream.DoubleStream.mapToObj(DoubleFunction): Stream \ IO;
@@ -170,7 +170,7 @@ mod Test.Java.Function {
         toString(get(findFirst(stream1))) == "42"
     }
 
-    @Test
+    @test
     def testDoubleConsumer(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Array[Float64, Static]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.forEach(DoubleConsumer): Unit \ IO;
@@ -181,7 +181,7 @@ mod Test.Java.Function {
         Float64.tryToInt32(last) == Some(8)
     }
 
-    @Test
+    @test
     def testDoublePredicate(): Bool \ IO = region rc {
         import static java.util.stream.DoubleStream.of(Array[Float64, rc]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.filter(DoublePredicate): DoubleStream \ IO;
@@ -195,7 +195,7 @@ mod Test.Java.Function {
         Float64.tryToInt32(tot) == Some(20)
     }
 
-    @Test
+    @test
     def testDoubleUnaryOperator(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Float64): DoubleStream \ IO;
         import java.util.stream.DoubleStream.map(DoubleUnaryOperator): DoubleStream \ IO;
