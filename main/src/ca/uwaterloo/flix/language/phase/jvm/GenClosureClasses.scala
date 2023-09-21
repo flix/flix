@@ -110,10 +110,6 @@ object GenClosureClasses {
     * Invoke method for the given `defn`, `classType`, and `resultType`.
     */
   private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def)(implicit root: Root, flix: Flix): Unit = {
-    // Continuation class
-//    val continuationType = JvmOps.getContinuationInterfaceType(defn.arrowType)
-//    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
-
     // Method header
     val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
