@@ -27,7 +27,7 @@ object KeywordOtherCompleter extends Completer {
       "@deprecated",
       "@parallel",
       "@parallelwhenpure",
-      "@Lazy",
+      "@lazy",
       "@lazywhenpure",
       "@test",
       "class",

@@ -205,7 +205,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class Lazy(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Lazy"
+      override def toString: String = "@lazy"
     }
 
     /**
@@ -286,7 +286,7 @@ object Ast {
     def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
 
     /**
-      * Returns `true` if `this` sequence contains the `@Lazy` annotation.
+      * Returns `true` if `this` sequence contains the `@lazy` annotation.
       */
     def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])
 

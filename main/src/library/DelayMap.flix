@@ -368,7 +368,7 @@ mod DelayMap {
     ///
     /// Helper function for `insertWithKey`. Applies `f` lazily.
     ///
-    @Lazy
+    @lazy
     def insertWithKeyL(f: (k, v, v) -> v, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
         let f1 = (k1, v1, v2) -> lazy f(k1, force v1, force v2);
@@ -416,7 +416,7 @@ mod DelayMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @parallelwhenpure @Lazy
+    @parallelwhenpure @lazy
     def mapWithKeyL(f: (k, v1) -> v2, m: DelayMap[k, v1]): DelayMap[k, v2] =
         let DMap(t) = m;
         let g = (k, v) -> lazy f(k, force v);
@@ -496,7 +496,7 @@ mod DelayMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    @experimental @Lazy
+    @experimental @lazy
     pub def union(m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         unionWithKey((_, v1, _) -> v1, m1, m2)
 
@@ -525,7 +525,7 @@ mod DelayMap {
     ///
     /// Helper function for `unionWithKey`. Applies `f` lazily.
     ///
-    @Lazy
+    @lazy
     def unionWithKeyL(f: (k, v, v) -> v, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         use RedBlackTree.{blackHeight, foldRight, insertWith};
         let DMap(xs) = m1;
@@ -724,7 +724,7 @@ mod DelayMap {
     ///
     /// Helper function for `updateWithKey`. Does not force the `v`.
     ///
-    @Lazy
+    @lazy
     def updateWithKeyL(f: (k, v) -> Option[v], k: k, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
         let f1 = (k1, v1) -> {
