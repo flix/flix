@@ -313,6 +313,18 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
+    case Expr.TryWith(_, _, _, tpe, _, _) =>
+      // TODO: VERIFIER: Add support for TryWith.
+      tpe
+
+    case Expr.Do(_, _, tpe, _, _) =>
+      // TODO: VERIFIER: Add support for Do.
+      tpe
+
+    case Expr.Resume(_, tpe, _) =>
+      // TODO: VERIFIER: Add support for Resume.
+      tpe
+
     case Expr.NewObject(name, clazz, tpe, methods, _, _, loc) =>
       // TODO: VERIFIER: Add support for NewObject.
       tpe

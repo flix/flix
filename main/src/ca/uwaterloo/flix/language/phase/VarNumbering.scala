@@ -109,6 +109,16 @@ object VarNumbering {
         }
         visitExps(rules.map(_.exp), i2)
 
+      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+        // TODO
+        i0
+
+      case Expr.Do(_, exps, _, _, _) =>
+        visitExps(exps, i0)
+
+      case Expr.Resume(exp, _, _) =>
+        visitExp(exp, i0)
+
       case Expr.NewObject(_, _, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0

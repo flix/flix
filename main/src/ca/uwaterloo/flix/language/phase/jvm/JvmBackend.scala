@@ -53,7 +53,6 @@ object JvmBackend {
       val erasedRefTypes = JvmOps.getErasedRefsOf(types)
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
-      val erasedContinuationTypes = erasedFunctionTypes.map(f => BackendObjType.Continuation(f.result))
 
       //
       // Second, generate classes.
@@ -69,7 +68,6 @@ object JvmBackend {
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       // Generate function classes.
-      val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedContinuationTypes)
       val functionInterfaces = GenFunctionAbstractClasses.gen(erasedFunctionTypes)
       val functionClasses = GenFunctionClasses.gen(root.defs)
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
@@ -127,7 +125,6 @@ object JvmBackend {
       List(
         mainClass,
         namespaceClasses,
-        continuationInterfaces,
         functionInterfaces,
         functionClasses,
         closureAbstractClasses,
