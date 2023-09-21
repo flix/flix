@@ -44,7 +44,7 @@ public class Def_u {
                     }
                     // --
 
-                    // Invariant: We know that vResult must now be Value(v) or a Suspension.
+                    // Invariant: We know that vResult must now be Done(v) or a Suspension.
 
                     if (vResult instanceof Value) {
                         name = (String) (((Value) vResult).obj);
