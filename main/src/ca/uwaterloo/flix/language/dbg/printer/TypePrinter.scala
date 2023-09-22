@@ -34,20 +34,33 @@ object TypePrinter {
       case Type.Cst(TypeConstructor.Arrow(_), _) =>
         val args = tpe.arrowArgTypes
         val res = tpe.arrowResultType
-        DocAst.Type.Arrow(args.map(printHelper), printHelper(res))
+        DocAst.Type.Arrow(args.map(printSimple), printSimple(res))
       case Type.Cst(TypeConstructor.Tuple(_), _) =>
         val args = tpe.typeArguments
-        DocAst.Type.Tuple(args.map(printHelper))
+        DocAst.Type.Tuple(args.map(printSimple))
       case Type.Cst(TypeConstructor.Unit, _) =>
         DocAst.Type.Unit
-      case _ => printHelper(tpe)
+      case _ => printSimple(tpe)
     }
   }
 
-  /** Format type as a string */
-  private def printHelper(tpe: Type): DocAst.Type = {
-    val formattedType = FormatType.formatTypeWithOptions(tpe, FormatOptions(ignorePur = true, ignoreEff = true, FormatOptions.VarName.NameBased))
-    DocAst.Type.AsIs(formattedType)
+  /**
+    * Returns the [[DocAst.Eff]] representation of `tpe`.
+    */
+  def printAsEffect(tpe: Type): DocAst.Eff = tpe match {
+    case Type.Cst(TypeConstructor.Pure, _) => DocAst.Eff.Pure
+    case Type.Cst(TypeConstructor.EffUniv, _) => DocAst.Eff.Impure
+    case _ => DocAst.Eff.AsIs(typeToString(tpe))
+  }
+
+  /** Print type without formatting as-is */
+  private def printSimple(tpe: Type): DocAst.Type = {
+    DocAst.Type.AsIs(typeToString(tpe))
+  }
+
+  /** Returns the type as a simple string */
+  private def typeToString(tpe: Type): String = {
+    FormatType.formatTypeWithOptions(tpe, FormatOptions(ignorePur = true, ignoreEff = true, FormatOptions.VarName.NameBased))
   }
 
 }

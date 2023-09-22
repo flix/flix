@@ -43,6 +43,7 @@ object SimplifiedAstPrinter {
           sym,
           formals.map(printFormalParam),
           MonoTypePrinter.print(tpe),
+          PurityPrinter.print(exp.purity),
           print(exp)
         )
     }.toList
