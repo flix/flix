@@ -31,6 +31,7 @@ object Instances {
     * Validates instances and classes in the given AST root.
     */
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Instances") {
+//    dumpClassStats(root)
     val errs = visitInstances(root, oldRoot, changeSet) ::: visitClasses(root)
     errs match {
       case Nil => ().toSuccess
@@ -184,9 +185,10 @@ object Instances {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
-        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty, LevelEnv.Unleveled).toOption.map {
-          case (subst, econstrs) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
-        }
+        superInst =>
+          Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty, LevelEnv.Unleveled).toOption.map {
+            case (subst, econstrs) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
+          }
       }.nextOption()
     }
 
@@ -252,5 +254,36 @@ object Instances {
     // Check the instances of each class in parallel.
     val results = ParOps.parMap(root.instances.values)(checkInstancesOfClass)
     results.flatten.toList
+  }
+
+  private def dumpClassStats(root: TypedAst.Root): Unit = {
+    val classNames = List(
+      "Eq",
+      "Order",
+      "FromString",
+      "ToString",
+      "Iterable",
+      "Foldable",
+      "Traversable",
+      "Witherable",
+      "Reader",
+      "Writer",
+    )
+
+    // lines, instances, signatures, functions
+    println("class | lines | instances | signatures | functions")
+    println("--- | --- | --- | --- | ---")
+
+    val classSyms = classNames.map(Symbol.mkClassSym)
+
+    classSyms.flatMap(root.classes.get).foreach {
+      case TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
+        val clazz = sym.name
+        val lines = loc.endLine - loc.beginLine + 1
+        val instances = root.instances.getOrElse(sym, Nil).size
+        val signatures = sigs.count(_.exp.isEmpty)
+        val functions = sigs.count(_.exp.isDefined)
+        println(s"$clazz | $lines | $instances | $signatures | $functions ")
+    }
   }
 }
