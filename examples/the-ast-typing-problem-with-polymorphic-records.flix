@@ -18,7 +18,7 @@ enum Type {
 }
 
 /// We can now write a function that given an expression extended
-/// with a tpe: Type field returns its type!
+/// with a tpe: Type label returns its type!
 def typeOf(e: Expr[(tpe = Type | r)]): Type = match e {
     case Expr.True   => Type.TBool
     case Expr.False  => Type.TBool

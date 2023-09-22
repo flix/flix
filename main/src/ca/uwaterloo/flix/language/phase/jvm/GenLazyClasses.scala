@@ -117,8 +117,7 @@ object GenLazyClasses {
     val erasedValueTypeDescriptor = erasedType.toDescriptor
     val internalClassType = classType.name.toInternalName
     val returnIns = AsmOps.getReturnInstruction(erasedType)
-    val functionType = JvmOps.getContinuationInterfaceType(MonoType.Arrow(Nil, valueType))
-    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(valueType))
+    val functionType = JvmType.Reference(BackendObjType.Thunk.jvmName)
 
     // Header of the method.
     val returnDescription = AsmOps.getMethodDescriptor(Nil, erasedType)
@@ -154,7 +153,7 @@ object GenLazyClasses {
     method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
     method.visitTypeInsn(CHECKCAST, functionType.name.toInternalName)
     // [this, value] the result of expression remains on the stack.
-    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, erasedType), false)
+    BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(valueType))(new BytecodeInstructions.F(method))
     // [] this.value now stores the result from expression.
     method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
 
