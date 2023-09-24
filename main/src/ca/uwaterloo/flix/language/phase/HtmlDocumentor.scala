@@ -805,6 +805,7 @@ object HtmlDocumentor {
     docType(spec.retTpe)
     docEffectType(spec.eff)
     docTypeConstraints(spec.tconstrs)
+    docEqualityConstraints(spec.econstrs)
     sb.append("</code>")
     docActions(linkId, spec.loc)
     sb.append("</div>")
@@ -849,6 +850,29 @@ object HtmlDocumentor {
       sb.append(s"<span class='tpe-constraint'>${esc(t.head.sym.name)}</span>[")
       docType(t.arg)
       sb.append("]")
+    }
+    sb.append("</span>")
+  }
+
+  /**
+    * Documents the given list of `EqualityConstraint`s, `econsts`.
+    * E.g. "where C.T[a] ~ String".
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `econsts` is empty, nothing will be generated.
+    */
+  private def docEqualityConstraints(econsts: List[Ast.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (econsts.isEmpty) {
+      return
+    }
+
+    sb.append("<span> <span class='keyword'>where</span> ")
+    docList(econsts.sortBy(_.loc)) { e =>
+      sb.append(s"${esc(e.cst.sym.clazz.name)}.${esc(e.cst.sym.name)}[")
+      docType(e.tpe1)
+      sb.append("] ~ ")
+      docType(e.tpe2)
     }
     sb.append("</span>")
   }
