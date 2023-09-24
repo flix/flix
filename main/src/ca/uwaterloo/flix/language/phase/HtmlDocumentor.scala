@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.util.LocalResource
 
@@ -298,7 +298,7 @@ object HtmlDocumentor {
           sym,
           tparam,
           superClasses,
-          assocs.filter(a => a.mod.isPublic),
+          assocs,
           Nil,
           laws.filter(l => l.spec.mod.isPublic && !l.spec.ann.isInternal),
           loc
@@ -453,6 +453,8 @@ object HtmlDocumentor {
   private def documentClass(clazz: Class)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
+    val sortedAssocs = clazz.decl.assocs.sortBy(_.sym.name)
+    val sortedInstances = clazz.instances.sortBy(_.loc)
     val sortedSigs = clazz.signatures.sortBy(_.sym.name)
     val sortedClassDefs = clazz.defs.sortBy(_.sym.name)
 
@@ -525,7 +527,8 @@ object HtmlDocumentor {
     docActions(None, clazz.decl.loc)
     sb.append("</div>")
     docDoc(clazz.decl.doc)
-    docSubSection("Instances", clazz.instances.sortBy(_.loc), docInstance)
+    docSubSection("Associated Types", sortedAssocs, docAssoc, open = true)
+    docSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
     sb.append("</section>")
 
@@ -921,10 +924,31 @@ object HtmlDocumentor {
     docType(spec.retTpe)
     docEffectType(spec.eff)
     docTypeConstraints(spec.tconstrs)
+    docEqualityConstraints(spec.econstrs)
     sb.append("</code>")
     docActions(linkId, spec.loc)
     sb.append("</div>")
     docDoc(spec.doc)
+  }
+
+  /**
+    * Documents the given associated type of a class.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docAssoc(assoc: TypedAst.AssocTypeSig)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<div>")
+    sb.append("<div class='decl'>")
+    sb.append("<code>")
+    sb.append("<span class='keyword'>type</span> ")
+    sb.append(s"<span class='name'>${assoc.sym.name}</span>")
+    sb.append(": ")
+    docKind(assoc.kind)
+    sb.append("</code>")
+    docActions(None, assoc.loc)
+    sb.append("</div>")
+    docDoc(assoc.doc)
+    sb.append("</div>")
   }
 
   /**
@@ -962,9 +986,35 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      sb.append(s"<span class='tpe-constraint'>${esc(t.head.sym.name)}</span>[")
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(t.head.sym))}' title='class ${esc(className(t.head.sym))}'>")
+      sb.append(esc(t.head.sym.name))
+      sb.append("</a>")
+      sb.append("[")
       docType(t.arg)
       sb.append("]")
+    }
+    sb.append("</span>")
+  }
+
+  /**
+    * Documents the given list of `EqualityConstraint`s, `econsts`.
+    * E.g. "where C.T[a] ~ String".
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `econsts` is empty, nothing will be generated.
+    */
+  private def docEqualityConstraints(econsts: List[Ast.EqualityConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (econsts.isEmpty) {
+      return
+    }
+
+    sb.append("<span> <span class='keyword'>where</span> ")
+    docList(econsts.sortBy(_.loc)) { e =>
+      sb.append(s"${esc(e.cst.sym.clazz.name)}.${esc(e.cst.sym.name)}[")
+      docType(e.tpe1)
+      sb.append("] ~ ")
+      docType(e.tpe2)
     }
     sb.append("</span>")
   }
@@ -1028,7 +1078,8 @@ object HtmlDocumentor {
     docList(tparams.sortBy(_.loc)) { p =>
       sb.append("<span class='tparam'>")
       sb.append(s"<span class='type'>${esc(p.name.name)}</span>")
-      sb.append(s": <span class='kind'>${esc(p.sym.kind.toString)}</span>")
+      sb.append(": ")
+      docKind(p.sym.kind)
       sb.append("</span>")
     }
     sb.append("]</span>")
@@ -1128,6 +1179,17 @@ object HtmlDocumentor {
   private def docType(tpe: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='type'>")
     sb.append(esc(FormatType.formatType(tpe)))
+    sb.append("</span>")
+  }
+
+  /**
+    * Document the the given `Kind`, `kind`.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    */
+  private def docKind(kind: Kind)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    sb.append("<span class='kind'>")
+    sb.append(esc(kind.toString))
     sb.append("</span>")
   }
 
