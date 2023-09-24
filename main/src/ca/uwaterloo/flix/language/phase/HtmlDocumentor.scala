@@ -514,7 +514,6 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(className(clazz.decl.sym))}</h1>")
 
-    sb.append("<section>")
     sb.append(s"<div class='box'>")
     docAnnotations(clazz.decl.ann)
     sb.append("<div class='decl'>")
@@ -530,7 +529,6 @@ object HtmlDocumentor {
     docSubSection("Associated Types", sortedAssocs, docAssoc, open = true)
     docSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
-    sb.append("</section>")
 
     docSection("Signatures", sortedSigs, docSignature)
     docSection("Class Definitions", sortedClassDefs, docSignature)
@@ -603,7 +601,6 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(effectName(eff.decl.sym))}</h1>")
 
-    sb.append("<section>")
     sb.append(s"<div class='box' id='eff-${esc(effectName(eff.decl.sym))}'>")
     docAnnotations(eff.decl.ann)
     sb.append("<div class='decl'>")
@@ -615,7 +612,6 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(eff.decl.doc)
     sb.append("</div>")
-    sb.append("</section>")
 
     docSection("Operations", sortedOps, docOp)
 
@@ -681,7 +677,6 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(enumName(enm.decl.sym))}</h1>")
 
-    sb.append("<section>")
     sb.append(s"<div class='box' id='enum-${esc(enm.decl.sym.name)}'>")
     docAnnotations(enm.decl.ann)
     sb.append("<div class='decl'>")
@@ -696,7 +691,6 @@ object HtmlDocumentor {
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
     sb.append("</div>")
-    sb.append("</section>")
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedModuleDefs, docDef)
