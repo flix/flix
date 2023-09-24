@@ -1034,7 +1034,9 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.classes.sortBy(_.loc)) { c =>
-      sb.append(s"<span class='tpe-constraint'>${esc(c.clazz.name)}</span>")
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(c.clazz))}' title='class ${esc(className(c.clazz))}'>")
+      sb.append(s"${esc(c.clazz.name)}")
+      sb.append("</a>")
     }
     sb.append("</span>")
   }
