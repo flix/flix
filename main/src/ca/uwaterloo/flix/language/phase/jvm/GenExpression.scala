@@ -724,7 +724,7 @@ object GenExpression {
           compileExpr(exps(i))
           // Stores the 'element' at the given 'index' in the 'array'
           // with the store instruction corresponding to the stored element
-          mv.visitInsn(AsmOps.getArrayStoreInstruction(backendType))
+          mv.visitInsn(backendType.getArrayStoreInstruction)
         }
 
       case AtomicOp.ArrayNew =>
@@ -738,7 +738,7 @@ object GenExpression {
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
         visitArrayInstantiate(mv, backendType)
-        if (backendType == BackendType.Int64 || backendType == BackendType.Float64) {
+        if (backendType.is64BitWidth) {
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
           // Duplicates the 'array reference' three places down the stack
@@ -752,7 +752,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(backendType)
+        val arrayFillType = backendType.toArrayFillType
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
@@ -1217,7 +1217,6 @@ object GenExpression {
           val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
           // previous JvmOps functions are already partial pattern matches
           val MonoType.Arrow(_, closureResultType) = exp.tpe
-          val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
 
           compileExpr(exp)
           // Casting to JvmType of closure abstract class
@@ -1234,8 +1233,7 @@ object GenExpression {
               s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
-          mv.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-            backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+          BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1261,8 +1259,6 @@ object GenExpression {
       case CallType.NonTailCall =>
         // JvmType of Def
         val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
-        // previous JvmOps function are already partial pattern matches
-        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tpe))
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1277,8 +1273,7 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        mv.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethod.name,
-          AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
@@ -1461,6 +1456,21 @@ object GenExpression {
 
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
+
+    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
+    case Expr.Do(op, exps, tpe, purity, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
+    case Expr.Resume(exp, tpe, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
 
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName

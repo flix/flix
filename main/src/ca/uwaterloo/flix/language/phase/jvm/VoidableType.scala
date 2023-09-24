@@ -1,6 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
- * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2023 Jonathan Lindegaard Starup, Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
+/**
+  * Represents all Flix types that are not object on the JVM including Void.
+  */
+trait VoidableType {
+  /**
+    * Returns a descriptor for the type. `Void` has descriptor `"V"`.
+    */
+  def toDescriptor: String
+}
 
-object GenContinuationAbstractClasses {
-  def gen(conts: Iterable[BackendObjType.Continuation])(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    conts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, contType) =>
-        macc + (contType.jvmName -> JvmClass(contType.jvmName, contType.genByteCode()))
-    }
+object VoidableType {
+  case object Void extends VoidableType {
+    override val toDescriptor: String = "V"
+
+    /**
+      * The erased string representation used in JVM names.
+      */
+    val toErasedString: String = "Void"
   }
 }

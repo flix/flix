@@ -34,13 +34,14 @@ object LoweredAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
     val defs = root.defs.values.map {
-      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, _, _, _), LoweredAst.Impl(exp, _)) =>
+      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           fparams.map(printFormalParam),
           TypePrinter.print(retTpe),
+          TypePrinter.printAsEffect(eff),
           print(exp)
         )
     }.toList
@@ -140,10 +141,10 @@ object LoweredAstPrinter {
   /**
     * Converts the record pattern into a [[DocAst.Expression]] by adding a series of [[DocAst.Expression.RecordExtend]] expressions.
     */
-  private def printRecordPattern(pats: List[LoweredAst.Pattern.Record.RecordFieldPattern], pat: LoweredAst.Pattern): DocAst.Expression = {
+  private def printRecordPattern(pats: List[LoweredAst.Pattern.Record.RecordLabelPattern], pat: LoweredAst.Pattern): DocAst.Expression = {
     pats.foldRight(printPattern(pat)) {
-      case (LoweredAst.Pattern.Record.RecordFieldPattern(field, _, p, _), acc) =>
-        DocAst.Expression.RecordExtend(field, printPattern(p), acc)
+      case (LoweredAst.Pattern.Record.RecordLabelPattern(label, _, p, _), acc) =>
+        DocAst.Expression.RecordExtend(label, printPattern(p), acc)
     }
   }
 

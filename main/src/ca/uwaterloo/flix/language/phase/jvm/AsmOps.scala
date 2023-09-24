@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Root
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
+import org.objectweb.asm.{ClassWriter, MethodVisitor}
 
 import scala.annotation.tailrec
 
@@ -122,22 +122,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the array store instruction for arrays of the given JvmType tpe
-    */
-  def getArrayStoreInstruction(tpe: BackendType): Int = tpe match {
-    case BackendType.Bool => BASTORE
-    case BackendType.Char => CASTORE
-    case BackendType.Int8 => BASTORE
-    case BackendType.Int16 => SASTORE
-    case BackendType.Int32 => IASTORE
-    case BackendType.Int64 => LASTORE
-    case BackendType.Float32 => FASTORE
-    case BackendType.Float64 => DASTORE
-    case BackendType.Reference(_) => AASTORE
-    case BackendType.Array(_) => AASTORE
-  }
-
-  /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
   def getArrayType(tpe: JvmType): String = tpe match {
@@ -152,22 +136,6 @@ object AsmOps {
     case JvmType.PrimDouble => "[D"
     case JvmType.String => "[Ljava/lang/String;"
     case JvmType.Reference(_) => "[Ljava/lang/Object;"
-  }
-
-  /**
-    * Returns the Array fill type for the value of the type specified by `tpe`
-    */
-  def getArrayFillType(tpe: BackendType): String = tpe match {
-    case BackendType.Bool => "([ZZ)V"
-    case BackendType.Char => "([CC)V"
-    case BackendType.Int8 => "([BB)V"
-    case BackendType.Int16 => "([SS)V"
-    case BackendType.Int32 => "([II)V"
-    case BackendType.Int64 => "([JJ)V"
-    case BackendType.Float32 => "([FF)V"
-    case BackendType.Float64 => "([DD)V"
-    case BackendType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
-    case BackendType.Array(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
   }
 
   /**

@@ -455,7 +455,7 @@ object JsonDocumentor {
     */
   private def visitClass(cla: Class)(implicit root: Root, flix: Flix): JObject = cla match {
     case Class(doc, ann, mod, sym, tparam, superClasses, _, signatures0, _, loc) => // TODO ASSOC-TYPES visit assocs
-      val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
+      val (sigs0, defs0) = signatures0.partition(_.exp.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
       val defs = defs0.sortBy(_.sym.name).map(visitSig)

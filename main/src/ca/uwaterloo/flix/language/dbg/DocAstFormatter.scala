@@ -46,14 +46,15 @@ object DocAstFormatter {
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
     val defs = defs0.map {
-      case Def(_, _, sym, parameters, resType, body) =>
+      case Def(_, _, sym, parameters, resType, effect, body) =>
         val name = sym.toString
         val args = parameters.map(aux(_, paren = false))
         val resTypef = formatType(resType, paren = false)
+        val effectf = formatEffect(effect, paren = false)
         val bodyf = format(body)
         val d = group(
           text("def") +: text(name) :: tuple(args) ::
-            text(":") +: group(resTypef +: text("=") :: breakWith(" ")) :: curlyOpen(bodyf)
+            text(":") +: group(resTypef :: effectf +: text("=") :: breakWith(" ")) :: curlyOpen(bodyf)
         )
         ((sym.namespace: Seq[String], sym.name), d)
     }
@@ -247,11 +248,11 @@ object DocAstFormatter {
   private def formatRecordBlock(d: RecordOp)(implicit i: Indent): Doc = {
     val (exs, restOpt) = collectRecordOps(d)
     val exsf = exs.map {
-      case RecordExtend(field, value, _) =>
+      case RecordExtend(label, value, _) =>
         val valuef = aux(value, paren = false)
-        text("+" + field.toString) +: text("=") +: valuef
-      case RecordRestrict(field, _) =>
-        text("-" + field.toString)
+        text("+" + label.toString) +: text("=") +: valuef
+      case RecordRestrict(label, _) =>
+        text("-" + label.toString)
     }
     restOpt match {
       case Some(rest) =>
@@ -332,10 +333,10 @@ object DocAstFormatter {
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
-        val (fields, restOpt) = collectRecordTypes(re)
-        val exsf = fields.map {
-          case Type.RecordExtend(field, value, _) =>
-            text(field) +: text("=") +: formatType(value, paren = false)
+        val (labels, restOpt) = collectRecordTypes(re)
+        val exsf = labels.map {
+          case Type.RecordExtend(label, value, _) =>
+            text(label) +: text("=") +: formatType(value, paren = false)
         }
         restOpt match {
           case Some(rest) =>
@@ -428,6 +429,12 @@ object DocAstFormatter {
     }
 
     chase(tpe, List())
+  }
+
+  private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
+    case Eff.Pure => empty
+    case Eff.Impure => text(" ") :: text("\\") +: text("IO")
+    case Eff.AsIs(s) => text(" ") :: text("\\") +: text(s)
   }
 
 }

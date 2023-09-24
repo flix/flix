@@ -18,32 +18,32 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.LabelCompletion
 
-object FieldRanker extends Ranker {
+object LabelRanker extends Ranker {
 
   /**
-    * Find the best field completion.
+    * Find the best [[LabelCompletion]].
     *
     * @param completions the list of completions.
-    * @return            Some(FieldCompletion) if a better completion is possible, else none.
+    * @return Some([[LabelCompletion]]) if a better completion is possible, else `None`.
     */
-  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[FieldCompletion] = {
-    // Remove all none field completions
-    getFieldCompletions(completions)
-      // Find the field comp that has 0 uses
-      .find(fieldComp => index.fieldUses(fieldComp.field).isEmpty)
+  override def findBest(completions: Iterable[Completion])(implicit context: CompletionContext, index: Index, deltaContext: DeltaContext): Option[LabelCompletion] = {
+    // Remove all none label completions
+    getLabelCompletions(completions)
+      // Find the label comp that has 0 uses
+      .find(labelComp => index.labelUses(labelComp.label).isEmpty)
   }
 
   /**
-    * Returns a list only consisting of field completions.
+    * Returns a list only consisting of [[LabelCompletion]]s.
     *
     * @param completions the list of all possible completions.
-    * @return            a List of FieldCompletions.
+    * @return a list of [[LabelCompletion]]s.
     */
-  private def getFieldCompletions(completions: Iterable[Completion]): Iterable[FieldCompletion] = {
+  private def getLabelCompletions(completions: Iterable[Completion]): Iterable[LabelCompletion] = {
     completions.collect {
-      case comp: FieldCompletion => comp
+      case comp: LabelCompletion => comp
     }
   }
 }
