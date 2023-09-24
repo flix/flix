@@ -406,13 +406,13 @@ object HtmlDocumentor {
 
     docSideBar { () =>
       mod.parent.map {
-        mod => sb.append(s"<a class='back' href='${esc(moduleFileName(mod))}'>${moduleName(mod)}</a>")
+        mod => sb.append(s"<a class='back' href='${escUrl(moduleFileName(mod))}'>${moduleName(mod)}</a>")
       }
       docSubModules(sortedMods)
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${escUrl(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -422,7 +422,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${escUrl(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -472,7 +472,7 @@ object HtmlDocumentor {
     docThemeToggle()
 
     docSideBar { () =>
-      sb.append(s"<a class='back' href='${esc(moduleFileName(clazz.parent))}'>${moduleName(clazz.parent)}</a>")
+      sb.append(s"<a class='back' href='${escUrl(moduleFileName(clazz.parent))}'>${moduleName(clazz.parent)}</a>")
       docSubModules(sortedMods)
       docSideBarSection(
         "Signatures",
@@ -487,7 +487,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${esc(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${escUrl(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Effects",
@@ -497,7 +497,7 @@ object HtmlDocumentor {
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${esc(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${escUrl(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -514,7 +514,6 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(className(clazz.decl.sym))}</h1>")
 
-    sb.append("<section>")
     sb.append(s"<div class='box'>")
     docAnnotations(clazz.decl.ann)
     sb.append("<div class='decl'>")
@@ -530,7 +529,6 @@ object HtmlDocumentor {
     docSubSection("Associated Types", sortedAssocs, docAssoc, open = true)
     docSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
-    sb.append("</section>")
 
     docSection("Signatures", sortedSigs, docSignature)
     docSection("Class Definitions", sortedClassDefs, docSignature)
@@ -603,7 +601,6 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(effectName(eff.decl.sym))}</h1>")
 
-    sb.append("<section>")
     sb.append(s"<div class='box' id='eff-${esc(effectName(eff.decl.sym))}'>")
     docAnnotations(eff.decl.ann)
     sb.append("<div class='decl'>")
@@ -615,7 +612,6 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(eff.decl.doc)
     sb.append("</div>")
-    sb.append("</section>")
 
     docSection("Operations", sortedOps, docOp)
 
@@ -681,7 +677,6 @@ object HtmlDocumentor {
     sb.append("<main>")
     sb.append(s"<h1>${esc(enumName(enm.decl.sym))}</h1>")
 
-    sb.append("<section>")
     sb.append(s"<div class='box' id='enum-${esc(enm.decl.sym.name)}'>")
     docAnnotations(enm.decl.ann)
     sb.append("<div class='decl'>")
@@ -696,7 +691,6 @@ object HtmlDocumentor {
     docCases(enm.decl.cases.values.toList)
     docDoc(enm.decl.doc)
     sb.append("</div>")
-    sb.append("</section>")
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedModuleDefs, docDef)
@@ -778,8 +772,8 @@ object HtmlDocumentor {
       return
     }
 
-    sb.append(s"<h3><a href='#${name.replace(' ', '-')}'>$name</a></h3>")
-    sb.append(s"<ul class='${name.replace(' ', '-')}'>")
+    sb.append(s"<h3><a href='#${escUrl(name.replace(' ', '-'))}'>${esc(name)}</a></h3>")
+    sb.append(s"<ul class='${esc(name.replace(' ', '-'))}'>")
     for (e <- group) {
       sb.append("<li>")
       docElt(e)
@@ -797,7 +791,7 @@ object HtmlDocumentor {
     sb.append("<ul class='Modules'>")
     for (m <- submodules) {
       sb.append("<li>")
-      sb.append(s"<a href='${esc(moduleFileName(m.sym))}'>${esc(m.sym.ns.last)}</a>")
+      sb.append(s"<a href='${escUrl(moduleFileName(m.sym))}'>${esc(m.sym.ns.last)}</a>")
       sb.append("</li>")
     }
     sb.append("</ul>")
@@ -1122,7 +1116,7 @@ object HtmlDocumentor {
     * This creates a link to the given ID on the current URL.
     */
   private def docLink(id: String)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<a href='#$id' class='copy-link' aria-label='Link'>")
+    sb.append(s"<a href='#${escUrl(id)}' class='copy-link' aria-label='Link'>")
     inlineIcon("link")
     sb.append("</a> ")
   }
@@ -1133,7 +1127,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' href='${esc(createLink(loc))}'>Source</a>")
+    sb.append(s"<a class='source' target='_blank' href='${escUrl(createLink(loc))}'>Source</a>")
   }
 
   /**
