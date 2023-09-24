@@ -965,7 +965,8 @@ object TypeReconstruction {
   /**
     * Returns the type of the given constant.
     */
-  private def constantType(cst: Ast.Constant): Type = cst match {
+    // TODO move to Type
+  def constantType(cst: Ast.Constant): Type = cst match {
     case Constant.Unit => Type.Unit
     case Constant.Null => Type.Null
     case Constant.Bool(_) => Type.Bool

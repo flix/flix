@@ -1,7 +1,8 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.{KindedAst, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type}
 
 import scala.collection.mutable.ListBuffer
 
@@ -19,18 +20,63 @@ object ConstraintGeneration {
     c.constrs.append(Constraint.Equality(tpe1, tpe2, renv, lenv, loc))
   }
 
+  def addTypeConstraints(cs: List[Constraint])(implicit c: Constraints): Unit = {
+    c.constrs.addAll(cs)
+  }
+
   case class Constraints(constrs: ListBuffer[Constraint])
 
-  def visitExp(exp0: KindedAst.Expr, renv: RigidityEnv, lenv: LevelEnv)(implicit c: Constraints): (Type, Type) = exp0 match {
+  def visitExp(exp0: KindedAst.Expr, renv: RigidityEnv, lenv: LevelEnv)(implicit c: Constraints, root: KindedAst.Root, flix: Flix): (Type, Type) = exp0 match {
     case Expr.Var(sym, loc) => (sym.tvar, Type.Pure)
-    case Expr.Def(sym, tpe, loc) => ???
-    case Expr.Sig(sym, tpe, loc) => ???
-    case Expr.Hole(sym, tpe, loc) => ???
-    case Expr.HoleWithExp(exp, tpe, eff, loc) => ???
+    case Expr.Def(sym, tvar, loc) =>
+      val defn = root.defs(sym)
+      val (tconstrs0, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+      unifyTypeM(tvar, defTpe, renv, lenv, loc)
+      val tconstrs = tconstrs0.map {
+        case Ast.TypeConstraint(head, arg, _) => Constraint.Class(head.sym, arg, renv, lenv, loc)
+      }
+      addTypeConstraints(tconstrs)
+      val resTpe = defTpe
+      val resEff = Type.Pure
+      (resTpe, resEff)
+
+    case Expr.Sig(sym, tvar, loc) =>
+      val sig = root.classes(sym.clazz).sigs(sym)
+      val (tconstrs0, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+      unifyTypeM(tvar, sigTpe, renv, lenv, loc)
+      val tconstrs = tconstrs0.map {
+        case Ast.TypeConstraint(head, arg, _) => Constraint.Class(head.sym, arg, renv, lenv, loc)
+      }
+      addTypeConstraints(tconstrs)
+      val resTpe = sigTpe
+      val resEff = Type.Pure
+      (resTpe, resEff)
+
+    case Expr.Hole(sym, tpe, loc) =>
+      (tpe, Type.Pure)
+
+    case Expr.HoleWithExp(exp, tvar, evar, loc) =>
+      val (tpe, eff) = visitExp(exp, renv, lenv)
+      // effect type is AT LEAST the inner expression's effect
+      val atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
+      unifyTypeM(atLeastEff, evar, renv, lenv, loc)
+      // result type is whatever is needed for the hole
+      val resTpe = tvar
+      val resEff = atLeastEff
+      (resTpe, resEff)
+
     case Expr.OpenAs(symUse, exp, tvar, loc) => ???
-    case Expr.Use(sym, alias, exp, loc) => ???
-    case Expr.Cst(cst, loc) => ???
+
+    case Expr.Use(sym, alias, exp, loc) =>
+      visitExp(exp, renv, lenv)
+
+    case Expr.Cst(cst, loc) =>
+      val resTpe = TypeReconstruction.constantType(cst)
+      val resEff = Type.Pure
+      (resTpe, resEff)
+
     case Expr.Apply(exp, exps, tpe, eff, loc) => ???
+
     case Expr.Lambda(fparam, exp, loc) => {
       unifyTypeM(fparam.sym.tvar, fparam.tpe, renv, lenv, loc)
       val (tpe, eff) = visitExp(exp, renv, lenv)
@@ -40,6 +86,7 @@ object ConstraintGeneration {
     }
     case Expr.Unary(sop, exp, tpe, loc) => ???
     case Expr.Binary(sop, exp1, exp2, tpe, loc) => ???
+
     case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val (tpe1, eff1) = visitExp(exp1, renv, lenv)
       val (tpe2, eff2) = visitExp(exp2, renv, lenv)
@@ -49,16 +96,35 @@ object ConstraintGeneration {
       val resTpe = tpe3
       val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
       (resTpe, resEff)
+
     case Expr.Stm(exp1, exp2, loc) =>
       val (tpe1, eff1) = visitExp(exp1, renv, lenv)
       val (tpe2, eff2) = visitExp(exp2, renv, lenv)
       val resTpe = tpe2
       val resEff = Type.mkUnion(eff1, eff2, loc)
       (resTpe, resEff)
-    case Expr.Discard(exp, loc) => ???
-    case Expr.Let(sym, mod, exp1, exp2, loc) => ???
+
+    case Expr.Discard(exp, loc) =>
+      val (tpe, eff) = visitExp(exp, renv, lenv)
+      val resTpe = Type.Unit
+      val resEff = eff
+      (resTpe, resEff)
+
+    case Expr.Let(sym, mod, exp1, exp2, loc) =>
+      val (tpe1, eff1) = visitExp(exp1, renv, lenv)
+      unifyTypeM(sym.tvar, tpe1, renv, lenv, loc)
+      val (tpe2, eff2) = visitExp(exp2, renv, lenv)
+      val resTpe = tpe2
+      val resEff = Type.mkUnion(eff1, eff2, loc)
+      (resTpe, resEff)
+
     case Expr.LetRec(sym, mod, exp1, exp2, loc) => ???
-    case Expr.Region(tpe, loc) => ???
+
+    case Expr.Region(tpe, loc) =>
+      val resTpe = tpe
+      val effTpe = Type.Pure
+      (resTpe, effTpe)
+
     case Expr.Scope(sym, regionVar, exp1, pvar, loc) => ???
     case Expr.ScopeExit(exp1, exp2, loc) => ???
     case Expr.Match(exp, rules, loc) => ???
