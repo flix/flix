@@ -584,6 +584,10 @@ section > * {
 code {
     font-family: Fira Code, monospace;
 }
+code a {
+    color: inherit;
+    text-decoration: inherit;
+}
 code.annotations {
     display: block;
 }

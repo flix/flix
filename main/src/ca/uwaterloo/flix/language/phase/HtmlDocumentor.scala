@@ -986,7 +986,10 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      sb.append(s"<span class='tpe-constraint'>${esc(t.head.sym.name)}</span>[")
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(t.head.sym))}' title='class ${esc(className(t.head.sym))}'>")
+      sb.append(esc(t.head.sym.name))
+      sb.append("</a>")
+      sb.append("[")
       docType(t.arg)
       sb.append("]")
     }
