@@ -568,7 +568,7 @@ object HtmlDocumentor {
       docSubModules(sortedMods)
       docSideBarSection(
         "Operations",
-        sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(esc(o.sym.name))}'")
+        sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(esc(o.sym.name))}'>${esc(o.sym.name)}</a>")
       )
       docSideBarSection(
         "Classes",
@@ -900,7 +900,7 @@ object HtmlDocumentor {
     */
   private def docOp(op: TypedAst.Op)(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append(s"<div class='box' id='op-${esc(op.sym.name)}'>")
-    docSpec(op.sym.name, op.spec, Some(s"sig-${esc(op.sym.name)}"))
+    docSpec(op.sym.name, op.spec, Some(s"op-${esc(op.sym.name)}"))
     sb.append("</div>")
   }
 
