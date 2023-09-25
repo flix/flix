@@ -509,7 +509,32 @@ object ConstraintGeneration {
       val resEff = Type.Impure
       (resTpe, resEff)
 
-    case Expr.NewObject(name, clazz, methods, loc) => ???
+    case Expr.NewObject(name, clazz, methods, loc) =>
+
+      /**
+        * Performs type inference on the given JVM `method`.
+        */
+      def visitJvmMethod(method: KindedAst.JvmMethod): Unit = method match {
+        case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, eff, loc) =>
+
+          /**
+            * Constrains the given formal parameter to its declared type.
+            */
+          def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
+            case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+              unifyTypeM(sym.tvar, tpe, loc)
+          }
+
+          fparams.foreach(visitFormalParam)
+          val (bodyTpe, bodyEff) = visitExp(exp)
+          expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+        // TODO ASSOC-TYPES check eff matches declared eff ?
+      }
+
+      methods.foreach(visitJvmMethod)
+      val resTpe = getFlixType(clazz)
+      val resEff = Type.Impure
+      (resTpe, resEff)
 
     case Expr.NewChannel(exp1, exp2, tvar, loc) =>
       val regionVar = Type.freshVar(Kind.Eff, loc)
