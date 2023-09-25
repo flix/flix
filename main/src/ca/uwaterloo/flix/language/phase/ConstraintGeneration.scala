@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import scala.collection.mutable.ListBuffer
 
@@ -607,4 +607,71 @@ object ConstraintGeneration {
     case Expr.FixpointProject(pred, exp1, exp2, tvar, loc) => ???
     case Expr.Error(m, tvar, eff) => ???
   }
+
+  /**
+    * Infers the type of the given pattern `pat0`.
+    */
+  private def visitPattern(pat0: KindedAst.Pattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): Type = pat0 match {
+
+    case KindedAst.Pattern.Wild(tvar, loc) => tvar
+
+    case KindedAst.Pattern.Var(sym, tvar, loc) =>
+      unifyTypeM(sym.tvar, tvar, loc)
+      tvar
+
+    case KindedAst.Pattern.Cst(cst, loc) => TypeReconstruction.constantType(cst)
+
+    case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
+      // Lookup the enum declaration.
+      val decl = root.enums(symUse.sym.enumSym)
+
+      // Lookup the case declaration.
+      val caze = decl.cases(symUse.sym)
+
+      // Instantiate the type scheme of the case.
+      val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+
+      //
+      // The tag type is a function from the type of variant to the type of the enum.
+      //
+      val tpe = visitPattern(pat)
+      unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+      tvar
+
+
+    case KindedAst.Pattern.Tuple(elms, loc) =>
+      val tpes = elms.map(visitPattern)
+      Type.mkTuple(tpes, loc)
+
+    case KindedAst.Pattern.Record(pats, pat, tvar, loc) =>
+      val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
+      val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
+
+      def mkRecordType(patTypes: List[(Name.Label, Type, SourceLocation)]): Type = {
+        val ps = patTypes.foldRight(freshRowVar: Type) {
+          case ((lbl, t, l), acc) => Type.mkRecordRowExtend(
+            lbl, t, acc, l)
+        }
+        Type.mkRecord(ps, loc)
+      }
+
+      val tailTpe = visitPattern(pat)
+      unifyTypeM(freshRecord, tailTpe, loc.asSynthetic)
+      val patTpes = pats.map(visitRecordLabelPattern)
+      val resTpe = mkRecordType(patTpes)
+      unifyTypeM(resTpe, tvar, loc)
+      resTpe
+
+    case KindedAst.Pattern.RecordEmpty(loc) => Type.mkRecord(Type.RecordRowEmpty, loc)
+
+  }
+
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
+    case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
+      // { Label = Pattern ... }
+      val tpe = visitPattern(p)
+      unifyTypeM(tpe, tvar, loc)
+      (label, tpe, loc)
+  }
+
 }
