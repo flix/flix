@@ -42,7 +42,7 @@ object ConstraintGeneration {
     c.constrs.addAll(tconstrs)
   }
 
-  def rigidityM(sym: Symbol.KindedTypeVarSym)(implicit c: Context): Unit = {
+  def rigidifyM(sym: Symbol.KindedTypeVarSym)(implicit c: Context): Unit = {
     c.renv = c.renv.markRigid(sym)
   }
 
@@ -162,7 +162,7 @@ object ConstraintGeneration {
       (resTpe, resEff)
 
     case Expr.Scope(sym, regionVar, exp, evar, loc) =>
-      rigidityM(regionVar.sym)
+      rigidifyM(regionVar.sym)
       enterScopeM(regionVar.sym)
       unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
       val (tpe, eff) = visitExp(exp)
@@ -204,7 +204,7 @@ object ConstraintGeneration {
       val bodies = rules.map(_.exp)
       val (tpe, eff) = visitExp(exp)
       // rigidify all the type vars in the rules
-      rules.flatMap(_.tpe.typeVars.toList).map(_.sym).foreach(rigidityM)
+      rules.flatMap(_.tpe.typeVars.toList).map(_.sym).foreach(rigidifyM)
       // unify each rule's variable with its type
       rules.foreach { rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc) }
       val (bodyTypes, bodyEffs) = bodies.map(visitExp).unzip
