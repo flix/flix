@@ -1,10 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type}
 
 import scala.collection.mutable.ListBuffer
 
@@ -511,10 +510,42 @@ object ConstraintGeneration {
       (resTpe, resEff)
 
     case Expr.NewObject(name, clazz, methods, loc) => ???
-    case Expr.NewChannel(exp1, exp2, tvar, loc) => ???
-    case Expr.GetChannel(exp, tvar, loc) => ???
-    case Expr.PutChannel(exp1, exp2, loc) => ???
-    case Expr.SelectChannel(rules, default, tvar, loc) => ???
+
+    case Expr.NewChannel(exp1, exp2, tvar, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val regionType = Type.mkRegion(regionVar, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      expectTypeM(expected = regionType, actual = tpe1, exp1.loc)
+      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      val resTpe = tvar
+      val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
+      (resTpe, resEff)
+
+    case Expr.GetChannel(exp, tvar, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val elmVar = Type.freshVar(Kind.Star, loc)
+      val channelType = Type.mkReceiver(elmVar, regionVar, loc)
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(expected = channelType, actual = tpe, exp.loc)
+      unifyTypeM(tvar, elmVar, loc)
+      val resTpe = tvar
+      val resEff = Type.mkUnion(eff, regionVar, loc)
+      (resTpe, resEff)
+
+    case Expr.PutChannel(exp1, exp2, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val elmVar = Type.freshVar(Kind.Star, loc)
+      val channelType = Type.mkSender(elmVar, regionVar, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
+      expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+      val resTpe = Type.mkUnit(loc)
+      val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
+      (resTpe, resEff)
+
+    case Expr.SelectChannel(rules, default, tvar, loc) =>
     case Expr.Spawn(exp1, exp2, loc) => ???
     case Expr.ParYield(frags, exp, loc) => ???
     case Expr.Lazy(exp, loc) => ???
