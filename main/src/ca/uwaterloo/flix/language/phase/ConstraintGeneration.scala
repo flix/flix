@@ -1025,7 +1025,10 @@ object ConstraintGeneration {
     case e@Expr.FixpointFilter(pred, exp, tvar, loc) => SchemaConstraintGeneration.visitFixpointFilter(e)
     case e@Expr.FixpointInject(exp, pred, tvar, loc) => SchemaConstraintGeneration.visitFixpointInject(e)
     case e@Expr.FixpointProject(pred, exp1, exp2, tvar, loc) => SchemaConstraintGeneration.visitFixpointProject(e)
-    case Expr.Error(m, tvar, eff) => ???
+    case Expr.Error(m, tvar, evar) =>
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
   }
 
   /**
