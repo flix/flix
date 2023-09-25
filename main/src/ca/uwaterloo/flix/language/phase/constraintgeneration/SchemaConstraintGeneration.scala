@@ -33,7 +33,7 @@ object SchemaConstraintGeneration {
       (resTpe, resEff)
   }
 
-  def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: Context, root: KindedAst.Root, flix: Flix) = {
+  def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
       def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
