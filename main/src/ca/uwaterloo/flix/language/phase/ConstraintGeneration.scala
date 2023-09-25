@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{RelationalChooseConstraintGeneration, RestrictableChooseConstraintGeneration, SchemaConstraintGeneration}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
@@ -509,62 +509,26 @@ object ConstraintGeneration {
       val resEff = Type.mkUnion(eff :: bodyEffs, loc)
       (resTpe, resEff)
 
-    case e@Expr.RelationalChoose(star, exps, rules, tpe, loc) =>
-      RelationalChooseConstraintGeneration.visitRelationalChoose(e)
-
     case e@Expr.RestrictableChoose(star, exp, rules, tpe, loc) => RestrictableChooseConstraintGeneration.visitRestrictableChoose(e)
 
     case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
-      if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
-        //
-        // Special Case 1: Absent or Present Tag
-        //
-        if (symUse.sym.name == "Absent") {
-          // Case 1.1: Absent Tag.
-          val elmVar = Type.freshVar(Kind.Star, loc)
-          val isAbsent = Type.True
-          val isPresent = Type.freshVar(Kind.Bool, loc)
-          unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent, loc), loc)
-          val resTpe = tvar
-          val resEff = Type.Pure
-          (resTpe, resEff)
-        }
-        else if (symUse.sym.name == "Present") {
-          // Case 1.2: Present Tag.
-          val isAbsent = Type.freshVar(Kind.Bool, loc)
-          val isPresent = Type.True
-          val (tpe, eff) = visitExp(exp)
-          unifyTypeM(tvar, Type.mkChoice(tpe, isAbsent, isPresent, loc), loc)
-          val resTpe = tvar
-          val resEff = eff
-          (resTpe, resEff)
-        } else {
-          // Case 1.3: Unknown tag.
-          throw InternalCompilerException(s"Unexpected choice tag: '${symUse.sym}'.", loc)
-        }
-      } else {
-        //
-        // General Case:
-        //
+      // Lookup the enum declaration.
+      val decl = root.enums(symUse.sym.enumSym)
 
-        // Lookup the enum declaration.
-        val decl = root.enums(symUse.sym.enumSym)
+      // Lookup the case declaration.
+      val caze = decl.cases(symUse.sym)
 
-        // Lookup the case declaration.
-        val caze = decl.cases(symUse.sym)
+      // Instantiate the type scheme of the case.
+      val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-        // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
-
-        //
-        // The tag type is a function from the type of variant to the type of the enum.
-        //
-        val (tpe, eff) = visitExp(exp)
-        unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
-        val resTpe = tvar
-        val resEff = eff
-        (resTpe, resEff)
-      }
+      //
+      // The tag type is a function from the type of variant to the type of the enum.
+      //
+      val (tpe, eff) = visitExp(exp)
+      unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+      val resTpe = tvar
+      val resEff = eff
+      (resTpe, resEff)
 
     case e@Expr.RestrictableTag(sym, exp, isOpen, tpe, loc) => RestrictableChooseConstraintGeneration.visitRestrictableTag(e)
 
