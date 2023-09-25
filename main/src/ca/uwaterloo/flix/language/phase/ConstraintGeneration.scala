@@ -200,7 +200,18 @@ object ConstraintGeneration {
       val resEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
       (resTpe, resEff)
 
-    case Expr.TypeMatch(exp, rules, loc) => ???
+    case Expr.TypeMatch(exp, rules, loc) =>
+      val bodies = rules.map(_.exp)
+      val (tpe, eff) = visitExp(exp)
+      // rigidify all the type vars in the rules
+      rules.flatMap(_.tpe.typeVars.toList).map(_.sym).foreach(rigidityM)
+      // unify each rule's variable with its type
+      rules.foreach { rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc) }
+      val (bodyTypes, bodyEffs) = bodies.map(visitExp).unzip
+      val resTpe = unifyAllTypesM(bodyTypes, Kind.Star, loc)
+      val resEff = Type.mkUnion(eff :: bodyEffs, loc)
+      (resTpe, resEff)
+
     case Expr.RelationalChoose(star, exps, rules, tpe, loc) => ???
     case Expr.RestrictableChoose(star, exp, rules, tpe, loc) => ???
     case Expr.Tag(sym, exp, tpe, loc) => ???
