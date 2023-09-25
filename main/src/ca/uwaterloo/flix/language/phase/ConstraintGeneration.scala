@@ -185,7 +185,21 @@ object ConstraintGeneration {
       val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
       (resTpe, resEff)
 
-    case Expr.Match(exp, rules, loc) => ???
+    case Expr.Match(exp, rules, loc) =>
+      val patterns = rules.map(_.pat)
+      val guards = rules.flatMap(_.guard)
+      val bodies = rules.map(_.exp)
+      val guardLocs = guards.map(_.loc)
+      val (tpe, eff) = visitExp(exp)
+      val patternTypes = patterns.map(visitPattern)
+      unifyAllTypesM(tpe :: patternTypes, Kind.Star, loc)
+      val (guardTpes, guardEffs) = guards.map(visitExp).unzip
+      guardTpes.zip(guardLocs).foreach { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
+      val (bodyTypes, bodyEffs) = bodies.map(visitExp).unzip
+      val resTpe = unifyAllTypesM(bodyTypes, Kind.Star, loc)
+      val resEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
+      (resTpe, resEff)
+
     case Expr.TypeMatch(exp, rules, loc) => ???
     case Expr.RelationalChoose(star, exps, rules, tpe, loc) => ???
     case Expr.RestrictableChoose(star, exp, rules, tpe, loc) => ???
