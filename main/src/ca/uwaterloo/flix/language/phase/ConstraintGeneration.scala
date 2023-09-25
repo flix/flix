@@ -946,7 +946,40 @@ object ConstraintGeneration {
       val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
       (resTpe, resEff)
 
-    case Expr.SelectChannel(rules, default, tvar, loc) => ???
+    case Expr.SelectChannel(rules, default, tvar, loc) =>
+
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+
+      /**
+        * Performs type inference on the given select rule `sr0`.
+        */
+      def inferSelectRule(sr0: KindedAst.SelectChannelRule): (Type, Type) = {
+        sr0 match {
+          case KindedAst.SelectChannelRule(sym, chan, body) =>
+            val (chanType, eff1) = visitExp(chan)
+            val (bodyType, eff2) = visitExp(body)
+            unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
+            val resTpe = bodyType
+            val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
+            (resTpe, resEff)
+        }
+      }
+
+      /**
+        * Performs type inference on the given optional default expression `exp0`.
+        */
+      def inferDefaultRule(exp0: Option[KindedAst.Expr]): (Type, Type) =
+        exp0 match {
+          case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
+          case Some(exp) => visitExp(exp)
+        }
+
+      val (ruleTypes, ruleEffs) = rules.map(inferSelectRule).unzip
+      val (defaultType, eff2) = inferDefaultRule(default)
+      unifyAllTypesM(tvar :: defaultType :: ruleTypes, Kind.Star, loc)
+      val resTpe = tvar
+      val resEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
+      (resTpe, resEff)
 
     case Expr.Spawn(exp1, exp2, loc) =>
       val regionVar = Type.freshVar(Kind.Eff, loc)
