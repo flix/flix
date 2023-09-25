@@ -545,11 +545,34 @@ object ConstraintGeneration {
       val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
       (resTpe, resEff)
 
-    case Expr.SelectChannel(rules, default, tvar, loc) =>
-    case Expr.Spawn(exp1, exp2, loc) => ???
+    case Expr.SelectChannel(rules, default, tvar, loc) => ???
+
+    case Expr.Spawn(exp1, exp2, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val regionType = Type.mkRegion(regionVar, loc)
+      val (tpe1, _) = visitExp(exp1)
+      val (tpe2, _) = visitExp(exp2)
+      expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
+      val resTpe = Type.Unit
+      val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
+      (resTpe, resEff)
+
     case Expr.ParYield(frags, exp, loc) => ???
-    case Expr.Lazy(exp, loc) => ???
-    case Expr.Force(exp, tvar, loc) => ???
+
+    case Expr.Lazy(exp, loc) =>
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+      val resTpe = Type.mkLazy(tpe, loc)
+      val resEff = Type.Pure
+      (resTpe, resEff)
+
+    case Expr.Force(exp, tvar, loc) =>
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, exp.loc)
+      val resTpe = tvar
+      val resEff = eff
+      (resTpe, resEff)
+
     case Expr.FixpointConstraintSet(cs, tvar, loc) => ???
     case Expr.FixpointLambda(pparams, exp, tvar, loc) => ???
     case Expr.FixpointMerge(exp1, exp2, loc) => ???
