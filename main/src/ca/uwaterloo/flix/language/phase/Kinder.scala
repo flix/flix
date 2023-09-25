@@ -599,13 +599,6 @@ object Kinder {
           KindedAst.Expr.Error(err, tvar, pvar)
       }
 
-    case ResolvedAst.Expr.RelationalChoose(star, exps0, rules0, loc) =>
-      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      val rulesVal = traverse(rules0)(visitRelationalChooseRule(_, kenv0, taenv, henv0, root))
-      mapN(expsVal, rulesVal) {
-        case (exps, rules) => KindedAst.Expr.RelationalChoose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
-
     case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val rulesVal = traverse(rules0)(visitRestrictableChooseRule(_, kenv0, taenv, henv0, root))
@@ -1035,18 +1028,6 @@ object Kinder {
   /**
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
-  private def visitRelationalChooseRule(rule0: ResolvedAst.RelationalChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RelationalChooseRule, KindError] = rule0 match {
-    case ResolvedAst.RelationalChooseRule(pat0, exp0) =>
-      val patVal = traverse(pat0)(visitRelationalChoosePattern)
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RelationalChooseRule(pat, exp)
-      }
-  }
-
-  /**
-    * Performs kinding on the given relational choice rule under the given kind environment.
-    */
   private def visitRestrictableChooseRule(rule0: ResolvedAst.RestrictableChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChooseRule, KindError] = rule0 match {
     case ResolvedAst.RestrictableChooseRule(pat0, exp0) =>
       val patVal = visitRestrictableChoosePattern(pat0)
@@ -1127,15 +1108,6 @@ object Kinder {
       }
 
     case ResolvedAst.Pattern.RecordEmpty(loc) => KindedAst.Pattern.RecordEmpty(loc).toSuccess
-  }
-
-  /**
-    * Performs kinding on the given relational choice pattern under the given kind environment.
-    */
-  private def visitRelationalChoosePattern(pat0: ResolvedAst.RelationalChoosePattern)(implicit flix: Flix): Validation[KindedAst.RelationalChoosePattern, KindError] = pat0 match {
-    case ResolvedAst.RelationalChoosePattern.Wild(loc) => KindedAst.RelationalChoosePattern.Wild(loc).toSuccess
-    case ResolvedAst.RelationalChoosePattern.Absent(loc) => KindedAst.RelationalChoosePattern.Absent(loc).toSuccess
-    case ResolvedAst.RelationalChoosePattern.Present(sym, loc) => KindedAst.RelationalChoosePattern.Present(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
   /**

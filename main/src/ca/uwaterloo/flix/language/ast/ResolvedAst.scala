@@ -127,8 +127,6 @@ object ResolvedAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(star: Boolean, exps: List[Expr], rules: List[RelationalChooseRule], loc: SourceLocation) extends Expr
-
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class Tag(sym: Ast.CaseSymUse, exp: Expr, loc: SourceLocation) extends Expr
@@ -265,20 +263,6 @@ object ResolvedAst {
 
   }
 
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoosePattern
-
-  }
-
   sealed trait RestrictableChoosePattern
 
   object RestrictableChoosePattern {
@@ -354,8 +338,6 @@ object ResolvedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: Seq[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
