@@ -222,8 +222,6 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.TypeMatch(e, rs, t, p, loc)
-    case Expr.RelationalChoose(_, _, _, _, loc) =>
-      throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)

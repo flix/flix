@@ -247,20 +247,6 @@ object KindedAst {
     }
   }
 
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends RelationalChoosePattern
-
-  }
-
   sealed trait RestrictableChoosePattern {
     def loc: SourceLocation
   }

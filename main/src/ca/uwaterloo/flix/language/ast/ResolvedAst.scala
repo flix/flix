@@ -263,20 +263,6 @@ object ResolvedAst {
 
   }
 
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoosePattern
-
-  }
-
   sealed trait RestrictableChoosePattern
 
   object RestrictableChoosePattern {

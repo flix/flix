@@ -1111,15 +1111,6 @@ object Kinder {
   }
 
   /**
-    * Performs kinding on the given relational choice pattern under the given kind environment.
-    */
-  private def visitRelationalChoosePattern(pat0: ResolvedAst.RelationalChoosePattern)(implicit flix: Flix): Validation[KindedAst.RelationalChoosePattern, KindError] = pat0 match {
-    case ResolvedAst.RelationalChoosePattern.Wild(loc) => KindedAst.RelationalChoosePattern.Wild(loc).toSuccess
-    case ResolvedAst.RelationalChoosePattern.Absent(loc) => KindedAst.RelationalChoosePattern.Absent(loc).toSuccess
-    case ResolvedAst.RelationalChoosePattern.Present(sym, loc) => KindedAst.RelationalChoosePattern.Present(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
-  }
-
-  /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
   private def visitRestrictableChoosePattern(pat00: ResolvedAst.RestrictableChoosePattern)(implicit flix: Flix): Validation[KindedAst.RestrictableChoosePattern, KindError] = pat00 match {

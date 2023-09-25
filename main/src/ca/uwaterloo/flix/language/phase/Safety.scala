@@ -181,10 +181,6 @@ object Safety {
         visit(exp) ++ missingDefault ++
           rules.flatMap { case TypeMatchRule(_, _, e) => visit(e) }
 
-      case Expr.RelationalChoose(exps, rules, _, _, _) =>
-        exps.flatMap(visit) ++
-          rules.flatMap { case RelationalChooseRule(_, exp) => visit(exp) }
-
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp) ++
           rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp) }

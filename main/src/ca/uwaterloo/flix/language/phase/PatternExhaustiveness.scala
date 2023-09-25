@@ -161,10 +161,6 @@ object PatternExhaustiveness {
         val expsErrs = (exp :: ruleExps).flatMap(visitExp(_, root))
         expsErrs
 
-      case Expr.RelationalChoose(exps, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exps ::: ruleExps).flatMap(visitExp(_, root))
-
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         (exp :: ruleExps).flatMap(visitExp(_, root))

@@ -209,8 +209,6 @@ object TokenKind {
 
   case object KeywordRegion extends TokenKind
 
-  case object KeywordRelational_choose extends TokenKind
-
   case object KeywordRestrictable extends TokenKind
 
   case object KeywordResume extends TokenKind
