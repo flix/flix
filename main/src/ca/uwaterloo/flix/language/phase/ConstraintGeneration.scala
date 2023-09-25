@@ -102,6 +102,10 @@ object ConstraintGeneration {
 
   case class Context(constrs: ListBuffer[Constraint], var renv: RigidityEnv, var lenv: LevelEnv)
 
+  object Context {
+    def empty(): Context = Context(ListBuffer.empty, RigidityEnv.empty, LevelEnv.Top)
+  }
+
   def visitExp(exp0: KindedAst.Expr)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = exp0 match {
     case Expr.Var(sym, loc) => (sym.tvar, Type.Pure)
     case Expr.Def(sym, tvar, loc) =>
