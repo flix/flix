@@ -599,13 +599,6 @@ object Kinder {
           KindedAst.Expr.Error(err, tvar, pvar)
       }
 
-    case ResolvedAst.Expr.RelationalChoose(star, exps0, rules0, loc) =>
-      val expsVal = traverse(exps0)(visitExp(_, kenv0, taenv, henv0, root))
-      val rulesVal = traverse(rules0)(visitRelationalChooseRule(_, kenv0, taenv, henv0, root))
-      mapN(expsVal, rulesVal) {
-        case (exps, rules) => KindedAst.Expr.RelationalChoose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
-
     case ResolvedAst.Expr.RestrictableChoose(star, exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
       val rulesVal = traverse(rules0)(visitRestrictableChooseRule(_, kenv0, taenv, henv0, root))
@@ -1029,18 +1022,6 @@ object Kinder {
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(tpeVal, expVal) {
         case (tpe, exp) => KindedAst.TypeMatchRule(sym, tpe, exp)
-      }
-  }
-
-  /**
-    * Performs kinding on the given relational choice rule under the given kind environment.
-    */
-  private def visitRelationalChooseRule(rule0: ResolvedAst.RelationalChooseRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RelationalChooseRule, KindError] = rule0 match {
-    case ResolvedAst.RelationalChooseRule(pat0, exp0) =>
-      val patVal = traverse(pat0)(visitRelationalChoosePattern)
-      val expVal = visitExp(exp0, kenv, taenv, henv, root)
-      mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RelationalChooseRule(pat, exp)
       }
   }
 
