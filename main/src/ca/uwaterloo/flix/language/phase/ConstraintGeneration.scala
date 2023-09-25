@@ -260,13 +260,86 @@ object ConstraintGeneration {
       val resEff = evar
       (resTpe, resEff)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) => ???
-    case Expr.ArrayLoad(base, index, tvar, evar, loc) => ???
-    case Expr.ArrayStore(base, index, elm, evar, loc) => ???
-    case Expr.ArrayLength(base, loc) => ???
-    case Expr.VectorLit(exps, tvar, evar, loc) => ???
-    case Expr.VectorLoad(exp1, exp2, tvar, evar, loc) => ???
-    case Expr.VectorLength(exp, loc) => ???
+    case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val regionType = Type.mkRegion(regionVar, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      val (tpe3, eff3) = visitExp(exp3)
+      expectTypeM(expected = regionType, actual = tpe1, loc)
+      expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
+      unifyTypeM(tvar, Type.mkArray(tpe2, regionVar, loc), loc)
+      unifyTypeM(evar, Type.mkUnion(eff1, eff2, eff3, regionVar, loc), loc)
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      expectTypeM(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
+      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      unifyTypeM(evar, Type.mkUnion(regionVar, eff1, eff2, loc), loc)
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
+      val elmVar = Type.freshVar(Kind.Star, loc)
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val arrayType = Type.mkArray(elmVar, regionVar, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      val (tpe3, eff3) = visitExp(exp3)
+      expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
+      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      expectTypeM(expected = elmVar, actual = tpe3, exp3.loc)
+      unifyTypeM(evar, Type.mkUnion(List(regionVar, eff1, eff2, eff3), loc), loc)
+      val resTpe = Type.Unit
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.ArrayLength(exp, loc) =>
+      val elmVar = Type.freshVar(Kind.Star, loc)
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
+      //        unbindVar(elmVar)
+      //        unbindVar(regionVar)
+      // TODO ASSOC-TYPES is there an unbind equivalent?
+      val resTpe = Type.Int32
+      val resEff = eff
+      (resTpe, resEff)
+
+    case Expr.VectorLit(exps, tvar, evar, loc) =>
+      val (tpes, effs) = exps.map(visitExp).unzip
+      val tpe = unifyAllTypesM(tpes, Kind.Star, loc)
+      unifyTypeM(tvar, Type.mkVector(tpe, loc), loc)
+      unifyTypeM(evar, Type.mkUnion(effs, loc), loc)
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.VectorLoad(exp1, exp2, tvar, evar, loc) =>
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      expectTypeM(expected = Type.mkVector(tvar, loc), actual = tpe1, exp1.loc)
+      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      unifyTypeM(evar, Type.mkUnion(eff1, eff2, loc), loc)
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.VectorLength(exp, loc) =>
+      val elmVar = Type.freshVar(Kind.Star, loc)
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(Type.mkVector(elmVar, loc), tpe, exp.loc)
+      //        _ <- unbindVar(elmVar) // TODO ASSOC-TYPES
+      val resTpe = Type.Int32
+      val resEff = eff
+      (resTpe, resEff)
+
     case Expr.Ref(exp1, exp2, tvar, evar, loc) => ???
     case Expr.Deref(exp, tvar, evar, loc) => ???
     case Expr.Assign(exp1, exp2, evar, loc) => ???
