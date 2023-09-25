@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.RelationalChooseConstraintGeneration
 
 import scala.collection.mutable.ListBuffer
 
@@ -33,6 +34,11 @@ object ConstraintGeneration {
   // TODO ASSOC-TYPES this should actually do something
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     unifyTypeM(expected, actual, loc)
+  }
+
+  // TODO ASSOC-TYPES this should actually do something
+  def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit c: Context): Unit = {
+    unifyTypeM(tpe1, tpe2, loc)
   }
 
   def addTypeConstraintsM(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation)(implicit c: Context): Unit = {
@@ -212,7 +218,9 @@ object ConstraintGeneration {
       val resEff = Type.mkUnion(eff :: bodyEffs, loc)
       (resTpe, resEff)
 
-    case Expr.RelationalChoose(star, exps, rules, tpe, loc) => ???
+    case e@Expr.RelationalChoose(star, exps, rules, tpe, loc) =>
+      RelationalChooseConstraintGeneration.visitRelationalChoose(e)
+
     case Expr.RestrictableChoose(star, exp, rules, tpe, loc) => ???
     case Expr.Tag(sym, exp, tpe, loc) => ???
     case Expr.RestrictableTag(sym, exp, isOpen, tpe, loc) => ???
