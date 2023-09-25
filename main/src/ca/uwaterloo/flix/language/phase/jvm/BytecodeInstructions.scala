@@ -102,7 +102,7 @@ object BytecodeInstructions {
   }
 
   // TODO: do this for methods
-  class Variable(tpe: BackendType, index: Int) {
+  class Variable(val tpe: BackendType, index: Int) {
     def load(): InstructionSet = xLoad(tpe, index)
 
     def store(): InstructionSet = xStore(tpe, index)
@@ -177,6 +177,26 @@ object BytecodeInstructions {
     f
   }
 
+  def DUP_X1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP_X1)
+    f
+  }
+
+  def DUP_X2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP_X2)
+    f
+  }
+
+  def DUP2_X1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP2_X1)
+    f
+  }
+
+  def DUP2_X2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP2_X2)
+    f
+  }
+
   def FLOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.FLOAD, index)
     f
@@ -234,6 +254,11 @@ object BytecodeInstructions {
 
   def ILOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.ILOAD, index)
+    f
+  }
+
+  def INSTANCEOF(tpe: JvmName): InstructionSet = f => {
+    f.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
     f
   }
 
@@ -334,6 +359,11 @@ object BytecodeInstructions {
 
   def RETURN(): InstructionSet = f => {
     f.visitInstruction(Opcodes.RETURN)
+    f
+  }
+
+  def SWAP(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.SWAP)
     f
   }
 
@@ -460,6 +490,13 @@ object BytecodeInstructions {
     case BackendType.Float32 => FSTORE(index)
     case BackendType.Float64 => DSTORE(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
+  }
+
+  def xSwap(lowerLarge: Boolean, higherLarge: Boolean): InstructionSet = (lowerLarge, higherLarge) match {
+    case (true, true) => DUP2_X2() ~ POP2()
+    case (true, false) => DUP_X2() ~ POP()
+    case (false, true) => DUP2_X1() ~ POP2()
+    case (false, false) => SWAP()
   }
 
   /**

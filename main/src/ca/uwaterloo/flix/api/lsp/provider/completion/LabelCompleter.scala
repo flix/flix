@@ -17,16 +17,16 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.FieldCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.LabelCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object FieldCompleter extends Completer {
+object LabelCompleter extends Completer {
 
   /**
-    * Returns a List of Completion for fields.
+    * Returns a list of [[LabelCompletion]]s.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[FieldCompletion] = {
-    // Do not get field completions if we are importing or using.
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[LabelCompletion] = {
+    // Do not get label completions if we are importing or using.
     if (context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil
     }
@@ -35,11 +35,11 @@ object FieldCompleter extends Completer {
 
     context.word match {
       case regex(prefix) if isFirstCharLowerCase(prefix) =>
-        index.fieldDefs.m.concat(index.fieldUses.m)
+        index.labelDefs.m.concat(index.labelUses.m)
           .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
           .map {
-            case (field, _) =>
-              Completion.FieldCompletion(field, prefix)
+            case (label, _) =>
+              Completion.LabelCompletion(label, prefix)
           }
       case _ => Nil
     }

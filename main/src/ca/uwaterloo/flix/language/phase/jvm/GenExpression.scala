@@ -710,14 +710,10 @@ object GenExpression {
         // We push the 'length' of the array on top of stack
         compileInt(exps.length)
         // We get the inner type of the array
-        val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+        val innerType = tpe.asInstanceOf[MonoType.Array].tpe
+        val backendType = BackendType.toFlixErasedBackendType(innerType)
         // Instantiating a new array of type jvmType
-        jvmType match {
-          case ref: JvmType.Reference => // Happens if the inner type is an object type
-            mv.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
-          case _ => // Happens if the inner type is a primitive type
-            mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
-        }
+        visitArrayInstantiate(mv, backendType)
         // For each element we generate code to store it into the array
         for (i <- exps.indices) {
           // Duplicates the 'array reference'
@@ -728,32 +724,21 @@ object GenExpression {
           compileExpr(exps(i))
           // Stores the 'element' at the given 'index' in the 'array'
           // with the store instruction corresponding to the stored element
-          mv.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
+          mv.visitInsn(backendType.getArrayStoreInstruction)
         }
 
       case AtomicOp.ArrayNew =>
         val List(exp1, exp2) = exps
         // We get the inner type of the array
-        val elmType = tpe.asInstanceOf[MonoType.Array].tpe
-        // We get the erased elm type.
-        val jvmType = JvmOps.getErasedJvmType(elmType)
+        val innerType = tpe.asInstanceOf[MonoType.Array].tpe
+        val backendType = BackendType.toFlixErasedBackendType(innerType)
         // Evaluating the value of the 'default element'
         compileExpr(exp1)
         // Evaluating the 'length' of the array
         compileExpr(exp2)
         // Instantiating a new array of type jvmType
-        if (elmType == MonoType.Str) {
-          mv.visitTypeInsn(ANEWARRAY, "java/lang/String")
-        } else if (elmType.isInstanceOf[MonoType.Native]) {
-          val native = elmType.asInstanceOf[MonoType.Native]
-          val name = native.clazz.getName.replace('.', '/')
-          mv.visitTypeInsn(ANEWARRAY, name)
-        } else if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-          mv.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-        } else { // Happens if the inner type is a primitive type
-          mv.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
-        }
-        if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
+        visitArrayInstantiate(mv, backendType)
+        if (backendType.is64BitWidth) {
           // Duplicates the 'array reference' three places down the stack
           mv.visitInsn(DUP_X2)
           // Duplicates the 'array reference' three places down the stack
@@ -767,7 +752,7 @@ object GenExpression {
           mv.visitInsn(SWAP)
         }
         // We get the array fill type
-        val arrayFillType = AsmOps.getArrayFillType(jvmType)
+        val arrayFillType = backendType.toArrayFillType
         // Invoking the method to fill the array with the default element
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
@@ -1232,7 +1217,6 @@ object GenExpression {
           val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
           // previous JvmOps functions are already partial pattern matches
           val MonoType.Arrow(_, closureResultType) = exp.tpe
-          val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
 
           compileExpr(exp)
           // Casting to JvmType of closure abstract class
@@ -1249,8 +1233,7 @@ object GenExpression {
               s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
-          mv.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-            backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+          BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1276,8 +1259,6 @@ object GenExpression {
       case CallType.NonTailCall =>
         // JvmType of Def
         val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
-        // previous JvmOps function are already partial pattern matches
-        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tpe))
 
         // Put the def on the stack
         AsmOps.compileDefSymbol(sym, mv)
@@ -1292,8 +1273,7 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        mv.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethod.name,
-          AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
@@ -1477,6 +1457,21 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
+    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
+    case Expr.Do(op, exps, tpe, purity, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
+    case Expr.Resume(exp, tpe, loc) =>
+      // TODO (temp unit value)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
@@ -1490,6 +1485,24 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  /**
+    * Emits code that instantiates an array of the type `tpe`.
+    */
+  private def visitArrayInstantiate(mv: MethodVisitor, tpe: BackendType): Unit = {
+    tpe match {
+      case BackendType.Array(_) => mv.visitTypeInsn(ANEWARRAY, tpe.toDescriptor)
+      case BackendType.Reference(ref) => mv.visitTypeInsn(ANEWARRAY, ref.jvmName.toInternalName)
+      case BackendType.Bool => mv.visitIntInsn(NEWARRAY, T_BOOLEAN)
+      case BackendType.Char => mv.visitIntInsn(NEWARRAY, T_CHAR)
+      case BackendType.Int8 => mv.visitIntInsn(NEWARRAY, T_BYTE)
+      case BackendType.Int16 => mv.visitIntInsn(NEWARRAY, T_SHORT)
+      case BackendType.Int32 => mv.visitIntInsn(NEWARRAY, T_INT)
+      case BackendType.Int64 => mv.visitIntInsn(NEWARRAY, T_LONG)
+      case BackendType.Float32 => mv.visitIntInsn(NEWARRAY, T_FLOAT)
+      case BackendType.Float64 => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
+    }
   }
 
   /**
@@ -1597,9 +1610,9 @@ object GenExpression {
     case _ => mv.visitLdcInsn(i)
   }
 
-  /*
-   * Adding the source of the line for debugging
-   */
+  /**
+    * Adds the source of the line for debugging
+    */
   private def addSourceLine(visitor: MethodVisitor, loc: SourceLocation): Unit = {
     val label = new Label()
     visitor.visitLabel(label)

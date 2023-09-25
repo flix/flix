@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ReadAst, Token}
+import ca.uwaterloo.flix.language.ast.{Ast, TokenErrorKind, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -42,18 +43,15 @@ object Lexer {
       // Construct a map from each source to its tokens.
       mapN(sequence(results))(_.toMap)
     }
+
   }
 
-  private def lex(s: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+    implicit val s: State = new State(src)
     // TODO: LEXER
-    //    implicit val s = new State()
-    //    while (!isAtEnd()) {
-    //      s.start = s.current
-    //      scanToken()
-    //    }
-    //    s.tokens += Token(TokenKind.EofToken, "<eof>")
-
-    Array.empty[Token].toSuccess
+    Validation.SoftFailure(s.tokens.toArray, LazyList.from(s.tokens).collect {
+      case Token(TokenKind.Err(e), t, l, c) => tokenErrToCompilationMessage(e, t, l, c)
+    })
   }
 
   private def advance()(implicit s: State): Char = ???
@@ -64,11 +62,38 @@ object Lexer {
 
   private def addToken(token: Token)(implicit s: State): Unit = ???
 
-  private class State {
+  /**
+   * Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
+   * NOTE: Why is this necessary?
+   * We would like the lexer to capture as many errors as possible before terminating.
+   * To do this, the lexer will produce error tokens instead of halting,
+   * each holding a kind of the simple type `ErrKind`.
+   * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
+   */
+  private def tokenErrToCompilationMessage(e: TokenErrorKind, t: String, l: Int, c: Int)(implicit s: State): CompilationMessage = {
+    val o = e match {
+      case TokenErrorKind.UnexpectedChar | TokenErrorKind.DoubleDottedNumber => t.length
+      case TokenErrorKind.BlockCommentTooDeep => 2
+      case _ => 1
+    }
+
+    val loc = SourceLocation(None, s.src, SourceKind.Real, l, c, l, c + o)
+    e match {
+      case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
+      case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
+      case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
+      case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
+      case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
+      case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)
+      case TokenErrorKind.UnterminatedInfixFunction => LexerError.UnterminatedInfixFunction(loc)
+      case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
+    }
+  }
+
+  private class State(val src: Ast.Source) {
     var start: Int = 0
     var current: Int = 0
     var line: Int = 0
     var tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
   }
-
 }

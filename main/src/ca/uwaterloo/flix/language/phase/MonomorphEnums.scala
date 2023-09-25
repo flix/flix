@@ -103,10 +103,10 @@ object MonomorphEnums {
     * Returns a [[LoweredAst.Def]] with specialized enums and without aliases in its types.
     */
   private def visitDef(defn: LoweredAst.Def)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Def = defn match {
-    case LoweredAst.Def(sym, spec, impl) =>
+    case LoweredAst.Def(sym, spec, exp) =>
       val s = visitSpec(spec)
-      val i = visitImpl(impl)
-      LoweredAst.Def(sym, s, i)
+      val e = visitExp(exp)
+      LoweredAst.Def(sym, s, e)
   }
 
   /**
@@ -119,16 +119,6 @@ object MonomorphEnums {
       val rt = visitType(retTpe)
       val p = visitType(eff)
       LoweredAst.Spec(doc, ann, mod, tparams, fs, ds, rt, p, tconstrs, loc)
-  }
-
-  /**
-    * Returns a [[LoweredAst.Impl]] with specialized enums and without aliases in its types.
-    */
-  private def visitImpl(impl: LoweredAst.Impl)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Impl = impl match {
-    case LoweredAst.Impl(exp, inferredScheme) =>
-      val e = visitExp(exp)
-      val is = visitScheme(inferredScheme)
-      LoweredAst.Impl(e, is)
   }
 
   /**
@@ -232,8 +222,6 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.TypeMatch(e, rs, t, p, loc)
-    case Expr.RelationalChoose(_, _, _, _, loc) =>
-      throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
@@ -329,6 +317,16 @@ object MonomorphEnums {
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       Pattern.Tuple(es, t, loc)
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val ps = pats.map {
+        case Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
+          Pattern.Record.RecordLabelPattern(label, visitType(tpe1), visitPat(pat1), loc1)
+      }
+      val p = visitPat(pat)
+      val t = visitType(tpe)
+      Pattern.Record(ps, p, t, loc)
+    case Pattern.RecordEmpty(tpe, loc) =>
+      Pattern.RecordEmpty(visitType(tpe), loc)
   }
 
   /**

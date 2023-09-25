@@ -63,7 +63,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
-    case Type.AssocType(_, arg, _, _) => arg.effects// TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -673,16 +673,6 @@ object Type {
   }
 
   /**
-    * Returns the type `Choice[tpe, isAbsent, isPresent]`.
-    */
-  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
-    val sym = Symbol.mkEnumSym("Choice")
-    val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
-    val tc = TypeConstructor.Enum(sym, kind)
-    Apply(Apply(Apply(Cst(tc, loc), tpe0, loc), isAbsent, loc), isPresent, loc)
-  }
-
-  /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Enum(sym, k), loc)
@@ -736,8 +726,8 @@ object Type {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
-    mkApply(Type.Cst(TypeConstructor.RecordRowExtend(field), loc), List(tpe, rest), loc)
+  def mkRecordRowExtend(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = {
+    mkApply(Type.Cst(TypeConstructor.RecordRowExtend(label), loc), List(tpe, rest), loc)
   }
 
   /**
@@ -916,7 +906,7 @@ object Type {
     */
   def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
-      Type.Cst( TypeConstructor.CaseSet(syms1 ++ syms2, sym), loc)
+      Type.Cst(TypeConstructor.CaseSet(syms1 ++ syms2, sym), loc)
     case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
     case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
     // TODO RESTR-VARS ALL case: universe

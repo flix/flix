@@ -84,14 +84,14 @@ object Redundancy {
   private def visitSig(sig: Sig)(implicit root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the signature.
-    val usedExp = sig.impl match {
+    val usedExp = sig.exp match {
       case None => Used.empty
-      case Some(impl) =>
-        visitExp(impl.exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
+      case Some(exp) =>
+        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
     }
 
     // Check for unused parameters and remove all variable symbols.
-    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
+    val unusedFormalParams = sig.exp.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
     val unusedTypeParams = findUnusedTypeParameters(sig.spec)
 
     val usedAll = (usedExp ++
@@ -112,7 +112,7 @@ object Redundancy {
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the definition.
-    val usedExp = visitExp(defn.impl.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
+    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
 
     val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
     val unusedTypeParams = findUnusedTypeParameters(defn.spec)
@@ -504,30 +504,6 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val usedMatch = visitExps(exps, env0, rc)
-      val usedRules = rules.map {
-        case RelationalChooseRule(pat, exp) =>
-          // Compute the free variables in the pattern.
-          val fvs = freeVars(pat)
-
-          // Extend the environment with the free variables.
-          val extendedEnv = env0 ++ fvs
-
-          // Visit the body.
-          val usedBody = visitExp(exp, extendedEnv, rc)
-
-          // Check for unused variable symbols.
-          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
-
-          // Check for shadowed variable symbols.
-          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
-
-          // Combine everything together.
-          (usedBody -- fvs ++ unusedVarSyms) ++ shadowedVarSyms
-      }
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
@@ -889,6 +865,9 @@ object Redundancy {
     case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
+    case Pattern.Record(pats, pat, _, _) =>
+      visitPats(pats.map(_.pat)) ++ visitPat(pat)
+    case Pattern.RecordEmpty(_, _) => Used.empty
   }
 
   /**
@@ -1045,14 +1024,14 @@ object Redundancy {
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
+    case Pattern.Record(pats, pat, _, _) =>
+      val patsVal = pats.foldLeft(Set.empty[Symbol.VarSym]) {
+        case (acc, rfp) => acc ++ freeVars(rfp.pat)
+      }
+      val patVal = freeVars(pat)
+      patsVal ++ patVal
+    case Pattern.RecordEmpty(_, _) => Set.empty
   }
-
-  /**
-    * Returns the free variables in the list of choice patterns `ps`.
-    */
-  private def freeVars(ps: List[RelationalChoosePattern]): Set[Symbol.VarSym] = ps.collect {
-    case RelationalChoosePattern.Present(sym, _, _) => sym
-  }.toSet
 
   /**
     * Returns the free variables in the restrictable pattern `p`.

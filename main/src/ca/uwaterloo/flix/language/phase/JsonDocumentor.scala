@@ -43,13 +43,7 @@ object JsonDocumentor {
     */
   val OutputDirectory: Path = Paths.get("./build/api")
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("Documentor") {
-    //
-    // Determine whether to generate documentation.
-    //
-    if (!flix.options.documentor) {
-      return root
-    }
+  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
 
     //
     // Classes.
@@ -165,8 +159,6 @@ object JsonDocumentor {
 
     // Write the string to the path.
     writeString(s, p)
-
-    root
   }
 
   /**
@@ -463,7 +455,7 @@ object JsonDocumentor {
     */
   private def visitClass(cla: Class)(implicit root: Root, flix: Flix): JObject = cla match {
     case Class(doc, ann, mod, sym, tparam, superClasses, _, signatures0, _, loc) => // TODO ASSOC-TYPES visit assocs
-      val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
+      val (sigs0, defs0) = signatures0.partition(_.exp.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
       val defs = defs0.sortBy(_.sym.name).map(visitSig)

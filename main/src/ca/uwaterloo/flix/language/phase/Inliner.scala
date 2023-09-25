@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -93,8 +93,8 @@ object Inliner {
   }
 
   /**
-    * Performs inlining operations on the expression `exp0` of type OccurrenceAst.Expression.
-    * Returns an expression of type Expression
+    * Performs inlining operations on the expression `exp0` of Monotype OccurrenceAst.Expression.
+    * Returns an expression of Monotype Expression
     */
   private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix): LiftedAst.Expr = exp0 match {
     case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
@@ -118,7 +118,7 @@ object Inliner {
     case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       op match {
-        case AtomicOp.Is(sym) if isSingleCaseEnum(sym, es) => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+        case AtomicOp.Is(sym) if isSingleCaseEnum(sym, es) => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
 
         case AtomicOp.Untag(_) =>
           val List(e) = es
@@ -466,7 +466,7 @@ object Inliner {
     * Performs boolean folding on a given unary expression with the logic:
     * Folds not-true => false and not-false => true.
     */
-  private def unaryFold(sop: SemanticOp, e: LiftedAst.Expr, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
+  private def unaryFold(sop: SemanticOp, e: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
     (sop, e) match {
       case (SemanticOp.BoolOp.Not, LiftedAst.Expr.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expr.Cst(Ast.Constant.Bool(!b), tpe, loc)
       case _ => LiftedAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, purity, loc)
@@ -483,16 +483,16 @@ object Inliner {
     * fold into false, if either the left or right expression is false.
     * if either the left or right expression is true, fold into the other expression.
     */
-  private def binaryFold(sop: SemanticOp, e1: LiftedAst.Expr, e2: LiftedAst.Expr, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
+  private def binaryFold(sop: SemanticOp, e1: LiftedAst.Expr, e2: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
     (sop, e1, e2) match {
       case (SemanticOp.BoolOp.And, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _), _) => e2
       case (SemanticOp.BoolOp.And, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _)) => e1
-      case (SemanticOp.BoolOp.And, LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _), _) => LiftedAst.Expr.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
-      case (SemanticOp.BoolOp.And, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _)) if e1.purity == Pure => LiftedAst.Expr.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
+      case (SemanticOp.BoolOp.And, LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _), _) => LiftedAst.Expr.Cst(Ast.Constant.Bool(false), MonoType.Bool, loc)
+      case (SemanticOp.BoolOp.And, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _)) if e1.purity == Pure => LiftedAst.Expr.Cst(Ast.Constant.Bool(false), MonoType.Bool, loc)
       case (SemanticOp.BoolOp.Or, LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _), _) => e2
       case (SemanticOp.BoolOp.Or, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _)) => e1
-      case (SemanticOp.BoolOp.Or, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
-      case (SemanticOp.BoolOp.Or, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
+      case (SemanticOp.BoolOp.Or, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _), _) => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
+      case (SemanticOp.BoolOp.Or, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _)) if e1.purity == Pure => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
       case _ => LiftedAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), tpe, purity, loc)
     }
   }
@@ -505,7 +505,7 @@ object Inliner {
     * to
     * if (c1 and c2) e else jump l1)
     */
-  private def reduceIfThenElse(outerCond: LiftedAst.Expr, outerThen: LiftedAst.Expr, outerElse: LiftedAst.Expr, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expr = outerCond match {
+  private def reduceIfThenElse(outerCond: LiftedAst.Expr, outerThen: LiftedAst.Expr, outerElse: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = outerCond match {
     case LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _) => outerThen
     case LiftedAst.Expr.Cst(Ast.Constant.Bool(false), _, _) => outerElse
     case _ =>

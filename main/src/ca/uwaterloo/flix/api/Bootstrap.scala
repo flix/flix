@@ -16,10 +16,12 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 
@@ -471,7 +473,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     reconfigureFlix(flix)
 
     flix.check() match {
-      case Validation.Success(_) => ().toSuccess
+      case Validation.Success(root) => ().toSuccess
       case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
     }
   }
@@ -590,10 +592,32 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
+    * Generates API documentation.
+    */
+  def doc(o: Options): Validation[Unit, BootstrapError] = {
+    // Configure a new Flix object.
+    implicit val flix: Flix = new Flix()
+    flix.setOptions(o)
+
+    // Add sources and packages.
+    reconfigureFlix(flix)
+
+    flix.check() map {
+      root =>
+        JsonDocumentor.run(root)(flix)
+        HtmlDocumentor.run(root)(flix)
+    } match {
+      case Validation.Success(root) => ().toSuccess
+      case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
+    }
+  }
+
+  /**
     * Runs the main function in flix package for the project.
     */
   def run(o: Options, args: Array[String]): Validation[Unit, BootstrapError] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    flix.setOptions(o)
     build().map(_.getMain).map {
       case Some(main) => main(args)
       case None => ()
@@ -605,6 +629,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def test(o: Options): Validation[Unit, BootstrapError] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    flix.setOptions(o)
     flatMapN(build()) {
       compilationResult =>
         Tester.run(Nil, compilationResult) match {

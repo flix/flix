@@ -95,6 +95,8 @@ object Monomorph {
             case Some(tpe) => tpe.map(default)
             case None => default(t)
           }
+          // Erase concrete effects like Print.
+          case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
           case Type.Cst(_, _) => t
           case Type.Apply(t1, t2, loc) =>
             val y = visit(t2)
@@ -223,22 +225,15 @@ object Monomorph {
        * Perform specialization of all non-parametric function definitions.
        */
       for ((sym, defn) <- nonParametricDefns) {
-        // Get a substitution from the inferred scheme to the declared scheme.
-        // This is necessary because the inferred scheme may be more generic than the declared scheme.
-        val subst = infallibleUnify(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base)
+
+        // We use an empty to perform type reductions.
+        val subst = StrictSubstitution(Substitution.empty, root.eqEnv)
 
         // Specialize the formal parameters to obtain fresh local variable symbols for them.
         val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
         // Specialize the body expression.
-        val body = visitExp(defn.impl.exp, env0, subst)
-
-        // Specialize the inferred scheme
-        val base = Type.mkUncurriedArrowWithEffect(fparams.map(fp => subst(fp.tpe)), subst(body.eff), subst(body.tpe), sym.loc.asSynthetic)
-        val tvars = base.typeVars.map(_.sym).toList
-        val tconstrs = Nil // type constraints are not used after monomorph
-        val econstrs = Nil // equality constraints are not used after monomorph
-        val scheme = Scheme(tvars, tconstrs, econstrs, base)
+        val body = visitExp(defn.exp, env0, subst)
 
         val spec0 = defn.spec
         val spec = LoweredAst.Spec(
@@ -253,9 +248,8 @@ object Monomorph {
           spec0.tconstrs,
           spec0.loc
         )
-        val impl = LoweredAst.Impl(body, scheme)
         // Reassemble the definition.
-        val newDefn = LoweredAst.Def(defn.sym, spec, impl)
+        val newDefn = LoweredAst.Def(defn.sym, spec, body)
         ctx.specializedDefns.put(sym, newDefn)
       }
 
@@ -272,7 +266,7 @@ object Monomorph {
         val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
         // Specialize the body expression.
-        val specializedExp = visitExp(defn.impl.exp, env0, subst)
+        val specializedExp = visitExp(defn.exp, env0, subst)
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
@@ -289,8 +283,7 @@ object Monomorph {
           spec0.tconstrs,
           spec0.loc
         )
-        val impl = LoweredAst.Impl(specializedExp, Scheme(Nil, Nil, Nil, subst(defn.impl.inferredScheme.base)))
-        val specializedDefn = defn.copy(sym = freshSym, spec = spec, impl = impl)
+        val specializedDefn = defn.copy(sym = freshSym, spec = spec, exp = specializedExp)
 
         // Save the specialized function.
         ctx.specializedDefns.put(freshSym, specializedDefn)
@@ -426,26 +419,6 @@ object Monomorph {
           }
       }.next() // We are safe to get next() because the last case will always match
 
-    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, env0, subst))
-      val rs = rules.map {
-        case RelationalChooseRule(pat, exp) =>
-          val patAndEnv = pat.map {
-            case RelationalChoosePattern.Wild(loc) => (RelationalChoosePattern.Wild(loc), Map.empty)
-            case RelationalChoosePattern.Absent(loc) => (RelationalChoosePattern.Absent(loc), Map.empty)
-            case RelationalChoosePattern.Present(sym, tpe1, loc) =>
-              val freshVar = Symbol.freshVarSym(sym)
-              (RelationalChoosePattern.Present(freshVar, subst(tpe1), loc), Map(sym -> freshVar))
-          }
-          val p = patAndEnv.map(_._1)
-          val env1 = patAndEnv.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-            case (acc, m) => acc ++ m
-          }
-          val e = visitExp(exp, env0 ++ env1, subst)
-          RelationalChooseRule(p, e)
-      }
-      Expr.RelationalChoose(es, rs, subst(tpe), subst(eff), loc)
-
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       Expr.VectorLit(es, subst(tpe), subst(eff), loc)
@@ -521,8 +494,18 @@ object Monomorph {
       val (p, env1) = visitPat(pat, subst)
       (Pattern.Tag(sym, p, subst(tpe), loc), env1)
     case Pattern.Tuple(elms, tpe, loc) =>
-      val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
+      val (ps, envs) = elms.map(visitPat(_, subst)).unzip
       (Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val (ps, envs) = pats.map {
+        case Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
+          val (p1, env1) = visitPat(pat1, subst)
+          (Pattern.Record.RecordLabelPattern(label, subst(tpe1), p1, loc1), env1)
+      }.unzip
+      val (p, env1) = visitPat(pat, subst)
+      val finalEnv = env1 :: envs
+      (Pattern.Record(ps, p, subst(tpe), loc), finalEnv.reduce(_ ++ _))
+    case Pattern.RecordEmpty(tpe, loc) => (Pattern.RecordEmpty(subst(tpe), loc), Map.empty)
   }
 
   /**
@@ -571,11 +554,11 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, LevelEnv.Unleveled, root.eqEnv)
+            defn.sym.text == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, LevelEnv.Unleveled, root.eqEnv)
         }
     }
 
-    (sig.impl, defns) match {
+    (sig.exp, defns) match {
       // Case 1: An instance implementation exists. Use it.
       case (_, defn :: Nil) => specializeDef(defn, tpe)
       // Case 2: No instance implementation, but a default implementation exists. Use it.
@@ -590,8 +573,8 @@ object Monomorph {
   /**
     * Converts a signature with an implementation into the equivalent definition.
     */
-  private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, impl: LoweredAst.Impl): LoweredAst.Def = {
-    LoweredAst.Def(sigSymToDefnSym(sigSym), spec, impl)
+  private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr): LoweredAst.Def = {
+    LoweredAst.Def(sigSymToDefnSym(sigSym), spec, exp)
   }
 
   /**
@@ -607,7 +590,7 @@ object Monomorph {
     */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
+    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe)
 
     // Check whether the function definition has already been specialized.
     ctx.def2def.get((defn.sym, tpe)) match {
@@ -689,6 +672,9 @@ object Monomorph {
           }
         case _ => tpe
       }
+
+    // Erase concrete effects like Print.
+    case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
 
     case Type.Cst(_, _) => tpe
 

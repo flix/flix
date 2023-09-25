@@ -40,13 +40,11 @@ object LoweredAst {
 
   case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
-  case class Sig(sym: Symbol.SigSym, spec: Spec, impl: Option[Impl])
+  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
-  case class Def(sym: Symbol.DefnSym, spec: Spec, impl: Impl)
+  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
-
-  case class Impl(exp: Expr, inferredScheme: Scheme)
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
@@ -115,8 +113,6 @@ object LoweredAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(exps: List[Expr], rules: List[RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -163,20 +159,13 @@ object LoweredAst {
 
     case class Tuple(elms: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
-  }
+    case class Record(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
+    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Pattern
 
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoosePattern
-
+    object Record {
+      case class RecordLabelPattern(label: Name.Label, tpe: Type, pat: Pattern, loc: SourceLocation)
+    }
   }
 
   sealed trait Predicate {
@@ -238,8 +227,6 @@ object LoweredAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 

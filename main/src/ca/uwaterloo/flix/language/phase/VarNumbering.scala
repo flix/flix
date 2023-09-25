@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 
 import scala.annotation.tailrec
 
@@ -108,6 +108,16 @@ object VarNumbering {
           sym.setStackOffset(i1)
         }
         visitExps(rules.map(_.exp), i2)
+
+      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+        // TODO
+        i0
+
+      case Expr.Do(_, exps, _, _, _) =>
+        visitExps(exps, i0)
+
+      case Expr.Resume(exp, _, _) =>
+        visitExp(exp, i0)
 
       case Expr.NewObject(_, _, _, _, _, _, _) =>
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject

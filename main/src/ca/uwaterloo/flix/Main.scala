@@ -85,7 +85,6 @@ object Main {
     var options = Options(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
-      documentor = cmdOpts.documentor,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubKey = cmdOpts.githubKey,
@@ -167,6 +166,7 @@ object Main {
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
               bootstrap.build(loadClasses = false)
           } match {
             case Validation.Success(_) => System.exit(0)
@@ -189,6 +189,17 @@ object Main {
         case Command.BuildPkg =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.buildPkg(options)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
+        case Command.Doc =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+            bootstrap => bootstrap.doc(options)
           } match {
             case Validation.Success(_) =>
               System.exit(0)
@@ -278,7 +289,6 @@ object Main {
     */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
-                     documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
@@ -334,6 +344,8 @@ object Main {
 
     case object BuildPkg extends Command
 
+    case object Doc extends Command
+
     case object Run extends Command
 
     case object Benchmark extends Command
@@ -375,6 +387,8 @@ object Main {
 
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
+      cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
+
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
       cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
@@ -394,9 +408,6 @@ object Main {
       opt[String]("args").action((s, c) => c.copy(args = Some(s))).
         valueName("<a1, a2, ...>").
         text("arguments passed to main. Must be a single quoted string.")
-
-      opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
-        text("generates HTML documentation.")
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
         text("specifies the main entry point.")

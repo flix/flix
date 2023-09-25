@@ -88,7 +88,6 @@ class Flix {
   /**
     * A cache of ASTs for debugging.
     */
-  private var cachedDocumentorAst: TypedAst.Root = TypedAst.empty
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
   private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
@@ -102,7 +101,6 @@ class Flix {
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
 
-  def getDocumentorAst: TypedAst.Root = cachedDocumentorAst
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
   def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
   def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
@@ -182,7 +180,6 @@ class Flix {
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
-    "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
@@ -217,6 +214,9 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
+    "Files.flix" -> LocalResource.get("/src/library/Files.flix"),
+    "IOError.flix" -> LocalResource.get("/src/library/IOError.flix"),
+    "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
     "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
@@ -294,6 +294,7 @@ class Flix {
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
+    "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
   )
 
   /**
@@ -586,8 +587,7 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
-    cachedDocumentorAst = JsonDocumentor.run(typedAst)
-    cachedLoweringAst = Lowering.run(cachedDocumentorAst)
+    cachedLoweringAst = Lowering.run(typedAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
     cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)
@@ -658,7 +658,7 @@ class Flix {
       val d = new Duration(e)
       val emojiPart = formatter.blue("✓ ")
       val phasePart = formatter.blue(f"$phase%-40s")
-      val timePart = f"${d.fmtMiliSeconds}%8s"
+      val timePart = f"${d.fmtMilliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
 
       // Print information about each subphase.
@@ -666,7 +666,7 @@ class Flix {
         val d = new Duration(e)
         val emojiPart = "    "
         val phasePart = formatter.magenta(f"$subphase%-37s")
-        val timePart = f"(${d.fmtMiliSeconds}%8s)"
+        val timePart = f"(${d.fmtMilliSeconds}%8s)"
         Console.println(emojiPart + phasePart + timePart)
       }
     }

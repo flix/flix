@@ -112,8 +112,6 @@ object KindedAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(star: Boolean, exps: List[Expr], rules: List[RelationalChooseRule], tpe: Type.Var, loc: SourceLocation) extends Expr
-
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type.Var, loc: SourceLocation) extends Expr
 
     case class Tag(sym: Ast.CaseSymUse, exp: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
@@ -124,11 +122,11 @@ object KindedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, field: Name.Field, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, value: Expr, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, rest: Expr, tpe: Type.Var, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends Expr
 
@@ -240,20 +238,13 @@ object KindedAst {
 
     case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 
-  }
+    case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
 
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
+    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends RelationalChoosePattern
-
+    object Record {
+      case class RecordLabelPattern(label: Name.Label, tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)
+    }
   }
 
   sealed trait RestrictableChoosePattern {
@@ -317,8 +308,6 @@ object KindedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr, tvar: Type.Var)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

@@ -41,10 +41,10 @@ object Indexer {
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = def0 match {
-    case Def(_, spec, impl) =>
+    case Def(_, spec, exp) =>
       val idx0 = Index.occurrenceOf(def0)
       val idx1 = visitSpec(spec)
-      val idx2 = visitImpl(impl)
+      val idx2 = visitExp(exp)
       idx0 ++ idx1 ++ idx2
   }
 
@@ -52,18 +52,11 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, spec, impl) =>
+    case Sig(_, spec, exp) =>
       val idx0 = Index.occurrenceOf(sig0)
       val idx1 = visitSpec(spec)
-      val idx2 = traverse(impl)(visitImpl)
+      val idx2 = traverse(exp)(visitExp)
       idx0 ++ idx1 ++ idx2
-  }
-
-  /**
-    * Returns a reverse index for the given `impl`.
-    */
-  private def visitImpl(impl: Impl): Index = impl match {
-    case Impl(exp, _) => visitExp(exp)
   }
 
   /**
@@ -263,11 +256,6 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ traverse(rules) {
-        case RelationalChooseRule(_, exp) => visitExp(exp)
-      } ++ Index.occurrenceOf(exp0)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ traverse(rules) {
         case RestrictableChooseRule(_, body) => visitExp(body)
@@ -288,14 +276,14 @@ object Indexer {
     case Expr.RecordEmpty(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expr.RecordSelect(exp, field, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordSelect(exp, label, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.useOf(label) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RecordExtend(field, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordExtend(label, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.defOf(label) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RecordRestrict(field, exp, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordRestrict(label, exp, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.defOf(label) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.ArrayLit(exps, exp, _, _, _) =>
       visitExps(exps) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -475,12 +463,22 @@ object Indexer {
       val parent = Entity.Pattern(pat0)
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
+    case Pattern.Record(pats, pat, _, _) =>
+      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordLabelPattern) ++ visitPat(pat)
+    case Pattern.RecordEmpty(_, _) => Index.empty
   }
 
   /**
     * Returns a reverse index for the given patterns `pats0`.
     */
   private def visitPats(pats0: List[Pattern]): Index = traverse(pats0)(visitPat)
+
+  /**
+    * Returns a reverse index for the given [[Pattern.Record.RecordLabelPattern]] `rfp`.
+    */
+  private def visitRecordLabelPattern(rfp: Pattern.Record.RecordLabelPattern): Index = {
+    Index.useOf(rfp.label) ++ visitType(rfp.tpe) ++ visitPat(rfp.pat)
+  }
 
   /**
     * Returns a reverse index for the given constraint `c0`.
@@ -540,7 +538,7 @@ object Indexer {
       case TypeConstructor.Arrow(_) =>
         // We do not index arrow constructors.
         Index.empty
-      case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
+      case TypeConstructor.RecordRowExtend(label) => Index.occurrenceOf(tpe0) ++ Index.useOf(label)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
       case TypeConstructor.Enum(sym, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case TypeConstructor.Effect(sym) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)

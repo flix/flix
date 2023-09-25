@@ -118,6 +118,11 @@ instance Iterable[Chain] {
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
+instance ToJava[Chain[a]] {
+    type O = ##java.util.List
+    pub def toJava(c: Chain[a]): ##java.util.List \ IO = Adaptor.toList(c)
+}
+
 mod Chain {
     use ViewLeft.{NoneLeft, SomeLeft}
     use ViewRight.{NoneRight, SomeRight}

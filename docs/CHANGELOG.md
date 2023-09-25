@@ -1,5 +1,16 @@
 # Changelog
 
+Version 0.40.0:
+
+- Language: Added support for pattern matching on records (thanks Jakob!)
+- Library: Added `MutPriorityQueue` (thanks Xavier!)
+- VSCode: Added completion for `use` of signatures and operations (thanks Xavier!)
+- VSCode: Added code actions to derive missing type class instances (thanks Holger!)
+- VSCode: Added code actions for unused code (thanks Holger!)
+- Compiler: Added new HTML API documentation tool (thanks Holger!)
+  - Emits plain HTML and CSS.
+  - Supports "light" and "dark" modes.
+
 Version 0.39.0:
 
 - VSCode: Added support for code actions (thanks Magnus, Holger!)
@@ -428,6 +439,7 @@ HEAD (in progress, not released):
 - Added a new file API (thanks Nina!)
 - Added `DelayList` and `DelayMap` (thanks Jakob!)
 - Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
+- Library: Added `Adaptor` module and `ToJava` class for working with Java collections (thanks Stephen!)
 - Improved stratification algorithm (thanks Jonathan!)
 - Inliner
 - Datalog abstraction

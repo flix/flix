@@ -46,7 +46,7 @@ object Regions {
   }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError] =
-    visitExp(def0.impl.exp)(Nil, flix)
+    visitExp(def0.exp)(Nil, flix)
 
   private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = exp0 match {
     case Expr.Cst(_, _, _) => Nil
@@ -115,13 +115,6 @@ object Regions {
         case TypeMatchRule(_, _, body) => visitExp(body)
         }
       matchErrors ++ rulesErrors ++ checkType(tpe, loc)
-
-    case Expr.RelationalChoose(exps, rules, tpe, _, loc) =>
-      val expsErrors = exps.flatMap(visitExp)
-      val rulesErrors = rules.flatMap {
-        case RelationalChooseRule(pat, exp) => visitExp(exp)
-      }
-      expsErrors ++ rulesErrors ++ checkType(tpe, loc)
 
     case Expr.RestrictableChoose(_, exp, rules, tpe, _, loc) =>
       val expErrors = visitExp(exp)

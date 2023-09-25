@@ -101,6 +101,11 @@ instance Iterable[Vector] {
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r = Vector.iterator(rc, v)
 }
 
+instance ToJava[Vector[a]] {
+    type O = ##java.util.List
+    pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
+}
+
 mod Vector {
 
     ///

@@ -86,8 +86,11 @@ object PatternExhaustiveness {
 
     case object Vector extends TyCon
 
-    case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
+    case class Enum(name: String, sym: EnumSym, args: List[TyCon]) extends TyCon
 
+    case class Record(labels: List[(Name.Label, TyCon)], tail: TyCon) extends TyCon
+
+    case object RecordEmpty extends TyCon
   }
 
   /**
@@ -106,26 +109,16 @@ object PatternExhaustiveness {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
     flix.phase("PatternExhaustiveness") {
-      val defErrs = root.defs.values.flatMap(defn => visitImpl(defn.impl, root))
-      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitImpl(defn.impl, root))
+      val defErrs = root.defs.values.flatMap(defn => visitExp(defn.exp, root))
+      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitExp(defn.exp, root))
       // Only need to check sigs with implementations
-      val sigsErrs = root.sigs.values.flatMap(_.impl).flatMap(visitImpl(_, root))
+      val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp(_, root))
 
       (defErrs ++ instanceDefErrs ++ sigsErrs).toList match {
         case Nil => Validation.Success(root)
         case errs => Validation.SoftFailure(root, LazyList.from(errs))
       }
     }
-
-  /**
-    * Check that all patterns in an implementation are exhaustive
-    *
-    * @param impl The implementation to check
-    * @param root The AST root
-    */
-  private def visitImpl(impl: TypedAst.Impl, root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = {
-    visitExp(impl.exp, root)
-  }
 
   /**
     * Check that all patterns in an expression are exhaustive
@@ -167,10 +160,6 @@ object PatternExhaustiveness {
         val ruleExps = rules.map(_.exp)
         val expsErrs = (exp :: ruleExps).flatMap(visitExp(_, root))
         expsErrs
-
-      case Expr.RelationalChoose(exps, rules, _, _, _) =>
-        val ruleExps = rules.map(_.exp)
-        (exps ::: ruleExps).flatMap(visitExp(_, root))
 
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         val ruleExps = rules.map(_.exp)
@@ -410,7 +399,7 @@ object PatternExhaustiveness {
       // If it's not our constructor, we ignore it
       case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), exp, _, _) =>
         ctor match {
-          case TyCon.Enum(name, _, _, _) =>
+          case TyCon.Enum(name, _, _) =>
             if (sym.name == name) {
               exp match {
                 // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
@@ -433,6 +422,16 @@ object PatternExhaustiveness {
         } else {
           acc
         }
+      case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
+        case TyCon.Record(_, _) =>
+          val ps = pats.map(_.pat)
+          val p = tail match {
+            case TypedAst.Pattern.RecordEmpty(_, _) => Nil
+            case _ => List(tail)
+          }
+          (ps ::: p ::: pat.tail) :: acc
+        case _ => acc
+      }
       // Also handle the non tag constructors
       case p =>
         if (patToCtor(p) == ctor) {
@@ -462,10 +461,10 @@ object PatternExhaustiveness {
     *
     */
   private def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
-    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.head match {
+    val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.headOption match {
       // If it's a wild card, we take the rest of the pattern
-      case _: TypedAst.Pattern.Wild => pat.tail :: acc
-      case _: TypedAst.Pattern.Var => pat.tail :: acc
+      case Some(_: TypedAst.Pattern.Wild) => pat.tail :: acc
+      case Some(_: TypedAst.Pattern.Var) => pat.tail :: acc
 
       // If it's a constructor, we don't include a row
       case _ => acc
@@ -492,11 +491,11 @@ object PatternExhaustiveness {
     *
     */
   private def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
-    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.head match {
-      case _: Pattern.Wild => pats
-      case _: Pattern.Var => pats
-      case tg: Pattern.Tag => tg :: pats
-      case p => p :: pats
+    def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.headOption match {
+      case Some(_: Pattern.Wild) => pats
+      case Some(_: Pattern.Var) => pats
+      case Some(p) => p :: pats
+      case None => pats
     }
 
     rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor).map(patToCtor)
@@ -516,7 +515,7 @@ object PatternExhaustiveness {
     * If the constructors are a complete signature, then they are exhaustive for the type, and we just have to
     * check that their arguments are also exhaustive
     *
-    * Wildcards are exhaustive, but we need to do some additional checking in that case (@see DefaultMatrix)
+    * Wildcards are exhaustive, but we need to do some additional checking in that case (@see defaultMatrix)
     *
     * @param ctors The ctors that we match with
     * @param root  Root of the expression tree
@@ -530,11 +529,12 @@ object PatternExhaustiveness {
       case TyCon.True => TyCon.True :: TyCon.False :: xs
       case TyCon.False => TyCon.True :: TyCon.False :: xs
       case a: TyCon.Tuple => a :: xs
+      case a: TyCon.Record => a :: xs
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other enums
-      case TyCon.Enum(_, sym, _, _) => {
-        root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1.name, sym, countTypeArgs(x._2.tpe), List.empty[TyCon]))
+      case TyCon.Enum(_, sym, _) => {
+        root.enums(sym).cases.map(x => TyCon.Enum(x._1.name, sym, List.fill(countTypeArgs(x._2.tpe))(TyCon.Wild)))
       }.toList ::: xs
 
       /* For numeric types, we consider them as "infinite" types union
@@ -578,7 +578,12 @@ object PatternExhaustiveness {
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
     case TyCon.Vector => 0
-    case TyCon.Enum(_, _, numArgs, _) => numArgs
+    case TyCon.Enum(_, _, args) => args.length
+    case TyCon.Record(labels, tail) => tail match {
+      case TyCon.RecordEmpty => labels.length
+      case _ => labels.length + 1
+    }
+    case TyCon.RecordEmpty => 0
   }
 
   /**
@@ -645,7 +650,17 @@ object PatternExhaustiveness {
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
     case TyCon.Vector => "Vector"
-    case TyCon.Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(TyCon.Tuple(args))
+    case TyCon.Enum(name, _, args) => if (args.isEmpty) name else name + prettyPrintCtor(TyCon.Tuple(args))
+    case TyCon.Record(labels, tail) =>
+      val labelStr = labels.map {
+        case (f, p) => s"$f = ${prettyPrintCtor(p)}"
+      }.mkString(", ")
+      val tailStr = tail match {
+        case TyCon.RecordEmpty => ""
+        case r => s" | ${prettyPrintCtor(r)}"
+      }
+      "{ " + labelStr + tailStr + " }"
+    case TyCon.RecordEmpty => ""
   }
 
 
@@ -658,17 +673,18 @@ object PatternExhaustiveness {
     */
   private def sameCtor(c1: TyCon, c2: TyCon): Boolean = (c1, c2) match {
     // Two enums are the same constructor if they have the same name and enum sym
-    case (TyCon.Enum(n1, s1, _, _), TyCon.Enum(n2, s2, _, _)) => n1 == n2 && s1 == s2
+    case (TyCon.Enum(n1, s1, _), TyCon.Enum(n2, s2, _)) => n1 == n2 && s1 == s2
     // Everything else is the same constructor if they are the same type
     case (a: TyCon.Tuple, b: TyCon.Tuple) => true
+    case (a: TyCon.Record, b: TyCon.Record) => true
     case (a, b) => a == b;
   }
 
   /**
-    * Convert a pattern to a TypeConstructor
+    * Convert a pattern to a TyCon
     *
     * @param pattern The pattern to convert
-    * @return a TypeConstructor representing the given pattern
+    * @return a TyCon representing the given pattern
     */
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
     case Pattern.Wild(_, _) => TyCon.Wild
@@ -688,21 +704,28 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
     case Pattern.Cst(Ast.Constant.Regex(_), _, _) => throw InternalCompilerException("unexpected regex pattern", pattern.loc)
     case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
-      val (args, numArgs) = pat match {
-        case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)
-        case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
-        case a => (List(patToCtor(a)), 1)
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) =>
+      val args = pat match {
+        case Pattern.Cst(Ast.Constant.Unit, _, _) => List.empty[TyCon]
+        case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
+        case a => List(patToCtor(a))
       }
-      TyCon.Enum(sym.name, sym.enumSym, numArgs, args)
-    }
+      TyCon.Enum(sym.name, sym.enumSym, args)
     case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
+    case Pattern.Record(pats, pat, _, _) =>
+      val patsVal = pats.map {
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, _, pat1, _) =>
+          (label, patToCtor(pat1))
+      }
+      val pVal = patToCtor(pat)
+      TyCon.Record(patsVal, pVal)
+    case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
   }
 
   /**
-    * Adds a TypeConstructor to a list of TypeConstructors, using up items in the list if it requires arguments
+    * Adds a `TyCon` to a list of `TyCon`s, using up items in the list if it requires arguments
     *
-    * e.g. rebuildPatter(Foo(a,b), [1,2,3]) => [Foo(1,2), 3]
+    * e.g. rebuildPattern(Foo(a,b), [1,2,3]) => [Foo(1,2), 3]
     *
     * @param tc  The type constructor to add
     * @param lst The list to add to
@@ -710,12 +733,17 @@ object PatternExhaustiveness {
     */
   private def rebuildPattern(tc: TyCon, lst: List[TyCon]): List[TyCon] = tc match {
     case TyCon.Tuple(args) => TyCon.Tuple(lst.take(args.size)) :: lst.drop(args.size)
-    case TyCon.Enum(name, sym, numArgs, _) => TyCon.Enum(name, sym, numArgs,
-      if (numArgs > lst.size) {
-        lst.take(lst.size) ::: List.fill(numArgs)(TyCon.Wild)
-      } else {
-        lst.take(numArgs)
-      }) :: lst.drop(numArgs)
+    case TyCon.Enum(name, sym, args) =>
+      val rebuiltArgs = lst.take(args.length)
+      TyCon.Enum(name, sym, rebuiltArgs) :: lst.drop(args.length)
+    case TyCon.Record(labels, _) =>
+      val all = lst.take(labels.length + 1)
+      val ls = labels.map {
+        case (l, _) => l
+      }.zip(all.take(labels.length))
+      val t = all.takeRight(1).head
+      TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
+    case TyCon.RecordEmpty => lst
     case a => a :: lst
   }
 

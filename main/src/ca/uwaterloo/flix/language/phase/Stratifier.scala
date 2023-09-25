@@ -86,8 +86,8 @@ object Stratifier {
     * Performs stratification of the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
-    visitExp(def0.impl.exp) map {
-      case e => def0.copy(impl = def0.impl.copy(exp = e))
+    visitExp(def0.exp) map {
+      case e => def0.copy(exp = e)
     }
 
   /**
@@ -201,15 +201,6 @@ object Stratifier {
         case (m, rs) => Expr.TypeMatch(m, rs, tpe, eff, loc)
       }
 
-    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val expsVal = traverse(exps)(visitExp)
-      val rulesVal = traverse(rules) {
-        case RelationalChooseRule(pat, exp) => mapN(visitExp(exp))(RelationalChooseRule(pat, _))
-      }
-      mapN(expsVal, rulesVal) {
-        case (es, rs) => Expr.RelationalChoose(es, rs, tpe, eff, loc)
-      }
-
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
@@ -237,19 +228,19 @@ object Stratifier {
     case Expr.RecordEmpty(tpe, loc) =>
       Expr.RecordEmpty(tpe, loc).toSuccess
 
-    case Expr.RecordSelect(base, field, tpe, eff, loc) =>
+    case Expr.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expr.RecordSelect(b, field, tpe, eff, loc)
+        case b => Expr.RecordSelect(b, label, tpe, eff, loc)
       }
 
-    case Expr.RecordExtend(field, value, rest, tpe, eff, loc) =>
+    case Expr.RecordExtend(label, value, rest, tpe, eff, loc) =>
       mapN(visitExp(value), visitExp(rest)) {
-        case (v, r) => Expr.RecordExtend(field, v, r, tpe, eff, loc)
+        case (v, r) => Expr.RecordExtend(label, v, r, tpe, eff, loc)
       }
 
-    case Expr.RecordRestrict(field, rest, tpe, eff, loc) =>
+    case Expr.RecordRestrict(label, rest, tpe, eff, loc) =>
       mapN(visitExp(rest)) {
-        case r => Expr.RecordRestrict(field, r, tpe, eff, loc)
+        case r => Expr.RecordRestrict(label, r, tpe, eff, loc)
       }
 
     case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
@@ -544,7 +535,7 @@ object Stratifier {
     * Returns the labelled graph of the given definition `def0`.
     */
   private def labelledGraphOfDef(def0: Def): LabelledGraph =
-    labelledGraphOfExp(def0.impl.exp)
+    labelledGraphOfExp(def0.exp)
 
   /**
     * Returns the labelled graph of the given expression `exp0`.
@@ -619,15 +610,6 @@ object Stratifier {
       rules.foldLeft(dg) {
         case (acc, TypeMatchRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
-
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val dg1 = exps.foldLeft(LabelledGraph.empty) {
-        case (acc, exp) => acc + labelledGraphOfExp(exp)
-      }
-      val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RelationalChooseRule(_, exp)) => acc + labelledGraphOfExp(exp)
-      }
-      dg1 + dg2
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val dg1 = labelledGraphOfExp(exp)

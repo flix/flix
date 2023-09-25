@@ -182,11 +182,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def): Iterator[SemanticToken] = defn0 match {
-    case Def(sym, spec, impl) =>
+    case Def(sym, spec, exp) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitSpec(spec)
-      val st3 = visitImpl(impl)
+      val st3 = visitExp(exp)
       st1 ++ st2 ++ st3
   }
 
@@ -194,11 +194,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig): Iterator[SemanticToken] = sig0 match {
-    case TypedAst.Sig(sym, spec, impl) =>
+    case TypedAst.Sig(sym, spec, exp) =>
       val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitSpec(spec)
-      val st3 = impl.iterator.flatMap(visitImpl)
+      val st3 = exp.iterator.flatMap(visitExp)
       st1 ++ st2 ++ st3
   }
 
@@ -214,13 +214,6 @@ object SemanticTokensProvider {
       val st5 = visitType(retTpe)
       val st6 = visitType(eff)
       st1 ++ st2 ++ st3 ++ st4 ++ st5
-  }
-
-  /**
-    * Returns all semantic tokens in the given `impl`.
-    */
-  private def visitImpl(impl: Impl): Iterator[SemanticToken] = impl match {
-    case Impl(exp, _) => visitExp(exp)
   }
 
   /**
@@ -368,13 +361,6 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val c = visitExps(exps)
-      rules.foldLeft(c) {
-        case (acc, RelationalChooseRule(pats, exp)) =>
-          acc ++ pats.iterator.flatMap(visitRelationalChoosePat) ++ visitExp(exp)
-      }
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val c = visitExp(exp)
       rules.foldLeft(c) {
@@ -395,16 +381,16 @@ object SemanticTokensProvider {
 
     case Expr.RecordEmpty(_, _) => Iterator.empty
 
-    case Expr.RecordSelect(exp, field, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+    case Expr.RecordSelect(exp, label, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expr.RecordExtend(field, exp1, exp2, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+    case Expr.RecordExtend(label, exp1, exp2, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp2) ++ visitExp(exp1)
 
-    case Expr.RecordRestrict(field, exp, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+    case Expr.RecordRestrict(label, exp, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, label.loc)
       Iterator(t) ++ visitExp(exp)
 
     case Expr.ArrayLit(exps, exp, _, _, _) =>
@@ -600,22 +586,17 @@ object SemanticTokensProvider {
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
-  }
+    case Pattern.Record(pats, pat, tpe, loc) =>
+      val patsVal = pats.flatMap {
+        case Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
+          val f = SemanticToken(SemanticTokenType.Property, Nil, loc1)
+          Iterator(f) ++ visitType(tpe1) ++ visitPat(pat1)
+      }.iterator
+      val patVal = visitPat(pat)
+      val tVal = visitType(tpe)
+      patsVal ++ patVal ++ tVal
 
-  /**
-    * Returns all semantic tokens in the given pattern `pat0`.
-    */
-  private def visitRelationalChoosePat(pat0: RelationalChoosePattern): Iterator[SemanticToken] = pat0 match {
-    case RelationalChoosePattern.Wild(loc) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
-      Iterator(t)
-    case RelationalChoosePattern.Absent(loc) =>
-      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t)
-    case RelationalChoosePattern.Present(sym, _, loc) =>
-      val t1 = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
-      val t2 = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t1, t2)
+    case Pattern.RecordEmpty(tpe, _) => Iterator.empty
   }
 
   /**

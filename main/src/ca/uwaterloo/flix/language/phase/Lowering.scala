@@ -169,19 +169,19 @@ object Lowering {
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = defn0 match {
-    case TypedAst.Def(sym, spec0, impl0) =>
+    case TypedAst.Def(sym, spec0, exp0) =>
       val spec = visitSpec(spec0)
-      val impl = visitImpl(impl0)
-      LoweredAst.Def(sym, spec, impl)
+      val exp = visitExp(exp0)
+      LoweredAst.Def(sym, spec, exp)
   }
 
   /**
     * Lowers the given signature `sig0`.
     */
   private def visitSig(sig0: TypedAst.Sig)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Sig = sig0 match {
-    case TypedAst.Sig(sym, spec0, impl0) =>
+    case TypedAst.Sig(sym, spec0, exp0) =>
       val spec = visitSpec(spec0)
-      val impl = impl0.map(visitImpl)
+      val impl = exp0.map(visitExp)
       LoweredAst.Sig(sym, spec, impl)
   }
 
@@ -321,16 +321,6 @@ object Lowering {
   }
 
   /**
-    * Lowers the given `impl0`.
-    */
-  private def visitImpl(impl0: TypedAst.Impl)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Impl = impl0 match {
-    case TypedAst.Impl(exp, inferredScheme) =>
-      val e = visitExp(exp)
-      val s = visitScheme(inferredScheme)
-      LoweredAst.Impl(e, s)
-  }
-
-  /**
     * Lowers the given `tparam`.
     */
   private def visitTypeParam(tparam: TypedAst.TypeParam)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeParam = tparam match {
@@ -451,12 +441,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.TypeMatch(e, rs, t, eff, loc)
 
-    case TypedAst.Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val es = visitExps(exps)
-      val rs = rules.map(visitRelationalChooseRule)
-      val t = visitType(tpe)
-      LoweredAst.Expr.RelationalChoose(es, rs, t, eff, loc)
-
     case TypedAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
       // lower into an ordinary match
       val e = visitExp(exp)
@@ -485,21 +469,21 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordEmpty, List.empty, t, Type.Pure, loc)
 
-    case TypedAst.Expr.RecordSelect(exp, field, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordSelect(exp, label, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(field), List(e), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(e), t, eff, loc)
 
-    case TypedAst.Expr.RecordExtend(field, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordExtend(field), List(e1, e2), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordExtend(label), List(e1, e2), t, eff, loc)
 
-    case TypedAst.Expr.RecordRestrict(field, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(field), List(e), t, eff, loc)
+      LoweredAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(e), t, eff, loc)
 
     case TypedAst.Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -850,6 +834,20 @@ object Lowering {
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       LoweredAst.Pattern.Tuple(es, t, loc)
+
+    case TypedAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val patsVal = pats.map {
+        case TypedAst.Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
+          val p1 = visitPat(pat1)
+          val t1 = visitType(tpe1)
+          LoweredAst.Pattern.Record.RecordLabelPattern(label, t1, p1, loc1)
+      }
+      val patVal = visitPat(pat)
+      val t = visitType(tpe)
+      LoweredAst.Pattern.Record(patsVal, patVal, t, loc)
+
+    case TypedAst.Pattern.RecordEmpty(tpe, loc) =>
+      LoweredAst.Pattern.RecordEmpty(visitType(tpe), loc)
   }
 
   /**
@@ -907,22 +905,6 @@ object Lowering {
     case TypedAst.FormalParam(sym, mod, tpe, src, loc) =>
       val t = visitType(tpe)
       LoweredAst.FormalParam(sym, mod, t, src, loc)
-  }
-
-  /**
-    * Lowers the given relational choice rule `rule0`.
-    */
-  private def visitRelationalChooseRule(rule0: TypedAst.RelationalChooseRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.RelationalChooseRule = rule0 match {
-    case TypedAst.RelationalChooseRule(pat, exp) =>
-      val p = pat.map {
-        case TypedAst.RelationalChoosePattern.Wild(loc) => LoweredAst.RelationalChoosePattern.Wild(loc)
-        case TypedAst.RelationalChoosePattern.Absent(loc) => LoweredAst.RelationalChoosePattern.Absent(loc)
-        case TypedAst.RelationalChoosePattern.Present(sym, tpe, loc) =>
-          val t = visitType(tpe)
-          LoweredAst.RelationalChoosePattern.Present(sym, t, loc)
-      }
-      val e = visitExp(exp)
-      LoweredAst.RelationalChooseRule(p, e)
   }
 
   /**
@@ -1120,6 +1102,10 @@ object Lowering {
     case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
     case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.RecordEmpty(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
   }
 
@@ -1877,15 +1863,6 @@ object Lowering {
     case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
-
-    case LoweredAst.Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val es = exps.map(substExp(_, subst))
-      val rs = rules map {
-        case LoweredAst.RelationalChooseRule(pat, exp) =>
-          // TODO: Substitute in patterns?
-          LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
-      }
-      LoweredAst.Expr.RelationalChoose(es, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

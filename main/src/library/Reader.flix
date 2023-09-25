@@ -1,6 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
- * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.jvm
-
-import ca.uwaterloo.flix.api.Flix
-
-object GenContinuationAbstractClasses {
-  def gen(conts: Iterable[BackendObjType.Continuation])(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    conts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, contType) =>
-        macc + (contType.jvmName -> JvmClass(contType.jvmName, contType.genByteCode()))
-    }
-  }
+///
+/// A type class for types which are resources that can be accessed as bytes.
+///
+class Reader[t] {
+    ///
+    /// Reads `k` bytes from the underlying resource and writes them into `b`.
+    ///
+    /// Returns `Ok(k)` to signify that `k` bytes was successfully read and written to `b`.
+    ///
+    /// Guarantees that `0 <= k < length(b)`.
+    ///
+    /// Returns `Err(e)` if some underlying I/O error occurs.
+    ///
+    pub def read(b: Array[Int8, r], r: t): Result[IOError, Int32] \ {r, IO}
 }

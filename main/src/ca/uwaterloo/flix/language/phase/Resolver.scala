@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoosePattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -1163,28 +1164,6 @@ object Resolver {
             case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
-        case NamedAst.Expr.RelationalChoose(star, exps, rules, loc) =>
-          val expsVal = traverse(exps)(visitExp(_, env0))
-          val rulesVal = traverse(rules) {
-            case NamedAst.RelationalChooseRule(pat0, exp0) =>
-              val p = pat0.map {
-                case NamedAst.RelationalChoosePattern.Wild(loc) => ResolvedAst.RelationalChoosePattern.Wild(loc)
-                case NamedAst.RelationalChoosePattern.Absent(loc) => ResolvedAst.RelationalChoosePattern.Absent(loc)
-                case NamedAst.RelationalChoosePattern.Present(sym, loc) => ResolvedAst.RelationalChoosePattern.Present(sym, loc)
-              }
-              val env = pat0.foldLeft(env0) {
-                case (acc, NamedAst.RelationalChoosePattern.Wild(_)) => acc
-                case (acc, NamedAst.RelationalChoosePattern.Absent(_)) => acc
-                case (acc, NamedAst.RelationalChoosePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
-              }
-              mapN(visitExp(exp0, env)) {
-                case e => ResolvedAst.RelationalChooseRule(p, e)
-              }
-          }
-          mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expr.RelationalChoose(star, es, rs, loc)
-          }
-
         case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
           val expVal = visitExp(exp, env0)
           val rulesVal = traverse(rules) {
@@ -1229,23 +1208,23 @@ object Resolver {
         case NamedAst.Expr.RecordEmpty(loc) =>
           ResolvedAst.Expr.RecordEmpty(loc).toSuccess
 
-        case NamedAst.Expr.RecordSelect(base, field, loc) =>
+        case NamedAst.Expr.RecordSelect(base, label, loc) =>
           val bVal = visitExp(base, env0)
           mapN(bVal) {
-            b => ResolvedAst.Expr.RecordSelect(b, field, loc)
+            b => ResolvedAst.Expr.RecordSelect(b, label, loc)
           }
 
-        case NamedAst.Expr.RecordExtend(field, value, rest, loc) =>
+        case NamedAst.Expr.RecordExtend(label, value, rest, loc) =>
           val vVal = visitExp(value, env0)
           val rVal = visitExp(rest, env0)
           mapN(vVal, rVal) {
-            case (v, r) => ResolvedAst.Expr.RecordExtend(field, v, r, loc)
+            case (v, r) => ResolvedAst.Expr.RecordExtend(label, v, r, loc)
           }
 
-        case NamedAst.Expr.RecordRestrict(field, rest, loc) =>
+        case NamedAst.Expr.RecordRestrict(label, rest, loc) =>
           val rVal = visitExp(rest, env0)
           mapN(rVal) {
-            r => ResolvedAst.Expr.RecordRestrict(field, r, loc)
+            r => ResolvedAst.Expr.RecordRestrict(label, r, loc)
           }
 
         case NamedAst.Expr.ArrayLit(exps, exp, loc) =>
@@ -1339,7 +1318,7 @@ object Resolver {
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
           val eVal = visitExp(exp, env0)
-          val clazzVal = lookupJvmClass(className, loc);
+          val clazzVal = lookupJvmClass(className, loc)
           mapN(eVal, clazzVal) {
             (e, clazz) => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
           }
@@ -1737,6 +1716,20 @@ object Resolver {
           mapN(esVal) {
             es => ResolvedAst.Pattern.Tuple(es, loc)
           }
+
+        case NamedAst.Pattern.Record(pats, pat, loc) =>
+          val psVal = traverse(pats) {
+            case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
+              mapN(visit(pat1)) {
+                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
+              }
+          }
+          val pVal = visit(pat)
+          mapN(psVal, pVal) {
+            case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
+          }
+
+        case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
       }
 
       visit(pat0)
@@ -1768,6 +1761,19 @@ object Resolver {
             es => ResolvedAst.Pattern.Tuple(es, loc)
           }
 
+        case NamedAst.Pattern.Record(pats, pat, loc) =>
+          val psVal = traverse(pats) {
+            case NamedAst.Pattern.Record.RecordLabelPattern(label, pat1, loc1) =>
+              mapN(visit(pat1)) {
+                case p => ResolvedAst.Pattern.Record.RecordLabelPattern(label, p, loc1)
+              }
+          }
+          val pVal = visit(pat)
+          mapN(psVal, pVal) {
+            case (ps, p) => ResolvedAst.Pattern.Record(ps, p, loc)
+          }
+
+        case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
       }
 
       visit(pat0)
@@ -1796,7 +1802,7 @@ object Resolver {
         */
       def resolve(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-          val tsVal = traverse(terms)(t => Patterns.resolveInConstraint(t, env, ns0, root))
+          val tsVal = traverse(terms)(Patterns.resolveInConstraint(_, env, ns0, root))
           mapN(tsVal) {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
@@ -2271,11 +2277,11 @@ object Resolver {
 
       case NamedAst.Type.RecordRowEmpty(loc) => UnkindedType.Cst(TypeConstructor.RecordRowEmpty, loc).toSuccess
 
-      case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
+      case NamedAst.Type.RecordRowExtend(label, value, rest, loc) =>
         val vVal = visit(value)
         val rVal = visit(rest)
         mapN(vVal, rVal) {
-          case (v, r) => UnkindedType.mkRecordRowExtend(field, v, r, loc)
+          case (v, r) => UnkindedType.mkRecordRowExtend(label, v, r, loc)
         }
 
       case NamedAst.Type.Record(row, loc) =>
@@ -3043,7 +3049,7 @@ object Resolver {
   }
 
   /**
-    * Successfully returns the type of the given associtated type `assoc0` if it is accessible from the given namespace `ns0`.
+    * Successfully returns the type of the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     */
@@ -3510,6 +3516,15 @@ object Resolver {
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
     case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
+    case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
+    case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty
+  }
+
+  /**
+    * Creates an environment from the given record pattern.
+    */
+  private def mkRecordPatternEnv(pats: List[Record.RecordLabelPattern], pat: ResolvedAst.Pattern): ListMap[String, Resolution] = {
+    mkPatternsEnv(pats.map(_.pat)) ++ mkPatternEnv(pat)
   }
 
   /**

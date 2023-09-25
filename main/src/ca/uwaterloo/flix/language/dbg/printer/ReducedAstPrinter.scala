@@ -36,13 +36,14 @@ object ReducedAstPrinter {
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
-      case ReducedAst.Def(ann, mod, sym, cparams, fparams, stmt, tpe, _, _) =>
+      case ReducedAst.Def(ann, mod, sym, cparams, fparams, stmt, tpe, purity, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
           MonoTypePrinter.print(tpe),
+          PurityPrinter.print(purity),
           print(stmt)
         )
     }.toList
@@ -68,6 +69,12 @@ object ReducedAstPrinter {
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
+    case Expr.TryWith(exp, effUse, rules, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map{
+      case ReducedAst.HandlerRule(op, fparams, exp) =>
+        (op.sym, fparams.map(printFormalParam), print(exp))
+    })
+    case Expr.Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
+    case Expr.Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
     case Expr.NewObject(name, clazz, tpe, _, methods, exps, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.zip(exps).map(printJvmMethod))
   }
 

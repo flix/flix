@@ -349,4 +349,24 @@ mod Float32 {
     ///
     pub def pow(b: Float32, n: Float32): Float32 = $FLOAT32_EXP$(b, n)
 
+    ///
+    /// Get the primitive Float32 value from its object representation (i.e. ##java.lang.Float).
+    ///
+    /// This function is expected to be used when marshaling Float32s from Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Float`.
+    ///
+    pub def floatValue(d: ##java.lang.Float): Float32 =
+        import java.lang.Float.floatValue(): Float32 \ {};
+        floatValue(d)
+
+    ///
+    /// Convert an Float32 value to its object representation (i.e. ##java.lang.Float).
+    ///
+    /// This function is expected to be used when marshaling Float32s to Java. Generally in Flix
+    /// code you should not need to use `##java.lang.Float`.
+    ///
+    pub def valueOf(d: Float32): ##java.lang.Float =
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float \ {};
+        valueOf(d)
+
 }

@@ -119,19 +119,17 @@ object WeededAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(star: Boolean, exps: List[Expr], rules: List[RelationalChooseRule], loc: SourceLocation) extends Expr
-
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, field: Name.Field, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, exp: Expr, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
@@ -243,17 +241,13 @@ object WeededAst {
 
     case class Tuple(elms: scala.List[Pattern], loc: SourceLocation) extends Pattern
 
-  }
+    case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
-  sealed trait RelationalChoosePattern
+    case class RecordEmpty(loc: SourceLocation) extends Pattern
 
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(ident: Name.Ident, loc: SourceLocation) extends RelationalChoosePattern
+    object Record {
+      case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
+    }
 
   }
 
@@ -314,7 +308,7 @@ object WeededAst {
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
-    case class RecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation) extends Type
+    case class RecordRowExtend(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation) extends Type
 
     case class Record(row: Type, loc: SourceLocation) extends Type
 
@@ -407,8 +401,6 @@ object WeededAst {
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

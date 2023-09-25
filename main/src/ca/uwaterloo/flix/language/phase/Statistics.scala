@@ -56,21 +56,14 @@ object Statistics {
     * Counts AST nodes in the given def.
     */
   private def visitDef(defn: Def): Counter = defn match {
-    case Def(sym, spec, impl) => visitImpl(impl)
+    case Def(sym, spec, exp) => visitExp(exp)
   }
 
   /**
     * Counts AST nodes in the given sig.
     */
   private def visitSig(sig: Sig): Counter = sig match {
-    case Sig(sym, spec, impl) => Counter.merge(impl.map(visitImpl))
-  }
-
-  /**
-    * Counts AST nodes in the given impl.
-    */
-  private def visitImpl(impl: Impl): Counter = impl match {
-    case Impl(exp, inferredScheme) => visitExp(exp)
+    case Sig(sym, spec, exp) => Counter.merge(exp.map(visitExp))
   }
 
   /**
@@ -102,15 +95,14 @@ object Statistics {
       case Expr.Discard(exp, eff, loc) => visitExp(exp)
       case Expr.Match(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
       case Expr.TypeMatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
-      case Expr.RelationalChoose(exps, rules, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChooseRule))
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitRestrictableChooseRule))
       case Expr.Tag(sym, exp, tpe, eff, loc) => visitExp(exp)
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => visitExp(exp)
       case Expr.Tuple(elms, tpe, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expr.RecordEmpty(tpe, loc) => Counter.empty
-      case Expr.RecordSelect(exp, field, tpe, eff, loc) => visitExp(exp)
-      case Expr.RecordExtend(field, value, rest, tpe, eff, loc) => visitExp(value) ++ visitExp(rest)
-      case Expr.RecordRestrict(field, rest, tpe, eff, loc) => visitExp(rest)
+      case Expr.RecordSelect(exp, label, tpe, eff, loc) => visitExp(exp)
+      case Expr.RecordExtend(label, value, rest, tpe, eff, loc) => visitExp(value) ++ visitExp(rest)
+      case Expr.RecordRestrict(label, rest, tpe, eff, loc) => visitExp(rest)
       case Expr.ArrayLit(exps, exp, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ visitExp(exp)
       case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expr.ArrayLoad(base, index, tpe, eff, loc) => visitExp(base) ++ visitExp(index)
@@ -173,13 +165,6 @@ object Statistics {
     */
   private def visitMatchTypeRule(rule: TypeMatchRule): Counter = rule match {
     case TypeMatchRule(_, _, exp) => visitExp(exp)
-  }
-
-  /**
-    * Counts AST nodes in the given rule.
-    */
-  private def visitRelationalChooseRule(rule: RelationalChooseRule): Counter = rule match {
-    case RelationalChooseRule(pat, exp) => visitExp(exp)
   }
 
   /**
@@ -273,7 +258,7 @@ object Statistics {
     def of(name: String): Counter = Counter(Map(name -> 1))
 
     /**
-      * Merges an interable of counters.
+      * Merges an iterable of counters.
       */
     def merge(counters: Iterable[Counter]): Counter = counters.foldLeft(Counter.empty)(_ ++ _)
   }

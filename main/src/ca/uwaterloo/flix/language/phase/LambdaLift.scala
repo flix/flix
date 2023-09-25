@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, Purity, SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -57,10 +57,10 @@ object LambdaLift {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
-    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
+    case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = liftExp(exp, sym, m)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, e.purity, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
   }
 
   /**
@@ -87,6 +87,11 @@ object LambdaLift {
       case SimplifiedAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(sym, tpe, loc)
 
       case SimplifiedAst.Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
+        val arrowTpe = tpe match {
+          case t: MonoType.Arrow => t
+          case _ =>  throw InternalCompilerException(s"Lambda has unexpected type: $tpe", loc)
+        }
+
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
@@ -99,15 +104,14 @@ object LambdaLift {
 
         // Construct the closure parameters
         val cs = if (cparams.isEmpty)
-          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, Type.mkUnit(loc), loc))
+          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc))
         else cparams.map(visitFormalParam)
 
         // Construct the formal parameters.
         val fs = fparams.map(visitFormalParam)
 
         // Construct a new definition.
-        val defTpe = tpe.arrowResultType
-        val purity = tpe.arrowEffectType
+        val defTpe = arrowTpe.result
         val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
 
         // Add the new definition to the map of lifted definitions.
@@ -115,13 +119,13 @@ object LambdaLift {
 
         // Construct the closure args.
         val closureArgs = if (freeVars.isEmpty)
-          List(LiftedAst.Expr.Cst(Ast.Constant.Unit, Type.mkUnit(loc), loc))
+          List(LiftedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc))
         else freeVars.map {
           case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expr.Var(sym, tpe, sym.loc)
         }
 
         // Construct the closure expression.
-        LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, tpe, Purity.Pure, loc)
+        LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
 
       case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps map visitExp

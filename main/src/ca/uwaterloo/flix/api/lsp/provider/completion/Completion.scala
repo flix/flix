@@ -47,8 +47,8 @@ sealed trait Completion {
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
-    case Completion.FieldCompletion(field, prefix) =>
-      val name = s"$prefix.${field.name}"
+    case Completion.LabelCompletion(label, prefix) =>
+      val name = s"$prefix.${label.name}"
       CompletionItem(label = name,
         sortText = Priority.high(name),
         textEdit = TextEdit(context.range, name),
@@ -222,6 +222,14 @@ sealed trait Completion {
         documentation = None,
         kind = CompletionItemKind.Method
       )
+    case Completion.UseEnumTagCompletion(sym, caze) =>
+      val name = s"${sym.toString}.${caze.sym.name}"
+      CompletionItem(
+        label = name,
+        sortText = Priority.normal(name),
+        textEdit = TextEdit(context.range, name),
+        documentation = None,
+        kind = CompletionItemKind.Method)
     case Completion.UseOpCompletion(name) =>
       CompletionItem(
         sortText = name,
@@ -249,7 +257,7 @@ sealed trait Completion {
       val args = (1 until arity + 1).map(i => s"?elem$i").mkString(", ")
       val snippet = if (args.isEmpty) name else s"$name($args)"
       CompletionItem(
-        label = CompletionUtils.getLabelForEnumTags(name, cas),
+        label = CompletionUtils.getLabelForEnumTags(name, cas, arity),
         sortText = Priority.normal(name),
         textEdit = TextEdit(context.range, snippet),
         detail = Some(enumSym.name),
@@ -284,12 +292,12 @@ object Completion {
   case class KeywordCompletion(name: String) extends Completion
 
   /**
-    * Represents a field completion.
+    * Represents a label completion.
     *
-    * @param field  the field.
+    * @param label the label.
     * @param prefix the prefix.
     */
-  case class FieldCompletion(field: Name.Field, prefix: String) extends Completion
+  case class LabelCompletion(label: Name.Label, prefix: String) extends Completion
 
   /**
     * Represents a predicate completion.
@@ -467,6 +475,13 @@ object Completion {
    */
   case class UseDefCompletion(name: String) extends Completion
 
+  /**
+   * Represents a Use Enum Tag completion
+   *
+   * @param enumSym the sym of the enum.
+   * @param caze    the case of the enum.
+   */
+  case class UseEnumTagCompletion(enumSym: EnumSym, caze: TypedAst.Case) extends Completion
   /**
    * Represents a Use Op completion.
    *

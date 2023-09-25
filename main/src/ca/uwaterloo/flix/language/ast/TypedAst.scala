@@ -46,13 +46,11 @@ object TypedAst {
 
   case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
-  case class Sig(sym: Symbol.SigSym, spec: Spec, impl: Option[Impl])
+  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
-  case class Def(sym: Symbol.DefnSym, spec: Spec, impl: Impl)
+  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], loc: SourceLocation)
-
-  case class Impl(exp: Expr, inferredScheme: Scheme)
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
@@ -146,8 +144,6 @@ object TypedAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(exps: List[Expr], rules: List[RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Tag(sym: Ast.CaseSymUse, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -160,11 +156,11 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class RecordSelect(exp: Expr, field: Name.Field, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -296,20 +292,13 @@ object TypedAst {
 
     case class Tuple(elms: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
-  }
+    case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
+    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Pattern
 
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoosePattern
-
+    object Record {
+      case class RecordLabelPattern(label: Name.Label, tpe: Type, pat: Pattern, loc: SourceLocation)
+    }
   }
 
   sealed trait RestrictableChoosePattern
@@ -373,8 +362,6 @@ object TypedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

@@ -71,7 +71,7 @@ object CodeHinter {
     * Computes code quality hints for the given definition `def0`.
     */
   private def visitDef(def0: TypedAst.Def)(implicit root: Root, flix: Flix): List[CodeHint] = {
-    visitExp(def0.impl.exp)
+    visitExp(def0.exp)
   }
 
   /**
@@ -147,11 +147,6 @@ object CodeHinter {
     case Expr.TypeMatch(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
         case TypeMatchRule(_, _, exp) => visitExp(exp)
-      }
-
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ rules.flatMap {
-        case RelationalChooseRule(_, exp) => visitExp(exp)
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
