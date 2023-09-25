@@ -998,7 +998,7 @@ object ConstraintGeneration {
       val (tpe, eff) = visitExp(exp)
       val patternTypes = patterns.map(visitPattern)
       val (fragTypes, fragEffs) = parExps.map(visitExp).unzip
-      patternTypes.zip(fragTypes).zip(patLocs).foreach { case ((patTpe, expTpe), l) => unifyTypeM(List(patTpe, expTpe), l) }
+      patternTypes.zip(fragTypes).zip(patLocs).foreach { case ((patTpe, expTpe), l) => unifyTypeM(patTpe, expTpe, l) }
       fragEffs.zip(patLocs).foreach { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) }
       val resTpe = tpe
       val resEff = eff
