@@ -47,6 +47,16 @@ object ConstraintGeneration {
     }
   }
 
+  def unifyType3M(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit c: Context): Unit = {
+    unifyTypeM(tpe1, tpe2, loc)
+    unifyTypeM(tpe1, tpe3, loc)
+  }
+
+  // TODO ASSOC-TYPES this should actually do something
+  def unifyEffM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit c: Context, flix: Flix): Unit= {
+    unifyTypeM(tpe1, tpe2, loc)
+  }
+
   // TODO ASSOC-TYPES this should actually do something
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     unifyTypeM(expected, actual, loc)
@@ -854,7 +864,7 @@ object ConstraintGeneration {
       /**
         * Infers the type of the given pattern `pat0`.
         */
-      private def visitPattern(pat0: KindedAst.Pattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): Type = pat0 match {
+      def visitPattern(pat0: KindedAst.Pattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): Type = pat0 match {
 
         case KindedAst.Pattern.Wild(tvar, loc) => tvar
 
