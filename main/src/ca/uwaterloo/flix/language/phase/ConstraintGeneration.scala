@@ -3,8 +3,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.RelationalChooseConstraintGeneration
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
 
@@ -34,6 +35,12 @@ object ConstraintGeneration {
   // TODO ASSOC-TYPES this should actually do something
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     unifyTypeM(expected, actual, loc)
+  }
+
+  // TODO ASSOC-TYPES what does this do?
+  def expectTypeBindM(expected: Type, actual: Type, bind: Type, loc: SourceLocation)(implicit c: Context): Unit = {
+    expectTypeM(expected, actual, loc)
+    unifyTypeM(expected, bind, loc)
   }
 
   // TODO ASSOC-TYPES this should actually do something
@@ -107,14 +114,66 @@ object ConstraintGeneration {
 
     case Expr.Apply(exp, exps, tpe, eff, loc) => ???
 
-    case Expr.Lambda(fparam, exp, loc) => {
+    case Expr.Lambda(fparam, exp, loc) =>
       unifyTypeM(fparam.sym.tvar, fparam.tpe, loc)
       val (tpe, eff) = visitExp(exp)
       val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
       val resEff = Type.Pure
       (resTpe, resEff)
+
+    case KindedAst.Expr.Unary(sop, exp, tvar, loc) => sop match {
+      case SemanticOp.BoolOp.Not =>
+        val (tpe, eff) = visitExp(exp)
+        expectTypeBindM(expected = Type.Bool, actual = tpe, bind = tvar, exp.loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+
+      case SemanticOp.Float32Op.Neg =>
+        val (tpe, eff) = visitExp(exp)
+        expectTypeBindM(expected = Type.Float32, actual = tpe, bind = tvar, exp.loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+
+      case SemanticOp.Float64Op.Neg =>
+        val (tpe, eff) = visitExp(exp)
+        expectTypeBindM(expected = Type.Float64, actual = tpe, bind = tvar, exp.loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+
+      case SemanticOp.Int8Op.Neg | SemanticOp.Int8Op.Not =>
+        val (tpe, eff) = visitExp(exp)
+        expectTypeBindM(expected = Type.Int8, actual = tpe, bind = tvar, exp.loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+
+      case SemanticOp.Int16Op.Neg | SemanticOp.Int16Op.Not =>
+        val (tpe, eff) = visitExp(exp)
+        expectTypeBindM(expected = Type.Int16, actual = tpe, bind = tvar, exp.loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+
+      case SemanticOp.Int32Op.Neg | SemanticOp.Int32Op.Not =>
+        val (tpe, eff) = visitExp(exp)
+        expectTypeBindM(expected = Type.Int32, actual = tpe, bind = tvar, exp.loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+
+      case SemanticOp.Int64Op.Neg | SemanticOp.Int64Op.Not =>
+        val (tpe, eff) = visitExp(exp)
+        expectTypeBindM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+
+      case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
     }
-    case Expr.Unary(sop, exp, tpe, loc) => ???
+
     case Expr.Binary(sop, exp1, exp2, tpe, loc) => ???
 
     case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
