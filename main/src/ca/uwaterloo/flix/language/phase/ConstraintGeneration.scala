@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.RelationalChooseConstraintGeneration
+import ca.uwaterloo.flix.language.phase.constraintgeneration.{RelationalChooseConstraintGeneration, SchemaConstraintGeneration}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
@@ -851,13 +851,13 @@ object ConstraintGeneration {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.FixpointConstraintSet(cs, tvar, loc) => ???
-      case Expr.FixpointLambda(pparams, exp, tvar, loc) => ???
-      case Expr.FixpointMerge(exp1, exp2, loc) => ???
-      case Expr.FixpointSolve(exp, loc) => ???
-      case Expr.FixpointFilter(pred, exp, tvar, loc) => ???
-      case Expr.FixpointInject(exp, pred, tvar, loc) => ???
-      case Expr.FixpointProject(pred, exp1, exp2, tvar, loc) => ???
+      case e@Expr.FixpointConstraintSet(cs, tvar, loc) => SchemaConstraintGeneration.visitFixpointConstraintSet(e)
+      case e@Expr.FixpointLambda(pparams, exp, tvar, loc) => SchemaConstraintGeneration.visitFixpointLambda(e)
+      case e@Expr.FixpointMerge(exp1, exp2, loc) => SchemaConstraintGeneration.visitFixpointMerge(e)
+      case e@Expr.FixpointSolve(exp, loc) => SchemaConstraintGeneration.visitFixpointSolve(e)
+      case e@Expr.FixpointFilter(pred, exp, tvar, loc) => SchemaConstraintGeneration.visitFixpointFilter(e)
+      case e@Expr.FixpointInject(exp, pred, tvar, loc) => SchemaConstraintGeneration.visitFixpointInject(e)
+      case e@Expr.FixpointProject(pred, exp1, exp2, tvar, loc) => SchemaConstraintGeneration.visitFixpointProject(e)
       case Expr.Error(m, tvar, eff) => ???
     }
 
