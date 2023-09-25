@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import scala.collection.mutable.ListBuffer
 
@@ -397,7 +397,7 @@ object ConstraintGeneration {
 
     case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
       cast match {
-        case CheckedCastType.TypeCast =>
+        case Ast.CheckedCastType.TypeCast =>
           // Ignore the inferred type of exp.
           val (_, eff) = visitExp(exp)
           unifyTypeM(evar, eff, loc)
@@ -405,7 +405,7 @@ object ConstraintGeneration {
           val resEff = evar
           (resTpe, resEff)
 
-        case CheckedCastType.EffectCast =>
+        case Ast.CheckedCastType.EffectCast =>
           // We simply union the purity and effect with a fresh variable.
           val (tpe, eff) = visitExp(exp)
           unifyTypeM(tvar, tpe, loc)
