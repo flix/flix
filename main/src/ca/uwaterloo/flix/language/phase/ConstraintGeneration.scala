@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
+import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import scala.collection.mutable.ListBuffer
@@ -437,17 +438,78 @@ object ConstraintGeneration {
       val resEff = eff
       (resTpe, resEff)
 
-    case Expr.TryCatch(exp, rules, loc) => ???
+    case Expr.TryCatch(exp, rules, loc) =>
+      val (tpes, effs) = rules.map {
+        case KindedAst.CatchRule(sym, clazz, body) =>
+          visitExp(body)
+      }.unzip
+      val (tpe, eff) = visitExp(exp)
+      val ruleTpe = unifyAllTypesM(tpes, Kind.Star, loc)
+      unifyTypeM(tpe, ruleTpe, loc)
+      val resTpe = tpe
+      val resEff = Type.mkUnion(eff :: effs, loc)
+      (resTpe, resEff)
+
     case Expr.TryWith(exp, eff, rules, tvar, loc) => ???
     case Expr.Do(op, args, tvar, loc) => ???
     case Expr.Resume(exp, argTvar, retTvar, loc) => ???
-    case Expr.InvokeConstructor(constructor, args, loc) => ???
-    case Expr.InvokeMethod(method, clazz, exp, args, loc) => ???
-    case Expr.InvokeStaticMethod(method, args, loc) => ???
-    case Expr.GetField(field, clazz, exp, loc) => ???
-    case Expr.PutField(field, clazz, exp1, exp2, loc) => ???
-    case Expr.GetStaticField(field, loc) => ???
-    case Expr.PutStaticField(field, exp, loc) => ???
+
+    case Expr.InvokeConstructor(constructor, args, loc) =>
+      val classTpe = getFlixType(constructor.getDeclaringClass)
+      val (_, _) = args.map(visitExp).unzip
+      val resTpe = classTpe
+      val resEff = Type.Impure
+      (resTpe, resEff)
+
+    case Expr.InvokeMethod(method, clazz, exp, args, loc) =>
+      val classTpe = getFlixType(clazz)
+      val (baseTyp, _) = visitExp(exp)
+      unifyTypeM(baseTyp, classTpe, loc)
+      val (_, _) = args.map(visitExp).unzip
+      val resTpe = getFlixType(method.getReturnType)
+      val resEff = Type.Impure
+      (resTpe, resEff)
+
+    case Expr.InvokeStaticMethod(method, args, loc) =>
+      val returnTpe = getFlixType(method.getReturnType)
+      val (_, _) = args.map(visitExp).unzip
+      val resTpe = getFlixType(method.getReturnType)
+      val resEff = Type.Impure
+      (resTpe, resEff)
+
+    case Expr.GetField(field, clazz, exp, loc) =>
+      val classType = getFlixType(clazz)
+      val fieldType = getFlixType(field.getType)
+      val (tpe, _) = visitExp(exp)
+      expectTypeM(expected = classType, actual = tpe, exp.loc)
+      val resTpe = fieldType
+      val resEff = Type.Impure
+      (resTpe, resEff)
+
+    case Expr.PutField(field, clazz, exp1, exp2, loc) =>
+      val fieldType = getFlixType(field.getType)
+      val classType = getFlixType(clazz)
+      val (tpe1, _) = visitExp(exp1)
+      val (tpe2, _) = visitExp(exp2)
+      expectTypeM(expected = classType, actual = tpe1, exp1.loc)
+      expectTypeM(expected = fieldType, actual = tpe2, exp2.loc)
+      val resTpe = Type.Unit
+      val resEff = Type.Impure
+      (resTpe, resEff)
+
+    case Expr.GetStaticField(field, loc) =>
+      val fieldType = getFlixType(field.getType)
+      val resTpe = fieldType
+      val resEff = Type.Impure
+      (resTpe, resEff)
+
+    case Expr.PutStaticField(field, exp, loc) =>
+      val (valueTyp, _) = visitExp(exp)
+      expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
+      val resTpe = Type.Unit
+      val resEff = Type.Impure
+      (resTpe, resEff)
+
     case Expr.NewObject(name, clazz, methods, loc) => ???
     case Expr.NewChannel(exp1, exp2, tvar, loc) => ???
     case Expr.GetChannel(exp, tvar, loc) => ???
