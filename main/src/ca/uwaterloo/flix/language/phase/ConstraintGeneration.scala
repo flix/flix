@@ -1,8 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import scala.collection.mutable.ListBuffer
 
@@ -377,12 +378,65 @@ object ConstraintGeneration {
       val resEff = evar
       (resTpe, resEff)
 
-    case Expr.Ascribe(exp, expectedType, expectedPur, tvar, loc) => ???
-    case Expr.InstanceOf(exp, clazz, loc) => ???
-    case Expr.CheckedCast(cast, exp, tvar, evar, loc) => ???
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc) => ???
-    case Expr.UncheckedMaskingCast(exp, loc) => ???
-    case Expr.Without(exp, eff, loc) => ???
+    case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
+      // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
+      val (actualTpe, actualEff) = visitExp(exp)
+      expectTypeM(expected = expectedTpe.getOrElse(Type.freshVar(Kind.Star, loc)), actual = actualTpe, loc)
+      unifyTypeM(actualTpe, tvar, loc)
+      expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Eff, loc)), actual = actualEff, loc)
+      val resTpe = tvar
+      val resEff = actualEff
+      (resTpe, resEff)
+
+    case Expr.InstanceOf(exp, clazz, loc) =>
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+      val resTpe = Type.Bool
+      val resEff = Type.Pure
+      (resTpe, resEff)
+
+    case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
+      cast match {
+        case CheckedCastType.TypeCast =>
+          // Ignore the inferred type of exp.
+          val (_, eff) = visitExp(exp)
+          unifyTypeM(evar, eff, loc)
+          val resTpe = tvar
+          val resEff = evar
+          (resTpe, resEff)
+
+        case CheckedCastType.EffectCast =>
+          // We simply union the purity and effect with a fresh variable.
+          val (tpe, eff) = visitExp(exp)
+          unifyTypeM(tvar, tpe, loc)
+          val resTpe = tvar
+          val resEff = Type.mkUnion(eff, evar, loc)
+          (resTpe, resEff)
+      }
+
+    case Expr.UncheckedCast(exp, declaredTpe, declaredEff, tvar, loc) =>
+      // A cast expression is unsound; the type system assumes the declared type is correct.
+      val (actualTyp, actualEff) = visitExp(exp)
+      unifyTypeM(tvar, declaredTpe.getOrElse(actualTyp), loc)
+      val resTpe = tvar
+      val resEff = declaredEff.getOrElse(actualEff)
+      (resTpe, resEff)
+
+    case Expr.UncheckedMaskingCast(exp, loc) =>
+      val (tpe, eff) = visitExp(exp)
+      val resTpe = tpe
+      val resEff = Type.Pure
+      (resTpe, resEff)
+
+    case Expr.Without(exp, effUse, loc) =>
+      val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+      //        val expected = Type.mkDifference(Type.freshVar(Kind.Bool, loc), effType, loc)
+      // TODO EFF-MIGRATION use expected
+      val (tpe, eff) = visitExp(exp)
+      val resTpe = tpe
+      val resEff = eff
+      (resTpe, resEff)
+
     case Expr.TryCatch(exp, rules, loc) => ???
     case Expr.TryWith(exp, eff, rules, tvar, loc) => ???
     case Expr.Do(op, args, tvar, loc) => ???
