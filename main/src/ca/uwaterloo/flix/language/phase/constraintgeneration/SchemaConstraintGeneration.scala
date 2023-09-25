@@ -33,7 +33,7 @@ object SchemaConstraintGeneration {
       (resTpe, resEff)
   }
 
-  def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = e match {
     case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
       def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
@@ -53,7 +53,7 @@ object SchemaConstraintGeneration {
       (resTpe, resEff)
   }
 
-  def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = e match {
     case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
       //
       //  exp1 : #{...}    exp2 : #{...}
@@ -68,7 +68,7 @@ object SchemaConstraintGeneration {
       (resTpe, resEff)
   }
 
-  def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = e match {
     case KindedAst.Expr.FixpointSolve(exp, loc) =>
       //
       //  exp : #{...}
@@ -83,7 +83,7 @@ object SchemaConstraintGeneration {
   }
 
 
-  def visitFixpointFilter(e: KindedAst.Expr.FixpointFilter)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointFilter(e: KindedAst.Expr.FixpointFilter)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = e match {
     case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
       //
       //  exp1 : tpe    exp2 : #{ P : a  | b }
@@ -102,7 +102,7 @@ object SchemaConstraintGeneration {
       (resTpe, resEff)
   }
 
-  def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = e match {
     case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
       //
       //  exp : F[freshElmType] where F is Foldable
@@ -129,7 +129,7 @@ object SchemaConstraintGeneration {
       (resTpe, resEff)
   }
 
-  def visitFixpointProject(e: KindedAst.Expr.FixpointProject)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointProject(e: KindedAst.Expr.FixpointProject)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = e match {
     case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
       //
       //  exp1: {$Result(freshRelOrLat, freshTupleVar) | freshRestSchemaVar }
