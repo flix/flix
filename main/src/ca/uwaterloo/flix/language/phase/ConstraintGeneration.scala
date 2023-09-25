@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{RelationalChooseConstraintGeneration, SchemaConstraintGeneration}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.{RelationalChooseConstraintGeneration, RestrictableChooseConstraintGeneration, SchemaConstraintGeneration}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
@@ -127,7 +127,7 @@ object ConstraintGeneration {
       val resEff = atLeastEff
       (resTpe, resEff)
 
-    case Expr.OpenAs(symUse, exp, tvar, loc) => ???
+    case e@Expr.OpenAs(symUse, exp, tvar, loc) => RestrictableChooseConstraintGeneration.visitOpenAs(e)
 
     case Expr.Use(sym, alias, exp, loc) =>
       visitExp(exp)
@@ -441,9 +441,11 @@ object ConstraintGeneration {
       case e@Expr.RelationalChoose(star, exps, rules, tpe, loc) =>
         RelationalChooseConstraintGeneration.visitRelationalChoose(e)
 
-      case Expr.RestrictableChoose(star, exp, rules, tpe, loc) => ???
+      case e@Expr.RestrictableChoose(star, exp, rules, tpe, loc) => RestrictableChooseConstraintGeneration.visitRestrictableChoose(e)
+
       case Expr.Tag(sym, exp, tpe, loc) => ???
-      case Expr.RestrictableTag(sym, exp, isOpen, tpe, loc) => ???
+
+      case e@Expr.RestrictableTag(sym, exp, isOpen, tpe, loc) => RestrictableChooseConstraintGeneration.visitRestrictableTag(e)
 
       case Expr.Tuple(elms, loc) =>
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip
