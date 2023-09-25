@@ -991,7 +991,18 @@ object ConstraintGeneration {
       val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
       (resTpe, resEff)
 
-    case Expr.ParYield(frags, exp, loc) => ???
+    case Expr.ParYield(frags, exp, loc) =>
+      val patterns = frags.map(_.pat)
+      val parExps = frags.map(_.exp)
+      val patLocs = frags.map(_.loc)
+      val (tpe, eff) = visitExp(exp)
+      val patternTypes = patterns.map(visitPattern)
+      val (fragTypes, fragEffs) = parExps.map(visitExp).unzip
+      patternTypes.zip(fragTypes).zip(patLocs).foreach { case ((patTpe, expTpe), l) => unifyTypeM(List(patTpe, expTpe), l) }
+      fragEffs.zip(patLocs).foreach { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) }
+      val resTpe = tpe
+      val resEff = eff
+      (resTpe, resEff)
 
     case Expr.Lazy(exp, loc) =>
       val (tpe, eff) = visitExp(exp)
