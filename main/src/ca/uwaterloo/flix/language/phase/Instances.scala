@@ -31,7 +31,7 @@ object Instances {
     * Validates instances and classes in the given AST root.
     */
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Instances") {
-//    dumpClassStats(root)
+    dumpClassStats(root)
     val errs = visitInstances(root, oldRoot, changeSet) ::: visitClasses(root)
     errs match {
       case Nil => ().toSuccess
@@ -270,20 +270,44 @@ object Instances {
       "Writer",
     )
 
+    def countConstraintInDefs(sym: Symbol.ClassSym): Int = {
+      root.defs.values.count {
+        case defn => defn.spec.tconstrs.exists {
+            case tconstr => tconstr.head.sym == sym
+          }
+      }
+    }
+
+    def countConstraintInSigs(sym: Symbol.ClassSym): Int = {
+      root.classes.values.filterNot(clazz => clazz.sym == sym).map {
+        case clazz => clazz.signatures.count {
+          case sig => sig.spec.tconstrs.exists {
+            case tconstr => tconstr.head.sym == sym
+          }
+        }
+      }.sum
+    }
+
+    def constraints(sym: Symbol.ClassSym): Int = {
+      countConstraintInDefs(sym) + countConstraintInSigs(sym)
+    }
+
     // lines, instances, signatures, functions
-    println("class | lines | instances | signatures | functions")
-    println("--- | --- | --- | --- | ---")
+    println("class & lines & instances & signatures & functions & eligible functions \\\\")
+    println("\\hline")
 
     val classSyms = classNames.map(Symbol.mkClassSym)
 
-    classSyms.flatMap(root.classes.get).foreach {
+//    classSyms.flatMap(root.classes.get).foreach {
+    root.classes.values.toList.sortBy(_.sym.name).foreach {
       case TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
         val clazz = sym.name
         val lines = loc.endLine - loc.beginLine + 1
         val instances = root.instances.getOrElse(sym, Nil).size
         val signatures = sigs.count(_.exp.isEmpty)
         val functions = sigs.count(_.exp.isDefined)
-        println(s"$clazz | $lines | $instances | $signatures | $functions ")
+        val eligible = constraints(sym)
+        println(s"\\textsf{$clazz} & $lines & $instances & $signatures & $functions & $eligible \\\\ ")
     }
   }
 }
