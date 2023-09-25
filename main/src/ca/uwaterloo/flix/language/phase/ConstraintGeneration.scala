@@ -340,9 +340,43 @@ object ConstraintGeneration {
       val resEff = eff
       (resTpe, resEff)
 
-    case Expr.Ref(exp1, exp2, tvar, evar, loc) => ???
-    case Expr.Deref(exp, tvar, evar, loc) => ???
-    case Expr.Assign(exp1, exp2, evar, loc) => ???
+    case Expr.Ref(exp1, exp2, tvar, evar, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val regionType = Type.mkRegion(regionVar, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      expectTypeM(tpe2, regionType, exp2.loc)
+      unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
+      unifyTypeM(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.Deref(exp, tvar, evar, loc) =>
+      val elmVar = Type.freshVar(Kind.Star, loc)
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val refType = Type.mkRef(elmVar, regionVar, loc)
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(expected = refType, actual = tpe, exp.loc)
+      unifyTypeM(tvar, elmVar, loc)
+      unifyTypeM(evar, Type.mkUnion(eff, regionVar, loc), loc)
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.Assign(exp1, exp2, evar, loc) =>
+      val elmVar = Type.freshVar(Kind.Star, loc)
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val refType = Type.mkRef(elmVar, regionVar, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      expectTypeM(expected = refType, actual = tpe1, exp1.loc)
+      expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+      unifyTypeM(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
+      val resTpe = Type.Unit
+      val resEff = evar
+      (resTpe, resEff)
+
     case Expr.Ascribe(exp, expectedType, expectedPur, tvar, loc) => ???
     case Expr.InstanceOf(exp, clazz, loc) => ???
     case Expr.CheckedCast(cast, exp, tvar, evar, loc) => ???
