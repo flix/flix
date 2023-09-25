@@ -20,6 +20,15 @@ object ConstraintGeneration {
     c.constrs.append(Constraint.Equality(tpe1, tpe2, c.renv, c.lenv, loc))
   }
 
+  def unifyAllTypesM(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit c: Context, flix: Flix): Type = {
+    tpes match {
+      case tpe1 :: rest =>
+        rest.foreach(unifyTypeM(tpe1, _, loc))
+        tpe1
+      case Nil => Type.freshVar(kind, loc.asSynthetic)
+    }
+  }
+
   // TODO ASSOC-TYPES this should actually do something
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     unifyTypeM(expected, actual, loc)
@@ -169,7 +178,7 @@ object ConstraintGeneration {
       val evar = Type.freshVar(Kind.Eff, loc)
       val (tpe1, _) = visitExp(exp1)
       val (tpe2, _) = visitExp(exp2)
-      expectTypeM(expected = Type.mkArrowWithEffect(Type.Unit, evar, Type.Unit), loc.asSynthetic)
+      expectTypeM(expected = Type.mkArrowWithEffect(Type.Unit, evar, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
       expectTypeM(expected = regionTpe, actual = tpe2, exp2.loc)
       val resTpe = Type.Unit
       val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
@@ -181,26 +190,90 @@ object ConstraintGeneration {
     case Expr.RestrictableChoose(star, exp, rules, tpe, loc) => ???
     case Expr.Tag(sym, exp, tpe, loc) => ???
     case Expr.RestrictableTag(sym, exp, isOpen, tpe, loc) => ???
-    case Expr.Tuple(elms, loc) => ???
-    case Expr.RecordEmpty(loc) => ???
-    case Expr.RecordSelect(exp, label, tpe, loc) => ???
-    case Expr.RecordExtend(label, value, rest, tpe, loc) => ???
-    case Expr.RecordRestrict(label, rest, tpe, loc) => ???
-    case Expr.ArrayLit(exps, exp, tvar, pvar, loc) => ???
-    case Expr.ArrayNew(exp1, exp2, exp3, tvar, pvar, loc) => ???
-    case Expr.ArrayLoad(base, index, tpe, pvar, loc) => ???
-    case Expr.ArrayStore(base, index, elm, pvar, loc) => ???
+
+    case Expr.Tuple(elms, loc) =>
+      val (elmTpes, elmEffs) = elms.map(visitExp).unzip
+      val resTpe = Type.mkTuple(elmTpes, loc)
+      val resEff = Type.mkUnion(elmEffs, loc)
+      (resTpe, resEff)
+
+    case Expr.RecordEmpty(loc) =>
+      val resTpe = Type.mkRecord(Type.RecordRowEmpty, loc)
+      val resEff = Type.Pure
+      (resTpe, resEff)
+
+    case Expr.RecordSelect(exp, label, tvar, loc) =>
+      //
+      // r : { label = tpe | row }
+      // -------------------------
+      //       r.label : tpe
+      //
+      val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+      val expectedRowType = Type.mkRecordRowExtend(label, tvar, freshRowVar, loc)
+      val expectedRecordType = Type.mkRecord(expectedRowType, loc)
+      val (tpe, eff) = visitExp(exp)
+      unifyTypeM(tpe, expectedRecordType, loc)
+      val resTpe = tvar
+      val resEff = eff
+      (resTpe, resEff)
+
+    case Expr.RecordExtend(label, exp1, exp2, tvar, loc) =>
+      //
+      //       exp1 : tpe        exp2 : {| r }
+      // ---------------------------------------------
+      // { label = exp1 | exp2 } : { label  :: tpe | r }
+      //
+      val restRow = Type.freshVar(Kind.RecordRow, loc)
+      val (tpe1, eff1) = visitExp(exp1)
+      val (tpe2, eff2) = visitExp(exp2)
+      unifyTypeM(tpe2, Type.mkRecord(restRow, loc), loc)
+      unifyTypeM(tvar, Type.mkRecord(Type.mkRecordRowExtend(label, tpe1, restRow, loc), loc), loc)
+      val resTpe = tvar
+      val resEff = Type.mkUnion(eff1, eff2, loc)
+      (resTpe, resEff)
+
+    case Expr.RecordRestrict(label, exp, tvar, loc) =>
+      //
+      //  exp : { label  :: t | r }
+      // -------------------------
+      // { -label | exp } : {| r }
+      //
+      val freshLabelType = Type.freshVar(Kind.Star, loc)
+      val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+      val (tpe, eff) = visitExp(exp)
+      unifyTypeM(tpe, Type.mkRecord(Type.mkRecordRowExtend(label, freshLabelType, freshRowVar, loc), loc), loc)
+      unifyTypeM(tvar, Type.mkRecord(freshRowVar, loc), loc)
+      val resTpe = tvar
+      val resEff = eff
+      (resTpe, resEff)
+
+    case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
+      val regionVar = Type.freshVar(Kind.Eff, loc)
+      val regionType = Type.mkRegion(regionVar, loc)
+      val (tpes, effs) = exps.map(visitExp).unzip
+      val (tpe, eff) = visitExp(exp)
+      expectTypeM(expected = regionType, actual = tpe, exp.loc)
+      val elmTpe = unifyAllTypesM(tpes, Kind.Star, loc)
+      unifyTypeM(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
+      unifyTypeM(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
+      val resTpe = tvar
+      val resEff = evar
+      (resTpe, resEff)
+
+    case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) => ???
+    case Expr.ArrayLoad(base, index, tvar, evar, loc) => ???
+    case Expr.ArrayStore(base, index, elm, evar, loc) => ???
     case Expr.ArrayLength(base, loc) => ???
-    case Expr.VectorLit(exps, tvar, pvar, loc) => ???
-    case Expr.VectorLoad(exp1, exp2, tpe, pvar, loc) => ???
+    case Expr.VectorLit(exps, tvar, evar, loc) => ???
+    case Expr.VectorLoad(exp1, exp2, tvar, evar, loc) => ???
     case Expr.VectorLength(exp, loc) => ???
-    case Expr.Ref(exp1, exp2, tvar, pvar, loc) => ???
-    case Expr.Deref(exp, tvar, pvar, loc) => ???
-    case Expr.Assign(exp1, exp2, pvar, loc) => ???
-    case Expr.Ascribe(exp, expectedType, expectedPur, tpe, loc) => ???
+    case Expr.Ref(exp1, exp2, tvar, evar, loc) => ???
+    case Expr.Deref(exp, tvar, evar, loc) => ???
+    case Expr.Assign(exp1, exp2, evar, loc) => ???
+    case Expr.Ascribe(exp, expectedType, expectedPur, tvar, loc) => ???
     case Expr.InstanceOf(exp, clazz, loc) => ???
-    case Expr.CheckedCast(cast, exp, tvar, pvar, loc) => ???
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, loc) => ???
+    case Expr.CheckedCast(cast, exp, tvar, evar, loc) => ???
+    case Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc) => ???
     case Expr.UncheckedMaskingCast(exp, loc) => ???
     case Expr.Without(exp, eff, loc) => ???
     case Expr.TryCatch(exp, rules, loc) => ???
@@ -216,20 +289,20 @@ object ConstraintGeneration {
     case Expr.PutStaticField(field, exp, loc) => ???
     case Expr.NewObject(name, clazz, methods, loc) => ???
     case Expr.NewChannel(exp1, exp2, tvar, loc) => ???
-    case Expr.GetChannel(exp, tpe, loc) => ???
+    case Expr.GetChannel(exp, tvar, loc) => ???
     case Expr.PutChannel(exp1, exp2, loc) => ???
-    case Expr.SelectChannel(rules, default, tpe, loc) => ???
+    case Expr.SelectChannel(rules, default, tvar, loc) => ???
     case Expr.Spawn(exp1, exp2, loc) => ???
     case Expr.ParYield(frags, exp, loc) => ???
     case Expr.Lazy(exp, loc) => ???
-    case Expr.Force(exp, tpe, loc) => ???
-    case Expr.FixpointConstraintSet(cs, tpe, loc) => ???
-    case Expr.FixpointLambda(pparams, exp, tpe, loc) => ???
+    case Expr.Force(exp, tvar, loc) => ???
+    case Expr.FixpointConstraintSet(cs, tvar, loc) => ???
+    case Expr.FixpointLambda(pparams, exp, tvar, loc) => ???
     case Expr.FixpointMerge(exp1, exp2, loc) => ???
     case Expr.FixpointSolve(exp, loc) => ???
-    case Expr.FixpointFilter(pred, exp, tpe, loc) => ???
-    case Expr.FixpointInject(exp, pred, tpe, loc) => ???
-    case Expr.FixpointProject(pred, exp1, exp2, tpe, loc) => ???
-    case Expr.Error(m, tpe, eff) => ???
+    case Expr.FixpointFilter(pred, exp, tvar, loc) => ???
+    case Expr.FixpointInject(exp, pred, tvar, loc) => ???
+    case Expr.FixpointProject(pred, exp1, exp2, tvar, loc) => ???
+    case Expr.Error(m, tvar, eff) => ???
   }
 }
