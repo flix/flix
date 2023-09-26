@@ -14,21 +14,19 @@
  *  limitations under the License.
  */
 
-enum MutDisjointSet[t, r] {
-    case MutDisjointSet({ parent = Ref[Option[MutDisjointSet[t, r]], r], rank = Ref[Int32, r] })
+enum MutDisjointSet[t: Type, r: Eff] {
+    case MutDisjointSet({ rc = Region[r], value = t, parent = Ref[Option[MutDisjointSet[t, r]], r], rank = Ref[Int32, r] })
 }
 
 mod MutDisjointSet {
 
-    pub def makeSet(rc: Region[r], x: t): MutDisjointSet[t, r] \ {} = singleton(rc, x)
-
-    pub def singleton(rc: Region[r], x: t): MutDisjointSet[t, r] \ {} =
-        MutDisjointSet({ parent = Ref.new(None), rank = Ref.new(0) })
+    pub def singleton(rc: Region[r], x: t): MutDisjointSet[t, r] \ r =
+        MutDisjointSet({ rc = rc, value = x, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
 
     pub def find(x: MutDisjointSet[t, r]): MutDisjointSet[t, r] = ???
 
-    pub def union(x: MutDisjointSet, y: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ r = ???
+    pub def union(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ {} = ???
 
-    pub def equivalent(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): Bool \ r = find(x) == find(y)
+    pub def equivalent(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): Bool \ {} = ???
 
 }
