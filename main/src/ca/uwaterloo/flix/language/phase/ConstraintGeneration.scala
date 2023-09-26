@@ -29,16 +29,16 @@ object ConstraintGeneration {
   sealed class Constraint
 
   object Constraint {
-    case class Equality(tpe1: Type, tpe2: Type, renv: RigidityEnv, lenv: LevelEnv, loc: SourceLocation) extends Constraint
+    case class Equality(tpe1: Type, tpe2: Type, lenv: LevelEnv, loc: SourceLocation) extends Constraint
 
-    case class Class(sym: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, lenv: LevelEnv, loc: SourceLocation) extends Constraint
+    case class Class(sym: Symbol.ClassSym, tpe: Type, lenv: LevelEnv, loc: SourceLocation) extends Constraint
   }
 
   /**
     * Generates constraints unifying the given types.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit c: Context): Unit = {
-    c.constrs.append(Constraint.Equality(tpe1, tpe2, c.renv, c.lenv, loc))
+    c.constrs.append(Constraint.Equality(tpe1, tpe2, c.lenv, loc))
   }
 
   /**
@@ -109,7 +109,7 @@ object ConstraintGeneration {
     */
   def addTypeConstraintsM(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation)(implicit c: Context): Unit = {
     val tconstrs = tconstrs0.map {
-      case Ast.TypeConstraint(head, arg, _) => Constraint.Class(head.sym, arg, c.renv, c.lenv, loc)
+      case Ast.TypeConstraint(head, arg, _) => Constraint.Class(head.sym, arg, c.lenv, loc)
     }
     c.constrs.addAll(tconstrs)
   }
