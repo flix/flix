@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
 
 import scala.collection.mutable.ListBuffer
@@ -35,7 +35,7 @@ object ConstraintGeneration {
     }
 
     val result = flix.phase("ConstraintGeneration") {
-      MapOps.mapValues(root.defs) {
+      ParOps.mapValues(root.defs) {
         case defn =>
           implicit val context: Context = Context.empty()
           implicit val r: KindedAst.Root = root
