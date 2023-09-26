@@ -1,0 +1,34 @@
+/*
+ *  Copyright 2023 Jakob Schneider Villumsen
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+enum MutDisjointSet[t, r] {
+    case MutDisjointSet({ parent = Ref[Option[MutDisjointSet[t, r]], r], rank = Ref[Int32, r] })
+}
+
+mod MutDisjointSet {
+
+    pub def makeSet(rc: Region[r], x: t): MutDisjointSet[t, r] \ {} = singleton(rc, x)
+
+    pub def singleton(rc: Region[r], x: t): MutDisjointSet[t, r] \ {} =
+        MutDisjointSet({ parent = Ref.new(None), rank = Ref.new(0) })
+
+    pub def find(x: MutDisjointSet[t, r]): MutDisjointSet[t, r] = ???
+
+    pub def union(x: MutDisjointSet, y: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ r = ???
+
+    pub def equivalent(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): Bool \ r = find(x) == find(y)
+
+}
