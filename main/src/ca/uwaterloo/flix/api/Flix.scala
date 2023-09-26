@@ -533,6 +533,7 @@ class Flix {
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
+      afterConstraintGen = ConstraintGeneration.run(afterDeriver)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       afterStatistics <- Statistics.run(afterEntryPoint)

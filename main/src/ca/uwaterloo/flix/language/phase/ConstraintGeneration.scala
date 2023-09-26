@@ -21,10 +21,29 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.MapOps
 
 import scala.collection.mutable.ListBuffer
 
 object ConstraintGeneration {
+
+  def run(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.DefnSym, (List[Constraint], Type, Type, RigidityEnv)] = {
+    if (true) {
+      return Map.empty
+    }
+
+    flix.phase("ConstraintGeneration") {
+      MapOps.mapValues(root.defs) {
+        case defn =>
+          implicit val context: Context = Context.empty()
+          implicit val r: KindedAst.Root = root
+          val (tpe, eff) = visitExp(defn.exp)
+          val constrs = context.constrs.toList
+          val renv = context.renv
+          (constrs, tpe, eff, renv)
+      }
+    }
+  }
 
   sealed class Constraint
 
