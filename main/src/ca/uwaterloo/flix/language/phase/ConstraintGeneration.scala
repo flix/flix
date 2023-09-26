@@ -34,10 +34,16 @@ object ConstraintGeneration {
     case class Class(sym: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, lenv: LevelEnv, loc: SourceLocation) extends Constraint
   }
 
+  /**
+    * Generates constraints unifying the given types.
+    */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     c.constrs.append(Constraint.Equality(tpe1, tpe2, c.renv, c.lenv, loc))
   }
 
+  /**
+    * Generates constraints unifying the given types.
+    */
   def unifyAllTypesM(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit c: Context, flix: Flix): Type = {
     tpes match {
       case tpe1 :: rest =>
@@ -47,6 +53,9 @@ object ConstraintGeneration {
     }
   }
 
+  /**
+    * Generates constraints expecting the given type arguments to unify.
+    */
   // TODO ASSOC-TYPES this should actually do something
   def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit c: Context, root: KindedAst.Root, flix: Flix): Unit = {
     expectedTypes.zip(actualTypes).zip(actualLocs).foreach {
@@ -54,33 +63,50 @@ object ConstraintGeneration {
     }
   }
 
-  // expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
+  /**
+    * Generates constraints unifying the given types.
+    */
   def unifyType3M(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     unifyTypeM(tpe1, tpe2, loc)
     unifyTypeM(tpe1, tpe3, loc)
   }
 
+  /**
+    * Generates constraints unifying the given effects.
+    */
   // TODO ASSOC-TYPES this should actually do something
   def unifyEffM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit c: Context, flix: Flix): Unit = {
     unifyTypeM(tpe1, tpe2, loc)
   }
 
+  /**
+    * Generates constraints expecting the given types to unify.
+    */
   // TODO ASSOC-TYPES this should actually do something
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     unifyTypeM(expected, actual, loc)
   }
 
+  /**
+    * Generates constraints expecting the given types to unify, binding them to the bound type.
+    */
   // TODO ASSOC-TYPES what does this do?
   def expectTypeBindM(expected: Type, actual: Type, bind: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     expectTypeM(expected, actual, loc)
     unifyTypeM(expected, bind, loc)
   }
 
+  /**
+    * Generates constraints unifying the given Booleans.
+    */
   // TODO ASSOC-TYPES this should actually do something
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit c: Context): Unit = {
     unifyTypeM(tpe1, tpe2, loc)
   }
 
+  /**
+    * Adds the given class constraints to the context.
+    */
   def addTypeConstraintsM(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation)(implicit c: Context): Unit = {
     val tconstrs = tconstrs0.map {
       case Ast.TypeConstraint(head, arg, _) => Constraint.Class(head.sym, arg, c.renv, c.lenv, loc)
@@ -88,24 +114,39 @@ object ConstraintGeneration {
     c.constrs.addAll(tconstrs)
   }
 
+  /**
+    * Marks the given type variable as rigid in the context.
+    */
   def rigidifyM(sym: Symbol.KindedTypeVarSym)(implicit c: Context): Unit = {
     c.renv = c.renv.markRigid(sym)
   }
 
+  /**
+    * Enters the type variable's scope in the context.
+    */
   def enterScopeM(sym: Symbol.KindedTypeVarSym)(implicit c: Context): Unit = {
-    c.lenv.enterScope(sym)
+    c.lenv.enterScope(sym) // MATT bug
   }
 
+  /**
+    * Exits the type variable's scope in the context.
+    */
   def exitScopeM(sym: Symbol.KindedTypeVarSym)(implicit c: Context): Unit = {
     c.lenv.exitScope(sym)
   }
 
+  /**
+    * Contains information to perform type unification in an expression.
+    */
   case class Context(constrs: ListBuffer[Constraint], var renv: RigidityEnv, var lenv: LevelEnv)
 
   object Context {
     def empty(): Context = Context(ListBuffer.empty, RigidityEnv.empty, LevelEnv.Top)
   }
 
+  /**
+    * Generates constraints for the given expression.
+    */
   def visitExp(exp0: KindedAst.Expr)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = exp0 match {
     case Expr.Var(sym, loc) => (sym.tvar, Type.Pure)
     case Expr.Def(sym, tvar, loc) =>
@@ -852,7 +893,7 @@ object ConstraintGeneration {
     case Expr.NewObject(name, clazz, methods, loc) =>
 
       /**
-        * Performs type inference on the given JVM `method`.
+        * Generates constraints for the JVM method.
         */
       def visitJvmMethod(method: KindedAst.JvmMethod): Unit = method match {
         case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, eff, loc) =>
@@ -915,9 +956,9 @@ object ConstraintGeneration {
       val regionVar = Type.freshVar(Kind.Eff, loc)
 
       /**
-        * Performs type inference on the given select rule `sr0`.
+        * Generates constraints for the SelectChannelRule.
         */
-      def inferSelectRule(sr0: KindedAst.SelectChannelRule): (Type, Type) = {
+      def visitSelectRule(sr0: KindedAst.SelectChannelRule): (Type, Type) = {
         sr0 match {
           case KindedAst.SelectChannelRule(sym, chan, body) =>
             val (chanType, eff1) = visitExp(chan)
@@ -930,16 +971,16 @@ object ConstraintGeneration {
       }
 
       /**
-        * Performs type inference on the given optional default expression `exp0`.
+        * Generates constraints for the default rule.
         */
-      def inferDefaultRule(exp0: Option[KindedAst.Expr]): (Type, Type) =
+      def visitDefaultRule(exp0: Option[KindedAst.Expr]): (Type, Type) =
         exp0 match {
           case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
           case Some(exp) => visitExp(exp)
         }
 
-      val (ruleTypes, ruleEffs) = rules.map(inferSelectRule).unzip
-      val (defaultType, eff2) = inferDefaultRule(default)
+      val (ruleTypes, ruleEffs) = rules.map(visitSelectRule).unzip
+      val (defaultType, eff2) = visitDefaultRule(default)
       unifyAllTypesM(tvar :: defaultType :: ruleTypes, Kind.Star, loc)
       val resTpe = tvar
       val resEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
@@ -996,7 +1037,7 @@ object ConstraintGeneration {
   }
 
   /**
-    * Infers the type of the given pattern `pat0`.
+    * Generates constraints for the pattern.
     */
   def visitPattern(pat0: KindedAst.Pattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): Type = pat0 match {
 
@@ -1053,6 +1094,9 @@ object ConstraintGeneration {
 
   }
 
+  /**
+    * Generates constraints for the record label pattern.
+    */
   private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
     case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
       // { Label = Pattern ... }
