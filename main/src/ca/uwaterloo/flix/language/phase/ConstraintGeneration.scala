@@ -28,7 +28,7 @@ import scala.collection.mutable.ListBuffer
 object ConstraintGeneration {
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.DefnSym, (List[Constraint], Type, Type, RigidityEnv)] = {
-    if (true) {
+    if (!flix.options.xtyper) {
       return Map.empty
     }
 

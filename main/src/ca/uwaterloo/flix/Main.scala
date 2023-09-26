@@ -115,7 +115,8 @@ object Main {
       xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary,
-      xparser = cmdOpts.xparser
+      xparser = cmdOpts.xparser,
+      xtyper = cmdOpts.xtyper
     )
 
     // Don't use progress bar if benchmarking.
@@ -323,6 +324,7 @@ object Main {
                      xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
+                     xtyper: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -549,6 +551,10 @@ object Main {
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
         text("[experimental] enables new experimental lexer and parser.")
+
+      // Xtyper
+      opt[Unit]("Xtyper").action((_, c) => c.copy(xtyper = true)).
+        text("[experimental] enables new experimental typer.")
 
       note("")
 

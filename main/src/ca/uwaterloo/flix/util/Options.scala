@@ -58,6 +58,7 @@ object Options {
     xflexibleregions = false,
     xsummary = false,
     xparser = false,
+    xtyper = false
   )
 
   /**
@@ -142,7 +143,8 @@ case class Options(lib: LibLevel,
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
                    xsummary: Boolean,
-                   xparser: Boolean
+                   xparser: Boolean,
+                   xtyper: Boolean,
                   )
 
 /**
