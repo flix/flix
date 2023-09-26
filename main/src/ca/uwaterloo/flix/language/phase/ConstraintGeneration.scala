@@ -125,14 +125,14 @@ object ConstraintGeneration {
     * Enters the type variable's scope in the context.
     */
   def enterScopeM(sym: Symbol.KindedTypeVarSym)(implicit c: Context): Unit = {
-    c.lenv.enterScope(sym) // MATT bug
+    c.lenv = c.lenv.enterScope(sym)
   }
 
   /**
     * Exits the type variable's scope in the context.
     */
   def exitScopeM(sym: Symbol.KindedTypeVarSym)(implicit c: Context): Unit = {
-    c.lenv.exitScope(sym)
+    c.lenv = c.lenv.exitScope(sym)
   }
 
   /**
