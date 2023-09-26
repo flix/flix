@@ -116,7 +116,8 @@ object Main {
       xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser,
-      xtyper = cmdOpts.xtyper
+      xtyper = cmdOpts.xtyper,
+      xprintconstraints = cmdOpts.xprintconstraints,
     )
 
     // Don't use progress bar if benchmarking.
@@ -325,6 +326,7 @@ object Main {
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
                      xtyper: Boolean = false,
+                     xprintconstraints: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -555,6 +557,10 @@ object Main {
       // Xtyper
       opt[Unit]("Xtyper").action((_, c) => c.copy(xtyper = true)).
         text("[experimental] enables new experimental typer.")
+
+      // Xprintconstraints
+      opt[Unit]("Xprintconstraints").action((_, c) => c.copy(xprintconstraints = true)).
+        text("[experimental] prints generated type constraints.")
 
       note("")
 

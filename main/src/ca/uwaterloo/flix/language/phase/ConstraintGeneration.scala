@@ -28,11 +28,13 @@ import scala.collection.mutable.ListBuffer
 object ConstraintGeneration {
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.DefnSym, (List[Constraint], Type, Type, RigidityEnv)] = {
+
+    // Skip this phase unless it is activated
     if (!flix.options.xtyper) {
       return Map.empty
     }
 
-    flix.phase("ConstraintGeneration") {
+    val result = flix.phase("ConstraintGeneration") {
       MapOps.mapValues(root.defs) {
         case defn =>
           implicit val context: Context = Context.empty()
@@ -43,6 +45,22 @@ object ConstraintGeneration {
           (constrs, tpe, eff, renv)
       }
     }
+
+    // report the constraints if directed
+    if (flix.options.xprintconstraints) {
+      result.foreach {
+        case (sym, (tconstrs, tpe, eff, renv)) =>
+          println(sym)
+          println("Type: " + tpe)
+          println("Effect: " + eff)
+          println("Rigid: " + renv.s)
+          println("Type constraints: " + tconstrs)
+          println()
+      }
+    }
+
+    // return the result
+    result
   }
 
   sealed class Constraint
