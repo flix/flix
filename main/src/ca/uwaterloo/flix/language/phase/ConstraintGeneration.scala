@@ -18,13 +18,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.Constraint.{Context, addTypeConstraintsM, enterScopeM, exitScopeM, expectTypeArguments, expectTypeBindM, expectTypeM, rigidifyM, unifyAllTypesM, unifyEffM, unifyTypeM}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.Constraint._
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{Constraint, RestrictableChooseConstraintGeneration, SchemaConstraintGeneration}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-import ca.uwaterloo.flix.util.collection.MapOps
-
-import scala.collection.mutable.ListBuffer
 
 object ConstraintGeneration {
 
