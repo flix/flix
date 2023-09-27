@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.constraintgeneration
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 
 import scala.collection.mutable.ListBuffer
 
@@ -14,7 +15,7 @@ class TypingContext {
     * Generates constraints unifying the given types.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
-    constrs.append(TypingConstraint.Equality(tpe1, tpe2, lenv, loc))
+    constrs.append(TypingConstraint.Equality(tpe1, tpe2, lenv, Provenance.Match, loc))
   }
 
   /**
@@ -32,10 +33,12 @@ class TypingContext {
   /**
     * Generates constraints expecting the given type arguments to unify.
     */
-  // TODO ASSOC-TYPES this should actually do something
   def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): Unit = {
-    expectedTypes.zip(actualTypes).zip(actualLocs).foreach {
-      case ((expectedType, actualType), loc) => expectTypeM(expectedType, actualType, loc)
+    expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
+      case (((expectedType, actualType), loc), index) =>
+        val argNum = index + 1
+        val prov = Provenance.ExpectLeftArgument(sym, argNum)
+        constrs.addOne(TypingConstraint.Equality(expectedType, actualType, lenv, prov, loc))
     }
   }
 
@@ -58,9 +61,8 @@ class TypingContext {
   /**
     * Generates constraints expecting the given types to unify.
     */
-  // TODO ASSOC-TYPES this should actually do something
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation): Unit = {
-    unifyTypeM(expected, actual, loc)
+    constrs.append(TypingConstraint.Equality(expected, actual, lenv, Provenance.ExpectLeft, loc))
   }
 
   /**

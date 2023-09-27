@@ -21,7 +21,27 @@ import ca.uwaterloo.flix.language.ast.{LevelEnv, SourceLocation, Symbol, Type}
 sealed class TypingConstraint
 
 object TypingConstraint {
-  case class Equality(tpe1: Type, tpe2: Type, lenv: LevelEnv, loc: SourceLocation) extends TypingConstraint
+  case class Equality(tpe1: Type, tpe2: Type, lenv: LevelEnv, prov: Provenance, loc: SourceLocation) extends TypingConstraint
 
   case class Class(sym: Symbol.ClassSym, tpe: Type, lenv: LevelEnv, loc: SourceLocation) extends TypingConstraint
+
+  sealed trait Provenance
+
+  object Provenance {
+
+    /**
+      * The constraint indicates that the left type is the expected type, while the right type is the actual type.
+      */
+    object ExpectLeft extends Provenance
+
+    /**
+      * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
+      */
+    case class ExpectLeftArgument(sym: Symbol, num: Int) extends Provenance
+
+    /**
+      * The constraint indicates that the types must match.
+      */
+    object Match extends Provenance
+  }
 }
