@@ -247,7 +247,7 @@ object HtmlDocumentor {
   private def mkClass(sym: Symbol.ClassSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
     val decl = root.classes(sym)
 
-    val (sigs, defs) = decl.signatures.partition(_.exp.isEmpty)
+    val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
     val instances = root.instances.getOrElse(sym, Nil)
 
     Class(decl, sigs, defs, instances, parent, companionMod)
@@ -1032,7 +1032,9 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.classes.sortBy(_.loc)) { c =>
-      sb.append(s"<span class='tpe-constraint'>${esc(c.clazz.name)}</span>")
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(c.clazz))}' title='class ${esc(className(c.clazz))}'>")
+      sb.append(s"${esc(c.clazz.name)}")
+      sb.append("</a>")
     }
     sb.append("</span>")
   }
