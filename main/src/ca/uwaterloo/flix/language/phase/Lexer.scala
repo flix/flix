@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
-// TODO: Char hex codes '\u0000'
-// TODO: Unicode chars
-// TODO: Out of bounds errors on peek
+// TODO: Out of bounds errors on peek and retreat
 
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
@@ -165,7 +163,45 @@ object Lexer {
     c
   }
 
-  // Peeks the character that state is currently sitting on without advancing
+  /**
+   * Peeks the previous character that state was on if available.
+   */
+  private def previous()(implicit s: State): Option[Char] = {
+    if (s.current.offset == 0) {
+      None
+    } else {
+      Some(s.src.data(s.current.offset - 1))
+    }
+  }
+
+  /**
+   * Peeks the character before the previous that state was on if available.
+   */
+  private def previousPrevious()(implicit s: State): Option[Char] = {
+    if (s.current.offset <= 1) {
+      None
+    } else {
+      Some(s.src.data(s.current.offset - 2))
+    }
+  }
+
+  /**
+   * A helper function wrapping peek, with special handling for escaped characters.
+   * This is useful for "\"" or `'\''`
+   */
+  private def escapedPeek()(implicit s: State): Char = {
+    var p = peek()
+    while (p == '\\') {
+      advance()
+      advance()
+      p = peek()
+    }
+    p
+  }
+
+  /**
+   * Peeks the character that state is currently sitting on without advancing.
+   */
   private def peek()(implicit s: State): Char = {
     s.src.data(s.current.offset)
   }
@@ -221,6 +257,14 @@ object Lexer {
       case '.' => TokenKind.Dot
       case '~' => TokenKind.Tilde
       case '\\' => TokenKind.Backslash
+      case '$' => if (peek().isUpper) {
+        acceptBuiltIn()
+      } else {
+        TokenKind.Dollar
+      }
+      case '\"' => acceptString()
+      case '\'' => acceptChar()
+      case '`' => acceptInfixFunction()
       case '#' => if (peek() == '#') {
         acceptJavaName()
       } else {
@@ -363,10 +407,6 @@ object Lexer {
         }
       case c if c.isLetter => acceptName(c.isUpper)
       case c if c.isDigit => acceptNumber()
-      case '$' => acceptBuiltIn()
-      case '\"' => acceptString()
-      case '\'' => acceptChar()
-      case '`' => acceptInfixFunction()
       case _ => TokenKind.Err(TokenErrorKind.UnexpectedChar)
     }
   }
@@ -410,14 +450,30 @@ object Lexer {
 
   /**
    * Moves current position past a built-in function, IE. "$BUILT_IN$".
+   * Note that $ can be used as a separator in java-names too. IE. "Map$Entry".
+   * When encountering a "$" there is no way to discern
+   * between a built-in and a java-name without looking ahead.
+   * Only a TokenKind.Dollar needs to be emitted in the java name case
+   * and then the lexer needs to be retreated to just after "$".
    */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
+    var advances = 0
     while (!isAtEnd()) {
-      if (peek() == '$') {
+      val p = peek()
+      if (p.isLower) {
+        // This means that the opening '$' was a separator.
+        // we need to rewind the lexer to just after '$'.
+        for (_ <- 0 until advances) {
+          retreat()
+        }
+        return TokenKind.Dollar
+      }
+      if (p == '$') {
         advance()
         return TokenKind.BuiltIn
       }
       advance()
+      advances += 1
     }
     TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
   }
@@ -440,17 +496,14 @@ object Lexer {
    * which is the reason this function will return a `TokenKind`.
    */
   private def acceptName(isUpper: Boolean)(implicit s: State): TokenKind = {
-    var kind = if (isUpper) {
+    val kind = if (isUpper) {
       TokenKind.NameUpperCase
     } else {
       TokenKind.LowercaseName
     }
     while (!isAtEnd()) {
       val p = peek()
-      if (p == '$' && peekPeek().exists(_.isLetter)) {
-        // Java names can have "$" in them. IE. "Map$Entry"
-        kind = TokenKind.NameJava
-      } else if (p == '?') {
+      if (p == '?') {
         advance()
         return TokenKind.HoleVariable
       } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
@@ -570,32 +623,27 @@ object Lexer {
    * If the string is unterminated a `TokenKind.Err` is returned.
    */
   private def acceptString()(implicit s: State): TokenKind = {
-    var prev = ' '
     var kind: TokenKind = TokenKind.LiteralString
     while (!isAtEnd()) {
-      var p = peek()
-
+      var p = escapedPeek()
       // Check for the beginning of an string interpolation.
-      if (prev == '$' && p == '{') {
+      if (!previousPrevious().contains('\\') && previous().contains('$') && p == '{') {
         acceptStringInterpolation() match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
             kind = k
-            p = peek()
-            prev = ' '
+            p = escapedPeek()
         }
       }
-
-      // Check for termination while handling escaped '\"'.
-      if (p == '\"' && prev != '\\') {
+      // Check for termination
+      if (p == '\"') {
         advance()
         return kind
       }
-      prev = advance()
+      advance()
     }
-
-    TokenKind.Err(LexerErr.UnterminatedString)
+    TokenKind.Err(TokenErrorKind.UnterminatedString)
   }
 
   /**
@@ -610,7 +658,7 @@ object Lexer {
    *
    * Some tricky but valid strings include:
    * "Hello ${" // "} world!"
-   * "My favorite number is ${ {40 + 2} }!"
+   * "My favorite number is ${ { "${"//"}"40 + 2} }!"
    * "${"${}"}"
    */
   private def acceptStringInterpolation()(implicit s: State): TokenKind = {
@@ -653,10 +701,11 @@ object Lexer {
   /**
    * Moves current position past a char literal.
    * If the char is unterminated a `TokenKind.Err` is returned
+   * Note that chars might contain unicode hex codes like these "\u00ff"
    */
   private def acceptChar()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
-      if (peek() == '\'') {
+      if (escapedPeek() == '\'') {
         advance()
         return TokenKind.Char
       }
@@ -755,7 +804,6 @@ object Lexer {
             return TokenKind.Err(TokenErrorKind.BlockCommentTooDeep)
           }
           advance()
-        case _ => advance()
         case ('*', Some('/')) =>
           level -= 1
           advance()
@@ -763,6 +811,7 @@ object Lexer {
           if (level == 0) {
             return TokenKind.CommentBlock
           }
+        case _ => advance()
       }
     }
     TokenKind.Err(TokenErrorKind.UnterminatedBlockComment)
