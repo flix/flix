@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypingConstraint}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypingConstraint, TypingContext}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 object ConstraintGeneration {
@@ -34,7 +34,7 @@ object ConstraintGeneration {
     val result = flix.phase("TypingConstraintGeneration") {
       ParOps.mapValues(root.defs) {
         case defn =>
-          implicit val context: Context = Context.empty()
+          implicit val context: TypingContext = new TypingContext
           implicit val r: KindedAst.Root = root
           val (tpe, eff) = visitExp(defn.exp)
           val constrs = context.constrs.toList
@@ -64,13 +64,13 @@ object ConstraintGeneration {
   /**
     * Generates constraints for the given expression.
     */
-  def visitExp(exp0: KindedAst.Expr)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Type, Type) = exp0 match {
+  def visitExp(exp0: KindedAst.Expr)(implicit c: TypingContext, root: KindedAst.Root, flix: Flix): (Type, Type) = exp0 match {
     case Expr.Var(sym, loc) => (sym.tvar, Type.Pure)
     case Expr.Def(sym, tvar, loc) =>
       val defn = root.defs(sym)
       val (tconstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
-      unifyTypeM(tvar, defTpe, loc)
-      addTypeConstraintsM(tconstrs, loc)
+      c.unifyTypeM(tvar, defTpe, loc)
+      c.addTypeConstraintsM(tconstrs, loc)
       val resTpe = defTpe
       val resEff = Type.Pure
       (resTpe, resEff)
@@ -78,8 +78,8 @@ object ConstraintGeneration {
     case Expr.Sig(sym, tvar, loc) =>
       val sig = root.classes(sym.clazz).sigs(sym)
       val (tconstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
-      unifyTypeM(tvar, sigTpe, loc)
-      addTypeConstraintsM(tconstrs, loc)
+      c.unifyTypeM(tvar, sigTpe, loc)
+      c.addTypeConstraintsM(tconstrs, loc)
       val resTpe = sigTpe
       val resEff = Type.Pure
       (resTpe, resEff)
@@ -91,7 +91,7 @@ object ConstraintGeneration {
       val (tpe, eff) = visitExp(exp)
       // effect type is AT LEAST the inner expression's effect
       val atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
-      unifyTypeM(atLeastEff, evar, loc)
+      c.unifyTypeM(atLeastEff, evar, loc)
       // result type is whatever is needed for the hole
       val resTpe = tvar
       val resEff = atLeastEff
@@ -141,10 +141,10 @@ object ConstraintGeneration {
           val declaredResultType = declaredType.arrowResultType
 
           val (tpes, effs) = exps.map(visitExp).unzip
-          expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
-          unifyTypeM(tvar2, declaredType, loc)
-          unifyTypeM(tvar, declaredResultType, loc)
-          unifyEffM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
+          c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
+          c.unifyTypeM(tvar2, declaredType, loc)
+          c.unifyTypeM(tvar, declaredResultType, loc)
+          c.unifyEffM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
           val resTpe = tvar
           val resEff = evar
           (resTpe, resEff)
@@ -157,9 +157,9 @@ object ConstraintGeneration {
           val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
           val (tpe, eff) = visitExp(exp)
           val (tpes, effs) = exps.map(visitExp).unzip
-          expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
-          unifyTypeM(tvar, lambdaBodyType, loc)
-          unifyEffM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
+          c.expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
+          c.unifyTypeM(tvar, lambdaBodyType, loc)
+          c.unifyEffM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
           // TODO ASSOC-TYPES unbind?
           //            _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
           //            _ <- unbindVar(lambdaBodyEff) // NB: Safe to unbind since the variable is not used elsewhere.
@@ -169,7 +169,7 @@ object ConstraintGeneration {
       }
 
     case Expr.Lambda(fparam, exp, loc) =>
-      unifyTypeM(fparam.sym.tvar, fparam.tpe, loc)
+      c.unifyTypeM(fparam.sym.tvar, fparam.tpe, loc)
       val (tpe, eff) = visitExp(exp)
       val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
       val resEff = Type.Pure
@@ -178,49 +178,49 @@ object ConstraintGeneration {
     case KindedAst.Expr.Unary(sop, exp, tvar, loc) => sop match {
       case SemanticOp.BoolOp.Not =>
         val (tpe, eff) = visitExp(exp)
-        expectTypeBindM(expected = Type.Bool, actual = tpe, bind = tvar, exp.loc)
+        c.expectTypeBindM(expected = Type.Bool, actual = tpe, bind = tvar, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
 
       case SemanticOp.Float32Op.Neg =>
         val (tpe, eff) = visitExp(exp)
-        expectTypeBindM(expected = Type.Float32, actual = tpe, bind = tvar, exp.loc)
+        c.expectTypeBindM(expected = Type.Float32, actual = tpe, bind = tvar, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
 
       case SemanticOp.Float64Op.Neg =>
         val (tpe, eff) = visitExp(exp)
-        expectTypeBindM(expected = Type.Float64, actual = tpe, bind = tvar, exp.loc)
+        c.expectTypeBindM(expected = Type.Float64, actual = tpe, bind = tvar, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
 
       case SemanticOp.Int8Op.Neg | SemanticOp.Int8Op.Not =>
         val (tpe, eff) = visitExp(exp)
-        expectTypeBindM(expected = Type.Int8, actual = tpe, bind = tvar, exp.loc)
+        c.expectTypeBindM(expected = Type.Int8, actual = tpe, bind = tvar, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
 
       case SemanticOp.Int16Op.Neg | SemanticOp.Int16Op.Not =>
         val (tpe, eff) = visitExp(exp)
-        expectTypeBindM(expected = Type.Int16, actual = tpe, bind = tvar, exp.loc)
+        c.expectTypeBindM(expected = Type.Int16, actual = tpe, bind = tvar, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
 
       case SemanticOp.Int32Op.Neg | SemanticOp.Int32Op.Not =>
         val (tpe, eff) = visitExp(exp)
-        expectTypeBindM(expected = Type.Int32, actual = tpe, bind = tvar, exp.loc)
+        c.expectTypeBindM(expected = Type.Int32, actual = tpe, bind = tvar, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
 
       case SemanticOp.Int64Op.Neg | SemanticOp.Int64Op.Not =>
         val (tpe, eff) = visitExp(exp)
-        expectTypeBindM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
+        c.expectTypeBindM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -233,9 +233,9 @@ object ConstraintGeneration {
       case SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Bool, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Bool, loc)
+        c.expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Bool, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Bool, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -244,9 +244,9 @@ object ConstraintGeneration {
            | SemanticOp.Float32Op.Exp =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Float32, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Float32, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Float32, loc)
+        c.expectTypeM(expected = Type.Float32, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Float32, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Float32, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -255,9 +255,9 @@ object ConstraintGeneration {
            | SemanticOp.Float64Op.Exp =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Float64, loc)
+        c.expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Float64, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -267,9 +267,9 @@ object ConstraintGeneration {
            | SemanticOp.Int8Op.And | SemanticOp.Int8Op.Or | SemanticOp.Int8Op.Xor =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Int8, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Int8, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Int8, loc)
+        c.expectTypeM(expected = Type.Int8, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Int8, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Int8, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -279,9 +279,9 @@ object ConstraintGeneration {
            | SemanticOp.Int16Op.And | SemanticOp.Int16Op.Or | SemanticOp.Int16Op.Xor =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Int16, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Int16, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Int16, loc)
+        c.expectTypeM(expected = Type.Int16, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Int16, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Int16, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -291,9 +291,9 @@ object ConstraintGeneration {
            | SemanticOp.Int32Op.And | SemanticOp.Int32Op.Or | SemanticOp.Int32Op.Xor =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Int32, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Int32, loc)
+        c.expectTypeM(expected = Type.Int32, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Int32, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -303,9 +303,9 @@ object ConstraintGeneration {
            | SemanticOp.Int64Op.And | SemanticOp.Int64Op.Or | SemanticOp.Int64Op.Xor =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Int64, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Int64, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Int64, loc)
+        c.expectTypeM(expected = Type.Int64, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Int64, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Int64, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -316,8 +316,8 @@ object ConstraintGeneration {
            | SemanticOp.Int64Op.Shl | SemanticOp.Int64Op.Shr =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        unifyTypeM(tvar, tpe1, loc)
-        expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, tpe1, loc)
+        c.expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -332,8 +332,8 @@ object ConstraintGeneration {
            | SemanticOp.Int64Op.Eq | SemanticOp.Int64Op.Neq =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        unifyTypeM(tpe1, tpe2, loc)
-        unifyTypeM(tvar, Type.Bool, loc)
+        c.unifyTypeM(tpe1, tpe2, loc)
+        c.unifyTypeM(tvar, Type.Bool, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -347,8 +347,8 @@ object ConstraintGeneration {
            | SemanticOp.Int64Op.Lt | SemanticOp.Int64Op.Le | SemanticOp.Int64Op.Gt | SemanticOp.Int64Op.Ge =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        unifyTypeM(tpe1, tpe2, loc)
-        unifyTypeM(tvar, Type.Bool, loc)
+        c.unifyTypeM(tpe1, tpe2, loc)
+        c.unifyTypeM(tvar, Type.Bool, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -356,9 +356,9 @@ object ConstraintGeneration {
       case SemanticOp.StringOp.Concat =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
-        expectTypeM(expected = Type.Str, actual = tpe2, exp2.loc)
-        unifyTypeM(tvar, Type.Str, loc)
+        c.expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = Type.Str, actual = tpe2, exp2.loc)
+        c.unifyTypeM(tvar, Type.Str, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -370,8 +370,8 @@ object ConstraintGeneration {
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
       val (tpe3, eff3) = visitExp(exp3)
-      expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
-      unifyTypeM(tpe2, tpe3, loc)
+      c.expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
+      c.unifyTypeM(tpe2, tpe3, loc)
       val resTpe = tpe3
       val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
       (resTpe, resEff)
@@ -391,7 +391,7 @@ object ConstraintGeneration {
 
     case Expr.Let(sym, mod, exp1, exp2, loc) =>
       val (tpe1, eff1) = visitExp(exp1)
-      unifyTypeM(sym.tvar, tpe1, loc)
+      c.unifyTypeM(sym.tvar, tpe1, loc)
       val (tpe2, eff2) = visitExp(exp2)
       val resTpe = tpe2
       val resEff = Type.mkUnion(eff1, eff2, loc)
@@ -404,8 +404,8 @@ object ConstraintGeneration {
       val p = Type.freshVar(Kind.Eff, loc)
       val expectedType = Type.mkArrowWithEffect(a, p, b, loc)
       val (tpe1, eff1) = visitExp(exp1)
-      unifyTypeM(expectedType, tpe1, exp1.loc)
-      unifyTypeM(sym.tvar, tpe1, exp1.loc)
+      c.unifyTypeM(expectedType, tpe1, exp1.loc)
+      c.unifyTypeM(sym.tvar, tpe1, exp1.loc)
       val (tpe2, eff2) = visitExp(exp2)
       val resTpe = tpe2
       val resEff = Type.mkUnion(eff1, eff2, loc)
@@ -417,12 +417,12 @@ object ConstraintGeneration {
       (resTpe, resEff)
 
     case Expr.Scope(sym, regionVar, exp, evar, loc) =>
-      rigidifyM(regionVar.sym)
-      enterScopeM(regionVar.sym)
-      unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
+      c.rigidifyM(regionVar.sym)
+      c.enterScopeM(regionVar.sym)
+      c.unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
       val (tpe, eff) = visitExp(exp)
-      exitScopeM(regionVar.sym)
-      unifyTypeM(evar, eff, loc)
+      c.exitScopeM(regionVar.sym)
+      c.unifyTypeM(evar, eff, loc)
       // TODO ASSOC-TYPES noEscapeM ?
       val resTpe = tpe
       val resEff = eff
@@ -434,8 +434,8 @@ object ConstraintGeneration {
       val evar = Type.freshVar(Kind.Eff, loc)
       val (tpe1, _) = visitExp(exp1)
       val (tpe2, _) = visitExp(exp2)
-      expectTypeM(expected = Type.mkArrowWithEffect(Type.Unit, evar, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
-      expectTypeM(expected = regionTpe, actual = tpe2, exp2.loc)
+      c.expectTypeM(expected = Type.mkArrowWithEffect(Type.Unit, evar, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = regionTpe, actual = tpe2, exp2.loc)
       val resTpe = Type.Unit
       val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
       (resTpe, resEff)
@@ -447,11 +447,11 @@ object ConstraintGeneration {
       val guardLocs = guards.map(_.loc)
       val (tpe, eff) = visitExp(exp)
       val patternTypes = patterns.map(visitPattern)
-      unifyAllTypesM(tpe :: patternTypes, Kind.Star, loc)
+      c.unifyAllTypesM(tpe :: patternTypes, Kind.Star, loc)
       val (guardTpes, guardEffs) = guards.map(visitExp).unzip
-      guardTpes.zip(guardLocs).foreach { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
+      guardTpes.zip(guardLocs).foreach { case (gTpe, gLoc) => c.expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
       val (bodyTypes, bodyEffs) = bodies.map(visitExp).unzip
-      val resTpe = unifyAllTypesM(bodyTypes, Kind.Star, loc)
+      val resTpe = c.unifyAllTypesM(bodyTypes, Kind.Star, loc)
       val resEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
       (resTpe, resEff)
 
@@ -459,11 +459,11 @@ object ConstraintGeneration {
       val bodies = rules.map(_.exp)
       val (tpe, eff) = visitExp(exp)
       // rigidify all the type vars in the rules
-      rules.flatMap(_.tpe.typeVars.toList).map(_.sym).foreach(rigidifyM)
+      rules.flatMap(_.tpe.typeVars.toList).map(_.sym).foreach(c.rigidifyM)
       // unify each rule's variable with its type
-      rules.foreach { rule => unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc) }
+      rules.foreach { rule => c.unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc) }
       val (bodyTypes, bodyEffs) = bodies.map(visitExp).unzip
-      val resTpe = unifyAllTypesM(bodyTypes, Kind.Star, loc)
+      val resTpe = c.unifyAllTypesM(bodyTypes, Kind.Star, loc)
       val resEff = Type.mkUnion(eff :: bodyEffs, loc)
       (resTpe, resEff)
 
@@ -483,7 +483,7 @@ object ConstraintGeneration {
       // The tag type is a function from the type of variant to the type of the enum.
       //
       val (tpe, eff) = visitExp(exp)
-      unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+      c.unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
       val resTpe = tvar
       val resEff = eff
       (resTpe, resEff)
@@ -511,7 +511,7 @@ object ConstraintGeneration {
       val expectedRowType = Type.mkRecordRowExtend(label, tvar, freshRowVar, loc)
       val expectedRecordType = Type.mkRecord(expectedRowType, loc)
       val (tpe, eff) = visitExp(exp)
-      unifyTypeM(tpe, expectedRecordType, loc)
+      c.unifyTypeM(tpe, expectedRecordType, loc)
       val resTpe = tvar
       val resEff = eff
       (resTpe, resEff)
@@ -525,8 +525,8 @@ object ConstraintGeneration {
       val restRow = Type.freshVar(Kind.RecordRow, loc)
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
-      unifyTypeM(tpe2, Type.mkRecord(restRow, loc), loc)
-      unifyTypeM(tvar, Type.mkRecord(Type.mkRecordRowExtend(label, tpe1, restRow, loc), loc), loc)
+      c.unifyTypeM(tpe2, Type.mkRecord(restRow, loc), loc)
+      c.unifyTypeM(tvar, Type.mkRecord(Type.mkRecordRowExtend(label, tpe1, restRow, loc), loc), loc)
       val resTpe = tvar
       val resEff = Type.mkUnion(eff1, eff2, loc)
       (resTpe, resEff)
@@ -540,8 +540,8 @@ object ConstraintGeneration {
       val freshLabelType = Type.freshVar(Kind.Star, loc)
       val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
       val (tpe, eff) = visitExp(exp)
-      unifyTypeM(tpe, Type.mkRecord(Type.mkRecordRowExtend(label, freshLabelType, freshRowVar, loc), loc), loc)
-      unifyTypeM(tvar, Type.mkRecord(freshRowVar, loc), loc)
+      c.unifyTypeM(tpe, Type.mkRecord(Type.mkRecordRowExtend(label, freshLabelType, freshRowVar, loc), loc), loc)
+      c.unifyTypeM(tvar, Type.mkRecord(freshRowVar, loc), loc)
       val resTpe = tvar
       val resEff = eff
       (resTpe, resEff)
@@ -551,10 +551,10 @@ object ConstraintGeneration {
       val regionType = Type.mkRegion(regionVar, loc)
       val (tpes, effs) = exps.map(visitExp).unzip
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(expected = regionType, actual = tpe, exp.loc)
-      val elmTpe = unifyAllTypesM(tpes, Kind.Star, loc)
-      unifyTypeM(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
-      unifyTypeM(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
+      c.expectTypeM(expected = regionType, actual = tpe, exp.loc)
+      val elmTpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
+      c.unifyTypeM(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
+      c.unifyTypeM(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
       val resTpe = tvar
       val resEff = evar
       (resTpe, resEff)
@@ -565,10 +565,10 @@ object ConstraintGeneration {
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
       val (tpe3, eff3) = visitExp(exp3)
-      expectTypeM(expected = regionType, actual = tpe1, loc)
-      expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
-      unifyTypeM(tvar, Type.mkArray(tpe2, regionVar, loc), loc)
-      unifyTypeM(evar, Type.mkUnion(eff1, eff2, eff3, regionVar, loc), loc)
+      c.expectTypeM(expected = regionType, actual = tpe1, loc)
+      c.expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
+      c.unifyTypeM(tvar, Type.mkArray(tpe2, regionVar, loc), loc)
+      c.unifyTypeM(evar, Type.mkUnion(eff1, eff2, eff3, regionVar, loc), loc)
       val resTpe = tvar
       val resEff = evar
       (resTpe, resEff)
@@ -577,9 +577,9 @@ object ConstraintGeneration {
       val regionVar = Type.freshVar(Kind.Eff, loc)
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
-      expectTypeM(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
-      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-      unifyTypeM(evar, Type.mkUnion(regionVar, eff1, eff2, loc), loc)
+      c.expectTypeM(expected = Type.mkArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      c.unifyTypeM(evar, Type.mkUnion(regionVar, eff1, eff2, loc), loc)
       val resTpe = tvar
       val resEff = evar
       (resTpe, resEff)
@@ -591,10 +591,10 @@ object ConstraintGeneration {
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
       val (tpe3, eff3) = visitExp(exp3)
-      expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
-      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-      expectTypeM(expected = elmVar, actual = tpe3, exp3.loc)
-      unifyTypeM(evar, Type.mkUnion(List(regionVar, eff1, eff2, eff3), loc), loc)
+      c.expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      c.expectTypeM(expected = elmVar, actual = tpe3, exp3.loc)
+      c.unifyTypeM(evar, Type.mkUnion(List(regionVar, eff1, eff2, eff3), loc), loc)
       val resTpe = Type.Unit
       val resEff = evar
       (resTpe, resEff)
@@ -603,7 +603,7 @@ object ConstraintGeneration {
       val elmVar = Type.freshVar(Kind.Star, loc)
       val regionVar = Type.freshVar(Kind.Eff, loc)
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
+      c.expectTypeM(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
       //        unbindVar(elmVar)
       //        unbindVar(regionVar)
       // TODO ASSOC-TYPES is there an unbind equivalent?
@@ -613,9 +613,9 @@ object ConstraintGeneration {
 
     case Expr.VectorLit(exps, tvar, evar, loc) =>
       val (tpes, effs) = exps.map(visitExp).unzip
-      val tpe = unifyAllTypesM(tpes, Kind.Star, loc)
-      unifyTypeM(tvar, Type.mkVector(tpe, loc), loc)
-      unifyTypeM(evar, Type.mkUnion(effs, loc), loc)
+      val tpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
+      c.unifyTypeM(tvar, Type.mkVector(tpe, loc), loc)
+      c.unifyTypeM(evar, Type.mkUnion(effs, loc), loc)
       val resTpe = tvar
       val resEff = evar
       (resTpe, resEff)
@@ -623,9 +623,9 @@ object ConstraintGeneration {
     case Expr.VectorLoad(exp1, exp2, tvar, evar, loc) =>
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
-      expectTypeM(expected = Type.mkVector(tvar, loc), actual = tpe1, exp1.loc)
-      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-      unifyTypeM(evar, Type.mkUnion(eff1, eff2, loc), loc)
+      c.expectTypeM(expected = Type.mkVector(tvar, loc), actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      c.unifyTypeM(evar, Type.mkUnion(eff1, eff2, loc), loc)
       val resTpe = tvar
       val resEff = evar
       (resTpe, resEff)
@@ -633,7 +633,7 @@ object ConstraintGeneration {
     case Expr.VectorLength(exp, loc) =>
       val elmVar = Type.freshVar(Kind.Star, loc)
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(Type.mkVector(elmVar, loc), tpe, exp.loc)
+      c.expectTypeM(Type.mkVector(elmVar, loc), tpe, exp.loc)
       //        _ <- unbindVar(elmVar) // TODO ASSOC-TYPES
       val resTpe = Type.Int32
       val resEff = eff
@@ -644,9 +644,9 @@ object ConstraintGeneration {
       val regionType = Type.mkRegion(regionVar, loc)
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
-      expectTypeM(tpe2, regionType, exp2.loc)
-      unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
-      unifyTypeM(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
+      c.expectTypeM(tpe2, regionType, exp2.loc)
+      c.unifyTypeM(tvar, Type.mkRef(tpe1, regionVar, loc), loc)
+      c.unifyTypeM(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
       val resTpe = tvar
       val resEff = evar
       (resTpe, resEff)
@@ -656,9 +656,9 @@ object ConstraintGeneration {
       val regionVar = Type.freshVar(Kind.Eff, loc)
       val refType = Type.mkRef(elmVar, regionVar, loc)
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(expected = refType, actual = tpe, exp.loc)
-      unifyTypeM(tvar, elmVar, loc)
-      unifyTypeM(evar, Type.mkUnion(eff, regionVar, loc), loc)
+      c.expectTypeM(expected = refType, actual = tpe, exp.loc)
+      c.unifyTypeM(tvar, elmVar, loc)
+      c.unifyTypeM(evar, Type.mkUnion(eff, regionVar, loc), loc)
       val resTpe = tvar
       val resEff = evar
       (resTpe, resEff)
@@ -669,9 +669,9 @@ object ConstraintGeneration {
       val refType = Type.mkRef(elmVar, regionVar, loc)
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
-      expectTypeM(expected = refType, actual = tpe1, exp1.loc)
-      expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
-      unifyTypeM(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
+      c.expectTypeM(expected = refType, actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+      c.unifyTypeM(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
       val resTpe = Type.Unit
       val resEff = evar
       (resTpe, resEff)
@@ -679,16 +679,16 @@ object ConstraintGeneration {
     case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
       // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
       val (actualTpe, actualEff) = visitExp(exp)
-      expectTypeM(expected = expectedTpe.getOrElse(Type.freshVar(Kind.Star, loc)), actual = actualTpe, loc)
-      unifyTypeM(actualTpe, tvar, loc)
-      expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Eff, loc)), actual = actualEff, loc)
+      c.expectTypeM(expected = expectedTpe.getOrElse(Type.freshVar(Kind.Star, loc)), actual = actualTpe, loc)
+      c.unifyTypeM(actualTpe, tvar, loc)
+      c.expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Eff, loc)), actual = actualEff, loc)
       val resTpe = tvar
       val resEff = actualEff
       (resTpe, resEff)
 
     case Expr.InstanceOf(exp, clazz, loc) =>
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+      c.expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
       val resTpe = Type.Bool
       val resEff = Type.Pure
       (resTpe, resEff)
@@ -698,7 +698,7 @@ object ConstraintGeneration {
         case Ast.CheckedCastType.TypeCast =>
           // Ignore the inferred type of exp.
           val (_, eff) = visitExp(exp)
-          unifyTypeM(evar, eff, loc)
+          c.unifyTypeM(evar, eff, loc)
           val resTpe = tvar
           val resEff = evar
           (resTpe, resEff)
@@ -706,7 +706,7 @@ object ConstraintGeneration {
         case Ast.CheckedCastType.EffectCast =>
           // We simply union the purity and effect with a fresh variable.
           val (tpe, eff) = visitExp(exp)
-          unifyTypeM(tvar, tpe, loc)
+          c.unifyTypeM(tvar, tpe, loc)
           val resTpe = tvar
           val resEff = Type.mkUnion(eff, evar, loc)
           (resTpe, resEff)
@@ -715,7 +715,7 @@ object ConstraintGeneration {
     case Expr.UncheckedCast(exp, declaredTpe, declaredEff, tvar, loc) =>
       // A cast expression is unsound; the type system assumes the declared type is correct.
       val (actualTyp, actualEff) = visitExp(exp)
-      unifyTypeM(tvar, declaredTpe.getOrElse(actualTyp), loc)
+      c.unifyTypeM(tvar, declaredTpe.getOrElse(actualTyp), loc)
       val resTpe = tvar
       val resEff = declaredEff.getOrElse(actualEff)
       (resTpe, resEff)
@@ -741,8 +741,8 @@ object ConstraintGeneration {
           visitExp(body)
       }.unzip
       val (tpe, eff) = visitExp(exp)
-      val ruleTpe = unifyAllTypesM(tpes, Kind.Star, loc)
-      unifyTypeM(tpe, ruleTpe, loc)
+      val ruleTpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
+      c.unifyTypeM(tpe, ruleTpe, loc)
       val resTpe = tpe
       val resEff = Type.mkUnion(eff :: effs, loc)
       (resTpe, resEff)
@@ -761,7 +761,7 @@ object ConstraintGeneration {
     case Expr.InvokeMethod(method, clazz, exp, args, loc) =>
       val classTpe = getFlixType(clazz)
       val (baseTyp, _) = visitExp(exp)
-      unifyTypeM(baseTyp, classTpe, loc)
+      c.unifyTypeM(baseTyp, classTpe, loc)
       val (_, _) = args.map(visitExp).unzip
       val resTpe = getFlixType(method.getReturnType)
       val resEff = Type.Impure
@@ -778,7 +778,7 @@ object ConstraintGeneration {
       val classType = getFlixType(clazz)
       val fieldType = getFlixType(field.getType)
       val (tpe, _) = visitExp(exp)
-      expectTypeM(expected = classType, actual = tpe, exp.loc)
+      c.expectTypeM(expected = classType, actual = tpe, exp.loc)
       val resTpe = fieldType
       val resEff = Type.Impure
       (resTpe, resEff)
@@ -788,8 +788,8 @@ object ConstraintGeneration {
       val classType = getFlixType(clazz)
       val (tpe1, _) = visitExp(exp1)
       val (tpe2, _) = visitExp(exp2)
-      expectTypeM(expected = classType, actual = tpe1, exp1.loc)
-      expectTypeM(expected = fieldType, actual = tpe2, exp2.loc)
+      c.expectTypeM(expected = classType, actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = fieldType, actual = tpe2, exp2.loc)
       val resTpe = Type.Unit
       val resEff = Type.Impure
       (resTpe, resEff)
@@ -802,7 +802,7 @@ object ConstraintGeneration {
 
     case Expr.PutStaticField(field, exp, loc) =>
       val (valueTyp, _) = visitExp(exp)
-      expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
+      c.expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
       val resTpe = Type.Unit
       val resEff = Type.Impure
       (resTpe, resEff)
@@ -820,12 +820,12 @@ object ConstraintGeneration {
             */
           def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
             case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
-              unifyTypeM(sym.tvar, tpe, loc)
+              c.unifyTypeM(sym.tvar, tpe, loc)
           }
 
           fparams.foreach(visitFormalParam)
           val (bodyTpe, bodyEff) = visitExp(exp)
-          expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+          c.expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
         // TODO ASSOC-TYPES check eff matches declared eff ?
       }
 
@@ -839,8 +839,8 @@ object ConstraintGeneration {
       val regionType = Type.mkRegion(regionVar, loc)
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
-      expectTypeM(expected = regionType, actual = tpe1, exp1.loc)
-      expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+      c.expectTypeM(expected = regionType, actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
       val resTpe = tvar
       val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
       (resTpe, resEff)
@@ -850,8 +850,8 @@ object ConstraintGeneration {
       val elmVar = Type.freshVar(Kind.Star, loc)
       val channelType = Type.mkReceiver(elmVar, regionVar, loc)
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(expected = channelType, actual = tpe, exp.loc)
-      unifyTypeM(tvar, elmVar, loc)
+      c.expectTypeM(expected = channelType, actual = tpe, exp.loc)
+      c.unifyTypeM(tvar, elmVar, loc)
       val resTpe = tvar
       val resEff = Type.mkUnion(eff, regionVar, loc)
       (resTpe, resEff)
@@ -862,8 +862,8 @@ object ConstraintGeneration {
       val channelType = Type.mkSender(elmVar, regionVar, loc)
       val (tpe1, eff1) = visitExp(exp1)
       val (tpe2, eff2) = visitExp(exp2)
-      expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
-      expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+      c.expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
+      c.expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
       val resTpe = Type.mkUnit(loc)
       val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
       (resTpe, resEff)
@@ -880,7 +880,7 @@ object ConstraintGeneration {
           case KindedAst.SelectChannelRule(sym, chan, body) =>
             val (chanType, eff1) = visitExp(chan)
             val (bodyType, eff2) = visitExp(body)
-            unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
+            c.unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
             val resTpe = bodyType
             val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
             (resTpe, resEff)
@@ -898,7 +898,7 @@ object ConstraintGeneration {
 
       val (ruleTypes, ruleEffs) = rules.map(visitSelectRule).unzip
       val (defaultType, eff2) = visitDefaultRule(default)
-      unifyAllTypesM(tvar :: defaultType :: ruleTypes, Kind.Star, loc)
+      c.unifyAllTypesM(tvar :: defaultType :: ruleTypes, Kind.Star, loc)
       val resTpe = tvar
       val resEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
       (resTpe, resEff)
@@ -908,7 +908,7 @@ object ConstraintGeneration {
       val regionType = Type.mkRegion(regionVar, loc)
       val (tpe1, _) = visitExp(exp1)
       val (tpe2, _) = visitExp(exp2)
-      expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
+      c.expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
       val resTpe = Type.Unit
       val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
       (resTpe, resEff)
@@ -920,22 +920,22 @@ object ConstraintGeneration {
       val (tpe, eff) = visitExp(exp)
       val patternTypes = patterns.map(visitPattern)
       val (fragTypes, fragEffs) = parExps.map(visitExp).unzip
-      patternTypes.zip(fragTypes).zip(patLocs).foreach { case ((patTpe, expTpe), l) => unifyTypeM(patTpe, expTpe, l) }
-      fragEffs.zip(patLocs).foreach { case (p, l) => expectTypeM(expected = Type.Pure, actual = p, l) }
+      patternTypes.zip(fragTypes).zip(patLocs).foreach { case ((patTpe, expTpe), l) => c.unifyTypeM(patTpe, expTpe, l) }
+      fragEffs.zip(patLocs).foreach { case (p, l) => c.expectTypeM(expected = Type.Pure, actual = p, l) }
       val resTpe = tpe
       val resEff = eff
       (resTpe, resEff)
 
     case Expr.Lazy(exp, loc) =>
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+      c.expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
       val resTpe = Type.mkLazy(tpe, loc)
       val resEff = Type.Pure
       (resTpe, resEff)
 
     case Expr.Force(exp, tvar, loc) =>
       val (tpe, eff) = visitExp(exp)
-      expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, exp.loc)
+      c.expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, exp.loc)
       val resTpe = tvar
       val resEff = eff
       (resTpe, resEff)
@@ -956,12 +956,12 @@ object ConstraintGeneration {
   /**
     * Generates constraints for the pattern.
     */
-  def visitPattern(pat0: KindedAst.Pattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): Type = pat0 match {
+  def visitPattern(pat0: KindedAst.Pattern)(implicit c: TypingContext, root: KindedAst.Root, flix: Flix): Type = pat0 match {
 
     case KindedAst.Pattern.Wild(tvar, loc) => tvar
 
     case KindedAst.Pattern.Var(sym, tvar, loc) =>
-      unifyTypeM(sym.tvar, tvar, loc)
+      c.unifyTypeM(sym.tvar, tvar, loc)
       tvar
 
     case KindedAst.Pattern.Cst(cst, loc) => TypeReconstruction.constantType(cst)
@@ -980,7 +980,7 @@ object ConstraintGeneration {
       // The tag type is a function from the type of variant to the type of the enum.
       //
       val tpe = visitPattern(pat)
-      unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+      c.unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
       tvar
 
 
@@ -1001,10 +1001,10 @@ object ConstraintGeneration {
       }
 
       val tailTpe = visitPattern(pat)
-      unifyTypeM(freshRecord, tailTpe, loc.asSynthetic)
+      c.unifyTypeM(freshRecord, tailTpe, loc.asSynthetic)
       val patTpes = pats.map(visitRecordLabelPattern)
       val resTpe = mkRecordType(patTpes)
-      unifyTypeM(resTpe, tvar, loc)
+      c.unifyTypeM(resTpe, tvar, loc)
       resTpe
 
     case KindedAst.Pattern.RecordEmpty(loc) => Type.mkRecord(Type.RecordRowEmpty, loc)
@@ -1014,11 +1014,11 @@ object ConstraintGeneration {
   /**
     * Generates constraints for the record label pattern.
     */
-  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: Context, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypingContext, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
     case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
       // { Label = Pattern ... }
       val tpe = visitPattern(p)
-      unifyTypeM(tpe, tvar, loc)
+      c.unifyTypeM(tpe, tvar, loc)
       (label, tpe, loc)
   }
 
