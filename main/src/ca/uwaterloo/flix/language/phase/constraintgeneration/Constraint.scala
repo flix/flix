@@ -22,13 +22,13 @@ import scala.collection.mutable.ListBuffer
 
 sealed trait Constraint {
   override def toString: String = this match {
-    case Constraint.Equality(tpe1, tpe2, lenv, loc) => s"$tpe1 ~ $tpe2" // TODO ASSOC-TYPES ignoring lenv
+    case Constraint.Equality(tpe1, tpe2, lenv, prov, loc) => s"$tpe1 ~ $tpe2" // TODO ASSOC-TYPES ignoring lenv
     case Constraint.Class(sym, tpe, lenv, loc) => s"$sym[$tpe]"
   }
 }
 
 object Constraint {
-  case class Equality(tpe1: Type, tpe2: Type, lenv: LevelEnv, loc: SourceLocation) extends Constraint
+  case class Equality(tpe1: Type, tpe2: Type, lenv: LevelEnv, prov: Provenance, loc: SourceLocation) extends Constraint
 
   case class Class(sym: Symbol.ClassSym, tpe: Type, lenv: LevelEnv, loc: SourceLocation) extends Constraint
 
@@ -38,6 +38,26 @@ object Constraint {
     */
   case class Context(constrs: ListBuffer[Constraint], var renv: RigidityEnv, var lenv: LevelEnv)
 
+  sealed trait Provenance
+
+  object Provenance {
+
+    /**
+      * The constraint indicates that the left type is the expected type, while the right type is the actual type.
+      */
+    object ExpectLeft extends Provenance
+
+    /**
+      * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
+      */
+    case class ExpectLeftArgument(sym: Symbol, num: Int) extends Provenance
+
+    /**
+      * The constraint indicates that the types must match.
+      */
+    object Match extends Provenance
+  }
+
   object Context {
     def empty(): Context = Context(ListBuffer.empty, RigidityEnv.empty, LevelEnv.Top)
   }
@@ -46,7 +66,7 @@ object Constraint {
     * Generates constraints unifying the given types.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit c: Context): Unit = {
-    c.constrs.append(Constraint.Equality(tpe1, tpe2, c.lenv, loc))
+    c.constrs.append(Constraint.Equality(tpe1, tpe2, c.lenv, Provenance.Match, loc))
   }
 
   /**
@@ -64,10 +84,12 @@ object Constraint {
   /**
     * Generates constraints expecting the given type arguments to unify.
     */
-  // TODO ASSOC-TYPES this should actually do something
   def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit c: Context, root: KindedAst.Root, flix: Flix): Unit = {
-    expectedTypes.zip(actualTypes).zip(actualLocs).foreach {
-      case ((expectedType, actualType), loc) => expectTypeM(expectedType, actualType, loc)
+    expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
+      case (((expectedType, actualType), loc), index) =>
+        val oneBasedIndex = index + 1
+        val constr = Constraint.Equality(expectedType, actualType, c.lenv, Provenance.ExpectLeftArgument(sym, oneBasedIndex), loc)
+        c.constrs.append(constr)
     }
   }
 
@@ -90,9 +112,8 @@ object Constraint {
   /**
     * Generates constraints expecting the given types to unify.
     */
-  // TODO ASSOC-TYPES this should actually do something
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit c: Context): Unit = {
-    unifyTypeM(expected, actual, loc)
+    c.constrs.append(Constraint.Equality(expected, actual, c.lenv, Provenance.ExpectLeft, loc))
   }
 
   /**
