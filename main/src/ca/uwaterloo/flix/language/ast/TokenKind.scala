@@ -79,6 +79,8 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
+  case object Dollar extends TokenKind
+
   case object Dot extends TokenKind
 
   case object Equal extends TokenKind
