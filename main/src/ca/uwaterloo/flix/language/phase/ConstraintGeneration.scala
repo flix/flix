@@ -53,8 +53,8 @@ object ConstraintGeneration {
           println(sym)
           println("Type: " + tpe)
           println("Effect: " + eff)
-          println("Rigid: " + renv.s)
-          println("Type constraints: " + tconstrs)
+          println("Rigid: " + renv.s.mkString(", "))
+          println("Type constraints: " + tconstrs.mkString(", "))
           println()
       }
     }
@@ -63,7 +63,12 @@ object ConstraintGeneration {
     result
   }
 
-  sealed class Constraint
+  sealed trait Constraint {
+    override def toString: String = this match {
+      case Constraint.Equality(tpe1, tpe2, lenv, loc) => s"$tpe1 ~ $tpe2" // TODO ASSOC-TYPES ignoring lenv
+      case Constraint.Class(sym, tpe, lenv, loc) => s"$sym[$tpe]"
+    }
+  }
 
   object Constraint {
     case class Equality(tpe1: Type, tpe2: Type, lenv: LevelEnv, loc: SourceLocation) extends Constraint
