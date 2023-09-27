@@ -44,7 +44,7 @@ object TypeReconstruction {
     val restrictableEnums = visitRestrictableEnums(root)
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
-    val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
+    val sigs = classes.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
 
     val modules = collectModules(root)
 
