@@ -18,21 +18,20 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.Constraint._
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{Constraint, RestrictableChooseConstraintGeneration, SchemaConstraintGeneration}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, LevelEnv, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypingConstraint}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 object ConstraintGeneration {
 
-  def run(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.DefnSym, (List[Constraint], Type, Type, RigidityEnv)] = {
+  def run(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.DefnSym, (List[TypingConstraint], Type, Type, RigidityEnv)] = {
 
     // Skip this phase unless it is activated
     if (!flix.options.xtyper) {
       return Map.empty
     }
 
-    val result = flix.phase("ConstraintGeneration") {
+    val result = flix.phase("TypingConstraintGeneration") {
       ParOps.mapValues(root.defs) {
         case defn =>
           implicit val context: Context = Context.empty()
