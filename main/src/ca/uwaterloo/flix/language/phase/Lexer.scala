@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
-// TODO: Out of bounds errors on peek and retreat
-
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
  * This lexer is resilient, meaning that when an unrecognized character is encountered,
@@ -111,7 +109,6 @@ object Lexer {
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-    //    if (src.name == "Fixpoint/Ram/RamStmt.flix") {
     if (src.name == "foo.flix") {
       println(s.tokens.mkString("\n"))
     }
@@ -143,19 +140,20 @@ object Lexer {
   }
 
   /**
-   * Retreats current position one char backwards returning the char it was previously sitting on,
-   * while keeping track of line and column numbers too.
+   * Retreats current position one char backwards while keeping track of line and column numbers too.
    */
-  private def retreat()(implicit s: State): Char = {
-    val c = s.src.data(s.current.offset)
+  private def retreat()(implicit s: State): Unit = {
+    if (s.current.offset == 0) {
+      return
+    }
     s.current.offset -= 1
+    val c = s.src.data(s.current.offset)
     if (c == '\n') {
       s.current.line -= 1
       s.current.column = 0
     } else {
       s.current.column -= 1
     }
-    c
   }
 
   /**
@@ -181,20 +179,6 @@ object Lexer {
   }
 
   /**
-   * A helper function wrapping peek, with special handling for escaped characters.
-   * This is useful for "\"" or `'\''`
-   */
-  private def escapedPeek()(implicit s: State): Char = {
-    var p = peek()
-    while (p == '\\') {
-      advance()
-      advance()
-      p = peek()
-    }
-    p
-  }
-
-  /**
    * Peeks the character that state is currently sitting on without advancing.
    */
   private def peek()(implicit s: State): Char = {
@@ -210,6 +194,24 @@ object Lexer {
     } else {
       Some(s.src.data(s.current.offset + 1))
     }
+  }
+
+  /**
+   * A helper function wrapping peek, with special handling for escaped characters.
+   * This is useful for "\"" or `'\''`
+   */
+  private def escapedPeek()(implicit s: State): Option[Char] = {
+    var p = peek()
+    while (p == '\\') {
+      advance()
+      // This check is for a source that ends on a '\'.
+      if (s.current.offset == s.src.data.length - 1) {
+        return None
+      }
+      advance()
+      p = peek()
+    }
+    Some(p)
   }
 
   /**
@@ -620,7 +622,7 @@ object Lexer {
     while (!isAtEnd()) {
       var p = escapedPeek()
       // Check for the beginning of an string interpolation.
-      if (!previousPrevious().contains('\\') && previous().contains('$') && p == '{') {
+      if (!previousPrevious().contains('\\') && previous().contains('$') && p.contains('{')) {
         acceptStringInterpolation() match {
           case e@TokenKind.Err(_) => return e
           case k =>
@@ -630,9 +632,13 @@ object Lexer {
         }
       }
       // Check for termination
-      if (p == '\"') {
+      if (p.contains('\"')) {
         advance()
         return kind
+      }
+      // Check if file ended on a '\', meaning that the string was unterminated
+      if (p.isEmpty) {
+        return TokenKind.Err(TokenErrorKind.UnterminatedString)
       }
       advance()
     }
@@ -698,7 +704,7 @@ object Lexer {
    */
   private def acceptChar()(implicit s: State): TokenKind = {
     while (!isAtEnd()) {
-      if (escapedPeek() == '\'') {
+      if (escapedPeek().contains('\'')) {
         advance()
         return TokenKind.LiteralChar
       }
