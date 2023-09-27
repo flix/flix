@@ -167,9 +167,6 @@ object EarlyTreeShaker {
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ visitExps(rules.map(_.exp))
-
     case Expr.VectorLit(exps, exp, _, _) =>
       visitExps(exps)
 

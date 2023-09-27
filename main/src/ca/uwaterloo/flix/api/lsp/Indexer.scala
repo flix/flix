@@ -256,11 +256,6 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ traverse(rules) {
-        case RelationalChooseRule(_, exp) => visitExp(exp)
-      } ++ Index.occurrenceOf(exp0)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ traverse(rules) {
         case RestrictableChooseRule(_, body) => visitExp(body)

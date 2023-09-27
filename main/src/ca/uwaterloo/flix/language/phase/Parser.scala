@@ -815,7 +815,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
-        RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
+        RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block |
         SelectChannel | Spawn | ParYield | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
@@ -973,39 +973,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ keyword("typematch") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.TypeMatch
-      }
-    }
-
-    def RelationalChoose: Rule1[ParsedAst.Expression.RelationalChoose] = {
-      def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
-        Expression ~> ((e: ParsedAst.Expression) => Seq(e))
-      }
-
-      def MatchMany: Rule1[Seq[ParsedAst.Expression]] = rule {
-        "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-      }
-
-      def ChoicePattern: Rule1[ParsedAst.RelationalChoosePattern] = rule {
-        (SP ~ "_" ~ SP ~> ParsedAst.RelationalChoosePattern.Wild) |
-          (SP ~ keyword("Absent") ~ SP ~> ParsedAst.RelationalChoosePattern.Absent) |
-          (SP ~ keyword("Present") ~ optWS ~ "(" ~ Names.Variable ~ ")" ~ SP ~> ParsedAst.RelationalChoosePattern.Present)
-      }
-
-      def CaseOne: Rule1[ParsedAst.RelationalChooseRule] = namedRule("ChooseCase") {
-        SP ~ keyword("case") ~ WS ~ ChoicePattern ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~>
-          ((sp1: SourcePosition, x: ParsedAst.RelationalChoosePattern, e: ParsedAst.Expression, sp2: SourcePosition) => ParsedAst.RelationalChooseRule(sp1, Seq(x), e, sp2))
-      }
-
-      def CaseMany: Rule1[ParsedAst.RelationalChooseRule] = namedRule("ChooseCase") {
-        SP ~ keyword("case") ~ WS ~ "(" ~ optWS ~ oneOrMore(ChoicePattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ atomic("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.RelationalChooseRule
-      }
-
-      def ChooseKind: Rule1[Boolean] = rule {
-        (keyword("relational_choose*") ~ push(true)) | (keyword("relational_choose") ~ push(false))
-      }
-
-      rule {
-        SP ~ ChooseKind ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RelationalChoose
       }
     }
 

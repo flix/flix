@@ -425,19 +425,12 @@ main h2 {
     font-family: Oswald, sans-serif;
 }
 
-section {
-    --h-padding: 0.75rem;
-    margin-left: calc(-1 * var(--h-padding));
-    margin-right: calc(-1 * var(--h-padding));
-
-    margin-bottom: 3rem;
-}
-section > * {
-    padding-left: var(--h-padding);
-    padding-right: var(--h-padding);
-}
-
 .box {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+
     box-shadow: 0 0 10px 0 var(--shadow-color);
     background-color: var(--bg-color-1);
     border: 1px solid var(--border-color);
@@ -447,6 +440,9 @@ section > * {
     border-radius: 0.2rem;
     box-sizing: border-box;
     overflow: auto;
+}
+.box:last-of-type {
+    margin-bottom: 3rem;
 }
 .box:target {
     box-shadow: 0 0 14px 0 var(--highlight-color);

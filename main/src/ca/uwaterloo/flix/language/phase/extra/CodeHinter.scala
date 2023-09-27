@@ -149,11 +149,6 @@ object CodeHinter {
         case TypeMatchRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ rules.flatMap {
-        case RelationalChooseRule(_, exp) => visitExp(exp)
-      }
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case RestrictableChooseRule(_, body) => visitExp(body)
