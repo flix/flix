@@ -102,16 +102,14 @@ object Lexer {
       whitespace()
       if (!isAtEnd()) {
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
-        addToken(scanToken())
+        val k = scanToken()
+        addToken(k)
       }
     }
 
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-    if (src.name == "foo.flix") {
-      println(s.tokens.mkString("\n"))
-    }
 
     val errorTokens = s.tokens.collect {
       case t@Token(TokenKind.Err(err), _, _, _, _, _) => tokenErrToCompilationMessage(err, t)
@@ -205,7 +203,7 @@ object Lexer {
     while (p == '\\') {
       advance()
       // This check is for a source that ends on a '\'.
-      if (s.current.offset == s.src.data.length - 1) {
+      if (s.current.offset >= s.src.data.length - 1) {
         return None
       }
       advance()
@@ -409,7 +407,7 @@ object Lexer {
    */
   private def isMatch(keyword: String)(implicit s: State): Boolean = {
     // Check if the keyword can appear before eof.
-    if (s.current.offset + keyword.length > s.src.data.length) {
+    if (s.current.offset + keyword.length - 1 > s.src.data.length) {
       return false
     }
 
