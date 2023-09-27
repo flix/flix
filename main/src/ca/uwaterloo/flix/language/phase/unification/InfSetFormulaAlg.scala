@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase.unification
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
