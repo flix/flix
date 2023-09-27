@@ -247,7 +247,7 @@ object HtmlDocumentor {
   private def mkClass(sym: Symbol.ClassSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
     val decl = root.classes(sym)
 
-    val (sigs, defs) = decl.signatures.partition(_.exp.isEmpty)
+    val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
     val instances = root.instances.getOrElse(sym, Nil)
 
     Class(decl, sigs, defs, instances, parent, companionMod)

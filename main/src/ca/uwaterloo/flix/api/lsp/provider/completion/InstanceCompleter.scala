@@ -84,7 +84,7 @@ object InstanceCompleter extends Completer {
       case (_, clazz) =>
         val hole = "${1:t}"
         val classSym = clazz.sym
-        val signatures = clazz.signatures.filter(_.exp.isEmpty)
+        val signatures = clazz.sigs.filter(_.exp.isEmpty)
         val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
         val completion = s"$classSym[$hole] {\n\n$body\n\n}\n"
 
