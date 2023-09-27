@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.constraintgeneration
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.ConstraintGeneration._
+import ca.uwaterloo.flix.language.phase.ConstraintGeneration.{visitExp, visitPattern}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.Constraint.{Context, addTypeConstraintsM, unifyAllTypesM, unifyEffM, unifyType3M, unifyTypeM}
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 
 object SchemaConstraintGeneration {
