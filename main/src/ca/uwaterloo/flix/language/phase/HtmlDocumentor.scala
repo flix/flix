@@ -89,8 +89,11 @@ object HtmlDocumentor {
       val out = documentClass(clazz)
       writeDocFile(classFileName(clazz.decl.sym), out)
 
-      clazz.companionMod.foreach {
-        _.submodules.foreach(visitMod)
+      clazz.companionMod.foreach { mod =>
+        mod.submodules.foreach(visitMod)
+        mod.classes.foreach(visitClass)
+        mod.effects.foreach(visitEffect)
+        mod.enums.foreach(visitEnum)
       }
     }
 
@@ -98,8 +101,11 @@ object HtmlDocumentor {
       val out = documentEffect(eff)
       writeDocFile(effectFileName(eff.decl.sym), out)
 
-      eff.companionMod.foreach {
-        _.submodules.foreach(visitMod)
+      eff.companionMod.foreach { mod =>
+        mod.submodules.foreach(visitMod)
+        mod.classes.foreach(visitClass)
+        mod.effects.foreach(visitEffect)
+        mod.enums.foreach(visitEnum)
       }
     }
 
@@ -107,8 +113,11 @@ object HtmlDocumentor {
       val out = documentEnum(enm)
       writeDocFile(enumFileName(enm.decl.sym), out)
 
-      enm.companionMod.foreach {
-        _.submodules.foreach(visitMod)
+      enm.companionMod.foreach { mod =>
+        mod.submodules.foreach(visitMod)
+        mod.classes.foreach(visitClass)
+        mod.effects.foreach(visitEffect)
+        mod.enums.foreach(visitEnum)
       }
     }
 
@@ -337,12 +346,8 @@ object HtmlDocumentor {
   private def filterEmpty(mod: Module): Module = {
     /**
       * Recursively walks the module tree removing empty modules.
-      * These modules are removed from the map, and from the `submodules` field.
-      *
-      * Returns a boolean, describing whether or not this module is included.
       */
-    def visitMod(mod: Module): Option[Module] = {
-      mod match {
+    def visitMod(mod: Module): Option[Module] = mod match {
         case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
           val filteredSubMods = submodules.flatMap(visitMod)
           val filteredClasses = classes.map {
@@ -381,7 +386,6 @@ object HtmlDocumentor {
             )
           )
       }
-    }
 
     visitMod(mod).get
   }
