@@ -45,14 +45,21 @@ object ConstraintGeneration {
 
     // report the constraints if directed
     if (flix.options.xprintconstraints) {
+      var overall = ConstraintAnalysis.empty
       result.foreach {
         case (sym, (tconstrs, tpe, eff, renv)) =>
           println(sym)
-          println("Type: " + tpe)
-          println("Effect: " + eff)
-          println("Rigid: " + renv.s.mkString(", "))
-          println("Type constraints: " + tconstrs.mkString(", "))
+          val analysis = analyzeAll(tconstrs)
+          overall = overall ++ analysis
+          analysis.print()
+//          println("Type: " + tpe)
+//          println("Effect: " + eff)
+//          println("Rigid: " + renv.s.mkString(", "))
+//          println("Type constraints: " + tconstrs.mkString(", "))
           println()
+
+          println("===== ANALYSIS TOTALS =====")
+          overall.print()
       }
     }
 
@@ -60,6 +67,92 @@ object ConstraintGeneration {
     result
   }
 
+  case object ConstraintAnalysis {
+    def empty: ConstraintAnalysis = ConstraintAnalysis(0, 0, 0, 0, 0, 0, 0)
+  }
+  case class ConstraintAnalysis(totalEq: Int, totalClass: Int, bothCst: Int, bothVar: Int, maxSize: Int, classCst: Int, classVar: Int) {
+    def ++(that: ConstraintAnalysis): ConstraintAnalysis = {
+      ConstraintAnalysis(
+        totalEq = this.totalEq + that.totalEq,
+        totalClass = this.totalClass,
+        bothCst = this.bothCst + that.bothCst,
+        bothVar = this.bothVar + that.bothVar,
+        maxSize = Integer.max(this.maxSize, that.maxSize),
+        classCst = this.classCst + that.classCst,
+        classVar = this.classVar + that.classVar,
+      )
+    }
+
+    def print(): Unit = {
+      println("Equal Constraints: " + totalEq)
+      println("Class Constraints: " + totalClass)
+      println("Both Constant: " + bothCst)
+      println("Both Variable: " + bothVar)
+      println("Maximum size: " + maxSize)
+      println("Class Constant: " + classCst)
+      println("Class Variable: " + classVar)
+    }
+  }
+
+  def analyzeAll(constrs: List[TypingConstraint]): ConstraintAnalysis = {
+    constrs.map(analyze).foldLeft(ConstraintAnalysis.empty)(_ ++ _)
+  }
+  def analyze(constr: TypingConstraint): ConstraintAnalysis = constr match {
+    case TypingConstraint.Equality(tpe1: Type.Var, tpe2: Type.Var, lenv, prov, loc) => ConstraintAnalysis(
+      totalEq = 1,
+      totalClass = 0,
+      bothCst = 0,
+      bothVar = 1,
+      maxSize = Integer.max(tpe1.size, tpe2.size),
+      classCst = 0,
+      classVar = 0
+    )
+    case TypingConstraint.Equality(tpe1: Type.Cst, tpe2: Type.Cst, lenv, prov, loc) => ConstraintAnalysis(
+      totalEq = 1,
+      totalClass = 0,
+      bothCst = 1,
+      bothVar = 0,
+      maxSize = Integer.max(tpe1.size, tpe2.size),
+      classCst = 0,
+      classVar = 0
+    )
+    case TypingConstraint.Equality(tpe1, tpe2, lenv, prov, loc) => ConstraintAnalysis(
+      totalEq = 1,
+      totalClass = 0,
+      bothCst = 0,
+      bothVar = 0,
+      maxSize = Integer.max(tpe1.size, tpe2.size),
+      classCst = 0,
+      classVar = 0
+    )
+    case TypingConstraint.Class(sym, tpe: Type.Var, lenv, loc) => ConstraintAnalysis(
+      totalEq = 0,
+      totalClass = 1,
+      bothCst = 0,
+      bothVar = 0,
+      maxSize = tpe.size,
+      classCst = 0,
+      classVar = 1,
+    )
+    case TypingConstraint.Class(sym, tpe: Type.Cst, lenv, loc) => ConstraintAnalysis(
+      totalEq = 0,
+      totalClass = 1,
+      bothCst = 0,
+      bothVar = 0,
+      maxSize = tpe.size,
+      classCst = 1,
+      classVar = 0,
+    )
+    case TypingConstraint.Class(sym, tpe, lenv, loc) => ConstraintAnalysis(
+      totalEq = 0,
+      totalClass = 1,
+      bothCst = 0,
+      bothVar = 0,
+      maxSize = tpe.size,
+      classCst = 0,
+      classVar = 0,
+    )
+  }
 
   /**
     * Generates constraints for the given expression.
