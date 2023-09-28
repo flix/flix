@@ -89,8 +89,11 @@ object HtmlDocumentor {
       val out = documentClass(clazz)
       writeDocFile(classFileName(clazz.decl.sym), out)
 
-      clazz.companionMod.foreach {
-        _.submodules.foreach(visitMod)
+      clazz.companionMod.foreach { mod =>
+        mod.submodules.foreach(visitMod)
+        mod.classes.foreach(visitClass)
+        mod.effects.foreach(visitEffect)
+        mod.enums.foreach(visitEnum)
       }
     }
 
@@ -98,8 +101,11 @@ object HtmlDocumentor {
       val out = documentEffect(eff)
       writeDocFile(effectFileName(eff.decl.sym), out)
 
-      eff.companionMod.foreach {
-        _.submodules.foreach(visitMod)
+      eff.companionMod.foreach { mod =>
+        mod.submodules.foreach(visitMod)
+        mod.classes.foreach(visitClass)
+        mod.effects.foreach(visitEffect)
+        mod.enums.foreach(visitEnum)
       }
     }
 
@@ -107,8 +113,11 @@ object HtmlDocumentor {
       val out = documentEnum(enm)
       writeDocFile(enumFileName(enm.decl.sym), out)
 
-      enm.companionMod.foreach {
-        _.submodules.foreach(visitMod)
+      enm.companionMod.foreach { mod =>
+        mod.submodules.foreach(visitMod)
+        mod.classes.foreach(visitClass)
+        mod.effects.foreach(visitEffect)
+        mod.enums.foreach(visitEnum)
       }
     }
 
@@ -238,7 +247,7 @@ object HtmlDocumentor {
   private def mkClass(sym: Symbol.ClassSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
     val decl = root.classes(sym)
 
-    val (sigs, defs) = decl.signatures.partition(_.exp.isEmpty)
+    val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
     val instances = root.instances.getOrElse(sym, Nil)
 
     Class(decl, sigs, defs, instances, parent, companionMod)
@@ -337,12 +346,8 @@ object HtmlDocumentor {
   private def filterEmpty(mod: Module): Module = {
     /**
       * Recursively walks the module tree removing empty modules.
-      * These modules are removed from the map, and from the `submodules` field.
-      *
-      * Returns a boolean, describing whether or not this module is included.
       */
-    def visitMod(mod: Module): Option[Module] = {
-      mod match {
+    def visitMod(mod: Module): Option[Module] = mod match {
         case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
           val filteredSubMods = submodules.flatMap(visitMod)
           val filteredClasses = classes.map {
@@ -381,7 +386,6 @@ object HtmlDocumentor {
             )
           )
       }
-    }
 
     visitMod(mod).get
   }
@@ -1028,7 +1032,9 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.classes.sortBy(_.loc)) { c =>
-      sb.append(s"<span class='tpe-constraint'>${esc(c.clazz.name)}</span>")
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(c.clazz))}' title='class ${esc(className(c.clazz))}'>")
+      sb.append(s"${esc(c.clazz.name)}")
+      sb.append("</a>")
     }
     sb.append("</span>")
   }
