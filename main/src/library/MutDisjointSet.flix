@@ -48,14 +48,21 @@ mod MutDisjointSet {
     ///
     ///
     ///
-    pub def union(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ r =
+    pub def union(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): Unit \ r =
         def link(x1, y1) = {
-            let Node({ xparent, xrank | _ }) = x1;
-            let Node({ yparent, yrank | _ }) = y1;
+            let Node({ parent = xparent, rank = xr | _ }) = x1;
+            let Node({ parent = yparent, rank = yr | _ }) = y1;
+            let xrank = Ref.get(xr);
+            let yrank = Ref.get(yr);
             if (xrank > yrank) {
-                ???
+                Ref.put(Some(x1), yparent)
             } else {
-                ???
+                Ref.put(Some(y1), xparent)
+            };
+            if (xrank == yrank) {
+                Ref.put(yrank + 1, yr)
+            } else {
+                ()
             }
         };
         link(find(x), find(y))
