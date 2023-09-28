@@ -18,7 +18,12 @@ package ca.uwaterloo.flix.language.phase.constraintgeneration
 import ca.uwaterloo.flix.language.ast.{LevelEnv, SourceLocation, Symbol, Type}
 
 
-sealed class TypingConstraint
+sealed trait TypingConstraint {
+  override def toString: String = this match {
+    case TypingConstraint.Equality(tpe1, tpe2, lenv, prov, loc) => s"$tpe1 ~ $tpe2"
+    case TypingConstraint.Class(sym, tpe, lenv, loc) => s"$sym[$tpe]"
+  }
+}
 
 object TypingConstraint {
   case class Equality(tpe1: Type, tpe2: Type, lenv: LevelEnv, prov: Provenance, loc: SourceLocation) extends TypingConstraint
