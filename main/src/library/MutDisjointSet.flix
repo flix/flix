@@ -14,16 +14,36 @@
  *  limitations under the License.
  */
 
-enum MutDisjointSet[t: Type, r: Eff] {
-    case MutDisjointSet({ rc = Region[r], value = t, parent = Ref[Option[MutDisjointSet[t, r]], r], rank = Ref[Int32, r] })
+pub enum MutDisjointSet[t: Type, r: Eff] {
+    case Node({ rc = Region[r], value = t, parent = Ref[Option[MutDisjointSet[t, r]], r], rank = Ref[Int32, r] })
 }
 
 mod MutDisjointSet {
 
-    pub def singleton(rc: Region[r], x: t): MutDisjointSet[t, r] \ r =
-        MutDisjointSet({ rc = rc, value = x, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
+    ///
+    ///
+    ///
+    pub def makeSet(rc: Region[r], x: m[t]): MutDisjointSet[t, r] with Iterable[m] = ???
 
-    pub def find(x: MutDisjointSet[t, r]): MutDisjointSet[t, r] = ???
+    ///
+    ///
+    ///
+    pub def singleton(rc: Region[r], x: t): MutDisjointSet[t, r] \ r =
+        Node({ rc = rc, value = x, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
+
+    ///
+    /// Returns the representative of the set that contains x.
+    ///
+    pub def find(x: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ r =
+        let Node({ parent | _ }) = x;
+        match Ref.get(parent) {
+            case Some(p) => {
+                let root = find(p);
+                Ref.put(Some(root), parent);
+                root
+            }
+            case None => x
+        }
 
     pub def union(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ {} = ???
 
