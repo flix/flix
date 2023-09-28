@@ -45,7 +45,20 @@ mod MutDisjointSet {
             case None => x
         }
 
-    pub def union(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ {} = ???
+    ///
+    ///
+    ///
+    pub def union(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): MutDisjointSet[t, r] \ r =
+        def link(x1, y1) = {
+            let Node({ xparent, xrank | _ }) = x1;
+            let Node({ yparent, yrank | _ }) = y1;
+            if (xrank > yrank) {
+                ???
+            } else {
+                ???
+            }
+        };
+        link(find(x), find(y))
 
     pub def equivalent(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): Bool \ {} = ???
 
