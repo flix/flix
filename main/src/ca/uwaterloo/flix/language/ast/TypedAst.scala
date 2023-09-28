@@ -42,7 +42,7 @@ object TypedAst {
                   eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef],
                   names: MultiMap[List[String], String])
 
-  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], signatures: List[Sig], laws: List[Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
@@ -143,8 +143,6 @@ object TypedAst {
     case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class RelationalChoose(exps: List[Expr], rules: List[RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -303,20 +301,6 @@ object TypedAst {
     }
   }
 
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoosePattern
-
-  }
-
   sealed trait RestrictableChoosePattern
 
   object RestrictableChoosePattern {
@@ -378,8 +362,6 @@ object TypedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

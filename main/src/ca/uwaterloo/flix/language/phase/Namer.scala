@@ -728,25 +728,6 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
-    case WeededAst.Expr.RelationalChoose(star, exps, rules, loc) =>
-      val expsVal = traverse(exps)(visitExp(_, ns0))
-      val rulesVal = traverse(rules) {
-        case WeededAst.RelationalChooseRule(pat0, exp0) =>
-          val p = pat0.map {
-            case WeededAst.RelationalChoosePattern.Wild(loc) => NamedAst.RelationalChoosePattern.Wild(loc)
-            case WeededAst.RelationalChoosePattern.Absent(loc) => NamedAst.RelationalChoosePattern.Absent(loc)
-            case WeededAst.RelationalChoosePattern.Present(ident, loc) =>
-              val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-              NamedAst.RelationalChoosePattern.Present(sym, loc)
-          }
-          mapN(visitExp(exp0, ns0)) {
-            case e => NamedAst.RelationalChooseRule(p, e)
-          }
-      }
-      mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expr.RelationalChoose(star, es, rs, loc)
-      }
-
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
