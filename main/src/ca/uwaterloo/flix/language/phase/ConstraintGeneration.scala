@@ -24,15 +24,20 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 object ConstraintGeneration {
 
-  def run(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.DefnSym, (List[TypingConstraint], Type, Type, RigidityEnv)] = {
+  case class Result(
+                     defs: Map[Symbol.DefnSym, (List[TypingConstraint], Type, Type, RigidityEnv)],
+                     sigs: Map[Symbol.SigSym, (List[TypingConstraint], Type, Type, RigidityEnv)],
+                   )
+
+  def run(root: KindedAst.Root)(implicit flix: Flix): Result = {
 
     // Skip this phase unless it is activated
     if (!flix.options.xtyper) {
-      return Map.empty
+      return Result(Map.empty, Map.empty)
     }
 
     val result = flix.phase("TypingConstraintGeneration") {
-      ParOps.mapValues(root.defs) {
+      val defVal = ParOps.mapValues(root.defs) {
         case defn =>
           implicit val context: TypingContext = new TypingContext
           implicit val r: KindedAst.Root = root
@@ -41,26 +46,62 @@ object ConstraintGeneration {
           val renv = context.renv
           (constrs, tpe, eff, renv)
       }
+
+      // filter down signatures to those with implementations
+      val sigsWithImpl = root.classes.values.flatMap(_.sigs).flatMap {
+        case (sym, sig) => sig.exp match {
+          case Some(value) => Some(sym -> value)
+          case None => None
+        }
+      }.toMap
+
+      val sigVal = ParOps.mapValues(sigsWithImpl) {
+        case exp =>
+          // TODO ASSOC-TYPES dedupe
+          implicit val context: TypingContext = new TypingContext
+          implicit val r: KindedAst.Root = root
+          val (tpe, eff) = visitExp(exp)
+          val constrs = context.constrs.toList
+          val renv = context.renv
+          (constrs, tpe, eff, renv)
+      }
+
+      val instDefs = root.instances.values.flatten.flatMap(_.defs).map {
+        case defn => defn.sym -> defn
+      }.toMap
+
+      val instVal = ParOps.mapValues(instDefs) {
+        case defn =>
+          // TODO ASSOC-TYPES dedupe
+          implicit val context: TypingContext = new TypingContext
+          implicit val r: KindedAst.Root = root
+          val (tpe, eff) = visitExp(defn.exp)
+          val constrs = context.constrs.toList
+          val renv = context.renv
+          (constrs, tpe, eff, renv)
+      }
+
+      Result(defVal ++ instVal, sigVal)
     }
 
     // report the constraints if directed
     if (flix.options.xprintconstraints) {
       var overall = ConstraintAnalysis.empty
-      result.foreach {
+      result.defs.foreach {
         case (sym, (tconstrs, tpe, eff, renv)) =>
           println(sym)
           val analysis = analyzeAll(tconstrs)
           overall = overall ++ analysis
           analysis.print()
-//          println("Type: " + tpe)
-//          println("Effect: " + eff)
-//          println("Rigid: " + renv.s.mkString(", "))
-//          println("Type constraints: " + tconstrs.mkString(", "))
+          //          println("Type: " + tpe)
+          //          println("Effect: " + eff)
+          //          println("Rigid: " + renv.s.mkString(", "))
+          //          println("Type constraints: " + tconstrs.mkString(", "))
           println()
-
-          println("===== ANALYSIS TOTALS =====")
-          overall.print()
       }
+
+      println("===== ANALYSIS TOTALS =====")
+      overall.print()
     }
 
     // return the result
@@ -70,6 +111,7 @@ object ConstraintGeneration {
   case object ConstraintAnalysis {
     def empty: ConstraintAnalysis = ConstraintAnalysis(0, 0, 0, 0, 0, 0, 0)
   }
+
   case class ConstraintAnalysis(totalEq: Int, totalClass: Int, bothCst: Int, bothVar: Int, maxSize: Int, classCst: Int, classVar: Int) {
     def ++(that: ConstraintAnalysis): ConstraintAnalysis = {
       ConstraintAnalysis(
@@ -97,6 +139,7 @@ object ConstraintGeneration {
   def analyzeAll(constrs: List[TypingConstraint]): ConstraintAnalysis = {
     constrs.map(analyze).foldLeft(ConstraintAnalysis.empty)(_ ++ _)
   }
+
   def analyze(constr: TypingConstraint): ConstraintAnalysis = constr match {
     case TypingConstraint.Equality(tpe1: Type.Var, tpe2: Type.Var, lenv, prov, loc) => ConstraintAnalysis(
       totalEq = 1,
