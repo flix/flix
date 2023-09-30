@@ -47,7 +47,7 @@ mod Adaptor {
             None
 
     ///
-    /// Returns the given Java Optional as a Flix Option.
+    /// Returns the given Java `Map.Entry` as a Flix tuple.
     ///
     pub def fromMapEntry(_: Proxy[k], _: Proxy[v], e: ##java.util.Map$Entry): (k, v) =
         import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
@@ -163,6 +163,14 @@ mod Adaptor {
             case None    => empty()
             case Some(a) => of(unchecked_cast(a as ##java.lang.Object))
         }
+
+    ///
+    /// Returns the key-value pair `p` as a new Java `Map.Entry`.
+    ///
+    pub def toMapEntry(p: (k, v)): ##java.util.Map$Entry \ IO =
+        import static java.util.Map.entry(##java.lang.Object, ##java.lang.Object): ##java.util.Map$Entry \ IO;
+        let (k, v) = p;
+        entry(unchecked_cast(k as ##java.lang.Object), unchecked_cast(v as ##java.lang.Object))
 
     ///
     /// Alias for `toArrayList`.

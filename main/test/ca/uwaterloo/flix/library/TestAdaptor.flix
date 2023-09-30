@@ -307,6 +307,17 @@ mod TestAdaptor {
         equals(o, checked_cast(of(checked_cast("hello"))))
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMapEntry                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMapEntry01(): Bool \ IO =
+        import static java.util.Map.entry(##java.lang.Object, ##java.lang.Object): ##java.util.Map$Entry \ {};
+        import java.util.Map$Entry.equals(##java.lang.Object): Bool \ {};
+        let e = Adaptor.toMapEntry(("hello", "world"));
+        equals(e, checked_cast(entry(checked_cast("hello"), checked_cast("world"))))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
