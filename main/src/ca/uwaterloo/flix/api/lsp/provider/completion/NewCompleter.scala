@@ -22,16 +22,63 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.NewCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object NewCompleter extends Completer {
-  def makeCompletion(text: String, context: CompletionContext): NewCompletion = {
+  def makeCompletion(text: String, context: CompletionContext): List[NewCompletion] = {
     NewCompletion(
         name = text,
         priority = Priority.normal("new completion"),
         textEdit = TextEdit(context.range, text),
-        InsertTextFormat.PlainText
-    )
+        InsertTextFormat.Snippet
+    ) :: Nil
+  }
+  def flixType(javaType: String): String = {
+    if (javaType == "void") {
+        "Unit"
+    } else if (javaType.contains(".")) {
+        "##" + javaType
+    } else {
+        javaType
+    }
+  }
+  def methodString(method: java.lang.reflect.Method, interfaceName: String, methodNum: Int): String = {
+    val sb = new StringBuilder
+    sb.append("def ")
+    sb.append(method.getName)
+    sb.append("(")
+    val params = method.getParameters
+    sb.append("_this: ##")
+    sb.append(interfaceName)
+    for (i <- 0 until params.length) {
+        sb.append(", ")
+        sb.append(params(i).getName)
+        sb.append(": ")
+        sb.append(flixType(params(i).getType.getName))
+    }
+    sb.append(")")
+    val retType = method.getReturnType.getName
+    sb.append(": ")
+    sb.append(flixType(retType))
+    sb.append(" \\ IO = ${" + methodNum + ":/* TODO */}")
+    return sb.toString
+  }
+  def countLeadingSpaces(s: String): Int = {
+    var i = 0
+    while (i < s.length && s.charAt(i) == ' ') {
+        i += 1
+    }
+    return i
   }
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[NewCompletion] = {
     val interfaceName = context.previousWord
-    makeCompletion(interfaceName, context) :: Nil
+    try {
+        // TODO: Fields, Snippets, all types of classes(even without full name or ##), disambiguate between 2 and 4 spaces, return types with ##
+        val cls = Class.forName(interfaceName)
+        val methodStrings = cls.getMethods.zipWithIndex.map { case (method, idx) => methodString(method, interfaceName, idx + 1) }
+        val indent = " " * countLeadingSpaces(context.prefix)
+        val methodsString = "{" + methodStrings.map("\n" + indent + "    " + _).mkString("") + "\n" + indent + "}\n"
+        return makeCompletion(methodsString, context)
+    } catch {
+        case e: ClassNotFoundException => return makeCompletion("nothing", context)
+        case e: NoClassDefFoundError => return makeCompletion("nothing", context)
+    }
   }
 }
