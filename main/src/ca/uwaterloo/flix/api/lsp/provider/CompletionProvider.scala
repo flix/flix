@@ -147,6 +147,7 @@ object CompletionProvider {
       //
       case SyntacticContext.Expr.Constraint => PredicateCompleter.getCompletions(context)
       case SyntacticContext.Expr.Do => OpCompleter.getCompletions(context)
+      case SyntacticContext.Expr.NewObject => NewCompleter.getCompletions(context)
       case _: SyntacticContext.Expr => ExprCompleter.getCompletions(context)
 
       //
