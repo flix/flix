@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.util
 
 import java.util
 import java.util.concurrent.{Callable, Executors}
-
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
+import scala.collection.parallel.CollectionConverters._
 import ca.uwaterloo.flix.api.Flix
 
 object ParOps {
@@ -47,10 +47,12 @@ object ParOps {
     * Apply the given function `f` to each value in the map `m` in parallel.
     */
   @inline
-  def mapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
-    parMap(m) {
-      case (k, v) => (k, f(v))
-    }.toMap
+  def mapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] = {
+    val parMap = m.par
+    parMap.tasksupport = flix.forkJoinTaskSupport
+    val result = parMap.mapValues(f)
+    result.seq.toMap
+  }
 
   /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.
