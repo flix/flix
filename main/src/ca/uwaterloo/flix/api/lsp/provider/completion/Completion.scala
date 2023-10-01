@@ -72,8 +72,8 @@ sealed trait Completion {
         insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
 
-    case Completion.NewCompletion(name, priority, textEdit, insertTextFormat) =>
-      CompletionItem(label = name,
+    case Completion.NewCompletion(text, priority, textEdit, insertTextFormat) =>
+      CompletionItem(label = text,
         sortText = priority,
         textEdit = textEdit,
         insertTextFormat = insertTextFormat,
