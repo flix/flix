@@ -81,8 +81,8 @@ object NewCompleter extends Completer {
         val methodsString = "{" + methodStrings.map("\n" + indent + "    " + _).mkString("") + "\n" + indent + "}\n"
         return makeCompletion(methodsString, context)
     } catch {
-        case e: ClassNotFoundException => return Nil
-        case e: NoClassDefFoundError => return Nil
+        case e: java.lang.ClassNotFoundException => return Nil
+        case e: java.lang.NoClassDefFoundError => return Nil
     }
   }
 }
