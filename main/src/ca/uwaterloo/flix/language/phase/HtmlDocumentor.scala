@@ -1132,7 +1132,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' href='${escUrl(createLink(loc))}'>Source</a>")
+    sb.append(s"<a class='source' target='_blank' href='${createLink(loc)}'>Source</a>")
   }
 
   /**
@@ -1287,10 +1287,12 @@ object HtmlDocumentor {
 
   /**
     * Create a raw link to the given `SourceLocation`.
+    *
+    * The URL is already escaped.
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"$LibraryGitHub${loc.source.name}#L${loc.beginLine}-L${loc.beginLine}"
+    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.beginLine}"
   }
 
   /**
