@@ -1164,28 +1164,6 @@ object Resolver {
             case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
-        case NamedAst.Expr.RelationalChoose(star, exps, rules, loc) =>
-          val expsVal = traverse(exps)(visitExp(_, env0))
-          val rulesVal = traverse(rules) {
-            case NamedAst.RelationalChooseRule(pat0, exp0) =>
-              val p = pat0.map {
-                case NamedAst.RelationalChoosePattern.Wild(loc) => ResolvedAst.RelationalChoosePattern.Wild(loc)
-                case NamedAst.RelationalChoosePattern.Absent(loc) => ResolvedAst.RelationalChoosePattern.Absent(loc)
-                case NamedAst.RelationalChoosePattern.Present(sym, loc) => ResolvedAst.RelationalChoosePattern.Present(sym, loc)
-              }
-              val env = pat0.foldLeft(env0) {
-                case (acc, NamedAst.RelationalChoosePattern.Wild(_)) => acc
-                case (acc, NamedAst.RelationalChoosePattern.Absent(_)) => acc
-                case (acc, NamedAst.RelationalChoosePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
-              }
-              mapN(visitExp(exp0, env)) {
-                case e => ResolvedAst.RelationalChooseRule(p, e)
-              }
-          }
-          mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expr.RelationalChoose(star, es, rs, loc)
-          }
-
         case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
           val expVal = visitExp(exp, env0)
           val rulesVal = traverse(rules) {

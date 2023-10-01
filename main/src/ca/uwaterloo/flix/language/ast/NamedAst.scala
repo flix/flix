@@ -129,8 +129,6 @@ object NamedAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(star: Boolean, exps: List[Expr], rules: List[RelationalChooseRule], loc: SourceLocation) extends Expr
-
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class Tuple(elms: List[Expr], loc: SourceLocation) extends Expr
@@ -260,18 +258,6 @@ object NamedAst {
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Pattern, loc: SourceLocation)
     }
-
-  }
-
-  sealed trait RelationalChoosePattern
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoosePattern
 
   }
 
@@ -425,8 +411,6 @@ object NamedAst {
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

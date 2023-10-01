@@ -44,7 +44,7 @@ object TypeReconstruction {
     val restrictableEnums = visitRestrictableEnums(root)
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
-    val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
+    val sigs = classes.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
 
     val modules = collectModules(root)
 
@@ -500,21 +500,6 @@ object TypeReconstruction {
         case (acc, TypedAst.TypeMatchRule(_, _, b)) => Type.mkUnion(b.eff, acc, loc)
       }
       TypedAst.Expr.TypeMatch(e1, rs, tpe, eff, loc)
-
-    case KindedAst.Expr.RelationalChoose(_, exps, rules, tvar, loc) =>
-      val es = exps.map(visitExp(_))
-      val rs = rules.map {
-        case KindedAst.RelationalChooseRule(pat0, exp) =>
-          val pat = pat0.map {
-            case KindedAst.RelationalChoosePattern.Wild(loc) => TypedAst.RelationalChoosePattern.Wild(loc)
-            case KindedAst.RelationalChoosePattern.Absent(loc) => TypedAst.RelationalChoosePattern.Absent(loc)
-            case KindedAst.RelationalChoosePattern.Present(sym, tvar, loc) => TypedAst.RelationalChoosePattern.Present(sym, subst(tvar), loc)
-          }
-          TypedAst.RelationalChooseRule(pat, visitExp(exp))
-      }
-      val tpe = subst(tvar)
-      val eff = Type.mkAnd(rs.map(_.exp.eff), loc)
-      TypedAst.Expr.RelationalChoose(es, rs, tpe, eff, loc)
 
     case KindedAst.Expr.RestrictableChoose(star, exp, rules, tvar, loc) =>
       val e = visitExp(exp)

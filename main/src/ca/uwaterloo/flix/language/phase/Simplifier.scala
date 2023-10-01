@@ -159,9 +159,6 @@ object Simplifier {
       case LoweredAst.Expr.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
-      case LoweredAst.Expr.RelationalChoose(_, _, _, _, loc) =>
-        throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
-
       case LoweredAst.Expr.VectorLit(exps, tpe, _, loc) =>
         // Note: We simplify Vectors to Arrays.
         val es = exps.map(visitExp)

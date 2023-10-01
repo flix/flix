@@ -84,28 +84,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalIntrinsic](result)
   }
 
-  test("MismatchedArity.01") {
-    val input =
-      """def f(): Bool =
-        |    relational_choose 123 {
-        |        case (Present(x), Present(y)) => x == y
-        |    }
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedArity](result)
-  }
-
-  test("MismatchedArity.02") {
-    val input =
-      """def f(): Bool =
-        |    relational_choose (123, 456) {
-        |        case Present(x) => x == x
-        |    }
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedArity](result)
-  }
-
   test("EmptyInterpolatedExpression.01") {
     val input = "def f(): String = \"${}\""
     val result = compile(input, Options.TestWithLibNix)
