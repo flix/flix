@@ -131,7 +131,7 @@ object Parser {
   private def syntacticContextOf(name: String): SyntacticContext = {
     name match {
       case "Expression" => SyntacticContext.Expr.OtherExpr
-      case "NewObject" => println("new"); Thread.sleep(1000); SyntacticContext.Expr.NewObject
+      case "NewObject" => SyntacticContext.Expr.NewObject
       case "Constraint" => SyntacticContext.Expr.Constraint
       case "Do" => SyntacticContext.Expr.Do
 
