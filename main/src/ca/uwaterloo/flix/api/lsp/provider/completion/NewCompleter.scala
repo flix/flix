@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 object NewCompleter extends Completer {
   def makeCompletion(text: String, context: CompletionContext): List[NewCompletion] = {
     NewCompletion(
-        name = text,
+        text = text,
         priority = Priority.normal("new completion"),
         textEdit = TextEdit(context.range, text),
         InsertTextFormat.Snippet
