@@ -34,7 +34,12 @@ object NewCompleter extends Completer {
     if (javaType == "void") {
         "Unit"
     } else if (javaType.contains(".")) {
-        "##" + javaType
+      // Not sure why this happens, but sometimes there is an extraneous [L in front of the type
+      if (javaType.startsWith("[L")) {
+        "##" + javaType.substring(2).replace(";", "")
+      } else {
+        "##" + javaType.replace(";", "")
+      }
     } else {
         javaType
     }
@@ -70,15 +75,14 @@ object NewCompleter extends Completer {
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[NewCompletion] = {
     val interfaceName = context.previousWord
     try {
-        // TODO: Fields, Snippets, all types of classes(even without full name or ##), disambiguate between 2 and 4 spaces, return types with ##
         val cls = Class.forName(interfaceName)
         val methodStrings = cls.getMethods.zipWithIndex.map { case (method, idx) => methodString(method, interfaceName, idx + 1) }
         val indent = " " * countLeadingSpaces(context.prefix)
         val methodsString = "{" + methodStrings.map("\n" + indent + "    " + _).mkString("") + "\n" + indent + "}\n"
         return makeCompletion(methodsString, context)
     } catch {
-        case e: ClassNotFoundException => return makeCompletion("nothing", context)
-        case e: NoClassDefFoundError => return makeCompletion("nothing", context)
+        case e: ClassNotFoundException => return Nil
+        case e: NoClassDefFoundError => return Nil
     }
   }
 }
