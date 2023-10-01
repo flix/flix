@@ -330,12 +330,12 @@ object Completion {
   /**
     * Represents a new completion
     *
-    * @param name             the name of the BuiltinType.
-    * @param priority         the priority of the BuiltinType.
+    * @param text             the text to be inserted.
+    * @param priority         the priority of the new completion.
     * @param textEdit         the edit which is applied to a document when selecting this completion.
     * @param insertTextFormat the format of the insert text.
     */
-  case class NewCompletion(name: String, priority: String, textEdit: TextEdit,
+  case class NewCompletion(text: String, priority: String, textEdit: TextEdit,
                                    insertTextFormat: InsertTextFormat) extends Completion
 
   /**
