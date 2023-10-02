@@ -39,6 +39,32 @@ mod TestAdaptor {
         compare(c1, checked_cast("bbbb"), checked_cast("aaaa")) == 1
 
     /////////////////////////////////////////////////////////////////////////////
+    // fromOptional                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromOptional01(): Bool \ {} =
+        import static java.util.Optional.empty(): ##java.util.Optional \ {};
+        let o = empty();
+        Adaptor.fromOptional(Proxy.Proxy: Proxy[String], o) == (None : Option[String])
+
+    @test
+    def fromOptional02(): Bool \ {} =
+        import static java.util.Optional.of(##java.lang.Object): ##java.util.Optional \ {};
+        let o = of(checked_cast("Hello"));
+        Adaptor.fromOptional(Proxy.Proxy: Proxy[String], o) == Some("Hello")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fromMapEntry                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromMapEntry01(): Bool \ {} =
+        import static java.util.Map.entry(##java.lang.Object, ##java.lang.Object): ##java.util.Map$Entry \ {};
+        let e = entry(checked_cast("hello"), checked_cast("world"));
+        Adaptor.fromMapEntry(Proxy.Proxy: Proxy[String], Proxy.Proxy: Proxy[String], e) == ("hello", "world")
+
+    /////////////////////////////////////////////////////////////////////////////
     // fromList                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -59,6 +85,31 @@ mod TestAdaptor {
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         let l = of(checked_cast("hello"), checked_cast("world"));
         Adaptor.fromList(l) == List#{"hello", "world"}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fromListToIterator                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromListToIterator01(): Bool \ {} = region rc {
+        import static java.util.List.of(): ##java.util.List \ {};
+        let l = of();
+        Iterator.toList(Adaptor.fromListToIterator(rc, Proxy.Proxy: Proxy[String], l)) == (List#{} : List[String])
+    }
+
+    @test
+    def fromListToIterator02(): Bool \ {} = region rc {
+        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
+        let l = of(checked_cast("hello"));
+        Iterator.toList(Adaptor.fromListToIterator(rc, Proxy.Proxy: Proxy[String], l)) == List#{"hello"}
+    }
+
+    @test
+    def fromListToIterator03(): Bool \ {} = region rc {
+        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
+        let l = of(checked_cast("hello"), checked_cast("world"));
+        Iterator.toList(Adaptor.fromListToIterator(rc, Proxy.Proxy: Proxy[String], l)) == List#{"hello", "world"}
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // fromSet                                                                 //
@@ -83,6 +134,31 @@ mod TestAdaptor {
         Adaptor.fromSet(s) == Set#{"hello", "world"}
 
     /////////////////////////////////////////////////////////////////////////////
+    // fromSetToIterator                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromSetToIterator01(): Bool \ {} = region rc {
+        import static java.util.Set.of(): ##java.util.Set \ {};
+        let s = of();
+        Iterator.toSet(Adaptor.fromSetToIterator(rc, Proxy.Proxy: Proxy[String], s)) == (Set#{} : Set[String])
+    }
+
+    @test
+    def fromSetToIterator02(): Bool \ {} = region rc {
+        import static java.util.Set.of(##java.lang.Object): ##java.util.Set \ {};
+        let s = of(checked_cast("hello"));
+        Iterator.toSet(Adaptor.fromSetToIterator(rc, Proxy.Proxy: Proxy[String], s)) == Set#{"hello"}
+    }
+
+    @test
+    def fromSetToIterator03(): Bool \ {} = region rc {
+        import static java.util.Set.of(##java.lang.Object, ##java.lang.Object): ##java.util.Set \ {};
+        let s = of(checked_cast("hello"), checked_cast("world"));
+        Iterator.toSet(Adaptor.fromSetToIterator(rc, Proxy.Proxy: Proxy[String], s)) == Set#{"hello", "world"}
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // fromMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -103,6 +179,31 @@ mod TestAdaptor {
         import static java.util.Map.of(##java.lang.Object, ##java.lang.Object, ##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
         let m = of(checked_cast("a"), checked_cast("hello"), checked_cast("b"), checked_cast("world"));
         Adaptor.fromMap(m) == Map#{"a" => "hello", "b" => "world"}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fromMapToIterator                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromMapToIterator01(): Bool \ {} = region rc {
+        import static java.util.Map.of(): ##java.util.Map \ {};
+        let m = of();
+        Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == (Map#{} : Map[String, String])
+    }
+
+    @test
+    def fromMapToIterator02(): Bool \ {} = region rc {
+        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
+        let m = of(checked_cast("a"), checked_cast("hello"));
+        Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == Map#{"a" => "hello"}
+    }
+
+    @test
+    def fromMapToIterator03(): Bool \ {} = region rc {
+        import static java.util.Map.of(##java.lang.Object, ##java.lang.Object, ##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
+        let m = of(checked_cast("a"), checked_cast("hello"), checked_cast("b"), checked_cast("world"));
+        Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == Map#{"a" => "hello", "b" => "world"}
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // fromIterator                                                            //
@@ -135,6 +236,86 @@ mod TestAdaptor {
         let flixIter = Adaptor.fromIterator(rc, Proxy.Proxy: Proxy[String], iter);
         Iterator.toList(flixIter) == List#{"hello", "world"}
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fromStreamToIterator                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromStreamToIterator01(): Bool \ {} = region rc {
+        import static java.util.stream.Stream.empty(): ##java.util.stream.Stream \ {};
+        let s = empty();
+        Iterator.toList(Adaptor.fromStreamToIterator(rc, Proxy.Proxy: Proxy[String], s)) == (Nil : List[String])
+    }
+
+    @test
+    def fromStreamToIterator02(): Bool \ {} = region rc {
+        import static java.util.stream.Stream.of(##java.lang.Object): ##java.util.stream.Stream \ {};
+        let s = of(checked_cast("hello"));
+        Iterator.toList(Adaptor.fromStreamToIterator(rc, Proxy.Proxy: Proxy[String], s)) == "hello" :: Nil
+    }
+
+    @test
+    def fromStreamToIterator03(): Bool \ {} = region rc {
+        import static java.util.stream.Stream.of(Array[##java.lang.Object, rc]): ##java.util.stream.Stream \ {};
+        let arr = Array#{checked_cast("hello"), checked_cast("world")} @ rc;
+        let s = of(arr);
+        Iterator.toList(Adaptor.fromStreamToIterator(rc, Proxy.Proxy: Proxy[String], s)) == "hello" :: "world" :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // fromCollectionToIterator                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def fromCollectionToIterator01(): Bool \ {} = region rc {
+        import static java.util.List.of(): ##java.util.List \ {};
+        let col = unchecked_cast(of() as ##java.util.Collection);
+        Iterator.toList(Adaptor.fromCollectionToIterator(rc, Proxy.Proxy: Proxy[String], col)) == (Nil : List[String])
+    }
+
+    @test
+    def fromCollectionToIterator02(): Bool \ {} = region rc {
+        import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
+        let col = unchecked_cast(of(checked_cast("hello")) as ##java.util.Collection);
+        Iterator.toList(Adaptor.fromCollectionToIterator(rc, Proxy.Proxy: Proxy[String], col)) == "hello" :: Nil
+    }
+
+    @test
+    def fromCollectionToIterator03(): Bool \ {} = region rc {
+        import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
+        let col = unchecked_cast(of(checked_cast("hello"), checked_cast("world")) as ##java.util.Collection);
+        Iterator.toList(Adaptor.fromCollectionToIterator(rc, Proxy.Proxy: Proxy[String], col)) == "hello" :: "world" :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toOptional                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toOptional01(): Bool \ IO =
+        import static java.util.Optional.empty(): ##java.util.Optional \ {};
+        import java.util.Optional.equals(##java.lang.Object): Bool \ {};
+        let o = Adaptor.toOptional(None : Option[String]);
+        equals(o, checked_cast(empty()))
+
+    @test
+    def toOptional02(): Bool \ IO =
+        import static java.util.Optional.of(##java.lang.Object): ##java.util.Optional \ {};
+        import java.util.Optional.equals(##java.lang.Object): Bool \ {};
+        let o = Adaptor.toOptional(Some("hello"));
+        equals(o, checked_cast(of(checked_cast("hello"))))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMapEntry                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMapEntry01(): Bool \ IO =
+        import static java.util.Map.entry(##java.lang.Object, ##java.lang.Object): ##java.util.Map$Entry \ {};
+        import java.util.Map$Entry.equals(##java.lang.Object): Bool \ {};
+        let e = Adaptor.toMapEntry(("hello", "world"));
+        equals(e, checked_cast(entry(checked_cast("hello"), checked_cast("world"))))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //

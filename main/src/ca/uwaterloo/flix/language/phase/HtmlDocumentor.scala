@@ -26,6 +26,7 @@ import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
 
 import java.net.URLEncoder
+import scala.annotation.tailrec
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -185,8 +186,8 @@ object HtmlDocumentor {
       val mod = root.modules(moduleSym)
       val uses = root.uses.getOrElse(moduleSym, Nil)
 
-      /** Modules that should not be included as a submodule */
-      var companionMods: List[Symbol.ModuleSym] = Nil
+      /** Modules that have already been visited as companion modules */
+      var companionMods: Map[Symbol.ModuleSym, Module] = Map.empty
 
       var submodules: List[Symbol.ModuleSym] = Nil
       var classes: List[Class] = Nil
@@ -198,28 +199,26 @@ object HtmlDocumentor {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.ClassSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods = m.sym :: companionMods)
+          companionMod.foreach(m => companionMods += (m.sym -> m))
           classes = mkClass(sym, moduleSym, companionMod, root) :: classes
         case sym: Symbol.EffectSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods = m.sym :: companionMods)
+          companionMod.foreach(m => companionMods += (m.sym -> m))
           effects = mkEffect(sym, moduleSym, companionMod, root) :: effects
         case sym: Symbol.EnumSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods = m.sym :: companionMods)
+          companionMod.foreach(m => companionMods += (m.sym -> m))
           enums = mkEnum(sym, moduleSym, companionMod, root) :: enums
         case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
         case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
         case _ => // No op
       }
 
-      submodules = submodules.filterNot(companionMods.contains)
-
       Module(
         moduleSym,
         parent,
         uses,
-        submodules.map(visitMod(_, Some(moduleSym))),
+        submodules.map(sym => companionMods.getOrElse(sym, visitMod(sym, Some(moduleSym)))),
         classes,
         effects,
         enums,
@@ -1133,7 +1132,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    sb.append(s"<a class='source' target='_blank' href='${escUrl(createLink(loc))}'>Source</a>")
+    sb.append(s"<a class='source' target='_blank' rel='nofollow' href='${createLink(loc)}'>Source</a>")
   }
 
   /**
@@ -1288,10 +1287,12 @@ object HtmlDocumentor {
 
   /**
     * Create a raw link to the given `SourceLocation`.
+    *
+    * The URL is already escaped.
     */
   private def createLink(loc: SourceLocation): String = {
     // TODO make it also work for local user code
-    s"$LibraryGitHub${loc.source.name}#L${loc.beginLine}-L${loc.beginLine}"
+    s"$LibraryGitHub${escUrl(loc.source.name)}#L${loc.beginLine}-L${loc.beginLine}"
   }
 
   /**
