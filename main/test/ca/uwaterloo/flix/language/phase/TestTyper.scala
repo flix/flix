@@ -203,7 +203,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestLeq.Wildcard.04") {
     val input = raw"def foo(g: Int32 -> Int32 \ _): Int32 \ _ = g(1)"
     val result = compile(input, Options.TestWithLibNix)
-    result.errors.foreach(err => println(err.message(ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter)))
     expectError[TypeError.UnexpectedEffect](result)
   }
 
