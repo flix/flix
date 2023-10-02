@@ -16,7 +16,7 @@
 
 pub enum MutDisjointSet[t: Type, r: Eff]({
     rc = Region[r],
-    nodes = Vector[(t, MutDisjointSet.Node[t, r])]
+    forest = MutList[MutDisjointSet.Node[t, r], r]
 })
 
 mod MutDisjointSet {
@@ -45,25 +45,42 @@ mod MutDisjointSet {
     }
 
     ///
-    /// Returns the node in the set `s` that contains `x`.
-    /// Returns `None` if `x` is not in `s`.
+    /// Returns a new empty `MutDisjointSet` in the region `rc`.
     ///
-    pub def node(x: t, s: MutDisjointSet[t, r]): Option[Node[t, r]] with Eq[t] = {
-        let MutDisjointSet({ nodes | _ }) = s;
-        Vector.find(fst >> Eq.eq(x), nodes)
-        |> Option.map(snd)
+    pub def new(rc: Region[r]): MutDisjointSet[t, r] \ r =
+        MutDisjointSet({ rc = rc, forest = MutList.new(rc) })
+
+    ///
+    /// Returns `true` iff `s` contains `x`.
+    ///
+    pub def contains(x: t, s: MutDisjointSet[t, r]): Bool \ r with Eq[t] = {
+        // Speed up with binary search
+        let MutDisjointSet({ forest | _ }) = s;
+        match MutList.find(match Node.Node({ value | _ }) -> value == x, forest) {
+            case Some(_) => true
+            case None    => false
+        }
     }
 
     ///
-    /// Returns a new collection of disjoint singletong sets containing
-    /// the elements of the iterable `m` in the region `rc`.
+    /// Updates `s` with a new disjoint set containing `x`
+    /// if `x` is not already in `s`.
     ///
-    pub def makeSet(rc: Region[r], m: m[t]): MutDisjointSet[t, r] \ r with Iterable[m], Order[t] = {
-        let nodes =
-            foreach (
-                x <- m
-            ) yield (x, singleton(rc, x));
-        MutDisjointSet({ rc = rc, nodes = nodes })
+    pub def makeSet(x: t, s: MutDisjointSet[t, r]): Unit \ r with Eq[t] = {
+        let MutDisjointSet({ rc, forest }) = s;
+        if (not contains(x, s)) {
+            MutList.push!(singleton(rc, x), forest)
+        } else {
+            ()
+        }
+    }
+
+    ///
+    /// Updates `s` with collection of disjoint singleton sets containing
+    /// the elements of the iterable `m`.
+    ///
+    pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Eq[t] = region rc {
+        Iterable.iterator(rc, m) |> Iterator.forEach(flip(makeSet)(s))
     }
 
     ///
@@ -75,21 +92,28 @@ mod MutDisjointSet {
     ///
     /// Returns the representative / root of the set that contains `x`.
     ///
-    pub def find(x: Node[t, r]): Node[t, r] \ r =
-        let Node.Node({ parent | _ }) = x;
-        match Ref.get(parent) {
-            case Some(p) => {
-                let root = find(p);
-                Ref.put(Some(root), parent);
-                root
+    pub def find(x: t, s: MutDisjointSet[t, r]): Option[Node[t, r]] \ r with Eq[t] = {
+        def findInternal(y) = {
+            let Node.Node({ parent | _ }) = y;
+            match Ref.get(parent) {
+                case Some(p) => {
+                    let root = findInternal(p);
+                    Ref.put(Some(root), parent);
+                    root
+                }
+                case None => y
             }
-            case None => x
-        }
+        };
+        let MutDisjointSet({ forest | _ }) = s;
+        // Use binary search for speed up
+        MutList.find(match Node.Node({ value | _ }) -> value == x, forest)
+        |> Option.map(findInternal)
+    }
 
     ///
     /// Merges the sets that contain `x` and `y`.
     ///
-    pub def union(x: Node[t, r], y: Node[t, r]): Unit \ r =
+    pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Eq[t] =
         def link(x1, y1) = {
             let Node.Node({ parent = yparent, rank = yr | _ }) = y1;
             let Node.Node({ parent = xparent, rank = xr | _ }) = x1;
@@ -106,7 +130,10 @@ mod MutDisjointSet {
                 ()
             }
         };
-        link(find(x), find(y))
+        match (find(x, s), find(y, s)) {
+            case (Some(xn), Some(yn)) => link(xn, yn)
+            case _ => ()
+        }
 
     pub def equivalent(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): Bool \ {} = ???
 
