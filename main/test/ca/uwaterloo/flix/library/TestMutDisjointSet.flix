@@ -33,4 +33,15 @@ mod TestMutDisjointSet {
         Assert.eq(true, actual)
     }
 
+    @Test
+    def makeSet02(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        foreach (x <- List.range(0, 10)) {
+            MutDisjointSet.makeSet(x, s)
+        };
+        let MutDisjointSet.MutDisjointSet({ forest | _ }) = s;
+        let actual = MutList.length(forest);
+        Assert.eq(10, actual)
+    }
+
 }
