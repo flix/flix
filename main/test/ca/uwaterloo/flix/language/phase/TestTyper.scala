@@ -29,7 +29,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): a = 21
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq02") {
@@ -43,7 +43,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq03") {
@@ -57,7 +57,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq04") {
@@ -71,7 +71,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq05") {
@@ -80,7 +80,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): a -> a = x -> 21
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq06") {
@@ -89,7 +89,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): a -> a = (x: Int32) -> x
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq07") {
@@ -98,7 +98,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): {x = Int32 | r} = {x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq08") {
@@ -107,7 +107,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): {x = Int32, y = Int32 | r} = {y = 42, x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestOccurs01") {
@@ -185,25 +185,26 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestLeq.Wildcard.01") {
     val input = "def foo(a: _): _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq.Wildcard.02") {
     val input = "def foo(a: Int32): _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq.Wildcard.03") {
     val input = raw"def foo(a: Int32): Int32 \ _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    expectError[TypeError.PossibleCheckedEffectCast](result)
   }
 
   test("TestLeq.Wildcard.04") {
     val input = raw"def foo(g: Int32 -> Int32 \ _): Int32 \ _ = g(1)"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    result.errors.foreach(err => println(err.message(ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter)))
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
   test("NoMatchingInstance.01") {
