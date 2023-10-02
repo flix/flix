@@ -104,28 +104,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the continuation class type `Cont$X` for the given type `tpe`.
-    *
-    * Int -> Int          =>  Cont$Int
-    * (Int, Int) -> Int   =>  Cont$Int
-    *
-    * NB: The given type `tpe` must be an arrow type.
-    */
-  def getContinuationInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
-    case MonoType.Arrow(_, tresult) =>
-      // The return type is the last type argument.
-      val returnType = JvmOps.getErasedJvmType(tresult)
-
-      // The JVM name is of the form Cont$ErasedType
-      val name = "Cont" + Flix.Delimiter + stringify(returnType)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
-
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
-
-  /**
     * Returns the function abstract class type `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
@@ -579,6 +557,12 @@ object JvmOps {
       case Expr.Scope(_, exp, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+      case Expr.TryWith(exp, _, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+      case Expr.Do(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
+
+      case Expr.Resume(exp, tpe, _) => visitExp(exp) ++ Set(tpe)
 
       case Expr.NewObject(_, _, _, _, _, exps, _) =>
         visitExps(exps)

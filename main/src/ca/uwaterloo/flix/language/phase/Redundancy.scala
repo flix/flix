@@ -504,30 +504,6 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val usedMatch = visitExps(exps, env0, rc)
-      val usedRules = rules.map {
-        case RelationalChooseRule(pat, exp) =>
-          // Compute the free variables in the pattern.
-          val fvs = freeVars(pat)
-
-          // Extend the environment with the free variables.
-          val extendedEnv = env0 ++ fvs
-
-          // Visit the body.
-          val usedBody = visitExp(exp, extendedEnv, rc)
-
-          // Check for unused variable symbols.
-          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
-
-          // Check for shadowed variable symbols.
-          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
-
-          // Combine everything together.
-          (usedBody -- fvs ++ unusedVarSyms) ++ shadowedVarSyms
-      }
-      usedMatch ++ usedRules.reduceLeft(_ ++ _)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
@@ -1056,13 +1032,6 @@ object Redundancy {
       patsVal ++ patVal
     case Pattern.RecordEmpty(_, _) => Set.empty
   }
-
-  /**
-    * Returns the free variables in the list of choice patterns `ps`.
-    */
-  private def freeVars(ps: List[RelationalChoosePattern]): Set[Symbol.VarSym] = ps.collect {
-    case RelationalChoosePattern.Present(sym, _, _) => sym
-  }.toSet
 
   /**
     * Returns the free variables in the restrictable pattern `p`.

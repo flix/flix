@@ -119,8 +119,6 @@ object WeededAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(star: Boolean, exps: List[Expr], rules: List[RelationalChooseRule], loc: SourceLocation) extends Expr
-
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
@@ -250,18 +248,6 @@ object WeededAst {
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
     }
-
-  }
-
-  sealed trait RelationalChoosePattern
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(ident: Name.Ident, loc: SourceLocation) extends RelationalChoosePattern
 
   }
 
@@ -415,8 +401,6 @@ object WeededAst {
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

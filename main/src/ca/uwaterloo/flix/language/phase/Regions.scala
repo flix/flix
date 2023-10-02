@@ -116,13 +116,6 @@ object Regions {
         }
       matchErrors ++ rulesErrors ++ checkType(tpe, loc)
 
-    case Expr.RelationalChoose(exps, rules, tpe, _, loc) =>
-      val expsErrors = exps.flatMap(visitExp)
-      val rulesErrors = rules.flatMap {
-        case RelationalChooseRule(pat, exp) => visitExp(exp)
-      }
-      expsErrors ++ rulesErrors ++ checkType(tpe, loc)
-
     case Expr.RestrictableChoose(_, exp, rules, tpe, _, loc) =>
       val expErrors = visitExp(exp)
       val rulesErrors = rules.flatMap {

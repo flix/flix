@@ -770,17 +770,6 @@ object ParsedAst {
     case class TypeMatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.TypeMatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Relational Choose Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param star  whether this is a relational_choose* expression.
-      * @param exps  the match expressions.
-      * @param rules the rules of the pattern match.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class RelationalChoose(sp1: SourcePosition, star: Boolean, exps: Seq[ParsedAst.Expression], rules: Seq[RelationalChooseRule], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Restrictable Choose Expression.
       *
       * @param sp1   the position of the first character in the expression.
@@ -1285,37 +1274,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the pattern.
       */
     case class RecordLabelPattern(sp1: SourcePosition, label: Name.Ident, pat: Option[Pattern], sp2: SourcePosition)
-
-  }
-
-  /**
-    * Relational Choice Patterns.
-    */
-  sealed trait RelationalChoosePattern
-
-  object RelationalChoosePattern {
-
-    /**
-      * A wildcard pattern.
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.RelationalChoosePattern
-
-    /**
-      * An absent pattern.
-      */
-    case class Absent(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.RelationalChoosePattern
-
-    /**
-      * A present pattern.
-      *
-      * @param sp1   the position of the first character in the pattern.
-      * @param ident the name of the variable.
-      * @param sp2   the position of the last character in the pattern.
-      */
-    case class Present(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.RelationalChoosePattern
 
   }
 
@@ -1877,16 +1835,6 @@ object ParsedAst {
     * @param exp     the body expression.
     */
   case class HandlerRule(op: Name.Ident, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
-
-  /**
-    * A relational choice pattern match rule.
-    *
-    * @param sp1 the position of the first character in the rule.
-    * @param pat the pattern of the rule.
-    * @param exp the body expression of the rule.
-    * @param sp2 the position of the first character in the rule.
-    */
-  case class RelationalChooseRule(sp1: SourcePosition, pat: Seq[ParsedAst.RelationalChoosePattern], exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * A type match rule consists of a variable, a type, and a body expression.

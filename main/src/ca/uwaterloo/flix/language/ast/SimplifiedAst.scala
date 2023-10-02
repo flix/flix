@@ -29,7 +29,7 @@ object SimplifiedAst {
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: MonoType, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: MonoType, loc: SourceLocation)
 

@@ -142,27 +142,25 @@ object Lowering {
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
-    val defs = ParOps.parMap(root.defs.values)((d: TypedAst.Def) => visitDef(d)(root, flix))
-    val sigs = ParOps.parMap(root.sigs.values)((s: TypedAst.Sig) => visitSig(s)(root, flix))
-    val instances = ParOps.parMap(root.instances.values)((insts: List[TypedAst.Instance]) => insts.map(i => visitInstance(i)(root, flix)))
-    val enums = ParOps.parMap(root.enums.values)((e: TypedAst.Enum) => visitEnum(e)(root, flix))
-    val restrictableEnums = ParOps.parMap(root.restrictableEnums.values)((e: TypedAst.RestrictableEnum) => visitRestrictableEnum(e)(root, flix))
-    val effects = ParOps.parMap(root.effects.values)((e: TypedAst.Effect) => visitEffect(e)(root, flix))
-    val aliases = ParOps.parMap(root.typeAliases.values)((a: TypedAst.TypeAlias) => visitTypeAlias(a)(root, flix))
+    implicit val r: TypedAst.Root = root
 
-    val newDefs = defs.map(kv => kv.sym -> kv).toMap
-    val newSigs = sigs.map(kv => kv.sym -> kv).toMap
-    val newInstances = instances.map(kv => kv.head.clazz.sym -> kv).toMap
-    val newEnums = (enums ++ restrictableEnums).map(kv => kv.sym -> kv).toMap
-    val newEffects = effects.map(kv => kv.sym -> kv).toMap
-    val newAliases = aliases.map(kv => kv.sym -> kv).toMap
+    val defs = ParOps.mapValues(root.defs)(visitDef)
+    val sigs = ParOps.mapValues(root.sigs)(visitSig)
+    val instances = ParOps.mapValues(root.instances)(insts => insts.map(visitInstance))
+    val enums = ParOps.mapValues(root.enums)(visitEnum)
+    val restrictableEnums = ParOps.mapValues(root.restrictableEnums)(visitRestrictableEnum)
+    val effects = ParOps.mapValues(root.effects)(visitEffect)
+    val aliases = ParOps.mapValues(root.typeAliases)(visitTypeAlias)
 
     // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.parMap(root.classes.values)((c: TypedAst.Class) => visitClass(c, newSigs)(root, flix))
-    val newClasses = classes.map(kv => kv.sym -> kv).toMap
+    val classes = ParOps.mapValues(root.classes)(c => visitClass(c, sigs))
 
-    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv)
+    val newEnums = enums ++ restrictableEnums.map {
+      case (_, v) => v.sym -> v
+    }
+
+    LoweredAst.Root(classes, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv)
   }
 
   /**
@@ -440,12 +438,6 @@ object Lowering {
       val rs = rules.map(visitMatchTypeRule)
       val t = visitType(tpe)
       LoweredAst.Expr.TypeMatch(e, rs, t, eff, loc)
-
-    case TypedAst.Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val es = visitExps(exps)
-      val rs = rules.map(visitRelationalChooseRule)
-      val t = visitType(tpe)
-      LoweredAst.Expr.RelationalChoose(es, rs, t, eff, loc)
 
     case TypedAst.Expr.RestrictableChoose(_, exp, rules, tpe, eff, loc) =>
       // lower into an ordinary match
@@ -911,22 +903,6 @@ object Lowering {
     case TypedAst.FormalParam(sym, mod, tpe, src, loc) =>
       val t = visitType(tpe)
       LoweredAst.FormalParam(sym, mod, t, src, loc)
-  }
-
-  /**
-    * Lowers the given relational choice rule `rule0`.
-    */
-  private def visitRelationalChooseRule(rule0: TypedAst.RelationalChooseRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.RelationalChooseRule = rule0 match {
-    case TypedAst.RelationalChooseRule(pat, exp) =>
-      val p = pat.map {
-        case TypedAst.RelationalChoosePattern.Wild(loc) => LoweredAst.RelationalChoosePattern.Wild(loc)
-        case TypedAst.RelationalChoosePattern.Absent(loc) => LoweredAst.RelationalChoosePattern.Absent(loc)
-        case TypedAst.RelationalChoosePattern.Present(sym, tpe, loc) =>
-          val t = visitType(tpe)
-          LoweredAst.RelationalChoosePattern.Present(sym, t, loc)
-      }
-      val e = visitExp(exp)
-      LoweredAst.RelationalChooseRule(p, e)
   }
 
   /**
@@ -1885,15 +1861,6 @@ object Lowering {
     case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
-
-    case LoweredAst.Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val es = exps.map(substExp(_, subst))
-      val rs = rules map {
-        case LoweredAst.RelationalChooseRule(pat, exp) =>
-          // TODO: Substitute in patterns?
-          LoweredAst.RelationalChooseRule(pat, substExp(exp, subst))
-      }
-      LoweredAst.Expr.RelationalChoose(es, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))

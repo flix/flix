@@ -47,7 +47,7 @@ object Simplifier {
         val e = visitExp(exp)
         val funType = spec.declaredScheme.base
         val retType = visitType(funType.arrowResultType)
-        val eff = visitType(funType.arrowEffectType)
+        val eff = simplifyEffect(funType.arrowEffectType)
         SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
     }
 
@@ -158,9 +158,6 @@ object Simplifier {
 
       case LoweredAst.Expr.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
-
-      case LoweredAst.Expr.RelationalChoose(_, _, _, _, loc) =>
-        throw InternalCompilerException(s"Code generation for relational choice is no longer supported", loc)
 
       case LoweredAst.Expr.VectorLit(exps, tpe, _, loc) =>
         // Note: We simplify Vectors to Arrays.
@@ -747,11 +744,10 @@ object Simplifier {
   /**
     * Returns the purity (or impurity) of an expression.
     */
-  private def simplifyEffect(eff: Type): Purity = {
-    if (eff == Type.Pure)
-      Pure
-    else
-      Impure
+  private def simplifyEffect(eff: Type): Purity = eff match {
+    case Type.Cst(TypeConstructor.Pure, _) => Purity.Pure
+    case Type.Cst(TypeConstructor.EffUniv, _) => Purity.Impure
+    case _ => throw InternalCompilerException(s"Unexpected purity '$eff'", eff.loc)
   }
 
   /**

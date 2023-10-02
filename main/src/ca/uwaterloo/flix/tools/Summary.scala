@@ -136,7 +136,7 @@ object Summary {
   private def getClassFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
     root.classes.collect {
       case (sym, clazz) if sym.loc.source == source =>
-        clazz.signatures.collect {
+        clazz.sigs.collect {
           case sig if sig.exp.nonEmpty => sig.spec
         }
     }.flatten

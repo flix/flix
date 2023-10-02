@@ -95,6 +95,8 @@ object Monomorph {
             case Some(tpe) => tpe.map(default)
             case None => default(t)
           }
+          // Erase concrete effects like Print.
+          case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
           case Type.Cst(_, _) => t
           case Type.Apply(t1, t2, loc) =>
             val y = visit(t2)
@@ -417,26 +419,6 @@ object Monomorph {
           }
       }.next() // We are safe to get next() because the last case will always match
 
-    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, env0, subst))
-      val rs = rules.map {
-        case RelationalChooseRule(pat, exp) =>
-          val patAndEnv = pat.map {
-            case RelationalChoosePattern.Wild(loc) => (RelationalChoosePattern.Wild(loc), Map.empty)
-            case RelationalChoosePattern.Absent(loc) => (RelationalChoosePattern.Absent(loc), Map.empty)
-            case RelationalChoosePattern.Present(sym, tpe1, loc) =>
-              val freshVar = Symbol.freshVarSym(sym)
-              (RelationalChoosePattern.Present(freshVar, subst(tpe1), loc), Map(sym -> freshVar))
-          }
-          val p = patAndEnv.map(_._1)
-          val env1 = patAndEnv.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-            case (acc, m) => acc ++ m
-          }
-          val e = visitExp(exp, env0 ++ env1, subst)
-          RelationalChooseRule(p, e)
-      }
-      Expr.RelationalChoose(es, rs, subst(tpe), subst(eff), loc)
-
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
       Expr.VectorLit(es, subst(tpe), subst(eff), loc)
@@ -572,7 +554,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, LevelEnv.Unleveled, root.eqEnv)
+            defn.sym.text == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, LevelEnv.Unleveled, root.eqEnv)
         }
     }
 
@@ -690,6 +672,9 @@ object Monomorph {
           }
         case _ => tpe
       }
+
+    // Erase concrete effects like Print.
+    case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
 
     case Type.Cst(_, _) => tpe
 

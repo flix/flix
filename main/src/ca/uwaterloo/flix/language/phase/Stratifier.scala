@@ -201,15 +201,6 @@ object Stratifier {
         case (m, rs) => Expr.TypeMatch(m, rs, tpe, eff, loc)
       }
 
-    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val expsVal = traverse(exps)(visitExp)
-      val rulesVal = traverse(rules) {
-        case RelationalChooseRule(pat, exp) => mapN(visitExp(exp))(RelationalChooseRule(pat, _))
-      }
-      mapN(expsVal, rulesVal) {
-        case (es, rs) => Expr.RelationalChoose(es, rs, tpe, eff, loc)
-      }
-
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
@@ -619,15 +610,6 @@ object Stratifier {
       rules.foldLeft(dg) {
         case (acc, TypeMatchRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
-
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val dg1 = exps.foldLeft(LabelledGraph.empty) {
-        case (acc, exp) => acc + labelledGraphOfExp(exp)
-      }
-      val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RelationalChooseRule(_, exp)) => acc + labelledGraphOfExp(exp)
-      }
-      dg1 + dg2
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val dg1 = labelledGraphOfExp(exp)

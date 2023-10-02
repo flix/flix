@@ -180,7 +180,6 @@ class Flix {
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
-    "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),

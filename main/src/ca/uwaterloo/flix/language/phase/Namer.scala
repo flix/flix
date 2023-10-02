@@ -84,7 +84,7 @@ object Namer {
     case decl: WeededAst.Declaration.Namespace => visitNamespace(decl, ns0)
     case decl: WeededAst.Declaration.Class => visitClass(decl, ns0)
     case decl: WeededAst.Declaration.Instance => visitInstance(decl, ns0)
-    case decl: WeededAst.Declaration.Def => visitDef(decl, ns0)
+    case decl: WeededAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonInstance)
     case decl: WeededAst.Declaration.Enum => visitEnum(decl, ns0)
     case decl: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: WeededAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
@@ -430,7 +430,7 @@ object Namer {
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym, ns0)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
-      val lawsVal = traverse(laws0)(visitDef(_, ns0))
+      val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.NonInstance))
 
       mapN(superClassesVal, assocsVal, sigsVal, lawsVal) {
         case (superClasses, assocs, sigs, laws) =>
@@ -450,7 +450,7 @@ object Namer {
       val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, ns0))
       flatMapN(tpeVal, tconstrsVal, assocsVal) {
         case (tpe, tconstrs, assocs) =>
-          val defsVal = traverse(defs0)(visitDef(_, ns0))
+          val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Instance))
           mapN(defsVal) {
             defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns0.parts, loc)
           }
@@ -514,7 +514,7 @@ object Namer {
   /**
     * Performs naming on the given definition declaration `decl0`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
+  private def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
@@ -537,7 +537,13 @@ object Namer {
           mapN(expVal) {
             case e =>
 
-              val sym = Symbol.mkDefnSym(ns0, ident)
+              // Give the def an id only if it is an instance def.
+              // This distinguishes instance defs that could share a namespace.
+              val id = defKind match {
+                case DefKind.Instance => Some(flix.genSym.freshId())
+                case DefKind.NonInstance => None
+              }
+              val sym = Symbol.mkDefnSym(ns0, ident, id)
               val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
           }
@@ -720,25 +726,6 @@ object Namer {
         case (e, rs) => NamedAst.Expr.TypeMatch(e, rs, loc)
       }.recoverOne {
         case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
-      }
-
-    case WeededAst.Expr.RelationalChoose(star, exps, rules, loc) =>
-      val expsVal = traverse(exps)(visitExp(_, ns0))
-      val rulesVal = traverse(rules) {
-        case WeededAst.RelationalChooseRule(pat0, exp0) =>
-          val p = pat0.map {
-            case WeededAst.RelationalChoosePattern.Wild(loc) => NamedAst.RelationalChoosePattern.Wild(loc)
-            case WeededAst.RelationalChoosePattern.Absent(loc) => NamedAst.RelationalChoosePattern.Absent(loc)
-            case WeededAst.RelationalChoosePattern.Present(ident, loc) =>
-              val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-              NamedAst.RelationalChoosePattern.Present(sym, loc)
-          }
-          mapN(visitExp(exp0, ns0)) {
-            case e => NamedAst.RelationalChooseRule(p, e)
-          }
-      }
-      mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expr.RelationalChoose(star, es, rs, loc)
       }
 
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
@@ -1616,4 +1603,20 @@ object Namer {
     * A structure holding the symbols and instances in the program.
     */
   case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
+
+  /**
+    * An enumeration of the kinds of defs.
+    */
+  private sealed trait DefKind
+  private object DefKind {
+    /**
+      * A def that is a member of an instance.
+      */
+    case object Instance extends DefKind
+
+    /**
+      * A def that is not a member of an instance.
+      */
+    case object NonInstance extends DefKind
+  }
 }
