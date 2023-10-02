@@ -72,6 +72,7 @@ sealed trait BackendObjType {
     case BackendObjType.Value => JvmName(DevFlixRuntime, "Value")
     case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
     case BackendObjType.Thunk => JvmName(DevFlixRuntime, "Thunk")
+    case BackendObjType.Resumption => JvmName(DevFlixRuntime, "Resumption")
     case BackendObjType.Frames => JvmName(DevFlixRuntime, "Frames")
     case BackendObjType.FramesCons => JvmName(DevFlixRuntime, "FramesCons")
     case BackendObjType.FramesNil => JvmName(DevFlixRuntime, "FramesNil")
@@ -1423,6 +1424,14 @@ object BackendObjType {
         RETURN()
       )
     ))
+  }
+
+  case object Resumption extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
+      cm.closeClassMaker()
+    }
   }
 
   case object Frames extends BackendObjType {
