@@ -242,4 +242,4 @@ object LexerError {
       s"${underline("Tip:")} Ensure that string interpolations are not nested more than $InterpolatedStringMaxNestingLevel levels deep."
     })
   }
-}git 
+}
