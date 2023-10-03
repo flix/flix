@@ -70,8 +70,11 @@ object Parser2 {
   private def parse(ts: Array[Token]): Validation[Tree, CompilationMessage] = {
     implicit val s: State = new State(ts)
     source()
+    println(s.events.mkString("\n"))
+
     val tree = buildTree()
     println(tree)
+
     tree.toSuccess
   }
 
@@ -79,17 +82,24 @@ object Parser2 {
     val tokens = s.tokens.iterator
     var stack: List[Tree] = List.empty
 
+    // Pop the last event, which must be a Close,
+    // to ensure that the stack is not empty when handling event below.
+    val lastEvent = s.events.last
+    s.events = s.events.dropRight(1)
+    assert(lastEvent match {
+      case Event.Close => true
+      case _ => false
+    })
+
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
           stack = stack :+ Tree(kind, Array.empty)
-          println(s"open: $kind")
 
         case Event.Close =>
           val child = Child.Tree(stack.last)
           stack = stack.dropRight(1)
           stack.last.children = stack.last.children :+ child
-          println(s"close $child")
 
         case Event.Advance =>
           val token = tokens.next()
@@ -187,7 +197,6 @@ object Parser2 {
   ////////// GRAMMAR ///////////////
   private def source()(implicit s: State): Unit = {
     val mark = open()
-    println("source")
     while (!eof()) {
       if (at(TokenKind.KeywordDef)) {
         definition()
@@ -200,7 +209,6 @@ object Parser2 {
   }
 
   private def definition()(implicit s: State): Unit = {
-    println("definition")
     assert(at(TokenKind.KeywordDef))
     val mark = open()
     expect(TokenKind.KeywordDef)
@@ -217,7 +225,6 @@ object Parser2 {
   }
 
   private def parameters()(implicit s: State): Unit = {
-    println("parameters")
     assert(at(TokenKind.ParenL))
     val mark = open()
     expect(TokenKind.ParenL)
@@ -240,7 +247,6 @@ object Parser2 {
   }
 
   private def parameter()(implicit s: State): Unit = {
-    println("parameter")
     assert(atAny(Name.Parameter))
     val mark = open()
     expectAny(Name.Parameter)
