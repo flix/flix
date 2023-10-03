@@ -21,24 +21,32 @@ object UnstructuredTree {
 
   object TreeKind {
 
+    case object Source extends TreeKind
+
     case object Def extends TreeKind
 
-    // TODO: PARSER2
+    case object Parameters extends TreeKind
+
+    case object Parameter extends TreeKind
+
+    case object ExprType extends TreeKind
+
+    case object ExprStmt extends TreeKind
 
     case object ErrorTree extends TreeKind
 
   }
 
-  case class Tree(kind: TreeKind, children: Array[Child]) {
+  case class Tree(kind: TreeKind, var children: Array[Child]) {
     override def toString: String = s"Tree($kind, [${children.mkString(", ")}])"
   }
 
   sealed trait Child
 
   object Child {
-    case class TokenChild(token: Token) extends Child
+    case class Token(token: ca.uwaterloo.flix.language.ast.Token) extends Child
 
-    case class TreeChild(tree: Tree) extends Child
+    case class Tree(tree: UnstructuredTree.Tree) extends Child
   }
 
 }

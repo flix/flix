@@ -114,8 +114,7 @@ object Lexer {
 
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
-
-
+    
     val errorTokens = s.tokens.collect {
       case t@Token(TokenKind.Err(err), _, _, _, _, _) => tokenErrToCompilationMessage(err, t)
     }

@@ -36,45 +36,44 @@ import scala.collection.mutable.ListBuffer
 
 object Flix {
   /**
-    * The reserved Flix delimiter.
-    */
+   * The reserved Flix delimiter.
+   */
   val Delimiter: String = "$"
 
   /**
-    * The file extension for intermediate representation files.
-    */
+   * The file extension for intermediate representation files.
+   */
   val IrFileExtension = "flixir"
 
   /**
-    * The maximum width of the intermediate representation files.
-    */
+   * The maximum width of the intermediate representation files.
+   */
   val IrFileWidth = 80
 
   /**
-    * The number of spaces per indentation in the intermediate representation files.
-    */
+   * The number of spaces per indentation in the intermediate representation files.
+   */
   val IrFileIndentation = 4
 }
 
 /**
-  * Main programmatic interface for Flix.
-  */
+ * Main programmatic interface for Flix.
+ */
 class Flix {
 
   /**
-    * A sequence of inputs to be parsed into Flix ASTs.
-    */
+   * A sequence of inputs to be parsed into Flix ASTs.
+   */
   private val inputs = mutable.Map.empty[String, Input]
 
   /**
-    * The set of sources changed since last compilation.
-    */
+   * The set of sources changed since last compilation.
+   */
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
-    * A cache of ASTs for incremental compilation.
-    */
-  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
+   * A cache of ASTs for incremental compilation.
+   */
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
@@ -86,8 +85,6 @@ class Flix {
 
   def getWeederAst: WeededAst.Root = cachedWeederAst
 
-  def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
-
   def getKinderAst: KindedAst.Root = cachedKinderAst
 
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
@@ -95,8 +92,8 @@ class Flix {
   def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
-    * A cache of ASTs for debugging.
-    */
+   * A cache of ASTs for debugging.
+   */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
   private var cachedMonoDefsAst: LoweredAst.Root = LoweredAst.empty
@@ -113,11 +110,11 @@ class Flix {
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
 
-  def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
+  def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
 
-  def getMonoDefsAst: LoweredAst.Root = cachedMonoDefsAst
+  def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
 
-  def getMonoTypesAst: LoweredAst.Root = cachedMonoTypesAst
+  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
 
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
 
@@ -129,19 +126,17 @@ class Flix {
 
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
 
-  def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
+  def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
 
   def getReducerAst: ReducedAst.Root = cachedReducerAst
 
-  def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
-
-  def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
+  def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
 
   /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The core library *must* be present for any program to compile.
-    */
+   * A sequence of internal inputs to be parsed into Flix ASTs.
+   *
+   * The core library *must* be present for any program to compile.
+   */
   private val coreLibrary = List(
     // Prelude
     "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
@@ -189,10 +184,10 @@ class Flix {
   )
 
   /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The standard library is not required to be present for at least some programs to compile.
-    */
+   * A sequence of internal inputs to be parsed into Flix ASTs.
+   *
+   * The standard library is not required to be present for at least some programs to compile.
+   */
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
@@ -322,53 +317,58 @@ class Flix {
   )
 
   /**
-    * A map to track the time spent in each phase and sub-phase.
-    */
+   * A map to track the time spent in each phase and sub-phase.
+   */
   var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
 
   /**
-    * The current phase we are in. Initially null.
-    */
+   * The current phase we are in. Initially null.
+   */
   private var currentPhase: PhaseTime = _
 
   /**
-    * The progress bar.
-    */
+   * The progress bar.
+   */
   private val progressBar: ProgressBar = new ProgressBar
 
   /**
-    * The default assumed charset.
-    */
+   * The default assumed charset.
+   */
   val defaultCharset: Charset = Charset.forName("UTF-8")
 
   /**
-    * The current Flix options.
-    */
+   * The current Flix options.
+   */
   var options: Options = Options.Default
 
   /**
-    * The thread pool executor service for `this` Flix instance.
-    */
-  var threadPool: java.util.concurrent.ForkJoinPool = _
+   * The fork join pool for `this` Flix instance.
+   */
+  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
 
   /**
-    * The symbol generator associated with this Flix instance.
-    */
+   * The fork join task support for `this` Flix instance.
+   */
+  var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
+
+  /**
+   * The symbol generator associated with this Flix instance.
+   */
   val genSym = new GenSym()
 
   /**
-    * The default output formatter.
-    */
+   * The default output formatter.
+   */
   private var formatter: Formatter = NoFormatter
 
   /**
-    * A class loader for loading external JARs.
-    */
+   * A class loader for loading external JARs.
+   */
   val jarLoader = new ExternalJarLoader
 
   /**
-    * Adds the given string `text` with the given `name`.
-    */
+   * Adds the given string `text` with the given `name`.
+   */
   def addSourceCode(name: String, text: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
@@ -379,8 +379,8 @@ class Flix {
   }
 
   /**
-    * Removes the source code with the given `name`.
-    */
+   * Removes the source code with the given `name`.
+   */
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
@@ -389,8 +389,8 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` as Flix source file.
-    */
+   * Adds the given path `p` as Flix source file.
+   */
   def addFlix(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -408,8 +408,8 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` as a Flix package file.
-    */
+   * Adds the given path `p` as a Flix package file.
+   */
   def addPkg(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -427,8 +427,8 @@ class Flix {
   }
 
   /**
-    * Removes the given path `p` as a Flix source file.
-    */
+   * Removes the given path `p` as a Flix source file.
+   */
   def remFlix(p: Path): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
@@ -438,8 +438,8 @@ class Flix {
   }
 
   /**
-    * Adds the JAR file at path `p` to the class loader.
-    */
+   * Adds the JAR file at path `p` to the class loader.
+   */
   def addJar(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -455,8 +455,8 @@ class Flix {
   }
 
   /**
-    * Adds the given `input` under the given `name`.
-    */
+   * Adds the given `input` under the given `name`.
+   */
   private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None =>
       inputs += name -> input
@@ -466,10 +466,10 @@ class Flix {
   }
 
   /**
-    * Removes the given `input` under the given `name`.
-    *
-    * Note: Removing an input means to replace it by the empty string.
-    */
+   * Removes the given `input` under the given `name`.
+   *
+   * Note: Removing an input means to replace it by the empty string.
+   */
   private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None => // nop
     case Some(_) =>
@@ -478,8 +478,8 @@ class Flix {
   }
 
   /**
-    * Sets the options used for this Flix instance.
-    */
+   * Sets the options used for this Flix instance.
+   */
   def setOptions(opts: Options): Flix = {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
@@ -488,8 +488,8 @@ class Flix {
   }
 
   /**
-    * Returns the format options associated with this Flix instance.
-    */
+   * Returns the format options associated with this Flix instance.
+   */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
       ignorePur = false,
@@ -499,13 +499,13 @@ class Flix {
   }
 
   /**
-    * Returns the current formatter instance.
-    */
+   * Returns the current formatter instance.
+   */
   def getFormatter: Formatter = this.formatter
 
   /**
-    * Sets the output formatter used for this Flix instance.
-    */
+   * Sets the output formatter used for this Flix instance.
+   */
   def setFormatter(formatter: Formatter): Flix = {
     if (formatter == null)
       throw new IllegalArgumentException("'formatter' must be non-null.")
@@ -514,9 +514,9 @@ class Flix {
   }
 
   /**
-    * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to append the explanation.
-    */
+   * Converts a list of compiler error messages to a list of printable messages.
+   * Decides whether or not to append the explanation.
+   */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
     if (options.explain)
       errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
@@ -525,8 +525,8 @@ class Flix {
   }
 
   /**
-    * Compiles the Flix program and returns a typed ast.
-    */
+   * Compiles the Flix program and returns a typed ast.
+   */
   def check(): Validation[TypedAst.Root, CompilationMessage] = try {
     import Validation.Implicit.AsMonad
 
@@ -545,7 +545,8 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
+      afterLexer <- Lexer.run(afterReader)
+      afterParser2 <- Parser2.run(afterLexer)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
@@ -599,8 +600,8 @@ class Flix {
   }
 
   /**
-    * Compiles the given typed ast to an executable ast.
-    */
+   * Compiles the given typed ast to an executable ast.
+   */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
@@ -645,16 +646,16 @@ class Flix {
   }
 
   /**
-    * Compiles the given typed ast to an executable ast.
-    */
+   * Compiles the given typed ast to an executable ast.
+   */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val result = check().toHardFailure
     Validation.flatMapN(result)(codeGen)
   }
 
   /**
-    * Enters the phase with the given name.
-    */
+   * Enters the phase with the given name.
+   */
   def phase[A](phase: String)(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
@@ -679,8 +680,8 @@ class Flix {
   }
 
   /**
-    * Enters the sub-phase with the given name.
-    */
+   * Enters the sub-phase with the given name.
+   */
   def subphase[A](subphase: String)(f: => A): A = {
     // Measure the execution time.
     val t = System.nanoTime()
@@ -696,15 +697,15 @@ class Flix {
   }
 
   /**
-    * Returns the total compilation time in nanoseconds.
-    */
+   * Returns the total compilation time in nanoseconds.
+   */
   def getTotalTime: Long = phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
   }
 
   /**
-    * A callback to indicate that work has started on the given subtask.
-    */
+   * A callback to indicate that work has started on the given subtask.
+   */
   def subtask(subtask: String, sample: Boolean = false): Unit = {
     if (options.progress) {
       progressBar.observe(currentPhase.phase, subtask, sample)
@@ -712,8 +713,8 @@ class Flix {
   }
 
   /**
-    * Returns a list of inputs constructed from the strings and paths passed to Flix.
-    */
+   * Returns a list of inputs constructed from the strings and paths passed to Flix.
+   */
   private def getInputs: List[Input] = {
     val lib = options.lib match {
       case LibLevel.Nix => Nil
@@ -724,24 +725,25 @@ class Flix {
   }
 
   /**
-    * Returns the inputs for the given list of (path, text) pairs.
-    */
+   * Returns the inputs for the given list of (path, text) pairs.
+   */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
     case (xs, (name, text)) => Input.Text(name, text, stable = true) :: xs
   }
 
   /**
-    * Initializes the fork-join thread pool.
-    */
-  private def initForkJoinPool(): Unit = {
-    threadPool = new ForkJoinPool(options.threads)
+   * Initializes the fork join pools.
+   */
+  private def initForkJoin(): Unit = {
+    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
+    forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
   }
 
   /**
-    * Shuts down the fork-join thread pools.
-    */
-  private def shutdownForkJoinPool(): Unit = {
-    threadPool.shutdown()
+   * Shuts down the fork join pools.
+   */
+  private def shutdownForkJoin(): Unit = {
+    forkJoinPool.shutdown()
   }
 
 }
