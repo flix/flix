@@ -51,17 +51,6 @@ mod MutDisjointSet {
         MutDisjointSet({ rc = rc, forest = MutMap.new(rc) })
 
     ///
-    /// Returns `true` iff `s` contains `x`.
-    ///
-    pub def contains(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
-        let MutDisjointSet({ forest | _ }) = s;
-        match MutMap.get(x, forest) {
-            case Some(_) => true
-            case None    => false
-        }
-    }
-
-    ///
     /// Updates `s` with a new disjoint set containing `x`
     /// if `x` is not already in `s`.
     ///
@@ -75,11 +64,14 @@ mod MutDisjointSet {
     }
 
     ///
-    /// Updates `s` with collection of disjoint singleton sets containing
-    /// the elements of the iterable `m`.
+    /// Returns `true` iff `s` contains `x`.
     ///
-    pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
-        Iterable.iterator(rc, m) |> Iterator.forEach(flip(makeSet)(s))
+    pub def contains(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
+        let MutDisjointSet({ forest | _ }) = s;
+        match MutMap.get(x, forest) {
+            case Some(_) => true
+            case None    => false
+        }
     }
 
     ///
@@ -89,14 +81,28 @@ mod MutDisjointSet {
         Node.Node({ rc = rc, value = x, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
 
     ///
+    /// Updates `s` with collection of disjoint singleton sets containing
+    /// the elements of the iterable `m`.
+    ///
+    pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
+        Iterable.iterator(rc, m) |> Iterator.forEach(flip(makeSet)(s))
+    }
+
+    ///
     /// Returns the representative / root of the set that contains `x`.
     ///
-    pub def find(x: t, s: MutDisjointSet[t, r]): Option[Node[t, r]] \ r with Order[t] = {
-        def findInternal(y) = {
+    pub def find(x: t, s: MutDisjointSet[t, r]): Option[t] \ r with Order[t] =
+        findNode(x, s) |> Option.map(match Node.Node({ value | _ }) -> value)
+
+    ///
+    /// Returns the representative / root `Node` of the set that contains `x`.
+    ///
+    def findNode(x: t, s: MutDisjointSet[t, r]): Option[Node[t, r]] \ r with Order[t] = {
+        def findRoot(y) = {
             let Node.Node({ parent | _ }) = y;
             match Ref.get(parent) {
                 case Some(p) => {
-                    let root = findInternal(p);
+                    let root = findRoot(p);
                     Ref.put(Some(root), parent);
                     root
                 }
@@ -105,11 +111,11 @@ mod MutDisjointSet {
         };
         let MutDisjointSet({ forest | _ }) = s;
         MutMap.get(x, forest)
-        |> Option.map(findInternal)
+        |> Option.map(findRoot)
     }
 
     ///
-    /// Merges the sets that contain `x` and `y`.
+    /// Merges the sets that contain `x` and `y` if both `x` and `y` are in `s`.
     ///
     pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] =
         def link(x1, y1) = {
@@ -128,7 +134,7 @@ mod MutDisjointSet {
                 ()
             }
         };
-        match (find(x, s), find(y, s)) {
+        match (findNode(x, s), findNode(y, s)) {
             case (Some(xn), Some(yn)) => link(xn, yn)
             case _ => ()
         }
