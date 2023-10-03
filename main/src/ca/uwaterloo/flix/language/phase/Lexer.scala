@@ -309,7 +309,6 @@ object Lexer {
       case _ if isKeyword("~~~") => TokenKind.TripleTilde
       case _ if isKeyword("<+>") => TokenKind.AngledPlus
       case _ if isKeyword("<=>") => TokenKind.AngledEqual
-      case _ if isKeyword("absent") => TokenKind.KeywordAbsent
       case _ if isKeyword("alias") => TokenKind.KeywordAlias
       case _ if isKeyword("and") => TokenKind.KeywordAnd
       case _ if isKeyword("as") => TokenKind.KeywordAs
@@ -359,14 +358,12 @@ object Lexer {
       case _ if isKeyword("or") => TokenKind.KeywordOr
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar
-      case _ if isKeyword("present") => TokenKind.KeywordPresent
       case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("pub") => TokenKind.KeywordPub
       case _ if isKeyword("pure") => TokenKind.KeywordPure
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
-      case _ if isKeyword("relational_choose") => TokenKind.KeywordRelationalChoose
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
       case _ if isKeyword("resume") => TokenKind.KeywordResume
       case _ if isKeyword("sealed") => TokenKind.KeywordSealed
