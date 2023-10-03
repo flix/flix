@@ -44,6 +44,7 @@ mod TestMutDisjointSet {
         Assert.eq(10, actual)
     }
 
+
     /////////////////////////////////////////////////////////////////////////////
     // makeSets                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -68,5 +69,28 @@ mod TestMutDisjointSet {
         Assert.eq(10, actual)
     }
 
+    @Test
+    def makeSets03(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets("a" :: "b" :: "c" :: Nil, s);
+        let MutDisjointSet.MutDisjointSet({ forest | _ }) = s;
+        let actual = MutMap.size(forest);
+        Assert.eq(3, actual)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // find                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def find01(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(-10, 20), s);
+        let actual = foreach (
+            x <- List.range(-10, 20)
+        ) yield MutDisjointSet.find(x, s);
+        Assert.eq(List.range(-10, 20) |> List.map(Some), actual)
+    }
 
 }
