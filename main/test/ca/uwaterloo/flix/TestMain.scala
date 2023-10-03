@@ -248,5 +248,5 @@ class TestMain extends AnyFunSuite {
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xparser)
   }
-  
+
 }
