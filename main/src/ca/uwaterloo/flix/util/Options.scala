@@ -22,8 +22,8 @@ import java.nio.file.Path
 
 object Options {
   /**
-    * Default options.
-    */
+   * Default options.
+   */
   val Default: Options = Options(
     lib = LibLevel.All,
     debug = false,
@@ -56,58 +56,59 @@ object Options {
     xprintboolunif = false,
     xnoqmc = false,
     xflexibleregions = false,
-    xsummary = false
+    xsummary = false,
+    xparser = false
   )
 
   /**
-    * Default test options.
-    */
+   * Default test options.
+   */
   val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
 
   /**
-    * Default test options with the standard library.
-    */
+   * Default test options with the standard library.
+   */
   val TestWithLibAll: Options = DefaultTest
 
   /**
-    * Default test options with the minimal library.
-    */
+   * Default test options with the minimal library.
+   */
   val TestWithLibMin: Options = DefaultTest.copy(lib = LibLevel.Min)
 
   /**
-    * Default test options without any library.
-    */
+   * Default test options without any library.
+   */
   val TestWithLibNix: Options = DefaultTest.copy(lib = LibLevel.Nix)
 }
 
 /**
-  * General Flix options.
-  *
-  * @param lib                 selects the level of libraries to include.
-  * @param debug               enables the emission of debugging information.
-  * @param entryPoint          specifies the main entry point.
-  * @param explain             enables additional explanations.
-  * @param githubKey           the API key to use for GitHub dependency resolution.
-  * @param incremental         enables incremental compilation.
-  * @param installDeps         enables automatic installation of dependencies.
-  * @param json                enable json output.
-  * @param output              the optional output directory where to place JVM bytecode.
-  * @param progress            print progress during compilation.
-  * @param test                enables test mode.
-  * @param target              the target JVM.
-  * @param threads             selects the number of threads to use.
-  * @param loadClassFiles      loads the generated class files into the JVM.
-  * @param xbddthreshold       the threshold for when to use BDDs for SVE.
-  * @param xnoboolcache        disable Boolean caches.
-  * @param xnoboolspecialcases disable Boolean unification shortcuts.
-  * @param xnobooltable        disable Boolean minimization via tabling.
-  * @param xnounittests        excludes unit tests from performance benchmarks.
-  * @param xstatistics         enables statistics collection.
-  * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xstrictmono         enables strict monomorphization.
-  * @param xprintphase         prints the chosen phase ASTs to the build folder.
-  * @param xsummary            prints a summary of the compiled modules.
-  */
+ * General Flix options.
+ *
+ * @param lib                 selects the level of libraries to include.
+ * @param debug               enables the emission of debugging information.
+ * @param entryPoint          specifies the main entry point.
+ * @param explain             enables additional explanations.
+ * @param githubKey           the API key to use for GitHub dependency resolution.
+ * @param incremental         enables incremental compilation.
+ * @param installDeps         enables automatic installation of dependencies.
+ * @param json                enable json output.
+ * @param output              the optional output directory where to place JVM bytecode.
+ * @param progress            print progress during compilation.
+ * @param test                enables test mode.
+ * @param target              the target JVM.
+ * @param threads             selects the number of threads to use.
+ * @param loadClassFiles      loads the generated class files into the JVM.
+ * @param xbddthreshold       the threshold for when to use BDDs for SVE.
+ * @param xnoboolcache        disable Boolean caches.
+ * @param xnoboolspecialcases disable Boolean unification shortcuts.
+ * @param xnobooltable        disable Boolean minimization via tabling.
+ * @param xnounittests        excludes unit tests from performance benchmarks.
+ * @param xstatistics         enables statistics collection.
+ * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
+ * @param xstrictmono         enables strict monomorphization.
+ * @param xprintphase         prints the chosen phase ASTs to the build folder.
+ * @param xsummary            prints a summary of the compiled modules.
+ */
 case class Options(lib: LibLevel,
                    debug: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
@@ -139,34 +140,35 @@ case class Options(lib: LibLevel,
                    xprintphase: Set[String],
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
-                   xsummary: Boolean
+                   xsummary: Boolean,
+                   xparser: Boolean
                   )
 
 /**
-  * An option to control the version of emitted JVM bytecode.
-  */
+ * An option to control the version of emitted JVM bytecode.
+ */
 sealed trait JvmTarget
 
 object JvmTarget {
 
   /**
-    * Emit bytecode for Java 1.6.
-    */
+   * Emit bytecode for Java 1.6.
+   */
   object Version16 extends JvmTarget
 
   /**
-    * Emit bytecode for Java 1.7.
-    */
+   * Emit bytecode for Java 1.7.
+   */
   object Version17 extends JvmTarget
 
   /**
-    * Emit bytecode for Java 1.8.
-    */
+   * Emit bytecode for Java 1.8.
+   */
   object Version18 extends JvmTarget
 
   /**
-    * Emit bytecode for Java 1.9.
-    */
+   * Emit bytecode for Java 1.9.
+   */
   object Version19 extends JvmTarget
 
 }
@@ -176,18 +178,18 @@ sealed trait LibLevel
 object LibLevel {
 
   /**
-    * Do not include any libraries, even those essential for basic functionality.
-    */
+   * Do not include any libraries, even those essential for basic functionality.
+   */
   case object Nix extends LibLevel
 
   /**
-    * Only include essential libraries.
-    */
+   * Only include essential libraries.
+   */
   case object Min extends LibLevel
 
   /**
-    * Include the full standard library.
-    */
+   * Include the full standard library.
+   */
   case object All extends LibLevel
 
 }

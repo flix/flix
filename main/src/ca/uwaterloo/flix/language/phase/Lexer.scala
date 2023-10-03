@@ -83,6 +83,11 @@ object Lexer {
    */
   def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     flix.phase("Lexer") {
+      if (flix.options.xparser) {
+        // New lexer and parser disabled. Return immediately.
+        return Map.empty[Ast.Source, Array[Token]].toSuccess
+      }
+
       // Lex each source file in parallel.
       val results = ParOps.parMap(root.sources) {
         case (src, _) => mapN(lex(src))(tokens => src -> tokens)
