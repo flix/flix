@@ -133,4 +133,39 @@ mod TestMutDisjointSet {
         Assert.eq((1 :: 3 :: 5 :: 7 :: 9 :: Nil) |> List.map(Some), actual)
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // union                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def union01(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(0, 1, s);
+        let actual = MutDisjointSet.find(0, s);
+        Assert.eq(Some(1), actual)
+    }
+
+    @Test
+    def union02(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(0, 1, s);
+        let actual = MutDisjointSet.find(0, s);
+        Assert.eq(Some(1), actual)
+    }
+
+    @Test
+    def union03(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(1, 3, s);
+        let actual = MutDisjointSet.find(3, s);
+        Assert.eq(Some(1), actual)
+    }
+
 }
