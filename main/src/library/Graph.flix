@@ -521,7 +521,7 @@ mod Graph {
     /// given a set of `Edge` and `Node` facts. Nodes can always reach
     /// themselves.
     ///
-    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Order[t] = #{
+    def reachability(): #{ Edge(t, t), Reachable(t, t), Node(t) | r } with Order[t] = #{
         // All nodes can reach themselves.
         Reachable(n, n) :- Node(n).
         // If `n1` can reach `m` and there is an edge from `m` to `n2` then `n1`
