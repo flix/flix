@@ -50,7 +50,7 @@ object Lexer {
     implicit val s: State = new State(src)
     // TODO: LEXER
     Validation.SoftFailure(s.tokens.toArray, LazyList.from(s.tokens).collect {
-      case Token(TokenKind.Err(e), t, l, c) => tokenErrToCompilationMessage(e, t, l, c)
+      case Token(TokenKind.Err(e), t, l, c, _, _) => tokenErrToCompilationMessage(e, t.mkString(""), l, c)
     })
   }
 
@@ -87,6 +87,8 @@ object Lexer {
       case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)
       case TokenErrorKind.UnterminatedInfixFunction => LexerError.UnterminatedInfixFunction(loc)
       case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
+      // TODO: correct this once merged with changes to LexerError
+      case _ => LexerError.UnterminatedString(loc)
     }
   }
 
