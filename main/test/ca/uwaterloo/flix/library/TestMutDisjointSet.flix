@@ -40,7 +40,7 @@ mod TestMutDisjointSet {
             MutDisjointSet.makeSet(x, s)
         };
         let MutDisjointSet.MutDisjointSet({ forest | _ }) = s;
-        let actual = MutList.length(forest);
+        let actual = MutMap.size(forest);
         Assert.eq(10, actual)
     }
 
