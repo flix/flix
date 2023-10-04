@@ -602,7 +602,7 @@ object SafetyError {
     * An error raised to indicate that a function marked with the `@Tailrec` annotation
     * has at least non-tail-recursive function call.
     *
-    * @param sym the symbol of the function annotated with `@Tailrec`
+    * @param sym the symbol of the function annotated with `@Tailrec`.
     * @param loc the location of the non-tail-recursive call.
     */
   case class NonTailRecursiveFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends SafetyError {
