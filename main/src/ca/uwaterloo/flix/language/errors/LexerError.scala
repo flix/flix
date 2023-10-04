@@ -37,7 +37,7 @@ object LexerError {
       s"""${line(kind, source.name)}
          |>> Block-comment nested too deep.
          |
-         |${code(loc, "Block-comment starts here.")}
+         |${code(loc, "This is nested too deep.")}
          |
          |""".stripMargin
     }
@@ -59,7 +59,7 @@ object LexerError {
       s"""${line(kind, source.name)}
          |>> Number has two decimal dots.
          |
-         |${code(loc, "Number found here.")}
+         |${code(loc, "Second decimal dot is here.")}
          |
          |""".stripMargin
     }
@@ -228,7 +228,7 @@ object LexerError {
       s"""${line(kind, source.name)}
          |>> String interpolation nested too deep.
          |
-         |${code(loc, "Interpolation starts here.")}
+         |${code(loc, "This is nested too deep.")}
          |
          |""".stripMargin
     }
