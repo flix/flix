@@ -112,9 +112,7 @@ mod MutDisjointSet {
     ///
     pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] =
         def link(x1, y1) = {
-            if (x1 == y1) {
-                ()
-            } else {
+            if (x1 != y1) {
                 let Node.Node({ parent = xparent, rank = xr | _ }) = x1;
                 let Node.Node({ parent = yparent, rank = yr | _ }) = y1;
                 let xrank = Ref.get(xr);
@@ -129,6 +127,9 @@ mod MutDisjointSet {
                 } else {
                     ()
                 }
+            }
+            else {
+                ()
             }
         };
         match (findSet(x, s), findSet(y, s)) {
