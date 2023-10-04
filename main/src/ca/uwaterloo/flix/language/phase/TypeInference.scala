@@ -239,7 +239,7 @@ object TypeInference {
           /// (or y) to determine the type of floating-point or integer operations.
           ///
           val initialSubst = getSubstFromParams(fparams0)
-          val initialRenv = getRigidityFromParams(fparams0)
+          val initialRenv = getRigidityFromSpec(spec0)
           val initialLenv = LevelEnv.Top
 
           run(initialSubst, Nil, initialRenv, initialLenv) match { // TODO ASSOC-TYPES initial econstrs?
@@ -1738,10 +1738,14 @@ object TypeInference {
   /**
     * Collects all the type variables from the formal params and sets them as rigid.
     */
-  private def getRigidityFromParams(params: List[KindedAst.FormalParam])(implicit flix: Flix): RigidityEnv = {
-    params.flatMap(_.tpe.typeVars).foldLeft(RigidityEnv.empty) {
-      case (renv, tvar) => renv.markRigid(tvar.sym)
-    }
+  private def getRigidityFromSpec(spec: KindedAst.Spec)(implicit flix: Flix): RigidityEnv = spec match {
+    case KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc) =>
+      // TODO ideally this should just use tparams, but we have to use other fields here
+      // TODO because tparams do not include the wildcards
+      val tvars = fparams.flatMap(_.tpe.typeVars) ++ tpe.typeVars ++ eff.typeVars
+      tvars.foldLeft(RigidityEnv.empty) {
+        case (renv, Type.Var(sym, _)) => renv.markRigid(sym)
+      }
   }
 
   /**
