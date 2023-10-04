@@ -602,15 +602,16 @@ object SafetyError {
     * An error raised to indicate that a function marked with the `@Tailrec` annotation
     * has at least non-tail-recursive function call.
     *
+    * @param sym the symbol of the function annotated with `@Tailrec`
     * @param loc the location of the non-tail-recursive call.
     */
-  case class NonTailRecursiveFunction(loc: SourceLocation) extends SafetyError {
-    override def summary: String = "Function annotated with @Tailrec must be tail recursive."
+  case class NonTailRecursiveFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends SafetyError {
+    override def summary: String = s"Function '$sym' annotated with @Tailrec must be tail recursive."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function annotated with @Tailrec must be tail recursive.
+         |>> Function '$sym' annotated with @Tailrec must be tail recursive.
          |
          |${code(loc, "A recursive call in non-tail position occurs here.")}
          |

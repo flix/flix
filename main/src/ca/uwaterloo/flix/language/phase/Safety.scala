@@ -115,7 +115,7 @@ object Safety {
 
   private def checkTailCallAnnotation(expectedPosition: CallPosition, actualPosition: CallPosition, actualSym: Option[Symbol.DefnSym], loc: SourceLocation): List[CompilationMessage] =
     (expectedPosition, actualPosition, actualSym) match {
-      case (TailPosition(sym), NonTailPosition, Some(asym)) if sym == asym => SafetyError.NonTailRecursiveFunction(loc) :: Nil
+      case (TailPosition(sym), NonTailPosition, Some(asym)) if sym == asym => SafetyError.NonTailRecursiveFunction(sym, loc) :: Nil
       case _ => Nil
     }
 
@@ -301,10 +301,7 @@ object Safety {
           rules.flatMap { case HandlerRule(_, _, e) => visit(e, currentCallPosition) }
 
       case Expr.Do(_, exps, _, _, _) =>
-        val first = exps.take(exps.length - 1).flatMap(visit(_, NonTailPosition)).filter {
-          case SafetyError.NonTailRecursiveFunction(_) => false
-          case _ => true
-        }
+        val first = exps.take(exps.length - 1).flatMap(visit(_, NonTailPosition))
         first ++ visit(exps.last, currentCallPosition)
 
       case Expr.Resume(exp, _, _) =>
