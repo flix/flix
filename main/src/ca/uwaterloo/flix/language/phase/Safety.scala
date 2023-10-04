@@ -75,7 +75,7 @@ object Safety {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    val tailpos = if (def0.spec.ann.isTailRecursive) TailPosition else NonTailPosition
+    val tailpos = if (def0.spec.ann.isTailRecursive) TailPosition(def0.sym) else NonTailPosition
     visitTestEntryPoint(def0) ::: visitExp(def0.exp, renv, tailpos, root)
   }
 
@@ -107,13 +107,13 @@ object Safety {
   // Maybe use Ast.CallType?
   private sealed trait Tailrec
 
-  private case object TailPosition extends Tailrec
+  private case class TailPosition(sym: Symbol.DefnSym) extends Tailrec
 
   private case object NonTailPosition extends Tailrec
 
   private def checkTailCallAnnotation(expectedValue: Tailrec, actualPosition: Tailrec, actualSym: Option[Symbol.DefnSym], loc: SourceLocation): List[CompilationMessage] =
     (expectedValue, actualPosition, actualSym) match {
-      case (TailPosition, NonTailPosition, Some(asym)) => SafetyError.NonTailRecursiveFunction(loc) :: Nil
+      case (TailPosition(sym), NonTailPosition, Some(asym)) if sym == asym => SafetyError.NonTailRecursiveFunction(loc) :: Nil
       case _ => Nil
     }
 
@@ -387,7 +387,7 @@ object Safety {
 
     }
 
-    visit(e0, TailPosition)
+    visit(e0, t0)
 
   }
 
