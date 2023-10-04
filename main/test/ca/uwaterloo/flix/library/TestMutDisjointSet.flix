@@ -133,6 +133,14 @@ mod TestMutDisjointSet {
         Assert.eq((1 :: 3 :: 5 :: 7 :: 9 :: Nil) |> List.map(Some), actual)
     }
 
+    @Test
+    def find05(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets("a" :: "b" :: "c" :: "d" :: Nil, s);
+        let actual = MutDisjointSet.find("A", s);
+        Assert.eq(None, actual)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // union                                                                   //
@@ -162,10 +170,93 @@ mod TestMutDisjointSet {
     def union03(): Bool = region rc {
         let s = MutDisjointSet.new(rc);
         MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(1, 1, s);
+        let actual = MutDisjointSet.find(1, s);
+        Assert.eq(Some(1), actual)
+    }
+
+    @Test
+    def union04(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(1, 1, s);
+        let actual = MutDisjointSet.find(1, s);
+        Assert.eq(Some(1), actual)
+    }
+
+    @Test
+    def union05(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(1, 1, s);
+        MutDisjointSet.union(1, 0, s);
+        let actual = MutDisjointSet.find(1, s);
+        Assert.eq(Some(1), actual)
+    }
+
+    @Test
+    def union06(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(1, 1, s);
+        MutDisjointSet.union(1, 0, s);
+        let actual = MutDisjointSet.find(0, s);
+        Assert.eq(Some(1), actual)
+    }
+
+    @Test
+    def union07(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(1, 0, s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(1, 1, s);
+        let actual = MutDisjointSet.find(0, s);
+        Assert.eq(Some(0), actual)
+    }
+
+    @Test
+    def union08(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(1, 0, s);
+        MutDisjointSet.union(0, 1, s);
+        MutDisjointSet.union(1, 1, s);
+        let actual = MutDisjointSet.find(1, s);
+        Assert.eq(Some(0), actual)
+    }
+
+    @Test
+    def union09(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
         MutDisjointSet.union(0, 1, s);
         MutDisjointSet.union(1, 3, s);
         let actual = MutDisjointSet.find(3, s);
         Assert.eq(Some(1), actual)
+    }
+
+    @Test
+    def union10(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets("a" :: "b" :: "c" :: "d" :: Nil, s);
+        MutDisjointSet.union("c", "d", s);
+        let actual = MutDisjointSet.find("a", s);
+        Assert.eq(Some("a"), actual)
+    }
+
+    @Test
+    def union11(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets("a" :: "b" :: "c" :: "d" :: Nil, s);
+        MutDisjointSet.union("c", "d", s);
+        MutDisjointSet.union("b", "c", s);
+        MutDisjointSet.union("a", "b", s);
+        let actual = MutDisjointSet.find("a", s);
+        Assert.eq(Some("d"), actual)
     }
 
 }
