@@ -72,10 +72,12 @@ sealed trait BackendObjType {
     case BackendObjType.Value => JvmName(DevFlixRuntime, "Value")
     case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
     case BackendObjType.Thunk => JvmName(DevFlixRuntime, "Thunk")
-    case BackendObjType.Resumption => JvmName(DevFlixRuntime, "Resumption")
     case BackendObjType.Frames => JvmName(DevFlixRuntime, "Frames")
     case BackendObjType.FramesCons => JvmName(DevFlixRuntime, "FramesCons")
     case BackendObjType.FramesNil => JvmName(DevFlixRuntime, "FramesNil")
+    case BackendObjType.Resumption => JvmName(DevFlixRuntime, "Resumption")
+    case BackendObjType.ResumptionCons => JvmName(DevFlixRuntime, "ResumptionCons")
+    case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, "ResumptionNil")
   }
 
   /**
@@ -1426,14 +1428,6 @@ object BackendObjType {
     ))
   }
 
-  case object Resumption extends BackendObjType {
-
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.jvmName)
-      cm.closeClassMaker()
-    }
-  }
-
   case object Frames extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -1542,5 +1536,33 @@ object BackendObjType {
         rest.load() ~ xReturn(rest.tpe)
       )
     ))
+  }
+
+  case object Resumption extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkAbstractClass(this.jvmName)
+
+      cm.closeClassMaker()
+    }
+    // TODO rewind method
+  }
+
+  case object ResumptionCons extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, Resumption.jvmName)
+
+      cm.closeClassMaker()
+    }
+  }
+
+  case object ResumptionNil extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, Resumption.jvmName)
+
+      cm.closeClassMaker()
+    }
   }
 }
