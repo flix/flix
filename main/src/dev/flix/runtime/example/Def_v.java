@@ -6,12 +6,12 @@ public class Def_v {
 
     public static Result apply() {
         return new Suspension(
-                "Con",
+                "Console",
                 new EffectCall() {
                     @Override
                     public Result apply(Handler h, Resumption r) {
                         Console c = (Console) h;
-                        return c.read(new Unit(), r);
+                        return c.read(Unit.instance, r);
                     }
                 },
                 new FramesNil(),
