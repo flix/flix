@@ -12,11 +12,11 @@ public interface Console {
     /**
      * Signature of the `Console.read` operation.
      */
-    public Result read(Unit opArg, Resumption k);
+    Result read(Unit opArg, Resumption k);
 
     /**
      * Signature of the `Console.print` handler.
      */
-    public Result print(String opArg, Resumption k);
+    Result print(String opArg, Resumption k);
 
 }

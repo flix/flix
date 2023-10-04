@@ -10,5 +10,5 @@ package dev.flix.runtime;
  * Then the frame represents the ability to call into `f` at the right place with the value `resumeArg`.
  */
 public interface Frame {
-    public Result apply(Value resumeArg);
+    Result apply(Value resumeArg);
 }
