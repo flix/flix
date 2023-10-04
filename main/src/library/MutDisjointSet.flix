@@ -136,6 +136,10 @@ mod MutDisjointSet {
             case _ => ()
         }
 
-    pub def equivalent(x: MutDisjointSet[t, r], y: MutDisjointSet[t, r]): Bool \ {} = ???
+    ///
+    /// Returns true if `x` and `y` have the same representative / root.
+    ///
+    pub def equivalent(x: t, y: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] =
+        findSet(x, s) == findSet(y, s)
 
 }
