@@ -111,9 +111,9 @@ object Safety {
 
   private case object NonTailPosition extends Tailrec
 
-  private def checkTailCallAnnotation(annotationValue: Tailrec, actualPosition: Tailrec, loc: SourceLocation): List[CompilationMessage] =
-    (annotationValue, actualPosition) match {
-      case (TailPosition, NonTailPosition) => SafetyError.NonTailRecursiveFunction(loc) :: Nil
+  private def checkTailCallAnnotation(expectedValue: Tailrec, actualPosition: Tailrec, actualSym: Option[Symbol.DefnSym], loc: SourceLocation): List[CompilationMessage] =
+    (expectedValue, actualPosition, actualSym) match {
+      case (TailPosition, NonTailPosition, Some(asym)) => SafetyError.NonTailRecursiveFunction(loc) :: Nil
       case _ => Nil
     }
 
@@ -149,7 +149,9 @@ object Safety {
         visit(exp, NonTailPosition)
 
       case Expr.Apply(exp, exps, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, loc) ++ visit(exp, NonTailPosition) ++ exps.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, None, loc) ++
+          visit(exp, NonTailPosition) ++
+          exps.flatMap(visit(_, NonTailPosition))
 
       case Expr.Unary(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
@@ -302,13 +304,16 @@ object Safety {
         visit(exp, tailrec)
 
       case Expr.InvokeConstructor(_, args, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, loc) ++ args.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, None, loc) ++
+          args.flatMap(visit(_, NonTailPosition))
 
       case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, loc) ++ visit(exp, NonTailPosition) ++ args.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, None, loc) ++
+          visit(exp, NonTailPosition) ++ args.flatMap(visit(_, NonTailPosition))
 
       case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, loc) ++ args.flatMap(visit(_, NonTailPosition))
+        checkTailCallAnnotation(t0, tailrec, None, loc) ++
+          args.flatMap(visit(_, NonTailPosition))
 
       case Expr.GetField(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
