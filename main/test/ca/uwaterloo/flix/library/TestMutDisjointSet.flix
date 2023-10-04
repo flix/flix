@@ -259,4 +259,123 @@ mod TestMutDisjointSet {
         Assert.eq(Some("d"), actual)
     }
 
+    @Test
+    def union12(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        let actual = MutDisjointSet.find(9, s);
+        Assert.eq(Some(4), actual)
+    }
+
+    @Test
+    def union13(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        MutDisjointSet.union(8, 1, s);
+        let actual = MutDisjointSet.find(9, s);
+        Assert.eq(Some(4), actual)
+    }
+
+    @Test
+    def union14(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        MutDisjointSet.union(8, 1, s);
+        MutDisjointSet.union(8, 9, s);
+        let actual = MutDisjointSet.find(8, s);
+        Assert.eq(Some(4), actual)
+    }
+
+    @Test
+    def union15(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        MutDisjointSet.union(8, 1, s);
+        MutDisjointSet.union(2, 3, s);
+        MutDisjointSet.union(2, 8, s);
+        MutDisjointSet.union(8, 9, s);
+        let actual = MutDisjointSet.find(4, s);
+        Assert.eq(Some(1), actual)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // equivalent                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def equivalent01(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(-10, 20), s);
+        let actual = MutDisjointSet.equivalent(-10, -10, s);
+        Assert.eq(true, actual)
+    }
+
+    @Test
+    def equivalent02(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(-10, 20), s);
+        let actual = MutDisjointSet.equivalent(-10, 10, s);
+        Assert.eq(false, actual)
+    }
+
+    @Test
+    def equivalent03(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(-10, 20), s);
+        let actual = MutDisjointSet.equivalent(-10, 200, s);
+        Assert.eq(false, actual)
+    }
+
+    @Test
+    def equivalent04(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        let actual = MutDisjointSet.equivalent(7, 9, s);
+        Assert.eq(true, actual)
+    }
+
+    @Test
+    def equivalent05(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        let actual = MutDisjointSet.equivalent(7, 8, s);
+        Assert.eq(false, actual)
+    }
+
+    @Test
+    def equivalent06(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        MutDisjointSet.union(8, 1, s);
+        let actual = MutDisjointSet.equivalent(7, 8, s);
+        Assert.eq(false, actual)
+    }
+
+    @Test
+    def equivalent07(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(7, 4, s);
+        MutDisjointSet.union(7, 9, s);
+        MutDisjointSet.union(8, 1, s);
+        MutDisjointSet.union(8, 7, s);
+        let actual = MutDisjointSet.equivalent(7, 8, s);
+        Assert.eq(true, actual)
+    }
+
 }
