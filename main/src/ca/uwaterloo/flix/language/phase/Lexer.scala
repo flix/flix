@@ -776,7 +776,6 @@ object Lexer {
         }
       }
     }
-
     // The very last char of the file was a digit so return the appropriate token.
     if (isDecimal) {
       TokenKind.LiteralFloat64
