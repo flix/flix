@@ -34,4 +34,8 @@ object TokenErrorKind {
   case object UnterminatedInfixFunction extends TokenErrorKind
 
   case object UnterminatedString extends TokenErrorKind
+
+  case object UnterminatedStringInterpolation extends TokenErrorKind
+
+  case object StringInterpolationTooDeep extends TokenErrorKind
 }
