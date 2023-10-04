@@ -738,7 +738,8 @@ object TypeInference {
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
           _ <- exitScopeM(regionVar.sym)
-          resultEff <- unifyTypeM(pvar, eff, loc)
+          purifiedEff <- purifyEffM(regionVar, eff)
+          resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
