@@ -122,6 +122,8 @@ object Safety {
     */
   private def visitExp(e0: Expr, renv: RigidityEnv, t0: Tailrec, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
 
+    var currentCall: Option[Symbol.DefnSym] = None
+
     /**
       * Local visitor.
       */
@@ -130,7 +132,9 @@ object Safety {
 
       case Expr.Var(_, _, _) => Nil
 
-      case Expr.Def(_, _, _) => Nil
+      case Expr.Def(sym, _, _) =>
+        currentCall = Some(sym)
+        Nil
 
       case Expr.Sig(_, _, _) => Nil
 
@@ -149,8 +153,9 @@ object Safety {
         visit(exp, NonTailPosition)
 
       case Expr.Apply(exp, exps, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, None, loc) ++
-          visit(exp, NonTailPosition) ++
+        currentCall = None
+        visit(exp, NonTailPosition) ++
+          checkTailCallAnnotation(t0, tailrec, currentCall, loc) ++
           exps.flatMap(visit(_, NonTailPosition))
 
       case Expr.Unary(_, exp, _, _, _) =>
