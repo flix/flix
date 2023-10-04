@@ -378,4 +378,12 @@ mod TestMutDisjointSet {
         Assert.eq(true, actual)
     }
 
+    @Test
+    def equivalent08(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        let actual = MutDisjointSet.equivalent(20, 30, s);
+        Assert.eq(false, actual)
+    }
+
 }
