@@ -103,7 +103,6 @@ object Safety {
 
   }
 
-
   /**
     * Represents the type of position a function call can appear in.
     */
