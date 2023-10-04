@@ -29,7 +29,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): a = 21
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq02") {
@@ -43,7 +43,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq03") {
@@ -57,7 +57,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq04") {
@@ -71,7 +71,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq05") {
@@ -80,7 +80,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): a -> a = x -> 21
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq06") {
@@ -89,7 +89,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): a -> a = (x: Int32) -> x
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq07") {
@@ -98,7 +98,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): {x = Int32 | r} = {x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq08") {
@@ -107,7 +107,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): {x = Int32, y = Int32 | r} = {y = 42, x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestOccurs01") {
@@ -185,25 +185,25 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestLeq.Wildcard.01") {
     val input = "def foo(a: _): _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq.Wildcard.02") {
     val input = "def foo(a: Int32): _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestLeq.Wildcard.03") {
     val input = raw"def foo(a: Int32): Int32 \ _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    expectError[TypeError.PossibleCheckedEffectCast](result)
   }
 
   test("TestLeq.Wildcard.04") {
     val input = raw"def foo(g: Int32 -> Int32 \ _): Int32 \ _ = g(1)"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.EffectGeneralizationError](result)
+    expectError[TypeError.UnexpectedEffect](result)
   }
 
   test("NoMatchingInstance.01") {
@@ -428,723 +428,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingArrowInstance](result)
-  }
-
-  test("TestChoose.Arity1.01") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = x -> {
-        |        relational_choose x {
-        |            case Absent => 1
-        |        }
-        |    };
-        |    f(Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.Arity1.02") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = x -> {
-        |        relational_choose x {
-        |            case Present(_) => 1
-        |        }
-        |    };
-        |    f(Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.Arity1.03") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = x -> {
-        |        relational_choose x {
-        |            case Absent => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.Arity1.04") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = x -> {
-        |        relational_choose x {
-        |            case Present(_) => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.01") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Absent, Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.02") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.03") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.IfThenElse.01") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentAbsent.IfThenElse.02") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent) => 1
-        |        }
-        |    };
-        |    f(Absent, if (true) Absent else Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.01") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Absent, Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.02") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.03") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.IfThenElse.01") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.AbsentPresent.IfThenElse.02") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |        }
-        |    };
-        |    f(Present(123), if (true) Absent else Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.01") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent)         => 1
-        |            case (Present(_), Present(_)) => 2
-        |        }
-        |    };
-        |    f(Absent, Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.02") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent)         => 1
-        |            case (Present(_), Present(_)) => 2
-        |        }
-        |    };
-        |    f(Present(123), Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.03") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |            case (Present(_), Absent) => 2
-        |        }
-        |    };
-        |    f(Absent, Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.TwoCases.04") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_)) => 1
-        |            case (Present(_), Absent) => 2
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.ThreeCases.01") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Present(_))       => 1
-        |            case (Present(_), Absent)       => 2
-        |            case (Present(_), Present(_))   => 3
-        |        }
-        |    };
-        |    f(Absent, Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.ThreeCases.02") {
-    val input =
-      """
-        |def foo(): Int32 =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent)           => 1
-        |            case (Absent, Present(_))       => 2
-        |            case (Present(_), Absent)       => 3
-        |        }
-        |    };
-        |    f(Present(123), Present(456))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.01") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent)    => 1
-        |            case (Present(_), Absent)    => 2
-        |        }
-        |    };
-        |    f(Absent, if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.02") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent)    => 1
-        |            case (Present(_), Absent)    => 2
-        |        }
-        |    };
-        |    f(Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.03") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (Absent, Absent)    => 1
-        |            case (Present(_), Absent)    => 2
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.04") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (_, Absent)    => 1
-        |            case (_, Absent)    => 2
-        |        }
-        |    };
-        |    f(Absent, if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.05") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (_, Absent)    => 1
-        |            case (_, Absent)    => 2
-        |        }
-        |    };
-        |    f(Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("TestChoose.If.06") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    let f = (x, y) -> {
-        |        relational_choose (x, y) {
-        |            case (_, Absent)    => 1
-        |            case (_, Absent)    => 2
-        |        }
-        |    };
-        |    f(if (true) Absent else Present(123), if (true) Absent else Present(456)) == 1
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.Choice.Param.01") {
-    val input =
-      """
-        |pub def foo(x: Choice[String, true, _]): Int32 =
-        |    relational_choose x {
-        |        case Absent => 1
-        |    }
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.Choice.Param.02") {
-    val input =
-      """
-        |pub def foo(x: Choice[String, _, true]): Int32 =
-        |    relational_choose x {
-        |        case Present(_) => 1
-        |    }
-        |
-        |pub enum Choice[a : Type, _isAbsent : Bool, _isPresent : Bool] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.Choice.Empty.01") {
-    val input =
-      """
-        |def foo(): Unit =
-        |    let f = x -> {
-        |        relational_choose x {
-        |            case Absent     => 1
-        |        };
-        |        relational_choose x {
-        |            case Present(_) => 2
-        |        }
-        |    };
-        |    f(Absent)
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.Choice.Empty.02") {
-    val input =
-      """
-        |def foo(): Unit =
-        |    let f = x -> {
-        |        relational_choose x {
-        |            case Absent     => 2
-        |        };
-        |        relational_choose x {
-        |            case Present(_) => 2
-        |        }
-        |    };
-        |    f(Present(123))
-        |
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.ChooseStar.01") {
-    val input =
-      """
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |pub def f(): Bool =
-        |    let f = x -> {
-        |        relational_choose* x {
-        |            case Absent     => Absent
-        |            case Present(v) => Present(v)
-        |        }
-        |    };
-        |    let isAbsent = x -> relational_choose x {
-        |        case Absent => true
-        |    };
-        |    isAbsent(f(Present(123)))
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.ChooseStar.02") {
-    val input =
-      """
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |pub def f(): Bool =
-        |    let f = x -> {
-        |        relational_choose* x {
-        |            case Absent     => Present(123)
-        |            case Present(_) => Absent
-        |        }
-        |    };
-        |    let isAbsent = x -> relational_choose x {
-        |        case Absent => true
-        |    };
-        |    isAbsent(f(Absent))
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.ChooseStar.03") {
-    val input =
-      """
-        |pub enum Choice[a : Type, _isAbsent : Eff, _isPresent : Eff] {
-        |    case Absent
-        |    case Present(a)
-        |}
-        |
-        |pub def f(): Bool =
-        |    let f = (x, y) -> {
-        |        relational_choose* (x, y) {
-        |            case (Absent, Absent)         => Absent
-        |            case (Present(_), Present(_)) => Present(42)
-        |        }
-        |    };
-        |    let isAbsent = x -> relational_choose x {
-        |        case Absent => true
-        |    };
-        |    isAbsent(f(Present(123), Present(456)))
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
   }
 
   test("Test.UnexpectedEffect.01") {

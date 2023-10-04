@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.LoweredAst
-import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern, RelationalChoosePattern}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object LoweredAstPrinter {
@@ -34,13 +34,14 @@ object LoweredAstPrinter {
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
     val defs = root.defs.values.map {
-      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, _, _, _), exp) =>
+      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           fparams.map(printFormalParam),
           TypePrinter.print(retTpe),
+          TypePrinter.printAsEffect(eff),
           print(exp)
         )
     }.toList
@@ -84,16 +85,6 @@ object LoweredAstPrinter {
           (patD, tpeD, bodyD)
       }
       DocAst.Expression.TypeMatch(expD, rulesD)
-    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val expD = DocAst.Expression.Tuple(exps.map(print))
-      val rulesD = rules.map {
-        case LoweredAst.RelationalChooseRule(pat, body) =>
-          val patD = DocAst.Expression.Tuple(pat.map(printRelationalChoosePattern))
-          val guardD = None
-          val bodyD = print(body)
-          (patD, guardD, bodyD)
-      }
-      DocAst.Expression.Match(expD, rulesD)
     case Expr.VectorLit(exps, tpe, eff, loc) => DocAst.Expression.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => DocAst.Expression.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, loc) => DocAst.Expression.ArrayLength(print(exp))
@@ -145,15 +136,6 @@ object LoweredAstPrinter {
       case (LoweredAst.Pattern.Record.RecordLabelPattern(label, _, p, _), acc) =>
         DocAst.Expression.RecordExtend(label, printPattern(p), acc)
     }
-  }
-
-  /**
-    * Converts the given pattern into a [[DocAst.Expression]].
-    */
-  private def printRelationalChoosePattern(pat: LoweredAst.RelationalChoosePattern): DocAst.Expression = pat match {
-    case RelationalChoosePattern.Wild(loc) => DocAst.Expression.Wild
-    case RelationalChoosePattern.Absent(loc) => DocAst.Expression.Absent
-    case RelationalChoosePattern.Present(sym, tpe, loc) => DocAst.Expression.Present(DocAst.Expression.Var(sym))
   }
 
   /**

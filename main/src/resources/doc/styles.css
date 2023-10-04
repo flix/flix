@@ -21,6 +21,7 @@
     --light-class-def-color: #bfb280;
     --light-classes-color: #fc9d9a;
     --light-enum-color: #c8c8a9;
+    --light-op-color: #ccaeff;
     --light-eff-color: #ffaefa;
     --light-type-alias-color: #f9cdad;
     --light-def-color: #83af9b;
@@ -49,6 +50,7 @@
     --dark-class-def-color: #bfb280;
     --dark-classes-color: #fc9d9a;
     --dark-enum-color: #c8c8a9;
+    --dark-op-color: #ccaeff;
     --dark-eff-color: #ffaefa;
     --dark-type-alias-color: #f9cdad;
     --dark-def-color: #83af9b;
@@ -77,6 +79,7 @@
     --class-def-color: var(--light-class-def-color);
     --classes-color: var(--light-classes-color);
     --enum-color: var(--light-enum-color);
+    --op-color: var(--light-op-color);
     --eff-color: var(--light-eff-color);
     --type-alias-color: var(--light-type-alias-color);
     --def-color: var(--light-def-color);
@@ -108,6 +111,7 @@
         --class-def-color: var(--dark-class-def-color);
         --classes-color: var(--dark-classes-color);
         --enum-color: var(--dark-enum-color);
+        --op-color: var(--dark-op-color);
         --eff-color: var(--dark-eff-color);
         --type-alias-color: var(--dark-type-alias-color);
         --def-color: var(--dark-def-color);
@@ -182,7 +186,7 @@ html, body {
 }
 
 body {
-    font-family: 'Noto Sans', sans-serif;
+    font-family: "Noto Sans", sans-serif;
 
     background-color: var(--bg-color-1);
     color: var(--text-color);
@@ -245,14 +249,14 @@ h1, h2 {
 }
 
 h1 {
-    font-family: Oswald, sans-serif;
+    font-family: "Oswald", sans-serif;
     font-size: 4.5rem;
     font-weight: 300;
     margin-bottom: 3rem;
 }
 
 h2 {
-    font-family: Oswald, sans-serif;
+    font-family: "Oswald", sans-serif;
     font-size: 2rem;
     font-weight: 500;
     margin-bottom: 1.5rem;
@@ -260,7 +264,7 @@ h2 {
 
 h3 {
     display: inline;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 0.9rem;
     font-weight: 200;
     color: var(--heading-color);
@@ -355,7 +359,7 @@ nav h2 {
 nav ul {
     margin-top: 0.2rem;
     padding-left: 0.5rem;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 13px;
     list-style: none;
 }
@@ -376,29 +380,32 @@ nav li::before {
     margin-right: 0.3rem;
 }
 nav .Modules li::before {
-    color: var(--module-color)
+    color: var(--module-color);
 }
 nav .Signatures li::before {
-    color: var(--signature-color)
+    color: var(--signature-color);
 }
 nav .Class-Definitions li::before {
-    color: var(--class-def-color)
+    color: var(--class-def-color);
 }
 nav .Classes li::before {
-    color: var(--classes-color)
+    color: var(--classes-color);
 }
 nav .Enums li::before {
-    color: var(--enum-color)
+    color: var(--enum-color);
+}
+nav .Operations li::before {
+    color: var(--op-color);
 }
 nav .Effects li::before {
-    color: var(--eff-color)
+    color: var(--eff-color);
 }
 nav .Type-Aliases li::before {
-    color: var(--type-alias-color)
+    color: var(--type-alias-color);
 }
 nav .Definitions li::before, 
 nav .Module-Definitions li::before {
-    color: var(--def-color)
+    color: var(--def-color);
 }
 
 main {
@@ -415,22 +422,15 @@ main {
 }
 
 main h2 {
-    font-family: Oswald, sans-serif;
-}
-
-section {
-    --h-padding: 0.75rem;
-    margin-left: calc(-1 * var(--h-padding));
-    margin-right: calc(-1 * var(--h-padding));
-
-    margin-bottom: 3rem;
-}
-section > * {
-    padding-left: var(--h-padding);
-    padding-right: var(--h-padding);
+    font-family: "Oswald", sans-serif;
 }
 
 .box {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+
     box-shadow: 0 0 10px 0 var(--shadow-color);
     background-color: var(--bg-color-1);
     border: 1px solid var(--border-color);
@@ -440,6 +440,9 @@ section > * {
     border-radius: 0.2rem;
     box-sizing: border-box;
     overflow: auto;
+}
+.box:last-of-type {
+    margin-bottom: 3rem;
 }
 .box:target {
     box-shadow: 0 0 14px 0 var(--highlight-color);
@@ -498,7 +501,7 @@ section > * {
 
 .actions > * {
     color: inherit;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 0.75rem;
     text-decoration: none;
     background-color: var(--bg-color-3);
@@ -575,7 +578,11 @@ section > * {
 }
 
 code {
-    font-family: Fira Code, monospace;
+    font-family: "Fira Code", monospace;
+}
+code a {
+    color: inherit;
+    text-decoration: inherit;
 }
 code.annotations {
     display: block;

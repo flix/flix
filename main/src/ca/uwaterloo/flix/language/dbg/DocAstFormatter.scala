@@ -46,14 +46,15 @@ object DocAstFormatter {
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
     val defs = defs0.map {
-      case Def(_, _, sym, parameters, resType, body) =>
+      case Def(_, _, sym, parameters, resType, effect, body) =>
         val name = sym.toString
         val args = parameters.map(aux(_, paren = false))
         val resTypef = formatType(resType, paren = false)
+        val effectf = formatEffect(effect, paren = false)
         val bodyf = format(body)
         val d = group(
           text("def") +: text(name) :: tuple(args) ::
-            text(":") +: group(resTypef +: text("=") :: breakWith(" ")) :: curlyOpen(bodyf)
+            text(":") +: group(resTypef :: effectf +: text("=") :: breakWith(" ")) :: curlyOpen(bodyf)
         )
         ((sym.namespace: Seq[String], sym.name), d)
     }
@@ -428,6 +429,12 @@ object DocAstFormatter {
     }
 
     chase(tpe, List())
+  }
+
+  private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
+    case Eff.Pure => empty
+    case Eff.Impure => text(" ") :: text("\\") +: text("IO")
+    case Eff.AsIs(s) => text(" ") :: text("\\") +: text(s)
   }
 
 }

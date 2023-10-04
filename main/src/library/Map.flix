@@ -156,7 +156,7 @@ mod Map {
     ///
     /// Returns the empty map.
     ///
-    /// `Map#{}` is syntactic sugar for `empty` (`Map#{} = empty()`).
+    /// `Map#{}` is syntactic sugar for `empty` (`Map#{} == empty()`).
     ///
     pub def empty(): Map[k, v] = Map(RedBlackTree.empty())
 

@@ -361,13 +361,6 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val c = visitExps(exps)
-      rules.foldLeft(c) {
-        case (acc, RelationalChooseRule(pats, exp)) =>
-          acc ++ pats.iterator.flatMap(visitRelationalChoosePat) ++ visitExp(exp)
-      }
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val c = visitExp(exp)
       rules.foldLeft(c) {
@@ -604,22 +597,6 @@ object SemanticTokensProvider {
       patsVal ++ patVal ++ tVal
 
     case Pattern.RecordEmpty(tpe, _) => Iterator.empty
-  }
-
-  /**
-    * Returns all semantic tokens in the given pattern `pat0`.
-    */
-  private def visitRelationalChoosePat(pat0: RelationalChoosePattern): Iterator[SemanticToken] = pat0 match {
-    case RelationalChoosePattern.Wild(loc) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
-      Iterator(t)
-    case RelationalChoosePattern.Absent(loc) =>
-      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t)
-    case RelationalChoosePattern.Present(sym, _, loc) =>
-      val t1 = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
-      val t2 = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-      Iterator(t1, t2)
   }
 
   /**

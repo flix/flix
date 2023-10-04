@@ -17,13 +17,13 @@ package ca.uwaterloo.flix.language.ast
 
 sealed trait TokenKind
 
-/* Tokens are named for 'what they are' rather than 'what they represent'.
+/**
+ * Tokens are named for 'what they are' rather than 'what they represent'.
  * So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
  *
  * Tokens belonging to some conceptual group should have the group name as prefix.
  * So 'LiteralInt32' is preferred over 'Int32Literal'
  */
-
 object TokenKind {
   case object Ampersand extends TokenKind
 
@@ -79,6 +79,8 @@ object TokenKind {
 
   case object CurlyR extends TokenKind
 
+  case object Dollar extends TokenKind
+
   case object Dot extends TokenKind
 
   case object Equal extends TokenKind
@@ -94,8 +96,6 @@ object TokenKind {
   case object HoleVariable extends TokenKind
 
   case object InfixFunction extends TokenKind
-
-  case object KeywordAbsent extends TokenKind
 
   case object KeywordAlias extends TokenKind
 
@@ -173,7 +173,7 @@ object TokenKind {
 
   case object KeywordLet extends TokenKind
 
-  case object KeywordMasked_cast extends TokenKind
+  case object KeywordMaskedCast extends TokenKind
 
   case object KeywordMatch extends TokenKind
 
@@ -187,15 +187,13 @@ object TokenKind {
 
   case object KeywordOpen extends TokenKind
 
-  case object KeywordOpen_as extends TokenKind
+  case object KeywordOpenAs extends TokenKind
 
   case object KeywordOr extends TokenKind
 
   case object KeywordOverride extends TokenKind
 
   case object KeywordPar extends TokenKind
-
-  case object KeywordPresent extends TokenKind
 
   case object KeywordProject extends TokenKind
 
@@ -208,8 +206,6 @@ object TokenKind {
   case object KeywordRef extends TokenKind
 
   case object KeywordRegion extends TokenKind
-
-  case object KeywordRelational_choose extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
 
@@ -233,7 +229,7 @@ object TokenKind {
 
   case object KeywordTypeMatch extends TokenKind
 
-  case object KeywordUnchecked_cast extends TokenKind
+  case object KeywordUncheckedCast extends TokenKind
 
   case object KeywordUse extends TokenKind
 
@@ -257,11 +253,19 @@ object TokenKind {
 
   case object LiteralFloat64 extends TokenKind
 
-  case object LiteralInt64 extends TokenKind
-
   case object LiteralInt8 extends TokenKind
 
+  case object LiteralInt16 extends TokenKind
+
+  case object LiteralInt32 extends TokenKind
+
+  case object LiteralInt64 extends TokenKind
+
   case object LiteralString extends TokenKind
+
+  case object LiteralStringInterpolationL extends TokenKind
+
+  case object LiteralStringInterpolationR extends TokenKind
 
   case object MapHash extends TokenKind
 
@@ -293,6 +297,8 @@ object TokenKind {
 
   case object StarStar extends TokenKind
 
+  case object Tilde extends TokenKind
+
   case object TripleAmpersand extends TokenKind
 
   case object TripleAngleL extends TokenKind
@@ -303,8 +309,6 @@ object TokenKind {
 
   case object TripleCaret extends TokenKind
 
-  case object TripleQuestionMark extends TokenKind
-
   case object TripleTilde extends TokenKind
 
   case object Underscore extends TokenKind
@@ -314,6 +318,7 @@ object TokenKind {
   case object VectorHash extends TokenKind
 
   /** A special token emitted instead of halting the lexer when an error is encountered.
+   *
    * @param kind the kind of error found.
    */
   case class Err(kind: TokenErrorKind) extends TokenKind

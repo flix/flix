@@ -673,16 +673,6 @@ object Type {
   }
 
   /**
-    * Returns the type `Choice[tpe, isAbsent, isPresent]`.
-    */
-  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
-    val sym = Symbol.mkEnumSym("Choice")
-    val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
-    val tc = TypeConstructor.Enum(sym, kind)
-    Apply(Apply(Apply(Cst(tc, loc), tpe0, loc), isAbsent, loc), isPresent, loc)
-  }
-
-  /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Enum(sym, k), loc)

@@ -1448,35 +1448,6 @@ object Weeder {
         case (e, rs) => WeededAst.Expr.TypeMatch(e, rs, loc)
       }
 
-    case ParsedAst.Expression.RelationalChoose(sp1, star, exps, rules, sp2) =>
-      //
-      // Check for mismatched arity of `exps` and `rules`.
-      //
-      val expectedArity = exps.length
-      for (ParsedAst.RelationalChooseRule(sp1, pat, _, sp2) <- rules) {
-        val actualArity = pat.length
-        if (actualArity != expectedArity) {
-          val err = WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2))
-          return WeededAst.Expr.Error(err).toSoftFailure(err)
-        }
-      }
-
-      val expsVal = traverse(exps)(visitExp(_, senv))
-      val rulesVal = traverse(rules) {
-        case ParsedAst.RelationalChooseRule(_, pat, exp, _) =>
-          val p = pat.map {
-            case ParsedAst.RelationalChoosePattern.Wild(sp1, sp2) => WeededAst.RelationalChoosePattern.Wild(mkSL(sp1, sp2))
-            case ParsedAst.RelationalChoosePattern.Absent(sp1, sp2) => WeededAst.RelationalChoosePattern.Absent(mkSL(sp1, sp2))
-            case ParsedAst.RelationalChoosePattern.Present(sp1, ident, sp2) => WeededAst.RelationalChoosePattern.Present(ident, mkSL(sp1, sp2))
-          }
-          mapN(visitExp(exp, senv)) {
-            case e => WeededAst.RelationalChooseRule(p.toList, e)
-          }
-      }
-      mapN(expsVal, rulesVal) {
-        case (es, rs) => WeededAst.Expr.RelationalChoose(star, es, rs, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.RestrictableChoose(sp1, star, exp, rules, sp2) =>
       val expVal = visitExp(exp, senv)
       val rulesVal = traverse(rules) {
@@ -3391,7 +3362,6 @@ object Weeder {
     case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.RelationalChoose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.RestrictableChoose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1

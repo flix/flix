@@ -204,10 +204,6 @@ object Safety {
         visit(exp, NonTailPosition) ++ missingDefault ++
           rules.flatMap { case TypeMatchRule(_, _, e) => visit(e, tailrec) }
 
-      case Expr.RelationalChoose(exps, rules, _, _, _) =>
-        exps.flatMap(visit(_, NonTailPosition)) ++
-          rules.flatMap { case RelationalChooseRule(_, exp) => visit(exp, tailrec) }
-
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp, NonTailPosition) ++
           rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp, tailrec) }
