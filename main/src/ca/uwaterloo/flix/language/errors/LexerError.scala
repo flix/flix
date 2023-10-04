@@ -90,6 +90,78 @@ object LexerError {
   }
 
   /**
+   * An error raised when an unexpected character if found within a built-in.
+   *
+   * One example is a block-comment occurring within a char `$BUILT_/* block-comment */IN$`.
+   *
+   * @param s   the problematic character.
+   * @param loc the location of s.
+   */
+  case class UnexpectedCharWithinBuiltIn(s: String, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unexpected character '$s' within built-in."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected character '${red(s)}' found in built-in.
+         |
+         |${code(loc, "Unexpected character.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when an unexpected character if found within a char.
+   *
+   * One example is a block-comment occurring within a char `'a/* block-comment */'`.
+   *
+   * @param s   the problematic character.
+   * @param loc the location of s.
+   */
+  case class UnexpectedCharWithinChar(s: String, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unexpected character '$s' within char."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected character '${red(s)}' found in char.
+         |
+         |${code(loc, "Unexpected character.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when an unexpected character if found within a char.
+   *
+   * One example is a block-comment occurring within a char `my/* block-comment */Function`.
+   *
+   * @param s   the problematic character.
+   * @param loc the location of s.
+   */
+  case class UnexpectedCharWithinInfixFunction(s: String, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unexpected character '$s' within infix function."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected character '${red(s)}' found in infix function.
+         |
+         |${code(loc, "Unexpected character.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
    * An error raised when an unterminated block comment is encountered.
    *
    * @param loc The location of the opening "/ *".

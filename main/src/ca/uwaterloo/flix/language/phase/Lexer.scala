@@ -130,13 +130,14 @@ object Lexer {
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-
+    println(s.tokens.mkString("\n"))
     val errorTokens = s.tokens.collect {
       case t@Token(TokenKind.Err(err), _, _, _, _, _) => tokenErrToCompilationMessage(err, t)
     }
     if (errorTokens.nonEmpty) {
       Validation.SoftFailure(s.tokens.toArray, LazyList.from(errorTokens))
     } else {
+
       s.tokens.toArray.toSuccess
     }
   }
@@ -475,6 +476,13 @@ object Lexer {
     var advances = 0
     while (!eof()) {
       val p = peek()
+
+      if (p == '$') {
+        // Check for termination.
+        advance()
+        return TokenKind.BuiltIn
+      }
+
       if (p.isLower) {
         // This means that the opening '$' was a separator.
         // we need to rewind the lexer to just after '$'.
@@ -483,10 +491,14 @@ object Lexer {
         }
         return TokenKind.Dollar
       }
-      if (p == '$') {
-        advance()
-        return TokenKind.BuiltIn
+
+      if (!p.isLetter && p != '_') {
+        // Do not allow non-letters other than _.
+        // This handles cases like a block comment for instance
+        // IE. `$BUILT_/*IN*/$` is disallowed.
+        return TokenKind.Err(TokenErrorKind.UnexpectedCharWithinBuiltIn)
       }
+
       advance()
       advances += 1
     }
@@ -610,10 +622,18 @@ object Lexer {
    */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (peek() == '`') {
+      val p = peek()
+      if (p == '`') {
         advance()
         return TokenKind.InfixFunction
       }
+
+      if (!p.isLetter && !isMathNameChar(p) && !isGreekNameChar(p)) {
+        // check for chars that are not allowed in function names,
+        // to handle cases like '`my function` or `my/**/function`'
+        return TokenKind.Err(TokenErrorKind.UnexpectedCharWithinInfixFunction)
+      }
+
       advance()
     }
     TokenKind.Err(TokenErrorKind.UnterminatedInfixFunction)
@@ -726,9 +746,16 @@ object Lexer {
    */
   private def acceptChar()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (escapedPeek().contains('\'')) {
+      val p = escapedPeek()
+      if (p.contains('\'')) {
         advance()
         return TokenKind.LiteralChar
+      }
+
+      if (p.exists(c => !c.isLetter && !c.isDigit)) {
+        // Any non letter or digit constitutes an unterminated char.
+        // This handles cases like a block comment within a char.
+        return TokenKind.Err(TokenErrorKind.UnexpectedCharWithinChar)
       }
       advance()
     }
@@ -847,7 +874,7 @@ object Lexer {
    * Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
    * Why is this necessary? We would like the lexer to capture as many errors as possible before terminating.
    * To do this, the lexer will produce error tokens instead of halting,
-   * each holding a kind of the simple type `ErrKind`.
+   * each holding a kind of the simple type `TokenErrorKind`.
    * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
    */
   private def tokenErrToCompilationMessage(e: TokenErrorKind, token: Token)(implicit s: State): CompilationMessage = {
@@ -864,6 +891,9 @@ object Lexer {
       case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
       case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
       case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
+      case TokenErrorKind.UnexpectedCharWithinBuiltIn => LexerError.UnexpectedCharWithinBuiltIn(t, loc)
+      case TokenErrorKind.UnexpectedCharWithinChar => LexerError.UnexpectedCharWithinChar(t, loc)
+      case TokenErrorKind.UnexpectedCharWithinInfixFunction => LexerError.UnexpectedCharWithinInfixFunction(t, loc)
       case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
       case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
       case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)

@@ -25,6 +25,12 @@ object TokenErrorKind {
 
   case object UnexpectedChar extends TokenErrorKind
 
+  case object UnexpectedCharWithinBuiltIn extends TokenErrorKind
+
+  case object UnexpectedCharWithinChar extends TokenErrorKind
+
+  case object UnexpectedCharWithinInfixFunction extends TokenErrorKind
+
   case object UnterminatedBlockComment extends TokenErrorKind
 
   case object UnterminatedBuiltIn extends TokenErrorKind
