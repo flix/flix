@@ -13,4 +13,14 @@ public class ResumptionCons implements Resumption {
         this.tail = tail;
     }
 
+    @Override
+    public Result rewind(Value v) { // TODO: instance method.
+        return new Thunk() { // Return thunk to avoid increase the stack.
+            @Override
+            public Result invoke() {
+                return Handler.installHandler(effSym, handler, frames, null);
+            }
+        };
+    }
+
 }

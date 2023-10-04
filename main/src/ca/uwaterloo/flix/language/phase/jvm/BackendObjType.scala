@@ -78,6 +78,7 @@ sealed trait BackendObjType {
     case BackendObjType.Resumption => JvmName(DevFlixRuntime, "Resumption")
     case BackendObjType.ResumptionCons => JvmName(DevFlixRuntime, "ResumptionCons")
     case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, "ResumptionNil")
+    case BackendObjType.Handler => JvmName(DevFlixRuntime, "Handler")
   }
 
   /**
@@ -1502,13 +1503,13 @@ object BackendObjType {
   }
 
   case object Resumption extends BackendObjType {
-
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkAbstractClass(this.jvmName)
-
+      val cm = mkInterface(this.jvmName)
+      cm.mkInterfaceMethod(RewindMethod)
       cm.closeClassMaker()
     }
-    // TODO rewind method
+
+    def RewindMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "rewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe))
   }
 
   case object ResumptionCons extends BackendObjType {
@@ -1516,8 +1517,24 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, Resumption.jvmName)
 
+      cm.mkField(SymField)
+      cm.mkField(HandlerField)
+      cm.mkField(FramesField)
+      cm.mkField(TailField)
+
+      cm.mkMethod(RewindMethod)
+
       cm.closeClassMaker()
     }
+
+    def SymField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "sym", String.toTpe)
+    def HandlerField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "handler", Handler.toTpe)
+    def FramesField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "frames", Frames.toTpe)
+    def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tail", Resumption.toTpe)
+
+    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(
+      ???
+    ))
   }
 
   case object ResumptionNil extends BackendObjType {
@@ -1525,6 +1542,22 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, Resumption.jvmName)
 
+      cm.mkMethod(RewindMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(
+      withName(1, Value.toTpe){v =>
+        v.load() ~ xReturn(v.tpe)
+      }
+    ))
+  }
+
+  case object Handler extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
       cm.closeClassMaker()
     }
   }

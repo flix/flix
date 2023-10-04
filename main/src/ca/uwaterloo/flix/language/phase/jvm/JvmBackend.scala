@@ -120,9 +120,10 @@ object JvmBackend {
       val framesInterface = Map(BackendObjType.Frames.jvmName -> JvmClass(BackendObjType.Frames.jvmName, BackendObjType.Frames.genByteCode()))
       val framesConsClass = Map(BackendObjType.FramesCons.jvmName -> JvmClass(BackendObjType.FramesCons.jvmName, BackendObjType.FramesCons.genByteCode()))
       val framesNilClass = Map(BackendObjType.FramesNil.jvmName -> JvmClass(BackendObjType.FramesNil.jvmName, BackendObjType.FramesNil.genByteCode()))
-      val resumptionAbstractClass = Map(BackendObjType.Resumption.jvmName -> JvmClass(BackendObjType.Resumption.jvmName, BackendObjType.Resumption.genByteCode()))
+      val resumptionInterface = Map(BackendObjType.Resumption.jvmName -> JvmClass(BackendObjType.Resumption.jvmName, BackendObjType.Resumption.genByteCode()))
       val resumptionConsClass = Map(BackendObjType.ResumptionCons.jvmName -> JvmClass(BackendObjType.ResumptionCons.jvmName, BackendObjType.ResumptionCons.genByteCode()))
-      val resumptionNil = Map(BackendObjType.ResumptionNil.jvmName -> JvmClass(BackendObjType.ResumptionNil.jvmName, BackendObjType.ResumptionNil.genByteCode()))
+      val resumptionNilClass = Map(BackendObjType.ResumptionNil.jvmName -> JvmClass(BackendObjType.ResumptionNil.jvmName, BackendObjType.ResumptionNil.genByteCode()))
+      val handlerInterface = Map(BackendObjType.Handler.jvmName -> JvmClass(BackendObjType.Handler.jvmName, BackendObjType.Handler.genByteCode()))
 
       // Collect all the classes and interfaces together.
       List(
@@ -156,7 +157,10 @@ object JvmBackend {
         framesInterface,
         framesConsClass,
         framesNilClass,
-        resumptionAbstractClass
+        resumptionInterface,
+        resumptionConsClass,
+        resumptionNilClass,
+        handlerInterface
       ).reduce(_ ++ _)
     }
 
