@@ -53,7 +53,7 @@ object Scheme {
     val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        macc + (tvar.id -> Type.freshVar(tvar.kind, loc, tvar.isRegion, Ast.VarText.Absent))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, loc, tvar.isRegion, Ast.VarText.Absent)(tvar.level, flix))
     }
 
     /**

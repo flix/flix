@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Level, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
 
@@ -31,7 +31,7 @@ object HoleCompletion {
   def candidates(sourceType: Type, targetType: Type, root: TypedAst.Root)(implicit flix: Flix): List[Symbol.DefnSym] = {
     val matchType = Type.mkArrowWithEffect(
       sourceType,
-      Type.freshVar(Kind.Eff, SourceLocation.Unknown),
+      Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Top, flix), // MATT top right?
       targetType,
       SourceLocation.Unknown
     )
