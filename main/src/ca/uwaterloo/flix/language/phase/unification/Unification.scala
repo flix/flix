@@ -264,7 +264,7 @@ object Unification {
     // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
       case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-        val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown), SourceLocation.Unknown)
+        val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Top, flix), SourceLocation.Unknown) // level is irrelevant here
         if (unifiesWith(expected, upcast, renv, LevelEnv.Unleveled, ListMap.empty)) { // TODO level env in error // TODO eqenv?
           TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
         } else {
@@ -369,7 +369,7 @@ object Unification {
   /**
     * Unifies all the types in the given (possibly empty) list `ts`.
     */
-  def unifyTypeAllowEmptyM(ts: List[Type], kind: Kind, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeAllowEmptyM(ts: List[Type], kind: Kind, loc: SourceLocation)(implicit level: Level, flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
       liftM(Type.freshVar(kind, loc))
     else

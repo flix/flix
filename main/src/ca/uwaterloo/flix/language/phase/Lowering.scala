@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, Level, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -1255,7 +1255,7 @@ object Lowering {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
-      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Level.Top, flix) // MATT top OK?
       // Construct a lambda that takes the unit argument.
       val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
@@ -1351,7 +1351,7 @@ object Lowering {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
-      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Level.Top, flix) // MATT top right?
       // Construct a lambda that takes the unit argument.
       val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
@@ -1628,7 +1628,7 @@ object Lowering {
     */
   private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
     val name = prefix + Flix.Delimiter + flix.genSym.freshId()
-    Symbol.freshVarSym(name, BoundBy.Let, loc)
+    Symbol.freshVarSym(name, BoundBy.Let, loc)(Level.Top, flix) // MATT top ok?
   }
 
   /**

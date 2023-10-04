@@ -30,6 +30,9 @@ import scala.collection.mutable
   */
 object Simplifier {
 
+  // level is irrelevant in this phase
+  implicit val DefaultLevel: Level = Level.Top
+
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
   def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {

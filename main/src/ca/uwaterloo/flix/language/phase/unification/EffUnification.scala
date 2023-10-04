@@ -51,7 +51,7 @@ object EffUnification {
       // Alpha rename variables.
       val alpha = ((tpe1.typeVars ++ tpe2.typeVars).toList.zipWithIndex).foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
         case (macc, (tvar, idx)) =>
-          val sym = new Symbol.KindedTypeVarSym(idx, Ast.VarText.Absent, tvar.kind, tvar.sym.isRegion, tvar.loc)
+          val sym = new Symbol.KindedTypeVarSym(idx, Ast.VarText.Absent, tvar.kind, tvar.sym.isRegion, tvar.sym.level, tvar.loc)
           val newTvar = Type.Var(sym, tvar.loc)
           macc + (tvar.sym -> newTvar)
       }

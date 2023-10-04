@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Level, LevelEnv, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.funsuite.AnyFunSuite
@@ -46,9 +46,9 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Substitution.Empty.03") {
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val subst = Substitution.empty
-    assertResult(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc))(subst(tpe))
+    assertResult(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc))(subst(tpe))
   }
 
   test("Substitution.Empty.04") {
@@ -58,105 +58,105 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Substitution.Singleton.01") {
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val subst = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
-    assertResult(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc))(subst(tpe))
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val subst = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
+    assertResult(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc))(subst(tpe))
   }
 
   test("Substitution.Singleton.02") {
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val subst = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val subst = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
     assertResult(Type.Bool)(subst(tpe))
   }
 
   test("Substitution.Singleton.05") {
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val subst = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc))
-    assertResult(Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc))(subst(tpe))
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val subst = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc))
+    assertResult(Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc))(subst(tpe))
   }
 
   test("Substitution.++.01") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Char)
 
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     assertResult(Type.Bool)((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.++.02") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Char)
 
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     assertResult(Type.Char)((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.++.03") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Char)
 
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     assertResult(Type.Bool)((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.++.04") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Char)
 
-    val tpe = Type.mkPureArrow(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), loc)
+    val tpe = Type.mkPureArrow(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), loc)
     assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.@@.01") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Char)
 
-    val tpe = Type.mkPureArrow(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), loc)
+    val tpe = Type.mkPureArrow(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), loc)
     assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst2 @@ subst1)(tpe))
   }
 
   test("Substitution.@@.02") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Char)
 
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     assertResult(Type.Bool)((subst2 @@ subst1)(tpe))
   }
 
   test("Substitution.@@.03") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc))
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc))
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
 
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     assertResult(Type.Bool)((subst2 @@ subst1)(tpe))
   }
 
   test("Substitution.@@.04") {
-    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc))
-    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc))
-    val subst3 = Substitution.singleton(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
+    val subst1 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc))
+    val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc))
+    val subst3 = Substitution.singleton(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), Type.Bool)
 
-    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     assertResult(Type.Bool)((subst3 @@ (subst2 @@ subst1))(tpe))
   }
 
   test("Unify.Var.01") {
-    val result = Unification.unifyTypes(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Unit, RigidityEnv.empty, LevelEnv.Top)
+    val result = Unification.unifyTypes(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Unit, RigidityEnv.empty, LevelEnv.Top)
     assert(isOk(result))
   }
 
   test("Unify.Var.02") {
-    val result = Unification.unifyTypes(Type.Unit, Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), RigidityEnv.empty, LevelEnv.Top)
+    val result = Unification.unifyTypes(Type.Unit, Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), RigidityEnv.empty, LevelEnv.Top)
     assert(isOk(result))
   }
 
   test("Unify.Var.03") {
-    val result = Unification.unifyTypes(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), RigidityEnv.empty, LevelEnv.Top)
+    val result = Unification.unifyTypes(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), RigidityEnv.empty, LevelEnv.Top)
     assert(isOk(result))
   }
 
   test("Unify.Var.04") {
-    val result = Unification.unifyTypes(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), RigidityEnv.empty, LevelEnv.Top)
+    val result = Unification.unifyTypes(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), RigidityEnv.empty, LevelEnv.Top)
     assert(isOk(result))
   }
 
@@ -221,7 +221,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.01") {
-    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe2 = Type.Bool
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
     assertResult(Type.Bool)(result(tpe1))
@@ -229,13 +229,13 @@ class TestUnification extends AnyFunSuite with TestUtils {
 
   test("Unify.02") {
     val tpe1 = Type.Bool
-    val tpe2 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe2 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
     assertResult(Type.Bool)(result(tpe2))
   }
 
   test("Unify.03") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -243,7 +243,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.04") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -251,7 +251,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.05") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = A
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -259,7 +259,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.06") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = A
     val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -267,7 +267,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.07") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(A, Type.Bool, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -275,8 +275,8 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.08") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(A, B, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -285,8 +285,8 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.09") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(A, B, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -295,8 +295,8 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.10") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(A, Type.Char, loc)
     val tpe2 = Type.mkPureArrow(Type.Bool, B, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -305,9 +305,9 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.11") {
-    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val C = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val A = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val B = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val C = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe1 = Type.mkPureArrow(A, B, loc)
     val tpe2 = Type.mkPureArrow(C, Type.Bool, loc)
     val (result, econstrs) = Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty, LevelEnv.Top).get // TODO ASSOC-TYPES consider econstrs
@@ -316,7 +316,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.12") {
-    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.RecordRow, isRegion = false, loc), loc)
+    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.RecordRow, isRegion = false, Level.Top, loc), loc)
     val labelType = Type.Bool
     val label = Name.Label("x", loc)
     val tpe2 = Type.mkRecord(Type.mkRecordRowExtend(label, labelType, tpe1, loc), loc)
@@ -325,7 +325,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.13") {
-    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.SchemaRow, isRegion = false, loc), loc)
+    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.SchemaRow, isRegion = false, Level.Top, loc), loc)
     val labelType = Type.mkRelation(List(Type.Bool), loc)
     val label = Name.Pred("X", loc)
     val tpe2 = Type.mkRecord(Type.mkSchemaRowExtend(label, labelType, tpe1, loc), loc)
@@ -334,23 +334,23 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.15") {
-    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    val tpe2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, loc), loc)
+    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
+    val tpe2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.RecordRow, isRegion = true, Level.Top, loc), loc)
     val renv = RigidityEnv.empty.markRigid(tpe2.sym)
     val result = Unification.unifyTypes(tpe1, tpe2, renv, LevelEnv.Top) // TODO ASSOC-TYPES consider econstrs
     assert(!isOk(result))
   }
 
   test("Unify.16") {
-    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
-    val tpe2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, Level.Top, loc), loc)
+    val tpe2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = true, Level.Top, loc), loc)
     val renv = RigidityEnv.empty.markRigid(tpe1.sym).markRigid(tpe2.sym)
     val result = Unification.unifyTypes(tpe1, tpe2, renv, LevelEnv.Top) // TODO ASSOC-TYPES consider econstrs
     assert(!isOk(result))
   }
 
   test("Unify.17") {
-    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, Level.Top, loc), loc)
     val tpe2 = Type.Unit
     val renv = RigidityEnv.empty.markRigid(tpe1.sym)
     val result = Unification.unifyTypes(tpe1, tpe2, renv, LevelEnv.Top) // TODO ASSOC-TYPES consider econstrs
@@ -358,7 +358,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Unify.18") {
-    val tvar = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, loc), loc)
+    val tvar = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, Level.Top, loc), loc)
     val tpe1 = Type.mkTuple(List(tvar, tvar), loc)
     val tpe2 = Type.mkTuple(List(tvar, Type.Unit), loc)
     val renv = RigidityEnv.empty.markRigid(tvar.sym)
@@ -379,7 +379,7 @@ class TestUnification extends AnyFunSuite with TestUtils {
   }
 
   test("unifyM.03") {
-    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
+    val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)
     val tpe2 = Type.Bool
     val subst0 = Substitution.empty
     val result = Unification.unifyTypeM(tpe1, tpe2, loc).run(subst0, Nil, RigidityEnv.empty, LevelEnv.Top)
@@ -407,14 +407,14 @@ class TestUnification extends AnyFunSuite with TestUtils {
 
   test("seqM.03") {
     val subst0 = Substitution.empty
-    val res1 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Bool, loc)
-    val res2 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Char, loc)
-    val res3 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.mkTuple(List(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)), loc), loc)
+    val res1 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Bool, loc)
+    val res2 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Char, loc)
+    val res3 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.mkTuple(List(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc), loc)), loc), loc)
     val result = seqM(List(res1, res2, res3)).run(subst0, Nil, RigidityEnv.empty, LevelEnv.Top)
     val (subst, econstrs, _, _, _) = result.get // TODO ASSOC-TYPES consider econstrs
-    assertResult(Type.Bool)(subst.m(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
-    assertResult(Type.Char)(subst.m(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
-    assertResult(Type.mkTuple(List(Type.Bool, Type.Char), loc))(subst.m(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
+    assertResult(Type.Bool)(subst.m(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc)))
+    assertResult(Type.Char)(subst.m(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc)))
+    assertResult(Type.mkTuple(List(Type.Bool, Type.Char), loc))(subst.m(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, Level.Top, loc)))
   }
 
   test("TestNoBoolEffects") {
