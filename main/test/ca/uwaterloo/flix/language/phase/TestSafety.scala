@@ -731,7 +731,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Int32 = 1
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectSuccess(result)
+    expectError[SafetyError.TailRecursiveFunctionWithoutRecursiveCall](result)
   }
 
   test("NonTailRecursiveFunction.03") {
@@ -796,7 +796,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         | { g(); g(); let _ = { g(); g() }; g() }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectSuccess(result)
+    expectError[SafetyError.TailRecursiveFunctionWithoutRecursiveCall](result)
   }
 
   test("NonTailRecursiveFunction.08") {

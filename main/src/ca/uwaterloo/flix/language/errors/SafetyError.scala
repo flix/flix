@@ -606,12 +606,12 @@ object SafetyError {
     * @param loc the location of the non-tail-recursive call.
     */
   case class NonTailRecursiveFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends SafetyError {
-    override def summary: String = s"Function '$sym' annotated with @Tailrec must be tail recursive."
+    override def summary: String = s"Function '$sym' annotated with @Tailrec can only have recursive calls in tail position."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function '$sym' annotated with @Tailrec must be tail recursive.
+         |>> Function '$sym' annotated with @Tailrec can only have recursive calls in tail position.
          |
          |${code(loc, "A recursive call in non-tail position occurs here.")}
          |
@@ -637,5 +637,28 @@ object SafetyError {
         |
         |"""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that a function marked with the `@Tailrec` annotation
+    * does not contain a recursive call.
+    *
+    * @param sym the symbol of the function annotated with `@Tailrec`.
+    * @param loc the location of the function body.
+    */
+  case class TailRecursiveFunctionWithoutRecursiveCall(sym: Symbol.DefnSym, loc: SourceLocation) extends SafetyError {
+    override def summary: String = s"Function '$sym' annotated with @Tailrec must contain a recursive call."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Function '$sym' annotated with @Tailrec must contain a recursive call.
+         |
+         |${code(loc, "The function does not contain a recursive call.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }
