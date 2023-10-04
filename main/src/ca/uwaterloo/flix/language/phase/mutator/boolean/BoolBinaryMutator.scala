@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.SemanticOp.BoolOp
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.phase.mutator.ExprMutator
 
-object BoolBinaryOpMutator extends ExprMutator {
+object BoolBinaryMutator extends ExprMutator {
   private val binaryBoolOpMutants: Map[BoolOp, BoolOp] = Map(
     BoolOp.And -> BoolOp.Or,
     BoolOp.Or -> BoolOp.And,
