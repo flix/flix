@@ -463,6 +463,21 @@ object Unification {
       Ok((s, econstrs, renv, lenv, purifiedEff))
     }
 
+  // MATT docs / hack
+  def purifyEffAndRefresh(tvar: Type.Var, eff: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
+    InferMonad { case (s, econstrs, renv, lenv) =>
+      val tvars = eff.typeVars.toList.map {
+        case tv => tv.sym -> Type.freshVar(tvar.kind, SourceLocation.Unknown)
+      }.toMap
+
+      val res = s(eff).map {
+        case tv if tv.sym == tvar.sym => Type.Pure
+        case tv => tvars(tv.sym)
+      }
+      Ok((s, econstrs, renv, lenv, res))
+    }
+  }
+
   /**
     * Returns the given effect formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `Pure`.
     */

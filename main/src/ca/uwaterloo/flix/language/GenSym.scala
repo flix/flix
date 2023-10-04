@@ -29,6 +29,9 @@ final class GenSym() {
     * Returns a freshly generated unique id.
     */
   def freshId(): Int = {
+    if (counter.get() == 107772) {
+      println("debug") // MATT
+    }
     counter.getAndIncrement()
   }
 
