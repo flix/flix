@@ -2,9 +2,9 @@ package dev.flix.runtime;
 
 public interface Handler {
     static Result installHandler(String effSym, Handler handler, Frames frames, Thunk thunk) {
-        Result vResult = thunk.apply();
+        Result vResult = thunk.invoke();
         while (vResult instanceof Thunk) {
-            vResult = ((Thunk) vResult).apply();
+            vResult = ((Thunk) vResult).invoke();
         }
         // Now two cases:
         if (vResult instanceof Suspension) {
@@ -29,7 +29,8 @@ public interface Handler {
             } else if (frames instanceof FramesCons) {
                 FramesCons cons = ((FramesCons) frames);
                 return installHandler(effSym, handler, cons.tail, new Thunk() {
-                    public Result apply() {
+                    @Override
+                    public Result invoke() {
                         return cons.head.apply(res);
                     }
                 });
