@@ -17,5 +17,6 @@ object Decrementer extends ExprMutator {
       case Constant.BigInt(lit) => Option(Expr.Cst(Constant.BigInt(lit.subtract(java.math.BigInteger.ONE)), tpe, loc))
       case _ => Option.empty
     }
+    case _ => Option.empty
   }
 }

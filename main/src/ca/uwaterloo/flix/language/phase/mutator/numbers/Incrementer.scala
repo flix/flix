@@ -17,5 +17,6 @@ object Incrementer extends ExprMutator {
       case Constant.BigInt(lit) => Option(Expr.Cst(Constant.BigInt(lit.add(java.math.BigInteger.ONE)), tpe, loc))
       case _ => Option.empty
     }
+    case _ => Option.empty
   }
 }
