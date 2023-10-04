@@ -703,13 +703,14 @@ object ParsedAst {
       * LetRecDef Expression (let rec using def keyword).
       *
       * @param sp1     the position of the first character in the expression.
+      * @param ann     the associated annotations.
       * @param ident   the identifier of the function.
       * @param fparams the formal parameters of the function.
       * @param exp1    the function expression.
       * @param exp2    the body expression.
       * @param sp2     the position of the last character in the expression.
       */
-    case class LetRecDef(sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], typeAndEff: Option[(ParsedAst.Type, Option[ParsedAst.Type])], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetRecDef(sp1: SourcePosition, ann: Seq[ParsedAst.Annotation], ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], typeAndEff: Option[(ParsedAst.Type, Option[ParsedAst.Type])], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Let Import Expression.
@@ -2203,9 +2204,9 @@ object ParsedAst {
     *           ^
     * }}}
     *
-    * @param sp1  the position of the first character of the derivations.
+    * @param sp1     the position of the first character of the derivations.
     * @param classes the derived classes.
-    * @param sp2  the position of the last character of the derivations.
+    * @param sp2     the position of the last character of the derivations.
     */
   case class Derivations(sp1: SourcePosition, classes: Seq[Name.QName], sp2: SourcePosition)
 }
