@@ -18,9 +18,14 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceKind, SourceLocation, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
+
+// TODO: How to handle errors?
+// An ErrorTree might wrap a ParserError -> Then the tree needs to be traversed to gather errors
+// An ErrorTree might have an index pointing into a separate error list maintained in State.
 
 object Parser2 {
 
@@ -34,11 +39,11 @@ object Parser2 {
     case object Advance extends Event
   }
 
-  private class State(ts: Array[Token]) {
-    val tokens: Array[Token] = ts
+  private class State(val tokens: Array[Token], val src: Ast.Source) {
     var position: Int = 0
     var fuel: Int = 256
     var events: Array[Event] = Array.empty
+    var errors: Array[Parse2Error] = Array.empty
   }
 
   private sealed trait Mark
@@ -63,19 +68,37 @@ object Parser2 {
 
     flix.phase("Parser2") {
       // Parse each source file in parallel.
-      ParOps.parTraverseValues(root)(parse)
+      val results = ParOps.parMap(root) {
+        case (src, tokens) => mapN(parse(src, tokens))({
+          case trees => src -> trees
+        })
+      }
+
+      // Construct a map from each source to its tokens.
+      mapN(sequence(results))(_.toMap)
     }
   }
 
-  private def parse(ts: Array[Token]): Validation[Tree, CompilationMessage] = {
-    implicit val s: State = new State(ts)
+  def f(tree: Tree): WeededAst.Declaration.Def = {
+    tree match {
+      case Tree(TreeKind.Def, children) =>
+    }
+  }
+
+  private def parse(src: Ast.Source, ts: Array[Token]): Validation[Tree, CompilationMessage] = {
+    implicit val s: State = new State(ts, src)
     source()
-    println(s.events.mkString("\n"))
-
     val tree = buildTree()
-    println(tree)
 
-    tree.toSuccess
+    //    println(s.events.mkString("\n"))
+    println(tree.toDebugString())
+
+
+    if (s.errors.length > 0) {
+      Validation.SoftFailure(tree, LazyList.from(s.errors))
+    } else {
+      tree.toSuccess
+    }
   }
 
   private def buildTree()(implicit s: State): Tree = {
@@ -107,14 +130,20 @@ object Parser2 {
       }
     }
 
+    // The stack should now contain a single Source tree,
+    // and there should only be an <eof> token left.
     assert(stack.length == 1)
-    assert(!tokens.hasNext)
+    assert(tokens.next() match {
+      case Token(TokenKind.Eof, _, _, _, _, _) => true
+      case _ => false
+    })
+
     stack.head
   }
 
   private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
-    s.events = s.events :+ Event.Open(TreeKind.ErrorTree)
+    s.events = s.events :+ Event.Open(TreeKind.ErrorTree(-1))
     mark
   }
 
@@ -131,7 +160,7 @@ object Parser2 {
   }
 
   private def eof()(implicit s: State): Boolean = {
-    s.position == s.tokens.length
+    s.position == s.tokens.length - 1
   }
 
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
@@ -175,24 +204,40 @@ object Parser2 {
 
   private def expect(kind: TokenKind)(implicit s: State): Unit = {
     if (!eat(kind)) {
-      //TODO: Do some error reporting here
+      val error = expectedError(kind)
+      s.errors = s.errors :+ error
     }
   }
 
   private def expectAny(kinds: List[TokenKind])(implicit s: State): Unit = {
     if (!eatAny(kinds)) {
-      //TODO: Do some error reporting here
+      val error = expectedAnyError(kinds)
+      s.errors = s.errors :+ error
     }
   }
 
-  // TODO: err should be some ParserError type
-  private def advanceWithError(err: String)(implicit s: State): Unit = {
+  private def advanceWithError(error: Parse2Error)(implicit s: State): Unit = {
     val mark = open()
-    println(err) // TODO: don't print here
     advance()
-    close(mark, TreeKind.ErrorTree)
+    closeWithError(mark, error)
   }
 
+  private def closeWithError(mark: Mark.Opened, error: Parse2Error)(implicit s: State): Unit = {
+    s.errors = s.errors :+ error
+    close(mark, TreeKind.ErrorTree(s.errors.length - 1))
+  }
+
+  private def expectedError(kind: TokenKind)(implicit s: State): Parse2Error = {
+    val token = s.tokens(s.position)
+    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + token.text.length)
+    Parse2Error.UnexpectedToken(loc, kind)
+  }
+
+  private def expectedAnyError(kinds: List[TokenKind])(implicit s: State): Parse2Error = {
+    val token = s.tokens(s.position)
+    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + token.text.length)
+    Parse2Error.UnexpectedToken(loc, kinds(0)) // TODO: Fix this
+  }
 
   ////////// GRAMMAR ///////////////
   private def source()(implicit s: State): Unit = {
@@ -201,13 +246,14 @@ object Parser2 {
       if (at(TokenKind.KeywordDef)) {
         definition()
       } else {
-        advanceWithError("expected a definition")
+        advanceWithError(expectedError(TokenKind.KeywordDef))
       }
     }
 
     close(mark, TreeKind.Source)
   }
 
+  // definition -> 'def' name parameters ':' ttype '=' expression (';' expression)*
   private def definition()(implicit s: State): Unit = {
     assert(at(TokenKind.KeywordDef))
     val mark = open()
@@ -218,9 +264,14 @@ object Parser2 {
     }
 
     expect(TokenKind.Colon)
-    expressionType()
+    ttype()
     expect(TokenKind.Equal)
-    expressionStatement()
+
+    expression()
+    while (at(TokenKind.Semi) && !eof()) {
+      expect(TokenKind.Semi)
+      expression()
+    }
     close(mark, TreeKind.Def)
   }
 
@@ -251,22 +302,49 @@ object Parser2 {
     val mark = open()
     expectAny(Name.Parameter)
     expect(TokenKind.Colon)
-    expressionType()
+    ttype()
     if (at(TokenKind.Comma)) {
       advance()
     }
     close(mark, TreeKind.Parameter)
   }
 
-  private def expressionType()(implicit s: State): Unit = {
+  // expression ->
+  private def expression()(implicit s: State): Unit = {
+    val mark = open()
+    // Handle clearly delimited expressions
+    nth(0) match {
+      case TokenKind.LiteralString
+           | TokenKind.LiteralChar
+           | TokenKind.LiteralFloat32
+           | TokenKind.LiteralFloat64
+           | TokenKind.LiteralBigDecimal
+           | TokenKind.LiteralInt8
+           | TokenKind.LiteralInt16
+           | TokenKind.LiteralInt32
+           | TokenKind.LiteralInt64
+           | TokenKind.LiteralBigInt =>
+        advance()
+        close(mark, TreeKind.ExprLiteral)
+      case TokenKind.NameUpperCase | TokenKind.NameLowerCase | TokenKind.NameGreek | TokenKind.NameMath =>
+        advance()
+        close(mark, TreeKind.ExprName)
+      case TokenKind.ParenL =>
+        expect(TokenKind.ParenL)
+        expression()
+        expect(TokenKind.ParenR)
+        close(mark, TreeKind.ExprParen)
+      case _ =>
+        if (!eof()) {
+          advance()
+        }
+        close(mark, TreeKind.ErrorTree(-1))
+    }
+  }
+
+  private def ttype()(implicit s: State): Unit = {
     val mark = open()
     expect(TokenKind.NameUpperCase) // TODO: a whole lot of parsing
     close(mark, TreeKind.ExprType)
-  }
-
-  private def expressionStatement()(implicit s: State): Unit = {
-    val mark = open()
-    expect(TokenKind.NameUpperCase) // TODO: a whole lot of parsing
-    close(mark, TreeKind.ExprStmt)
   }
 }
