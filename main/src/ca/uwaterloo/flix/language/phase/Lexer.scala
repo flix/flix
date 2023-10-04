@@ -35,12 +35,12 @@ object Lexer {
   /**
    * The maximal allowed nesting level of block-comments.
    */
-  val BlockCommentMaxNestingLevel = 32
+  private val BlockCommentMaxNestingLevel = 32
 
   /**
    * The maximal allowed nesting level of string interpolation.
    */
-  val InterpolatedStringMaxNestingLevel = 32
+  private val InterpolatedStringMaxNestingLevel = 32
 
   /**
    * The characters allowed in a user defined operator mapped to their `TokenKind`s
@@ -90,7 +90,7 @@ object Lexer {
 
       // Lex each source file in parallel.
       val results = ParOps.parMap(root.sources) {
-        case (src, _) => mapN(lex(src))(tokens => src -> tokens)
+        case (src, _) => mapN(tryLex(src))(tokens => src -> tokens)
       }
 
       // Construct a map from each source to its tokens.
@@ -99,13 +99,28 @@ object Lexer {
   }
 
   /**
+   * A workaround to allow using the new lexer but avoid crashing the compiler on unforeseen bugs.
+   * This is not viable long term and should never be merged into a stable release,
+   * but it allows us to battle-test the lexer in nightly, without inconveniencing users too much.
+   */
+  private def tryLex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+    try {
+      lex(src)
+    } catch {
+      case except: Throwable =>
+        println(except)
+        Array.empty[Token].toSuccess
+    }
+  }
+
+  /**
    * Lexes a single source (file) into an array of tokens.
    */
   private def lex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
     implicit val s: State = new State(src)
-    while (!isAtEnd()) {
+    while (!eof()) {
       whitespace()
-      if (!isAtEnd()) {
+      if (!eof()) {
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
         val k = scanToken()
         addToken(k)
@@ -129,10 +144,14 @@ object Lexer {
   /**
    * Advances current position one char forward, returning the char it was previously sitting on,
    * while keeping track of line and column numbers too.
+   * Note: If the lexer has arrived at EOF advance will continuously return EOF without advancing.
+   * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
    */
   private def advance()(implicit s: State): Char = {
     val c = s.src.data(s.current.offset)
-    s.current.offset += 1
+    if (!eof()) {
+      s.current.offset += 1
+    }
     if (c == '\n') {
       s.current.line += 1
       s.current.column = 0
@@ -183,6 +202,9 @@ object Lexer {
 
   /**
    * Peeks the character that state is currently sitting on without advancing.
+   * Note: Peek does not to bound checks. This is done under the assumption that the lexer
+   * is only ever advanced using `advance`.
+   * Since `advance` cannot move past EOF peek will always be in bounds.
    */
   private def peek()(implicit s: State): Char = {
     s.src.data(s.current.offset)
@@ -201,7 +223,7 @@ object Lexer {
 
   /**
    * A helper function wrapping peek, with special handling for escaped characters.
-   * This is useful for "\"" or `'\''`
+   * This is useful for "\"" or `'\''`.
    */
   private def escapedPeek()(implicit s: State): Option[Char] = {
     var p = peek()
@@ -218,10 +240,10 @@ object Lexer {
   }
 
   /**
-   * Checks if the current position has passed the end of the source
+   * Checks if the current position has landed on end-of-file
    */
-  private def isAtEnd()(implicit s: State): Boolean = {
-    s.current.offset >= s.src.data.length
+  private def eof()(implicit s: State): Boolean = {
+    s.current.offset >= s.src.data.length - 1
   }
 
   /**
@@ -451,7 +473,7 @@ object Lexer {
    */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
     var advances = 0
-    while (!isAtEnd()) {
+    while (!eof()) {
       val p = peek()
       if (p.isLower) {
         // This means that the opening '$' was a separator.
@@ -475,7 +497,7 @@ object Lexer {
    * Moves current position past all whitespace characters.
    */
   private def whitespace()(implicit s: State): Unit = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (!peek().isWhitespace) {
         return
       }
@@ -494,7 +516,7 @@ object Lexer {
     } else {
       TokenKind.NameLowerCase
     }
-    while (!isAtEnd()) {
+    while (!eof()) {
       val p = peek()
       if (p == '?') {
         advance()
@@ -513,7 +535,7 @@ object Lexer {
    */
   private def acceptJavaName()(implicit s: State): TokenKind = {
     advance()
-    while (!isAtEnd()) {
+    while (!eof()) {
       val p = peek()
       if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
         return TokenKind.NameJava
@@ -529,7 +551,7 @@ object Lexer {
    * IE. "Χαίρετε"
    */
   private def acceptGreekName()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (!isGreekNameChar(peek())) {
         return TokenKind.NameGreek
       }
@@ -552,7 +574,7 @@ object Lexer {
    * IE. "⊆"
    */
   private def acceptMathName()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (!isMathNameChar(peek())) {
         return TokenKind.NameMath
       }
@@ -573,7 +595,7 @@ object Lexer {
    * Moves current position past a named hole. IE. "?foo".
    */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (!peek().isLetter) {
         return TokenKind.HoleNamed
       }
@@ -587,7 +609,7 @@ object Lexer {
    * Moves current position past an infix function.
    */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (peek() == '`') {
         advance()
         return TokenKind.InfixFunction
@@ -603,7 +625,7 @@ object Lexer {
    * of the characters in `validUserOpTokens`.
    */
   private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (!ValidUserOpTokens.contains(peek())) {
         return TokenKind.UserDefinedOperator
       } else {
@@ -619,7 +641,7 @@ object Lexer {
    */
   private def acceptString()(implicit s: State): TokenKind = {
     var kind: TokenKind = TokenKind.LiteralString
-    while (!isAtEnd()) {
+    while (!eof()) {
       var p = escapedPeek()
       // Check for the beginning of an string interpolation.
       if (!previousPrevious().contains('\\') && previous().contains('$') && p.contains('{')) {
@@ -672,9 +694,9 @@ object Lexer {
     addToken(TokenKind.LiteralStringInterpolationL)
     // consume tokens until a terminating '}' is found
     var blockNestingLevel = 0
-    while (!isAtEnd()) {
+    while (!eof()) {
       whitespace()
-      if (!isAtEnd()) {
+      if (!eof()) {
         s.start = new Position(s.current.line, s.current.column, s.current.offset)
         val kind = scanToken()
 
@@ -703,7 +725,7 @@ object Lexer {
    * Note that chars might contain unicode hex codes like these "\u00ff"
    */
   private def acceptChar()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (escapedPeek().contains('\'')) {
         advance()
         return TokenKind.LiteralChar
@@ -721,7 +743,7 @@ object Lexer {
    */
   private def acceptNumber()(implicit s: State): TokenKind = {
     var isDecimal = false
-    while (!isAtEnd()) {
+    while (!eof()) {
       peek() match {
         // Digits and _ are just consumed
         case c if c.isDigit || c == '_' => advance()
@@ -754,14 +776,20 @@ object Lexer {
         }
       }
     }
-    TokenKind.Err(TokenErrorKind.UnexpectedChar)
+
+    // The very last char of the file was a digit so return the appropriate token.
+    if (isDecimal) {
+      TokenKind.LiteralFloat64
+    } else {
+      TokenKind.LiteralInt32
+    }
   }
 
   /**
    * Moves current position past an annotation. IE. "@Test".
    */
   private def acceptAnnotation()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (!peek().isLetter) {
         return TokenKind.Annotation
       } else {
@@ -775,7 +803,7 @@ object Lexer {
    * Moves current position past a line-comment
    */
   private def acceptLineComment()(implicit s: State): TokenKind = {
-    while (!isAtEnd()) {
+    while (!eof()) {
       if (peek() == '\n') {
         return TokenKind.CommentLine
       } else {
@@ -795,7 +823,7 @@ object Lexer {
    */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
     var level = 1
-    while (!isAtEnd()) {
+    while (!eof()) {
       (peek(), peekPeek()) match {
         case ('/', Some('*')) =>
           level += 1
@@ -832,7 +860,7 @@ object Lexer {
       case _ => 1
     }
 
-    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + offset)
+    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line + 1, token.col, token.line + 1, token.col + offset)
     e match {
       case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
       case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
