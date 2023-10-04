@@ -125,6 +125,7 @@ object Safety {
   private def visitExp(e0: Expr, renv: RigidityEnv, expectedCallPosition: CallPosition, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
 
     var currentCallSym: Option[Symbol.DefnSym] = None
+    var containsRecursiveCall = false
 
     /**
       * Local visitor.
@@ -136,6 +137,10 @@ object Safety {
 
       case Expr.Def(sym, _, _) =>
         currentCallSym = Some(sym)
+        expectedCallPosition match {
+          case TailPosition(esym) if sym == esym => containsRecursiveCall = true
+          case _ => ()
+        }
         Nil
 
       case Expr.Sig(_, _, _) => Nil
@@ -391,7 +396,16 @@ object Safety {
 
     }
 
-    visit(e0, expectedCallPosition)
+    val visitorErrors = visit(e0, expectedCallPosition)
+
+    val recursiveCallError = expectedCallPosition match {
+      case TailPosition(sym) if !containsRecursiveCall =>
+        val loc = root.defs(sym).exp.loc
+        SafetyError.TailRecursiveFunctionWithoutRecursiveCall(sym, loc) :: Nil
+      case _ => Nil
+    }
+
+    visitorErrors ++ recursiveCallError
 
   }
 
