@@ -130,7 +130,8 @@ object Lexer {
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-    println(s.tokens.mkString("\n"))
+    //    println(s.tokens.mkString("\n"))
+
     val errorTokens = s.tokens.collect {
       case t@Token(TokenKind.Err(err), _, _, _, _, _) => tokenErrToCompilationMessage(err, t)
     }
@@ -496,7 +497,7 @@ object Lexer {
         // Do not allow non-letters other than _.
         // This handles cases like a block comment for instance
         // IE. `$BUILT_/*IN*/$` is disallowed.
-        return TokenKind.Err(TokenErrorKind.UnexpectedCharWithinBuiltIn)
+        return TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
       }
 
       advance()
@@ -631,7 +632,7 @@ object Lexer {
       if (!p.isLetter && !isMathNameChar(p) && !isGreekNameChar(p)) {
         // check for chars that are not allowed in function names,
         // to handle cases like '`my function` or `my/**/function`'
-        return TokenKind.Err(TokenErrorKind.UnexpectedCharWithinInfixFunction)
+        return TokenKind.Err(TokenErrorKind.UnterminatedInfixFunction)
       }
 
       advance()
@@ -755,7 +756,7 @@ object Lexer {
       if (p.exists(c => !c.isLetter && !c.isDigit)) {
         // Any non letter or digit constitutes an unterminated char.
         // This handles cases like a block comment within a char.
-        return TokenKind.Err(TokenErrorKind.UnexpectedCharWithinChar)
+        return TokenKind.Err(TokenErrorKind.UnterminatedChar)
       }
       advance()
     }
@@ -891,9 +892,6 @@ object Lexer {
       case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
       case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
       case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
-      case TokenErrorKind.UnexpectedCharWithinBuiltIn => LexerError.UnexpectedCharWithinBuiltIn(t, loc)
-      case TokenErrorKind.UnexpectedCharWithinChar => LexerError.UnexpectedCharWithinChar(t, loc)
-      case TokenErrorKind.UnexpectedCharWithinInfixFunction => LexerError.UnexpectedCharWithinInfixFunction(t, loc)
       case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
       case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
       case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)

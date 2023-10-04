@@ -71,7 +71,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
-  test("LexerError.UnexpectedChar") {
+  test("LexerError.UnexpectedChar.01") {
     val input =
       s"""
          |def f(): Char = €
@@ -122,13 +122,22 @@ class TestLexer extends AnyFunSuite with TestUtils {
   test("LexerError.UnterminatedBuiltIn.01") {
     val input =
       s"""
-         |def f(): Unit = $$BUILT_IN
+         |def f(): Int32 = $$BUILT_IN; 42
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedBuiltIn.02") {
+    val input =
+      s"""
+         |def f(): Unit = $$BUILT_IN
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedBuiltIn](result)
+  }
+
+  test("LexerError.UnterminatedBuiltIn.03") {
     val input =
       s"""
          |def f(): Unit = $$BUILT_/*IN*/$$
@@ -164,7 +173,16 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedChar](result)
   }
 
-  test("LexerError.UnterminatedInfixFunction") {
+  test("LexerError.UnterminatedChar.04") {
+    val input =
+      s"""
+         |def f(): Char = '/* This is a block-comment */a'
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedChar](result)
+  }
+
+  test("LexerError.UnterminatedInfixFunction.01") {
     val input =
       s"""
          |def f(): Int32 = 1 `add 2
@@ -173,7 +191,16 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedInfixFunction](result)
   }
 
-  test("LexerError.UnterminatedString") {
+  test("LexerError.UnterminatedInfixFunction.02") {
+    val input =
+      s"""
+         |def f(): Int32 = 1 `add/*this is a block comment*/` 2
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedInfixFunction](result)
+  }
+
+  test("LexerError.UnterminatedString.01") {
     val input =
       s"""
          |def f(): String = "This is unterminated
@@ -182,7 +209,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedString](result)
   }
 
-  test("LexerError.UnterminatedStringInterpolation") {
+  test("LexerError.UnterminatedStringInterpolation.01") {
     val input =
       s"""
          |def f(): String = "Hi $${name!"
@@ -191,7 +218,25 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedStringInterpolation](result)
   }
 
-  test("LexerError.StringInterpolationTooDeep") {
+  test("LexerError.UnterminatedStringInterpolation.02") {
+    val input =
+      s"""
+         |def f(): String = "$${"Hi $${name!"}"
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedStringInterpolation](result)
+  }
+
+  test("LexerError.UnterminatedStringInterpolation.03") {
+    val input =
+      s"""
+         |def f(): String = "$${"Hi $${name!}""
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedStringInterpolation](result)
+  }
+
+  test("LexerError.StringInterpolationTooDeep.01") {
     val input =
       s"""
          |"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"
