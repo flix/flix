@@ -399,7 +399,7 @@ object Safety {
 
     val recursiveCallError = expectedCallPosition match {
       case TailPosition(sym) if !containsRecursiveCall =>
-        val loc = root.defs(sym).exp.loc
+        val loc = root.defs(sym).spec.loc
         SafetyError.TailRecursiveFunctionWithoutRecursiveCall(sym, loc) :: Nil
       case _ => Nil
     }
