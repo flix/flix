@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.errors.Parse2Error
+
 object UnstructuredTree {
 
   sealed trait TreeKind
@@ -29,16 +31,33 @@ object UnstructuredTree {
 
     case object Parameter extends TreeKind
 
+    case object ExprLiteral extends TreeKind
+
+    case object ExprName extends TreeKind
+
+    case object ExprParen extends TreeKind
+
     case object ExprType extends TreeKind
 
-    case object ExprStmt extends TreeKind
-
-    case object ErrorTree extends TreeKind
+    /**
+     * A tree representing a parse-error.
+     *
+     * The actual error objects live in a list stored in the parser state for each source.
+     *
+     * @param error an index into an array of errors where the error message resides
+     */
+    case class ErrorTree(error: Parse2Error) extends TreeKind
 
   }
 
   case class Tree(kind: TreeKind, var children: Array[Child]) {
-    override def toString: String = s"Tree($kind, [${children.mkString(", ")}])"
+    def toDebugString(nesting: Int = 1): String =
+      s"$kind ${
+        children.map {
+          case Child.Token(token) => s"\n${"\t" * nesting}'${token.text}'"
+          case Child.Tree(tree) => s"\n${"\t" * nesting}${tree.toDebugString(nesting + 1)}"
+        }.mkString("")
+      }"
   }
 
   sealed trait Child
