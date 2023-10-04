@@ -104,15 +104,17 @@ object Safety {
   }
 
 
-  // Maybe use Ast.CallType?
-  private sealed trait Tailrec
+  /**
+    * Represents the type of position a function call can appear in.
+    */
+  private sealed trait CallPosition
 
-  private case class TailPosition(sym: Symbol.DefnSym) extends Tailrec
+  private case class TailPosition(sym: Symbol.DefnSym) extends CallPosition
 
-  private case object NonTailPosition extends Tailrec
+  private case object NonTailPosition extends CallPosition
 
-  private def checkTailCallAnnotation(expectedValue: Tailrec, actualPosition: Tailrec, actualSym: Option[Symbol.DefnSym], loc: SourceLocation): List[CompilationMessage] =
-    (expectedValue, actualPosition, actualSym) match {
+  private def checkTailCallAnnotation(expectedPosition: CallPosition, actualPosition: CallPosition, actualSym: Option[Symbol.DefnSym], loc: SourceLocation): List[CompilationMessage] =
+    (expectedPosition, actualPosition, actualSym) match {
       case (TailPosition(sym), NonTailPosition, Some(asym)) if sym == asym => SafetyError.NonTailRecursiveFunction(loc) :: Nil
       case _ => Nil
     }
@@ -120,20 +122,20 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expr, renv: RigidityEnv, t0: Tailrec, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(e0: Expr, renv: RigidityEnv, expectedCallPosition: CallPosition, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
 
-    var currentCall: Option[Symbol.DefnSym] = None
+    var currentCallSym: Option[Symbol.DefnSym] = None
 
     /**
       * Local visitor.
       */
-    def visit(exp0: Expr, tailrec: Tailrec): List[CompilationMessage] = exp0 match {
+    def visit(exp0: Expr, currentCallPosition: CallPosition): List[CompilationMessage] = exp0 match {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(_, _, _) => Nil
 
       case Expr.Def(sym, _, _) =>
-        currentCall = Some(sym)
+        currentCallSym = Some(sym)
         Nil
 
       case Expr.Sig(_, _, _) => Nil
@@ -141,7 +143,7 @@ object Safety {
       case Expr.Hole(_, _, _) => Nil
 
       case Expr.HoleWithExp(exp, _, _, _) =>
-        visit(exp, tailrec)
+        visit(exp, currentCallPosition)
 
       case Expr.OpenAs(_, exp, _, _) =>
         visit(exp, NonTailPosition)
@@ -153,9 +155,9 @@ object Safety {
         visit(exp, NonTailPosition)
 
       case Expr.Apply(exp, exps, _, _, loc) =>
-        currentCall = None
+        currentCallSym = None
         visit(exp, NonTailPosition) ++
-          checkTailCallAnnotation(t0, tailrec, currentCall, loc) ++
+          checkTailCallAnnotation(expectedCallPosition, currentCallPosition, currentCallSym, loc) ++
           exps.flatMap(visit(_, NonTailPosition))
 
       case Expr.Unary(_, exp, _, _, _) =>
@@ -165,31 +167,31 @@ object Safety {
         visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
 
       case Expr.Let(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, tailrec)
+        visit(exp1, NonTailPosition) ++ visit(exp2, currentCallPosition)
 
       case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, tailrec)
+        visit(exp1, NonTailPosition) ++ visit(exp2, currentCallPosition)
 
       case Expr.Region(_, _) => Nil
 
       case Expr.Scope(_, _, exp, _, _, _) =>
-        visit(exp, tailrec)
+        visit(exp, currentCallPosition)
 
       case Expr.ScopeExit(exp1, exp2, _, _, _) =>
         visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, tailrec) ++ visit(exp3, tailrec)
+        visit(exp1, NonTailPosition) ++ visit(exp2, currentCallPosition) ++ visit(exp3, currentCallPosition)
 
       case Expr.Stm(exp1, exp2, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, tailrec)
+        visit(exp1, NonTailPosition) ++ visit(exp2, currentCallPosition)
 
       case Expr.Discard(exp, _, _) =>
-        visit(exp, tailrec)
+        visit(exp, currentCallPosition)
 
       case Expr.Match(exp, rules, _, _, _) =>
         visit(exp, NonTailPosition) ++
-          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit(_, NonTailPosition)) ++ visit(e, tailrec) }
+          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit(_, NonTailPosition)) ++ visit(e, currentCallPosition) }
 
       case Expr.TypeMatch(exp, rules, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`
@@ -200,11 +202,11 @@ object Safety {
           }
         }
         visit(exp, NonTailPosition) ++ missingDefault ++
-          rules.flatMap { case TypeMatchRule(_, _, e) => visit(e, tailrec) }
+          rules.flatMap { case TypeMatchRule(_, _, e) => visit(e, currentCallPosition) }
 
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp, NonTailPosition) ++
-          rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp, tailrec) }
+          rules.flatMap { case RestrictableChooseRule(_, exp) => visit(exp, currentCallPosition) }
 
       case Expr.Tag(_, exp, _, _, _) =>
         visit(exp, NonTailPosition)
@@ -271,53 +273,53 @@ object Safety {
             val from = Type.eraseAliases(exp.tpe)
             val to = Type.eraseAliases(tpe)
             val errors = verifyCheckedTypeCast(from, to, loc)
-            visit(exp, tailrec) ++ errors
+            visit(exp, currentCallPosition) ++ errors
 
           case CheckedCastType.EffectCast =>
             val from = Type.eraseAliases(exp.eff)
             val to = Type.eraseAliases(eff)
             val errors = verifyCheckedEffectCast(from, to, renv, loc)
-            visit(exp, tailrec) ++ errors
+            visit(exp, currentCallPosition) ++ errors
         }
 
       case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
         val errors = verifyUncheckedCast(e)
-        visit(exp, tailrec) ++ errors
+        visit(exp, currentCallPosition) ++ errors
 
       case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-        visit(exp, tailrec)
+        visit(exp, currentCallPosition)
 
       case Expr.Without(exp, _, _, _, _) =>
         visit(exp, NonTailPosition)
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visit(exp, NonTailPosition) ++
-          rules.flatMap { case CatchRule(_, _, e) => visit(e, tailrec) }
+          rules.flatMap { case CatchRule(_, _, e) => visit(e, currentCallPosition) }
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp, NonTailPosition) ++
-          rules.flatMap { case HandlerRule(_, _, e) => visit(e, tailrec) }
+          rules.flatMap { case HandlerRule(_, _, e) => visit(e, currentCallPosition) }
 
       case Expr.Do(_, exps, _, _, _) =>
         val first = exps.take(exps.length - 1).flatMap(visit(_, NonTailPosition)).filter {
           case SafetyError.NonTailRecursiveFunction(_) => false
           case _ => true
         }
-        first ++ visit(exps.last, tailrec)
+        first ++ visit(exps.last, currentCallPosition)
 
       case Expr.Resume(exp, _, _) =>
-        visit(exp, tailrec)
+        visit(exp, currentCallPosition)
 
       case Expr.InvokeConstructor(_, args, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, None, loc) ++
+        checkTailCallAnnotation(expectedCallPosition, currentCallPosition, None, loc) ++
           args.flatMap(visit(_, NonTailPosition))
 
       case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, None, loc) ++
+        checkTailCallAnnotation(expectedCallPosition, currentCallPosition, None, loc) ++
           visit(exp, NonTailPosition) ++ args.flatMap(visit(_, NonTailPosition))
 
       case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
-        checkTailCallAnnotation(t0, tailrec, None, loc) ++
+        checkTailCallAnnotation(expectedCallPosition, currentCallPosition, None, loc) ++
           args.flatMap(visit(_, NonTailPosition))
 
       case Expr.GetField(_, exp, _, _, _) =>
@@ -350,15 +352,15 @@ object Safety {
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
         rules.flatMap { case SelectChannelRule(_, chan, body) => visit(chan, NonTailPosition) ++
-          visit(body, tailrec)
+          visit(body, currentCallPosition)
         } ++
-          default.map(visit(_, tailrec)).getOrElse(Nil)
+          default.map(visit(_, currentCallPosition)).getOrElse(Nil)
 
       case Expr.Spawn(exp1, exp2, _, _, _) =>
         visit(exp1, NonTailPosition) ++ visit(exp2, NonTailPosition)
 
       case Expr.ParYield(frags, exp, _, _, _) =>
-        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e, NonTailPosition) } ++ visit(exp, tailrec)
+        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e, NonTailPosition) } ++ visit(exp, currentCallPosition)
 
       case Expr.Lazy(exp, _, _) =>
         visit(exp, NonTailPosition)
@@ -392,7 +394,7 @@ object Safety {
 
     }
 
-    visit(e0, t0)
+    visit(e0, expectedCallPosition)
 
   }
 
