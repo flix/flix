@@ -36,14 +36,6 @@ mod MutDisjointSet {
         }
     }
 
-    instance Order[Node[t, r]] with Order[t] {
-        pub def compare(x: Node[t, r], y: Node[t, r]): Comparison = {
-            let Node.Node({ value = xval | _ }) = x;
-            let Node.Node({ value = yval | _ }) = y;
-            Order.compare(xval, yval)
-        }
-    }
-
     ///
     /// Returns a new empty `MutDisjointSet` in the region `rc`.
     ///
@@ -92,12 +84,12 @@ mod MutDisjointSet {
     /// Returns the representative / root of the set that contains `x`.
     ///
     pub def find(x: t, s: MutDisjointSet[t, r]): Option[t] \ r with Order[t] =
-        findNode(x, s) |> Option.map(match Node.Node({ value | _ }) -> value)
+        findSet(x, s) |> Option.map(match Node.Node({ value | _ }) -> value)
 
     ///
     /// Returns the representative / root `Node` of the set that contains `x`.
     ///
-    def findNode(x: t, s: MutDisjointSet[t, r]): Option[Node[t, r]] \ r with Order[t] = {
+    def findSet(x: t, s: MutDisjointSet[t, r]): Option[Node[t, r]] \ r with Order[t] = {
         def findRoot(y) = {
             let Node.Node({ parent | _ }) = y;
             match Ref.get(parent) {
@@ -120,22 +112,26 @@ mod MutDisjointSet {
     ///
     pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] =
         def link(x1, y1) = {
-            let Node.Node({ parent = xparent, rank = xr | _ }) = x1;
-            let Node.Node({ parent = yparent, rank = yr | _ }) = y1;
-            let xrank = Ref.get(xr);
-            let yrank = Ref.get(yr);
-            if (xrank > yrank) {
-                Ref.put(Some(x1), yparent)
-            } else {
-                Ref.put(Some(y1), xparent)
-            };
-            if (xrank == yrank) {
-                Ref.put(yrank + 1, yr)
-            } else {
+            if (x1 == y1) {
                 ()
+            } else {
+                let Node.Node({ parent = xparent, rank = xr | _ }) = x1;
+                let Node.Node({ parent = yparent, rank = yr | _ }) = y1;
+                let xrank = Ref.get(xr);
+                let yrank = Ref.get(yr);
+                if (xrank > yrank) {
+                    Ref.put(Some(x1), yparent)
+                } else {
+                    Ref.put(Some(y1), xparent)
+                };
+                if (xrank == yrank) {
+                    Ref.put(yrank + 1, yr)
+                } else {
+                    ()
+                }
             }
         };
-        match (findNode(x, s), findNode(y, s)) {
+        match (findSet(x, s), findSet(y, s)) {
             case (Some(xn), Some(yn)) => link(xn, yn)
             case _ => ()
         }
