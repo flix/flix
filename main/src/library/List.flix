@@ -249,6 +249,7 @@ mod List {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
+    @Tailrec
     pub def findLeft(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = match l {
         case Nil     => None
         case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
@@ -499,6 +500,7 @@ mod List {
     ///
     /// Helper function for `permutations`.
     ///
+    @Tailrec
     def at(i: Int32, l: List[a]): a = match (i, l) {
         case (0, x :: _)  => x
         case (p, _ :: xs) => at(p - 1, xs)
@@ -575,6 +577,7 @@ mod List {
     ///
     /// Helper function for `transpose`.
     ///
+    @Tailrec
     def uniformHelper(l: List[List[a]], len: Int32): Bool = match l {
         case Nil     => true
         case x :: xs => if (length(x) == len) uniformHelper(xs, len) else false
@@ -600,6 +603,7 @@ mod List {
     ///
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
+    @Tailrec
     pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
         case (Nil, _)           => true
         case (_, Nil)           => false
@@ -609,6 +613,7 @@ mod List {
     ///
     /// Returns `true` if and only if `l1` is an infix of `l2`.
     ///
+    @Tailrec
     pub def isInfixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
         case (Nil, _)     => true
         case (_, Nil)     => false
@@ -630,6 +635,7 @@ mod List {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
+    @Tailrec
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = match l {
         case Nil     => s
         case x :: xs => foldLeft(f, f(s, x), xs)
@@ -708,6 +714,7 @@ mod List {
     ///
     /// Returns `false` if `l` is empty.
     ///
+    @Tailrec
     pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
         case Nil     => false
         case x :: xs => if (f(x)) true else exists(f, xs)
@@ -718,6 +725,7 @@ mod List {
     ///
     /// Returns `true` if `l` is empty.
     ///
+    @Tailrec
     pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = match l {
         case Nil     => true
         case x :: xs => if (f(x)) forAll(f, xs) else false
@@ -806,6 +814,7 @@ mod List {
     /// Returns `Nil` if `n > length(l)`.
     /// Returns `l` if `n < 0`.
     ///
+    @Tailrec
     pub def drop(n: Int32, l: List[a]): List[a] = match l {
         case _ if n <= 0 => l
         case Nil         => Nil
@@ -815,6 +824,7 @@ mod List {
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
+    @Tailrec
     pub def dropWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef = match l {
         case Nil     => Nil
         case x :: xs => if (f(x)) dropWhile(f, xs) else l
@@ -892,6 +902,7 @@ mod List {
     ///
     /// Helper function for `groupBy`.
     ///
+    @Tailrec
     def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
         case Nil     => true
         case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
@@ -947,8 +958,6 @@ mod List {
             case (_, _)               => k(Applicative.point(Nil))
         };
         loop(xs, ys, identity)
-
-
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`
@@ -1008,6 +1017,7 @@ mod List {
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
     /// starting with the initial value `c` and going from left to right.
     ///
+    @Tailrec
     pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef = match (l1, l2) {
         case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
         case _                  => c
@@ -1050,6 +1060,7 @@ mod List {
     ///
     /// Returns `None` if every element of `l` is `None`.
     ///
+    @Tailrec
     pub def findMap(f: a -> Option[b] \ ef, l: List[a]): Option[b] \ ef = match l {
         case Nil     => None
         case x :: xs => match f(x) {
@@ -1129,6 +1140,7 @@ mod List {
     ///
     /// Applies `f` to every element of `l`.
     ///
+    @Tailrec
     pub def forEach(f: a -> Unit \ ef, l: List[a]): Unit \ ef = match l {
         case Nil     => ()
         case x :: xs => f(x); forEach(f, xs)
