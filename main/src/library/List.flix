@@ -165,6 +165,7 @@ mod List {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    @Tailrec
     pub def last(l: List[a]): Option[a] = match l {
         case Nil      => None
         case x :: Nil => Some(x)
@@ -192,6 +193,7 @@ mod List {
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
+    @Tailrec
     pub def memberOf(a: a, l: List[a]): Bool with Eq[a] = match l {
         case Nil     => false
         case x :: xs => if (a == x) true else memberOf(a, xs)
