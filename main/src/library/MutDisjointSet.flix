@@ -28,14 +28,6 @@ mod MutDisjointSet {
         rank = Ref[Int32, r]
     })
 
-    instance Eq[Node[t, r]] with Eq[t] {
-        pub def eq(x: Node[t, r], y: Node[t, r]): Bool = {
-            let Node.Node({ value = xval | _ }) = x;
-            let Node.Node({ value = yval | _ }) = y;
-            Eq.eq(xval, yval)
-        }
-    }
-
     ///
     /// Returns a new empty `MutDisjointSet` in the region `rc`.
     ///
@@ -112,7 +104,7 @@ mod MutDisjointSet {
     ///
     pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] =
         def link(x1, y1) = {
-            if (x1 != y1) {
+            if (not equal(x1, y1)) {
                 let Node.Node({ parent = xparent, rank = xr | _ }) = x1;
                 let Node.Node({ parent = yparent, rank = yr | _ }) = y1;
                 let xrank = Ref.get(xr);
@@ -142,6 +134,16 @@ mod MutDisjointSet {
     /// Returns false if either `x` or `y` is not in `s`.
     ///
     pub def equivalent(x: t, y: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] =
-        findSet(x, s) == findSet(y, s)
+        match (findSet(x, s), findSet(y, s)) {
+            case (Some(xn), Some(yn)) => equal(xn, yn)
+            case _                    => false
+        }
+
+    ///
+    /// Returns true if `x` and `y` have the same value.
+    ///
+    def equal(x: Node[t, r], y: Node[t, r]): Bool with Eq[t] = match (x, y) {
+        case (Node.Node({ value = xval | _ }), Node.Node({ value = yval | _ })) => xval == yval
+    }
 
 }
