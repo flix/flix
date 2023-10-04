@@ -23,14 +23,15 @@ sealed trait LevelEnv {
   /**
     * Purifies regions in the type if they are out of scope.
     */
-  def purify(tpe: Type): Type = this match {
-    case LevelEnv.Unleveled => tpe
-    case LevelEnv.Leveled(scopes) =>
-      tpe.map {
-        case Type.Var(sym, _) if (sym.isRegion && !scopes.contains(sym)) => Type.Pure
-        case t => t
-      }
-  }
+  def purify(tpe: Type): Type = tpe
+//    this match {
+//    case LevelEnv.Unleveled => tpe
+//    case LevelEnv.Leveled(scopes) =>
+//      tpe.map {
+//        case Type.Var(sym, _) if (sym.isRegion && !scopes.contains(sym)) => Type.Pure
+//        case t => t
+//      }
+//  }
 
   /**
     * Enters the scope of the given region.
