@@ -54,8 +54,8 @@ object Unification {
     val tpe = lenv.purify(tpe0)
 
     // Set the variable levels to the minimum of all flexible variables involved.
-    val tvars = tpe0.typeVars + x
-    val levelOpt = tvars.filter(tv => renv.isFlexible(tv.sym)).map(_.sym.level).minOption
+    val tvars = (tpe0.typeVars + x).filter(tv => renv.isFlexible(tv.sym))
+    val levelOpt = tvars.map(_.sym.level).minOption
     levelOpt match {
       case Some(level) => tvars.foreach(_.sym.level = level)
       case None => ()

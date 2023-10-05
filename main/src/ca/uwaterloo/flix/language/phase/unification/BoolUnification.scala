@@ -31,8 +31,8 @@ object BoolUnification {
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
     // Set the variable levels to the minimum of all flexible variables involved.
-    val tvars = tpe1.typeVars ++ tpe2.typeVars
-    val levelOpt = tvars.filter(tv => renv0.isFlexible(tv.sym)).map(_.sym.level).minOption
+    val tvars = (tpe1.typeVars ++ tpe2.typeVars).filter(tv => renv0.isFlexible(tv.sym))
+    val levelOpt = tvars.map(_.sym.level).minOption
     levelOpt match {
       case Some(level) => tvars.foreach(_.sym.level = level)
       case None => ()
