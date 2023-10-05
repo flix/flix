@@ -22,6 +22,9 @@ import ca.uwaterloo.flix.util.Result
 
 object HoleCompletion {
 
+  // Level is irrelevant here
+  private implicit val DefaultLevel: Level = Level.Top
+
   /**
     * Returns the set of definitions whose final parameter type and return type match the given `sourceType` and `targetType`, respectively.
     *
@@ -31,7 +34,7 @@ object HoleCompletion {
   def candidates(sourceType: Type, targetType: Type, root: TypedAst.Root)(implicit flix: Flix): List[Symbol.DefnSym] = {
     val matchType = Type.mkArrowWithEffect(
       sourceType,
-      Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Top, flix), // MATT top right?
+      Type.freshVar(Kind.Eff, SourceLocation.Unknown),
       targetType,
       SourceLocation.Unknown
     )

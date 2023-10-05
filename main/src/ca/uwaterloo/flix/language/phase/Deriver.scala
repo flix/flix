@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 object Deriver {
 
   // We don't use regions here, so we can safely put every variable in the top level.
-  implicit val DefaultLevel: Level = Level.Top
+  private implicit val DefaultLevel: Level = Level.Top
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = traverse(root.enums.values) {

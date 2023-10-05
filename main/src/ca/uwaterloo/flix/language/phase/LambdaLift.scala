@@ -25,6 +25,9 @@ import scala.collection.mutable
 
 object LambdaLift {
 
+  // Level is irrelevant here
+  private implicit val DefaultLevel: Level = Level.Top
+
   /**
     * Mutable map of top level definitions.
     */
@@ -104,8 +107,7 @@ object LambdaLift {
 
         // Construct the closure parameters
         val cs = if (cparams.isEmpty) {
-          // MATT top ok?
-          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc)(Level.Top, flix), Ast.Modifiers.Empty, MonoType.Unit, loc))
+          List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc))
         } else cparams.map(visitFormalParam)
 
         // Construct the formal parameters.

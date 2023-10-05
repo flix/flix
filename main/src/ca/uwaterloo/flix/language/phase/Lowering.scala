@@ -39,6 +39,9 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 object Lowering {
 
+  // Level is irrelevant here
+  private implicit val DefaultLevel: Level = Level.Top
+
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
 
@@ -1255,7 +1258,7 @@ object Lowering {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
-      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Level.Top, flix) // MATT top OK?
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
       val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
@@ -1351,7 +1354,7 @@ object Lowering {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
-      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Level.Top, flix) // MATT top right?
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
       val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)

@@ -30,8 +30,8 @@ import scala.collection.mutable
   */
 object Simplifier {
 
-  // level is irrelevant in this phase
-  implicit val DefaultLevel: Level = Level.Top
+  // Level is irrelevant here
+  private implicit val DefaultLevel: Level = Level.Top
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
