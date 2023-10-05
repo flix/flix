@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, TokenErrorKind, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -131,11 +131,11 @@ object Lexer {
     addToken(TokenKind.Eof)
 
 
-    val errorTokens = s.tokens.collect {
-      case t@Token(TokenKind.Err(err), _, _, _, _, _) => tokenErrToCompilationMessage(err, t)
+    val errors = s.tokens.collect {
+      case Token(TokenKind.Err(err), _, _, _, _, _) => err
     }
-    if (errorTokens.nonEmpty) {
-      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errorTokens))
+    if (errors.nonEmpty) {
+      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
     } else {
       s.tokens.toArray.toSuccess
     }
@@ -244,6 +244,27 @@ object Lexer {
    */
   private def eof()(implicit s: State): Boolean = {
     s.current.offset >= s.src.data.length - 1
+  }
+
+
+  /**
+   * A helper function for producing a `SourceLocation` starting at `s.start`.
+   *
+   * @param length the length that the source location should span
+   */
+  private def sourceLocationAtStart(length: Int = 1)(implicit s: State): SourceLocation = {
+    val line = s.start.line + 1 // state is zero-indexed while file numbers are one-indexed.
+    SourceLocation(None, s.src, SourceKind.Real, line, s.start.column, line, s.start.column + length)
+  }
+
+  /**
+   * A helper function for producing a `SourceLocation` starting at `s.current`.
+   *
+   * @param length the length that the source location should span
+   */
+  private def sourceLocationAtCurrent(length: Int = 1)(implicit s: State): SourceLocation = {
+    val line = s.current.line + 1 // state is zero-indexed while file numbers are one-indexed.
+    SourceLocation(None, s.src, SourceKind.Real, line, s.current.column, line, s.current.column + length)
   }
 
   /**
@@ -422,7 +443,7 @@ object Lexer {
         }
       case c if c.isLetter => acceptName(c.isUpper)
       case c if c.isDigit => acceptNumber()
-      case _ => TokenKind.Err(TokenErrorKind.UnexpectedChar)
+      case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
   }
 
@@ -490,7 +511,7 @@ object Lexer {
       advance()
       advances += 1
     }
-    TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
+    TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
   }
 
   /**
@@ -616,7 +637,7 @@ object Lexer {
       }
       advance()
     }
-    TokenKind.Err(TokenErrorKind.UnterminatedInfixFunction)
+    TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
   }
 
   /**
@@ -660,11 +681,11 @@ object Lexer {
       }
       // Check if file ended on a '\', meaning that the string was unterminated
       if (p.isEmpty) {
-        return TokenKind.Err(TokenErrorKind.UnterminatedString)
+        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
       advance()
     }
-    TokenKind.Err(TokenErrorKind.UnterminatedString)
+    TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
   }
 
   /**
@@ -687,7 +708,7 @@ object Lexer {
     s.interpolationNestingLevel += 1
     if (s.interpolationNestingLevel > InterpolatedStringMaxNestingLevel) {
       s.interpolationNestingLevel = 0
-      return TokenKind.Err(TokenErrorKind.StringInterpolationTooDeep)
+      return TokenKind.Err(LexerError.StringInterpolationTooDeep(sourceLocationAtCurrent()))
     }
 
     advance() // Consume '{'.
@@ -716,7 +737,7 @@ object Lexer {
         addToken(kind)
       }
     }
-    TokenKind.Err(TokenErrorKind.UnterminatedStringInterpolation)
+    TokenKind.Err(LexerError.UnterminatedStringInterpolation(sourceLocationAtStart()))
   }
 
   /**
@@ -733,7 +754,7 @@ object Lexer {
       advance()
     }
 
-    TokenKind.Err(TokenErrorKind.UnterminatedChar)
+    TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
   }
 
   /**
@@ -751,7 +772,7 @@ object Lexer {
         // Dots mark a decimal but are otherwise ignored
         case '.' =>
           if (isDecimal) {
-            return TokenKind.Err(TokenErrorKind.DoubleDottedNumber)
+            return TokenKind.Err(LexerError.DoubleDottedNumber(sourceLocationAtCurrent()))
           }
           isDecimal = true
           advance()
@@ -827,7 +848,7 @@ object Lexer {
         case ('/', Some('*')) =>
           level += 1
           if (level >= BlockCommentMaxNestingLevel) {
-            return TokenKind.Err(TokenErrorKind.BlockCommentTooDeep)
+            return TokenKind.Err(LexerError.BlockCommentTooDeep(sourceLocationAtCurrent()))
           }
           advance()
         case ('*', Some('/')) =>
@@ -840,37 +861,6 @@ object Lexer {
         case _ => advance()
       }
     }
-    TokenKind.Err(TokenErrorKind.UnterminatedBlockComment)
-  }
-
-  /**
-   * Converts a `Token` of kind `TokenKind.Err` into a CompilationMessage.
-   * Why is this necessary? We would like the lexer to capture as many errors as possible before terminating.
-   * To do this, the lexer will produce error tokens instead of halting,
-   * each holding a kind of the simple type `ErrKind`.
-   * So we need this mapping to produce a `CompilationMessage`, which is a case class, if there were any errors.
-   */
-  private def tokenErrToCompilationMessage(e: TokenErrorKind, token: Token)(implicit s: State): CompilationMessage = {
-    val t = token.text
-
-    val offset = e match {
-      case TokenErrorKind.UnexpectedChar | TokenErrorKind.DoubleDottedNumber => t.length
-      case TokenErrorKind.BlockCommentTooDeep => 2
-      case _ => 1
-    }
-
-    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line + 1, token.col, token.line + 1, token.col + offset)
-    e match {
-      case TokenErrorKind.BlockCommentTooDeep => LexerError.BlockCommentTooDeep(loc)
-      case TokenErrorKind.DoubleDottedNumber => LexerError.DoubleDottedNumber(loc)
-      case TokenErrorKind.UnexpectedChar => LexerError.UnexpectedChar(t, loc)
-      case TokenErrorKind.UnterminatedBlockComment => LexerError.UnterminatedBlockComment(loc)
-      case TokenErrorKind.UnterminatedBuiltIn => LexerError.UnterminatedBuiltIn(loc)
-      case TokenErrorKind.UnterminatedChar => LexerError.UnterminatedChar(loc)
-      case TokenErrorKind.UnterminatedInfixFunction => LexerError.UnterminatedInfixFunction(loc)
-      case TokenErrorKind.UnterminatedString => LexerError.UnterminatedString(loc)
-      case TokenErrorKind.UnterminatedStringInterpolation => LexerError.UnterminatedStringInterpolation(loc)
-      case TokenErrorKind.StringInterpolationTooDeep => LexerError.StringInterpolationTooDeep(loc)
-    }
+    TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
   }
 }

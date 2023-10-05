@@ -9,7 +9,7 @@ public class Def_main {
     public static void main(String[] args) {
         Result vResult = apply(null);
         while (vResult instanceof Thunk) {
-            vResult = ((Thunk) vResult).apply();
+            vResult = ((Thunk) vResult).invoke();
         }
         if (vResult instanceof Suspension) {
             throw new RuntimeException("Unhandled effect");
@@ -20,9 +20,9 @@ public class Def_main {
 
     public static Result apply(Locals_main locals) {
         ConsoleHandler17 handler = new ConsoleHandler17();
-        return Handler.installHandler("Con", handler, new FramesNil(), new Thunk() {
+        return Handler.installHandler("Console", handler, new FramesNil(), new Thunk() {
             @Override
-            public Result apply() {
+            public Result invoke() {
                 return Def_u.apply(new Locals_u(0, null, null), null);
             }
         });

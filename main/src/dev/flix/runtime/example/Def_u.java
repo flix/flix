@@ -7,7 +7,7 @@ public class Def_u {
     // def u(): Int32 \ Con =
     //     let name = v();
     //     let greetings = "Hello ${name}";
-    //     do Con.print(greetings);
+    //     do Console.print(greetings);
     //     String.length("${name}")
 
     public static Result apply(Locals_u fd, Value resumeArg) {
@@ -33,21 +33,21 @@ public class Def_u {
             switch (pc) {
                 case 0:
                     // We begin by calling `v`. This can result in one of three outcomes:
-                    // A Done value, a thunk, or a suspension.
+                    // A value, a thunk, or a suspension.
                     // If we get a thunk, we continue to evaluate it until we are left with either a value or suspension.
 
                     Result vResult = Def_v.apply();
 
                     // -- below can be put into an unwind function on Result.
                     while (vResult instanceof Thunk) { // aka. "ForceTailCall".
-                        vResult = ((Thunk) vResult).apply();
+                        vResult = ((Thunk) vResult).invoke();
                     }
                     // --
 
-                    // Invariant: We know that vResult must now be Done(v) or a Suspension.
+                    // Invariant: We know that vResult must now be Value(v) or a Suspension.
 
                     if (vResult instanceof Value) {
-                        name = (String) (((Value) vResult).obj);
+                        name = (String) (((Value) vResult).o);
                         pc = 1;
                         continue jump;
                     } else if (vResult instanceof Suspension) {
@@ -60,7 +60,7 @@ public class Def_u {
                     break;
 
                 case 11:
-                    name = (String) Integer.toString(resumeArg.int32);
+                    name = (String) Integer.toString(resumeArg.i32);
                     pc = 1; // (fallthrough is OK).
 
                 case 1:
@@ -77,13 +77,13 @@ public class Def_u {
                         }
                     };
 
-                    return new Suspension("Con", op, prefix, new ResumptionNil());
+                    return new Suspension("Console", op, prefix, new ResumptionNil());
 
                 case 21:
                     // NOP
 
                 case 2:
-                    return Value.mkInt32(name.length());
+                    return new Value((int) name.length());
             }
         }
 
