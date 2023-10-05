@@ -315,7 +315,7 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[Type] = {
 
     /**
       * Local pattern visitor.
@@ -356,7 +356,7 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+  private def inferRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern], root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferRestrictableChoosePattern(_, root))
   }
 

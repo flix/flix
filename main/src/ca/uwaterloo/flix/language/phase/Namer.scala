@@ -689,7 +689,7 @@ object Namer {
       // Introduce a rigid region variable for the region.
       val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
 
-      mapN(visitExp(exp, ns0)) {
+      mapN(visitExp(exp, ns0)(level.incr, flix)) {
         case e => NamedAst.Expr.Scope(sym, regionVar, e, loc)
       }
 

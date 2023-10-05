@@ -161,6 +161,10 @@ object TypeInference {
     case KindedAst.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
+      if (sym.namespace == List("Vector") && sym.name == "sequence") {
+        println("debug")
+      }
+
       typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, eqEnv, sym.loc)
 
     //      recoverOne {
@@ -736,7 +740,7 @@ object TypeInference {
           _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
           _ <- enterScopeM(regionVar.sym)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
-          (constrs, tpe, eff) <- visitExp(exp)
+          (constrs, tpe, eff) <- visitExp(exp)(level.incr)
           _ <- exitScopeM(regionVar.sym)
           purifiedEff <- purifyEffAndRefresh(regionVar, eff)
 //          _ <- traverseM(tpe.typeVars.toList)(rigidifyM) // MATT hacking around

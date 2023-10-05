@@ -1113,7 +1113,7 @@ object Resolver {
 
         case NamedAst.Expr.Scope(sym, regionVar, exp, loc) =>
           val env = env0 ++ mkVarEnv(sym) ++ mkTypeVarEnv(regionVar)
-          val eVal = visitExp(exp, env)
+          val eVal = visitExp(exp, env)(level.incr)
           mapN(eVal) {
             e => ResolvedAst.Expr.Scope(sym, regionVar, e, loc)
           }

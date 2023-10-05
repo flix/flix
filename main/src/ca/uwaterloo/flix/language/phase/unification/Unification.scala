@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
+import scala.collection.mutable
+
 object Unification {
 
   /**
@@ -50,6 +52,15 @@ object Unification {
   def unifyVar(x: Type.Var, tpe0: Type, renv: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     // purify the regions of the type that are out of scope
     val tpe = lenv.purify(tpe0)
+
+    // Set the variable levels to the minimum of all flexible variables involved.
+    val tvars = tpe0.typeVars + x
+    val levelOpt = tvars.filter(tv => renv.isFlexible(tv.sym)).map(_.sym.level).minOption
+    levelOpt match {
+      case Some(level) => tvars.foreach(_.sym.level = level)
+      case None => ()
+    }
+
     tpe match {
 
       // ensure the kinds are compatible
@@ -466,13 +477,16 @@ object Unification {
   // MATT docs / hack
   def purifyEffAndRefresh(tvar: Type.Var, eff: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
     InferMonad { case (s, econstrs, renv, lenv) =>
-      val tvars = eff.typeVars.toList.map {
-        case tv => tv.sym -> Type.freshVar(tvar.kind, SourceLocation.Unknown)
-      }.toMap
+
+      val cache = mutable.HashMap.empty[Symbol.KindedTypeVarSym, Type.Var]
 
       val res = s(eff).map {
+        // Case 1: The region. Purify it.
         case tv if tv.sym == tvar.sym => Type.Pure
-        case tv => tvars(tv.sym)
+        // Case 2: A variable from inside the region. Generalize it.
+        case tv if tv.sym.level > level => cache.getOrElseUpdate(tv.sym, Type.freshVar(tv.kind, SourceLocation.Unknown))
+        // Case 3: A variable from outside the region. Keep it.
+        case tv => tv
       }
       Ok((s, econstrs, renv, lenv, res))
     }
