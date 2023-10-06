@@ -499,7 +499,7 @@ object SafetyError {
     *
     * @param loc the location where the error occurred.
     */
-  case class MissingDefaultMatchTypeCase(loc: SourceLocation) extends SafetyError {
+  case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
     override def summary: String = s"Missing default case."
 
     override def message(formatter: Formatter): String = {

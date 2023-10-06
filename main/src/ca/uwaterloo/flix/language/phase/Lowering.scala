@@ -435,7 +435,7 @@ object Lowering {
 
     case TypedAst.Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = rules.map(visitMatchTypeRule)
+      val rs = rules.map(visitTypeMatchRule)
       val t = visitType(tpe)
       LoweredAst.Expr.TypeMatch(e, rs, t, eff, loc)
 
@@ -961,7 +961,7 @@ object Lowering {
   /**
     * Lowers the given match rule `rule0`.
     */
-  private def visitMatchTypeRule(rule0: TypedAst.TypeMatchRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
+  private def visitTypeMatchRule(rule0: TypedAst.TypeMatchRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
     case TypedAst.TypeMatchRule(sym, tpe, exp) =>
       val e = visitExp(exp)
       LoweredAst.TypeMatchRule(sym, tpe, e)

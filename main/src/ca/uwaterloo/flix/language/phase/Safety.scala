@@ -175,7 +175,7 @@ object Safety {
         val missingDefault = rules.last match {
           case TypeMatchRule(_, tpe, _) => tpe match {
             case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
-            case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
+            case _ => List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
           }
         }
         visit(exp) ++ missingDefault ++
