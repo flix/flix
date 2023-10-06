@@ -474,8 +474,11 @@ object Unification {
       Ok((s, econstrs, renv, lenv, purifiedEff))
     }
 
-  // MATT docs / hack
-  def purifyEffAndRefresh(tvar: Type.Var, eff: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
+  /**
+    * Purifies the given tvar in the type and unbinds variables in the substitution that reside in a level
+    * that is deeper than the current level.
+    */
+  def purifyEffAndUnbind(tvar: Type.Var, eff: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
     InferMonad { case (s, econstrs, renv, lenv) =>
 
       var s2 = s
@@ -483,8 +486,8 @@ object Unification {
       val res = s(eff).map {
         // Case 1: The region. Purify it.
         case tv if tv.sym == tvar.sym => Type.Pure
-        // Case 2: A variable from inside the region. Generalize it.
-        case tv if tv.sym.level > level => s2 = s2.unbind(tv.sym); tv // MATT crazy hack!
+        // Case 2: A variable from inside the region. Unbind it.
+        case tv if tv.sym.level > level => s2 = s2.unbind(tv.sym); tv
         // Case 3: A variable from outside the region. Keep it.
         case tv => tv
       }
