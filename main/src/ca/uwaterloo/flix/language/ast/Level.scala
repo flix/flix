@@ -38,6 +38,28 @@ object Level {
 
   /**
     * Sets the levels of all the type variables in the types to the variables' minimum level.
+    *
+    * For example, given
+    *
+    * {{{
+    * tpe1 = a@2 + b@2
+    * tpe2 = c@4 + d! + Pure
+    * }}}
+    *
+    * the variables' levels are modified to
+    *
+    * {{{
+    * a@2, b@2, c@2
+    * }}}
+    *
+    * and the resulting types are
+    *
+    * {{{
+    * tpe1 = a@2 + b@2
+    * tpe2 = c@2 + d! + Pure
+    * }}}
+    *
+    * Note that this modifies the variables' levels globally.
     */
   def equalize(tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
     val tvars = (tpe1.typeVars ++ tpe2.typeVars).filter(tv => renv.isFlexible(tv.sym))
@@ -47,7 +69,6 @@ object Level {
       case None => ()
     }
   }
-
 }
 
 case class Level(i: Int) extends AnyVal with Ordered[Level] {
