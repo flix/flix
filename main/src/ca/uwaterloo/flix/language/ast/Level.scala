@@ -71,7 +71,7 @@ object Level {
   }
 }
 
-case class Level(i: Int) extends AnyVal with Ordered[Level] {
+case class Level(i: Int) extends Ordered[Level] {
   if (i < 0) {
     throw InternalCompilerException(s"Unexpected negative level: $i", SourceLocation.Unknown)
   }
