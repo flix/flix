@@ -478,17 +478,17 @@ object Unification {
   def purifyEffAndRefresh(tvar: Type.Var, eff: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
     InferMonad { case (s, econstrs, renv, lenv) =>
 
-      val cache = mutable.HashMap.empty[Symbol.KindedTypeVarSym, Type.Var]
+      var s2 = s
 
       val res = s(eff).map {
         // Case 1: The region. Purify it.
         case tv if tv.sym == tvar.sym => Type.Pure
         // Case 2: A variable from inside the region. Generalize it.
-        case tv if tv.sym.level > level => cache.getOrElseUpdate(tv.sym, Type.freshVar(tv.kind, SourceLocation.Unknown))
+        case tv if tv.sym.level > level => s2 = s2.unbind(tv.sym); tv // MATT crazy hack!
         // Case 3: A variable from outside the region. Keep it.
         case tv => tv
       }
-      Ok((s, econstrs, renv, lenv, res))
+      Ok((s2, econstrs, renv, lenv, res))
     }
   }
 
