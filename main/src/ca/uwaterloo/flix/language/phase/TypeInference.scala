@@ -736,8 +736,12 @@ object TypeInference {
           _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
           _ <- enterScopeM(regionVar.sym)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
+          // Increase the level environment as we enter the region
           (constrs, tpe, eff) <- visitExp(exp)(level.incr)
           _ <- exitScopeM(regionVar.sym)
+          // Purify the region's effect and unbind free local effect variables from the substitution.
+          // This ensures that the substitution cannot re-introduce the region
+          // in place of the free local effect variables.
           purifiedEff <- purifyEffAndUnbind(regionVar, eff)
           resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           _ <- noEscapeM(regionVar, tpe)
