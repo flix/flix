@@ -567,6 +567,7 @@ object Kinder {
       val pvar = Type.freshVar(Kind.Eff, loc.asSynthetic)
       flatMapN(kenv0 + (regionVar -> Kind.Eff)) {
         case kenv =>
+          // We must increase the level because we go under a new region scope.
           val expVal = visitExp(exp0, kenv, taenv, henv0, root)(level.incr, flix)
           mapN(expVal) {
             exp => KindedAst.Expr.Scope(sym, rv, exp, pvar, loc)
