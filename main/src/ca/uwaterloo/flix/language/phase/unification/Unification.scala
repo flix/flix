@@ -473,7 +473,7 @@ object Unification {
     * - Purifies the given type variable in the given effect.
     * - Unbinds variables in the substitution that are from deeper than the current level.
     */
-  def purifyEffAndUnbind(tvar: Type.Var, eff: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
+  def purifyEffAndUnbindM(tvar: Type.Var, eff: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
     InferMonad { case (s, econstrs, renv, lenv) =>
 
       var s2 = s

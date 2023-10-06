@@ -742,7 +742,7 @@ object TypeInference {
           // Purify the region's effect and unbind free local effect variables from the substitution.
           // This ensures that the substitution cannot re-introduce the region
           // in place of the free local effect variables.
-          purifiedEff <- purifyEffAndUnbind(regionVar, eff)
+          purifiedEff <- purifyEffAndUnbindM(regionVar, eff)
           resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
