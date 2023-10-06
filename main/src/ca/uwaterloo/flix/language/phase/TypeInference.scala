@@ -161,10 +161,6 @@ object TypeInference {
     case KindedAst.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
-      if (sym.namespace == List("Vector") && sym.name == "sequence") {
-        println("debug")
-      }
-
       typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, eqEnv, sym.loc)
 
     //      recoverOne {
