@@ -39,8 +39,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 object Lowering {
 
-  // Level is irrelevant here
-  private implicit val DefaultLevel: Level = Level.Top
+  // Post type inference, level is irrelevant.
+  private implicit val DefaultLevel: Level = Level.Default
 
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")

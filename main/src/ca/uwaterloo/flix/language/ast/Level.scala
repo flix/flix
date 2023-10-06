@@ -20,24 +20,32 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 /**
   * Indicates a nesting depth.
   *
-  * Each time evaluation enters a region, level increases by one.
+  * Each time evaluation enters a region, the level increases by one.
+  * Currently, we only increase the nesting depth for regions (the scope expression).
   */
-case class Level(i: Int) extends AnyVal with Ordered[Level] {
-  if (i < 0) {
-    throw InternalCompilerException(s"Unexpected negative level: $i", SourceLocation.Unknown)
-  }
-  override def compare(that: Level): Int = this.i.compare(that.i)
-
-  def incr: Level = Level(i + 1)
-
-  def decr: Level = Level(i - 1)
-}
 
 object Level {
 
   /**
     * The least-deep level.
     */
-  def Top: Level = Level(0)
+  val Top: Level = Level(0)
+
+  /**
+    * The default level, for when the level is not relevant.
+    */
+  val Default: Level = Level(0)
+}
+
+case class Level(i: Int) extends AnyVal with Ordered[Level] {
+  if (i < 0) {
+    throw InternalCompilerException(s"Unexpected negative level: $i", SourceLocation.Unknown)
+  }
+
+  override def compare(that: Level): Int = this.i.compare(that.i)
+
+  def incr: Level = Level(i + 1)
+
+  def decr: Level = Level(i - 1)
 }
 

@@ -275,7 +275,7 @@ object Unification {
     // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
       case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-        val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Top, flix), SourceLocation.Unknown) // level is irrelevant here
+        val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Default, flix), SourceLocation.Unknown) // level is irrelevant here
         if (unifiesWith(expected, upcast, renv, LevelEnv.Unleveled, ListMap.empty)) { // TODO level env in error // TODO eqenv?
           TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
         } else {

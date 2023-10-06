@@ -25,8 +25,8 @@ import scala.collection.mutable
 
 object LambdaLift {
 
-  // Level is irrelevant here
-  private implicit val DefaultLevel: Level = Level.Top
+  // Post type inference, level is irrelevant.
+  private implicit val DefaultLevel: Level = Level.Default
 
   /**
     * Mutable map of top level definitions.

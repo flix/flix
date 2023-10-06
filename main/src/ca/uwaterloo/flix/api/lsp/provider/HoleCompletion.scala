@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.util.Result
 
 object HoleCompletion {
 
-  // Level is irrelevant here
-  private implicit val DefaultLevel: Level = Level.Top
+  // Post type inference, level is irrelevant.
+  private implicit val DefaultLevel: Level = Level.Default
 
   /**
     * Returns the set of definitions whose final parameter type and return type match the given `sourceType` and `targetType`, respectively.
