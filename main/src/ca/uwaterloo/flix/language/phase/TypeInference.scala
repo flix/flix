@@ -743,8 +743,6 @@ object TypeInference {
           (constrs, tpe, eff) <- visitExp(exp)(level.incr)
           _ <- exitScopeM(regionVar.sym)
           purifiedEff <- purifyEffAndRefresh(regionVar, eff)
-//          _ <- traverseM(tpe.typeVars.toList)(rigidifyM) // MATT hacking around
-//          _ <- traverseM(purifiedEff.typeVars.toList)(rigidifyM) // MATT hacking around
           resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe

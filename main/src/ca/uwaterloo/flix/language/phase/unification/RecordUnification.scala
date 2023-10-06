@@ -77,7 +77,7 @@ object RecordUnification {
           Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshVar(Kind.RecordRow, tvar.loc)(tvar.sym.level, flix) // MATT is this right?
+          val restRow2 = Type.freshVar(Kind.RecordRow, tvar.loc)(tvar.sym.level, flix)
           val type2 = Type.mkRecordRowExtend(label1, labelType1, restRow2, tvar.loc)
           val subst = Substitution.singleton(tv.sym, type2)
           Ok((subst, restRow2, Nil)) // TODO ASSOC-TYPES Nil right?

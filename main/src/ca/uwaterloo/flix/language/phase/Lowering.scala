@@ -1631,7 +1631,7 @@ object Lowering {
     */
   private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
     val name = prefix + Flix.Delimiter + flix.genSym.freshId()
-    Symbol.freshVarSym(name, BoundBy.Let, loc)(Level.Top, flix) // MATT top ok?
+    Symbol.freshVarSym(name, BoundBy.Let, loc)
   }
 
   /**
