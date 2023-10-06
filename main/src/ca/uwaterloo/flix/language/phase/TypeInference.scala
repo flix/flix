@@ -240,10 +240,9 @@ object TypeInference {
           ///
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromSpec(spec0)
-          val initialLenv = LevelEnv.Top
 
-          run(initialSubst, Nil, initialRenv, initialLenv) match { // TODO ASSOC-TYPES initial econstrs?
-            case Ok((subst0, partialEconstrs, renv0, _, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
+          run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
+            case Ok((subst0, partialEconstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -734,11 +733,9 @@ object TypeInference {
         for {
           // don't make the region var rigid if the --Xflexible-regions flag is set
           _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
-          _ <- enterScopeM(regionVar.sym)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           // Increase the level environment as we enter the region
           (constrs, tpe, eff) <- visitExp(exp)(level.incr)
-          _ <- exitScopeM(regionVar.sym)
           // Purify the region's effect and unbind free local effect variables from the substitution.
           // This ensures that the substitution cannot re-introduce the region
           // in place of the free local effect variables.
