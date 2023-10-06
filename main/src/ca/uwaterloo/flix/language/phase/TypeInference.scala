@@ -719,7 +719,7 @@ object TypeInference {
         val expectedType = Type.mkArrowWithEffect(a, p, b, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
-          arrowTyp <- unifyTypeM(expectedType, tpe1, exp1.loc)
+//          arrowTyp <- unifyTypeM(expectedType, tpe1, exp1.loc)
           boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
@@ -739,7 +739,8 @@ object TypeInference {
           // Purify the region's effect and unbind free local effect variables from the substitution.
           // This ensures that the substitution cannot re-introduce the region
           // in place of the free local effect variables.
-          purifiedEff <- purifyEffAndUnbindM(regionVar, eff)
+//          purifiedEff <- purifyEffAndUnbindM(regionVar, eff)
+          purifiedEff <- purifyEffM(regionVar, eff)
           resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
