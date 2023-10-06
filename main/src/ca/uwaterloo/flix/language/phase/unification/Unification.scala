@@ -47,19 +47,25 @@ object Unification {
   }
 
   /**
+    * Sets the levels of all the type variables in the types to the variables' minimum level.
+    */
+  def equalizeLevels(tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+    val tvars = (tpe1.typeVars ++ tpe2.typeVars).filter(tv => renv.isFlexible(tv.sym))
+    val levelOpt = tvars.map(_.sym.level).minOption
+    levelOpt match {
+      case Some(level) => tvars.foreach(_.sym.level = level)
+      case None => ()
+    }
+  }
+
+  /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   def unifyVar(x: Type.Var, tpe0: Type, renv: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
     // purify the regions of the type that are out of scope
     val tpe = lenv.purify(tpe0)
 
-    // Set the variable levels to the minimum of all flexible variables involved.
-    val tvars = (tpe0.typeVars + x).filter(tv => renv.isFlexible(tv.sym))
-    val levelOpt = tvars.map(_.sym.level).minOption
-    levelOpt match {
-      case Some(level) => tvars.foreach(_.sym.level = level)
-      case None => ()
-    }
+    equalizeLevels(x, tpe0, renv)
 
     tpe match {
 

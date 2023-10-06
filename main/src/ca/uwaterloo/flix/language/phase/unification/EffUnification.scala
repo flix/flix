@@ -35,13 +35,7 @@ object EffUnification {
     val tpe1 = lenv.purify(tpe10)
     val tpe2 = lenv.purify(tpe20)
 
-    // Set the variable levels to the minimum of all flexible variables involved.
-    val tvars = (tpe1.typeVars ++ tpe2.typeVars).filter(tv => renv0.isFlexible(tv.sym))
-    val levelOpt = tvars.map(_.sym.level).minOption
-    levelOpt match {
-      case Some(level) => tvars.foreach(_.sym.level = level)
-      case None => ()
-    }
+    Unification.equalizeLevels(tpe10, tpe20, renv0)
 
     //
     // NOTE: ALWAYS UNSOUND. USE ONLY FOR EXPERIMENTS.
