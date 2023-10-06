@@ -35,7 +35,7 @@ object EffUnification {
     val tpe1 = lenv.purify(tpe10)
     val tpe2 = lenv.purify(tpe20)
 
-    Unification.equalizeLevels(tpe10, tpe20, renv0)
+    Level.equalize(tpe10, tpe20, renv0)
 
     //
     // NOTE: ALWAYS UNSOUND. USE ONLY FOR EXPERIMENTS.

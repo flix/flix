@@ -35,6 +35,19 @@ object Level {
     * The default level, for when the level is not relevant.
     */
   val Default: Level = Level(0)
+
+  /**
+    * Sets the levels of all the type variables in the types to the variables' minimum level.
+    */
+  def equalize(tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
+    val tvars = (tpe1.typeVars ++ tpe2.typeVars).filter(tv => renv.isFlexible(tv.sym))
+    val levelOpt = tvars.map(_.sym.level).minOption
+    levelOpt match {
+      case Some(level) => tvars.foreach(_.sym.level = level)
+      case None => ()
+    }
+  }
+
 }
 
 case class Level(i: Int) extends AnyVal with Ordered[Level] {

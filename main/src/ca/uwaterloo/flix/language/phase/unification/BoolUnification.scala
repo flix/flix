@@ -30,7 +30,7 @@ object BoolUnification {
    */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
-    Unification.equalizeLevels(tpe1, tpe2, renv0)
+    Level.equalize(tpe1, tpe2, renv0)
 
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
