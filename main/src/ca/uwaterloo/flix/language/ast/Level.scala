@@ -15,12 +15,17 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 /**
   * Indicates a nesting depth.
   *
   * Each time evaluation enters a region, level increases by one.
   */
 case class Level(i: Int) extends AnyVal with Ordered[Level] {
+  if (i < 0) {
+    throw InternalCompilerException(s"Unexpected negative level: $i", SourceLocation.Unknown)
+  }
   override def compare(that: Level): Int = this.i.compare(that.i)
 
   def incr: Level = Level(i + 1)
@@ -31,7 +36,7 @@ case class Level(i: Int) extends AnyVal with Ordered[Level] {
 object Level {
 
   /**
-    * The highest level.
+    * The least-deep level.
     */
   def Top: Level = Level(0)
 }
