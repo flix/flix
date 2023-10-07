@@ -29,6 +29,9 @@ object BoolUnification {
    * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
    */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+
+    Level.equalize(tpe1, tpe2, renv0)
+
     // Give up early if either type contains an associated type.
     if (Type.hasAssocType(tpe1) || Type.hasAssocType(tpe2)) {
       return Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
