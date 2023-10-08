@@ -5,139 +5,139 @@ mod Test.Exp.ReifyType {
     //////////////////////////////////////
 
     @Test
-    def matchTypeUnit01(): Bool = typematch () {
+    def typeMatchUnit01(): Bool = typematch () {
         case _: Unit => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeUnit02(): Bool = typematch () {
+    def typeMatchUnit02(): Bool = typematch () {
         case x: Unit => x == ()
         case _: _ => false
     }
 
     @Test
-    def matchTypeBool01(): Bool = typematch true {
+    def typeMatchBool01(): Bool = typematch true {
         case _: Bool => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeBool02(): Bool = typematch true {
+    def typeMatchBool02(): Bool = typematch true {
         case x: Bool => x == true
         case _: _ => false
     }
 
     @Test
-    def matchTypeChar01(): Bool = typematch 'a' {
+    def typeMatchChar01(): Bool = typematch 'a' {
         case _: Char => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeChar02(): Bool = typematch 'a' {
+    def typeMatchChar02(): Bool = typematch 'a' {
         case x: Char => x == 'a'
         case _: _ => false
     }
 
     @Test
-    def matchTypeFloat32_01(): Bool = typematch 0.123f32 {
+    def typeMatchFloat32_01(): Bool = typematch 0.123f32 {
         case _: Float32 => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeFloat32_02(): Bool = typematch 0.123f32 {
+    def typeMatchFloat32_02(): Bool = typematch 0.123f32 {
         case x: Float32 => x == 0.123f32
         case _: _ => false
     }
 
     @Test
-    def matchTypeFloat64_01(): Bool = typematch 0.123f64 {
+    def typeMatchFloat64_01(): Bool = typematch 0.123f64 {
         case _: Float64 => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeFloat64_02(): Bool = typematch 0.123f64 {
+    def typeMatchFloat64_02(): Bool = typematch 0.123f64 {
         case x: Float64 => x == 0.123f64
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt8_01(): Bool = typematch 123i8 {
+    def typeMatchInt8_01(): Bool = typematch 123i8 {
         case _: Int8 => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt8_02(): Bool = typematch 123i8 {
+    def typeMatchInt8_02(): Bool = typematch 123i8 {
         case x: Int8 => x == 123i8
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt16_01(): Bool = typematch 123i16 {
+    def typeMatchInt16_01(): Bool = typematch 123i16 {
         case _: Int16 => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt16_02(): Bool = typematch 123i16 {
+    def typeMatchInt16_02(): Bool = typematch 123i16 {
         case x: Int16 => x == 123i16
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt32_01(): Bool = typematch 123i32 {
+    def typeMatchInt32_01(): Bool = typematch 123i32 {
         case _: Int32 => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt32_02(): Bool = typematch 123i32 {
+    def typeMatchInt32_02(): Bool = typematch 123i32 {
         case x: Int32 => x == 123i32
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt64_01(): Bool = typematch 123i64 {
+    def typeMatchInt64_01(): Bool = typematch 123i64 {
         case _: Int64 => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeInt64_02(): Bool = typematch 123i64 {
+    def typeMatchInt64_02(): Bool = typematch 123i64 {
         case x: Int64 => x == 123i64
         case _: _ => false
     }
 
     @Test
-    def matchTypeBigInt01(): Bool = typematch 123ii {
+    def typeMatchBigInt01(): Bool = typematch 123ii {
         case _: BigInt => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeBigInt02(): Bool = typematch 123ii {
+    def typeMatchBigInt02(): Bool = typematch 123ii {
         case x: BigInt => x == 123ii
         case _: _ => false
     }
 
     @Test
-    def matchTypeString01(): Bool = typematch "hello" {
+    def typeMatchString01(): Bool = typematch "hello" {
         case _: String => true
         case _: _ => false
     }
 
     @Test
-    def matchTypeString02(): Bool = typematch "hello" {
+    def typeMatchString02(): Bool = typematch "hello" {
         case x: String => x == "hello"
         case _: _ => false
     }
 
     @Test
-    def matchTypeArrayUnit01(): Bool = region rc {
+    def typeMatchArrayUnit01(): Bool = region rc {
         typematch Array#{()} @ rc {
             case _: Array[Unit, rc] => true
             case _: _ => false
@@ -145,7 +145,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayUnit02(): Bool = region rc {
+    def typeMatchArrayUnit02(): Bool = region rc {
         typematch Array#{()} @ rc {
             case x: Array[Unit, rc] => Array.sameElements(x, Array#{()} @ rc)
             case _: _ => false
@@ -153,7 +153,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayBool01(): Bool = region rc {
+    def typeMatchArrayBool01(): Bool = region rc {
         typematch Array#{true} @ rc {
             case _: Array[Bool, rc] => true
             case _: _ => false
@@ -161,7 +161,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayBool02(): Bool = region rc {
+    def typeMatchArrayBool02(): Bool = region rc {
         typematch Array#{true} @ rc {
             case x: Array[Bool, rc] => Array.sameElements(x, Array#{true} @ rc)
             case _: _ => false
@@ -169,7 +169,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayChar01(): Bool = region rc {
+    def typeMatchArrayChar01(): Bool = region rc {
         typematch Array#{'a'} @ rc {
             case _: Array[Char, rc] => true
             case _: _ => false
@@ -177,7 +177,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayChar02(): Bool = region rc {
+    def typeMatchArrayChar02(): Bool = region rc {
         typematch Array#{'a'} @ rc {
             case x: Array[Char, rc] => Array.sameElements(x, Array#{'a'} @ rc)
             case _: _ => false
@@ -185,7 +185,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayFloat32_01(): Bool = region rc {
+    def typeMatchArrayFloat32_01(): Bool = region rc {
         typematch Array#{0.123f32} @ rc {
             case _: Array[Float32, rc] => true
             case _: _ => false
@@ -193,7 +193,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayFloat32_02(): Bool = region rc {
+    def typeMatchArrayFloat32_02(): Bool = region rc {
         typematch Array#{0.123f32} @ rc {
             case x: Array[Float32, rc] => Array.sameElements(x, Array#{0.123f32} @ rc)
             case _: _ => false
@@ -201,7 +201,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayFloat64_01(): Bool = region rc {
+    def typeMatchArrayFloat64_01(): Bool = region rc {
         typematch Array#{0.123f64} @ rc {
             case _: Array[Float64, rc] => true
             case _: _ => false
@@ -209,7 +209,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayFloat64_02(): Bool = region rc {
+    def typeMatchArrayFloat64_02(): Bool = region rc {
         typematch Array#{0.123f64} @ rc {
             case x: Array[Float64, rc] => Array.sameElements(x, Array#{0.123f64} @ rc)
             case _: _ => false
@@ -217,7 +217,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt8_01(): Bool = region rc {
+    def typeMatchArrayInt8_01(): Bool = region rc {
         typematch Array#{123i8} @ rc {
             case _: Array[Int8, rc] => true
             case _: _ => false
@@ -225,7 +225,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt8_02(): Bool = region rc {
+    def typeMatchArrayInt8_02(): Bool = region rc {
         typematch Array#{123i8} @ rc {
             case x: Array[Int8, rc] => Array.sameElements(x, Array#{123i8} @ rc)
             case _: _ => false
@@ -233,7 +233,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt16_01(): Bool = region rc {
+    def typeMatchArrayInt16_01(): Bool = region rc {
         typematch Array#{123i16} @ rc {
             case _: Array[Int16, rc] => true
             case _: _ => false
@@ -241,7 +241,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt16_02(): Bool = region rc {
+    def typeMatchArrayInt16_02(): Bool = region rc {
         typematch Array#{123i16} @ rc {
             case x: Array[Int16, rc] => Array.sameElements(x, Array#{123i16} @ rc)
             case _: _ => false
@@ -249,7 +249,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt32_01(): Bool = region rc {
+    def typeMatchArrayInt32_01(): Bool = region rc {
         typematch Array#{123i32} @ rc {
             case _: Array[Int32, rc] => true
             case _: _ => false
@@ -257,7 +257,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt32_02(): Bool = region rc {
+    def typeMatchArrayInt32_02(): Bool = region rc {
         typematch Array#{123i32} @ rc {
             case x: Array[Int32, rc] => Array.sameElements(x, Array#{123i32} @ rc)
             case _: _ => false
@@ -265,7 +265,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt64_01(): Bool = region rc {
+    def typeMatchArrayInt64_01(): Bool = region rc {
         typematch Array#{123i64} @ rc {
             case _: Array[Int64, rc] => true
             case _: _ => false
@@ -273,7 +273,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayInt64_02(): Bool = region rc {
+    def typeMatchArrayInt64_02(): Bool = region rc {
         typematch Array#{123i64} @ rc {
             case x: Array[Int64, rc] => Array.sameElements(x, Array#{123i64} @ rc)
             case _: _ => false
@@ -281,7 +281,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayBigInt01(): Bool = region rc {
+    def typeMatchArrayBigInt01(): Bool = region rc {
         typematch Array#{123ii} @ rc {
             case _: Array[BigInt, rc] => true
             case _: _ => false
@@ -289,7 +289,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayBigInt02(): Bool = region rc {
+    def typeMatchArrayBigInt02(): Bool = region rc {
         typematch Array#{123ii} @ rc {
             case x: Array[BigInt, rc] => Array.sameElements(x, Array#{123ii} @ rc)
             case _: _ => false
@@ -297,7 +297,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayString01(): Bool = region rc {
+    def typeMatchArrayString01(): Bool = region rc {
         typematch Array#{"hello"} @ rc {
             case _: Array[String, rc] => true
             case _: _ => false
@@ -305,7 +305,7 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeArrayString02(): Bool = region rc {
+    def typeMatchArrayString02(): Bool = region rc {
         typematch Array#{"hello"} @ rc {
             case x: Array[String, rc] => Array.sameElements(x, Array#{"hello"} @ rc)
             case _: _ => false
@@ -317,40 +317,40 @@ mod Test.Exp.ReifyType {
     //////////////////////////////////////
 
     @Test
-    def matchTypeEff01(): Bool = hof(_ -> 123)
+    def typeMatchEff01(): Bool = hof(_ -> 123)
 
     @Test
-    def matchTypeEff02(): Bool = not hof(_ -> unchecked_cast(123 as _ \ IO))
+    def typeMatchEff02(): Bool = not hof(_ -> unchecked_cast(123 as _ \ IO))
 
     @Test
-    def matchTypeEff03(): Bool = not hof(_ -> unchecked_cast(123 as _ \ IO))
+    def typeMatchEff03(): Bool = not hof(_ -> unchecked_cast(123 as _ \ IO))
 
     @Test
-    def matchTypeEff04(): Bool = hof((x -> x) >> (y -> y))
+    def typeMatchEff04(): Bool = hof((x -> x) >> (y -> y))
 
     @Test
-    def matchTypeEff05(): Bool = not hof((x -> x) >> (y -> unchecked_cast(y as _ \ IO)))
+    def typeMatchEff05(): Bool = not hof((x -> x) >> (y -> unchecked_cast(y as _ \ IO)))
 
     @Test
-    def matchTypeEff06(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> y))
+    def typeMatchEff06(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> y))
 
     @Test
-    def matchTypeEff07(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
+    def typeMatchEff07(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
 
     @Test
-    def matchTypeEff08(): Bool = not hof((x -> x) >> (y -> unchecked_cast(y as _ \ IO)))
+    def typeMatchEff08(): Bool = not hof((x -> x) >> (y -> unchecked_cast(y as _ \ IO)))
 
     @Test
-    def matchTypeEff09(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> y))
+    def typeMatchEff09(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> y))
 
     @Test
-    def matchTypeEff10(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
+    def typeMatchEff10(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
 
     @Test
-    def matchTypeEff11(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
+    def typeMatchEff11(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
 
     @Test
-    def matchTypeEff12(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
+    def typeMatchEff12(): Bool = not hof((x -> unchecked_cast(x as _ \ IO)) >> (y -> unchecked_cast(y as _ \ IO)))
 
     def hof(f: a -> b \ ef): Bool = typematch f {
         case _: _ -> _ \ {} => true
@@ -371,16 +371,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeBool01(): Bool = reflectBool(true)
+    def polyTypeMatchBool01(): Bool = reflectBool(true)
 
     @Test
-    def polyMatchTypeBool02(): Bool = reflectBool(false)
+    def polyTypeMatchBool02(): Bool = reflectBool(false)
 
     @Test
-    def polyMatchTypeBool03(): Bool = not reflectBool(123i32)
+    def polyTypeMatchBool03(): Bool = not reflectBool(123i32)
 
     @Test
-    def polyMatchTypeBool04(): Bool = not reflectBool("abc")
+    def polyTypeMatchBool04(): Bool = not reflectBool("abc")
 
     def reflectChar(x: a): Bool = typematch x {
       case r: Char => r <= 'a' or r > 'a'
@@ -388,16 +388,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeChar01(): Bool = reflectChar('a')
+    def polyTypeMatchChar01(): Bool = reflectChar('a')
 
     @Test
-    def polyMatchTypeChar02(): Bool = reflectChar('\u1234')
+    def polyTypeMatchChar02(): Bool = reflectChar('\u1234')
 
     @Test
-    def polyMatchTypeChar03(): Bool = not reflectChar(123i32)
+    def polyTypeMatchChar03(): Bool = not reflectChar(123i32)
 
     @Test
-    def polyMatchTypeChar04(): Bool = not reflectChar("abc")
+    def polyTypeMatchChar04(): Bool = not reflectChar("abc")
 
     def reflectFloat32(x: a): Bool = typematch x {
       case r: Float32 => r <= 0.0f32 or r > 0.0f32
@@ -405,16 +405,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeFloat32_01(): Bool = reflectFloat32(123.0f32)
+    def polyTypeMatchFloat32_01(): Bool = reflectFloat32(123.0f32)
 
     @Test
-    def polyMatchTypeFloat32_02(): Bool = reflectFloat32(-123.0f32)
+    def polyTypeMatchFloat32_02(): Bool = reflectFloat32(-123.0f32)
 
     @Test
-    def polyMatchTypeFloat32_03(): Bool = not reflectFloat32(123i32)
+    def polyTypeMatchFloat32_03(): Bool = not reflectFloat32(123i32)
 
     @Test
-    def polyMatchTypeFloat32_04(): Bool = not reflectFloat32("abc")
+    def polyTypeMatchFloat32_04(): Bool = not reflectFloat32("abc")
 
     def reflectFloat64(x: a): Bool = typematch x {
       case r: Float64 => r <= 0.0f64 or r > 0.0f64
@@ -422,16 +422,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeFloat64_01(): Bool = reflectFloat64(123.0f64)
+    def polyTypeMatchFloat64_01(): Bool = reflectFloat64(123.0f64)
 
     @Test
-    def polyMatchTypeFloat64_02(): Bool = reflectFloat64(-123.0f64)
+    def polyTypeMatchFloat64_02(): Bool = reflectFloat64(-123.0f64)
 
     @Test
-    def polyMatchTypeFloat64_03(): Bool = not reflectFloat64(123i64)
+    def polyTypeMatchFloat64_03(): Bool = not reflectFloat64(123i64)
 
     @Test
-    def polyMatchTypeFloat64_04(): Bool = not reflectFloat64("abc")
+    def polyTypeMatchFloat64_04(): Bool = not reflectFloat64("abc")
 
     def reflectInt8(x: a): Bool = typematch x {
       case r: Int8 => r <= 0i8 or r > 0i8
@@ -439,16 +439,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeInt8_01(): Bool = reflectInt8(123i8)
+    def polyTypeMatchInt8_01(): Bool = reflectInt8(123i8)
 
     @Test
-    def polyMatchTypeInt8_02(): Bool = reflectInt8(-123i8)
+    def polyTypeMatchInt8_02(): Bool = reflectInt8(-123i8)
 
     @Test
-    def polyMatchTypeInt8_03(): Bool = not reflectInt8(123i64)
+    def polyTypeMatchInt8_03(): Bool = not reflectInt8(123i64)
 
     @Test
-    def polyMatchTypeInt8_04(): Bool = not reflectInt8("abc")
+    def polyTypeMatchInt8_04(): Bool = not reflectInt8("abc")
 
     def reflectInt16(x: a): Bool = typematch x {
       case r: Int16 => r <= 0i16 or r > 0i16
@@ -456,16 +456,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeInt16_01(): Bool = reflectInt16(123i16)
+    def polyTypeMatchInt16_01(): Bool = reflectInt16(123i16)
 
     @Test
-    def polyMatchTypeInt16_02(): Bool = reflectInt16(-123i16)
+    def polyTypeMatchInt16_02(): Bool = reflectInt16(-123i16)
 
     @Test
-    def polyMatchTypeInt16_03(): Bool = not reflectInt16(123i64)
+    def polyTypeMatchInt16_03(): Bool = not reflectInt16(123i64)
 
     @Test
-    def polyMatchTypeInt16_04(): Bool = not reflectInt16("abc")
+    def polyTypeMatchInt16_04(): Bool = not reflectInt16("abc")
 
     def reflectInt32(x: a): Bool = typematch x {
       case r: Int32 => r <= 0i32 or r > 0i32
@@ -473,16 +473,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeInt32_01(): Bool = reflectInt32(123i32)
+    def polyTypeMatchInt32_01(): Bool = reflectInt32(123i32)
 
     @Test
-    def polyMatchTypeInt32_02(): Bool = reflectInt32(-123i32)
+    def polyTypeMatchInt32_02(): Bool = reflectInt32(-123i32)
 
     @Test
-    def polyMatchTypeInt32_03(): Bool = not reflectInt32(123i64)
+    def polyTypeMatchInt32_03(): Bool = not reflectInt32(123i64)
 
     @Test
-    def polyMatchTypeInt32_04(): Bool = not reflectInt32("abc")
+    def polyTypeMatchInt32_04(): Bool = not reflectInt32("abc")
 
     def reflectInt64(x: a): Bool = typematch x {
       case r: Int64 => r <= 0i64 or r > 0i64
@@ -490,16 +490,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeInt64_01(): Bool = reflectInt64(123i64)
+    def polyTypeMatchInt64_01(): Bool = reflectInt64(123i64)
 
     @Test
-    def polyMatchTypeInt64_02(): Bool = reflectInt64(-123i64)
+    def polyTypeMatchInt64_02(): Bool = reflectInt64(-123i64)
 
     @Test
-    def polyMatchTypeInt64_03(): Bool = not reflectInt64(123ii)
+    def polyTypeMatchInt64_03(): Bool = not reflectInt64(123ii)
 
     @Test
-    def polyMatchTypeInt64_04(): Bool = not reflectInt64("abc")
+    def polyTypeMatchInt64_04(): Bool = not reflectInt64("abc")
 
     def reflectBigInt(x: a): Bool = typematch x {
       case r: BigInt => r <= 0ii or r > 0ii
@@ -507,16 +507,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeBigInt_01(): Bool = reflectBigInt(123ii)
+    def polyTypeMatchBigInt_01(): Bool = reflectBigInt(123ii)
 
     @Test
-    def polyMatchTypeBigInt_02(): Bool = reflectBigInt(-123ii)
+    def polyTypeMatchBigInt_02(): Bool = reflectBigInt(-123ii)
 
     @Test
-    def polyMatchTypeBigInt_03(): Bool = not reflectBigInt(123i64)
+    def polyTypeMatchBigInt_03(): Bool = not reflectBigInt(123i64)
 
     @Test
-    def polyMatchTypeBigInt_04(): Bool = not reflectBigInt("abc")
+    def polyTypeMatchBigInt_04(): Bool = not reflectBigInt("abc")
 
     def reflectString(x: a): Bool = typematch x {
       case r: String => r <= "hi" or r > "hi"
@@ -524,16 +524,16 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def polyMatchTypeString_01(): Bool = reflectString("hi")
+    def polyTypeMatchString_01(): Bool = reflectString("hi")
 
     @Test
-    def polyMatchTypeString_02(): Bool = reflectString("\u1234")
+    def polyTypeMatchString_02(): Bool = reflectString("\u1234")
 
     @Test
-    def polyMatchTypeString_03(): Bool = not reflectString(123i64)
+    def polyTypeMatchString_03(): Bool = not reflectString(123i64)
 
     @Test
-    def polyMatchTypeString_04(): Bool = not reflectString('a')
+    def polyTypeMatchString_04(): Bool = not reflectString('a')
 
     //////////////////////////////////////
     // Complex tests                    //
@@ -664,21 +664,21 @@ mod Test.Exp.ReifyType {
     }
 
     @Test
-    def matchTypeFallThrough01(): Bool = typematch "hello" {
+    def typeMatchFallThrough01(): Bool = typematch "hello" {
         case x: Int8 => x == 123i8
         case x: Int64 => x == 123i64
         case _: _ => true
     }
 
     @Test
-    def matchTypePolymorphic01(): Bool = typematch Nil {
+    def typeMatchPolymorphic01(): Bool = typematch Nil {
         case _: List[Unit] => false
         case _: List[_] => true
         case _: _ => true
     }
 
     @Test
-    def matchTypePolymorphic02(): Bool = typematch (Nil: List[String]) {
+    def typeMatchPolymorphic02(): Bool = typematch (Nil: List[String]) {
         case _: List[Unit] => false
         case _: List[String] => true
         case _: _ => false
