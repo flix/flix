@@ -30,10 +30,10 @@ pub enum MutQueue[a: Type, r: Region] {
 mod MutQueue {
 
     ///
-    /// Returns a String representation of the mutable priority queue `pq`.
+    /// Returns a String representation of the mutable priority queue `mq`.
     ///
-    pub def toString(pq: MutQueue[a, r]): String \ r with ToString[a] = region reg {
-        let MutQueue(_, arr, s) = pq;
+    pub def toString(mq: MutQueue[a, r]): String \ r with ToString[a] = region reg {
+        let MutQueue(_, arr, s) = mq;
         let sb = StringBuilder.new(reg);
         StringBuilder.appendString!("MutQueue {", sb);
         Array.forEachWithIndex((i, x) -> {
@@ -54,99 +54,99 @@ mod MutQueue {
         MutQueue(rc, ref Array.new(rc, 8) @ rc, ref 0 @ rc)
 
     ///
-    /// Returns the number of elements in `pq`.
+    /// Returns the number of elements in `mq`.
     ///
-    pub def size(pq: MutQueue[a, r]): Int32 \ r =
-        let MutQueue(_, _, s) = pq;
+    pub def size(mq: MutQueue[a, r]): Int32 \ r =
+        let MutQueue(_, _, s) = mq;
         deref s
 
     ///
-    /// Returns whether `pq` is empty.
+    /// Returns whether `mq` is empty.
     ///
-    pub def isEmpty(pq: MutQueue[a, r]): Bool \ r =
-        let MutQueue(_, _, s) = pq;
+    pub def isEmpty(mq: MutQueue[a, r]): Bool \ r =
+        let MutQueue(_, _, s) = mq;
         deref s == 0
 
     ///
-    /// Optionally returns the top element of `pq`.
+    /// Optionally returns the top element of `mq`.
     ///
-    pub def peek(pq: MutQueue[a, r]): Option[a] \ r =
-        let MutQueue(_, arr, s) = pq;
+    pub def peek(mq: MutQueue[a, r]): Option[a] \ r =
+        let MutQueue(_, arr, s) = mq;
         if (deref s == 0) None
         else Some(Array.get(0, deref arr))
 
     ///
-    /// Enqueues an element `x` into a `pq`.
+    /// Enqueues an element `x` into a `mq`.
     ///
-    pub def enqueue(pq: MutQueue[a, r], x: a): Unit \ r with Order[a] = {
-        let MutQueue(_, arr, s) = pq;
-        expand(pq);
+    pub def enqueue(mq: MutQueue[a, r], x: a): Unit \ r with Order[a] = {
+        let MutQueue(_, arr, s) = mq;
+        expand(mq);
         Array.put(x, deref s, deref arr);
-        heapifyUp(deref s, pq);
+        heapifyUp(deref s, mq);
         s := deref s + 1
     }
 
     ///
-    /// Removes and optionally returns the top element of `pq`.
+    /// Removes and optionally returns the top element of `mq`.
     ///
-    pub def dequeue(pq: MutQueue[a, r]): Option[a] \ r with Order[a] =
-        let MutQueue(_, arr, s) = pq;
+    pub def dequeue(mq: MutQueue[a, r]): Option[a] \ r with Order[a] =
+        let MutQueue(_, arr, s) = mq;
         if (deref s > 0) {
-            let top = peek(pq);
+            let top = peek(mq);
             Array.put(Array.get(deref s - 1, deref arr), 0, deref arr);
-            heapifyDown(0, pq);
+            heapifyDown(0, mq);
             s := deref s - 1;
             top
         }
         else None
 
     ///
-    /// Enqueues each element in `l` into `pq`.
+    /// Enqueues each element in `l` into `mq`.
     ///
-    pub def enqueueAll(pq: MutQueue[a, r], m: m[a]): Unit \ r with Order[a], Iterable[m] =
+    pub def enqueueAll(mq: MutQueue[a, r], m: m[a]): Unit \ r with Order[a], Iterable[m] =
         foreach(x <- m) {
-            enqueue(pq, x)
+            enqueue(mq, x)
         }
 
     ///
-    /// Returns an iterator over `pq`.
+    /// Returns an iterator over `mq`.
     ///
-    /// Modifying `pq` during iteration is undefined and not recommended.
+    /// Modifying `mq` during iteration is undefined and not recommended.
     ///
-    pub def iterator(rc: Region[r1], pq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
-        let MutQueue(_, arr, s) = pq;
+    pub def iterator(rc: Region[r1], mq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
+        let MutQueue(_, arr, s) = mq;
         let it1 = Iterator.range(rc, 0, deref s);
         Iterator.map(x -> Array.get(x, deref arr), it1)
 
     ///
-    /// Returns a List representation of `pq`.
+    /// Returns a List representation of `mq`.
     ///
     /// Note that a MutQueue's element order depends on the order in which the elements were enqueued.
     ///
-    pub def toList(pq: MutQueue[a, r]): List[a] \ r with Order[a] =
-        let MutQueue(_, arr, s) = pq;
+    pub def toList(mq: MutQueue[a, r]): List[a] \ r with Order[a] =
+        let MutQueue(_, arr, s) = mq;
         List.take(deref s, Array.foldRight((x, acc) -> x :: acc, Nil, deref arr))
 
     ///
-    /// Optionally returns a Nel representation of `pq`.
+    /// Optionally returns a Nel representation of `mq`.
     ///
-    pub def toNel(pq: MutQueue[a, r]): Option[Nel[a]] \ r with Order[a] =
-        List.toNel(toList(pq))
+    pub def toNel(mq: MutQueue[a, r]): Option[Nel[a]] \ r with Order[a] =
+        List.toNel(toList(mq))
 
     ///
-    /// Returns an Array representation of `pq`.
+    /// Returns an Array representation of `mq`.
     ///
     /// Note that a MutQueue's element order depends on the order in which the elements were enqueued.
     ///
-    pub def toArray(rc: Region[r1], pq: MutQueue[a, r2]): Array[a, r1] \ {r1, r2} =
-        let MutQueue(_, arr, s) = pq;
+    pub def toArray(rc: Region[r1], mq: MutQueue[a, r2]): Array[a, r1] \ {r1, r2} =
+        let MutQueue(_, arr, s) = mq;
         Array.takeLeft(rc, deref s, deref arr)
 
     ///
-    /// Reinforces the max heap invariant from `idx` after an element is added to `pq`.
+    /// Reinforces the max heap invariant from `idx` after an element is added to `mq`.
     ///
-    def heapifyUp(idx: Int32, pq: MutQueue[a, r]): Unit \ r with Order[a] =
-        let MutQueue(_, arr, _) = pq;
+    def heapifyUp(idx: Int32, mq: MutQueue[a, r]): Unit \ r with Order[a] =
+        let MutQueue(_, arr, _) = mq;
         if (idx != 0) {
             let parentIdx = (idx - 1) / 2;
             let cur  = Array.get(idx, deref arr);
@@ -154,17 +154,17 @@ mod MutQueue {
             if (cur > parent) {
                 Array.put(parent, idx, deref arr);
                 Array.put(cur, parentIdx, deref arr);
-                heapifyUp(parentIdx, pq)
+                heapifyUp(parentIdx, mq)
             }
             else ()
         }
         else ()
 
     ///
-    /// Reinforces the max heap invariant from `idx` after an element is removed from `pq`.
+    /// Reinforces the max heap invariant from `idx` after an element is removed from `mq`.
     ///
-    def heapifyDown(idx: Int32, pq: MutQueue[a, r]): Unit \ r with Order[a] =
-        let MutQueue(_, arr, s) = pq;
+    def heapifyDown(idx: Int32, mq: MutQueue[a, r]): Unit \ r with Order[a] =
+        let MutQueue(_, arr, s) = mq;
         let size = deref s;
         let lChildIdx = idx * 2 + 1;
         let rChildIdx = idx * 2 + 2;
@@ -185,12 +185,12 @@ mod MutQueue {
                     if (lChild > rChild) {
                         Array.put(cur, lChildIdx, deref arr);
                         Array.put(lChild, idx, deref arr);
-                        heapifyDown(lChildIdx, pq)
+                        heapifyDown(lChildIdx, mq)
                     }
                     else {
                         Array.put(cur, rChildIdx, deref arr);
                         Array.put(rChild, idx, deref arr);
-                        heapifyDown(rChildIdx, pq)
+                        heapifyDown(rChildIdx, mq)
                     }
                 }
                 else ()
@@ -199,10 +199,10 @@ mod MutQueue {
         else ()
 
     ///
-    /// Expands the internal array of `pq` if its capacity is full.
+    /// Expands the internal array of `mq` if its capacity is full.
     ///
-    def expand(pq: MutQueue[a, r]): Unit \ r =
-        let MutQueue(reg, arr, s) = pq;
+    def expand(mq: MutQueue[a, r]): Unit \ r =
+        let MutQueue(reg, arr, s) = mq;
         let oldCapacity = Array.length(deref arr);
         if (oldCapacity == deref s) {
             let newCapacity = 2 + (oldCapacity * 2);
