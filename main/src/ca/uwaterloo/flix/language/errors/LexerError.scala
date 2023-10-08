@@ -37,15 +37,12 @@ object LexerError {
       s"""${line(kind, source.name)}
          |>> Block-comment nested too deep.
          |
-         |${code(loc, "Block-comment starts here.")}
+         |${code(loc, "This is nested too deep.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that block-comments are not nested more than 32 levels deep."
-    })
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -62,7 +59,7 @@ object LexerError {
       s"""${line(kind, source.name)}
          |>> Number has two decimal dots.
          |
-         |${code(loc, "Number found here.")}
+         |${code(loc, "Second decimal dot is here.")}
          |
          |""".stripMargin
     }
@@ -103,7 +100,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated block-comment.
+         |>> Missing '*/' in block-comment.
          |
          |${code(loc, "Block-comment starts here.")}
          |
@@ -124,7 +121,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated built-in.
+         |>> Missing '$$' in built-in.
          |
          |${code(loc, "Built-in starts here.")}
          |
@@ -145,7 +142,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated char.
+         |>> Missing `'` in char.
          |
          |${code(loc, "Char starts here")}
          |
@@ -158,7 +155,7 @@ object LexerError {
   /**
    * An error raised when an unterminated infix function is encountered.
    *
-   * @param loc The location of the opening '`'.
+   * @param loc The location of the opening '&#96;'.
    */
   case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated infix function."
@@ -166,7 +163,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated infix function.
+         |>> Missing '`' in infix function.
          |
          |${code(loc, "Infix function starts here.")}
          |
@@ -187,7 +184,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated string.
+         |>> missing '"' in string.
          |
          |${code(loc, "String starts here.")}
          |
@@ -196,5 +193,46 @@ object LexerError {
 
     override def explain(formatter: Formatter): Option[String] = None
   }
-}
 
+  /**
+   * An error raised when an unterminated string is encountered.
+   *
+   * @param loc The location of the opening `{`.
+   */
+  case class UnterminatedStringInterpolation(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated string interpolation."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing '}' in string interpolation.
+         |
+         |${code(loc, "Interpolation starts here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when block-comments are nested too deep.
+   *
+   * @param loc The location of the opening "${".
+   */
+  case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"String interpolation nested too deep."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> String interpolation nested too deep.
+         |
+         |${code(loc, "This is nested too deep.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+}

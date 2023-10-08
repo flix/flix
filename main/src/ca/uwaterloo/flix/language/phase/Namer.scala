@@ -285,7 +285,7 @@ object Namer {
   /**
     * Performs naming on the given constraint `c0`.
     */
-  private def visitConstraint(c0: WeededAst.Constraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
+  private def visitConstraint(c0: WeededAst.Constraint, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
     case WeededAst.Constraint(h, bs, loc) =>
 
       // Introduce a symbol for every unique ident in the body, removing wildcards
@@ -489,7 +489,7 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fparamsVal = getFormalParams(fparams0)
+      val fparamsVal = getFormalParams(fparams0)(Level.Top, flix)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
@@ -499,7 +499,7 @@ object Namer {
           val econstrs = Nil // TODO ASSOC-TYPES allow eq-constrs here
 
           // Then visit the parts depending on the parameters
-          val expVal = traverseOpt(exp0)(visitExp(_, ns0))
+          val expVal = traverseOpt(exp0)(visitExp(_, ns0)(Level.Top, flix))
 
           mapN(expVal) {
             case exp =>
@@ -522,7 +522,7 @@ object Namer {
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fparamsVal = getFormalParams(fparams0)
+      val fparamsVal = getFormalParams(fparams0)(Level.Top, flix)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
@@ -532,7 +532,7 @@ object Namer {
         case (fparams, tpe, eff, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
-          val expVal = visitExp(exp, ns0)
+          val expVal = visitExp(exp, ns0)(Level.Top, flix)
 
           mapN(expVal) {
             case e =>
@@ -572,7 +572,7 @@ object Namer {
     case WeededAst.Declaration.Op(doc, ann, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
-      val fparamsVal = getFormalParams(fparams0)
+      val fparamsVal = getFormalParams(fparams0)(Level.Top, flix)
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
 
@@ -592,7 +592,7 @@ object Namer {
     * Performs naming on the given expression `exp0`.
     */
   // TODO NS-REFACTOR can remove ns0 too?
-  private def visitExp(exp0: WeededAst.Expr, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expr, NameError] = exp0 match {
+  private def visitExp(exp0: WeededAst.Expr, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Expr, NameError] = exp0 match {
 
     case WeededAst.Expr.Ambiguous(name, loc) =>
       NamedAst.Expr.Ambiguous(name, loc).toSuccess
@@ -689,7 +689,8 @@ object Namer {
       // Introduce a rigid region variable for the region.
       val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
 
-      mapN(visitExp(exp, ns0)) {
+      // We must increase the level because we go under a new region scope.
+      mapN(visitExp(exp, ns0)(level.incr, flix)) {
         case e => NamedAst.Expr.Scope(sym, regionVar, e, loc)
       }
 
@@ -1083,7 +1084,7 @@ object Namer {
   /**
     * Names the given pattern `pat0`.
     */
-  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): NamedAst.Pattern = pat0 match {
+  private def visitPattern(pat0: WeededAst.Pattern)(implicit level: Level, flix: Flix): NamedAst.Pattern = pat0 match {
     case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
     case WeededAst.Pattern.Var(ident, loc) =>
       // make a fresh variable symbol for the local variable.
@@ -1119,7 +1120,7 @@ object Namer {
   /**
     * Names the given pattern `pat0`
     */
-  private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoosePattern)(implicit flix: Flix): NamedAst.RestrictableChoosePattern = {
+  private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoosePattern)(implicit level: Level, flix: Flix): NamedAst.RestrictableChoosePattern = {
     def visitVarPlace(vp: WeededAst.RestrictableChoosePattern.VarOrWild): NamedAst.RestrictableChoosePattern.VarOrWild = vp match {
       case RestrictableChoosePattern.Wild(loc) => NamedAst.RestrictableChoosePattern.Wild(loc)
       case RestrictableChoosePattern.Var(ident, loc) =>
@@ -1137,7 +1138,7 @@ object Namer {
   /**
     * Names the given head predicate `head`.
     */
-  private def visitHeadPredicate(head: WeededAst.Predicate.Head, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
+  private def visitHeadPredicate(head: WeededAst.Predicate.Head, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
       for {
         es <- traverse(exps)(t => visitExp(t, ns0))
@@ -1147,7 +1148,7 @@ object Namer {
   /**
     * Names the given body predicate `body`.
     */
-  private def visitBodyPredicate(body: WeededAst.Predicate.Body, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
+  private def visitBodyPredicate(body: WeededAst.Predicate.Body, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
       NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
@@ -1425,7 +1426,7 @@ object Namer {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: WeededAst.FormalParam)(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError.TypeNameError] = fparam match {
+  private def visitFormalParam(fparam: WeededAst.FormalParam)(implicit level: Level, flix: Flix): Validation[NamedAst.FormalParam, NameError.TypeNameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
@@ -1455,7 +1456,7 @@ object Namer {
   /**
     * Translates the given weeded JvmMethod to a named JvmMethod.
     */
-  private def visitJvmMethod(method: WeededAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
+  private def visitJvmMethod(method: WeededAst.JvmMethod, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
     case WeededAst.JvmMethod(ident, fparams0, exp0, tpe0, eff0, loc) =>
       flatMapN(traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]) {
         case fparams =>
@@ -1471,7 +1472,7 @@ object Namer {
   /**
     * Performs naming on the given formal parameters `fparam0`.
     */
-  private def getFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
+  private def getFormalParams(fparams0: List[WeededAst.FormalParam])(implicit level: Level, flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
     traverse(fparams0)(visitFormalParam)
   }
 
@@ -1481,9 +1482,9 @@ object Namer {
     */
   private def getTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Kinded(ident, kind) =>
-      NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
+      NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident)(Level.Top, flix), visitKind(kind), ident.loc)
     case WeededAst.TypeParam.Unkinded(ident) =>
-      NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
+      NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident)(Level.Top, flix), ident.loc)
   }
 
   /**
@@ -1516,7 +1517,7 @@ object Namer {
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
-        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
+        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident)(Level.Top, flix), visitKind(kind), ident.loc)
     }
     NamedAst.TypeParams.Kinded(tparams)
   }
@@ -1527,7 +1528,7 @@ object Namer {
   private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Unkinded(ident) =>
-        NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
+        NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident)(Level.Top, flix), ident.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
   }
@@ -1538,7 +1539,7 @@ object Namer {
   private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Implicit = {
     val tvars = types.flatMap(freeTypeVars).distinct
     val tparams = tvars.map {
-      ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
+      ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident)(Level.Top, flix), ident.loc)
     }
     NamedAst.TypeParams.Implicit(tparams)
   }
@@ -1558,7 +1559,7 @@ object Namer {
     val effTvars = eff.toList.flatMap(freeTypeVars)
 
     val tparams = (fparamTvars ::: tpeTvars ::: effTvars).distinct.map {
-      ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
+      ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident)(Level.Top, flix), ident.loc)
     }
 
     NamedAst.TypeParams.Implicit(tparams)
@@ -1587,7 +1588,7 @@ object Namer {
   /**
     * Creates a flexible unkinded type variable symbol from the given ident.
     */
-  private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
+  private def mkTypeVarSym(ident: Name.Ident)(implicit level: Level, flix: Flix): Symbol.UnkindedTypeVarSym = {
     Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), isRegion = false, ident.loc)
   }
 

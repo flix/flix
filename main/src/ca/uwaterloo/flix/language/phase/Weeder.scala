@@ -937,8 +937,8 @@ object Weeder {
       if (frags.nonEmpty) {
         val fqnForEach = "Iterator.forEach"
         val fqnIterator = "Iterable.iterator"
-        val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-        val regVar = WeededAst.Expr.Ambiguous(Name.mkQName(regIdent), loc)
+        val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
+        val regVar = WeededAst.Expr.Ambiguous(Name.mkQName(regIdent), loc.asSynthetic)
 
         val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
           case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>

@@ -896,7 +896,7 @@ object Stratifier {
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, LevelEnv.Unleveled, ListMap.empty) // TODO ASSOC-TYPES empty right?
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, ListMap.empty) // TODO ASSOC-TYPES empty right?
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

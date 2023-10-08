@@ -43,7 +43,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit level: Level, flix: Flix): (List[Ast.TypeConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -132,7 +132,7 @@ object Scheme {
     val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
-    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv, LevelEnv.Top).toValidation) {
+    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
       case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
         val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
         val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)

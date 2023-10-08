@@ -124,7 +124,7 @@ object GenMainClass {
 
     // Push `Unit` on the stack.
     main.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
-      BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
     // Call the `Ns.m_entrypoint` method.
     val nsClassName = JvmOps.getNamespaceClassType(JvmOps.getNamespace(sym)).name.toInternalName
