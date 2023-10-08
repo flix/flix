@@ -26,7 +26,6 @@ import java.nio.file.{Files, Path, Paths}
 import com.github.rjeschke.txtmark
 
 import java.net.URLEncoder
-import scala.annotation.tailrec
 
 /**
   * A phase that emits a JSON file for library documentation.
@@ -186,8 +185,8 @@ object HtmlDocumentor {
       val mod = root.modules(moduleSym)
       val uses = root.uses.getOrElse(moduleSym, Nil)
 
-      /** Modules that have already been visited as companion modules */
-      var companionMods: Map[Symbol.ModuleSym, Module] = Map.empty
+      /** Modules that should not be included as a submodule */
+      var companionMods: List[Symbol.ModuleSym] = Nil
 
       var submodules: List[Symbol.ModuleSym] = Nil
       var classes: List[Class] = Nil
@@ -199,26 +198,28 @@ object HtmlDocumentor {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.ClassSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods += (m.sym -> m))
+          companionMod.foreach(m => companionMods = m.sym :: companionMods)
           classes = mkClass(sym, moduleSym, companionMod, root) :: classes
         case sym: Symbol.EffectSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods += (m.sym -> m))
+          companionMod.foreach(m => companionMods = m.sym :: companionMods)
           effects = mkEffect(sym, moduleSym, companionMod, root) :: effects
         case sym: Symbol.EnumSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods += (m.sym -> m))
+          companionMod.foreach(m => companionMods = m.sym :: companionMods)
           enums = mkEnum(sym, moduleSym, companionMod, root) :: enums
         case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
         case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
         case _ => // No op
       }
 
+      submodules = submodules.filterNot(companionMods.contains)
+
       Module(
         moduleSym,
         parent,
         uses,
-        submodules.map(sym => companionMods.getOrElse(sym, visitMod(sym, Some(moduleSym)))),
+        submodules.map(visitMod(_, Some(moduleSym))),
         classes,
         effects,
         enums,
