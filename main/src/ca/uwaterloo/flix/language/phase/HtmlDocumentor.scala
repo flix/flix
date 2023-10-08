@@ -77,7 +77,7 @@ object HtmlDocumentor {
 
     def visitMod(mod: Module): Unit = {
       val out = documentModule(mod)
-      writeDocFile(moduleFileName(mod.sym), out)
+      writeDocFile(mod.fileName(), out)
 
       mod.submodules.foreach(visitMod)
       mod.classes.foreach(visitClass)
@@ -87,7 +87,7 @@ object HtmlDocumentor {
 
     def visitClass(clazz: Class): Unit = {
       val out = documentClass(clazz)
-      writeDocFile(classFileName(clazz.decl.sym), out)
+      writeDocFile(clazz.fileName(), out)
 
       clazz.companionMod.foreach { mod =>
         mod.submodules.foreach(visitMod)
@@ -99,7 +99,7 @@ object HtmlDocumentor {
 
     def visitEffect(eff: Effect): Unit = {
       val out = documentEffect(eff)
-      writeDocFile(effectFileName(eff.decl.sym), out)
+      writeDocFile(eff.fileName(), out)
 
       eff.companionMod.foreach { mod =>
         mod.submodules.foreach(visitMod)
@@ -111,7 +111,7 @@ object HtmlDocumentor {
 
     def visitEnum(enm: Enum): Unit = {
       val out = documentEnum(enm)
-      writeDocFile(enumFileName(enm.decl.sym), out)
+      writeDocFile(enm.fileName(), out)
 
       enm.companionMod.foreach { mod =>
         mod.submodules.foreach(visitMod)
@@ -396,13 +396,13 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val sortedClasses = mod.classes.sortBy(_.decl.sym.name)
-    val sortedEnums = mod.enums.sortBy(_.decl.sym.name)
-    val sortedEffs = mod.effects.sortBy(_.decl.sym.name)
+    val sortedClasses = mod.classes.sortBy(_.name())
+    val sortedEnums = mod.enums.sortBy(_.name())
+    val sortedEffs = mod.effects.sortBy(_.name())
     val sortedTypeAliases = mod.typeAliases.sortBy(_.sym.name)
     val sortedDefs = mod.defs.sortBy(_.sym.name)
 
-    sb.append(mkHead(moduleName(mod.sym)))
+    sb.append(mkHead(mod.name()))
     sb.append("<body class='no-script'>")
 
     docThemeToggle()
@@ -415,17 +415,17 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${escUrl(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${escUrl(c.fileName())}'>${esc(c.name())}</a>"),
       )
       docSideBarSection(
         "Effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(effectFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -440,7 +440,7 @@ object HtmlDocumentor {
     }
 
     sb.append("<main>")
-    sb.append(s"<h1>${esc(moduleName(mod.sym))}</h1>")
+    sb.append(s"<h1>${esc(mod.name())}</h1>")
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Definitions", sortedDefs, docDef)
     sb.append("</main>")
@@ -462,13 +462,13 @@ object HtmlDocumentor {
     val sortedClassDefs = clazz.defs.sortBy(_.sym.name)
 
     val mod = clazz.companionMod
-    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
-    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
-    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.decl.sym.name)
+    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.name())
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name())
+    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.name())
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(className(clazz.decl.sym)))
+    sb.append(mkHead(clazz.name()))
     sb.append("<body class='no-script'>")
 
     docThemeToggle()
@@ -489,17 +489,17 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${escUrl(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${escUrl(c.fileName())}'>${esc(c.name())}</a>"),
       )
       docSideBarSection(
         "Effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(effectFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -514,14 +514,14 @@ object HtmlDocumentor {
     }
 
     sb.append("<main>")
-    sb.append(s"<h1>${esc(className(clazz.decl.sym))}</h1>")
+    sb.append(s"<h1>${esc(clazz.name())}</h1>")
 
     sb.append(s"<div class='box'>")
     docAnnotations(clazz.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>class</span> ")
-    sb.append(s"<span class='name'>${esc(clazz.decl.sym.name)}</span>")
+    sb.append(s"<span class='name'>${esc(clazz.name())}</span>")
     docTypeParams(List(clazz.decl.tparam))
     docTypeConstraints(clazz.decl.superClasses)
     sb.append("</code>")
@@ -554,13 +554,13 @@ object HtmlDocumentor {
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
 
     val mod = eff.companionMod
-    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
-    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
-    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.decl.sym.name)
+    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.name())
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name())
+    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.name())
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(effectName(eff.decl.sym)))
+    sb.append(mkHead(eff.name()))
     sb.append("<body class='no-script'>")
 
     docThemeToggle()
@@ -575,17 +575,17 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${escUrl(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${escUrl(c.fileName())}'>${esc(c.name())}</a>"),
       )
       docSideBarSection(
         "Effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(effectFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -600,14 +600,14 @@ object HtmlDocumentor {
     }
 
     sb.append("<main>")
-    sb.append(s"<h1>${esc(effectName(eff.decl.sym))}</h1>")
+    sb.append(s"<h1>${esc(eff.name())}</h1>")
 
-    sb.append(s"<div class='box' id='eff-${esc(effectName(eff.decl.sym))}'>")
+    sb.append(s"<div class='box' id='eff-${esc(eff.name())}'>")
     docAnnotations(eff.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>eff</span> ")
-    sb.append(s"<span class='name'>${esc(eff.decl.sym.name)}</span>")
+    sb.append(s"<span class='name'>${esc(eff.name())}</span>")
     sb.append("</code>")
     docActions(None, eff.decl.loc)
     sb.append("</div>")
@@ -633,13 +633,13 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val mod = enm.companionMod
-    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
-    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
-    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.decl.sym.name)
+    val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.name())
+    val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.name())
+    val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.name())
     val sortedTypeAliases = mod.map(_.typeAliases).getOrElse(Nil).sortBy(_.sym.name)
     val sortedModuleDefs = mod.map(_.defs).getOrElse(Nil).sortBy(_.sym.name)
 
-    sb.append(mkHead(enumName(enm.decl.sym)))
+    sb.append(mkHead(enm.name()))
     sb.append("<body class='no-script'>")
 
     docThemeToggle()
@@ -650,17 +650,17 @@ object HtmlDocumentor {
       docSideBarSection(
         "Classes",
         sortedClasses,
-        (c: Class) => sb.append(s"<a href='${escUrl(classFileName(c.decl.sym))}'>${esc(c.decl.sym.name)}</a>"),
+        (c: Class) => sb.append(s"<a href='${escUrl(c.fileName())}'>${esc(c.name())}</a>"),
       )
       docSideBarSection(
         "Effects",
         sortedEffs,
-        (e: Effect) => sb.append(s"<a href='${escUrl(effectFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Effect) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Enums",
         sortedEnums,
-        (e: Enum) => sb.append(s"<a href='${escUrl(enumFileName(e.decl.sym))}'>${esc(e.decl.sym.name)}</a>"),
+        (e: Enum) => sb.append(s"<a href='${escUrl(e.fileName())}'>${esc(e.name())}</a>"),
       )
       docSideBarSection(
         "Type Aliases",
@@ -675,14 +675,14 @@ object HtmlDocumentor {
     }
 
     sb.append("<main>")
-    sb.append(s"<h1>${esc(enumName(enm.decl.sym))}</h1>")
+    sb.append(s"<h1>${esc(enm.name())}</h1>")
 
-    sb.append(s"<div class='box' id='enum-${esc(enm.decl.sym.name)}'>")
+    sb.append(s"<div class='box' id='enum-${esc(enm.name())}'>")
     docAnnotations(enm.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
     sb.append("<span class='keyword'>enum</span> ")
-    sb.append(s"<span class='name'>${esc(enm.decl.sym.name)}</span>")
+    sb.append(s"<span class='name'>${esc(enm.name())}</span>")
     docTypeParams(enm.decl.tparams)
     docDerivations(enm.decl.derives)
     sb.append("</code>")
