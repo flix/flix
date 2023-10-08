@@ -1053,17 +1053,23 @@ object HtmlDocumentor {
     for (c <- cases.sortBy(_.loc)) {
       sb.append("<code>")
       sb.append("<span class='keyword'>case</span> ")
-      sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>(")
+      sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
       SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
+        case SimpleType.Unit => // Nothing
         case SimpleType.Tuple(elms) =>
+          sb.append("(")
           docList(elms) { t =>
             sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
           }
-        case _ => docType(c.tpe)
+          sb.append(")")
+        case _ =>
+          sb.append("(")
+          docType(c.tpe)
+          sb.append(")")
       }
 
-      sb.append(")</code>")
+      sb.append("</code>")
     }
     sb.append("</div>")
   }
