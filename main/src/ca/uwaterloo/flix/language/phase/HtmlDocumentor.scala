@@ -396,7 +396,6 @@ object HtmlDocumentor {
   private def documentModule(mod: Module)(implicit flix: Flix): String = {
     implicit val sb: StringBuilder = new StringBuilder()
 
-    val sortedMods = mod.submodules.sortBy(_.sym.ns.last)
     val sortedClasses = mod.classes.sortBy(_.decl.sym.name)
     val sortedEnums = mod.enums.sortBy(_.decl.sym.name)
     val sortedEffs = mod.effects.sortBy(_.decl.sym.name)
@@ -412,7 +411,7 @@ object HtmlDocumentor {
       mod.parent.map {
         mod => sb.append(s"<a class='back' href='${escUrl(moduleFileName(mod))}'>${moduleName(mod)}</a>")
       }
-      docSubModules(sortedMods)
+      docSubModules(mod)
       docSideBarSection(
         "Classes",
         sortedClasses,
@@ -463,7 +462,6 @@ object HtmlDocumentor {
     val sortedClassDefs = clazz.defs.sortBy(_.sym.name)
 
     val mod = clazz.companionMod
-    val sortedMods = mod.map(_.submodules).getOrElse(Nil).sortBy(_.sym.ns.last)
     val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.decl.sym.name)
@@ -477,7 +475,7 @@ object HtmlDocumentor {
 
     docSideBar { () =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(clazz.parent))}'>${moduleName(clazz.parent)}</a>")
-      docSubModules(sortedMods)
+      mod.foreach(docSubModules)
       docSideBarSection(
         "Signatures",
         sortedSigs,
@@ -556,7 +554,6 @@ object HtmlDocumentor {
     val sortedOps = eff.decl.ops.sortBy(_.sym.name)
 
     val mod = eff.companionMod
-    val sortedMods = mod.map(_.submodules).getOrElse(Nil).sortBy(_.sym.ns.last)
     val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.decl.sym.name)
@@ -570,7 +567,7 @@ object HtmlDocumentor {
 
     docSideBar { () =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(eff.parent))}'>${moduleName(eff.parent)}</a>")
-      docSubModules(sortedMods)
+      mod.foreach(docSubModules)
       docSideBarSection(
         "Operations",
         sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(esc(o.sym.name))}'>${esc(o.sym.name)}</a>")
@@ -636,7 +633,6 @@ object HtmlDocumentor {
     implicit val sb: StringBuilder = new StringBuilder()
 
     val mod = enm.companionMod
-    val sortedMods = mod.map(_.submodules).getOrElse(Nil).sortBy(_.sym.ns.last)
     val sortedClasses = mod.map(_.classes).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEnums = mod.map(_.enums).getOrElse(Nil).sortBy(_.decl.sym.name)
     val sortedEffs = mod.map(_.effects).getOrElse(Nil).sortBy(_.decl.sym.name)
@@ -650,7 +646,7 @@ object HtmlDocumentor {
 
     docSideBar { () =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(enm.parent))}'>${moduleName(enm.parent)}</a>")
-      docSubModules(sortedMods)
+      mod.foreach(docSubModules)
       docSideBarSection(
         "Classes",
         sortedClasses,
@@ -786,16 +782,24 @@ object HtmlDocumentor {
     sb.append("</ul>")
   }
 
-  private def docSubModules(submodules: List[Module])(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (submodules.isEmpty) {
+  private def docSubModules(parentMod: Module)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    val subItems: List[Item] =
+      parentMod.submodules ++
+        parentMod.classes ++
+        parentMod.effects ++
+        parentMod.enums
+
+    val sortedItems = subItems.sortBy(_.name())
+
+    if (sortedItems.isEmpty) {
       return
     }
 
     sb.append("<h3>Modules</h3>")
     sb.append("<ul class='Modules'>")
-    for (m <- submodules) {
+    for (m <- sortedItems) {
       sb.append("<li>")
-      sb.append(s"<a href='${escUrl(moduleFileName(m.sym))}'>${esc(m.sym.ns.last)}</a>")
+      sb.append(s"<a href='${escUrl(m.fileName())}'>${esc(m.name())}</a>")
       sb.append("</li>")
     }
     sb.append("</ul>")
@@ -1307,6 +1311,14 @@ object HtmlDocumentor {
   private def escUrl(s: String): String = URLEncoder.encode(s, "UTF-8")
 
   /**
+    * An item is a unit that is typically output to its own HTML file.
+    */
+  private sealed trait Item {
+    def name(): String
+
+    def fileName(): String
+  }
+  /**
     * A represention of a module that's easier to work with while generating documention.
     */
   private case class Module(sym: Symbol.ModuleSym,
@@ -1317,7 +1329,11 @@ object HtmlDocumentor {
                             effects: List[Effect],
                             enums: List[Enum],
                             typeAliases: List[TypedAst.TypeAlias],
-                            defs: List[TypedAst.Def])
+                            defs: List[TypedAst.Def]) extends Item {
+    override def name(): String = moduleName(this.sym)
+
+    override def fileName(): String = moduleFileName(this.sym)
+  }
 
   /**
     * A represention of a class that's easier to work with while generating documention.
@@ -1327,19 +1343,31 @@ object HtmlDocumentor {
                            defs: List[TypedAst.Sig],
                            instances: List[TypedAst.Instance],
                            parent: Symbol.ModuleSym,
-                           companionMod: Option[Module])
+                           companionMod: Option[Module]) extends Item {
+    override def name(): String = className(this.decl.sym)
+
+    override def fileName(): String = classFileName(this.decl.sym)
+  }
 
   /**
     * A represention of an effect that's easier to work with while generating documention.
     */
   private case class Effect(decl: TypedAst.Effect,
                             parent: Symbol.ModuleSym,
-                            companionMod: Option[Module])
+                            companionMod: Option[Module]) extends Item {
+    override def name(): String = effectName(this.decl.sym)
+
+    override def fileName(): String = effectFileName(this.decl.sym)
+  }
 
   /**
     * A represention of an enum that's easier to work with while generating documention.
     */
   private case class Enum(decl: TypedAst.Enum,
                           parent: Symbol.ModuleSym,
-                          companionMod: Option[Module])
+                          companionMod: Option[Module]) extends Item {
+    override def name(): String = enumName(this.decl.sym)
+
+    override def fileName(): String = enumFileName(this.decl.sym)
+  }
 }
