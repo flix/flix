@@ -511,7 +511,7 @@ object Lexer {
         return TokenKind.Dollar
       }
 
-      if (!p.isLetter && p != '_') {
+      if (!p.isLetter && !p.isDigit && p != '_') {
         // Do not allow non-letters other than _.
         // This handles cases like a block comment for instance
         // IE. `$BUILT_/*IN*/$` is disallowed.
@@ -647,7 +647,7 @@ object Lexer {
         return TokenKind.InfixFunction
       }
 
-      if (!p.isLetter && !isMathNameChar(p) && !isGreekNameChar(p)) {
+      if (p != '.' && p != '!' && !p.isLetter && !p.isDigit && !isMathNameChar(p) && !isGreekNameChar(p)) {
         // check for chars that are not allowed in function names,
         // to handle cases like '`my function` or `my/**/function`'
         return TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
@@ -760,10 +760,11 @@ object Lexer {
 
   /**
    * Moves current position past a char literal.
-   * If the char is unterminated a `TokenKind.Err` is returned
-   * Note that chars might contain unicode hex codes like these "\u00ff"
+   * If the char is unterminated a `TokenKind.Err` is returned.
+   * Note that chars might contain unicode hex codes like these '\u00ff'.
    */
   private def acceptChar()(implicit s: State): TokenKind = {
+    var prev = ' '
     while (!eof()) {
       val p = escapedPeek()
       if (p.contains('\'')) {
@@ -771,12 +772,11 @@ object Lexer {
         return TokenKind.LiteralChar
       }
 
-      if (p.exists(c => !c.isLetter && !c.isDigit)) {
-        // Any non letter or digit constitutes an unterminated char.
-        // This handles cases like a block comment within a char.
+      if ((prev, p) == ('/', Some('*'))) {
+        // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
-      advance()
+      prev = advance()
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))

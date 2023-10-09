@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.LexerError
+import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, ResolutionError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -146,6 +146,15 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
+  test("LexerError.UnterminatedBuiltIn.04") {
+    val input =
+      s"""
+         |def f(): Unit = $$INT64_REM$$
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("LexerError.UnterminatedChar.01") {
     val input =
       s"""
@@ -198,6 +207,16 @@ class TestLexer extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedInfixFunction](result)
+  }
+
+  test("LexerError.UnterminatedInfixFunction.03") {
+    val input =
+      s"""
+         |def f(): Int32 = 1 `Hash.combine` 2
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    // Expect the lexer to produce no errors. Instead the an undefined name should be thrown.
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("LexerError.UnterminatedString.01") {
