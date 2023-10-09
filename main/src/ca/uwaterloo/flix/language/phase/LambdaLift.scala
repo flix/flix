@@ -18,12 +18,15 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Level, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 
 object LambdaLift {
+
+  // Post type inference, level is irrelevant.
+  private implicit val DefaultLevel: Level = Level.Default
 
   /**
     * Mutable map of top level definitions.
@@ -103,9 +106,9 @@ object LambdaLift {
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
         // Construct the closure parameters
-        val cs = if (cparams.isEmpty)
+        val cs = if (cparams.isEmpty) {
           List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc))
-        else cparams.map(visitFormalParam)
+        } else cparams.map(visitFormalParam)
 
         // Construct the formal parameters.
         val fs = fparams.map(visitFormalParam)

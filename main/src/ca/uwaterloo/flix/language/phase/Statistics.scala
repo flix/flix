@@ -94,7 +94,7 @@ object Statistics {
       case Expr.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expr.Discard(exp, eff, loc) => visitExp(exp)
       case Expr.Match(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
-      case Expr.TypeMatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
+      case Expr.TypeMatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitTypeMatchRule))
       case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitRestrictableChooseRule))
       case Expr.Tag(sym, exp, tpe, eff, loc) => visitExp(exp)
       case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => visitExp(exp)
@@ -163,7 +163,7 @@ object Statistics {
   /**
     * Counts AST nodes in the given rule.
     */
-  private def visitMatchTypeRule(rule: TypeMatchRule): Counter = rule match {
+  private def visitTypeMatchRule(rule: TypeMatchRule): Counter = rule match {
     case TypeMatchRule(_, _, exp) => visitExp(exp)
   }
 

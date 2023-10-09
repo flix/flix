@@ -240,10 +240,9 @@ object TypeInference {
           ///
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromSpec(spec0)
-          val initialLenv = LevelEnv.Top
 
-          run(initialSubst, Nil, initialRenv, initialLenv) match { // TODO ASSOC-TYPES initial econstrs?
-            case Ok((subst0, partialEconstrs, renv0, _, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
+          run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
+            case Ok((subst0, partialEconstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -338,7 +337,7 @@ object TypeInference {
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: KindedAst.Expr): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
+    def visitExp(e0: KindedAst.Expr)(implicit level: Level): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
       case KindedAst.Expr.Var(sym, loc) =>
         liftM(List.empty, sym.tvar, Type.Pure)
@@ -734,11 +733,14 @@ object TypeInference {
         for {
           // don't make the region var rigid if the --Xflexible-regions flag is set
           _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
-          _ <- enterScopeM(regionVar.sym)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
-          (constrs, tpe, eff) <- visitExp(exp)
-          _ <- exitScopeM(regionVar.sym)
-          resultEff <- unifyTypeM(pvar, eff, loc)
+          // Increase the level environment as we enter the region
+          (constrs, tpe, eff) <- visitExp(exp)(level.incr)
+          // Purify the region's effect and unbind free local effect variables from the substitution.
+          // This ensures that the substitution cannot re-introduce the region
+          // in place of the free local effect variables.
+          purifiedEff <- purifyEffAndUnbindM(regionVar, eff)
+          resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
@@ -1464,7 +1466,7 @@ object TypeInference {
     /**
       * Infers the type of the given constraint `con0` inside the inference monad.
       */
-    def visitConstraint(con0: KindedAst.Constraint): InferMonad[(List[Ast.TypeConstraint], Type)] = {
+    def visitConstraint(con0: KindedAst.Constraint)(implicit level: Level): InferMonad[(List[Ast.TypeConstraint], Type)] = {
       val KindedAst.Constraint(cparams, head0, body0, loc) = con0
       //
       //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -1479,7 +1481,7 @@ object TypeInference {
       } yield (constrs1 ++ constrs2.flatten, resultType)
     }
 
-    visitExp(exp0)
+    visitExp(exp0)(Level.Top)
   }
 
   /**
@@ -1496,7 +1498,7 @@ object TypeInference {
   /**
     * Infers the type of the given pattern `pat0`.
     */
-  private def inferPattern(pat0: KindedAst.Pattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferPattern(pat0: KindedAst.Pattern, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[Type] = {
 
     /**
       * Local pattern visitor.
@@ -1589,14 +1591,14 @@ object TypeInference {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferPatterns(pats0: List[KindedAst.Pattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+  private def inferPatterns(pats0: List[KindedAst.Pattern], root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferPattern(_, root))
   }
 
   /**
     * Infers the type of the given [[KindedAst.Pattern.Record.RecordLabelPattern]] `pat`.
     */
-  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Label, Type, SourceLocation)] = pat match {
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(Name.Label, Type, SourceLocation)] = pat match {
     case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
       // { Label = Pattern ... }
       for {
@@ -1608,7 +1610,7 @@ object TypeInference {
   /**
     * Infers the type of the given head predicate.
     */
-  private def inferHeadPredicate(head: KindedAst.Predicate.Head, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
+  private def inferHeadPredicate(head: KindedAst.Predicate.Head, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
       // Adds additional type constraints if the denotation is a lattice.
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
@@ -1623,7 +1625,7 @@ object TypeInference {
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = {
+  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = {
 
     body0 match {
       case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
@@ -1706,7 +1708,7 @@ object TypeInference {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(declaredType))
+        macc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(declaredType)(Level.Top, flix))
     }
   }
 
@@ -1715,7 +1717,7 @@ object TypeInference {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit level: Level, flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
@@ -1751,7 +1753,7 @@ object TypeInference {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit level: Level, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 
   /**
     * Computes and prints statistics about the given substitution.

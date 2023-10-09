@@ -312,7 +312,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.NonPublicClass](result)
   }
 
-  test("TestMissingDefaultMatchTypeCase.01") {
+  test("TestMissingDefaultTypeMatchCase.01") {
     val input =
       """
         |def f(): Bool = typematch () {
@@ -320,10 +320,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.MissingDefaultMatchTypeCase](result)
+    expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
-  test("TestMissingDefaultMatchTypeCase.02") {
+  test("TestMissingDefaultTypeMatchCase.02") {
     val input =
       """
         |def f(x: a): Bool = typematch x {
@@ -331,7 +331,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.MissingDefaultMatchTypeCase](result)
+    expectError[SafetyError.MissingDefaultTypeMatchCase](result)
   }
 
   test("UnableToDeriveSendable.01") {
