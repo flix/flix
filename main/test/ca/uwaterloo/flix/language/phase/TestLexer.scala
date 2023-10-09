@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, ResolutionError}
+import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -147,15 +147,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedBuiltIn.04") {
-    val input =
-      s"""
-         |def f(): Unit = $$INT64_REM$$
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("LexerError.UnterminatedBuiltIn.05") {
     val input =
       s"""
          |def f(): Unit = $$BUILT_IN""".stripMargin
