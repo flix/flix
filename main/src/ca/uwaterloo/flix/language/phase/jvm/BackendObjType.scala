@@ -86,6 +86,20 @@ sealed trait BackendObjType {
     * Returns `this` wrapped in `BackendType.Reference`.
     */
   def toTpe: BackendType.Reference = BackendType.Reference(this)
+
+  protected def nullarySuperConstructor(superClass: ConstructorMethod): ConstructorMethod = ConstructorMethod(
+    this.jvmName,
+    IsPublic,
+    Nil,
+    Some(thisLoad() ~ INVOKESPECIAL(superClass) ~ RETURN())
+  )
+
+  protected def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField): StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+    NEW(this.jvmName) ~
+      DUP() ~ INVOKESPECIAL(thisConstructor) ~
+      PUTSTATIC(singleton) ~
+      RETURN()
+  ))
 }
 
 object BackendObjType {
@@ -106,31 +120,23 @@ object BackendObjType {
   private def mkName(prefix: String): String =
     mkName(prefix, Nil)
 
-
   case object Unit extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal)
 
       cm.mkStaticConstructor(StaticConstructor)
       cm.mkConstructor(Constructor)
-      cm.mkField(InstanceField)
+      cm.mkField(SingletonField)
       cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
-    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
-      NEW(this.jvmName) ~
-        DUP() ~ INVOKESPECIAL(Constructor) ~
-        PUTSTATIC(InstanceField) ~
-        RETURN()
-    ))
+    def StaticConstructor: StaticConstructorMethod = singletonStaticConstructor(Constructor, SingletonField)
 
-    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
+    def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       pushString("()") ~ ARETURN()
@@ -153,9 +159,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
   }
@@ -396,9 +400,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(Thunk.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(Thunk.Constructor)
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"arg$index", args(index))
 
@@ -421,7 +423,7 @@ object BackendObjType {
 
       cm.mkStaticConstructor(StaticConstructor)
       cm.mkConstructor(Constructor)
-      cm.mkField(InstanceField)
+      cm.mkField(SingletonField)
       cm.mkMethod(LookupFieldMethod)
       cm.mkMethod(RestrictFieldMethod)
       cm.mkMethod(ToStringMethod)
@@ -430,20 +432,13 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
-    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
-      NEW(this.jvmName) ~
-        DUP() ~ INVOKESPECIAL(Constructor) ~
-        PUTSTATIC(InstanceField) ~
-        RETURN()
-    ))
+    def StaticConstructor: StaticConstructorMethod = singletonStaticConstructor(Constructor, SingletonField)
 
     def interface: Record.type = Record
 
-    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
+    def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
     def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
       throwUnsupportedOperationException(
@@ -483,9 +478,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "label", String.toTpe)
 
@@ -725,9 +718,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
       NEW(JvmName.AtomicLong) ~
@@ -1341,9 +1332,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def BoolField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "b", BackendType.Bool)
 
@@ -1382,6 +1371,7 @@ object BackendObjType {
     }
   }
 
+  /** Frame is really just java.util.Function<Value, Result> **/
   case object Frame extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -1407,9 +1397,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(Result.toTpe))
 
@@ -1442,6 +1430,15 @@ object BackendObjType {
     def ReverseMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverse", mkDescriptor()(Frames.toTpe))
 
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
+
+    def pushImplementation: InstructionSet = {
+      withName(1, Frame.toTpe)(frame =>
+        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
+          DUP() ~ frame.load() ~ PUTFIELD(FramesCons.HeadField) ~
+          DUP() ~ thisLoad() ~ PUTFIELD(FramesCons.TailField) ~
+          xReturn(FramesCons.toTpe)
+      )
+    }
   }
 
   case object FramesCons extends BackendObjType {
@@ -1453,7 +1450,6 @@ object BackendObjType {
       cm.mkField(TailField)
       cm.mkConstructor(Constructor)
       cm.mkMethod(PushMethod)
-      cm.mkMethod(ReverseMethod)
       cm.mkMethod(ReverseOntoMethod)
 
       cm.closeClassMaker()
@@ -1463,25 +1459,9 @@ object BackendObjType {
 
     def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "tail", Frames.toTpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
-    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(
-      withName(1, Frame.toTpe)(frame =>
-        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
-        DUP() ~ frame.load() ~ PUTFIELD(FramesCons.HeadField) ~
-        DUP() ~ thisLoad() ~ PUTFIELD(FramesCons.TailField) ~
-        xReturn(FramesCons.toTpe)
-      )
-    ))
-
-    def ReverseMethod: InstanceMethod = Frames.ReverseMethod.implementation(this.jvmName, IsFinal, Some(
-      thisLoad() ~
-      NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~
-      INVOKEVIRTUAL(ReverseOntoMethod) ~
-      xReturn(Frames.toTpe)
-    ))
+    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(Frames.pushImplementation))
 
     def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
       withName(1, Frames.toTpe)(rest =>
@@ -1502,31 +1482,14 @@ object BackendObjType {
 
       cm.mkConstructor(Constructor)
       cm.mkMethod(PushMethod)
-      cm.mkMethod(ReverseMethod)
       cm.mkMethod(ReverseOntoMethod)
 
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
-    ))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
-    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(
-      withName(1, Frame.toTpe)(frame =>
-        NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
-        DUP() ~ frame.load() ~ PUTFIELD(FramesCons.HeadField) ~
-        DUP() ~ thisLoad() ~ PUTFIELD(FramesCons.TailField) ~
-        xReturn(FramesCons.toTpe)
-      )
-    ))
-
-    def ReverseMethod: InstanceMethod = Frames.ReverseMethod.implementation(this.jvmName, IsFinal, Some(
-      thisLoad() ~
-      NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~
-      INVOKEVIRTUAL(ReverseOntoMethod) ~
-      xReturn(Frames.toTpe)
-    ))
+    def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(Frames.pushImplementation))
 
     def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
       withName(1, Frames.toTpe)(rest =>

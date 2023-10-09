@@ -901,6 +901,33 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedEnumTag](result)
   }
 
+  test("PrefixedEnumSym.01") {
+    val input =
+      s"""
+         |mod N {
+         |    enum _Color {
+         |        case Red,
+         |        case Green,
+         |        case Blue
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("PrefixedEnumSym.02") {
+    val input =
+      s"""
+         |mod N {
+         |    enum _USD(Int32)
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("UnusedFormalParam.Def.01") {
     val input =
       s"""

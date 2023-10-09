@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, sequence, traverse}
@@ -30,6 +30,9 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * Errors with overlapping instances or unfulfilled type constraints must be caught in later phases.
   */
 object Deriver {
+
+  // We don't use regions here, so we can safely put every variable in the default level
+  private implicit val DefaultLevel: Level = Level.Default
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = traverse(root.enums.values) {
