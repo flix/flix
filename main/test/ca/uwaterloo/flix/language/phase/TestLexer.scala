@@ -155,6 +155,14 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("LexerError.UnterminatedBuiltIn.05") {
+    val input =
+      s"""
+         |def f(): Unit = $$BUILT_IN""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedBuiltIn](result)
+  }
+
   test("LexerError.UnterminatedChar.01") {
     val input =
       s"""
@@ -191,6 +199,14 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedChar](result)
   }
 
+  test("LexerError.UnterminatedChar.05") {
+    val input =
+      s"""
+         |def f(): Char = 'a""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedChar](result)
+  }
+
   test("LexerError.UnterminatedInfixFunction.01") {
     val input =
       s"""
@@ -212,11 +228,9 @@ class TestLexer extends AnyFunSuite with TestUtils {
   test("LexerError.UnterminatedInfixFunction.03") {
     val input =
       s"""
-         |def f(): Int32 = 1 `Hash.combine` 2
-       """.stripMargin
+         |def f(): Int32 = 1 `add 2""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    // Expect the lexer to produce no errors. Instead the an undefined name should be thrown.
-    expectError[ResolutionError.UndefinedName](result)
+    expectError[LexerError.UnterminatedInfixFunction](result)
   }
 
   test("LexerError.UnterminatedString.01") {
@@ -224,6 +238,14 @@ class TestLexer extends AnyFunSuite with TestUtils {
       s"""
          |def f(): String = "This is unterminated
        """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedString](result)
+  }
+
+  test("LexerError.UnterminatedString.02") {
+    val input =
+      s"""
+         |def f(): String = "This is unterminated""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedString](result)
   }
@@ -251,6 +273,14 @@ class TestLexer extends AnyFunSuite with TestUtils {
       s"""
          |def f(): String = "$${"Hi $${name!}""
        """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedStringInterpolation](result)
+  }
+
+  test("LexerError.UnterminatedStringInterpolation.04") {
+    val input =
+      s"""
+         |def f(): String = "Hi $${name!"""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedStringInterpolation](result)
   }
