@@ -7,10 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestLexer extends AnyFunSuite with TestUtils {
   test("LexerError.BlockCommentTooDeep.01") {
-    val input =
-      s"""
-         |/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */
-       """.stripMargin
+    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.BlockCommentTooDeep](result)
   }
@@ -18,64 +15,43 @@ class TestLexer extends AnyFunSuite with TestUtils {
   test("LexerError.BlockCommentTooDeep.02") {
     // Note: The innermost block-comment is unterminated,
     // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input =
-    s"""
-       |/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is unclosed and deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */
-       """.stripMargin
+    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is unclosed and deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.BlockCommentTooDeep](result)
   }
 
   test("LexerError.DoubleDottedNumber.01") {
-    val input =
-      s"""
-         |def f(): Float32 = 1.2.3
-       """.stripMargin
+    val input = "1.2.3"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
   test("LexerError.DoubleDottedNumber.02") {
-    val input =
-      s"""
-         |def f(): Float32 = 12..3
-       """.stripMargin
+    val input = "12..3"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
   test("LexerError.DoubleDottedNumber.03") {
-    val input =
-      s"""
-         |def f(): Float32 = 123..
-       """.stripMargin
+    val input = "123.."
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
   test("LexerError.DoubleDottedNumber.04") {
-    val input =
-      s"""
-         |def f(): Float32 = 123..32f32
-       """.stripMargin
+    val input = "123..32f32"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
   test("LexerError.DoubleDottedNumber.05") {
-    val input =
-      s"""
-         |def f(): Float32 = 12332..f32
-       """.stripMargin
+    val input = "12332..f32"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
   test("LexerError.UnexpectedChar.01") {
-    val input =
-      s"""
-         |def f(): Char = €
-       """.stripMargin
+    val input = "€"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnexpectedChar](result)
   }
@@ -91,10 +67,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedBlockComment.02") {
-    val input =
-      s"""
-         |def f(): /* This is unterminated Unit = ()
-       """.stripMargin
+    val input = "def f(): /* This is unterminated Unit = ()"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBlockComment](result)
   }
@@ -103,8 +76,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit = ()
-         |/* This is unterminated
-       """.stripMargin
+         |/* This is unterminated""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBlockComment](result)
   }
@@ -120,167 +92,115 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedBuiltIn.01") {
-    val input =
-      s"""
-         |def f(): Int32 = $$BUILT_IN; 42
-       """.stripMargin
+    val input = "$BUILT_IN; 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedBuiltIn.02") {
-    val input =
-      s"""
-         |def f(): Unit = $$BUILT_IN
-       """.stripMargin
+    val input = "$BUILT_IN"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedBuiltIn.03") {
-    val input =
-      s"""
-         |def f(): Unit = $$BUILT_/*IN*/$$
-       """.stripMargin
+    val input = "$BUILT_/*IN*/$"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedBuiltIn.04") {
-    val input =
-      s"""
-         |def f(): Unit = $$BUILT_IN""".stripMargin
+    val input = "$$BUILT_IN"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedChar.01") {
-    val input =
-      s"""
-         |def f(): Char = 'a
-       """.stripMargin
+    val input = "'a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedChar](result)
   }
 
   test("LexerError.UnterminatedChar.02") {
-    val input =
-      s"""
-         |def f(): Char = '\uffff
-       """.stripMargin
+    val input = "'\uffff"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedChar](result)
   }
 
   test("LexerError.UnterminatedChar.03") {
-    val input =
-      s"""
-         |def f(): Char = 'a/* This is a block-comment */'
-       """.stripMargin
+    val input = "'a/* This is a block-comment */'"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedChar](result)
   }
 
   test("LexerError.UnterminatedChar.04") {
-    val input =
-      s"""
-         |def f(): Char = '/* This is a block-comment */a'
-       """.stripMargin
+    val input = "'/* This is a block-comment */a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedChar](result)
   }
 
   test("LexerError.UnterminatedChar.05") {
-    val input =
-      s"""
-         |def f(): Char = 'a""".stripMargin
+    val input = "'a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedChar](result)
   }
 
   test("LexerError.UnterminatedInfixFunction.01") {
-    val input =
-      s"""
-         |def f(): Int32 = 1 `add 2
-       """.stripMargin
+    val input = "1 `add 2"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedInfixFunction](result)
   }
 
   test("LexerError.UnterminatedInfixFunction.02") {
-    val input =
-      s"""
-         |def f(): Int32 = 1 `add/*this is a block comment*/` 2
-       """.stripMargin
+    val input = "1 `add/*this is a block comment*/` 2"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedInfixFunction](result)
   }
 
   test("LexerError.UnterminatedInfixFunction.03") {
-    val input =
-      s"""
-         |def f(): Int32 = 1 `add 2""".stripMargin
+    val input = "1 `add 2"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedInfixFunction](result)
   }
 
   test("LexerError.UnterminatedString.01") {
-    val input =
-      s"""
-         |def f(): String = "This is unterminated
-       """.stripMargin
+    val input = """ "This is unterminated """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedString](result)
   }
 
   test("LexerError.UnterminatedString.02") {
-    val input =
-      s"""
-         |def f(): String = "This is unterminated""".stripMargin
+    val input = """ "\ """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedString](result)
   }
 
+  test("LexerError.TerminatedStringNoNewline.01") {
+    val input = """ def f(): String = "This is terminated" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
   test("LexerError.UnterminatedStringInterpolation.01") {
-    val input =
-      s"""
-         |def f(): String = "Hi $${name!"
-       """.stripMargin
+    val input = """ "Hi ${name!" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedStringInterpolation](result)
   }
 
   test("LexerError.UnterminatedStringInterpolation.02") {
-    val input =
-      s"""
-         |def f(): String = "$${"Hi $${name!"}"
-       """.stripMargin
+    val input = """ "${"Hi ${name!"}" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedStringInterpolation](result)
   }
 
   test("LexerError.UnterminatedStringInterpolation.03") {
-    val input =
-      s"""
-         |def f(): String = "$${"Hi $${name!}""
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedStringInterpolation](result)
-  }
-
-  test("LexerError.UnterminatedStringInterpolation.04") {
-    val input =
-      s"""
-         |def f(): String = "Hi $${name!"""".stripMargin
+    val input = """ "${"Hi ${name!}"" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedStringInterpolation](result)
   }
 
   test("LexerError.StringInterpolationTooDeep.01") {
-    val input =
-      s"""
-         |"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"
-       """.stripMargin
+    val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.StringInterpolationTooDeep](result)
   }
@@ -288,10 +208,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   test("LexerError.StringInterpolationTooDeep.02") {
     // Note: The innermost interpolation is unterminated,
     // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input =
-    s"""
-       |"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"this is $${unclosed and deep"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"
-       """.stripMargin
+    val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${unclosed and deep"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.StringInterpolationTooDeep](result)
   }

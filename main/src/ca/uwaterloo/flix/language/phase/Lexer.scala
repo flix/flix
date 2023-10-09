@@ -108,7 +108,7 @@ object Lexer {
       lex(src)
     } catch {
       case except: Throwable =>
-        println(except)
+        except.printStackTrace()
         Array.empty[Token].toSuccess
     }
   }
@@ -147,10 +147,12 @@ object Lexer {
    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
    */
   private def advance()(implicit s: State): Char = {
-    val c = s.src.data(s.current.offset)
-    if (!eof()) {
-      s.current.offset += 1
+    if (s.current.offset > s.src.data.length) {
+      return s.src.data.last
     }
+
+    val c = s.src.data(s.current.offset)
+    s.current.offset += 1
     if (c == '\n') {
       s.current.line += 1
       s.current.column = 0
@@ -206,6 +208,9 @@ object Lexer {
    * Since `advance` cannot move past EOF peek will always be in bounds.
    */
   private def peek()(implicit s: State): Char = {
+    if (s.current.offset >= s.src.data.length) {
+      return s.src.data.last
+    }
     s.src.data(s.current.offset)
   }
 
@@ -213,7 +218,7 @@ object Lexer {
    * Peeks the character after the one that state is sitting on if available.
    */
   private def peekPeek()(implicit s: State): Option[Char] = {
-    if (s.current.offset >= s.src.data.length) {
+    if (s.current.offset >= s.src.data.length - 1) {
       None
     } else {
       Some(s.src.data(s.current.offset + 1))
@@ -242,9 +247,8 @@ object Lexer {
    * Checks if the current position has landed on end-of-file
    */
   private def eof()(implicit s: State): Boolean = {
-    s.current.offset >= s.src.data.length - 1
+    s.current.offset >= s.src.data.length
   }
-
 
   /**
    * A helper function for producing a `SourceLocation` starting at `s.start`.
