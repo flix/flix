@@ -108,7 +108,7 @@ object Lexer {
       lex(src)
     } catch {
       case except: Throwable =>
-        println(except)
+        except.printStackTrace()
         Array.empty[Token].toSuccess
     }
   }
@@ -130,14 +130,13 @@ object Lexer {
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-
     val errors = s.tokens.collect {
       case Token(TokenKind.Err(err), _, _, _, _, _) => err
     }
-    if (errors.nonEmpty) {
-      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
-    } else {
+    if (errors.isEmpty) {
       s.tokens.toArray.toSuccess
+    } else {
+      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
     }
   }
 
@@ -148,10 +147,12 @@ object Lexer {
    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
    */
   private def advance()(implicit s: State): Char = {
-    val c = s.src.data(s.current.offset)
-    if (!eof()) {
-      s.current.offset += 1
+    if (s.current.offset > s.src.data.length) {
+      return s.src.data.last
     }
+
+    val c = s.src.data(s.current.offset)
+    s.current.offset += 1
     if (c == '\n') {
       s.current.line += 1
       s.current.column = 0
@@ -207,6 +208,9 @@ object Lexer {
    * Since `advance` cannot move past EOF peek will always be in bounds.
    */
   private def peek()(implicit s: State): Char = {
+    if (s.current.offset >= s.src.data.length) {
+      return s.src.data.last
+    }
     s.src.data(s.current.offset)
   }
 
@@ -214,7 +218,7 @@ object Lexer {
    * Peeks the character after the one that state is sitting on if available.
    */
   private def peekPeek()(implicit s: State): Option[Char] = {
-    if (s.current.offset >= s.src.data.length) {
+    if (s.current.offset >= s.src.data.length - 1) {
       None
     } else {
       Some(s.src.data(s.current.offset + 1))
@@ -243,9 +247,8 @@ object Lexer {
    * Checks if the current position has landed on end-of-file
    */
   private def eof()(implicit s: State): Boolean = {
-    s.current.offset >= s.src.data.length - 1
+    s.current.offset >= s.src.data.length
   }
-
 
   /**
    * A helper function for producing a `SourceLocation` starting at `s.start`.
@@ -496,6 +499,13 @@ object Lexer {
     var advances = 0
     while (!eof()) {
       val p = peek()
+
+      if (p == '$') {
+        // Check for termination.
+        advance()
+        return TokenKind.BuiltIn
+      }
+
       if (p.isLower) {
         // This means that the opening '$' was a separator.
         // we need to rewind the lexer to just after '$'.
@@ -504,10 +514,14 @@ object Lexer {
         }
         return TokenKind.Dollar
       }
-      if (p == '$') {
-        advance()
-        return TokenKind.BuiltIn
+
+      if (!p.isLetter && !p.isDigit && p != '_') {
+        // Do not allow non-letters other than _.
+        // This handles cases like a block comment for instance
+        // IE. `$BUILT_/*IN*/$` is disallowed.
+        return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
       }
+
       advance()
       advances += 1
     }
@@ -631,10 +645,18 @@ object Lexer {
    */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (peek() == '`') {
+      val p = peek()
+      if (p == '`') {
         advance()
         return TokenKind.InfixFunction
       }
+
+      if (p != '.' && p != '!' && !p.isLetter && !p.isDigit && !isMathNameChar(p) && !isGreekNameChar(p)) {
+        // check for chars that are not allowed in function names,
+        // to handle cases like '`my function` or `my/**/function`'
+        return TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
+      }
+
       advance()
     }
     TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
@@ -742,16 +764,23 @@ object Lexer {
 
   /**
    * Moves current position past a char literal.
-   * If the char is unterminated a `TokenKind.Err` is returned
-   * Note that chars might contain unicode hex codes like these "\u00ff"
+   * If the char is unterminated a `TokenKind.Err` is returned.
+   * Note that chars might contain unicode hex codes like these '\u00ff'.
    */
   private def acceptChar()(implicit s: State): TokenKind = {
+    var prev = ' '
     while (!eof()) {
-      if (escapedPeek().contains('\'')) {
+      val p = escapedPeek()
+      if (p.contains('\'')) {
         advance()
         return TokenKind.LiteralChar
       }
-      advance()
+
+      if ((prev, p) == ('/', Some('*'))) {
+        // This handles block comment within a char.
+        return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
+      }
+      prev = advance()
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
