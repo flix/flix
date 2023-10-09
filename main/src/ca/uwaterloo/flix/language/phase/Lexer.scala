@@ -130,16 +130,13 @@ object Lexer {
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-    //    println(s.tokens.mkString("\n"))
-
     val errors = s.tokens.collect {
       case Token(TokenKind.Err(err), _, _, _, _, _) => err
     }
-    if (errors.nonEmpty) {
-      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
-    } else {
-
+    if (errors.isEmpty) {
       s.tokens.toArray.toSuccess
+    } else {
+      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
     }
   }
 
@@ -518,7 +515,7 @@ object Lexer {
         // Do not allow non-letters other than _.
         // This handles cases like a block comment for instance
         // IE. `$BUILT_/*IN*/$` is disallowed.
-        return TokenKind.Err(TokenErrorKind.UnterminatedBuiltIn)
+        return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
       }
 
       advance()
@@ -653,7 +650,7 @@ object Lexer {
       if (!p.isLetter && !isMathNameChar(p) && !isGreekNameChar(p)) {
         // check for chars that are not allowed in function names,
         // to handle cases like '`my function` or `my/**/function`'
-        return TokenKind.Err(TokenErrorKind.UnterminatedInfixFunction)
+        return TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
       }
 
       advance()
@@ -777,7 +774,7 @@ object Lexer {
       if (p.exists(c => !c.isLetter && !c.isDigit)) {
         // Any non letter or digit constitutes an unterminated char.
         // This handles cases like a block comment within a char.
-        return TokenKind.Err(TokenErrorKind.UnterminatedChar)
+        return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
       advance()
     }

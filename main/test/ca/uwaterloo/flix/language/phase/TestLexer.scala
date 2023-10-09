@@ -244,4 +244,26 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.StringInterpolationTooDeep](result)
   }
+
+  test("LexerError.StringInterpolationTooDeep.02") {
+    // Note: The innermost interpolation is unterminated,
+    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
+    val input =
+    s"""
+       |"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"this is $${unclosed and deep"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.StringInterpolationTooDeep](result)
+  }
+
+  test("LexerError.StringInterpolationTooDeep.02") {
+    // Note: The innermost interpolation is unterminated,
+    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
+    val input =
+    s"""
+       |"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"$${"this is $${unclosed and deep"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.StringInterpolationTooDeep](result)
+  }
 }
