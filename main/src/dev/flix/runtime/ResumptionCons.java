@@ -14,11 +14,16 @@ public class ResumptionCons implements Resumption {
     }
 
     @Override
-    public Result rewind(Value v) { // TODO: instance method.
+    public Result rewind(Value v) {
         return new Thunk() { // Return thunk to avoid increase the stack.
             @Override
             public Result invoke() {
-                return Handler.installHandler(effSym, handler, frames, null);
+                return Handler.installHandler(effSym, handler, frames, new Thunk() {
+                    @Override
+                    public Result invoke() {
+                        return tail.rewind(v);
+                    }
+                });
             }
         };
     }
