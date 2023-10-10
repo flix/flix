@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,20 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceKind, SourceLocation, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceKind, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
-// TODO: How to handle errors?
-// An ErrorTree might wrap a ParserError -> Then the tree needs to be traversed to gather errors
-// An ErrorTree might have an index pointing into a separate error list maintained in State.
+// TODO: Add change set support
 
+// TODO: Add a way to transform Tree into a weededAst
+
+
+/**
+ * Errors reside both within the produced `Tree` but are also kept in an array in `state.errors`
+ * to make it easy to return them as a `CompilationMessage` after parsing.
+ */
 object Parser2 {
 
   private sealed trait Event
@@ -51,7 +56,7 @@ object Parser2 {
   private object Mark {
     case class Opened(index: Int) extends Mark
 
-    case class Closed(index: Int) extends Mark
+    //    case class Closed(index: Int) extends Mark
   }
 
   private object Name {
@@ -61,7 +66,7 @@ object Parser2 {
   }
 
   def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, Tree], CompilationMessage] = {
-    if (!flix.options.xparser) {
+    if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
       return Map.empty[Ast.Source, Tree].toSuccess
     }
@@ -69,19 +74,11 @@ object Parser2 {
     flix.phase("Parser2") {
       // Parse each source file in parallel.
       val results = ParOps.parMap(root) {
-        case (src, tokens) => mapN(parse(src, tokens))({
-          case trees => src -> trees
-        })
+        case (src, tokens) => mapN(parse(src, tokens))(trees => src -> trees)
       }
 
       // Construct a map from each source to its tokens.
       mapN(sequence(results))(_.toMap)
-    }
-  }
-
-  def f(tree: Tree): WeededAst.Declaration.Def = {
-    tree match {
-      case Tree(TreeKind.Def, children) =>
     }
   }
 
@@ -90,9 +87,7 @@ object Parser2 {
     source()
     val tree = buildTree()
 
-    //    println(s.events.mkString("\n"))
     println(tree.toDebugString())
-
 
     if (s.errors.length > 0) {
       Validation.SoftFailure(tree, LazyList.from(s.errors))
@@ -141,9 +136,17 @@ object Parser2 {
     stack.head
   }
 
+  /**
+   * A helper function for turning the current position of the parser as a `SourceLocation`
+   */
+  private def currentSourceLocation()(implicit s: State): SourceLocation = {
+    val token = s.tokens(s.position)
+    SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + token.text.length)
+  }
+
   private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
-    s.events = s.events :+ Event.Open(TreeKind.ErrorTree(-1))
+    s.events = s.events :+ Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
     mark
   }
 
@@ -152,11 +155,22 @@ object Parser2 {
     s.events = s.events :+ Event.Close
   }
 
+  private def closeWithError(mark: Mark.Opened, error: Parse2Error)(implicit s: State): Unit = {
+    s.errors = s.errors :+ error
+    close(mark, TreeKind.ErrorTree(error))
+  }
+
   private def advance()(implicit s: State): Unit = {
     assert(!eof())
     s.fuel = 256
     s.events = s.events :+ Event.Advance
     s.position += 1
+  }
+
+  private def advanceWithError(error: Parse2Error)(implicit s: State): Unit = {
+    val mark = open()
+    advance()
+    closeWithError(mark, error)
   }
 
   private def eof()(implicit s: State): Boolean = {
@@ -204,39 +218,18 @@ object Parser2 {
 
   private def expect(kind: TokenKind)(implicit s: State): Unit = {
     if (!eat(kind)) {
-      val error = expectedError(kind)
-      s.errors = s.errors :+ error
+      val mark = open()
+      val error = Parse2Error.UnexpectedToken(currentSourceLocation(), kind)
+      closeWithError(mark, error)
     }
   }
 
   private def expectAny(kinds: List[TokenKind])(implicit s: State): Unit = {
     if (!eatAny(kinds)) {
-      val error = expectedAnyError(kinds)
-      s.errors = s.errors :+ error
+      val mark = open()
+      val error = Parse2Error.DevErr(currentSourceLocation(), s"Expected one of ${kinds.mkString(", ")}")
+      closeWithError(mark, error)
     }
-  }
-
-  private def advanceWithError(error: Parse2Error)(implicit s: State): Unit = {
-    val mark = open()
-    advance()
-    closeWithError(mark, error)
-  }
-
-  private def closeWithError(mark: Mark.Opened, error: Parse2Error)(implicit s: State): Unit = {
-    s.errors = s.errors :+ error
-    close(mark, TreeKind.ErrorTree(s.errors.length - 1))
-  }
-
-  private def expectedError(kind: TokenKind)(implicit s: State): Parse2Error = {
-    val token = s.tokens(s.position)
-    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + token.text.length)
-    Parse2Error.UnexpectedToken(loc, kind)
-  }
-
-  private def expectedAnyError(kinds: List[TokenKind])(implicit s: State): Parse2Error = {
-    val token = s.tokens(s.position)
-    val loc = SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + token.text.length)
-    Parse2Error.UnexpectedToken(loc, kinds(0)) // TODO: Fix this
   }
 
   ////////// GRAMMAR ///////////////
@@ -246,7 +239,7 @@ object Parser2 {
       if (at(TokenKind.KeywordDef)) {
         definition()
       } else {
-        advanceWithError(expectedError(TokenKind.KeywordDef))
+        advanceWithError(Parse2Error.UnexpectedToken(currentSourceLocation(), TokenKind.KeywordDef))
       }
     }
 
@@ -331,6 +324,10 @@ object Parser2 {
         close(mark, TreeKind.ExprName)
       case TokenKind.ParenL =>
         expect(TokenKind.ParenL)
+        if (eat(TokenKind.ParenR)) { // Handle unit literal `()`
+          close(mark, TreeKind.ExprLiteral)
+          return
+        }
         expression()
         expect(TokenKind.ParenR)
         close(mark, TreeKind.ExprParen)
@@ -338,7 +335,7 @@ object Parser2 {
         if (!eof()) {
           advance()
         }
-        close(mark, TreeKind.ErrorTree(-1))
+        closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), "Expected expression."))
     }
   }
 

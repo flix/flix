@@ -46,4 +46,28 @@ object Parse2Error {
 
     override def explain(formatter: Formatter): Option[String] = None
   }
+
+  /**
+   * A temporary general error to speed up development
+   *
+   * TODO: Remove this! This should not make it into master
+   *
+   * @param loc     The source location where the issue is.
+   * @param message The error message.
+   */
+  case class DevErr(loc: SourceLocation, message: String) extends Parse2Error {
+    override def summary: String = message
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $message
+         |
+         |${code(loc, s"Here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 }
