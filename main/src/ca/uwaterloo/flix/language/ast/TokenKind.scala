@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.errors.LexerError
+
 sealed trait TokenKind
 
 /**
@@ -325,9 +327,9 @@ object TokenKind {
 
   /** A special token emitted instead of halting the lexer when an error is encountered.
    *
-   * @param kind the kind of error found.
+   * @param error the actual error related to this token
    */
-  case class Err(kind: TokenErrorKind) extends TokenKind
+  case class Err(error: LexerError) extends TokenKind
 
   /** A virtual token signalling END-OF-FILE.
    */

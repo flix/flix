@@ -548,8 +548,8 @@ object Main {
 
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
-        text("[experimental] enables new experimental lexer and parser.")
-      
+        text("[experimental] disables new experimental lexer and parser.")
+
       note("")
 
       // Input files.
