@@ -73,6 +73,7 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
+  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty  
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
@@ -526,7 +527,7 @@ class Flix {
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader)
+      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
@@ -545,6 +546,7 @@ class Flix {
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
+        this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
         this.cachedWeederAst = afterWeeder
         this.cachedKinderAst = afterKinder
