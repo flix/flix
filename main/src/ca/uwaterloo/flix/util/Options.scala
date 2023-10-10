@@ -142,7 +142,7 @@ case class Options(lib: LibLevel,
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
                    xsummary: Boolean,
-                   xparser: Boolean,
+                   xparser: Boolean
                   )
 
 /**
