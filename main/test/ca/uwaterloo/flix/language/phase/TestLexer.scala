@@ -176,7 +176,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedString.03") {
-    val input = """""""
+    val input = "\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedString](result)
   }
