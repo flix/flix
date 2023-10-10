@@ -17,10 +17,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
+
 import scala.collection.mutable
 
 /**
@@ -81,20 +82,22 @@ object Lexer {
   /**
    * Run the lexer on multiple `Ast.Source`s in parallel.
    */
-  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
+  def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     flix.phase("Lexer") {
       if (flix.options.xparser) {
         // New lexer and parser disabled. Return immediately.
         return Map.empty[Ast.Source, Array[Token]].toSuccess
       }
 
-      // Lex each source file in parallel.
-      val results = ParOps.parMap(root.sources) {
-        case (src, _) => mapN(tryLex(src))(tokens => src -> tokens)
-      }
+      // Compute the stale and fresh sources.
+      val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
+
+      // Lex each stale source file in parallel.
+      val results = ParOps.parMap(stale.keys)(src => mapN(tryLex(src))(tokens => src -> tokens))
 
       // Construct a map from each source to its tokens.
-      mapN(sequence(results))(_.toMap)
+      val reused = fresh.map(_.toSuccess[(Ast.Source, Array[Token]), CompilationMessage])
+      mapN(sequence(results ++ reused))(_.toMap)
     }
   }
 
