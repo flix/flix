@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
-import ca.uwaterloo.flix.language.phase.Lexer.{InterpolatedStringMaxNestingLevel, BlockCommentMaxNestingLevel}
 
 sealed trait LexerError extends CompilationMessage {
   val kind = "Lexer Error"

@@ -22,8 +22,8 @@ import java.nio.file.Path
 
 object Options {
   /**
-   * Default options.
-   */
+    * Default options.
+    */
   val Default: Options = Options(
     lib = LibLevel.All,
     debug = false,
@@ -57,27 +57,27 @@ object Options {
     xnoqmc = false,
     xflexibleregions = false,
     xsummary = false,
-    xparser = false
+    xparser = false,
   )
 
   /**
-   * Default test options.
-   */
+    * Default test options.
+    */
   val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
 
   /**
-   * Default test options with the standard library.
-   */
+    * Default test options with the standard library.
+    */
   val TestWithLibAll: Options = DefaultTest
 
   /**
-   * Default test options with the minimal library.
-   */
+    * Default test options with the minimal library.
+    */
   val TestWithLibMin: Options = DefaultTest.copy(lib = LibLevel.Min)
 
   /**
-   * Default test options without any library.
-   */
+    * Default test options without any library.
+    */
   val TestWithLibNix: Options = DefaultTest.copy(lib = LibLevel.Nix)
 }
 
@@ -142,34 +142,34 @@ case class Options(lib: LibLevel,
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
                    xsummary: Boolean,
-                   xparser: Boolean
+                   xparser: Boolean,
                   )
 
 /**
- * An option to control the version of emitted JVM bytecode.
- */
+  * An option to control the version of emitted JVM bytecode.
+  */
 sealed trait JvmTarget
 
 object JvmTarget {
 
   /**
-   * Emit bytecode for Java 1.6.
-   */
+    * Emit bytecode for Java 1.6.
+    */
   object Version16 extends JvmTarget
 
   /**
-   * Emit bytecode for Java 1.7.
-   */
+    * Emit bytecode for Java 1.7.
+    */
   object Version17 extends JvmTarget
 
   /**
-   * Emit bytecode for Java 1.8.
-   */
+    * Emit bytecode for Java 1.8.
+    */
   object Version18 extends JvmTarget
 
   /**
-   * Emit bytecode for Java 1.9.
-   */
+    * Emit bytecode for Java 1.9.
+    */
   object Version19 extends JvmTarget
 
 }
@@ -179,18 +179,18 @@ sealed trait LibLevel
 object LibLevel {
 
   /**
-   * Do not include any libraries, even those essential for basic functionality.
-   */
+    * Do not include any libraries, even those essential for basic functionality.
+    */
   case object Nix extends LibLevel
 
   /**
-   * Only include essential libraries.
-   */
+    * Only include essential libraries.
+    */
   case object Min extends LibLevel
 
   /**
-   * Include the full standard library.
-   */
+    * Include the full standard library.
+    */
   case object All extends LibLevel
 
 }

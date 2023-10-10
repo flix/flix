@@ -99,8 +99,6 @@ object TokenKind {
 
   case object InfixFunction extends TokenKind
 
-  case object KeywordAbsent extends TokenKind
-
   case object KeywordAlias extends TokenKind
 
   case object KeywordAnd extends TokenKind
@@ -199,8 +197,6 @@ object TokenKind {
 
   case object KeywordPar extends TokenKind
 
-  case object KeywordPresent extends TokenKind
-
   case object KeywordProject extends TokenKind
 
   case object KeywordPub extends TokenKind
@@ -212,8 +208,6 @@ object TokenKind {
   case object KeywordRef extends TokenKind
 
   case object KeywordRegion extends TokenKind
-
-  case object KeywordRelationalChoose extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
 

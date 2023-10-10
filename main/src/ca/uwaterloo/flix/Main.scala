@@ -29,13 +29,13 @@ import java.net.BindException
 import java.nio.file.Paths
 
 /**
- * The main entry point for the Flix compiler and runtime.
- */
+  * The main entry point for the Flix compiler and runtime.
+  */
 object Main {
 
   /**
-   * The main method.
-   */
+    * The main method.
+    */
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
@@ -115,7 +115,7 @@ object Main {
       xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary,
-      xparser = cmdOpts.xparser,
+      xparser = cmdOpts.xparser
     )
 
     // Don't use progress bar if benchmarking.
@@ -285,8 +285,8 @@ object Main {
   }
 
   /**
-   * A case class representing the parsed command line options.
-   */
+    * A case class representing the parsed command line options.
+    */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
                      entryPoint: Option[String] = None,
@@ -326,8 +326,8 @@ object Main {
                      files: Seq[File] = Seq())
 
   /**
-   * A case class representing possible commands.
-   */
+    * A case class representing possible commands.
+    */
   sealed trait Command
 
   object Command {
@@ -359,10 +359,10 @@ object Main {
   }
 
   /**
-   * Parse command line options.
-   *
-   * @param args the arguments array.
-   */
+    * Parse command line options.
+    *
+    * @param args the arguments array.
+    */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
     implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix
