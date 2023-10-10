@@ -54,8 +54,8 @@ object UnstructuredTree {
     def toDebugString(nesting: Int = 1): String =
       s"$kind ${
         children.map {
-          case Child.Token(token) => s"\n${"\t" * nesting}'${token.text}'"
-          case Child.Tree(tree) => s"\n${"\t" * nesting}${tree.toDebugString(nesting + 1)}"
+          case Child.Token(token) => s"\n${"  " * nesting}'${token.text}'"
+          case Child.Tree(tree) => s"\n${"  " * nesting}${tree.toDebugString(nesting + 1)}"
         }.mkString("")
       }"
   }
