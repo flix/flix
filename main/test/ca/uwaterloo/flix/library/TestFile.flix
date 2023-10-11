@@ -23,13 +23,28 @@ mod TestFile {
 
     ///
     /// Helper - make a filepath within the temp directory.
-    /// Assumes getTemporaryDirectory() returns a path suffixed with the separator.
+    /// Use `java.nio.file.Path` functions for platform independence.
     ///
-    def makeTempPath(fileName: String): Result[IOError, String] =
-        match Environment.getTemporaryDirectory() {
-            case Some(dir)  => Ok(dir + fileName)
+    def makeTempPath(fileName: String): Result[IOError, String] = region rc {
+        import static java.nio.file.Path.of(String, Array[String, rc]): ##java.nio.file.Path \ rc as ofPath;
+        import java.nio.file.Path.toString(): String \ {};
+        import java.nio.file.Path.normalize(): ##java.nio.file.Path \ {};
+        let tempdir = match Environment.getTemporaryDirectory() {
+            case Some(dir)  => Ok(dir)
             case None       => Err(Generic("Could not find TemporaryDirectory"))
+        };
+        try {
+            Result.flatMap(root ->  {
+                let arr = List.toArray(rc, fileName :: Nil);
+                let path = ofPath(root, arr) |> normalize |> toString;
+                Ok(path)
+            }, tempdir)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String \ {};
+                Err(Generic(getMessage(ex)))
         }
+    }
 
     ///
     /// Helper - open an existing file for reading, run `reader`, use `test`
