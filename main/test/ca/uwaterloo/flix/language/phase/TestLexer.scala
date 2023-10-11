@@ -175,6 +175,12 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedString](result)
   }
 
+  test("LexerError.UnterminatedString.03") {
+    val input = "\""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedString](result)
+  }
+
   test("LexerError.TerminatedStringNoNewline.01") {
     val input = """ def f(): String = "This is terminated" """
     val result = compile(input, Options.TestWithLibNix)
