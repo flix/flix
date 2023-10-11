@@ -744,7 +744,7 @@ object Lexer {
       s.interpolationNestingLevel = 0
       return TokenKind.Err(LexerError.StringInterpolationTooDeep(sourceLocationAtCurrent()))
     }
-
+    val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
     addToken(TokenKind.LiteralStringInterpolationL)
     // consume tokens until a terminating '}' is found
@@ -771,7 +771,7 @@ object Lexer {
         addToken(kind)
       }
     }
-    TokenKind.Err(LexerError.UnterminatedStringInterpolation(sourceLocationAtStart()))
+    TokenKind.Err(LexerError.UnterminatedStringInterpolation(startLocation))
   }
 
   /**
