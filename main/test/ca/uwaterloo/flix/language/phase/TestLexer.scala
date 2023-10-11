@@ -218,4 +218,16 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.StringInterpolationTooDeep](result)
   }
+
+  test("Lexer.BlockCommentTerminationInString.01") {
+    val input = """ /* def example(): String = "*//" */ """
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[LexerError](result)
+  }
+
+  test("Lexer.BlockCommentOpeningInString.01") {
+    val input = """ /* def example(): String = "//*" */ """
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
 }
