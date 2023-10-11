@@ -875,20 +875,30 @@ object Lexer {
    */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
     var level = 1
+    var isInString = false
     while (!eof()) {
       (peek(), peekPeek()) match {
+        case ('"', _) =>
+          isInString = !isInString
+          advance()
         case ('/', Some('*')) =>
-          level += 1
-          if (level >= BlockCommentMaxNestingLevel) {
-            return TokenKind.Err(LexerError.BlockCommentTooDeep(sourceLocationAtCurrent()))
+          if (!isInString) {
+            level += 1
+            if (level >= BlockCommentMaxNestingLevel) {
+              return TokenKind.Err(LexerError.BlockCommentTooDeep(sourceLocationAtCurrent()))
+            }
           }
           advance()
         case ('*', Some('/')) =>
-          level -= 1
-          advance()
-          advance()
-          if (level == 0) {
-            return TokenKind.CommentBlock
+          if (!isInString) {
+            level -= 1
+            advance()
+            advance()
+            if (level == 0) {
+              return TokenKind.CommentBlock
+            }
+          } else {
+            advance()
           }
         case _ => advance()
       }
