@@ -872,6 +872,9 @@ object Lexer {
    * If this level is reached a `TokenKind.Err` is returned.
    * A block-comment might also be unterminated if there is less terminations than levels of nesting.
    * In this case a `TokenKind.Err` is returned as well.
+   * Also note cases like '/* def f(): String = "* /" */'.
+   * Since a string containing either "/ *" or "* /"is treated as a regular string,
+   * acceptBlockComment must keep track of whether it is within a string to ignore nesting or termination.
    */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
     var level = 1
