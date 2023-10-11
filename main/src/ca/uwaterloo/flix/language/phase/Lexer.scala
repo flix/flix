@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, Sour
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import org.parboiled2.ParserInput
 
 import scala.collection.mutable
 
@@ -72,6 +73,10 @@ object Lexer {
     val current: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
     var interpolationNestingLevel: Int = 0
+    // Compute a `ParserInput` when initializing a state for lexing a source.
+    // This is necessary to display source code in error messages.
+    // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
+    val parserInput: ParserInput = ParserInput.apply(src.data)
   }
 
   /**
@@ -259,8 +264,10 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtStart(length: Int = 1)(implicit s: State): SourceLocation = {
-    val line = s.start.line + 1 // state is zero-indexed while file numbers are one-indexed.
-    SourceLocation(None, s.src, SourceKind.Real, line, s.start.column, line, s.start.column + length)
+    // state is zero-indexed while SourceLocation works as one-indexed.
+    val line = s.start.line + 1
+    val column = s.start.column + 1
+    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
   }
 
   /**
@@ -269,8 +276,10 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtCurrent(length: Int = 1)(implicit s: State): SourceLocation = {
-    val line = s.current.line + 1 // state is zero-indexed while file numbers are one-indexed.
-    SourceLocation(None, s.src, SourceKind.Real, line, s.current.column, line, s.current.column + length)
+    // state is zero-indexed while SourceLocation works as one-indexed.
+    val line = s.current.line + 1
+    val column = s.current.column + 1
+    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
   }
 
   /**
