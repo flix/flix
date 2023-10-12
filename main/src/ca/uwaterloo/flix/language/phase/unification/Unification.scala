@@ -519,10 +519,10 @@ object Unification {
   /**
     * Ensures that the region variable `rvar` does not escape.
     *
-    * A rigid variable could escape in two ways:
+    * A rigid region variable could escape in two ways:
     *
-    * - Directly: Via being returned (possibly inside some data structure).
-    * - Indirectly: Via being assigned outside of the scope.
+    * - Directly: via being returned (possibly inside some data structure).
+    * - Indirectly: via being unified with some type variable outside its scope.
     *
     * We check for both.
     */
@@ -536,7 +536,7 @@ object Unification {
         // Case 1: Direct escape via return.
         Err(TypeError.RegionVarEscapes(rvar, minimizedType, rvar.loc))
       } else if (actualRegion < leavingRegion) {
-        // Case 2: Indirect escape via assignment outside the scope.
+        // Case 2: Indirect escape via unification outside of its scope.
         Err(TypeError.RegionVarEscapes(rvar, rvar, rvar.loc))
       } else {
         Ok((s, econstrs, renv, ()))
