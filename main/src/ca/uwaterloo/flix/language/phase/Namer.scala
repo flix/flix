@@ -684,10 +684,10 @@ object Namer {
 
     case WeededAst.Expr.Scope(ident, exp, loc) =>
       // Introduce a fresh variable symbol for the region.
-      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)(level.incr, flix)
 
       // Introduce a rigid region variable for the region.
-      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)
+      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), isRegion = true, loc)(level.incr, flix)
 
       // We must increase the level because we go under a new region scope.
       mapN(visitExp(exp, ns0)(level.incr, flix)) {
