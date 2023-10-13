@@ -712,14 +712,10 @@ object TypeInference {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
-        // Ensure that `exp1` is a lambda.
-        val a = Type.freshVar(Kind.Star, loc)
-        val b = Type.freshVar(Kind.Star, loc)
-        val p = Type.freshVar(Kind.Eff, loc)
-        val expectedType = Type.mkArrowWithEffect(a, p, b, loc)
+        // Note: We do not have to ensure that `exp1` is a lambda
+        // because it is syntactically ensured.
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
-          arrowTyp <- unifyTypeM(expectedType, tpe1, exp1.loc)
           boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2

@@ -73,7 +73,7 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty  
+  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
@@ -539,7 +539,6 @@ class Flix {
       afterStatistics <- Statistics.run(afterEntryPoint)
       _ <- Instances.run(afterStatistics, cachedTyperAst, changeSet)
       afterStratifier <- Stratifier.run(afterStatistics)
-      _ <- Regions.run(afterStratifier)
       afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
