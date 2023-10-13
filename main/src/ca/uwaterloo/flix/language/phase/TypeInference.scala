@@ -715,8 +715,9 @@ object TypeInference {
         // Note: We do not have to ensure that `exp1` is a lambda
         // because it is syntactically ensured.
         for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)(level.incr)
           boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
+          _ <- purifyLetRec(boundVar)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
           resultEff = Type.mkUnion(eff1, eff2, loc)
