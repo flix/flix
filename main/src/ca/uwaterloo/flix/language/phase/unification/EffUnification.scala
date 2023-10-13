@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
+import ca.uwaterloo.flix.util.collection.Bimap
 import org.sosy_lab.pjbdd.api.DD
 
 object EffUnification {
@@ -177,7 +178,7 @@ object EffUnification {
     //
     // Run the expensive Boolean unification algorithm.
     //
-    booleanUnification(f1, f2, renv) match {
+    booleanUnification(f1, f2, renv, env) match {
       case None => UnificationError.MismatchedEffects(tpe1, tpe2).toErr
       case Some(subst) =>
         if (!flix.options.xnoboolcache) {
@@ -190,7 +191,7 @@ object EffUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int], env: Bimap[BoolFormula.VarOrEff, Int])
                                    (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = alg.mkXor(tpe1, tpe2)
@@ -202,7 +203,7 @@ object EffUnification {
     val flexibleTypeVars = typeVars.filterNot(renv.contains)
 
     // Determine the order in which to eliminate the variables.
-    val freeVars = computeVariableOrder(flexibleTypeVars)
+    val freeVars = computeVariableOrder(flexibleTypeVars, env)
 
     // Eliminate all variables.
     try {
@@ -226,19 +227,20 @@ object EffUnification {
   /**
     * A heuristic used to determine the order in which to eliminate variable.
     *
-    * Semantically the order of variables is immaterial. Changing the order may
-    * yield different unifiers, but they are all equivalent. However, changing
-    * the can lead to significant speed-ups / slow-downs.
+    * We want to instantiate inner most variables.
+    * Hence we want a reverse ordering on each variable level.
     *
-    * We make the following observation:
-    *
-    * We want to have synthetic variables (i.e. fresh variables introduced during
-    * type inference) expressed in terms of real variables (i.e. variables that
-    * actually occur in the source code). We can ensure this by eliminating the
-    * synthetic variables first.
+    * Experimentally this ordering co-incides with reverse ordering on the variable index.
     */
-  private def computeVariableOrder(l: List[Int]): List[Int] = {
-    l.reverse // TODO have to reverse the order for regions to work
+  private def computeVariableOrder[F](freeVars: List[Int], env: Bimap[BoolFormula.VarOrEff, Int]): List[Int] = {
+    def levelOf(i: Int): Int = env.getBackward(i) match {
+      case Some(BoolFormula.VarOrEff.Var(sym)) => -sym.level.i
+      case Some(BoolFormula.VarOrEff.Eff(_)) =>
+        throw InternalCompilerException(s"Unexpected effect variable: '$i'.", SourceLocation.Unknown)
+      case None =>
+        throw InternalCompilerException(s"Unmapped variable: '$i''", SourceLocation.Unknown)
+    }
+    freeVars.sortBy(levelOf)
   }
 
   /**
