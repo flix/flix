@@ -233,8 +233,8 @@ object EffUnification {
     * Experimentally this ordering co-incides with reverse ordering on the variable index.
     */
   private def computeVariableOrder[F](freeVars: List[Int], env: Bimap[BoolFormula.VarOrEff, Int]): List[Int] = {
-    def levelOf(i: Int): Int = env.getBackward(i) match {
-      case Some(BoolFormula.VarOrEff.Var(sym)) => -sym.level.i
+    def levelOf(i: Int): (Int, Int) = env.getBackward(i) match {
+      case Some(BoolFormula.VarOrEff.Var(sym)) => (-sym.level.i, sym.id)
       case Some(BoolFormula.VarOrEff.Eff(_)) =>
         throw InternalCompilerException(s"Unexpected effect variable: '$i'.", SourceLocation.Unknown)
       case None =>
