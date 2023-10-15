@@ -384,4 +384,23 @@ mod TestMutDisjointSet {
         Assert.eq(false, actual)
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def size01(): Bool = region rc {
+        let s: MutDisjointSet[String, rc] = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(Nil, s);
+        Assert.eq(0, MutDisjointSet.size(s))
+    }
+
+    @Test
+    def size02(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        Assert.eq(10, MutDisjointSet.size(s))
+    }
+
 }
