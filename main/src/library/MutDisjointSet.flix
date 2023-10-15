@@ -60,10 +60,7 @@ mod MutDisjointSet {
     ///
     pub def contains(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
         let MutDisjointSet({ forest | _ }) = s;
-        match MutMap.get(x, forest) {
-            case Some(_) => true
-            case None    => false
-        }
+        MutMap.memberOf(x, forest)
     }
 
     ///
