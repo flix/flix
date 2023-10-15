@@ -445,6 +445,47 @@ object Unification {
   }
 
   /**
+    * Purifies all effect variables in `tpe` (which should be the type of a letrec-bound function).
+    *
+    * This emulates the instantiation of a type scheme where we mark the letrec function as having
+    * no effects by itself, but only those effects that the function itself actually causes.
+    *
+    * This is to avoid inferring a type like: f: a -> b \ alpha + ef_1 + ef_2 ... where alpha
+    * is purely an artifact of type inference.
+    */
+  def purifyLetRec(tpe: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
+    InferMonad { case (s1, econstrs, renv) =>
+
+      // (We do not have to apply s1 to tpe since that has already been done).
+
+      // Compute the free effect variables in the function type.
+      val fvs = tpe.typeVars.filter(_.kind == Kind.Eff)
+
+      // Compute those variables which occur at the same level as the letrec.
+      // Note: We could consider variable at the same and higher-level, but we stay conservative for now.
+      val rvs = fvs.filter(_.sym.level == level.incr)
+
+      if (rvs.isEmpty) {
+        // Case 1: No variables. No work to be done.
+        Ok((s1, econstrs, renv, tpe))
+      } else {
+        // Case 2: We have some variables. We want to purify them.
+
+        // Compute a new substitution where those variables are pure.
+        val s2 = Substitution(rvs.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type])({
+          case (macc, tvar) => macc + (tvar.sym -> Type.Pure)
+        }))
+
+        // Compose s1 and s2. Apply s2 to tpe. We only apply s2 because s1 has already been applied.
+        val s3 = s1 @@ s2
+        val res = s2(tpe)
+
+        Ok((s3, econstrs, renv, res))
+      }
+    }
+  }
+
+  /**
     * Removes the given type variable `tvar` from the substitution.
     *
     * NB: Use with EXTREME CAUTION.
