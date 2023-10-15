@@ -73,8 +73,7 @@ mod MutDisjointSet {
         Node.Node({ rc = rc, value = x, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
 
     ///
-    /// Updates `s` with collection of disjoint singleton sets containing
-    /// the elements of the iterable `m`.
+    /// Updates `s` with the elements of the iterable `m`.
     ///
     pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
         Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
