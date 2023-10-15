@@ -712,8 +712,8 @@ object TypeInference {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
-        // Note: We do not have to ensure that `exp1` is a lambda
-        // because it is syntactically ensured.
+        // Note 1: We do not have to ensure that `exp1` is a lambda because it is syntactically ensured.
+        // Note 2: We purify the letrec bound function to simplify its inferred effect.
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)(level.incr)
           boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
