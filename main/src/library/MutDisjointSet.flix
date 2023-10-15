@@ -146,6 +146,9 @@ mod MutDisjointSet {
         case (Node.Node({ value = xval | _ }), Node.Node({ value = yval | _ })) => xval == yval
     }
 
+    ///
+    /// Returns the number of elements in `s`.
+    ///
     pub def size(s: MutDisjointSet[t, r]): Int32 \ r with Order[t] =
         let MutDisjointSet({ forest | _ }) = s;
         MutMap.size(forest)
