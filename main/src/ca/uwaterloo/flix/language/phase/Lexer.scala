@@ -17,10 +17,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import org.parboiled2.ParserInput
+
 import scala.collection.mutable
 
 /**
@@ -71,6 +73,10 @@ object Lexer {
     val current: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
     var interpolationNestingLevel: Int = 0
+    // Compute a `ParserInput` when initializing a state for lexing a source.
+    // This is necessary to display source code in error messages.
+    // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
+    val parserInput: ParserInput = ParserInput.apply(src.data)
   }
 
   /**
@@ -81,20 +87,22 @@ object Lexer {
   /**
    * Run the lexer on multiple `Ast.Source`s in parallel.
    */
-  def run(root: ReadAst.Root)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
+  def run(root: ReadAst.Root, oldTokens: Map[Ast.Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, Array[Token]], CompilationMessage] = {
     flix.phase("Lexer") {
       if (flix.options.xparser) {
         // New lexer and parser disabled. Return immediately.
         return Map.empty[Ast.Source, Array[Token]].toSuccess
       }
 
-      // Lex each source file in parallel.
-      val results = ParOps.parMap(root.sources) {
-        case (src, _) => mapN(tryLex(src))(tokens => src -> tokens)
-      }
+      // Compute the stale and fresh sources.
+      val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
+
+      // Lex each stale source file in parallel.
+      val results = ParOps.parMap(stale.keys)(src => mapN(tryLex(src))(tokens => src -> tokens))
 
       // Construct a map from each source to its tokens.
-      mapN(sequence(results))(_.toMap)
+      val reused = fresh.map(_.toSuccess[(Ast.Source, Array[Token]), CompilationMessage])
+      mapN(sequence(results ++ reused))(_.toMap)
     }
   }
 
@@ -108,7 +116,7 @@ object Lexer {
       lex(src)
     } catch {
       case except: Throwable =>
-        println(except)
+        except.printStackTrace()
         Array.empty[Token].toSuccess
     }
   }
@@ -130,14 +138,13 @@ object Lexer {
     // Add a virtual eof token at the last position.
     addToken(TokenKind.Eof)
 
-
     val errors = s.tokens.collect {
       case Token(TokenKind.Err(err), _, _, _, _, _) => err
     }
-    if (errors.nonEmpty) {
-      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
-    } else {
+    if (errors.isEmpty) {
       s.tokens.toArray.toSuccess
+    } else {
+      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
     }
   }
 
@@ -148,10 +155,12 @@ object Lexer {
    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
    */
   private def advance()(implicit s: State): Char = {
-    val c = s.src.data(s.current.offset)
-    if (!eof()) {
-      s.current.offset += 1
+    if (s.current.offset > s.src.data.length) {
+      return s.src.data.last
     }
+
+    val c = s.src.data(s.current.offset)
+    s.current.offset += 1
     if (c == '\n') {
       s.current.line += 1
       s.current.column = 0
@@ -207,6 +216,9 @@ object Lexer {
    * Since `advance` cannot move past EOF peek will always be in bounds.
    */
   private def peek()(implicit s: State): Char = {
+    if (s.current.offset >= s.src.data.length) {
+      return s.src.data.last
+    }
     s.src.data(s.current.offset)
   }
 
@@ -214,7 +226,7 @@ object Lexer {
    * Peeks the character after the one that state is sitting on if available.
    */
   private def peekPeek()(implicit s: State): Option[Char] = {
-    if (s.current.offset >= s.src.data.length) {
+    if (s.current.offset >= s.src.data.length - 1) {
       None
     } else {
       Some(s.src.data(s.current.offset + 1))
@@ -243,9 +255,8 @@ object Lexer {
    * Checks if the current position has landed on end-of-file
    */
   private def eof()(implicit s: State): Boolean = {
-    s.current.offset >= s.src.data.length - 1
+    s.current.offset >= s.src.data.length
   }
-
 
   /**
    * A helper function for producing a `SourceLocation` starting at `s.start`.
@@ -253,8 +264,10 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtStart(length: Int = 1)(implicit s: State): SourceLocation = {
-    val line = s.start.line + 1 // state is zero-indexed while file numbers are one-indexed.
-    SourceLocation(None, s.src, SourceKind.Real, line, s.start.column, line, s.start.column + length)
+    // state is zero-indexed while SourceLocation works as one-indexed.
+    val line = s.start.line + 1
+    val column = s.start.column + 1
+    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
   }
 
   /**
@@ -263,8 +276,10 @@ object Lexer {
    * @param length the length that the source location should span
    */
   private def sourceLocationAtCurrent(length: Int = 1)(implicit s: State): SourceLocation = {
-    val line = s.current.line + 1 // state is zero-indexed while file numbers are one-indexed.
-    SourceLocation(None, s.src, SourceKind.Real, line, s.current.column, line, s.current.column + length)
+    // state is zero-indexed while SourceLocation works as one-indexed.
+    val line = s.current.line + 1
+    val column = s.current.column + 1
+    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
   }
 
   /**
@@ -496,6 +511,13 @@ object Lexer {
     var advances = 0
     while (!eof()) {
       val p = peek()
+
+      if (p == '$') {
+        // Check for termination.
+        advance()
+        return TokenKind.BuiltIn
+      }
+
       if (p.isLower) {
         // This means that the opening '$' was a separator.
         // we need to rewind the lexer to just after '$'.
@@ -504,10 +526,14 @@ object Lexer {
         }
         return TokenKind.Dollar
       }
-      if (p == '$') {
-        advance()
-        return TokenKind.BuiltIn
+
+      if (!p.isLetter && !p.isDigit && p != '_') {
+        // Do not allow non-letters other than _.
+        // This handles cases like a block comment for instance
+        // IE. `$BUILT_/*IN*/$` is disallowed.
+        return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
       }
+
       advance()
       advances += 1
     }
@@ -631,10 +657,18 @@ object Lexer {
    */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (peek() == '`') {
+      val p = peek()
+      if (p == '`') {
         advance()
         return TokenKind.InfixFunction
       }
+
+      if (p != '.' && p != '!' && !p.isLetter && !p.isDigit && !isMathNameChar(p) && !isGreekNameChar(p)) {
+        // check for chars that are not allowed in function names,
+        // to handle cases like '`my function` or `my/**/function`'
+        return TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
+      }
+
       advance()
     }
     TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
@@ -710,7 +744,7 @@ object Lexer {
       s.interpolationNestingLevel = 0
       return TokenKind.Err(LexerError.StringInterpolationTooDeep(sourceLocationAtCurrent()))
     }
-
+    val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
     addToken(TokenKind.LiteralStringInterpolationL)
     // consume tokens until a terminating '}' is found
@@ -737,21 +771,28 @@ object Lexer {
         addToken(kind)
       }
     }
-    TokenKind.Err(LexerError.UnterminatedStringInterpolation(sourceLocationAtStart()))
+    TokenKind.Err(LexerError.UnterminatedStringInterpolation(startLocation))
   }
 
   /**
    * Moves current position past a char literal.
-   * If the char is unterminated a `TokenKind.Err` is returned
-   * Note that chars might contain unicode hex codes like these "\u00ff"
+   * If the char is unterminated a `TokenKind.Err` is returned.
+   * Note that chars might contain unicode hex codes like these '\u00ff'.
    */
   private def acceptChar()(implicit s: State): TokenKind = {
+    var prev = ' '
     while (!eof()) {
-      if (escapedPeek().contains('\'')) {
+      val p = escapedPeek()
+      if (p.contains('\'')) {
         advance()
         return TokenKind.LiteralChar
       }
-      advance()
+
+      if ((prev, p) == ('/', Some('*'))) {
+        // This handles block comment within a char.
+        return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
+      }
+      prev = advance()
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))

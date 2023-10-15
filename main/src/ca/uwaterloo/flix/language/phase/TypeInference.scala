@@ -332,7 +332,7 @@ object TypeInference {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  def inferExp(exp0: KindedAst.Expr, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  def inferExp(exp0: KindedAst.Expr, root: KindedAst.Root, level0: Level)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
@@ -712,14 +712,10 @@ object TypeInference {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
-        // Ensure that `exp1` is a lambda.
-        val a = Type.freshVar(Kind.Star, loc)
-        val b = Type.freshVar(Kind.Star, loc)
-        val p = Type.freshVar(Kind.Eff, loc)
-        val expectedType = Type.mkArrowWithEffect(a, p, b, loc)
+        // Note: We do not have to ensure that `exp1` is a lambda
+        // because it is syntactically ensured.
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
-          arrowTyp <- unifyTypeM(expectedType, tpe1, exp1.loc)
           boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
@@ -1481,7 +1477,7 @@ object TypeInference {
       } yield (constrs1 ++ constrs2.flatten, resultType)
     }
 
-    visitExp(exp0)(Level.Top)
+    visitExp(exp0)(level0)
   }
 
   /**
@@ -1489,7 +1485,7 @@ object TypeInference {
     */
   private def inferExpectedExp(exp: KindedAst.Expr, tpe0: Type, eff0: Type, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
     for {
-      (tconstrs, tpe, eff) <- inferExp(exp, root)
+      (tconstrs, tpe, eff) <- inferExp(exp, root, Level.Top)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
       _ <- expectEffectM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, eff)
@@ -1615,7 +1611,7 @@ object TypeInference {
       // Adds additional type constraints if the denotation is a lattice.
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
       for {
-        (termConstrs, termTypes, termEffs) <- traverseM(terms)(inferExp(_, root)).map(_.unzip3)
+        (termConstrs, termTypes, termEffs) <- traverseM(terms)(inferExp(_, root, level)).map(_.unzip3)
         pureTermEffs <- unifyEffM(Type.Pure, Type.mkUnion(termEffs, loc), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
@@ -1640,14 +1636,14 @@ object TypeInference {
         val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         for {
-          (constrs, tpe, eff) <- inferExp(exp, root)
+          (constrs, tpe, eff) <- inferExp(exp, root, level)
           expTyp <- unifyTypeM(expectedType, tpe, loc)
           expEff <- unifyEffM(Type.Pure, eff, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
 
       case KindedAst.Predicate.Body.Guard(exp, loc) =>
         for {
-          (constrs, tpe, eff) <- inferExp(exp, root)
+          (constrs, tpe, eff) <- inferExp(exp, root, level)
           expEff <- unifyEffM(Type.Pure, eff, loc)
           expTyp <- unifyTypeM(Type.Bool, tpe, loc)
         } yield (constrs, mkAnySchemaRowType(loc))

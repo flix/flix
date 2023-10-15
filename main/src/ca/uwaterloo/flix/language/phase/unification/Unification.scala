@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.Regions
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -49,7 +48,7 @@ object Unification {
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
-    Level.equalize(x, tpe, renv)
+    Level.equalizeR(x, tpe, renv)
 
     tpe match {
 
@@ -518,18 +517,30 @@ object Unification {
   }
 
   /**
-    * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
+    * Ensures that the region variable `rvar` does not escape.
+    *
+    * A rigid region variable could escape in two ways:
+    *
+    * - Directly: via being returned (possibly inside some data structure).
+    * - Indirectly: via being unified with some type variable outside its scope.
+    *
+    * We check for both.
     */
-  def noEscapeM(rvar: Type.Var, tpe: Type)(implicit flix: Flix): InferMonad[Unit] =
+  def noEscapeM(rvar: Type.Var, tpe: Type)(implicit level: Level, flix: Flix): InferMonad[Unit] =
     InferMonad { case (s, econstrs, renv) =>
-      // Apply the current substitution to `tpe`.
-      val t = TypeMinimization.minimizeType(s(tpe))
+      val minimizedType = TypeMinimization.minimizeType(s(tpe))
+      val actualRegion = rvar.sym.level.i
+      val leavingRegion = level.i + 1
 
-      // Check whether the region variable is essential to the type.
-      if (Regions.essentialTo(rvar, t)) {
-        Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
-      } else
+      if (minimizedType.typeVars.contains(rvar)) {
+        // Case 1: Direct escape via return.
+        Err(TypeError.RegionVarEscapes(rvar, minimizedType, rvar.loc))
+      } else if (actualRegion < leavingRegion) {
+        // Case 2: Indirect escape via unification outside of its scope.
+        Err(TypeError.RegionVarEscapes(rvar, rvar, rvar.loc))
+      } else {
         Ok((s, econstrs, renv, ()))
+      }
     }
 
   /**

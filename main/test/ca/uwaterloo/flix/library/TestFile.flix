@@ -18,7 +18,33 @@ mod TestFile {
 
     use File.Mode.{ReadOnly, ReadWrite}
     use Applicative.{*>}
+    use Monad.{>>=}
     use IOError.Generic
+
+    ///
+    /// Helper - make a filepath within the temp directory.
+    /// Use `java.nio.file.Path` functions for platform independence.
+    ///
+    def makeTempPath(fileName: String): Result[IOError, String] = region rc {
+        import static java.nio.file.Path.of(String, Array[String, rc]): ##java.nio.file.Path \ rc as ofPath;
+        import java.nio.file.Path.toString(): String \ {};
+        import java.nio.file.Path.normalize(): ##java.nio.file.Path \ {};
+        let tempdir = match Environment.getTemporaryDirectory() {
+            case Some(dir)  => Ok(dir)
+            case None       => Err(Generic("Could not find TemporaryDirectory"))
+        };
+        try {
+            Result.flatMap(root ->  {
+                let arr = List.toArray(rc, fileName :: Nil);
+                let path = ofPath(root, arr) |> normalize |> toString;
+                Ok(path)
+            }, tempdir)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String \ {};
+                Err(Generic(getMessage(ex)))
+        }
+    }
 
     ///
     /// Helper - open an existing file for reading, run `reader`, use `test`
@@ -155,10 +181,11 @@ mod TestFile {
 
     @test
     def setLength01(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
-                    File.setLength!(10i64),
-                    File.length,
-                    len -> len == 10i64)
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
+                        File.setLength!(10i64),
+                        File.length,
+                        len -> len == 10i64))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -430,10 +457,11 @@ mod TestFile {
         let src = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
         let dest = Array.new(rc, 4);
         let expected = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.write!(src),
                     File.read!(dest),
-                    _ -> Array.sameElements(dest, expected))
+                    _ -> Array.sameElements(dest, expected)))
             |> Result.getWithDefault(false)
     }
 
@@ -446,10 +474,11 @@ mod TestFile {
         let src = Array#{0i8, 1i8, 2i8, 3i8} @ rc;
         let dest = Array.new(rc, 2);
         let expected = Array#{2i8, 3i8} @ rc;
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeWith!(sourceOffset = 2, length = 2, src),
                     File.read!(dest),
-                    _ -> Array.sameElements(dest, expected))
+                    _ -> Array.sameElements(dest, expected)))
             |> Result.getWithDefault(false)
     }
 
@@ -459,19 +488,21 @@ mod TestFile {
 
     @test
     def writeBool01(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeBool!(true),
                     File.readBool!,
-                    b -> b == true)
+                    b -> b == true))
             |> Result.getWithDefault(false)
 
 
     @test
     def writeBool02(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeBool!(false),
                     File.readBool!,
-                    b -> b == false)
+                    b -> b == false))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -480,10 +511,11 @@ mod TestFile {
 
     @test
     def writeAsChar01(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeAsChar!(65),
                     File.readChar!,
-                    ch -> ch == 'A')
+                    ch -> ch == 'A'))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -492,10 +524,11 @@ mod TestFile {
 
     @test
     def writeAsByte01(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeAsByte!(100),
                     File.readByte!,
-                    i -> i == 100)
+                    i -> i == 100))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -504,10 +537,11 @@ mod TestFile {
 
     @test
     def writeAsShort01(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeAsShort!(100),
                     File.readUnsignedShort!,
-                    i -> i == 100)
+                    i -> i == 100))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -516,10 +550,11 @@ mod TestFile {
 
     @test
     def writeInt3201(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeInt32!(100),
                     File.readInt32!,
-                    i -> i == 100)
+                    i -> i == 100))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -528,10 +563,11 @@ mod TestFile {
 
     @test
     def writeInt6401(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeInt64!(100i64),
                     File.readInt64!,
-                    i -> i == 100i64)
+                    i -> i == 100i64))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -540,10 +576,11 @@ mod TestFile {
 
     @test
     def writeFloat3201(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeFloat32!(100.0f32),
                     File.readFloat32!,
-                    d -> d == 100.0f32)
+                    d -> d == 100.0f32))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -552,10 +589,11 @@ mod TestFile {
 
     @test
     def writeFloat6401(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeFloat64!(100.0f64),
                     File.readFloat64!,
-                    d -> d == 100.0f64)
+                    d -> d == 100.0f64))
             |> Result.getWithDefault(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -564,10 +602,11 @@ mod TestFile {
 
     @test
     def writeModifiedUTF01(): Bool \ IO =
-        testWriteFunctionWithReadBack("./main/test/ca/uwaterloo/flix/library/testdata/outfile01.bin",
+        (makeTempPath("outfile01.bin") >>= path ->
+            testWriteFunctionWithReadBack(path,
                     File.writeModifiedUTF!("Hello World!"),
                     File.readModifiedUTF!,
-                    s -> s == "Hello World!")
+                    s -> s == "Hello World!"))
             |> Result.getWithDefault(false)
 
 }

@@ -73,6 +73,7 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
+  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
@@ -208,7 +209,7 @@ class Flix {
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
-    "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
+    "MutQueue.flix" -> LocalResource.get("/src/library/MutQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutDisjointSet.flix" -> LocalResource.get("/src/library/MutDisjointSet.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
@@ -527,7 +528,7 @@ class Flix {
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader)
+      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
@@ -539,13 +540,13 @@ class Flix {
       afterStatistics <- Statistics.run(afterEntryPoint)
       _ <- Instances.run(afterStatistics, cachedTyperAst, changeSet)
       afterStratifier <- Stratifier.run(afterStatistics)
-      _ <- Regions.run(afterStratifier)
       afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
+        this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
         this.cachedWeederAst = afterWeeder
         this.cachedKinderAst = afterKinder
