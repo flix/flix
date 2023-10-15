@@ -34,10 +34,10 @@ import scala.annotation.tailrec
   * INVARIANT: No rule should comsume trailing whitespace
   *
   * REASON: Consuming trailing whitespace might consume the documentation of the
-  *         next def/class/etc.
+  * next def/class/etc.
   *
   * EXAMPLE: Do not write `... ~ optWS ~ optional(":" ~ optWS ~ Type)`,
-  *          instead write `... ~ optional(optWS ~ ":" ~ optWS ~ Type)`.
+  * instead write `... ~ optional(optWS ~ ":" ~ optWS ~ Type)`.
   */
 object Parser {
 
@@ -885,7 +885,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ (SomeTypeAndEffect | NoTypeAndEffect) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
+        SP ~ optional(Annotation) ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ (SomeTypeAndEffect | NoTypeAndEffect) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
       }
     }
 
