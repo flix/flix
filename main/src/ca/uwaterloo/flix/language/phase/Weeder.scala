@@ -1137,6 +1137,7 @@ object Weeder {
     case ParsedAst.Expression.LetRecDef(sp1, ann, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
+      val annVal = visitAnnotations(ann)
 
       val tpeOpt = tpeAndEff.map(_._1)
       val effOpt = tpeAndEff.flatMap(_._2)
