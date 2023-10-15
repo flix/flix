@@ -406,6 +406,20 @@ mod TestMutDisjointSet {
         Assert.eq(false, actual)
     }
 
+    @Test
+    def equivalent09(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(-100, 100), s);
+        let actual =
+            List.range(0, 10)
+            |> List.forAll(x ->
+                List.range(0, 10)
+                |> List.filter(y -> x != y)
+                |> List.forAll(y -> not MutDisjointSet.equivalent(x, y, s))
+            );
+        Assert.eq(true, actual)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
