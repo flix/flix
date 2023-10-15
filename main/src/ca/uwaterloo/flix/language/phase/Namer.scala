@@ -673,7 +673,7 @@ object Namer {
         case (e1, e2) => NamedAst.Expr.Let(sym, mod, e1, e2, loc)
       }
 
-    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) =>
+    case WeededAst.Expr.LetRec(ident, ann, mod, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expr.LetRec(sym, mod, e1, e2, loc)

@@ -1137,8 +1137,16 @@ object Weeder {
     case ParsedAst.Expression.LetRecDef(sp1, ann, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
-      val annVal = mapN(visitAnnotations(ann)) {
-        case a => a
+      val annVal = flatMapN(visitAnnotations(ann)) {
+        case Ast.Annotations(annotations) =>
+          val onlyTailrec = annotations.forall(_.isInstanceOf[Ast.Annotation.TailRecursive])
+          val onlyOneAnnotation = annotations.size == 1
+          if (onlyTailrec && onlyOneAnnotation) {
+            Ast.Annotations(annotations).toSuccess
+          }
+          else {
+            WeederError.IllegalInnerFunctionAnnotation(loc).toFailure
+          }
       }
 
       val tpeOpt = tpeAndEff.map(_._1)
@@ -2561,6 +2569,7 @@ object Weeder {
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
     case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
     case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
+    case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
     case name => WeederError.UndefinedAnnotation(name, ident.loc).toFailure
   }
 
