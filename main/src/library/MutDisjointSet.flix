@@ -77,7 +77,7 @@ mod MutDisjointSet {
     /// the elements of the iterable `m`.
     ///
     pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
-        Iterable.iterator(rc, m) |> Iterator.forEach(flip(makeSet)(s))
+        Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
     }
 
     ///
