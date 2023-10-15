@@ -439,4 +439,12 @@ mod TestMutDisjointSet {
         Assert.eq(10, MutDisjointSet.size(s))
     }
 
+    @Test
+    def size03(): Bool = region rc {
+        let s = MutDisjointSet.new(rc);
+        MutDisjointSet.makeSets(List.range(0, 10), s);
+        MutDisjointSet.union(0, 1, s);
+        Assert.eq(10, MutDisjointSet.size(s))
+    }
+
 }
