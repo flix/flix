@@ -56,7 +56,7 @@ mod MutDisjointSet {
     }
 
     ///
-    /// Returns `true` iff `s` contains `x`.
+    /// Returns `true` iff `x` is a member of `s`.
     ///
     pub def memberOf(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
         let MutDisjointSet({ forest | _ }) = s;
