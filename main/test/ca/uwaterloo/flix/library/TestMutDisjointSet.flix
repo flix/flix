@@ -28,7 +28,7 @@ mod TestMutDisjointSet {
         };
         let actual =
             List.range(0, 10)
-            |> List.forAll(x -> MutDisjointSet.contains(x, s));
+            |> List.forAll(x -> MutDisjointSet.memberOf(x, s));
         Assert.eq(true, actual)
     }
 
@@ -54,7 +54,7 @@ mod TestMutDisjointSet {
         MutDisjointSet.makeSets(List.range(0, 10), s);
         let actual =
             List.range(0, 10)
-            |> List.forAll(x -> MutDisjointSet.contains(x, s));
+            |> List.forAll(x -> MutDisjointSet.memberOf(x, s));
         Assert.eq(true, actual)
     }
 

@@ -48,7 +48,7 @@ mod MutDisjointSet {
     ///
     pub def makeSet(x: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] = {
         let MutDisjointSet({ rc, forest }) = s;
-        if (not contains(x, s)) {
+        if (not memberOf(x, s)) {
             MutMap.put!(x, singleton(rc, x), forest)
         } else {
             ()
@@ -58,7 +58,7 @@ mod MutDisjointSet {
     ///
     /// Returns `true` iff `s` contains `x`.
     ///
-    pub def contains(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
+    pub def memberOf(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
         let MutDisjointSet({ forest | _ }) = s;
         MutMap.memberOf(x, forest)
     }
