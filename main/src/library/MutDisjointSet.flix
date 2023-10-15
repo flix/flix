@@ -14,6 +14,10 @@
  *  limitations under the License.
  */
 
+///
+/// Represents a mutable disjoint set data structure
+/// using union-by-rank and path compression.
+///
 pub enum MutDisjointSet[t: Type, r: Eff]({
     rc = Region[r],
     forest = MutMap[t, MutDisjointSet.Node[t, r], r]
@@ -21,6 +25,10 @@ pub enum MutDisjointSet[t: Type, r: Eff]({
 
 mod MutDisjointSet {
 
+    ///
+    /// Represents an element in the disjoint set forest.
+    ///
+    @Internal
     pub enum Node[t: Type, r: Eff]({
         rc = Region[r],
         value = t,
