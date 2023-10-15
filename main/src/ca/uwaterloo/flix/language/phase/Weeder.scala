@@ -3317,7 +3317,7 @@ object Weeder {
     * Attempts to compile the given regular expression into a Pattern.
     */
   private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.InvalidRegularExpression] = try {
-    var patt = JPattern.compile(regex)
+    val patt = JPattern.compile(regex)
     patt.toSuccess
   } catch {
     case ex: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, ex.getMessage, loc).toFailure
