@@ -1174,4 +1174,20 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = None
   }
+
+  case class IllegalInnerFunctionAnnotation(loc: SourceLocation) extends WeederError {
+    override def summary: String = "An inner function may only be annotated with @Tailrec."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected annotation of inner function.
+         |
+         |${code(loc, "An inner function may only be annotated with @Tailrec.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
 }
