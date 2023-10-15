@@ -113,17 +113,17 @@ mod MutDisjointSet {
     pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] =
         def link(x1, y1) = {
             if (not equal(x1, y1)) {
-                let Node.Node({ parent = xparent, rank = xr | _ }) = x1;
-                let Node.Node({ parent = yparent, rank = yr | _ }) = y1;
-                let xrank = Ref.get(xr);
-                let yrank = Ref.get(yr);
-                if (xrank > yrank) {
-                    Ref.put(Some(x1), yparent)
+                let Node.Node({ parent = xParent, rank = xr | _ }) = x1;
+                let Node.Node({ parent = yParent, rank = yr | _ }) = y1;
+                let xRank = Ref.get(xr);
+                let yRank = Ref.get(yr);
+                if (xRank > yRank) {
+                    Ref.put(Some(x1), yParent)
                 } else {
-                    Ref.put(Some(y1), xparent)
+                    Ref.put(Some(y1), xParent)
                 };
-                if (xrank == yrank) {
-                    Ref.put(yrank + 1, yr)
+                if (xRank == yRank) {
+                    Ref.put(yRank + 1, yr)
                 } else {
                     ()
                 }
@@ -151,7 +151,7 @@ mod MutDisjointSet {
     /// Returns true if `x` and `y` have the same value.
     ///
     def equal(x: Node[t, r], y: Node[t, r]): Bool with Eq[t] = match (x, y) {
-        case (Node.Node({ value = xval | _ }), Node.Node({ value = yval | _ })) => xval == yval
+        case (Node.Node({ value = xVal | _ }), Node.Node({ value = yVal | _ })) => xVal == yVal
     }
 
     ///
