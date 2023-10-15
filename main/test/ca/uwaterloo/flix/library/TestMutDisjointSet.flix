@@ -27,8 +27,8 @@ mod TestMutDisjointSet {
             MutDisjointSet.makeSet(x, s)
         };
         let actual =
-        List.range(0, 10)
-        |> List.forAll(x -> MutDisjointSet.contains(x, s));
+            List.range(0, 10)
+            |> List.forAll(x -> MutDisjointSet.contains(x, s));
         Assert.eq(true, actual)
     }
 
@@ -53,9 +53,8 @@ mod TestMutDisjointSet {
         let s = MutDisjointSet.new(rc);
         MutDisjointSet.makeSets(List.range(0, 10), s);
         let actual =
-        List.range(0, 10)
-        |> List.map(s |> flip(MutDisjointSet.contains))
-        |> List.foldLeft((a, b) -> a and b, true);
+            List.range(0, 10)
+            |> List.forAll(x -> MutDisjointSet.contains(x, s));
         Assert.eq(true, actual)
     }
 
