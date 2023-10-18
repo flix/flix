@@ -90,7 +90,7 @@ jar {
 
 task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     mainClass = 'org.scalatest.tools.Runner'
-    args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
+    args = ['-P', '-s', 'ca.uwaterloo.flix.TestAll', '-o']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }
