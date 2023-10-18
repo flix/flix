@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.phase.mutator.ExprMutator
 
 object BoolCstMutator extends ExprMutator {
   override def mutateExpr(exp: Expr): Option[Expr] = exp match {
-    case Expr.Cst(Constant.Bool(lit), tpe, loc) => Option(Expr.Cst(Constant.Bool(!lit), tpe, loc))
-    case _ => Option.empty
+    case Expr.Cst(Constant.Bool(lit), tpe, loc) => Some(Expr.Cst(Constant.Bool(!lit), tpe, loc))
+    case _ => None
   }
 }

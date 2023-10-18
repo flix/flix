@@ -15,9 +15,9 @@ object BoolBinaryMutator extends ExprMutator {
   override def mutateExpr(exp: Expr): Option[Expr] = exp match {
     case Expr.Binary(sop: BoolOp, exp1, exp2, tpe, eff, loc) => sop match {
       case BoolOp.And | BoolOp.Or | BoolOp.Eq | BoolOp.Neq =>
-        Option(Expr.Binary(binaryBoolOpMutants(sop), exp1, exp2, tpe, eff, loc))
-      case _ => Option.empty
+        Some(Expr.Binary(binaryBoolOpMutants(sop), exp1, exp2, tpe, eff, loc))
+      case _ => None
     }
-    case _ => Option.empty
+    case _ => None
   }
 }
