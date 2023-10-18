@@ -14,13 +14,13 @@ jobs:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
 
     steps:
-      - name: Check out the master branch
+      - name: Check out master
         uses: actions/checkout@v3
-      - name: Set up JDK 1.11
+      - name: Install JDK
         uses: actions/setup-java@v2
         with:
           distribution: 'temurin'
-          java-version: '19'
+          java-version: '21'
       - name: Build with gradle
         run: ./gradlew clean compileTestScala --console=plain
       - name: Run tests with timeout
