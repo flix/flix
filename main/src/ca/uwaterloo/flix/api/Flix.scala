@@ -474,8 +474,8 @@ class Flix {
     */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
-      ignorePur = options.xnobooleffects,
-      ignoreEff = options.xnoseteffects,
+      ignorePur = false,
+      ignoreEff = false,
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
     )
   }

@@ -89,16 +89,7 @@ object Unification {
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
-    //
-    // Bools
-    //
-    case (Kind.Eff, Kind.Eff) =>
-      // don't try to unify effects if the `no-bool-effects` flag is on
-      if (flix.options.xnobooleffects) {
-        Ok(Substitution.empty, Nil)
-      } else {
-        EffUnification.unify(tpe1, tpe2, renv)
-      }
+    case (Kind.Eff, Kind.Eff) => EffUnification.unify(tpe1, tpe2, renv)
 
     case (Kind.Bool, Kind.Bool) => BoolUnification.unify(tpe1, tpe2, renv)
 
@@ -106,19 +97,10 @@ object Unification {
       val cases = sym1.universe
       CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1).map((_, Nil)) // TODO ASSOC-TYPES support in sets
 
-    //
-    // Record Rows
-    //
     case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
-    //
-    // Schema Rows
-    //
     case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in rows
 
-    //
-    // Other: Star or Arrow
-    //
     case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv)
   }
 
