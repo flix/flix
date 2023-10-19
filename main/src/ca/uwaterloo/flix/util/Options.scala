@@ -54,7 +54,6 @@ object Options {
     xprintphase = Set.empty,
     xprintboolunif = false,
     xnoqmc = false,
-    xflexibleregions = false,
     xsummary = false,
     xparser = false,
   )
@@ -138,7 +137,6 @@ case class Options(lib: LibLevel,
                    xvirtualthreads: Boolean,
                    xprintphase: Set[String],
                    xprintboolunif: Boolean,
-                   xflexibleregions: Boolean,
                    xsummary: Boolean,
                    xparser: Boolean
                   )

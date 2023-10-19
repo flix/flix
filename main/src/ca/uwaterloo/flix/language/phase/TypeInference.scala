@@ -728,8 +728,7 @@ object TypeInference {
 
       case KindedAst.Expr.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
-          // don't make the region var rigid if the --Xflexible-regions flag is set
-          _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
+          _ <- rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           // Increase the level environment as we enter the region
           (constrs, tpe, eff) <- visitExp(exp)(level.incr)
