@@ -108,7 +108,6 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintphase = cmdOpts.xprintphase,
-      xprintboolunif = cmdOpts.xprintboolunif,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser
     )
@@ -310,7 +309,6 @@ object Main {
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
-                     xprintboolunif: Boolean = false,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
                      files: Seq[File] = Seq())
@@ -480,10 +478,6 @@ object Main {
       // Xprint-phase
       opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
         text("[experimental] prints the AST(s) after the given phase(s). 'all' prints all ASTs.")
-
-      // Xprint-bool-unif
-      opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
-        text("[experimental] prints boolean unification queries.")
 
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).

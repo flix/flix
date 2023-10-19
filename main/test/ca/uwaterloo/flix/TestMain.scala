@@ -195,12 +195,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xnoboolunif)
   }
 
-  test("--Xprint-bool-unif") {
-    val args = Array("--Xprint-bool-unif")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xprintboolunif)
-  }
-
   test("--Xstrictmono") {
     val args = Array("--Xstrictmono")
     val opts = Main.parseCmdOpts(args).get
