@@ -103,7 +103,6 @@ object Main {
       xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
-      xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
       xnoseteffects = cmdOpts.xnoseteffects,
@@ -308,7 +307,6 @@ object Main {
                      xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
-                     xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      xnoseteffects: Boolean = false,
@@ -518,10 +516,6 @@ object Main {
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
         text("[experimental] disables Boolean unification. (DO NOT USE).")
-
-      // Xno-unit-tests
-      opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
-        text("[experimental] excludes unit tests from performance benchmarks.")
 
       // Xno-qmc
       opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
