@@ -201,12 +201,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xstrictmono)
   }
 
-  test("--Xvirtual-threads") {
-    val args = Array("--Xvirtual-threads")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xvirtualthreads)
-  }
-
   test("--Xno-qmc") {
     val args = Array("--Xno-qmc")
     val opts = Main.parseCmdOpts(args).get

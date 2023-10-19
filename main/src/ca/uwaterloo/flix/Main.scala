@@ -106,7 +106,6 @@ object Main {
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser
@@ -307,7 +306,6 @@ object Main {
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xvirtualthreads: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
@@ -470,10 +468,6 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
-
-      // Xvirtual-threads
-      opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
-        text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
       // Xprint-phase
       opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
