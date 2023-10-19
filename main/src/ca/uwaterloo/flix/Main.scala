@@ -98,7 +98,6 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       xbddthreshold = cmdOpts.xbddthreshold,
-      xboolclassic = cmdOpts.xboolclassic,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
@@ -112,7 +111,6 @@ object Main {
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintphase = cmdOpts.xprintphase,
       xprintboolunif = cmdOpts.xprintboolunif,
-      xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser
     )
@@ -304,7 +302,6 @@ object Main {
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xboolclassic: Boolean = false,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
@@ -318,7 +315,6 @@ object Main {
                      xvirtualthreads: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
-                     xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
                      files: Seq[File] = Seq())
@@ -465,10 +461,6 @@ object Main {
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables compiler debugging output.")
 
-      // Xflexible-regions
-      opt[Unit]("Xflexible-regions").action((_, c) => c.copy(xflexibleregions = true)).
-        text("[experimental] uses flexible variables for regions")
-
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
@@ -504,13 +496,6 @@ object Main {
       // Xprint-bool-unif
       opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
         text("[experimental] prints boolean unification queries.")
-
-      //
-      // Boolean unification flags.
-      //
-      // Xbool-classic
-      opt[Unit]("Xbool-classic").action((_, c) => c.copy(xboolclassic = true)).
-        text("[experimental] enable classic Boolean unification (as published in 2020).")
 
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
