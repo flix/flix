@@ -105,6 +105,14 @@ mod MutDisjointSet {
     ///
     /// Merges the sets that contain `x` and `y` if both `x` and `y` are in `s`.
     /// If `x` and `y` have the same rank, then `y` becomes the new parent of `x`.
+    /// Otherwise, the element with the highest rank becomes the new representative.
+    ///
+    /// The rank of an element is determined by how many times it is made
+    /// the new representative after a union with another element of the
+    /// same rank.
+    ///
+    /// Further reading:
+    /// https://en.wikipedia.org/wiki/Disjoint-set_data_structure
     ///
     pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] =
         def link(x1, y1) = {
