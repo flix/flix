@@ -98,13 +98,11 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       xbddthreshold = cmdOpts.xbddthreshold,
-      xboolclassic = cmdOpts.xboolclassic,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
-      xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
       xnooptimizer = cmdOpts.xnooptimizer,
@@ -302,13 +300,11 @@ object Main {
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xboolclassic: Boolean = false,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
-                     xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      xnooptimizer: Boolean = false,
@@ -489,13 +485,6 @@ object Main {
       opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
         text("[experimental] prints boolean unification queries.")
 
-      //
-      // Boolean unification flags.
-      //
-      // Xbool-classic
-      opt[Unit]("Xbool-classic").action((_, c) => c.copy(xboolclassic = true)).
-        text("[experimental] enable classic Boolean unification (as published in 2020).")
-
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
         text("[experimental] sets the threshold for when to use BDDs.")
@@ -515,10 +504,6 @@ object Main {
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
         text("[experimental] disables Boolean unification. (DO NOT USE).")
-
-      // Xno-unit-tests
-      opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
-        text("[experimental] excludes unit tests from performance benchmarks.")
 
       // Xno-qmc
       opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
