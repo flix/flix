@@ -105,12 +105,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.listen.nonEmpty)
   }
 
-  test("--lsp") {
-    val args = Array("--lsp", "8080", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.lsp.nonEmpty)
-  }
-
   test("--threads") {
     val args = Array("--threads", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
