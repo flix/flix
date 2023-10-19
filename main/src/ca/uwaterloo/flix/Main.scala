@@ -72,7 +72,6 @@ object Main {
     // construct flix options.
     var options = Options(
       lib = cmdOpts.xlib,
-      debug = cmdOpts.xdebug,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubKey = cmdOpts.githubKey,
@@ -283,7 +282,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
-                     xdebug: Boolean = false,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
@@ -429,10 +427,6 @@ object Main {
       // Xbenchmark-throughput
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
         text("[experimental] benchmarks the performance of the entire compiler.")
-
-      // Xdebug.
-      opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
-        text("[experimental] enables compiler debugging output.")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).

@@ -141,12 +141,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xbddthreshold.contains(42))
   }
 
-  test("--Xdebug") {
-    val args = Array("--Xdebug", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xdebug)
-  }
-
   test("--Xlib nix") {
     val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
