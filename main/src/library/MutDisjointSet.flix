@@ -47,6 +47,9 @@ mod MutDisjointSet {
     /// if `x` is not already in `s`.
     ///
     pub def makeSet(x: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] = {
+        def singleton(rc, y) = {
+            Node.Node({ rc = rc, value = y, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
+        };
         let MutDisjointSet({ rc, forest }) = s;
         if (not memberOf(x, s)) {
             MutMap.put!(x, singleton(rc, x), forest)
@@ -62,12 +65,6 @@ mod MutDisjointSet {
         let MutDisjointSet({ forest | _ }) = s;
         MutMap.memberOf(x, forest)
     }
-
-    ///
-    /// Returns a new `Node` from `x` in `rc`.
-    ///
-    def singleton(rc: Region[r], x: t): Node[t, r] \ r =
-        Node.Node({ rc = rc, value = x, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
 
     ///
     /// Updates `s` with the elements of the iterable `m`.
