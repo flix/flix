@@ -16,12 +16,13 @@
 
 package ca.uwaterloo.flix.util
 
-import java.util
 import java.util.concurrent.{Callable, Executors}
 
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
+
+import java.util.concurrent.ExecutorService
 
 object ParOps {
 
@@ -30,17 +31,24 @@ object ParOps {
     */
   @inline
   def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    // Build the parallel array.
-    val parArray = xs.toParArray
+    val in: Vector[A] = xs.toVector
+    val out: scala.collection.mutable.ArrayBuffer[B] = scala.collection.mutable.ArrayBuffer.fill(in.size)(null.asInstanceOf[B])
 
-    // Configure the task support.
-    parArray.tasksupport = flix.forkJoinTaskSupport
+    val executorService: java.util.concurrent.ExecutorService = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()
+    try {
+      for ((elm, idx) <- xs.zipWithIndex) {
+        executorService.submit(new Runnable {
+          override def run(): Unit = {
+            out(idx) = f(elm)
+          }
+        }
+        )
+      }
+    } finally {
+      executorService.close()
+    }
 
-    // Apply the function `f` in parallel.
-    val result = parArray.map(f)
-
-    // Return the result as an iterable.
-    result.seq
+    out
   }
 
   /**
@@ -89,7 +97,7 @@ object ParOps {
     while (delta.nonEmpty) {
 
       // Construct a collection of callables.
-      val callables = new util.ArrayList[NextCallable]
+      val callables = new java.util.ArrayList[NextCallable]
       for (sym <- delta) {
         callables.add(new NextCallable(sym))
       }
