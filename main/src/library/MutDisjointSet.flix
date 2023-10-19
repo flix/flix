@@ -59,18 +59,18 @@ mod MutDisjointSet {
     }
 
     ///
+    /// Updates `s` with the elements of the iterable `m`.
+    ///
+    pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
+        Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
+    }
+
+    ///
     /// Returns `true` iff `x` is a member of `s`.
     ///
     pub def memberOf(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
         let MutDisjointSet({ forest | _ }) = s;
         MutMap.memberOf(x, forest)
-    }
-
-    ///
-    /// Updates `s` with the elements of the iterable `m`.
-    ///
-    pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
-        Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
     }
 
     ///
