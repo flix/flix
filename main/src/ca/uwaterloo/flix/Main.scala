@@ -107,8 +107,6 @@ object Main {
       xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
-      xnoseteffects = cmdOpts.xnoseteffects,
-      xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintphase = cmdOpts.xprintphase,
@@ -313,8 +311,6 @@ object Main {
                      xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
-                     xnoseteffects: Boolean = false,
-                     xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
@@ -476,14 +472,6 @@ object Main {
       // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enables strict monomorphization.")
-
-      // Xno-set-effects
-      opt[Unit]("Xno-set-effects").action((_, c) => c.copy(xnoseteffects = true)).
-        text("[experimental] disables set effects.")
-
-      // Xno-bool-effects
-      opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
-        text("[experimental] disables bool effects.")
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
