@@ -18,7 +18,7 @@ dependencies {
     implementation('org.java-websocket:Java-WebSocket:1.5.3')
     implementation('org.jline:jline:3.22.0')
     implementation('org.json4s:json4s-native_2.13:3.6.12')
-    implementation('org.ow2.asm:asm:9.2')
+    implementation('org.ow2.asm:asm:9.6')
     implementation('org.parboiled:parboiled_2.13:2.4.1')
     implementation('org.scalactic:scalactic_2.13:3.2.15')
     implementation("org.scala-lang.modules:scala-parallel-collections_2.13:0.2.0")
@@ -90,7 +90,7 @@ jar {
 
 task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     mainClass = 'org.scalatest.tools.Runner'
-    args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
+    args = ['-P', '-s', 'ca.uwaterloo.flix.TestAll', '-o']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }
