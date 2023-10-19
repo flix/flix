@@ -307,25 +307,16 @@ mod TestMutDisjointSet {
     @Test
     def union16(): Bool = region rc {
         let s = MutDisjointSet.new(rc);
-        MutDisjointSet.union(1, 2, s);
-        Assert.eq(0, MutDisjointSet.size(s))
+        MutDisjointSet.union(20, 21, s);
+        Assert.eq(true, MutDisjointSet.memberOf(20, s))
     }
 
     @Test
     def union17(): Bool = region rc {
         let s = MutDisjointSet.new(rc);
-        MutDisjointSet.makeSets(List.range(0, 10), s);
         MutDisjointSet.union(20, 21, s);
-        let actual =
-            List.range(0, 10)
-            |> List.forAll(x ->
-                List.range(0, 10)
-                |> List.filter(y -> x != y)
-                |> List.forAll(y -> not MutDisjointSet.equivalent(x, y, s))
-            );
-        Assert.eq(true, actual)
+        Assert.eq(true, MutDisjointSet.memberOf(21, s))
     }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // equivalent                                                              //
