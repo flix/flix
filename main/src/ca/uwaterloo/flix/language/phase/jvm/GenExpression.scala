@@ -1008,7 +1008,8 @@ object GenExpression {
             mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
             // make a thread and run it
-            if (flix.options.xvirtualthreads) {
+            // TODO: VirtualThreads: Enable by default once JDK 21+ becomes a requirement.
+            if (false) {
               mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
               mv.visitInsn(POP)
             } else {

@@ -63,18 +63,6 @@ object Main {
       System.exit(0)
     }
 
-    // check if the --lsp flag was passed.
-    if (cmdOpts.lsp.nonEmpty) {
-      try {
-        val languageServer = new LanguageServer(cmdOpts.lsp.get, Options.Default)
-        languageServer.run()
-      } catch {
-        case ex: BindException =>
-          Console.println(ex.getMessage)
-      }
-      System.exit(0)
-    }
-
     // compute the main entry point
     val entryPoint = cmdOpts.entryPoint match {
       case None => Options.Default.entryPoint
@@ -104,7 +92,6 @@ object Main {
       xnoqmc = cmdOpts.xnoqmc,
       xstrictmono = cmdOpts.xstrictmono,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser
@@ -287,7 +274,6 @@ object Main {
                      githubKey: Option[String] = None,
                      json: Boolean = false,
                      listen: Option[Int] = None,
-                     lsp: Option[Int] = None,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
@@ -303,7 +289,6 @@ object Main {
                      xnoqmc: Boolean = false,
                      xstrictmono: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xvirtualthreads: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
@@ -411,10 +396,6 @@ object Main {
         valueName("<port>").
         text("starts the socket server and listens on the given port.")
 
-      opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
-        valueName("<port>").
-        text("starts the LSP server and listens on the given port.")
-
       opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
         text("disables automatic installation of dependencies.")
 
@@ -458,10 +439,6 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
-
-      // Xvirtual-threads
-      opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
-        text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
       // Xprint-phase
       opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
