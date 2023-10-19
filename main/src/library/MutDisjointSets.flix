@@ -18,12 +18,12 @@
 /// Represents a mutable disjoint set data structure
 /// using union-by-rank and path compression.
 ///
-pub enum MutDisjointSet[t: Type, r: Eff]({
+pub enum MutDisjointSets[t: Type, r: Eff]({
     rc = Region[r],
-    forest = MutMap[t, MutDisjointSet.Node[t, r], r]
+    forest = MutMap[t, MutDisjointSets.Node[t, r], r]
 })
 
-mod MutDisjointSet {
+mod MutDisjointSets {
 
     ///
     /// Represents an element in the disjoint set forest.
@@ -37,20 +37,20 @@ mod MutDisjointSet {
     })
 
     ///
-    /// Returns a new empty `MutDisjointSet` in the region `rc`.
+    /// Returns new and empty `MutDisjointSets` in the region `rc`.
     ///
-    pub def new(rc: Region[r]): MutDisjointSet[t, r] \ r =
-        MutDisjointSet({ rc = rc, forest = MutMap.new(rc) })
+    pub def new(rc: Region[r]): MutDisjointSets[t, r] \ r =
+        MutDisjointSets({ rc = rc, forest = MutMap.new(rc) })
 
     ///
     /// Updates `s` with a new disjoint set containing `x`
     /// if `x` is not already in `s`.
     ///
-    pub def makeSet(x: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] = {
+    pub def makeSet(x: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] = {
         def singleton(rc, y) = {
             Node.Node({ rc = rc, value = y, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
         };
-        let MutDisjointSet({ rc, forest }) = s;
+        let MutDisjointSets({ rc, forest }) = s;
         if (not memberOf(x, s)) {
             MutMap.put!(x, singleton(rc, x), forest)
         } else {
@@ -61,28 +61,28 @@ mod MutDisjointSet {
     ///
     /// Updates `s` with the elements of the iterable `m`.
     ///
-    pub def makeSets(m: m[t], s: MutDisjointSet[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
+    pub def makeSets(m: m[t], s: MutDisjointSets[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
         Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
     }
 
     ///
     /// Returns `true` iff `x` is a member of `s`.
     ///
-    pub def memberOf(x: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] = {
-        let MutDisjointSet({ forest | _ }) = s;
+    pub def memberOf(x: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] = {
+        let MutDisjointSets({ forest | _ }) = s;
         MutMap.memberOf(x, forest)
     }
 
     ///
     /// Returns the representative / root of the set that contains `x`.
     ///
-    pub def find(x: t, s: MutDisjointSet[t, r]): Option[t] \ r with Order[t] =
+    pub def find(x: t, s: MutDisjointSets[t, r]): Option[t] \ r with Order[t] =
         findSet(x, s) |> Option.map(match Node.Node({ value | _ }) -> value)
 
     ///
     /// Returns the representative / root `Node` of the set that contains `x`.
     ///
-    def findSet(x: t, s: MutDisjointSet[t, r]): Option[Node[t, r]] \ r with Order[t] = {
+    def findSet(x: t, s: MutDisjointSets[t, r]): Option[Node[t, r]] \ r with Order[t] = {
         def findRoot(y) = {
             let Node.Node({ parent | _ }) = y;
             match Ref.get(parent) {
@@ -94,7 +94,7 @@ mod MutDisjointSet {
                 case None => y
             }
         };
-        let MutDisjointSet({ forest | _ }) = s;
+        let MutDisjointSets({ forest | _ }) = s;
         MutMap.get(x, forest)
         |> Option.map(findRoot)
     }
@@ -111,7 +111,7 @@ mod MutDisjointSet {
     /// Further reading:
     /// https://en.wikipedia.org/wiki/Disjoint-set_data_structure
     ///
-    pub def union(x: t, y: t, s: MutDisjointSet[t, r]): Unit \ r with Order[t] =
+    pub def union(x: t, y: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] =
         def link(x1, y1) = {
             if (not equal(x1, y1)) {
                 let Node.Node({ parent = xParent, rank = xr | _ }) = x1;
@@ -155,7 +155,7 @@ mod MutDisjointSet {
     /// This is equivalent to having the same representative / root.
     /// Returns false if either `x` or `y` is not in `s`.
     ///
-    pub def equivalent(x: t, y: t, s: MutDisjointSet[t, r]): Bool \ r with Order[t] =
+    pub def equivalent(x: t, y: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] =
         match (findSet(x, s), findSet(y, s)) {
             case (Some(xn), Some(yn)) => equal(xn, yn)
             case _                    => false
@@ -171,8 +171,8 @@ mod MutDisjointSet {
     ///
     /// Returns the number of elements in `s`.
     ///
-    pub def size(s: MutDisjointSet[t, r]): Int32 \ r with Order[t] =
-        let MutDisjointSet({ forest | _ }) = s;
+    pub def size(s: MutDisjointSets[t, r]): Int32 \ r with Order[t] =
+        let MutDisjointSets({ forest | _ }) = s;
         MutMap.size(forest)
 
 }
