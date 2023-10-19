@@ -138,7 +138,19 @@ mod MutDisjointSet {
         };
         match (findSet(x, s), findSet(y, s)) {
             case (Some(xn), Some(yn)) => link(xn, yn)
-            case _ => ()
+            case (Some(_), None) => {
+                makeSet(y, s);
+                union(x, y, s)
+            }
+            case (None, Some(_)) => {
+                makeSet(y, s);
+                union(x, y, s)
+            }
+            case (None, None)     => {
+                makeSet(x, s);
+                makeSet(y, s);
+                union(x, y, s)
+            }
         }
 
     ///
