@@ -728,6 +728,7 @@ object TypeInference {
 
       case KindedAst.Expr.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
+          _ <- rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           // Increase the level environment as we enter the region
           (constrs, tpe, eff) <- visitExp(exp)(level.incr)
