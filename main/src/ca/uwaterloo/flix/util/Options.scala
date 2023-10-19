@@ -26,7 +26,6 @@ object Options {
     */
   val Default: Options = Options(
     lib = LibLevel.All,
-    debug = false,
     entryPoint = None,
     explain = false,
     githubKey = None,
@@ -78,7 +77,6 @@ object Options {
   * General Flix options.
   *
   * @param lib                 selects the level of libraries to include.
-  * @param debug               enables the emission of debugging information.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
   * @param githubKey           the API key to use for GitHub dependency resolution.
@@ -95,7 +93,6 @@ object Options {
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
   * @param xnobooltable        disable Boolean minimization via tabling.
-  * @param xstatistics         enables statistics collection.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono         enables strict monomorphization.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
@@ -103,7 +100,6 @@ object Options {
   * @param xparser             disables new lexer and parser.
   */
 case class Options(lib: LibLevel,
-                   debug: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    githubKey: Option[String],
