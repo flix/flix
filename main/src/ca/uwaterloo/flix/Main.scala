@@ -98,7 +98,6 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       xbddthreshold = cmdOpts.xbddthreshold,
-      xboolclassic = cmdOpts.xboolclassic,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
@@ -304,7 +303,6 @@ object Main {
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xboolclassic: Boolean = false,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
@@ -500,13 +498,6 @@ object Main {
       // Xprint-bool-unif
       opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
         text("[experimental] prints boolean unification queries.")
-
-      //
-      // Boolean unification flags.
-      //
-      // Xbool-classic
-      opt[Unit]("Xbool-classic").action((_, c) => c.copy(xboolclassic = true)).
-        text("[experimental] enable classic Boolean unification (as published in 2020).")
 
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
