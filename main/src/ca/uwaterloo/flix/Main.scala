@@ -113,7 +113,6 @@ object Main {
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintphase = cmdOpts.xprintphase,
       xprintboolunif = cmdOpts.xprintboolunif,
-      xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser
     )
@@ -320,7 +319,6 @@ object Main {
                      xvirtualthreads: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
-                     xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
                      files: Seq[File] = Seq())
@@ -466,10 +464,6 @@ object Main {
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables compiler debugging output.")
-
-      // Xflexible-regions
-      opt[Unit]("Xflexible-regions").action((_, c) => c.copy(xflexibleregions = true)).
-        text("[experimental] uses flexible variables for regions")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
