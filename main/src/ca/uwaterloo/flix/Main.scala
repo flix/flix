@@ -103,7 +103,6 @@ object Main {
       xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
-      xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
@@ -303,7 +302,6 @@ object Main {
                      xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
-                     xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
@@ -456,10 +454,6 @@ object Main {
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
-
-      // Xstatistics
-      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
-        text("[experimental] prints compilation statistics.")
 
       // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
