@@ -48,7 +48,6 @@ object Options {
     xnooptimizer = false,
     xvirtualthreads = false,
     xprintphase = Set.empty,
-    xprintboolunif = false,
     xnoqmc = false,
     xsummary = false,
     xparser = false,
@@ -96,7 +95,6 @@ object Options {
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
   * @param xnobooltable        disable Boolean minimization via tabling.
-  * @param xnounittests        excludes unit tests from performance benchmarks.
   * @param xstatistics         enables statistics collection.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono         enables strict monomorphization.
@@ -128,7 +126,6 @@ case class Options(lib: LibLevel,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
                    xprintphase: Set[String],
-                   xprintboolunif: Boolean,
                    xsummary: Boolean,
                    xparser: Boolean
                   )
