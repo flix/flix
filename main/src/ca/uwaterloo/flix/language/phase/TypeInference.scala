@@ -712,11 +712,12 @@ object TypeInference {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
-        // Note: We do not have to ensure that `exp1` is a lambda
-        // because it is syntactically ensured.
+        // Note 1: We do not have to ensure that `exp1` is a lambda because it is syntactically ensured.
+        // Note 2: We purify the letrec bound function to simplify its inferred effect.
         for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)(level.incr)
           boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
+          _ <- purifyLetRec(boundVar)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
           resultEff = Type.mkUnion(eff1, eff2, loc)
@@ -727,8 +728,7 @@ object TypeInference {
 
       case KindedAst.Expr.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
-          // don't make the region var rigid if the --Xflexible-regions flag is set
-          _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
+          _ <- rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           // Increase the level environment as we enter the region
           (constrs, tpe, eff) <- visitExp(exp)(level.incr)

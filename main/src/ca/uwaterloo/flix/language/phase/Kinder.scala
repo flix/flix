@@ -553,7 +553,7 @@ object Kinder {
       }
 
     case ResolvedAst.Expr.LetRec(sym, mod, exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
+      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)(level.incr, flix)
       val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) => KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc)
