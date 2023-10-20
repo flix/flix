@@ -168,12 +168,12 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Let(sym, mod, e1, e2, t, p, loc)
-    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
-      Expr.LetRec(sym, mod, e1, e2, t, p, loc)
+      Expr.LetRec(sym, ann, mod, e1, e2, t, p, loc)
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       // The region variable has been rendered redundant by Monomorph.
       // It has replaced the region with pure/impure and the variable could
