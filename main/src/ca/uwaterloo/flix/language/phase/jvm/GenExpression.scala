@@ -1338,7 +1338,7 @@ object GenExpression {
       mv.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpr(exp2)
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
+    case Expr.LetRec(varSym, _, index, defSym, exp1, exp2, _, _, loc) =>
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`

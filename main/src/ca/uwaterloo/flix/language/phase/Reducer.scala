@@ -103,7 +103,7 @@ object Reducer {
     case LiftedAst.Expr.LetRec(varSym, ann, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
-      ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
+      ReducedAst.Expr.LetRec(varSym, ann, index, defSym, e1, e2, tpe, purity, loc)
 
     case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
