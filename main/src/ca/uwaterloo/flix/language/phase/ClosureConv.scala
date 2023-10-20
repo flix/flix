@@ -113,8 +113,8 @@ object ClosureConv {
     case Expr.Let(sym, e1, e2, tpe, purity, loc) =>
       Expr.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-    case Expr.LetRec(sym, e1, e2, tpe, purity, loc) =>
-      Expr.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
+    case Expr.LetRec(sym, ann, e1, e2, tpe, purity, loc) =>
+      Expr.LetRec(sym, ann, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
     case Expr.Scope(sym, e, tpe, purity, loc) =>
       Expr.Scope(sym, visitExp(e), tpe, purity, loc)
@@ -229,7 +229,7 @@ object ClosureConv {
     case Expr.Let(sym, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
-    case Expr.LetRec(sym, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(sym, _, exp1, exp2, _, _, _) =>
       filterBoundVar(freeVars(exp1) ++ freeVars(exp2), sym)
 
     case Expr.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
@@ -349,11 +349,11 @@ object ClosureConv {
         val e2 = visitExp(exp2)
         Expr.Let(newSym, e1, e2, tpe, purity, loc)
 
-      case Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
+      case Expr.LetRec(sym, ann, exp1, exp2, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expr.LetRec(newSym, e1, e2, tpe, purity, loc)
+        Expr.LetRec(newSym, ann, e1, e2, tpe, purity, loc)
 
       case Expr.Scope(sym, exp, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)

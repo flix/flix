@@ -224,10 +224,10 @@ object Inliner {
         }
       }
 
-    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.LetRec(varSym, ann, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
+      LiftedAst.Expr.LetRec(varSym, ann, index, defSym, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -420,12 +420,12 @@ object Inliner {
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expr.Let(freshVar, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.LetRec(varSym, ann, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val freshVar = Symbol.freshVarSym(varSym)
       val env1 = env0 + (varSym -> freshVar)
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
-      LiftedAst.Expr.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
+      LiftedAst.Expr.LetRec(freshVar, ann, index, defSym, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)

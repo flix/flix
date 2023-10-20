@@ -64,7 +64,7 @@ object OccurrenceAst {
 
     case class Let(sym: Symbol.VarSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, occur: Occur, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class LetRec(varSym: Symbol.VarSym, ann: Ast.Annotations, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expression, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 

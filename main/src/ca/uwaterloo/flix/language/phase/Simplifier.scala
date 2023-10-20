@@ -151,9 +151,9 @@ object Simplifier {
         val t = visitType(tpe)
         SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-      case LoweredAst.Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
+      case LoweredAst.Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc) =>
         val t = visitType(tpe)
-        SimplifiedAst.Expr.LetRec(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+        SimplifiedAst.Expr.LetRec(sym, ann, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
       case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
         val t = visitType(tpe)
@@ -695,8 +695,8 @@ object Simplifier {
       case SimplifiedAst.Expr.Let(sym, exp1, exp2, purity, tpe, loc) =>
         SimplifiedAst.Expr.Let(sym, visitExp(exp1), visitExp(exp2), purity, tpe, loc)
 
-      case SimplifiedAst.Expr.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expr.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
+      case SimplifiedAst.Expr.LetRec(sym, ann, exp1, exp2, tpe, purity, loc) =>
+        SimplifiedAst.Expr.LetRec(sym, ann, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
       case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expr.Scope(sym, visitExp(exp), tpe, purity, loc)
