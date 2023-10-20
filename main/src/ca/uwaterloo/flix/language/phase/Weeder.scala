@@ -1138,15 +1138,15 @@ object Weeder {
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
       val annVal = flatMapN(visitAnnotations(ann)) {
-        case Ast.Annotations(annotations) =>
+        case Ast.Annotations(annotations) if annotations.nonEmpty =>
           val onlyTailrec = annotations.forall(_.isInstanceOf[Ast.Annotation.TailRecursive])
-          val onlyOneAnnotation = annotations.size == 1
-          if (onlyTailrec && onlyOneAnnotation) {
+          if (onlyTailrec) {
             Ast.Annotations(annotations).toSuccess
           }
           else {
             WeederError.IllegalInnerFunctionAnnotation(loc).toFailure
           }
+        case anns => anns.toSuccess
       }
 
       val tpeOpt = tpeAndEff.map(_._1)
