@@ -1224,7 +1224,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = {
-        | @Benchmark @Tailrec
+        | @benchmark @Tailrec
         | def g(i) = if (i <= 0) 0 else 1 + g(i - 1);
         | g(10)
         |}
