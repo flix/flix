@@ -146,9 +146,9 @@ object Stratifier {
         case (e1, e2) => Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
       }
 
-    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
       }
 
     case Expr.Region(_, _) =>
@@ -578,7 +578,7 @@ object Stratifier {
     case Expr.Let(_, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expr.Region(_, _) =>

@@ -313,7 +313,7 @@ object Redundancy {
       // Visit the expression with the extended environment
       val innerUsed = visitExp(exp, env, rc)
 
-     // TODO NS-REFACTOR check for unused syms
+      // TODO NS-REFACTOR check for unused syms
       innerUsed ++ shadowedName
 
     case Expr.Lambda(fparam, exp, _, _) =>
@@ -362,7 +362,7 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LetRec(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 

@@ -141,7 +141,7 @@ object PatternExhaustiveness {
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp, root)
       case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expr.Let(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
-      case Expr.LetRec(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expr.Region(_, _) => Nil
       case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp, root)
       case Expr.ScopeExit(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))

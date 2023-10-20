@@ -119,7 +119,7 @@ object CodeHinter {
     case Expr.Let(_, _, exp1, exp2, _, eff, loc) =>
       checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _) => Nil
@@ -133,7 +133,7 @@ object CodeHinter {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, eff,  loc) =>
+    case Expr.Stm(exp1, exp2, _, eff, loc) =>
       checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Discard(exp, _, _) =>
