@@ -280,7 +280,13 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Op]] `op0`.
     */
-  private def visitOp(op0: WeededAst.Declaration.Op)(implicit flix: Flix): DesugaredAst.Declaration.Op = ???
+  private def visitOp(op0: WeededAst.Declaration.Op)(implicit flix: Flix): DesugaredAst.Declaration.Op = op0 match {
+    case WeededAst.Declaration.Op(doc, ann, mod, ident, fparams0, tpe0, tconstrs0, loc) =>
+      val fparams = visitFormalParams(fparams0)
+      val tpe = visitType(tpe0)
+      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      DesugaredAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Kind]] `kind0`.
