@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
@@ -263,7 +264,13 @@ object Desugar {
   /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
     */
-  private def visitFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = fparams0.map {
+  private def visitFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] =
+    fparams0.map(visitFormalParam)
+
+  /**
+    * Desugars the given [[WeededAst.FormalParam]] `fparam0`.
+    */
+  private def visitFormalParam(fparam0: WeededAst.FormalParam)(implicit flix: Flix): DesugaredAst.FormalParam = fparam0 match {
     case WeededAst.FormalParam(ident, mod, tpe0, loc) =>
       val tpe = tpe0.map(visitType)
       DesugaredAst.FormalParam(ident, mod, tpe, loc)
@@ -336,6 +343,85 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
     */
-  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = ???
+  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
+    case WeededAst.Expr.Ambiguous(qname, loc) => Expr.Ambiguous(qname, loc)
+    case WeededAst.Expr.Open(qname, loc) => Expr.Open(qname, loc)
+    case WeededAst.Expr.OpenAs(qname, exp, loc) => Expr.OpenAs(qname, visitExp(exp), loc)
+    case WeededAst.Expr.Hole(name, loc) => Expr.Hole(name, loc)
+    case WeededAst.Expr.HoleWithExp(exp, loc) => Expr.HoleWithExp(visitExp(exp), loc)
+    case WeededAst.Expr.Use(uses, exp, loc) => Expr.Use(uses.map(visitUseOrImport), visitExp(exp), loc)
+    case WeededAst.Expr.Cst(cst, loc) => Expr.Cst(cst, loc)
+    case WeededAst.Expr.Apply(exp, exps, loc) => Expr.Apply(visitExp(exp), visitExps(exps), loc)
+    case WeededAst.Expr.Lambda(fparam, exp, loc) => Expr.Lambda(visitFormalParam(fparam), visitExp(exp), loc)
+    case WeededAst.Expr.Unary(sop, exp, loc) => ???
+    case WeededAst.Expr.Binary(sop, exp1, exp2, loc) => ???
+    case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) => ???
+    case WeededAst.Expr.Stm(exp1, exp2, loc) => ???
+    case WeededAst.Expr.Discard(exp, loc) => ???
+    case WeededAst.Expr.Let(ident, mod, exp1, exp2, loc) => ???
+    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) => ???
+    case WeededAst.Expr.Region(tpe, loc) => ???
+    case WeededAst.Expr.Scope(ident, exp, loc) => ???
+    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) => ???
+    case WeededAst.Expr.Match(exp, rules, loc) => ???
+    case WeededAst.Expr.TypeMatch(exp, rules, loc) => ???
+    case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) => ???
+    case WeededAst.Expr.Tuple(exps, loc) => ???
+    case WeededAst.Expr.RecordEmpty(loc) => ???
+    case WeededAst.Expr.RecordSelect(exp, label, loc) => ???
+    case WeededAst.Expr.RecordExtend(label, exp1, exp2, loc) => ???
+    case WeededAst.Expr.RecordRestrict(label, exp, loc) => ???
+    case WeededAst.Expr.ArrayLit(exps, exp, loc) => ???
+    case WeededAst.Expr.ArrayNew(exp1, exp2, exp3, loc) => ???
+    case WeededAst.Expr.ArrayLoad(exp1, exp2, loc) => ???
+    case WeededAst.Expr.ArrayLength(exp, loc) => ???
+    case WeededAst.Expr.ArrayStore(exp1, exp2, exp3, loc) => ???
+    case WeededAst.Expr.VectorLit(exps, loc) => ???
+    case WeededAst.Expr.VectorLoad(exp1, exp2, loc) => ???
+    case WeededAst.Expr.VectorLength(exp, loc) => ???
+    case WeededAst.Expr.Ref(exp1, exp2, loc) => ???
+    case WeededAst.Expr.Deref(exp, loc) => ???
+    case WeededAst.Expr.Assign(exp1, exp2, loc) => ???
+    case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) => ???
+    case WeededAst.Expr.InstanceOf(exp, className, loc) => ???
+    case WeededAst.Expr.CheckedCast(cast, exp, loc) => ???
+    case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) => ???
+    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) => ???
+    case WeededAst.Expr.Without(exp, eff, loc) => ???
+    case WeededAst.Expr.TryCatch(exp, rules, loc) => ???
+    case WeededAst.Expr.TryWith(exp, eff, rules, loc) => ???
+    case WeededAst.Expr.Do(op, exps, loc) => ???
+    case WeededAst.Expr.Resume(exp, loc) => ???
+    case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) => ???
+    case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) => ???
+    case WeededAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) => ???
+    case WeededAst.Expr.GetField(className, fieldName, exp, loc) => ???
+    case WeededAst.Expr.PutField(className, fieldName, exp1, exp2, loc) => ???
+    case WeededAst.Expr.GetStaticField(className, fieldName, loc) => ???
+    case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) => ???
+    case WeededAst.Expr.NewObject(tpe, methods, loc) => ???
+    case WeededAst.Expr.NewChannel(exp1, exp2, loc) => ???
+    case WeededAst.Expr.GetChannel(exp, loc) => ???
+    case WeededAst.Expr.PutChannel(exp1, exp2, loc) => ???
+    case WeededAst.Expr.SelectChannel(rules, exp, loc) => ???
+    case WeededAst.Expr.Spawn(exp1, exp2, loc) => ???
+    case WeededAst.Expr.ParYield(frags, exp, loc) => ???
+    case WeededAst.Expr.Lazy(exp, loc) => ???
+    case WeededAst.Expr.Force(exp, loc) => ???
+    case WeededAst.Expr.FixpointConstraintSet(cs, loc) => ???
+    case WeededAst.Expr.FixpointLambda(pparams, exp, loc) => ???
+    case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) => ???
+    case WeededAst.Expr.FixpointSolve(exp, loc) => ???
+    case WeededAst.Expr.FixpointFilter(pred, exp, loc) => ???
+    case WeededAst.Expr.FixpointInject(exp, pred, loc) => ???
+    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) => ???
+    case WeededAst.Expr.Error(m) => ???
+  }
+
+  /**
+    * Desugars the given list of [[WeededAst.Expr]] `exps`.
+    */
+  private def visitExps(exps: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Expr] =
+    exps.map(visitExp)
 
 }
