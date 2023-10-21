@@ -418,10 +418,10 @@ object Desugar {
       Expr.PutStaticField(className, fieldName, visitExp(exp), loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) => Expr.NewObject(visitType(tpe), methods.map(visitJvmMethod), loc)
-    case WeededAst.Expr.NewChannel(exp1, exp2, loc) => ???
-    case WeededAst.Expr.GetChannel(exp, loc) => ???
-    case WeededAst.Expr.PutChannel(exp1, exp2, loc) => ???
-    case WeededAst.Expr.SelectChannel(rules, exp, loc) => ???
+    case WeededAst.Expr.NewChannel(exp1, exp2, loc) => Expr.NewChannel(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.GetChannel(exp, loc) => Expr.GetChannel(visitExp(exp), loc)
+    case WeededAst.Expr.PutChannel(exp1, exp2, loc) => Expr.PutChannel(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.SelectChannel(rules, exp, loc) => Expr.SelectChannel(rules.map(visitSelectChannelRule), exp.map(visitExp), loc)
     case WeededAst.Expr.Spawn(exp1, exp2, loc) => ???
     case WeededAst.Expr.ParYield(frags, exp, loc) => ???
     case WeededAst.Expr.Lazy(exp, loc) => ???
@@ -503,5 +503,12 @@ object Desugar {
   private def visitJvmMethod(method0: WeededAst.JvmMethod)(implicit flix: Flix): DesugaredAst.JvmMethod = method0 match {
     case WeededAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       DesugaredAst.JvmMethod(ident, visitFormalParams(fparams), visitExp(exp), visitType(tpe), eff.map(visitType), loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.SelectChannelRule]] `rule0`.
+    */
+  private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule)(implicit flix: Flix): DesugaredAst.SelectChannelRule = rule0 match {
+    case WeededAst.SelectChannelRule(ident, exp1, exp2) => DesugaredAst.SelectChannelRule(ident, visitExp(exp1), visitExp(exp2))
   }
 }
