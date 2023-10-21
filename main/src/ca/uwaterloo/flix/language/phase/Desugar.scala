@@ -396,16 +396,28 @@ object Desugar {
     case WeededAst.Expr.Without(exp, eff, loc) => Expr.Without(visitExp(exp), eff, loc)
     case WeededAst.Expr.TryCatch(exp, rules, loc) => Expr.TryCatch(visitExp(exp), rules.map(visitCatchRule), loc)
     case WeededAst.Expr.TryWith(exp, eff, rules, loc) => Expr.TryWith(visitExp(exp), eff, rules.map(visitHandlerRule), loc)
-    case WeededAst.Expr.Do(op, exps, loc) => ???
-    case WeededAst.Expr.Resume(exp, loc) => ???
-    case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) => ???
-    case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) => ???
-    case WeededAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) => ???
-    case WeededAst.Expr.GetField(className, fieldName, exp, loc) => ???
-    case WeededAst.Expr.PutField(className, fieldName, exp1, exp2, loc) => ???
-    case WeededAst.Expr.GetStaticField(className, fieldName, loc) => ???
-    case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) => ???
-    case WeededAst.Expr.NewObject(tpe, methods, loc) => ???
+    case WeededAst.Expr.Do(op, exps, loc) => Expr.Do(op, visitExps(exps), loc)
+    case WeededAst.Expr.Resume(exp, loc) => Expr.Resume(visitExp(exp), loc)
+    case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
+      Expr.InvokeConstructor(className, visitExps(exps), sig.map(visitType), loc)
+
+    case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
+      Expr.InvokeMethod(className, methodName, visitExp(exp), visitExps(exps), sig.map(visitType), visitType(retTpe), loc)
+
+    case WeededAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
+      Expr.InvokeStaticMethod(className, methodName, visitExps(exps), sig.map(visitType), visitType(retTpe), loc)
+
+    case WeededAst.Expr.GetField(className, fieldName, exp, loc) =>
+      Expr.GetField(className, fieldName, visitExp(exp), loc)
+
+    case WeededAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
+      Expr.PutField(className, fieldName, visitExp(exp1), visitExp(exp2), loc)
+
+    case WeededAst.Expr.GetStaticField(className, fieldName, loc) => Expr.GetStaticField(className, fieldName, loc)
+    case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
+      Expr.PutStaticField(className, fieldName, visitExp(exp), loc)
+
+    case WeededAst.Expr.NewObject(tpe, methods, loc) => Expr.NewObject(visitType(tpe), methods.map(visitJvmMethod), loc)
     case WeededAst.Expr.NewChannel(exp1, exp2, loc) => ???
     case WeededAst.Expr.GetChannel(exp, loc) => ???
     case WeededAst.Expr.PutChannel(exp1, exp2, loc) => ???
@@ -460,10 +472,11 @@ object Desugar {
     * Desugars the given [[WeededAst.RestrictableChoosePattern]] `pat0`.
     */
   private def visitRestrictableChoosePattern(pat0: WeededAst.RestrictableChoosePattern)(implicit flix: Flix): DesugaredAst.RestrictableChoosePattern = {
-    def visitVarOrWild(varOrWild0: WeededAst.RestrictableChoosePattern.VarOrWild): DesugaredAst.RestrictableChoosePattern.VarOrWild = varOrWild0 match {
-      case WeededAst.RestrictableChoosePattern.Wild(loc) => DesugaredAst.RestrictableChoosePattern.Wild(loc)
-      case WeededAst.RestrictableChoosePattern.Var(ident, loc) => DesugaredAst.RestrictableChoosePattern.Var(ident, loc)
-    }
+    def visitVarOrWild(varOrWild0: WeededAst.RestrictableChoosePattern.VarOrWild): DesugaredAst.RestrictableChoosePattern.VarOrWild =
+      varOrWild0 match {
+        case WeededAst.RestrictableChoosePattern.Wild(loc) => DesugaredAst.RestrictableChoosePattern.Wild(loc)
+        case WeededAst.RestrictableChoosePattern.Var(ident, loc) => DesugaredAst.RestrictableChoosePattern.Var(ident, loc)
+      }
 
     pat0 match {
       case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) => DesugaredAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarOrWild), loc)
@@ -482,5 +495,13 @@ object Desugar {
     */
   private def visitHandlerRule(rule0: WeededAst.HandlerRule)(implicit flix: Flix): DesugaredAst.HandlerRule = rule0 match {
     case WeededAst.HandlerRule(op, fparams, exp) => DesugaredAst.HandlerRule(op, visitFormalParams(fparams), visitExp(exp))
+  }
+
+  /**
+    * Desugars the given [[WeededAst.JvmMethod]] `method0`.
+    */
+  private def visitJvmMethod(method0: WeededAst.JvmMethod)(implicit flix: Flix): DesugaredAst.JvmMethod = method0 match {
+    case WeededAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
+      DesugaredAst.JvmMethod(ident, visitFormalParams(fparams), visitExp(exp), visitType(tpe), eff.map(visitType), loc)
   }
 }
