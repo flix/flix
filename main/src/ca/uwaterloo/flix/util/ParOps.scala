@@ -53,6 +53,18 @@ object ParOps {
     }.toMap
 
   /**
+    * Apply the given fallible function `f` to each value in the map `m` in parallel,
+    * returning the resulting map if all calls are successful.
+    */
+  @inline
+  def mapValuesFallible[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
+    val results = parMap(m) {
+      case (k, v) => f(v).map((k, _))
+    }
+    Validation.sequence(results).map(_.toMap)
+  }
+
+  /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.
     */
   @inline
