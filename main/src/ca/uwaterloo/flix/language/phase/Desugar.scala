@@ -72,14 +72,14 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Instance]] `d`.
+    * Desugars the given [[WeededAst.Declaration.Instance]] `instance0`.
     */
-  private def visitInstance(d: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = ???
+  private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = ???
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Def]] `d`.
+    * Desugars the given [[WeededAst.Declaration.Def]] `def0`.
     */
-  private def visitDef(d: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = d match {
+  private def visitDef(def0: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = def0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, constrs0, loc) =>
       flix.subtask(ident.name, sample = true)
       val tparams = visitKindedTypeParams(tparams0)
@@ -93,9 +93,9 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Law]] `d`.
+    * Desugars the given [[WeededAst.Declaration.Law]] `law0`.
     */
-  private def visitLaw(d: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = d match {
+  private def visitLaw(law0: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = law0 match {
     case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
       val tparams = visitKindedTypeParams(tparams0)
       val fparams = visitFormalParams(fparams0)
@@ -107,9 +107,9 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Enum]] `d`.
+    * Desugars the given [[WeededAst.Declaration.Enum]] `enum0`.
     */
-  private def visitEnum(d: WeededAst.Declaration.Enum)(implicit flix: Flix): DesugaredAst.Declaration.Enum = d match {
+  private def visitEnum(enum0: WeededAst.Declaration.Enum)(implicit flix: Flix): DesugaredAst.Declaration.Enum = enum0 match {
     case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives0, cases0, loc) =>
       val tparams = visitTypeParams(tparams0)
       val derives = visitDerivations(derives0)
@@ -118,19 +118,19 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.RestrictableEnum]] `d`.
+    * Desugars the given [[WeededAst.Declaration.RestrictableEnum]] `restrictableEnum0`.
     */
-  private def visitRestrictableEnum(d: WeededAst.Declaration.RestrictableEnum)(implicit flix: Flix): DesugaredAst.Declaration.RestrictableEnum = ???
+  private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum)(implicit flix: Flix): DesugaredAst.Declaration.RestrictableEnum = ???
 
   /**
-    * Desugars the given [[WeededAst.Declaration.TypeAlias]] `d`.
+    * Desugars the given [[WeededAst.Declaration.TypeAlias]] `typeAlias0`.
     */
-  private def visitTypeAlias(d: WeededAst.Declaration.TypeAlias)(implicit flix: Flix): DesugaredAst.Declaration.TypeAlias = ???
+  private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias)(implicit flix: Flix): DesugaredAst.Declaration.TypeAlias = ???
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Effect]] `d`.
+    * Desugars the given [[WeededAst.Declaration.Effect]] `eff0`.
     */
-  private def visitEffect(d: WeededAst.Declaration.Effect)(implicit flix: Flix): DesugaredAst.Declaration.Effect = ???
+  private def visitEffect(eff0: WeededAst.Declaration.Effect)(implicit flix: Flix): DesugaredAst.Declaration.Effect = ???
 
   /**
     * Desugars the given [[WeededAst.TypeParam]] `tparam0`.
@@ -148,34 +148,34 @@ object Desugar {
   private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = ???
 
   /**
-    * Desugars the given [[WeededAst.KindedTypeParams]] `tparams`.
+    * Desugars the given [[WeededAst.KindedTypeParams]] `tparams0`.
     */
-  private def visitKindedTypeParams(tparams: WeededAst.KindedTypeParams)(implicit flix: Flix): DesugaredAst.KindedTypeParams = ???
+  private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams)(implicit flix: Flix): DesugaredAst.KindedTypeParams = ???
 
   /**
-    * Desugars the given [[WeededAst.TypeParams]] `tparams`.
+    * Desugars the given [[WeededAst.TypeParams]] `tparams0`.
     */
-  private def visitTypeParams(tparams: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = ???
+  private def visitTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = ???
 
   /**
-    * Desugars the given list of [[WeededAst.FormalParam]] `fparams`.
+    * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
     */
-  private def visitFormalParams(fparams: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = ???
+  private def visitFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = ???
 
   /**
-    * Desugars the given [[WeededAst.Type]] `tpe`.
+    * Desugars the given [[WeededAst.Type]] `tpe0`.
     */
-  private def visitType(tpe: WeededAst.Type)(implicit flix: Flix): DesugaredAst.Type = ???
+  private def visitType(tpe0: WeededAst.Type)(implicit flix: Flix): DesugaredAst.Type = ???
 
   /**
-    * Desugars the given [[WeededAst.TypeConstraint]] `tconstr`.
+    * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = ???
+  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = ???
 
   /**
-    * Desugars the given [[WeededAst.EqualityConstraint]] `econstr`.
+    * Desugars the given [[WeededAst.EqualityConstraint]] `econstr0`.
     */
-  private def visitEqualityConstraint(econstr: WeededAst.EqualityConstraint)(implicit flix: Flix): DesugaredAst.EqualityConstraint = ???
+  private def visitEqualityConstraint(econstr0: WeededAst.EqualityConstraint)(implicit flix: Flix): DesugaredAst.EqualityConstraint = ???
 
   /**
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
