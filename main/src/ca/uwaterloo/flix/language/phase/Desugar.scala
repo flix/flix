@@ -188,7 +188,16 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Sig]] `sig0`.
     */
-  private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = ???
+  private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = sig0 match {
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
+      val tparams = visitKindedTypeParams(tparams0)
+      val fparams = visitFormalParams(fparams0)
+      val exp = exp0.map(visitExp)
+      val tpe = visitType(tpe0)
+      val eff = eff0.map(visitType)
+      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      DesugaredAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Type]] `tpe0`.
