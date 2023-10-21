@@ -291,7 +291,10 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Kind]] `kind0`.
     */
-  private def visitKind(kind0: WeededAst.Kind)(implicit flix: Flix): DesugaredAst.Kind = ???
+  private def visitKind(kind0: WeededAst.Kind)(implicit flix: Flix): DesugaredAst.Kind = kind0 match {
+    case WeededAst.Kind.Ambiguous(qname, loc) => DesugaredAst.Kind.Ambiguous(qname, loc)
+    case WeededAst.Kind.Arrow(k1, k2, loc) => DesugaredAst.Kind.Arrow(visitKind(k1), visitKind(k2), loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
