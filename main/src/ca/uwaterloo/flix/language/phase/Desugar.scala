@@ -364,8 +364,8 @@ object Desugar {
     case WeededAst.Expr.Scope(ident, exp, loc) => Expr.Scope(ident, visitExp(exp), loc)
     case WeededAst.Expr.ScopeExit(exp1, exp2, loc) => Expr.ScopeExit(visitExp(exp1), visitExp(exp2), loc)
     case WeededAst.Expr.Match(exp, rules, loc) => Expr.Match(visitExp(exp), rules.map(visitMatchRule), loc)
-    case WeededAst.Expr.TypeMatch(exp, rules, loc) => ???
-    case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) => ???
+    case WeededAst.Expr.TypeMatch(exp, rules, loc) => Expr.TypeMatch(visitExp(exp), rules.map(visitTypeMatchRule), loc)
+    case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) => Expr.RestrictableChoose(star, visitExp(exp), rules.map(visitRestrictableChooseRule), loc)
     case WeededAst.Expr.Tuple(exps, loc) => ???
     case WeededAst.Expr.RecordEmpty(loc) => ???
     case WeededAst.Expr.RecordSelect(exp, label, loc) => ???
@@ -428,12 +428,34 @@ object Desugar {
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
     */
   private def visitMatchRule(rule0: WeededAst.MatchRule)(implicit flix: Flix): DesugaredAst.MatchRule = rule0 match {
-    case WeededAst.MatchRule(pat, exp1, exp2) => DesugaredAst.MatchRule(visitPattern(pat), visitExp(exp1), visitExp(exp2))
+    case WeededAst.MatchRule(pat, exp1, exp2) => DesugaredAst.MatchRule(visitPattern(pat), exp1.map(visitExp), visitExp(exp2))
   }
 
   /**
     * Desugars the given [[WeededAst.Pattern]] `pat0`.
     */
   private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): DesugaredAst.Pattern = ???
+
+  /**
+    * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
+    */
+  private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
+    case WeededAst.TypeMatchRule(ident, tpe, exp) => DesugaredAst.TypeMatchRule(ident, visitType(tpe), visitExp(exp))
+  }
+
+  private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule)(implicit flix: Flix): DesugaredAst.RestrictableChooseRule = rule0 match {
+    case WeededAst.RestrictableChooseRule(pat, exp) => DesugaredAst.RestrictableChooseRule(visitRestrictableChoosePattern(pat), visitExp(exp))
+  }
+
+  private def visitRestrictableChoosePattern(pat0: WeededAst.RestrictableChoosePattern)(implicit flix: Flix): DesugaredAst.RestrictableChoosePattern = {
+    def visitVarOrWild(varOrWild0: WeededAst.RestrictableChoosePattern.VarOrWild): DesugaredAst.RestrictableChoosePattern.VarOrWild = varOrWild0 match {
+      case WeededAst.RestrictableChoosePattern.Wild(loc) => DesugaredAst.RestrictableChoosePattern.Wild(loc)
+      case WeededAst.RestrictableChoosePattern.Var(ident, loc) => DesugaredAst.RestrictableChoosePattern.Var(ident, loc)
+    }
+
+    pat0 match {
+      case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) => DesugaredAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarOrWild), loc)
+    }
+  }
 
 }
