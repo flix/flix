@@ -61,7 +61,15 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Class]] `d`.
     */
-  private def visitClass(d: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = ???
+  private def visitClass(d: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = d match {
+    case WeededAst.Declaration.Class(doc, ann, mod, ident, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
+      val tparam = visitTypeParam(tparam0)
+      val superClasses = superClasses0.map(visitTypeConstraint)
+      val assocs = assocs0.map(visitAssocTypeSig)
+      val sigs = sigs0.map(visitSig)
+      val laws = laws0.map(visitDef)
+      DesugaredAst.Declaration.Class(doc, ann, mod, ident, tparam, superClasses, assocs, sigs, laws, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.Instance]] `d`.
@@ -123,6 +131,21 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Effect]] `d`.
     */
   private def visitEffect(d: WeededAst.Declaration.Effect)(implicit flix: Flix): DesugaredAst.Declaration.Effect = ???
+
+  /**
+    * Desugars the given [[WeededAst.TypeParam]] `tparam0`.
+    */
+  private def visitTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): DesugaredAst.TypeParam = ???
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.AssocTypeSig]] `assoc0`.
+    */
+  private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeSig = ???
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.Sig]] `assoc`.
+    */
+  private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = ???
 
   /**
     * Desugars the given [[WeededAst.KindedTypeParams]] `tparams`.
