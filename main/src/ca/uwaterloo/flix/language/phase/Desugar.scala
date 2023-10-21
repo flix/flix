@@ -466,7 +466,15 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Pattern]] `pat0`.
     */
-  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): DesugaredAst.Pattern = ???
+  private def visitPattern(pat0: WeededAst.Pattern): DesugaredAst.Pattern = pat0 match {
+    case WeededAst.Pattern.Wild(loc) => DesugaredAst.Pattern.Wild(loc)
+    case WeededAst.Pattern.Var(ident, loc) => DesugaredAst.Pattern.Var(ident, loc)
+    case WeededAst.Pattern.Cst(cst, loc) => DesugaredAst.Pattern.Cst(cst, loc)
+    case WeededAst.Pattern.Tag(qname, pat, loc) => DesugaredAst.Pattern.Tag(qname, visitPattern(pat), loc)
+    case WeededAst.Pattern.Tuple(elms, loc) => DesugaredAst.Pattern.Tuple(elms.map(visitPattern), loc)
+    case WeededAst.Pattern.Record(pats, pat, loc) => DesugaredAst.Pattern.Record(pats.map(visitRecordLabelPattern), visitPattern(pat), loc)
+    case WeededAst.Pattern.RecordEmpty(loc) => DesugaredAst.Pattern.RecordEmpty(loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
@@ -563,5 +571,13 @@ object Desugar {
       DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc)
     case WeededAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, tpes.map(visitType), loc)
+  }
+
+  /**
+    * Desugars the given [[WeededAst.Pattern.Record.RecordLabelPattern]] `pat0`.
+    */
+  private def visitRecordLabelPattern(pat0: WeededAst.Pattern.Record.RecordLabelPattern): DesugaredAst.Pattern.Record.RecordLabelPattern = pat0 match {
+    case WeededAst.Pattern.Record.RecordLabelPattern(label, pat, loc) =>
+      DesugaredAst.Pattern.Record.RecordLabelPattern(label, pat.map(visitPattern), loc)
   }
 }
