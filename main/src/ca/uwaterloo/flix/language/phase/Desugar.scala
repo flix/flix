@@ -103,7 +103,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Law]] `law0`.
     */
-  private def visitLaw(law0: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = law0 match {
+  private def visitLaw(law0: WeededAst.Declaration.Law): DesugaredAst.Declaration.Law = law0 match {
     case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
       val tparams = visitKindedTypeParams(tparams0)
       val fparams = visitFormalParams(fparams0)
@@ -117,7 +117,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Enum]] `enum0`.
     */
-  private def visitEnum(enum0: WeededAst.Declaration.Enum)(implicit flix: Flix): DesugaredAst.Declaration.Enum = enum0 match {
+  private def visitEnum(enum0: WeededAst.Declaration.Enum): DesugaredAst.Declaration.Enum = enum0 match {
     case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives0, cases0, loc) =>
       val tparams = visitTypeParams(tparams0)
       val derives = visitDerivations(derives0)
@@ -128,7 +128,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.RestrictableEnum]] `restrictableEnum0`.
     */
-  private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum)(implicit flix: Flix): DesugaredAst.Declaration.RestrictableEnum = restrictableEnum0 match {
+  private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum): DesugaredAst.Declaration.RestrictableEnum = restrictableEnum0 match {
     case WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index0, tparams0, derives0, cases0, loc) =>
       val index = visitTypeParam(index0)
       val tparams = visitTypeParams(tparams0)
@@ -140,7 +140,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.TypeAlias]] `typeAlias0`.
     */
-  private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias)(implicit flix: Flix): DesugaredAst.Declaration.TypeAlias = typeAlias0 match {
+  private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias): DesugaredAst.Declaration.TypeAlias = typeAlias0 match {
     case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
       val tparams = visitTypeParams(tparams0)
       val tpe = visitType(tpe0)
@@ -150,7 +150,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Effect]] `eff0`.
     */
-  private def visitEffect(eff0: WeededAst.Declaration.Effect)(implicit flix: Flix): DesugaredAst.Declaration.Effect = eff0 match {
+  private def visitEffect(eff0: WeededAst.Declaration.Effect): DesugaredAst.Declaration.Effect = eff0 match {
     case WeededAst.Declaration.Effect(doc, ann, mod, ident, ops0, loc) =>
       val ops = ops0.map(visitOp)
       DesugaredAst.Declaration.Effect(doc, ann, mod, ident, ops, loc)
@@ -159,7 +159,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeParam]] `tparam0`.
     */
-  private def visitTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): DesugaredAst.TypeParam = tparam0 match {
+  private def visitTypeParam(tparam0: WeededAst.TypeParam): DesugaredAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Unkinded(ident) => DesugaredAst.TypeParam.Unkinded(ident)
     case WeededAst.TypeParam.Kinded(ident, kind0) =>
       val kind = visitKind(kind0)
@@ -169,7 +169,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = tconstr0 match {
+  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint): DesugaredAst.TypeConstraint = tconstr0 match {
     case WeededAst.TypeConstraint(clazz, tpe0, loc) =>
       val tpe = visitType(tpe0)
       DesugaredAst.TypeConstraint(clazz, tpe, loc)
@@ -178,7 +178,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.AssocTypeSig]] `assoc0`.
     */
-  private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeSig = assoc0 match {
+  private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig): DesugaredAst.Declaration.AssocTypeSig = assoc0 match {
     case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam0, kind0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val kind = visitKind(kind0)
@@ -188,7 +188,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Sig]] `sig0`.
     */
-  private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = sig0 match {
+  private def visitSig(sig0: WeededAst.Declaration.Sig): DesugaredAst.Declaration.Sig = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
       val tparams = visitKindedTypeParams(tparams0)
       val fparams = visitFormalParams(fparams0)
@@ -202,7 +202,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Type]] `tpe0`.
     */
-  private def visitType(tpe0: WeededAst.Type)(implicit flix: Flix): DesugaredAst.Type = tpe0 match {
+  private def visitType(tpe0: WeededAst.Type): DesugaredAst.Type = tpe0 match {
     case WeededAst.Type.Var(ident, loc) => DesugaredAst.Type.Var(ident, loc)
     case WeededAst.Type.Ambiguous(qname, loc) => DesugaredAst.Type.Ambiguous(qname, loc)
     case WeededAst.Type.Unit(loc) => DesugaredAst.Type.Unit(loc)
@@ -248,7 +248,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.AssocTypeDef]] `assoc0`.
     */
-  private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeDef = assoc0 match {
+  private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef): DesugaredAst.Declaration.AssocTypeDef = assoc0 match {
     case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
       val arg = visitType(arg0)
       val tpe = visitType(tpe0)
@@ -258,7 +258,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.KindedTypeParams]] `tparams0`.
     */
-  private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams)(implicit flix: Flix): DesugaredAst.KindedTypeParams = tparams0 match {
+  private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams): DesugaredAst.KindedTypeParams = tparams0 match {
     case WeededAst.TypeParams.Elided => DesugaredAst.TypeParams.Elided
     case WeededAst.TypeParams.Kinded(tparams1) =>
       val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Kinded => t }
@@ -268,13 +268,13 @@ object Desugar {
   /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
     */
-  private def visitFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] =
+  private def visitFormalParams(fparams0: List[WeededAst.FormalParam]): List[DesugaredAst.FormalParam] =
     fparams0.map(visitFormalParam)
 
   /**
     * Desugars the given [[WeededAst.FormalParam]] `fparam0`.
     */
-  private def visitFormalParam(fparam0: WeededAst.FormalParam)(implicit flix: Flix): DesugaredAst.FormalParam = fparam0 match {
+  private def visitFormalParam(fparam0: WeededAst.FormalParam): DesugaredAst.FormalParam = fparam0 match {
     case WeededAst.FormalParam(ident, mod, tpe0, loc) =>
       val tpe = tpe0.map(visitType)
       DesugaredAst.FormalParam(ident, mod, tpe, loc)
@@ -283,7 +283,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.EqualityConstraint]] `econstr0`.
     */
-  private def visitEqualityConstraint(econstr0: WeededAst.EqualityConstraint)(implicit flix: Flix): DesugaredAst.EqualityConstraint = econstr0 match {
+  private def visitEqualityConstraint(econstr0: WeededAst.EqualityConstraint): DesugaredAst.EqualityConstraint = econstr0 match {
     case WeededAst.EqualityConstraint(qname, tpe01, tpe02, loc) =>
       val tpe1 = visitType(tpe01)
       val tpe2 = visitType(tpe02)
@@ -293,7 +293,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeParams]] `tparams0`.
     */
-  private def visitTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = tparams0 match {
+  private def visitTypeParams(tparams0: WeededAst.TypeParams): DesugaredAst.TypeParams = tparams0 match {
     case params: WeededAst.KindedTypeParams => visitKindedTypeParams(params)
     case WeededAst.TypeParams.Unkinded(tparams1) =>
       val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Unkinded => t }
@@ -310,7 +310,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Case]] `case0`.
     */
-  private def visitCase(case0: WeededAst.Case)(implicit flix: Flix): DesugaredAst.Case = case0 match {
+  private def visitCase(case0: WeededAst.Case): DesugaredAst.Case = case0 match {
     case WeededAst.Case(ident, tpe0, loc) =>
       val tpe = visitType(tpe0)
       DesugaredAst.Case(ident, tpe, loc)
@@ -319,7 +319,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.RestrictableCase]] `case0`.
     */
-  private def visitRestrictableCase(case0: WeededAst.RestrictableCase)(implicit flix: Flix): DesugaredAst.RestrictableCase = case0 match {
+  private def visitRestrictableCase(case0: WeededAst.RestrictableCase): DesugaredAst.RestrictableCase = case0 match {
     case WeededAst.RestrictableCase(ident, tpe0, loc) =>
       val tpe = visitType(tpe0)
       DesugaredAst.RestrictableCase(ident, tpe, loc)
@@ -328,7 +328,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Op]] `op0`.
     */
-  private def visitOp(op0: WeededAst.Declaration.Op)(implicit flix: Flix): DesugaredAst.Declaration.Op = op0 match {
+  private def visitOp(op0: WeededAst.Declaration.Op): DesugaredAst.Declaration.Op = op0 match {
     case WeededAst.Declaration.Op(doc, ann, mod, ident, fparams0, tpe0, tconstrs0, loc) =>
       val fparams = visitFormalParams(fparams0)
       val tpe = visitType(tpe0)
@@ -339,7 +339,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Kind]] `kind0`.
     */
-  private def visitKind(kind0: WeededAst.Kind)(implicit flix: Flix): DesugaredAst.Kind = kind0 match {
+  private def visitKind(kind0: WeededAst.Kind): DesugaredAst.Kind = kind0 match {
     case WeededAst.Kind.Ambiguous(qname, loc) => DesugaredAst.Kind.Ambiguous(qname, loc)
     case WeededAst.Kind.Arrow(k1, k2, loc) => DesugaredAst.Kind.Arrow(visitKind(k1), visitKind(k2), loc)
   }
@@ -347,7 +347,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
     */
-  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
+  private def visitExp(exp0: WeededAst.Expr): DesugaredAst.Expr = exp0 match {
     case WeededAst.Expr.Ambiguous(qname, loc) => Expr.Ambiguous(qname, loc)
     case WeededAst.Expr.Open(qname, loc) => Expr.Open(qname, loc)
     case WeededAst.Expr.OpenAs(qname, exp, loc) => Expr.OpenAs(qname, visitExp(exp), loc)
@@ -453,13 +453,13 @@ object Desugar {
   /**
     * Desugars the given list of [[WeededAst.Expr]] `exps`.
     */
-  private def visitExps(exps: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Expr] =
+  private def visitExps(exps: List[WeededAst.Expr]): List[DesugaredAst.Expr] =
     exps.map(visitExp)
 
   /**
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
     */
-  private def visitMatchRule(rule0: WeededAst.MatchRule)(implicit flix: Flix): DesugaredAst.MatchRule = rule0 match {
+  private def visitMatchRule(rule0: WeededAst.MatchRule): DesugaredAst.MatchRule = rule0 match {
     case WeededAst.MatchRule(pat, exp1, exp2) => DesugaredAst.MatchRule(visitPattern(pat), exp1.map(visitExp), visitExp(exp2))
   }
 
@@ -479,14 +479,14 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
     */
-  private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
+  private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule): DesugaredAst.TypeMatchRule = rule0 match {
     case WeededAst.TypeMatchRule(ident, tpe, exp) => DesugaredAst.TypeMatchRule(ident, visitType(tpe), visitExp(exp))
   }
 
   /**
     * Desugars the given [[WeededAst.RestrictableChooseRule]] `rule0`.
     */
-  private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule)(implicit flix: Flix): DesugaredAst.RestrictableChooseRule = rule0 match {
+  private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule): DesugaredAst.RestrictableChooseRule = rule0 match {
     case WeededAst.RestrictableChooseRule(pat, exp) => DesugaredAst.RestrictableChooseRule(visitRestrictableChoosePattern(pat), visitExp(exp))
   }
 
@@ -508,21 +508,21 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.CatchRule]] `rule0`.
     */
-  private def visitCatchRule(rule0: WeededAst.CatchRule)(implicit flix: Flix): DesugaredAst.CatchRule = rule0 match {
+  private def visitCatchRule(rule0: WeededAst.CatchRule): DesugaredAst.CatchRule = rule0 match {
     case WeededAst.CatchRule(ident, className, exp) => DesugaredAst.CatchRule(ident, className, visitExp(exp))
   }
 
   /**
     * Desugars the given [[WeededAst.HandlerRule]] `rule0`.
     */
-  private def visitHandlerRule(rule0: WeededAst.HandlerRule)(implicit flix: Flix): DesugaredAst.HandlerRule = rule0 match {
+  private def visitHandlerRule(rule0: WeededAst.HandlerRule): DesugaredAst.HandlerRule = rule0 match {
     case WeededAst.HandlerRule(op, fparams, exp) => DesugaredAst.HandlerRule(op, visitFormalParams(fparams), visitExp(exp))
   }
 
   /**
     * Desugars the given [[WeededAst.JvmMethod]] `method0`.
     */
-  private def visitJvmMethod(method0: WeededAst.JvmMethod)(implicit flix: Flix): DesugaredAst.JvmMethod = method0 match {
+  private def visitJvmMethod(method0: WeededAst.JvmMethod): DesugaredAst.JvmMethod = method0 match {
     case WeededAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       DesugaredAst.JvmMethod(ident, visitFormalParams(fparams), visitExp(exp), visitType(tpe), eff.map(visitType), loc)
   }
@@ -530,21 +530,21 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.SelectChannelRule]] `rule0`.
     */
-  private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule)(implicit flix: Flix): DesugaredAst.SelectChannelRule = rule0 match {
+  private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule): DesugaredAst.SelectChannelRule = rule0 match {
     case WeededAst.SelectChannelRule(ident, exp1, exp2) => DesugaredAst.SelectChannelRule(ident, visitExp(exp1), visitExp(exp2))
   }
 
   /**
     * Desugars the given [[WeededAst.ParYieldFragment]] `frag0`.
     */
-  private def visitParYieldFragment(frag0: WeededAst.ParYieldFragment)(implicit flix: Flix): DesugaredAst.ParYieldFragment = frag0 match {
+  private def visitParYieldFragment(frag0: WeededAst.ParYieldFragment): DesugaredAst.ParYieldFragment = frag0 match {
     case WeededAst.ParYieldFragment(pat, exp, loc) => DesugaredAst.ParYieldFragment(visitPattern(pat), visitExp(exp), loc)
   }
 
   /**
     * Desugars the given [[WeededAst.Constraint]] `constraint0`.
     */
-  private def visitConstraint(constraint0: WeededAst.Constraint)(implicit flix: Flix): DesugaredAst.Constraint = {
+  private def visitConstraint(constraint0: WeededAst.Constraint): DesugaredAst.Constraint = {
     def visitHead(head0: WeededAst.Predicate.Head): DesugaredAst.Predicate.Head = head0 match {
       case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) => DesugaredAst.Predicate.Head.Atom(pred, den, visitExps(exps), loc)
     }
@@ -566,7 +566,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.PredicateParam]] `param0`.
     */
-  private def visitPredicateParam(param0: WeededAst.PredicateParam)(implicit flix: Flix): DesugaredAst.PredicateParam = param0 match {
+  private def visitPredicateParam(param0: WeededAst.PredicateParam): DesugaredAst.PredicateParam = param0 match {
     case WeededAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc)
     case WeededAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
