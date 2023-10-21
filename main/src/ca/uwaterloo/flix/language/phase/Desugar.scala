@@ -245,7 +245,12 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeParams]] `tparams0`.
     */
-  private def visitTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = ???
+  private def visitTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = tparams0 match {
+    case params: WeededAst.KindedTypeParams => visitKindedTypeParams(params)
+    case WeededAst.TypeParams.Unkinded(tparams1) =>
+      val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Unkinded => t }
+      DesugaredAst.TypeParams.Unkinded(tparams)
+  }
 
   /**
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
