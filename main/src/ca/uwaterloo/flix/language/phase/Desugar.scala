@@ -74,7 +74,6 @@ object Desugar {
   private def visitDef(d: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = d match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, constrs0, loc) =>
       flix.subtask(ident.name, sample = true)
-
       val tparams = visitKindedTypeParams(tparams0)
       val fparams = visitFormalParams(fparams0)
       val exp = visitExp(exp0)
@@ -88,7 +87,16 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Law]] `d`.
     */
-  private def visitLaw(d: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = ???
+  private def visitLaw(d: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = d match {
+    case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
+      val tparams = visitKindedTypeParams(tparams0)
+      val fparams = visitFormalParams(fparams0)
+      val exp = visitExp(exp0)
+      val tpe = visitType(tpe0)
+      val eff = visitType(eff0)
+      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      DesugaredAst.Declaration.Law(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.Enum]] `d`.
