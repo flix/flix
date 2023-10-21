@@ -60,9 +60,9 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Class]] `clazz0`.
+    * Desugars the given [[WeededAst.Declaration.Class]] `class0`.
     */
-  private def visitClass(clazz0: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = clazz0 match {
+  private def visitClass(class0: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = class0 match {
     case WeededAst.Declaration.Class(doc, ann, mod, ident, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
