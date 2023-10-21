@@ -417,22 +417,30 @@ object Desugar {
     case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
       Expr.PutStaticField(className, fieldName, visitExp(exp), loc)
 
-    case WeededAst.Expr.NewObject(tpe, methods, loc) => Expr.NewObject(visitType(tpe), methods.map(visitJvmMethod), loc)
+    case WeededAst.Expr.NewObject(tpe, methods, loc) =>
+      Expr.NewObject(visitType(tpe), methods.map(visitJvmMethod), loc)
+
     case WeededAst.Expr.NewChannel(exp1, exp2, loc) => Expr.NewChannel(visitExp(exp1), visitExp(exp2), loc)
     case WeededAst.Expr.GetChannel(exp, loc) => Expr.GetChannel(visitExp(exp), loc)
     case WeededAst.Expr.PutChannel(exp1, exp2, loc) => Expr.PutChannel(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.SelectChannel(rules, exp, loc) => Expr.SelectChannel(rules.map(visitSelectChannelRule), exp.map(visitExp), loc)
+    case WeededAst.Expr.SelectChannel(rules, exp, loc) =>
+      Expr.SelectChannel(rules.map(visitSelectChannelRule), exp.map(visitExp), loc)
+
     case WeededAst.Expr.Spawn(exp1, exp2, loc) => Expr.Spawn(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.ParYield(frags, exp, loc) => Expr.ParYield(frags.map(visitParYieldFragment), visitExp(exp), loc)
+    case WeededAst.Expr.ParYield(frags, exp, loc) =>
+      Expr.ParYield(frags.map(visitParYieldFragment), visitExp(exp), loc)
+
     case WeededAst.Expr.Lazy(exp, loc) => Expr.Lazy(visitExp(exp), loc)
     case WeededAst.Expr.Force(exp, loc) => Expr.Force(visitExp(exp), loc)
-    case WeededAst.Expr.FixpointConstraintSet(cs, loc) => Expr.FixpointConstraintSet(???, loc)
+    case WeededAst.Expr.FixpointConstraintSet(cs, loc) => Expr.FixpointConstraintSet(cs.map(visitConstraint), loc)
     case WeededAst.Expr.FixpointLambda(pparams, exp, loc) => Expr.FixpointLambda(???, visitExp(exp), loc)
     case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) => Expr.FixpointMerge(visitExp(exp1), visitExp(exp2), loc)
     case WeededAst.Expr.FixpointSolve(exp, loc) => Expr.FixpointSolve(visitExp(exp), loc)
-    case WeededAst.Expr.FixpointFilter(pred, exp, loc) => Expr.FixpointFilter(???, visitExp(exp), loc)
-    case WeededAst.Expr.FixpointInject(exp, pred, loc) => Expr.FixpointInject(visitExp(exp), ???, loc)
-    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) => Expr.FixpointProject(???, visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.FixpointFilter(pred, exp, loc) => Expr.FixpointFilter(pred, visitExp(exp), loc)
+    case WeededAst.Expr.FixpointInject(exp, pred, loc) => Expr.FixpointInject(visitExp(exp), pred, loc)
+    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
+      Expr.FixpointProject(pred, visitExp(exp1), visitExp(exp2), loc)
+
     case WeededAst.Expr.Error(m) => DesugaredAst.Expr.Error(m)
   }
 
@@ -517,5 +525,24 @@ object Desugar {
     */
   private def visitParYieldFragment(frag0: WeededAst.ParYieldFragment)(implicit flix: Flix): DesugaredAst.ParYieldFragment = frag0 match {
     case WeededAst.ParYieldFragment(pat, exp, loc) => DesugaredAst.ParYieldFragment(visitPattern(pat), visitExp(exp), loc)
+  }
+
+  private def visitConstraint(constraint0: WeededAst.Constraint)(implicit flix: Flix): DesugaredAst.Constraint = {
+    def visitHead(head0: WeededAst.Predicate.Head): DesugaredAst.Predicate.Head = head0 match {
+      case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) => DesugaredAst.Predicate.Head.Atom(pred, den, visitExps(exps), loc)
+    }
+
+    def visitBody(body0: WeededAst.Predicate.Body): DesugaredAst.Predicate.Body = body0 match {
+      case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
+        DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms.map(visitPattern), loc)
+      case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
+        DesugaredAst.Predicate.Body.Functional(idents, visitExp(exp), loc)
+      case WeededAst.Predicate.Body.Guard(exp, loc) =>
+        DesugaredAst.Predicate.Body.Guard(visitExp(exp), loc)
+    }
+
+    constraint0 match {
+      case WeededAst.Constraint(head, body, loc) => DesugaredAst.Constraint(visitHead(head), body.map(visitBody), loc)
+    }
   }
 }
