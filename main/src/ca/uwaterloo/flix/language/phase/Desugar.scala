@@ -161,14 +161,18 @@ object Desugar {
     */
   private def visitTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): DesugaredAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Unkinded(ident) => DesugaredAst.TypeParam.Unkinded(ident)
-    case WeededAst.TypeParam.Kinded(ident, kind) => DesugaredAst.TypeParam.Kinded(ident, visitKind(kind))
+    case WeededAst.TypeParam.Kinded(ident, kind0) =>
+      val kind = visitKind(kind0)
+      DesugaredAst.TypeParam.Kinded(ident, kind)
   }
 
   /**
     * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = tconstr0 match {
-    case WeededAst.TypeConstraint(clazz, tpe, loc) => DesugaredAst.TypeConstraint(clazz, visitType(tpe), loc)
+    case WeededAst.TypeConstraint(clazz, tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      DesugaredAst.TypeConstraint(clazz, tpe, loc)
   }
 
   /**
