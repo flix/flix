@@ -127,7 +127,10 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.RestrictableEnum]] `restrictableEnum0`.
     */
-  private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum)(implicit flix: Flix): DesugaredAst.Declaration.RestrictableEnum = ???
+  private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum)(implicit flix: Flix): DesugaredAst.Declaration.RestrictableEnum = restrictableEnum0 match {
+    case WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index0, tparams0, derives0, cases0, loc) =>
+      ???
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.TypeAlias]] `typeAlias0`.
@@ -145,6 +148,11 @@ object Desugar {
   private def visitTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): DesugaredAst.TypeParam = ???
 
   /**
+    * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
+    */
+  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = ???
+
+  /**
     * Desugars the given [[WeededAst.Declaration.AssocTypeSig]] `assoc0`.
     */
   private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeSig = ???
@@ -153,6 +161,11 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Sig]] `sig0`.
     */
   private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = ???
+
+  /**
+    * Desugars the given [[WeededAst.Type]] `tpe0`.
+    */
+  private def visitType(tpe0: WeededAst.Type)(implicit flix: Flix): DesugaredAst.Type = ???
 
   /**
     * Desugars the given [[WeededAst.Declaration.AssocTypeDef]] `assoc0`.
@@ -165,29 +178,19 @@ object Desugar {
   private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams)(implicit flix: Flix): DesugaredAst.KindedTypeParams = ???
 
   /**
-    * Desugars the given [[WeededAst.TypeParams]] `tparams0`.
-    */
-  private def visitTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = ???
-
-  /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
     */
   private def visitFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = ???
 
   /**
-    * Desugars the given [[WeededAst.Type]] `tpe0`.
-    */
-  private def visitType(tpe0: WeededAst.Type)(implicit flix: Flix): DesugaredAst.Type = ???
-
-  /**
-    * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
-    */
-  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = ???
-
-  /**
     * Desugars the given [[WeededAst.EqualityConstraint]] `econstr0`.
     */
   private def visitEqualityConstraint(econstr0: WeededAst.EqualityConstraint)(implicit flix: Flix): DesugaredAst.EqualityConstraint = ???
+
+  /**
+    * Desugars the given [[WeededAst.TypeParams]] `tparams0`.
+    */
+  private def visitTypeParams(tparams0: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = ???
 
   /**
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
