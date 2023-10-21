@@ -167,7 +167,9 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = ???
+  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint)(implicit flix: Flix): DesugaredAst.TypeConstraint = tconstr0 match {
+    case WeededAst.TypeConstraint(clazz, tpe, loc) => DesugaredAst.TypeConstraint(clazz, visitType(tpe), loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.AssocTypeSig]] `assoc0`.
