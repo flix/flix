@@ -232,11 +232,15 @@ object Desugar {
     case WeededAst.Type.Or(tpe1, tpe2, loc) => DesugaredAst.Type.Or(visitType(tpe1), visitType(tpe2), loc)
     case WeededAst.Type.Complement(tpe, loc) => DesugaredAst.Type.Complement(visitType(tpe), loc)
     case WeededAst.Type.Union(tpe1, tpe2, loc) => DesugaredAst.Type.Union(visitType(tpe1), visitType(tpe2), loc)
-    case WeededAst.Type.Intersection(tpe1, tpe2, loc) => DesugaredAst.Type.Intersection(visitType(tpe1), visitType(tpe2), loc)
+    case WeededAst.Type.Intersection(tpe1, tpe2, loc) =>
+      DesugaredAst.Type.Intersection(visitType(tpe1), visitType(tpe2), loc)
+
     case WeededAst.Type.Pure(loc) => DesugaredAst.Type.Pure(loc)
     case WeededAst.Type.CaseSet(cases, loc) => DesugaredAst.Type.CaseSet(cases, loc)
     case WeededAst.Type.CaseUnion(tpe1, tpe2, loc) => DesugaredAst.Type.CaseUnion(visitType(tpe1), visitType(tpe2), loc)
-    case WeededAst.Type.CaseIntersection(tpe1, tpe2, loc) => DesugaredAst.Type.CaseIntersection(visitType(tpe1), visitType(tpe2), loc)
+    case WeededAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
+      DesugaredAst.Type.CaseIntersection(visitType(tpe1), visitType(tpe2), loc)
+
     case WeededAst.Type.CaseComplement(tpe, loc) => DesugaredAst.Type.CaseComplement(visitType(tpe), loc)
     case WeededAst.Type.Ascribe(tpe, kind, loc) => DesugaredAst.Type.Ascribe(visitType(tpe), visitKind(kind), loc)
   }
@@ -433,7 +437,9 @@ object Desugar {
     case WeededAst.Expr.Lazy(exp, loc) => Expr.Lazy(visitExp(exp), loc)
     case WeededAst.Expr.Force(exp, loc) => Expr.Force(visitExp(exp), loc)
     case WeededAst.Expr.FixpointConstraintSet(cs, loc) => Expr.FixpointConstraintSet(cs.map(visitConstraint), loc)
-    case WeededAst.Expr.FixpointLambda(pparams, exp, loc) => Expr.FixpointLambda(???, visitExp(exp), loc)
+    case WeededAst.Expr.FixpointLambda(pparams, exp, loc) =>
+      Expr.FixpointLambda(pparams.map(visitPredicateParam), visitExp(exp), loc)
+
     case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) => Expr.FixpointMerge(visitExp(exp1), visitExp(exp2), loc)
     case WeededAst.Expr.FixpointSolve(exp, loc) => Expr.FixpointSolve(visitExp(exp), loc)
     case WeededAst.Expr.FixpointFilter(pred, exp, loc) => Expr.FixpointFilter(pred, visitExp(exp), loc)
@@ -527,6 +533,9 @@ object Desugar {
     case WeededAst.ParYieldFragment(pat, exp, loc) => DesugaredAst.ParYieldFragment(visitPattern(pat), visitExp(exp), loc)
   }
 
+  /**
+    * Desugars the given [[WeededAst.Constraint]] `constraint0`.
+    */
   private def visitConstraint(constraint0: WeededAst.Constraint)(implicit flix: Flix): DesugaredAst.Constraint = {
     def visitHead(head0: WeededAst.Predicate.Head): DesugaredAst.Predicate.Head = head0 match {
       case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) => DesugaredAst.Predicate.Head.Atom(pred, den, visitExps(exps), loc)
@@ -544,5 +553,15 @@ object Desugar {
     constraint0 match {
       case WeededAst.Constraint(head, body, loc) => DesugaredAst.Constraint(visitHead(head), body.map(visitBody), loc)
     }
+  }
+
+  /**
+    * Desugars the given [[WeededAst.PredicateParam]] `param0`.
+    */
+  private def visitPredicateParam(param0: WeededAst.PredicateParam)(implicit flix: Flix): DesugaredAst.PredicateParam = param0 match {
+    case WeededAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
+      DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc)
+    case WeededAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
+      DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, tpes.map(visitType), loc)
   }
 }
