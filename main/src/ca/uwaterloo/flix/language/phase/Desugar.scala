@@ -395,7 +395,7 @@ object Desugar {
     case WeededAst.Expr.UncheckedMaskingCast(exp, loc) => Expr.UncheckedMaskingCast(visitExp(exp), loc)
     case WeededAst.Expr.Without(exp, eff, loc) => Expr.Without(visitExp(exp), eff, loc)
     case WeededAst.Expr.TryCatch(exp, rules, loc) => Expr.TryCatch(visitExp(exp), rules.map(visitCatchRule), loc)
-    case WeededAst.Expr.TryWith(exp, eff, rules, loc) => ???
+    case WeededAst.Expr.TryWith(exp, eff, rules, loc) => Expr.TryWith(visitExp(exp), eff, rules.map(visitHandlerRule), loc)
     case WeededAst.Expr.Do(op, exps, loc) => ???
     case WeededAst.Expr.Resume(exp, loc) => ???
     case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) => ???
@@ -477,4 +477,10 @@ object Desugar {
     case WeededAst.CatchRule(ident, className, exp) => DesugaredAst.CatchRule(ident, className, visitExp(exp))
   }
 
+  /**
+    * Desugars the given [[WeededAst.HandlerRule]] `rule0`.
+    */
+  private def visitHandlerRule(rule0: WeededAst.HandlerRule)(implicit flix: Flix): DesugaredAst.HandlerRule = rule0 match {
+    case WeededAst.HandlerRule(op, fparams, exp) => DesugaredAst.HandlerRule(op, visitFormalParams(fparams), visitExp(exp))
+  }
 }
