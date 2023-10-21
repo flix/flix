@@ -129,7 +129,11 @@ object Desugar {
     */
   private def visitRestrictableEnum(restrictableEnum0: WeededAst.Declaration.RestrictableEnum)(implicit flix: Flix): DesugaredAst.Declaration.RestrictableEnum = restrictableEnum0 match {
     case WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index0, tparams0, derives0, cases0, loc) =>
-      ???
+      val index = visitTypeParam(index0)
+      val tparams = visitTypeParams(tparams0)
+      val derives = visitDerivations(derives0)
+      val cases = cases0.map(visitRestrictableCase)
+      DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives, cases, loc)
   }
 
   /**
@@ -201,6 +205,11 @@ object Desugar {
     * Desugars the given [[WeededAst.Case]] `case0`.
     */
   private def visitCase(case0: WeededAst.Case)(implicit flix: Flix): DesugaredAst.Case = ???
+
+  /**
+    * Desugars the given [[WeededAst.RestrictableCase]] `case0`.
+    */
+  private def visitRestrictableCase(case0: WeededAst.RestrictableCase)(implicit flix: Flix): DesugaredAst.RestrictableCase = ???
 
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
