@@ -74,7 +74,14 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Instance]] `instance0`.
     */
-  private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = ???
+  private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = instance0 match {
+    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, loc) =>
+      val tpe = visitType(tpe0)
+      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val assocs = assocs0.map(visitAssocTypeDef)
+      val defs = defs0.map(visitDef)
+      DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.Def]] `def0`.
@@ -143,9 +150,14 @@ object Desugar {
   private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeSig = ???
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Sig]] `assoc`.
+    * Desugars the given [[WeededAst.Declaration.Sig]] `sig0`.
     */
   private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = ???
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.AssocTypeDef]] `assoc0`.
+    */
+  private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeDef = ???
 
   /**
     * Desugars the given [[WeededAst.KindedTypeParams]] `tparams0`.
