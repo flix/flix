@@ -485,7 +485,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.RestrictableChoosePattern]] `pat0`.
     */
-  private def visitRestrictableChoosePattern(pat0: WeededAst.RestrictableChoosePattern)(implicit flix: Flix): DesugaredAst.RestrictableChoosePattern = {
+  private def visitRestrictableChoosePattern(pat0: WeededAst.RestrictableChoosePattern): DesugaredAst.RestrictableChoosePattern = {
     def visitVarOrWild(varOrWild0: WeededAst.RestrictableChoosePattern.VarOrWild): DesugaredAst.RestrictableChoosePattern.VarOrWild =
       varOrWild0 match {
         case WeededAst.RestrictableChoosePattern.Wild(loc) => DesugaredAst.RestrictableChoosePattern.Wild(loc)
