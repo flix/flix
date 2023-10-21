@@ -72,18 +72,18 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Def]] `d`.
     */
   private def visitDef(d: WeededAst.Declaration.Def)(implicit flix: Flix): DesugaredAst.Declaration.Def = d match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, constrs, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, constrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      val tparamsVal = visitKindedTypeParams(tparams)
-      val fparamsVal = visitFormalParams(fparams)
-      val expVal = visitExp(exp)
-      val tpeVal = visitType(tpe)
-      val effVal = eff.map(visitType)
-      val tconstrsVal = tconstrs.map(visitTypeConstraint)
-      val constrsVal = constrs.map(visitEqualityConstraint)
+      val tparams = visitKindedTypeParams(tparams0)
+      val fparams = visitFormalParams(fparams0)
+      val exp = visitExp(exp0)
+      val tpe = visitType(tpe0)
+      val eff = eff0.map(visitType)
+      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val constrs = constrs0.map(visitEqualityConstraint)
 
-      DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparamsVal, fparamsVal, expVal, tpeVal, effVal, tconstrsVal, constrsVal, loc)
+      DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, constrs, loc)
 
   }
 
