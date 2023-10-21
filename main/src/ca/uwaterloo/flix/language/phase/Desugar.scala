@@ -22,7 +22,7 @@ object Desugar {
   }
 
   /**
-    * Desugars the given compilation unit `unit`.
+    * Desugars the given [[WeededAst.CompilationUnit]] `unit`.
     */
   private def visitUnit(src: Ast.Source, unit: WeededAst.CompilationUnit)(implicit flix: Flix): (Ast.Source, DesugaredAst.CompilationUnit) = unit match {
     case WeededAst.CompilationUnit(usesAndImports0, decls0, loc) =>
@@ -32,17 +32,17 @@ object Desugar {
   }
 
   /**
-    * Maps `useOrImport` to a corresponding [[DesugaredAst.UseOrImport]].
+    * Maps `useOrImport0` to a corresponding [[DesugaredAst.UseOrImport]].
     */
-  private def visitUseOrImport(useOrImport: WeededAst.UseOrImport): DesugaredAst.UseOrImport = useOrImport match {
+  private def visitUseOrImport(useOrImport0: WeededAst.UseOrImport): DesugaredAst.UseOrImport = useOrImport0 match {
     case WeededAst.UseOrImport.Use(qname, alias, loc) => DesugaredAst.UseOrImport.Use(qname, alias, loc)
     case WeededAst.UseOrImport.Import(name, alias, loc) => DesugaredAst.UseOrImport.Import(name, alias, loc)
   }
 
   /**
-    * Compiles `decl` to a [[DesugaredAst.Declaration]].
+    * Compiles `decl0` to a [[DesugaredAst.Declaration]].
     */
-  private def visitDecl(decl: WeededAst.Declaration)(implicit flix: Flix): DesugaredAst.Declaration = decl match {
+  private def visitDecl(decl0: WeededAst.Declaration)(implicit flix: Flix): DesugaredAst.Declaration = decl0 match {
     case WeededAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val decls = decls0.map(visitDecl)
@@ -59,9 +59,9 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Class]] `d`.
+    * Desugars the given [[WeededAst.Declaration.Class]] `clazz0`.
     */
-  private def visitClass(d: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = d match {
+  private def visitClass(clazz0: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = clazz0 match {
     case WeededAst.Declaration.Class(doc, ann, mod, ident, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
