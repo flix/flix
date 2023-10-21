@@ -149,7 +149,11 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Effect]] `eff0`.
     */
-  private def visitEffect(eff0: WeededAst.Declaration.Effect)(implicit flix: Flix): DesugaredAst.Declaration.Effect = ???
+  private def visitEffect(eff0: WeededAst.Declaration.Effect)(implicit flix: Flix): DesugaredAst.Declaration.Effect = eff0 match {
+    case WeededAst.Declaration.Effect(doc, ann, mod, ident, ops0, loc) =>
+      val ops = ops0.map(visitOp)
+      DesugaredAst.Declaration.Effect(doc, ann, mod, ident, ops, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.TypeParam]] `tparam0`.
@@ -215,6 +219,11 @@ object Desugar {
     * Desugars the given [[WeededAst.RestrictableCase]] `case0`.
     */
   private def visitRestrictableCase(case0: WeededAst.RestrictableCase)(implicit flix: Flix): DesugaredAst.RestrictableCase = ???
+
+  /**
+    * Desugars the given [[WeededAst.Declaration.Op]] `op0`.
+    */
+  private def visitOp(op0: WeededAst.Declaration.Op)(implicit flix: Flix): DesugaredAst.Declaration.Op = ???
 
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
