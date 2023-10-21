@@ -72,39 +72,29 @@ object Kinder {
     flatMapN(visitTypeAliases(root.taOrder, root)) {
       taenv =>
 
-        // Extra type annotations are required due to limitations in Scala's type inference.
-        val enumsVal = Validation.sequence(ParOps.parMap(root.enums)({
-          pair: (Symbol.EnumSym, ResolvedAst.Declaration.Enum) =>
-            val (sym, enum) = pair
-            visitEnum(enum, taenv, root).map(sym -> _)
-        }))
+        val enumsVal = ParOps.mapValuesFallible(root.enums) {
+          enum => visitEnum(enum, taenv, root)
+        }
 
-        // Extra type annotations are required due to limitations in Scala's type inference.
-        val restrictableEnumsVal = Validation.sequence(ParOps.parMap(root.restrictableEnums)({
-          pair: (Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum) =>
-            val (sym, enum) = pair
-            visitRestrictableEnum(enum, taenv, root).map(sym -> _)
-        }))
+        val restrictableEnumsVal = ParOps.mapValuesFallible(root.restrictableEnums) {
+          enum => visitRestrictableEnum(enum, taenv, root)
+        }
 
         val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
-        val instancesVal = Validation.sequence(ParOps.parMap(root.instances)({
-          pair: (Symbol.ClassSym, List[ResolvedAst.Declaration.Instance]) =>
-            val (sym, insts) = pair
-            traverse(insts)(visitInstance(_, taenv, root)).map(sym -> _)
-        }))
+        val instancesVal = ParOps.mapValuesFallible(root.instances) {
+          insts => traverse(insts)(visitInstance(_, taenv, root))
+        }
 
-        val effectsVal = Validation.sequence(ParOps.parMap(root.effects)({
-          pair: (Symbol.EffectSym, ResolvedAst.Declaration.Effect) =>
-            val (sym, eff) = pair
-            visitEffect(eff, taenv, root).map(sym -> _)
-        }))
+        val effectsVal = ParOps.mapValuesFallible(root.effects) {
+          eff => visitEffect(eff, taenv, root)
+        }
 
         mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, restrictableEnums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
+            KindedAst.Root(classes, instances, defs, enums, restrictableEnums, effects, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -226,14 +216,8 @@ object Kinder {
   private def visitClasses(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, KindedAst.Class], KindError] = {
     val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
 
-    val results = ParOps.parMap(staleClasses.values)(visitClass(_, taenv, root))
-
-    Validation.sequence(results) map {
-      res =>
-        res.foldLeft(freshClasses) {
-          case (acc, defn) => acc + (defn.sym -> defn)
-        }
-    }
+    val result = ParOps.mapValuesFallible(staleClasses)(visitClass(_, taenv, root))
+    result.map(freshClasses ++ _)
   }
 
   /**
@@ -299,14 +283,8 @@ object Kinder {
   private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-    val results = ParOps.parMap(staleDefs.values)(visitDef(_, Nil, KindEnv.empty, taenv, root))
-
-    Validation.sequence(results) map {
-      res =>
-        res.foldLeft(freshDefs) {
-          case (acc, defn) => acc + (defn.sym -> defn)
-        }
-    }
+    val result = ParOps.mapValuesFallible(staleDefs)(visitDef(_, Nil, KindEnv.empty, taenv, root))
+    result.map(freshDefs ++ _)
   }
 
   /**
