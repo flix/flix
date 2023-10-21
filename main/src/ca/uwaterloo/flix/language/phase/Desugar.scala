@@ -226,7 +226,11 @@ object Desugar {
   /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
     */
-  private def visitFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = ???
+  private def visitFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = fparams0.map {
+    case WeededAst.FormalParam(ident, mod, tpe0, loc) =>
+      val tpe = tpe0.map(visitType)
+      DesugaredAst.FormalParam(ident, mod, tpe, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.EqualityConstraint]] `econstr0`.
