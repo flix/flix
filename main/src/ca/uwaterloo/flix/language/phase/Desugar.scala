@@ -353,17 +353,17 @@ object Desugar {
     case WeededAst.Expr.Cst(cst, loc) => Expr.Cst(cst, loc)
     case WeededAst.Expr.Apply(exp, exps, loc) => Expr.Apply(visitExp(exp), visitExps(exps), loc)
     case WeededAst.Expr.Lambda(fparam, exp, loc) => Expr.Lambda(visitFormalParam(fparam), visitExp(exp), loc)
-    case WeededAst.Expr.Unary(sop, exp, loc) => ???
-    case WeededAst.Expr.Binary(sop, exp1, exp2, loc) => ???
-    case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) => ???
-    case WeededAst.Expr.Stm(exp1, exp2, loc) => ???
-    case WeededAst.Expr.Discard(exp, loc) => ???
-    case WeededAst.Expr.Let(ident, mod, exp1, exp2, loc) => ???
-    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) => ???
-    case WeededAst.Expr.Region(tpe, loc) => ???
-    case WeededAst.Expr.Scope(ident, exp, loc) => ???
-    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) => ???
-    case WeededAst.Expr.Match(exp, rules, loc) => ???
+    case WeededAst.Expr.Unary(sop, exp, loc) => Expr.Unary(sop, visitExp(exp), loc)
+    case WeededAst.Expr.Binary(sop, exp1, exp2, loc) => Expr.Binary(sop, visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) => Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), loc)
+    case WeededAst.Expr.Stm(exp1, exp2, loc) => Expr.Stm(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Discard(exp, loc) => Expr.Discard(visitExp(exp), loc)
+    case WeededAst.Expr.Let(ident, mod, exp1, exp2, loc) => Expr.Let(ident, mod, visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) => Expr.LetRec(ident, mod, visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Region(tpe, loc) => Expr.Region(tpe, loc)
+    case WeededAst.Expr.Scope(ident, exp, loc) => Expr.Scope(ident, visitExp(exp), loc)
+    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) => Expr.ScopeExit(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Match(exp, rules, loc) => Expr.Match(visitExp(exp), rules.map(visitMatchRule), loc)
     case WeededAst.Expr.TypeMatch(exp, rules, loc) => ???
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) => ???
     case WeededAst.Expr.Tuple(exps, loc) => ???
@@ -423,5 +423,17 @@ object Desugar {
     */
   private def visitExps(exps: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Expr] =
     exps.map(visitExp)
+
+  /**
+    * Desugars the given [[WeededAst.MatchRule]] `rule0`.
+    */
+  private def visitMatchRule(rule0: WeededAst.MatchRule)(implicit flix: Flix): DesugaredAst.MatchRule = rule0 match {
+    case WeededAst.MatchRule(pat, exp1, exp2) => DesugaredAst.MatchRule(visitPattern(pat), visitExp(exp1), visitExp(exp2))
+  }
+
+  /**
+    * Desugars the given [[WeededAst.Pattern]] `pat0`.
+    */
+  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): DesugaredAst.Pattern = ???
 
 }
