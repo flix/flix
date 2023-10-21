@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.WeededAst.TypeParam
 import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
@@ -158,7 +159,10 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeParam]] `tparam0`.
     */
-  private def visitTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): DesugaredAst.TypeParam = ???
+  private def visitTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): DesugaredAst.TypeParam = tparam0 match {
+    case WeededAst.TypeParam.Unkinded(ident) => DesugaredAst.TypeParam.Unkinded(ident)
+    case WeededAst.TypeParam.Kinded(ident, kind) => DesugaredAst.TypeParam.Kinded(ident, visitKind(kind))
+  }
 
   /**
     * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
@@ -224,6 +228,11 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.Op]] `op0`.
     */
   private def visitOp(op0: WeededAst.Declaration.Op)(implicit flix: Flix): DesugaredAst.Declaration.Op = ???
+
+  /**
+    * Desugars the given [[WeededAst.Kind]] `kind0`.
+    */
+  private def visitKind(kind0: WeededAst.Kind)(implicit flix: Flix): DesugaredAst.Kind = ???
 
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
