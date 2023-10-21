@@ -101,7 +101,13 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Enum]] `d`.
     */
-  private def visitEnum(d: WeededAst.Declaration.Enum)(implicit flix: Flix): DesugaredAst.Declaration.Enum = ???
+  private def visitEnum(d: WeededAst.Declaration.Enum)(implicit flix: Flix): DesugaredAst.Declaration.Enum = d match {
+    case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives0, cases0, loc) =>
+      val tparams = visitTypeParams(tparams0)
+      val derives = visitDerivations(derives0)
+      val cases = cases0.map(visitCase)
+      DesugaredAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.RestrictableEnum]] `d`.
@@ -124,6 +130,11 @@ object Desugar {
   private def visitKindedTypeParams(tparams: WeededAst.KindedTypeParams)(implicit flix: Flix): DesugaredAst.KindedTypeParams = ???
 
   /**
+    * Desugars the given [[WeededAst.TypeParams]] `tparams`.
+    */
+  private def visitTypeParams(tparams: WeededAst.TypeParams)(implicit flix: Flix): DesugaredAst.TypeParams = ???
+
+  /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams`.
     */
   private def visitFormalParams(fparams: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = ???
@@ -142,6 +153,16 @@ object Desugar {
     * Desugars the given [[WeededAst.EqualityConstraint]] `econstr`.
     */
   private def visitEqualityConstraint(econstr: WeededAst.EqualityConstraint)(implicit flix: Flix): DesugaredAst.EqualityConstraint = ???
+
+  /**
+    * Desugars the given [[WeededAst.Derivations]] `derives0`.
+    */
+  private def visitDerivations(derives0: WeededAst.Derivations)(implicit flix: Flix): DesugaredAst.Derivations = ???
+
+  /**
+    * Desugars the given [[WeededAst.Case]] `case0`.
+    */
+  private def visitCase(case0: WeededAst.Case)(implicit flix: Flix): DesugaredAst.Case = ???
 
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
