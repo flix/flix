@@ -82,9 +82,7 @@ object Desugar {
       val eff = eff0.map(visitType)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val constrs = constrs0.map(visitEqualityConstraint)
-
       DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, constrs, loc)
-
   }
 
   /**
