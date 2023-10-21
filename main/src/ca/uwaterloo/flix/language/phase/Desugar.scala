@@ -139,7 +139,12 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.TypeAlias]] `typeAlias0`.
     */
-  private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias)(implicit flix: Flix): DesugaredAst.Declaration.TypeAlias = ???
+  private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias)(implicit flix: Flix): DesugaredAst.Declaration.TypeAlias = typeAlias0 match {
+    case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+      val tparams = visitTypeParams(tparams0)
+      val tpe = visitType(tpe0)
+      DesugaredAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.Effect]] `eff0`.
