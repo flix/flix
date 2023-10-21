@@ -34,7 +34,7 @@ object Desugar {
   /**
     * Maps `u0` to a corresponding [[DesugaredAst.UseOrImport]].
     */
-  private def visitUseOrImport(u0: WeededAst.UseOrImport): DesugaredAst.UseOrImport = u0 match {
+  private def visitUseOrImport(useOrImport: WeededAst.UseOrImport): DesugaredAst.UseOrImport = useOrImport match {
     case WeededAst.UseOrImport.Use(qname, alias, loc) => DesugaredAst.UseOrImport.Use(qname, alias, loc)
     case WeededAst.UseOrImport.Import(name, alias, loc) => DesugaredAst.UseOrImport.Import(name, alias, loc)
   }
