@@ -10,15 +10,15 @@ object Desugar {
     * Performs desugaring on `program`.
     */
   def run(program: WeededAst.Root)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
-    val unitsVal = ParOps.parMap(program.units) {
+    val units = ParOps.parMap(program.units) {
       case (k, v) => visitUnit(k, v)
     }
 
-    val desugaredCompilationUnits = unitsVal.foldLeft(Map.empty[Ast.Source, DesugaredAst.CompilationUnit]) {
+    val allUnits = units.foldLeft(Map.empty[Ast.Source, DesugaredAst.CompilationUnit]) {
       case (macc, (k, v)) => macc + (k -> v)
     }
 
-    DesugaredAst.Root(desugaredCompilationUnits, program.entryPoint, program.names)
+    DesugaredAst.Root(allUnits, program.entryPoint, program.names)
   }
 
   /**
