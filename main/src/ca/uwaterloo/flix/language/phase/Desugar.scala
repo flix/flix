@@ -32,7 +32,7 @@ object Desugar {
   }
 
   /**
-    * Maps `u0` to a corresponding [[DesugaredAst.UseOrImport]].
+    * Maps `useOrImport` to a corresponding [[DesugaredAst.UseOrImport]].
     */
   private def visitUseOrImport(useOrImport: WeededAst.UseOrImport): DesugaredAst.UseOrImport = useOrImport match {
     case WeededAst.UseOrImport.Use(qname, alias, loc) => DesugaredAst.UseOrImport.Use(qname, alias, loc)
@@ -40,13 +40,13 @@ object Desugar {
   }
 
   /**
-    * Compiles `decl` to a list of [[DesugaredAst.Declaration]].
+    * Compiles `decl` to a [[DesugaredAst.Declaration]].
     */
   private def visitDecl(decl: WeededAst.Declaration)(implicit flix: Flix): DesugaredAst.Declaration = decl match {
-    case WeededAst.Declaration.Namespace(ident, usesAndImports, decls, loc) =>
-      val usesAndImportsVal = usesAndImports.map(visitUseOrImport)
-      val declsVal = decls.map(visitDecl)
-      DesugaredAst.Declaration.Namespace(ident, usesAndImportsVal, declsVal, loc)
+    case WeededAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
+      val usesAndImports = usesAndImports0.map(visitUseOrImport)
+      val decls = decls0.map(visitDecl)
+      DesugaredAst.Declaration.Namespace(ident, usesAndImports, decls, loc)
 
     case d: WeededAst.Declaration.Class => visitClass(d)
     case d: WeededAst.Declaration.Instance => visitInstance(d)
