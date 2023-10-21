@@ -65,12 +65,9 @@ object Weeder {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
-      val results = ParOps.parMap(stale)(kv => visitCompilationUnit(kv._1, kv._2))
-      Validation.sequence(results) map {
-        case rs =>
-          val m = rs.foldLeft(fresh) {
-            case (acc, (k, v)) => acc + (k -> v)
-          }
+      ParOps.mapValuesFallible(stale)(visitCompilationUnit).map {
+        result =>
+          val m = fresh ++ result
           WeededAst.Root(m, root.entryPoint, root.names)
       }
     }
@@ -78,14 +75,14 @@ object Weeder {
   /**
     * Weeds the given abstract syntax tree.
     */
-  private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
+  private def visitCompilationUnit(unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[WeededAst.CompilationUnit, WeederError] = {
     val usesAndImportsVal = traverse(unit.usesOrImports)(visitUseOrImport)
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
     mapN(usesAndImportsVal, declarationsVal) {
       case (usesAndImports, decls) =>
-        src -> WeededAst.CompilationUnit(usesAndImports.flatten, decls.flatten, loc)
+        WeededAst.CompilationUnit(usesAndImports.flatten, decls.flatten, loc)
     }
   }
 
