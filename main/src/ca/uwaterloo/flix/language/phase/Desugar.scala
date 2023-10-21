@@ -207,7 +207,12 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.AssocTypeDef]] `assoc0`.
     */
-  private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeDef = ???
+  private def visitAssocTypeDef(assoc0: WeededAst.Declaration.AssocTypeDef)(implicit flix: Flix): DesugaredAst.Declaration.AssocTypeDef = assoc0 match {
+    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+      val arg = visitType(arg0)
+      val tpe = visitType(tpe0)
+      DesugaredAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.KindedTypeParams]] `tparams0`.
