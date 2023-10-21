@@ -255,7 +255,9 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
     */
-  private def visitDerivations(derives0: WeededAst.Derivations)(implicit flix: Flix): DesugaredAst.Derivations = ???
+  private def visitDerivations(derives0: WeededAst.Derivations)(implicit flix: Flix): DesugaredAst.Derivations = derives0 match {
+    case WeededAst.Derivations(classes, loc) => DesugaredAst.Derivations(classes, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Case]] `case0`.
