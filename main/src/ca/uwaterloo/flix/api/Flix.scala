@@ -474,8 +474,8 @@ class Flix {
     */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
-      ignorePur = options.xnobooleffects,
-      ignoreEff = options.xnoseteffects,
+      ignorePur = false,
+      ignoreEff = false,
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
     )
   }
@@ -536,9 +536,8 @@ class Flix {
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
-      afterStatistics <- Statistics.run(afterEntryPoint)
-      _ <- Instances.run(afterStatistics, cachedTyperAst, changeSet)
-      afterStratifier <- Stratifier.run(afterStatistics)
+      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      afterStratifier <- Stratifier.run(afterEntryPoint)
       afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
@@ -600,8 +599,7 @@ class Flix {
     cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
     cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
-    val afterJvmBackend = JvmBackend.run(cachedVarNumberingAst)
-    val result = Finish.run(afterJvmBackend)
+    val result = JvmBackend.run(cachedVarNumberingAst)
 
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()
@@ -613,7 +611,7 @@ class Flix {
     progressBar.complete()
 
     // Return the result.
-    result
+    Validation.Success(result)
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -652,25 +650,6 @@ class Flix {
 
     // And add it to the list of executed phases.
     phaseTimers += currentPhase
-
-    // Print performance information if in verbose mode.
-    if (options.debug) {
-      // Print information about the phase.
-      val d = new Duration(e)
-      val emojiPart = formatter.blue("✓ ")
-      val phasePart = formatter.blue(f"$phase%-40s")
-      val timePart = f"${d.fmtMilliSeconds}%8s"
-      Console.println(emojiPart + phasePart + timePart)
-
-      // Print information about each subphase.
-      for ((subphase, e) <- currentPhase.subphases.reverse) {
-        val d = new Duration(e)
-        val emojiPart = "    "
-        val phasePart = formatter.magenta(f"$subphase%-37s")
-        val timePart = f"(${d.fmtMilliSeconds}%8s)"
-        Console.println(emojiPart + phasePart + timePart)
-      }
-    }
 
     // Return the result computed by the phase.
     r

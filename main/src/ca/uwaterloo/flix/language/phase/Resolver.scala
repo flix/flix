@@ -1102,7 +1102,7 @@ object Resolver {
 
         case NamedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
           val env = env0 ++ mkVarEnv(sym)
-          val e1Val = visitExp(exp1, env)
+          val e1Val = visitExp(exp1, env)(level.incr)
           val e2Val = visitExp(exp2, env)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expr.LetRec(sym, mod, e1, e2, loc)

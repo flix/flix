@@ -129,4 +129,11 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     case _ => false
   }
 
+  /**
+    * Returns a human-readable representation of `this` source location.
+    *
+    * Note: The `toString` method should only be used for debugging.
+    */
+  override def toString: String = format
+
 }

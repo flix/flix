@@ -105,12 +105,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.listen.nonEmpty)
   }
 
-  test("--lsp") {
-    val args = Array("--lsp", "8080", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.lsp.nonEmpty)
-  }
-
   test("--threads") {
     val args = Array("--threads", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -147,12 +141,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xbddthreshold.contains(42))
   }
 
-  test("--Xdebug") {
-    val args = Array("--Xdebug", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xdebug)
-  }
-
   test("--Xlib nix") {
     val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -169,12 +157,6 @@ class TestMain extends AnyFunSuite {
     val args = Array("--Xlib", "all", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xlib == LibLevel.All)
-  }
-
-  test("--Xbool-classic") {
-    val args = Array("--Xbool-classic")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xboolclassic)
   }
 
   test("--Xno-bool-cache") {
@@ -201,28 +183,10 @@ class TestMain extends AnyFunSuite {
     assert(opts.xnoboolunif)
   }
 
-  test("--Xno-unit-tests") {
-    val args = Array("--Xno-unit-tests")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnounittests)
-  }
-
-  test("--Xprint-bool-unif") {
-    val args = Array("--Xprint-bool-unif")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xprintboolunif)
-  }
-
   test("--Xstrictmono") {
     val args = Array("--Xstrictmono")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xstrictmono)
-  }
-
-  test("--Xvirtual-threads") {
-    val args = Array("--Xvirtual-threads")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xvirtualthreads)
   }
 
   test("--Xno-qmc") {
