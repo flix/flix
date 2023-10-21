@@ -422,18 +422,18 @@ object Desugar {
     case WeededAst.Expr.GetChannel(exp, loc) => Expr.GetChannel(visitExp(exp), loc)
     case WeededAst.Expr.PutChannel(exp1, exp2, loc) => Expr.PutChannel(visitExp(exp1), visitExp(exp2), loc)
     case WeededAst.Expr.SelectChannel(rules, exp, loc) => Expr.SelectChannel(rules.map(visitSelectChannelRule), exp.map(visitExp), loc)
-    case WeededAst.Expr.Spawn(exp1, exp2, loc) => ???
-    case WeededAst.Expr.ParYield(frags, exp, loc) => ???
-    case WeededAst.Expr.Lazy(exp, loc) => ???
-    case WeededAst.Expr.Force(exp, loc) => ???
-    case WeededAst.Expr.FixpointConstraintSet(cs, loc) => ???
-    case WeededAst.Expr.FixpointLambda(pparams, exp, loc) => ???
-    case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) => ???
-    case WeededAst.Expr.FixpointSolve(exp, loc) => ???
-    case WeededAst.Expr.FixpointFilter(pred, exp, loc) => ???
-    case WeededAst.Expr.FixpointInject(exp, pred, loc) => ???
-    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) => ???
-    case WeededAst.Expr.Error(m) => ???
+    case WeededAst.Expr.Spawn(exp1, exp2, loc) => Expr.Spawn(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.ParYield(frags, exp, loc) => Expr.ParYield(frags.map(visitParYieldFragment), visitExp(exp), loc)
+    case WeededAst.Expr.Lazy(exp, loc) => Expr.Lazy(visitExp(exp), loc)
+    case WeededAst.Expr.Force(exp, loc) => Expr.Force(visitExp(exp), loc)
+    case WeededAst.Expr.FixpointConstraintSet(cs, loc) => Expr.FixpointConstraintSet(???, loc)
+    case WeededAst.Expr.FixpointLambda(pparams, exp, loc) => Expr.FixpointLambda(???, visitExp(exp), loc)
+    case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) => Expr.FixpointMerge(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.FixpointSolve(exp, loc) => Expr.FixpointSolve(visitExp(exp), loc)
+    case WeededAst.Expr.FixpointFilter(pred, exp, loc) => Expr.FixpointFilter(???, visitExp(exp), loc)
+    case WeededAst.Expr.FixpointInject(exp, pred, loc) => Expr.FixpointInject(visitExp(exp), ???, loc)
+    case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) => Expr.FixpointProject(???, visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Error(m) => DesugaredAst.Expr.Error(m)
   }
 
   /**
@@ -510,5 +510,12 @@ object Desugar {
     */
   private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule)(implicit flix: Flix): DesugaredAst.SelectChannelRule = rule0 match {
     case WeededAst.SelectChannelRule(ident, exp1, exp2) => DesugaredAst.SelectChannelRule(ident, visitExp(exp1), visitExp(exp2))
+  }
+
+  /**
+    * Desugars the given [[WeededAst.ParYieldFragment]] `frag0`.
+    */
+  private def visitParYieldFragment(frag0: WeededAst.ParYieldFragment)(implicit flix: Flix): DesugaredAst.ParYieldFragment = frag0 match {
+    case WeededAst.ParYieldFragment(pat, exp, loc) => DesugaredAst.ParYieldFragment(visitPattern(pat), visitExp(exp), loc)
   }
 }
