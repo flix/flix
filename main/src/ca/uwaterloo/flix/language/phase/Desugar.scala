@@ -271,7 +271,11 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.RestrictableCase]] `case0`.
     */
-  private def visitRestrictableCase(case0: WeededAst.RestrictableCase)(implicit flix: Flix): DesugaredAst.RestrictableCase = ???
+  private def visitRestrictableCase(case0: WeededAst.RestrictableCase)(implicit flix: Flix): DesugaredAst.RestrictableCase = case0 match {
+    case WeededAst.RestrictableCase(ident, tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      DesugaredAst.RestrictableCase(ident, tpe, loc)
+  }
 
   /**
     * Desugars the given [[WeededAst.Declaration.Op]] `op0`.
