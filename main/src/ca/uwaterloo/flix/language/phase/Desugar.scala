@@ -365,30 +365,36 @@ object Desugar {
     case WeededAst.Expr.ScopeExit(exp1, exp2, loc) => Expr.ScopeExit(visitExp(exp1), visitExp(exp2), loc)
     case WeededAst.Expr.Match(exp, rules, loc) => Expr.Match(visitExp(exp), rules.map(visitMatchRule), loc)
     case WeededAst.Expr.TypeMatch(exp, rules, loc) => Expr.TypeMatch(visitExp(exp), rules.map(visitTypeMatchRule), loc)
-    case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) => Expr.RestrictableChoose(star, visitExp(exp), rules.map(visitRestrictableChooseRule), loc)
-    case WeededAst.Expr.Tuple(exps, loc) => ???
-    case WeededAst.Expr.RecordEmpty(loc) => ???
-    case WeededAst.Expr.RecordSelect(exp, label, loc) => ???
-    case WeededAst.Expr.RecordExtend(label, exp1, exp2, loc) => ???
-    case WeededAst.Expr.RecordRestrict(label, exp, loc) => ???
-    case WeededAst.Expr.ArrayLit(exps, exp, loc) => ???
-    case WeededAst.Expr.ArrayNew(exp1, exp2, exp3, loc) => ???
-    case WeededAst.Expr.ArrayLoad(exp1, exp2, loc) => ???
-    case WeededAst.Expr.ArrayLength(exp, loc) => ???
-    case WeededAst.Expr.ArrayStore(exp1, exp2, exp3, loc) => ???
-    case WeededAst.Expr.VectorLit(exps, loc) => ???
-    case WeededAst.Expr.VectorLoad(exp1, exp2, loc) => ???
-    case WeededAst.Expr.VectorLength(exp, loc) => ???
-    case WeededAst.Expr.Ref(exp1, exp2, loc) => ???
-    case WeededAst.Expr.Deref(exp, loc) => ???
-    case WeededAst.Expr.Assign(exp1, exp2, loc) => ???
-    case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) => ???
-    case WeededAst.Expr.InstanceOf(exp, className, loc) => ???
-    case WeededAst.Expr.CheckedCast(cast, exp, loc) => ???
-    case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) => ???
-    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) => ???
-    case WeededAst.Expr.Without(exp, eff, loc) => ???
-    case WeededAst.Expr.TryCatch(exp, rules, loc) => ???
+    case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
+      Expr.RestrictableChoose(star, visitExp(exp), rules.map(visitRestrictableChooseRule), loc)
+
+    case WeededAst.Expr.Tuple(exps, loc) => Expr.Tuple(visitExps(exps), loc)
+    case WeededAst.Expr.RecordEmpty(loc) => Expr.RecordEmpty(loc)
+    case WeededAst.Expr.RecordSelect(exp, label, loc) => Expr.RecordSelect(visitExp(exp), label, loc)
+    case WeededAst.Expr.RecordExtend(label, exp1, exp2, loc) => Expr.RecordExtend(label, visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.RecordRestrict(label, exp, loc) => Expr.RecordRestrict(label, visitExp(exp), loc)
+    case WeededAst.Expr.ArrayLit(exps, exp, loc) => Expr.ArrayLit(visitExps(exps), visitExp(exp), loc)
+    case WeededAst.Expr.ArrayNew(exp1, exp2, exp3, loc) => Expr.ArrayNew(visitExp(exp1), visitExp(exp2), visitExp(exp3), loc)
+    case WeededAst.Expr.ArrayLoad(exp1, exp2, loc) => Expr.ArrayLoad(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.ArrayLength(exp, loc) => Expr.ArrayLength(visitExp(exp), loc)
+    case WeededAst.Expr.ArrayStore(exp1, exp2, exp3, loc) => Expr.ArrayStore(visitExp(exp1), visitExp(exp2), visitExp(exp3), loc)
+    case WeededAst.Expr.VectorLit(exps, loc) => Expr.VectorLit(visitExps(exps), loc)
+    case WeededAst.Expr.VectorLoad(exp1, exp2, loc) => Expr.VectorLoad(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.VectorLength(exp, loc) => Expr.VectorLength(visitExp(exp), loc)
+    case WeededAst.Expr.Ref(exp1, exp2, loc) => Expr.Ref(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Deref(exp, loc) => Expr.Deref(visitExp(exp), loc)
+    case WeededAst.Expr.Assign(exp1, exp2, loc) => Expr.Assign(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
+      Expr.Ascribe(visitExp(exp), expectedType.map(visitType), expectedEff.map(visitType), loc)
+
+    case WeededAst.Expr.InstanceOf(exp, className, loc) => Expr.InstanceOf(visitExp(exp), className, loc)
+    case WeededAst.Expr.CheckedCast(cast, exp, loc) => Expr.CheckedCast(cast, visitExp(exp), loc)
+    case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
+      Expr.UncheckedCast(visitExp(exp), declaredType.map(visitType), declaredEff.map(visitType), loc)
+
+    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) => Expr.UncheckedMaskingCast(visitExp(exp), loc)
+    case WeededAst.Expr.Without(exp, eff, loc) => Expr.Without(visitExp(exp), eff, loc)
+    case WeededAst.Expr.TryCatch(exp, rules, loc) => Expr.TryCatch(visitExp(exp), rules.map(visitCatchRule), loc)
     case WeededAst.Expr.TryWith(exp, eff, rules, loc) => ???
     case WeededAst.Expr.Do(op, exps, loc) => ???
     case WeededAst.Expr.Resume(exp, loc) => ???
@@ -443,10 +449,16 @@ object Desugar {
     case WeededAst.TypeMatchRule(ident, tpe, exp) => DesugaredAst.TypeMatchRule(ident, visitType(tpe), visitExp(exp))
   }
 
+  /**
+    * Desugars the given [[WeededAst.RestrictableChooseRule]] `rule0`.
+    */
   private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule)(implicit flix: Flix): DesugaredAst.RestrictableChooseRule = rule0 match {
     case WeededAst.RestrictableChooseRule(pat, exp) => DesugaredAst.RestrictableChooseRule(visitRestrictableChoosePattern(pat), visitExp(exp))
   }
 
+  /**
+    * Desugars the given [[WeededAst.RestrictableChoosePattern]] `pat0`.
+    */
   private def visitRestrictableChoosePattern(pat0: WeededAst.RestrictableChoosePattern)(implicit flix: Flix): DesugaredAst.RestrictableChoosePattern = {
     def visitVarOrWild(varOrWild0: WeededAst.RestrictableChoosePattern.VarOrWild): DesugaredAst.RestrictableChoosePattern.VarOrWild = varOrWild0 match {
       case WeededAst.RestrictableChoosePattern.Wild(loc) => DesugaredAst.RestrictableChoosePattern.Wild(loc)
@@ -456,6 +468,13 @@ object Desugar {
     pat0 match {
       case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) => DesugaredAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarOrWild), loc)
     }
+  }
+
+  /**
+    * Desugars the given [[WeededAst.CatchRule]] `rule0`.
+    */
+  private def visitCatchRule(rule0: WeededAst.CatchRule)(implicit flix: Flix): DesugaredAst.CatchRule = rule0 match {
+    case WeededAst.CatchRule(ident, className, exp) => DesugaredAst.CatchRule(ident, className, visitExp(exp))
   }
 
 }
