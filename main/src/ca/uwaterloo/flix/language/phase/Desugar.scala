@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.WeededAst.TypeParam
 import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
@@ -217,7 +216,12 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.KindedTypeParams]] `tparams0`.
     */
-  private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams)(implicit flix: Flix): DesugaredAst.KindedTypeParams = ???
+  private def visitKindedTypeParams(tparams0: WeededAst.KindedTypeParams)(implicit flix: Flix): DesugaredAst.KindedTypeParams = tparams0 match {
+    case WeededAst.TypeParams.Elided => DesugaredAst.TypeParams.Elided
+    case WeededAst.TypeParams.Kinded(tparams1) =>
+      val tparams = tparams1.map(visitTypeParam).collect { case t: DesugaredAst.TypeParam.Kinded => t }
+      DesugaredAst.TypeParams.Kinded(tparams)
+  }
 
   /**
     * Desugars the given list of [[WeededAst.FormalParam]] `fparams0`.
