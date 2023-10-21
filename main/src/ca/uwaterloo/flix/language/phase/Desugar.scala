@@ -121,11 +121,6 @@ object Desugar {
   private def visitFormalParams(fparams: List[WeededAst.FormalParam])(implicit flix: Flix): List[DesugaredAst.FormalParam] = ???
 
   /**
-    * Desugars the given [[WeededAst.Expr]] `exp0`.
-    */
-  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = ???
-
-  /**
     * Desugars the given [[WeededAst.Type]] `tpe`.
     */
   private def visitType(tpe: WeededAst.Type)(implicit flix: Flix): DesugaredAst.Type = ???
@@ -139,5 +134,10 @@ object Desugar {
     * Desugars the given [[WeededAst.EqualityConstraint]] `econstr`.
     */
   private def visitEqualityConstraint(econstr: WeededAst.EqualityConstraint)(implicit flix: Flix): DesugaredAst.EqualityConstraint = ???
+
+  /**
+    * Desugars the given [[WeededAst.Expr]] `exp0`.
+    */
+  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = ???
 
 }
