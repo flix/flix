@@ -31,9 +31,10 @@ object Desugar {
       case (k, v) => visitUnit(k, v)
     }
 
-    val allUnits = units.foldLeft(Map.empty[Ast.Source, DesugaredAst.CompilationUnit]) {
-      case (macc, (k, v)) => macc + (k -> v)
-    }
+    val allUnits = ParOps.parAgg(units, Map.empty[Ast.Source, DesugaredAst.CompilationUnit])(
+      {
+        case (macc, (k, v)) => macc + (k -> v)
+      }, _ ++ _)
 
     DesugaredAst.Root(allUnits, program.entryPoint, program.names)
   }
