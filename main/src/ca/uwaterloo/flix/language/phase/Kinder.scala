@@ -72,25 +72,17 @@ object Kinder {
     flatMapN(visitTypeAliases(root.taOrder, root)) {
       taenv =>
 
-        val enumsVal = ParOps.mapValuesFallible(root.enums) {
-          enum => visitEnum(enum, taenv, root)
-        }
+        val enumsVal = ParOps.mapValuesFallible(root.enums)(visitEnum(_, taenv, root))
 
-        val restrictableEnumsVal = ParOps.mapValuesFallible(root.restrictableEnums) {
-          enum => visitRestrictableEnum(enum, taenv, root)
-        }
+        val restrictableEnumsVal = ParOps.mapValuesFallible(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
 
         val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
-        val instancesVal = ParOps.mapValuesFallible(root.instances) {
-          insts => traverse(insts)(visitInstance(_, taenv, root))
-        }
+        val instancesVal = ParOps.mapValuesFallible(root.instances)(traverse(_)(i => visitInstance(i, taenv, root)))
 
-        val effectsVal = ParOps.mapValuesFallible(root.effects) {
-          eff => visitEffect(eff, taenv, root)
-        }
+        val effectsVal = ParOps.mapValuesFallible(root.effects)(visitEffect(_, taenv, root))
 
         mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, restrictableEnums, classes, defs, instances, effects) =>

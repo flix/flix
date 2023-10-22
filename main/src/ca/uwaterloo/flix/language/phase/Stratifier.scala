@@ -59,12 +59,10 @@ object Stratifier {
 
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = flix.subphase("Stratify Defs") {
-      ParOps.mapValuesFallible(root.defs)(v => visitDef(v)(root, g, flix))
+      ParOps.mapValuesFallible(root.defs)(visitDef(_)(root, g, flix))
     }
     val newInstances = flix.subphase("Stratify Instance Defs") {
-      ParOps.mapValuesFallible(root.instances) (
-        is => traverse(is)(i => visitInstance(i)(root, g, flix))
-      )
+      ParOps.mapValuesFallible(root.instances)(traverse(_)(i => visitInstance(i)(root, g, flix)))
     }
 
     mapN(newDefs, newInstances) {

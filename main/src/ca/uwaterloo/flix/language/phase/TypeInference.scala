@@ -199,9 +199,7 @@ object TypeInference {
       // only infer the stale defs
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-      ParOps.mapValuesFallible(staleDefs) {
-        defn => visitDefn(defn, Nil, root, classEnv, eqEnv)
-      }
+      ParOps.mapValuesFallible(staleDefs)(visitDefn(_, Nil, root, classEnv, eqEnv))
     }
 
   /**
