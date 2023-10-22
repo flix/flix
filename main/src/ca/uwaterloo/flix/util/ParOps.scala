@@ -57,7 +57,7 @@ object ParOps {
     * returning the resulting map if all calls are successful.
     */
   @inline
-  def mapValuesFallible[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
+  def parMapValuesSeq[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
     val results = parMap(m) {
       case (k, v) => f(v).map((k, _))
     }

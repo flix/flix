@@ -65,7 +65,7 @@ object Weeder {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
-      ParOps.mapValuesFallible(stale)(visitCompilationUnit).map {
+      ParOps.parMapValuesSeq(stale)(visitCompilationUnit).map {
         result =>
           val m = fresh ++ result
           WeededAst.Root(m, root.entryPoint, root.names)
