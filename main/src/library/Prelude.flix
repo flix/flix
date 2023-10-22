@@ -33,9 +33,14 @@ pub eff IO
 pub eff NonDet
 
 ///
-/// The identity function.
+/// The pure identity function.
 ///
-pub def identity(x: a): a \ ef = checked_ecast(x)
+pub def identity(x: a): a = x
+
+///
+/// The identity function, automatically casting to the required effect.
+///
+pub def eidentity(x: a): a \ ef = checked_ecast(x)
 
 ///
 /// The constant function.
