@@ -372,7 +372,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
         };
-        loop(c, identity)
+        loop(c, eidentity)
 
     ///
     /// Returns the result of applying `f` to every element in `c` along with that element's index.
@@ -384,7 +384,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
-        loop(c, 0, identity)
+        loop(c, 0, eidentity)
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a Nec with all results.
@@ -396,7 +396,7 @@ mod Nec {
             case ViewLeft.OneLeft(f2)      => k(map(f2, c))
             case ViewLeft.SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
-        loop(f, identity)
+        loop(f, eidentity)
 
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.
@@ -406,7 +406,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(a)}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
         };
-        loop(c, identity)
+        loop(c, eidentity)
 
     ///
     /// Returns the reverse of `c`.
@@ -542,7 +542,7 @@ mod Nec {
             case ViewLeft.OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
         };
-        loop(c, identity)
+        loop(c, eidentity)
 
 
 
@@ -654,7 +654,7 @@ mod Nec {
                 loop(rs, qs, ks -> k(cons(a, ks)))
             }
         };
-        loop(c1, c2, identity)
+        loop(c1, c2, eidentity)
 
     ///
     /// Returns a pair of Necs, the first containing all first components in `c`
@@ -688,7 +688,7 @@ mod Nec {
             case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(singleton <$> f(x,y))
             case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(singleton <$> f(x,y))
         };
-        loop(viewLeft(xs), viewLeft(ys), identity)
+        loop(viewLeft(xs), viewLeft(ys), eidentity)
 
     ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each

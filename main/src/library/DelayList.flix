@@ -612,7 +612,7 @@ mod DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, identity)
+        loop(l, eidentity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -698,7 +698,7 @@ mod DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, identity))
+        if (isEmpty(l)) None else Some(loop(l, eidentity))
 
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
