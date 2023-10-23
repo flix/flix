@@ -901,20 +901,30 @@ object Desugar {
     */
   private def visitConstraint(constraint0: WeededAst.Constraint): DesugaredAst.Constraint = {
     def visitHead(head0: WeededAst.Predicate.Head): DesugaredAst.Predicate.Head = head0 match {
-      case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) => DesugaredAst.Predicate.Head.Atom(pred, den, visitExps(exps), loc)
+      case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
+        val e = visitExps(exps)
+        DesugaredAst.Predicate.Head.Atom(pred, den, e, loc)
     }
 
     def visitBody(body0: WeededAst.Predicate.Body): DesugaredAst.Predicate.Body = body0 match {
       case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-        DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms.map(visitPattern), loc)
+        val ts = terms.map(visitPattern)
+        DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
+
       case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
-        DesugaredAst.Predicate.Body.Functional(idents, visitExp(exp), loc)
+        val e = visitExp(exp)
+        DesugaredAst.Predicate.Body.Functional(idents, e, loc)
+
       case WeededAst.Predicate.Body.Guard(exp, loc) =>
-        DesugaredAst.Predicate.Body.Guard(visitExp(exp), loc)
+        val e = visitExp(exp)
+        DesugaredAst.Predicate.Body.Guard(e, loc)
     }
 
     constraint0 match {
-      case WeededAst.Constraint(head, body, loc) => DesugaredAst.Constraint(visitHead(head), body.map(visitBody), loc)
+      case WeededAst.Constraint(head, body, loc) =>
+        val h = visitHead(head)
+        val b = body.map(visitBody)
+        DesugaredAst.Constraint(h, b, loc)
     }
   }
 
