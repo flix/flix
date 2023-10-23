@@ -768,7 +768,11 @@ object Desugar {
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
     */
   private def visitMatchRule(rule0: WeededAst.MatchRule): DesugaredAst.MatchRule = rule0 match {
-    case WeededAst.MatchRule(pat, exp1, exp2) => DesugaredAst.MatchRule(visitPattern(pat), exp1.map(visitExp), visitExp(exp2))
+    case WeededAst.MatchRule(pat, exp1, exp2) =>
+      val p = visitPattern(pat)
+      val e1 = exp1.map(visitExp)
+      val e2 = visitExp(exp2)
+      DesugaredAst.MatchRule(p, e1, e2)
   }
 
   /**
