@@ -858,7 +858,10 @@ object Desugar {
     * Desugars the given [[WeededAst.HandlerRule]] `rule0`.
     */
   private def visitHandlerRule(rule0: WeededAst.HandlerRule): DesugaredAst.HandlerRule = rule0 match {
-    case WeededAst.HandlerRule(op, fparams, exp) => DesugaredAst.HandlerRule(op, visitFormalParams(fparams), visitExp(exp))
+    case WeededAst.HandlerRule(op, fparams, exp) =>
+      val fps = visitFormalParams(fparams)
+      val e = visitExp(exp)
+      DesugaredAst.HandlerRule(op, fps, e)
   }
 
   /**
