@@ -1047,7 +1047,7 @@ object BackendObjType {
           t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
         } ~
         withName(2, BackendObjType.Iterator.toTpe) { i =>
-        thisLoad() ~ GETFIELD(OnExitField) ~
+          thisLoad() ~ GETFIELD(OnExitField) ~
           INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
           i.store() ~
           whileLoop(Condition.NE) {
@@ -1244,14 +1244,7 @@ object BackendObjType {
 
     def MetaFactoryMethod: StaticMethod = StaticMethod(
       this.jvmName, IsPublic, IsFinal, "metaFactory",
-      mkDescriptor(
-        methodHandlesLookup,
-        String.toTpe,
-        methodType,
-        methodType,
-        methodHandle,
-        methodType
-      )(callSite),
+      mkDescriptor(methodHandlesLookup, String.toTpe, methodType, methodType, methodHandle, methodType)(callSite),
       None
     )
   }
