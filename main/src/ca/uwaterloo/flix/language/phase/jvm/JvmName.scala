@@ -17,6 +17,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import org.objectweb.asm
+
 import java.nio.file.{Path, Paths}
 
 /**
@@ -39,6 +41,8 @@ object JvmName {
       // Descriptor of the method
       s"($argumentDescriptor)$resultDescriptor"
     }
+
+    def toAsmType: asm.Type = asm.Type.getType(toDescriptor)
   }
 
   object MethodDescriptor {
@@ -73,6 +77,7 @@ object JvmName {
   //
 
   val JavaLang: List[String] = List("java", "lang")
+  val JavaLangInvoke: List[String] = List("java", "lang", "invoke")
   val JavaUtil: List[String] = List("java", "util")
   val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
   val JavaUtilConcurrent: List[String] = JavaUtil ::: List("concurrent")
