@@ -21,7 +21,7 @@ public class ResumptionCons implements Resumption {
                 return Handler.installHandler(effSym, handler, frames, new Thunk() {
                     @Override
                     public Result invoke() {
-                        return tail.rewind(v);
+                        return Resumption.staticRewind(tail, v);
                     }
                 });
             }
