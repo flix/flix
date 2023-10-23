@@ -56,6 +56,8 @@ object MonoType {
 
   case object Region extends MonoType
 
+  case class ErasedType(kind: Kind) extends MonoType
+
   ///
   /// Compound Types.
   ///

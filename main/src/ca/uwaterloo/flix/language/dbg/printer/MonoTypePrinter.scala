@@ -50,6 +50,7 @@ object MonoTypePrinter {
     case MonoType.SchemaEmpty => Type.SchemaEmpty
     case MonoType.SchemaExtend(name, tpe, rest) => Type.SchemaExtend(name, print(tpe), print(rest))
     case MonoType.Native(clazz) => Type.Native(clazz)
+    case MonoType.ErasedType(kind) => ???
   }
 
 }

@@ -3306,6 +3306,7 @@ object Resolver {
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case t: TypeConstructor.ErasedType => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
 
       }
 

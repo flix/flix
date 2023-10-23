@@ -157,6 +157,7 @@ object BackendType {
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
          MonoType.Region => BackendObjType.JavaObject.toTpe
+    case MonoType.ErasedType(kind) => ???
   }
 
   /**
@@ -188,6 +189,7 @@ object BackendType {
          MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
          MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |
          MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
+    case MonoType.ErasedType(kind) => ???
   }
 
   sealed trait PrimitiveType extends BackendType {

@@ -204,6 +204,7 @@ object FormatType {
       case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
       case SimpleType.Union(_) => true
+      case SimpleType.ErasedType(_) => true
     }
 
     /**
@@ -351,6 +352,9 @@ object FormatType {
 
       case SimpleType.Tuple(elms) =>
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
+
+      case SimpleType.ErasedType(kind) =>
+        "@"
     }
 
     visit(tpe00, Mode.Type)

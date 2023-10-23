@@ -636,6 +636,8 @@ object JvmOps {
       case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
       case MonoType.Native(_) => Set(tpe)
+
+      case MonoType.ErasedType(_) => Set(tpe)
     }
   }
 

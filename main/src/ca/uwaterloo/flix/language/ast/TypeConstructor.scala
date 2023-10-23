@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorph}
 
 import scala.collection.immutable.SortedSet
 
@@ -393,5 +393,11 @@ object TypeConstructor {
       */
     def kind: Kind = Kind.Eff ->: Kind.Star
   }
+
+  /**
+    * A type constructor that represents an unconstrained variable after monomorphization.
+    */
+  @IntroducedBy(Monomorph.getClass)
+  case class ErasedType(kind: Kind) extends TypeConstructor
 
 }

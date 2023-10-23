@@ -319,6 +319,8 @@ object Simplifier {
             case TypeConstructor.CaseIntersection(_) => MonoType.Unit
             case TypeConstructor.CaseUnion(_) => MonoType.Unit
 
+            case TypeConstructor.ErasedType(kind) => MonoType.ErasedType(kind)
+
             case TypeConstructor.Relation =>
               throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 

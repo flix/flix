@@ -71,14 +71,16 @@ object Monomorph {
         // TODO: In particular, it seems there are two cases.
         // TODO: A. Variables that occur inside the specialized types (those we can erase?)
         // TODO: B. Variables that occur inside an expression but nowhere else really.
-        if (flix.options.xstrictmono)
-          throw UnexpectedNonConstBool(tpe0, tpe0.loc)
-        else
-          Type.Pure
+        if (flix.options.xstrictmono) throw UnexpectedNonConstBool(tpe0, tpe0.loc)
+        else Type.Pure
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case _ => Type.Unit
+      case Kind.Star | Kind.Arrow(_, _) => Type.mkErasedType(tpe0.kind, tpe0.loc)
+      case Kind.Bool => ???
+      case Kind.Predicate => ???
+      case Kind.Wild => ???
+      case Kind.WildCaseSet => ???
     }
 
     /**

@@ -259,6 +259,12 @@ object SimpleType {
     */
   case class Tuple(elms: List[SimpleType]) extends SimpleType
 
+  /**
+    * An erased type.
+    */
+  case class ErasedType(kind: Kind) extends SimpleType
+
+
   /////////
   // Fields
   /////////
@@ -534,6 +540,7 @@ object SimpleType {
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
+        case TypeConstructor.ErasedType(kind) => SimpleType.ErasedType(kind)
       }
     }
 

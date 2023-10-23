@@ -1040,4 +1040,7 @@ object Type {
     }
   }
 
+  def mkErasedType(kind: Kind, loc: SourceLocation = SourceLocation.Unknown): Type =
+    Type.Cst(TypeConstructor.ErasedType(kind), loc)
+
 }
