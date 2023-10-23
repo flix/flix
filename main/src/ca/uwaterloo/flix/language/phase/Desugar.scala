@@ -934,8 +934,10 @@ object Desugar {
   private def visitPredicateParam(param0: WeededAst.PredicateParam): DesugaredAst.PredicateParam = param0 match {
     case WeededAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc)
+
     case WeededAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
-      DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, tpes.map(visitType), loc)
+      val ts = tpes.map(visitType)
+      DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
   }
 
   /**
