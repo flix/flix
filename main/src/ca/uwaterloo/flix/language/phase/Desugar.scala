@@ -47,8 +47,11 @@ object Desugar {
     * Maps `useOrImport0` to a corresponding [[DesugaredAst.UseOrImport]].
     */
   private def visitUseOrImport(useOrImport0: WeededAst.UseOrImport): DesugaredAst.UseOrImport = useOrImport0 match {
-    case WeededAst.UseOrImport.Use(qname, alias, loc) => DesugaredAst.UseOrImport.Use(qname, alias, loc)
-    case WeededAst.UseOrImport.Import(name, alias, loc) => DesugaredAst.UseOrImport.Import(name, alias, loc)
+    case WeededAst.UseOrImport.Use(qname, alias, loc) =>
+      DesugaredAst.UseOrImport.Use(qname, alias, loc)
+
+    case WeededAst.UseOrImport.Import(name, alias, loc) =>
+      DesugaredAst.UseOrImport.Import(name, alias, loc)
   }
 
   /**
@@ -388,7 +391,8 @@ object Desugar {
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
     */
   private def visitDerivations(derives0: WeededAst.Derivations): DesugaredAst.Derivations = derives0 match {
-    case WeededAst.Derivations(classes, loc) => DesugaredAst.Derivations(classes, loc)
+    case WeededAst.Derivations(classes, loc) =>
+      DesugaredAst.Derivations(classes, loc)
   }
 
   /**
@@ -424,8 +428,13 @@ object Desugar {
     * Desugars the given [[WeededAst.Kind]] `kind0`.
     */
   private def visitKind(kind0: WeededAst.Kind): DesugaredAst.Kind = kind0 match {
-    case WeededAst.Kind.Ambiguous(qname, loc) => DesugaredAst.Kind.Ambiguous(qname, loc)
-    case WeededAst.Kind.Arrow(k1, k2, loc) => DesugaredAst.Kind.Arrow(visitKind(k1), visitKind(k2), loc)
+    case WeededAst.Kind.Ambiguous(qname, loc) =>
+      DesugaredAst.Kind.Ambiguous(qname, loc)
+
+    case WeededAst.Kind.Arrow(k1, k2, loc) =>
+      val k1 = visitKind(k1)
+      val k2 = visitKind(k2)
+      DesugaredAst.Kind.Arrow(k1, k2, loc)
   }
 
   /**
