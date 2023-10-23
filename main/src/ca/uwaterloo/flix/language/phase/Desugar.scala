@@ -803,21 +803,26 @@ object Desugar {
 
     case WeededAst.Pattern.RecordEmpty(loc) =>
       DesugaredAst.Pattern.RecordEmpty(loc)
-
   }
 
   /**
     * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
     */
   private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule): DesugaredAst.TypeMatchRule = rule0 match {
-    case WeededAst.TypeMatchRule(ident, tpe, exp) => DesugaredAst.TypeMatchRule(ident, visitType(tpe), visitExp(exp))
+    case WeededAst.TypeMatchRule(ident, tpe, exp) =>
+      val t = visitType(tpe)
+      val e = visitExp(exp)
+      DesugaredAst.TypeMatchRule(ident, t, e)
   }
 
   /**
     * Desugars the given [[WeededAst.RestrictableChooseRule]] `rule0`.
     */
   private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule): DesugaredAst.RestrictableChooseRule = rule0 match {
-    case WeededAst.RestrictableChooseRule(pat, exp) => DesugaredAst.RestrictableChooseRule(visitRestrictableChoosePattern(pat), visitExp(exp))
+    case WeededAst.RestrictableChooseRule(pat, exp) =>
+      val p = visitRestrictableChoosePattern(pat)
+      val e = visitExp(exp)
+      DesugaredAst.RestrictableChooseRule(p, e)
   }
 
   /**
@@ -826,12 +831,17 @@ object Desugar {
   private def visitRestrictableChoosePattern(pat0: WeededAst.RestrictableChoosePattern): DesugaredAst.RestrictableChoosePattern = {
     def visitVarOrWild(varOrWild0: WeededAst.RestrictableChoosePattern.VarOrWild): DesugaredAst.RestrictableChoosePattern.VarOrWild =
       varOrWild0 match {
-        case WeededAst.RestrictableChoosePattern.Wild(loc) => DesugaredAst.RestrictableChoosePattern.Wild(loc)
-        case WeededAst.RestrictableChoosePattern.Var(ident, loc) => DesugaredAst.RestrictableChoosePattern.Var(ident, loc)
+        case WeededAst.RestrictableChoosePattern.Wild(loc) =>
+          DesugaredAst.RestrictableChoosePattern.Wild(loc)
+
+        case WeededAst.RestrictableChoosePattern.Var(ident, loc) =>
+          DesugaredAst.RestrictableChoosePattern.Var(ident, loc)
       }
 
     pat0 match {
-      case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) => DesugaredAst.RestrictableChoosePattern.Tag(qname, pat.map(visitVarOrWild), loc)
+      case WeededAst.RestrictableChoosePattern.Tag(qname, pat, loc) =>
+        val p = pat.map(visitVarOrWild)
+        DesugaredAst.RestrictableChoosePattern.Tag(qname, p, loc)
     }
   }
 
