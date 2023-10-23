@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.Regions
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -49,7 +48,7 @@ object Unification {
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
-    Level.equalize(x, tpe, renv)
+    Level.equalizeR(x, tpe, renv)
 
     tpe match {
 
@@ -90,16 +89,7 @@ object Unification {
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
-    //
-    // Bools
-    //
-    case (Kind.Eff, Kind.Eff) =>
-      // don't try to unify effects if the `no-bool-effects` flag is on
-      if (flix.options.xnobooleffects) {
-        Ok(Substitution.empty, Nil)
-      } else {
-        EffUnification.unify(tpe1, tpe2, renv)
-      }
+    case (Kind.Eff, Kind.Eff) => EffUnification.unify(tpe1, tpe2, renv)
 
     case (Kind.Bool, Kind.Bool) => BoolUnification.unify(tpe1, tpe2, renv)
 
@@ -107,19 +97,10 @@ object Unification {
       val cases = sym1.universe
       CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1).map((_, Nil)) // TODO ASSOC-TYPES support in sets
 
-    //
-    // Record Rows
-    //
     case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
-    //
-    // Schema Rows
-    //
     case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in rows
 
-    //
-    // Other: Star or Arrow
-    //
     case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv)
   }
 
@@ -446,6 +427,47 @@ object Unification {
   }
 
   /**
+    * Purifies all effect variables in `tpe` (which should be the type of a letrec-bound function).
+    *
+    * This emulates the instantiation of a type scheme where we mark the letrec function as having
+    * no effects by itself, but only those effects that the function itself actually causes.
+    *
+    * This is to avoid inferring a type like: f: a -> b \ alpha + ef_1 + ef_2 ... where alpha
+    * is purely an artifact of type inference.
+    */
+  def purifyLetRec(tpe: Type)(implicit level: Level, flix: Flix): InferMonad[Type] = {
+    InferMonad { case (s1, econstrs, renv) =>
+
+      // (We do not have to apply s1 to tpe since that has already been done).
+
+      // Compute the free effect variables in the function type.
+      val fvs = tpe.typeVars.filter(_.kind == Kind.Eff)
+
+      // Compute those variables which occur at the same level as the letrec.
+      // Note: We could consider variable at the same and higher-level, but we stay conservative for now.
+      val rvs = fvs.filter(_.sym.level == level.incr)
+
+      if (rvs.isEmpty) {
+        // Case 1: No variables. No work to be done.
+        Ok((s1, econstrs, renv, tpe))
+      } else {
+        // Case 2: We have some variables. We want to purify them.
+
+        // Compute a new substitution where those variables are pure.
+        val s2 = Substitution(rvs.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type])({
+          case (macc, tvar) => macc + (tvar.sym -> Type.Pure)
+        }))
+
+        // Compose s1 and s2. Apply s2 to tpe. We only apply s2 because s1 has already been applied.
+        val s3 = s1 @@ s2
+        val res = s2(tpe)
+
+        Ok((s3, econstrs, renv, res))
+      }
+    }
+  }
+
+  /**
     * Removes the given type variable `tvar` from the substitution.
     *
     * NB: Use with EXTREME CAUTION.
@@ -518,18 +540,30 @@ object Unification {
   }
 
   /**
-    * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
+    * Ensures that the region variable `rvar` does not escape.
+    *
+    * A rigid region variable could escape in two ways:
+    *
+    * - Directly: via being returned (possibly inside some data structure).
+    * - Indirectly: via being unified with some type variable outside its scope.
+    *
+    * We check for both.
     */
-  def noEscapeM(rvar: Type.Var, tpe: Type)(implicit flix: Flix): InferMonad[Unit] =
+  def noEscapeM(rvar: Type.Var, tpe: Type)(implicit level: Level, flix: Flix): InferMonad[Unit] =
     InferMonad { case (s, econstrs, renv) =>
-      // Apply the current substitution to `tpe`.
-      val t = TypeMinimization.minimizeType(s(tpe))
+      val minimizedType = TypeMinimization.minimizeType(s(tpe))
+      val actualRegion = rvar.sym.level.i
+      val leavingRegion = level.i + 1
 
-      // Check whether the region variable is essential to the type.
-      if (Regions.essentialTo(rvar, t)) {
-        Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
-      } else
+      if (minimizedType.typeVars.contains(rvar)) {
+        // Case 1: Direct escape via return.
+        Err(TypeError.RegionVarEscapes(rvar, minimizedType, rvar.loc))
+      } else if (actualRegion < leavingRegion) {
+        // Case 2: Indirect escape via unification outside of its scope.
+        Err(TypeError.RegionVarEscapes(rvar, rvar, rvar.loc))
+      } else {
         Ok((s, econstrs, renv, ()))
+      }
     }
 
   /**

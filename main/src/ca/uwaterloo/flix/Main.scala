@@ -63,18 +63,6 @@ object Main {
       System.exit(0)
     }
 
-    // check if the --lsp flag was passed.
-    if (cmdOpts.lsp.nonEmpty) {
-      try {
-        val languageServer = new LanguageServer(cmdOpts.lsp.get, Options.Default)
-        languageServer.run()
-      } catch {
-        case ex: BindException =>
-          Console.println(ex.getMessage)
-      }
-      System.exit(0)
-    }
-
     // compute the main entry point
     val entryPoint = cmdOpts.entryPoint match {
       case None => Options.Default.entryPoint
@@ -84,7 +72,6 @@ object Main {
     // construct flix options.
     var options = Options(
       lib = cmdOpts.xlib,
-      debug = cmdOpts.xdebug,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubKey = cmdOpts.githubKey,
@@ -98,22 +85,14 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       xbddthreshold = cmdOpts.xbddthreshold,
-      xboolclassic = cmdOpts.xboolclassic,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
-      xnounittests = cmdOpts.xnounittests,
-      xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
-      xnoseteffects = cmdOpts.xnoseteffects,
-      xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintphase = cmdOpts.xprintphase,
-      xprintboolunif = cmdOpts.xprintboolunif,
-      xflexibleregions = cmdOpts.xflexibleregions,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser
     )
@@ -295,7 +274,6 @@ object Main {
                      githubKey: Option[String] = None,
                      json: Boolean = false,
                      listen: Option[Int] = None,
-                     lsp: Option[Int] = None,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
@@ -304,23 +282,14 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
-                     xdebug: Boolean = false,
-                     xboolclassic: Boolean = false,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
-                     xnounittests: Boolean = false,
-                     xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
-                     xnoseteffects: Boolean = false,
-                     xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xvirtualthreads: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
-                     xprintboolunif: Boolean = false,
-                     xflexibleregions: Boolean = false,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
                      files: Seq[File] = Seq())
@@ -427,10 +396,6 @@ object Main {
         valueName("<port>").
         text("starts the socket server and listens on the given port.")
 
-      opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
-        valueName("<port>").
-        text("starts the LSP server and listens on the given port.")
-
       opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
         text("disables automatic installation of dependencies.")
 
@@ -463,56 +428,21 @@ object Main {
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
         text("[experimental] benchmarks the performance of the entire compiler.")
 
-      // Xdebug.
-      opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
-        text("[experimental] enables compiler debugging output.")
-
-      // Xflexible-regions
-      opt[Unit]("Xflexible-regions").action((_, c) => c.copy(xflexibleregions = true)).
-        text("[experimental] uses flexible variables for regions")
-
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
-
-      // Xstatistics
-      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
-        text("[experimental] prints compilation statistics.")
 
       // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enables strict monomorphization.")
 
-      // Xno-set-effects
-      opt[Unit]("Xno-set-effects").action((_, c) => c.copy(xnoseteffects = true)).
-        text("[experimental] disables set effects.")
-
-      // Xno-bool-effects
-      opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
-        text("[experimental] disables bool effects.")
-
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
 
-      // Xvirtual-threads
-      opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
-        text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
-
       // Xprint-phase
       opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
         text("[experimental] prints the AST(s) after the given phase(s). 'all' prints all ASTs.")
-
-      // Xprint-bool-unif
-      opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
-        text("[experimental] prints boolean unification queries.")
-
-      //
-      // Boolean unification flags.
-      //
-      // Xbool-classic
-      opt[Unit]("Xbool-classic").action((_, c) => c.copy(xboolclassic = true)).
-        text("[experimental] enable classic Boolean unification (as published in 2020).")
 
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
@@ -533,10 +463,6 @@ object Main {
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
         text("[experimental] disables Boolean unification. (DO NOT USE).")
-
-      // Xno-unit-tests
-      opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
-        text("[experimental] excludes unit tests from performance benchmarks.")
 
       // Xno-qmc
       opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).

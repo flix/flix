@@ -37,38 +37,16 @@ object Level {
   val Default: Level = Level(0)
 
   /**
-    * Sets the levels of all the type variables in the types to the variables' minimum level.
+    * Assigns to every variable `x` in `tpe` the minimum level of `tvar` and `x` itself.
     *
-    * For example, given
-    *
-    * {{{
-    * tpe1 = a@2 + b@2
-    * tpe2 = c@4 + d! + Pure
-    * }}}
-    *
-    * the variables' levels are modified to
-    *
-    * {{{
-    * a@2, b@2, c@2
-    * }}}
-    *
-    * and the resulting types are
-    *
-    * {{{
-    * tpe1 = a@2 + b@2
-    * tpe2 = c@2 + d! + Pure
-    * }}}
-    *
-    * Note that this modifies the variables' levels globally.
+    * Note: This function is *NOT* commutative.
     */
-  def equalize(tpe1: Type, tpe2: Type, renv: RigidityEnv): Unit = {
-    val tvars = (tpe1.typeVars ++ tpe2.typeVars).filter(tv => renv.isFlexible(tv.sym))
-    val levelOpt = tvars.map(_.sym.level).minOption
-    levelOpt match {
-      case Some(level) => tvars.foreach(_.sym.level = level)
-      case None => ()
+  def equalizeR(tvar: Type.Var, tpe: Type, renv: RigidityEnv): Unit = {
+    tpe.typeVars.foreach {
+      t => t.sym.level = Level(Math.min(t.sym.level.i, tvar.sym.level.i))
     }
   }
+
 }
 
 case class Level(i: Int) extends Ordered[Level] {

@@ -592,25 +592,45 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.RegionVarEscapes](result)
   }
 
-  //  test("Test.RegionVarEscapes.05") {
-  //    val input =
-  //      """
-  //        |pub def g(): Int32 =
-  //        |    let region r1;
-  //        |    let cell = ref None @ r1;
-  //        |    let _ = {
-  //        |        let region r2;
-  //        |        let x = ref 123 @ r2;
-  //        |        cell := Some(_ -> {deref x});
-  //        |        ()
-  //        |    };
-  //        |    42
-  //        |
-  //      """.stripMargin
-  //    val result = compile(input, Options.TestWithLibNix)
-  //    expectError[TypeError.RegionVarEscapes](result)
-  //    }
-  //  }
+  test("RegionVarEscapes.05") {
+    val input =
+      """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let m = ref None @ Static;
+        |    region rc {
+        |        let x = ref 123 @ rc;
+        |        m := Some(x);
+        |        ()
+        |    }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
+  test("RegionVarEscapes.06") {
+    val input =
+      """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let m = ref None @ Static;
+        |    region rc {
+        |        let x = ref 123 @ rc;
+        |        m := Some(_ -> x);
+        |        ()
+        |    }
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
 
   test("Test.InvalidOpParamCount.Do.01") {
     val input =

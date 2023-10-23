@@ -47,15 +47,6 @@ object BytecodeLoader {
       case (macc, (jvmName, _)) =>
         // Attempt to load class.
         val loadedClass = loader.loadClass(jvmName.toBinaryName)
-
-        //
-        // Print when a class is loaded, if debugging and verbosity is enabled.
-        //
-        if (flix.options.debug) {
-          Console.println(s"Loaded: '${jvmName.toBinaryName}'.")
-        }
-
-        // Update map.
         macc + (jvmName -> loadedClass)
     }
   }

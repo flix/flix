@@ -71,15 +71,10 @@ object CompletionUtils {
 
       val retTpe = FormatType.formatType(retTpe0)
 
-      // don't show purity if bool effects are turned off
-      val eff = if (flix.options.xnobooleffects) {
-        ""
-      } else {
-        eff0 match {
-          case Type.Cst(TypeConstructor.Pure, _) => ""
-          case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
-          case p => raw" \ " + FormatType.formatType(p)
-        }
+      val eff = eff0 match {
+        case Type.Cst(TypeConstructor.Pure, _) => ""
+        case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
+        case p => raw" \ " + FormatType.formatType(p)
       }
 
       s"$name(${args.mkString(", ")}): $retTpe$eff"

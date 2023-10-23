@@ -1,5 +1,12 @@
 # Changelog
 
+Version 0.41.0:
+- Library: Added `Adaptor` module (thanks Stephen!)
+- Library: Added `Reader` module (thanks Stephen!)
+- Compiler: Reworked type inference for regions and letrec (thanks Magnus, Matt!)
+- Compiler: Major improvements to the HTML API documentation tool (thanks Holger!)
+- Compiler: Added new experimental lexer (thanks Herluf!)
+
 Version 0.40.0:
 
 - Language: Added support for pattern matching on records (thanks Jakob!)
@@ -433,14 +440,9 @@ Version 0.1:
 2016-06-08: 
 - Initial release.
 
-
 HEAD (in progress, not released):
 
-- Added a new file API (thanks Nina!)
 - Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
-- Library: Added `Adaptor` module and `ToJava` class for working with Java collections (thanks Stephen!)
-- Improved stratification algorithm (thanks Jonathan!)
 - Inliner
 - Datalog abstraction
 - Restrictable variants

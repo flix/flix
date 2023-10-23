@@ -1008,7 +1008,8 @@ object BackendObjType {
     // }
     def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
       (
-        if (flix.options.xvirtualthreads) {
+        // TODO: VirtualThreads: Enable by default once JDK 21+ becomes a requirement.
+        if (false) {
           INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
         } else {
           NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
