@@ -467,97 +467,295 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Lambda(fparam1, e, loc)
 
-    case WeededAst.Expr.Unary(sop, exp, loc) => Expr.Unary(sop, visitExp(exp), loc)
-    case WeededAst.Expr.Binary(sop, exp1, exp2, loc) => Expr.Binary(sop, visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) => Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), loc)
-    case WeededAst.Expr.Stm(exp1, exp2, loc) => Expr.Stm(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.Discard(exp, loc) => Expr.Discard(visitExp(exp), loc)
-    case WeededAst.Expr.Let(ident, mod, exp1, exp2, loc) => Expr.Let(ident, mod, visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) => Expr.LetRec(ident, mod, visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.Region(tpe, loc) => Expr.Region(tpe, loc)
-    case WeededAst.Expr.Scope(ident, exp, loc) => Expr.Scope(ident, visitExp(exp), loc)
-    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) => Expr.ScopeExit(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.Match(exp, rules, loc) => Expr.Match(visitExp(exp), rules.map(visitMatchRule), loc)
-    case WeededAst.Expr.TypeMatch(exp, rules, loc) => Expr.TypeMatch(visitExp(exp), rules.map(visitTypeMatchRule), loc)
+    case WeededAst.Expr.Unary(sop, exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Unary(sop, e, loc)
+
+    case WeededAst.Expr.Binary(sop, exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.Binary(sop, e1, e2, loc)
+
+    case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expr.IfThenElse(e1, e2, e3, loc)
+
+    case WeededAst.Expr.Stm(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.Stm(e1, e2, loc)
+
+    case WeededAst.Expr.Discard(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Discard(e, loc)
+
+    case WeededAst.Expr.Let(ident, mod, exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.Let(ident, mod, e1, e2, loc)
+
+    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.LetRec(ident, mod, e1, e2, loc)
+
+    case WeededAst.Expr.Region(tpe, loc) =>
+      Expr.Region(tpe, loc)
+
+    case WeededAst.Expr.Scope(ident, exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Scope(ident, e, loc)
+
+    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.ScopeExit(e1, e2, loc)
+
+    case WeededAst.Expr.Match(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitMatchRule)
+      Expr.Match(e, rs, loc)
+
+    case WeededAst.Expr.TypeMatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitTypeMatchRule)
+      Expr.TypeMatch(e, rs, loc)
+
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
-      Expr.RestrictableChoose(star, visitExp(exp), rules.map(visitRestrictableChooseRule), loc)
+      val e = visitExp(exp)
+      val rs = rules.map(visitRestrictableChooseRule)
+      Expr.RestrictableChoose(star, e, rs, loc)
 
-    case WeededAst.Expr.Tuple(exps, loc) => Expr.Tuple(visitExps(exps), loc)
-    case WeededAst.Expr.RecordEmpty(loc) => Expr.RecordEmpty(loc)
-    case WeededAst.Expr.RecordSelect(exp, label, loc) => Expr.RecordSelect(visitExp(exp), label, loc)
-    case WeededAst.Expr.RecordExtend(label, exp1, exp2, loc) => Expr.RecordExtend(label, visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.RecordRestrict(label, exp, loc) => Expr.RecordRestrict(label, visitExp(exp), loc)
-    case WeededAst.Expr.ArrayLit(exps, exp, loc) => Expr.ArrayLit(visitExps(exps), visitExp(exp), loc)
-    case WeededAst.Expr.ArrayNew(exp1, exp2, exp3, loc) => Expr.ArrayNew(visitExp(exp1), visitExp(exp2), visitExp(exp3), loc)
-    case WeededAst.Expr.ArrayLoad(exp1, exp2, loc) => Expr.ArrayLoad(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.ArrayLength(exp, loc) => Expr.ArrayLength(visitExp(exp), loc)
-    case WeededAst.Expr.ArrayStore(exp1, exp2, exp3, loc) => Expr.ArrayStore(visitExp(exp1), visitExp(exp2), visitExp(exp3), loc)
-    case WeededAst.Expr.VectorLit(exps, loc) => Expr.VectorLit(visitExps(exps), loc)
-    case WeededAst.Expr.VectorLoad(exp1, exp2, loc) => Expr.VectorLoad(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.VectorLength(exp, loc) => Expr.VectorLength(visitExp(exp), loc)
-    case WeededAst.Expr.Ref(exp1, exp2, loc) => Expr.Ref(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.Deref(exp, loc) => Expr.Deref(visitExp(exp), loc)
-    case WeededAst.Expr.Assign(exp1, exp2, loc) => Expr.Assign(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Tuple(exps, loc) =>
+      val es = visitExps(exps)
+      Expr.Tuple(es, loc)
+
+    case WeededAst.Expr.RecordEmpty(loc) =>
+      Expr.RecordEmpty(loc)
+
+    case WeededAst.Expr.RecordSelect(exp, label, loc) =>
+      val e = visitExp(exp)
+      Expr.RecordSelect(e, label, loc)
+
+    case WeededAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.RecordExtend(label, e1, e2, loc)
+
+    case WeededAst.Expr.RecordRestrict(label, exp, loc) =>
+      val e = visitExp(exp)
+      Expr.RecordRestrict(label, e, loc)
+
+    case WeededAst.Expr.ArrayLit(exps, exp, loc) =>
+      val es = visitExps(exps)
+      val e = visitExp(exp)
+      Expr.ArrayLit(es, e, loc)
+
+    case WeededAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expr.ArrayNew(e1, e2, e3, loc)
+
+    case WeededAst.Expr.ArrayLoad(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.ArrayLoad(e1, e2, loc)
+
+    case WeededAst.Expr.ArrayLength(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.ArrayLength(e, loc)
+
+    case WeededAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expr.ArrayStore(e1, e2, e3, loc)
+
+    case WeededAst.Expr.VectorLit(exps, loc) =>
+      val e = visitExps(exps)
+      Expr.VectorLit(e, loc)
+
+    case WeededAst.Expr.VectorLoad(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.VectorLoad(e1, e2, loc)
+
+    case WeededAst.Expr.VectorLength(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.VectorLength(e, loc)
+
+    case WeededAst.Expr.Ref(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.Ref(e1, e2, loc)
+
+    case WeededAst.Expr.Deref(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Deref(e, loc)
+
+    case WeededAst.Expr.Assign(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.Assign(e1, e2, loc)
+
     case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
-      Expr.Ascribe(visitExp(exp), expectedType.map(visitType), expectedEff.map(visitType), loc)
+      val e = visitExp(exp)
+      val ts = expectedType.map(visitType)
+      val effs = expectedEff.map(visitType)
+      Expr.Ascribe(e, ts, effs, loc)
 
-    case WeededAst.Expr.InstanceOf(exp, className, loc) => Expr.InstanceOf(visitExp(exp), className, loc)
-    case WeededAst.Expr.CheckedCast(cast, exp, loc) => Expr.CheckedCast(cast, visitExp(exp), loc)
+    case WeededAst.Expr.InstanceOf(exp, className, loc) =>
+      val e = visitExp(exp)
+      Expr.InstanceOf(e, className, loc)
+
+    case WeededAst.Expr.CheckedCast(cast, exp, loc) =>
+      val e = visitExp(exp)
+      Expr.CheckedCast(cast, e, loc)
+
     case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
-      Expr.UncheckedCast(visitExp(exp), declaredType.map(visitType), declaredEff.map(visitType), loc)
+      val e = visitExp(exp)
+      val t = declaredType.map(visitType)
+      val eff = declaredEff.map(visitType)
+      Expr.UncheckedCast(e, t, eff, loc)
 
-    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) => Expr.UncheckedMaskingCast(visitExp(exp), loc)
-    case WeededAst.Expr.Without(exp, eff, loc) => Expr.Without(visitExp(exp), eff, loc)
-    case WeededAst.Expr.TryCatch(exp, rules, loc) => Expr.TryCatch(visitExp(exp), rules.map(visitCatchRule), loc)
-    case WeededAst.Expr.TryWith(exp, eff, rules, loc) => Expr.TryWith(visitExp(exp), eff, rules.map(visitHandlerRule), loc)
-    case WeededAst.Expr.Do(op, exps, loc) => Expr.Do(op, visitExps(exps), loc)
-    case WeededAst.Expr.Resume(exp, loc) => Expr.Resume(visitExp(exp), loc)
+    case WeededAst.Expr.UncheckedMaskingCast(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.UncheckedMaskingCast(e, loc)
+
+    case WeededAst.Expr.Without(exp, eff, loc) =>
+      val e = visitExp(exp)
+      Expr.Without(e, eff, loc)
+
+    case WeededAst.Expr.TryCatch(exp, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitCatchRule)
+      Expr.TryCatch(e, rs, loc)
+
+    case WeededAst.Expr.TryWith(exp, eff, rules, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitHandlerRule)
+      Expr.TryWith(e, eff, rs, loc)
+
+    case WeededAst.Expr.Do(op, exps, loc) =>
+      val es = visitExps(exps)
+      Expr.Do(op, es, loc)
+
+    case WeededAst.Expr.Resume(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Resume(e, loc)
+
     case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
-      Expr.InvokeConstructor(className, visitExps(exps), sig.map(visitType), loc)
+      val es = visitExps(exps)
+      val ts = sig.map(visitType)
+      Expr.InvokeConstructor(className, es, ts, loc)
 
     case WeededAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
-      Expr.InvokeMethod(className, methodName, visitExp(exp), visitExps(exps), sig.map(visitType), visitType(retTpe), loc)
+      val e = visitExp(exp)
+      val es = visitExps(exps)
+      val ts = sig.map(visitType)
+      val rt = visitType(retTpe)
+      Expr.InvokeMethod(className, methodName, e, es, ts, rt, loc)
 
     case WeededAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
-      Expr.InvokeStaticMethod(className, methodName, visitExps(exps), sig.map(visitType), visitType(retTpe), loc)
+      val es = visitExps(exps)
+      val ts = sig.map(visitType)
+      val rt = visitType(retTpe)
+      Expr.InvokeStaticMethod(className, methodName, es, ts, rt, loc)
 
     case WeededAst.Expr.GetField(className, fieldName, exp, loc) =>
-      Expr.GetField(className, fieldName, visitExp(exp), loc)
+      val e = visitExp(exp)
+      Expr.GetField(className, fieldName, e, loc)
 
     case WeededAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-      Expr.PutField(className, fieldName, visitExp(exp1), visitExp(exp2), loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.PutField(className, fieldName, e1, e2, loc)
 
-    case WeededAst.Expr.GetStaticField(className, fieldName, loc) => Expr.GetStaticField(className, fieldName, loc)
+    case WeededAst.Expr.GetStaticField(className, fieldName, loc) =>
+      Expr.GetStaticField(className, fieldName, loc)
+
     case WeededAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-      Expr.PutStaticField(className, fieldName, visitExp(exp), loc)
+      val e = visitExp(exp)
+      Expr.PutStaticField(className, fieldName, e, loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
-      Expr.NewObject(visitType(tpe), methods.map(visitJvmMethod), loc)
+      val t = visitType(tpe)
+      val ms = methods.map(visitJvmMethod)
+      Expr.NewObject(t, ms, loc)
 
-    case WeededAst.Expr.NewChannel(exp1, exp2, loc) => Expr.NewChannel(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.GetChannel(exp, loc) => Expr.GetChannel(visitExp(exp), loc)
-    case WeededAst.Expr.PutChannel(exp1, exp2, loc) => Expr.PutChannel(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.NewChannel(e1, e2, loc)
+
+    case WeededAst.Expr.GetChannel(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.GetChannel(e, loc)
+
+    case WeededAst.Expr.PutChannel(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.PutChannel(e1, e2, loc)
+
     case WeededAst.Expr.SelectChannel(rules, exp, loc) =>
-      Expr.SelectChannel(rules.map(visitSelectChannelRule), exp.map(visitExp), loc)
+      val rs = rules.map(visitSelectChannelRule)
+      val es = exp.map(visitExp)
+      Expr.SelectChannel(rs, es, loc)
 
-    case WeededAst.Expr.Spawn(exp1, exp2, loc) => Expr.Spawn(visitExp(exp1), visitExp(exp2), loc)
+    case WeededAst.Expr.Spawn(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.Spawn(e1, e2, loc)
+
     case WeededAst.Expr.ParYield(frags, exp, loc) =>
-      Expr.ParYield(frags.map(visitParYieldFragment), visitExp(exp), loc)
+      val fs = frags.map(visitParYieldFragment)
+      val e = visitExp(exp)
+      Expr.ParYield(fs, e, loc)
 
-    case WeededAst.Expr.Lazy(exp, loc) => Expr.Lazy(visitExp(exp), loc)
-    case WeededAst.Expr.Force(exp, loc) => Expr.Force(visitExp(exp), loc)
-    case WeededAst.Expr.FixpointConstraintSet(cs, loc) => Expr.FixpointConstraintSet(cs.map(visitConstraint), loc)
+    case WeededAst.Expr.Lazy(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Lazy(e, loc)
+
+    case WeededAst.Expr.Force(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.Force(e, loc)
+
+    case WeededAst.Expr.FixpointConstraintSet(cs, loc) =>
+      val cs1 = cs.map(visitConstraint)
+      Expr.FixpointConstraintSet(cs1, loc)
+
     case WeededAst.Expr.FixpointLambda(pparams, exp, loc) =>
-      Expr.FixpointLambda(pparams.map(visitPredicateParam), visitExp(exp), loc)
+      val ps = pparams.map(visitPredicateParam)
+      val e = visitExp(exp)
+      Expr.FixpointLambda(ps, e, loc)
 
-    case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) => Expr.FixpointMerge(visitExp(exp1), visitExp(exp2), loc)
-    case WeededAst.Expr.FixpointSolve(exp, loc) => Expr.FixpointSolve(visitExp(exp), loc)
-    case WeededAst.Expr.FixpointFilter(pred, exp, loc) => Expr.FixpointFilter(pred, visitExp(exp), loc)
-    case WeededAst.Expr.FixpointInject(exp, pred, loc) => Expr.FixpointInject(visitExp(exp), pred, loc)
+    case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.FixpointMerge(e1, e2, loc)
+
+    case WeededAst.Expr.FixpointSolve(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.FixpointSolve(e, loc)
+
+    case WeededAst.Expr.FixpointFilter(pred, exp, loc) =>
+      val e = visitExp(exp)
+      Expr.FixpointFilter(pred, e, loc)
+
+    case WeededAst.Expr.FixpointInject(exp, pred, loc) =>
+      val e = visitExp(exp)
+      Expr.FixpointInject(e, pred, loc)
+
     case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
-      Expr.FixpointProject(pred, visitExp(exp1), visitExp(exp2), loc)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.FixpointProject(pred, e1, e2, loc)
 
-    case WeededAst.Expr.Error(m) => DesugaredAst.Expr.Error(m)
+    case WeededAst.Expr.Error(m) =>
+      DesugaredAst.Expr.Error(m)
   }
 
   /**
