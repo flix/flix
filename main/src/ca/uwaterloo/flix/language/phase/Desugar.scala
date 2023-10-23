@@ -890,7 +890,10 @@ object Desugar {
     * Desugars the given [[WeededAst.ParYieldFragment]] `frag0`.
     */
   private def visitParYieldFragment(frag0: WeededAst.ParYieldFragment): DesugaredAst.ParYieldFragment = frag0 match {
-    case WeededAst.ParYieldFragment(pat, exp, loc) => DesugaredAst.ParYieldFragment(visitPattern(pat), visitExp(exp), loc)
+    case WeededAst.ParYieldFragment(pat, exp, loc) =>
+      val p = visitPattern(pat)
+      val e = visitExp(exp)
+      DesugaredAst.ParYieldFragment(p, e, loc)
   }
 
   /**
