@@ -54,17 +54,12 @@ object JvmBackend {
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
 
-      // Compute the set of anonymous classes (NewObjects) in the program.
-      val anonClassDefs = root.anonClasses
-
       //
       // Second, generate classes.
       //
 
-      // Generate the main class.
       val mainClass = GenMainClass.gen()
 
-      // Generate the namespace classes.
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       // Generate function classes.
@@ -77,7 +72,6 @@ object JvmBackend {
       val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
       val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
 
-      // Generate tuple classes for each tuple type in the program.
       val tupleClasses = GenTupleClasses.gen(types)
 
       // Generate record classes.
@@ -85,14 +79,11 @@ object JvmBackend {
       val recordEmptyClasses = Map(genClass(BackendObjType.RecordEmpty))
       val recordExtendClasses = erasedExtendTypes.map(genClass).toMap
 
-      // Generate references classes.
       val refClasses = erasedRefTypes.map(genClass).toMap
 
-      // Generate lazy classes.
       val lazyClasses = GenLazyClasses.gen(types)
 
-      // Generate anonymous classes.
-      val anonClasses = GenAnonymousClasses.gen(anonClassDefs)
+      val anonClasses = GenAnonymousClasses.gen(root.anonClasses)
 
       val unitClass = Map(genClass(BackendObjType.Unit))
 
@@ -108,7 +99,7 @@ object JvmBackend {
 
       val uncaughtExceptionHandlerClass = Map(genClass(BackendObjType.UncaughtExceptionHandler))
 
-      // Generate new (unused) effect handler classes.
+      // Generate effect runtime classes.
       val resultInterface = Map(genClass(BackendObjType.Result))
       val valueClass = Map(genClass(BackendObjType.Value))
       val frameInterface = Map(genClass(BackendObjType.Frame))
@@ -181,7 +172,7 @@ object JvmBackend {
     }
   }
 
-  def genClass(g: Generatable)(implicit flix: Flix): (JvmName, JvmClass) = {
+  private def genClass(g: Generatable)(implicit flix: Flix): (JvmName, JvmClass) = {
     (g.jvmName, JvmClass(g.jvmName, g.genByteCode()))
   }
 
