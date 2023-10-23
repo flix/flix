@@ -432,15 +432,41 @@ object Desugar {
     * Desugars the given [[WeededAst.Expr]] `exp0`.
     */
   private def visitExp(exp0: WeededAst.Expr): DesugaredAst.Expr = exp0 match {
-    case WeededAst.Expr.Ambiguous(qname, loc) => Expr.Ambiguous(qname, loc)
-    case WeededAst.Expr.Open(qname, loc) => Expr.Open(qname, loc)
-    case WeededAst.Expr.OpenAs(qname, exp, loc) => Expr.OpenAs(qname, visitExp(exp), loc)
-    case WeededAst.Expr.Hole(name, loc) => Expr.Hole(name, loc)
-    case WeededAst.Expr.HoleWithExp(exp, loc) => Expr.HoleWithExp(visitExp(exp), loc)
-    case WeededAst.Expr.Use(uses, exp, loc) => Expr.Use(uses.map(visitUseOrImport), visitExp(exp), loc)
-    case WeededAst.Expr.Cst(cst, loc) => Expr.Cst(cst, loc)
-    case WeededAst.Expr.Apply(exp, exps, loc) => Expr.Apply(visitExp(exp), visitExps(exps), loc)
-    case WeededAst.Expr.Lambda(fparam, exp, loc) => Expr.Lambda(visitFormalParam(fparam), visitExp(exp), loc)
+    case WeededAst.Expr.Ambiguous(qname, loc) =>
+      Expr.Ambiguous(qname, loc)
+
+    case WeededAst.Expr.Open(qname, loc) =>
+      Expr.Open(qname, loc)
+
+    case WeededAst.Expr.OpenAs(qname, exp, loc) =>
+      val e = visitExp(exp)
+      Expr.OpenAs(qname, e, loc)
+
+    case WeededAst.Expr.Hole(name, loc) =>
+      Expr.Hole(name, loc)
+
+    case WeededAst.Expr.HoleWithExp(exp, loc) =>
+      val e = visitExp(exp)
+      Expr.HoleWithExp(e, loc)
+
+    case WeededAst.Expr.Use(uses, exp, loc) =>
+      val u1 = uses.map(visitUseOrImport)
+      val e = visitExp(exp)
+      Expr.Use(u1, e, loc)
+
+    case WeededAst.Expr.Cst(cst, loc) =>
+      Expr.Cst(cst, loc)
+
+    case WeededAst.Expr.Apply(exp, exps, loc) =>
+      val e = visitExp(exp)
+      val es = visitExps(exps)
+      Expr.Apply(e, es, loc)
+
+    case WeededAst.Expr.Lambda(fparam, exp, loc) =>
+      val fparam1 = visitFormalParam(fparam)
+      val e = visitExp(exp)
+      Expr.Lambda(fparam1, e, loc)
+
     case WeededAst.Expr.Unary(sop, exp, loc) => Expr.Unary(sop, visitExp(exp), loc)
     case WeededAst.Expr.Binary(sop, exp1, exp2, loc) => Expr.Binary(sop, visitExp(exp1), visitExp(exp2), loc)
     case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) => Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), loc)
