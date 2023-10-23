@@ -869,7 +869,11 @@ object Desugar {
     */
   private def visitJvmMethod(method0: WeededAst.JvmMethod): DesugaredAst.JvmMethod = method0 match {
     case WeededAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
-      DesugaredAst.JvmMethod(ident, visitFormalParams(fparams), visitExp(exp), visitType(tpe), eff.map(visitType), loc)
+      val fps = visitFormalParams(fparams)
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      val ef = eff.map(visitType)
+      DesugaredAst.JvmMethod(ident, fps, e, t, ef, loc)
   }
 
   /**
