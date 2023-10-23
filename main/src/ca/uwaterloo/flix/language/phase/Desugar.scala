@@ -29,14 +29,8 @@ object Desugar {
   def run(program: WeededAst.Root)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
     val units = ParOps.parMap(program.units) {
       case (k, v) => visitUnit(k, v)
-    }
-
-    val allUnits = ParOps.parAgg(units, Map.empty[Ast.Source, DesugaredAst.CompilationUnit])(
-      {
-        case (macc, (k, v)) => macc + (k -> v)
-      }, _ ++ _)
-
-    DesugaredAst.Root(allUnits, program.entryPoint, program.names)
+    }.foldLeft(Map.empty[Ast.Source, DesugaredAst.CompilationUnit])(_ + _)
+    DesugaredAst.Root(units, program.entryPoint, program.names)
   }
 
   /**
