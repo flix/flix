@@ -27,20 +27,18 @@ object Desugar {
     * Performs desugaring on `program`.
     */
   def run(program: WeededAst.Root)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
-    val units = ParOps.parMap(program.units) {
-      case (k, v) => visitUnit(k, v)
-    }.foldLeft(Map.empty[Ast.Source, DesugaredAst.CompilationUnit])(_ + _)
+    val units = ParOps.mapValues(program.units)(visitUnit)
     DesugaredAst.Root(units, program.entryPoint, program.names)
   }
 
   /**
     * Desugars the given [[WeededAst.CompilationUnit]] `unit`.
     */
-  private def visitUnit(src: Ast.Source, unit: WeededAst.CompilationUnit)(implicit flix: Flix): (Ast.Source, DesugaredAst.CompilationUnit) = unit match {
+  private def visitUnit(unit: WeededAst.CompilationUnit)(implicit flix: Flix): DesugaredAst.CompilationUnit = unit match {
     case WeededAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val decls = decls0.map(visitDecl)
-      src -> DesugaredAst.CompilationUnit(usesAndImports, decls, loc)
+      DesugaredAst.CompilationUnit(usesAndImports, decls, loc)
   }
 
   /**
@@ -431,9 +429,9 @@ object Desugar {
     case WeededAst.Kind.Ambiguous(qname, loc) =>
       DesugaredAst.Kind.Ambiguous(qname, loc)
 
-    case WeededAst.Kind.Arrow(k1, k2, loc) =>
-      val k1 = visitKind(k1)
-      val k2 = visitKind(k2)
+    case WeededAst.Kind.Arrow(kind1, kind2, loc) =>
+      val k1 = visitKind(kind1)
+      val k2 = visitKind(kind2)
       DesugaredAst.Kind.Arrow(k1, k2, loc)
   }
 
