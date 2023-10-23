@@ -849,7 +849,9 @@ object Desugar {
     * Desugars the given [[WeededAst.CatchRule]] `rule0`.
     */
   private def visitCatchRule(rule0: WeededAst.CatchRule): DesugaredAst.CatchRule = rule0 match {
-    case WeededAst.CatchRule(ident, className, exp) => DesugaredAst.CatchRule(ident, className, visitExp(exp))
+    case WeededAst.CatchRule(ident, className, exp) =>
+      val e = visitExp(exp)
+      DesugaredAst.CatchRule(ident, className, e)
   }
 
   /**
