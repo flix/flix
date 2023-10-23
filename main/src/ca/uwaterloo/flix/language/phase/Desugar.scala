@@ -779,13 +779,31 @@ object Desugar {
     * Desugars the given [[WeededAst.Pattern]] `pat0`.
     */
   private def visitPattern(pat0: WeededAst.Pattern): DesugaredAst.Pattern = pat0 match {
-    case WeededAst.Pattern.Wild(loc) => DesugaredAst.Pattern.Wild(loc)
-    case WeededAst.Pattern.Var(ident, loc) => DesugaredAst.Pattern.Var(ident, loc)
-    case WeededAst.Pattern.Cst(cst, loc) => DesugaredAst.Pattern.Cst(cst, loc)
-    case WeededAst.Pattern.Tag(qname, pat, loc) => DesugaredAst.Pattern.Tag(qname, visitPattern(pat), loc)
-    case WeededAst.Pattern.Tuple(elms, loc) => DesugaredAst.Pattern.Tuple(elms.map(visitPattern), loc)
-    case WeededAst.Pattern.Record(pats, pat, loc) => DesugaredAst.Pattern.Record(pats.map(visitRecordLabelPattern), visitPattern(pat), loc)
-    case WeededAst.Pattern.RecordEmpty(loc) => DesugaredAst.Pattern.RecordEmpty(loc)
+    case WeededAst.Pattern.Wild(loc) =>
+      DesugaredAst.Pattern.Wild(loc)
+
+    case WeededAst.Pattern.Var(ident, loc) =>
+      DesugaredAst.Pattern.Var(ident, loc)
+
+    case WeededAst.Pattern.Cst(cst, loc) =>
+      DesugaredAst.Pattern.Cst(cst, loc)
+
+    case WeededAst.Pattern.Tag(qname, pat, loc) =>
+      val p = visitPattern(pat)
+      DesugaredAst.Pattern.Tag(qname, p, loc)
+
+    case WeededAst.Pattern.Tuple(elms, loc) =>
+      val es = elms.map(visitPattern)
+      DesugaredAst.Pattern.Tuple(es, loc)
+
+    case WeededAst.Pattern.Record(pats, pat, loc) =>
+      val ps = pats.map(visitRecordLabelPattern)
+      val p = visitPattern(pat)
+      DesugaredAst.Pattern.Record(ps, p, loc)
+
+    case WeededAst.Pattern.RecordEmpty(loc) =>
+      DesugaredAst.Pattern.RecordEmpty(loc)
+
   }
 
   /**
