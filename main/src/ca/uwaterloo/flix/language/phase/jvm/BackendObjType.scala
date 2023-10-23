@@ -120,7 +120,7 @@ object BackendObjType {
   private def mkName(prefix: String): String =
     mkName(prefix, Nil)
 
-  case object Unit extends BackendObjType {
+  case object Unit extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal)
 
@@ -149,7 +149,7 @@ object BackendObjType {
 
   case class Lazy(tpe: BackendType) extends BackendObjType
 
-  case class Ref(tpe: BackendType) extends BackendObjType {
+  case class Ref(tpe: BackendType) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
@@ -168,7 +168,7 @@ object BackendObjType {
 
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
-  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
 
 
     /**
@@ -417,7 +417,7 @@ object BackendObjType {
     }
   }
 
-  case object RecordEmpty extends BackendObjType {
+  case object RecordEmpty extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(this.interface.jvmName))
 
@@ -462,7 +462,7 @@ object BackendObjType {
     ))
   }
 
-  case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
+  case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(Record.jvmName))
 
@@ -552,7 +552,7 @@ object BackendObjType {
         branch(Condition.Bool)(cases)
   }
 
-  case object Record extends BackendObjType {
+  case object Record extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkInterface(this.jvmName)
 
@@ -589,7 +589,7 @@ object BackendObjType {
   case class Native(className: JvmName) extends BackendObjType
 
 
-  case object ReifiedSourceLocation extends BackendObjType {
+  case object ReifiedSourceLocation extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
@@ -701,7 +701,7 @@ object BackendObjType {
       mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
   }
 
-  case object Global extends BackendObjType {
+  case object Global extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
@@ -779,7 +779,7 @@ object BackendObjType {
 
   case object Regex extends BackendObjType
 
-  case object FlixError extends BackendObjType {
+  case object FlixError extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName, JvmName.Error)
 
@@ -796,7 +796,7 @@ object BackendObjType {
     ))
   }
 
-  case object HoleError extends BackendObjType {
+  case object HoleError extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
 
@@ -881,7 +881,7 @@ object BackendObjType {
     ))
   }
 
-  case object MatchError extends BackendObjType {
+  case object MatchError extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
@@ -948,7 +948,7 @@ object BackendObjType {
     ))
   }
 
-  case object Region extends BackendObjType {
+  case object Region extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal)
@@ -1091,7 +1091,7 @@ object BackendObjType {
     ))
   }
 
-  case object UncaughtExceptionHandler extends BackendObjType {
+  case object UncaughtExceptionHandler extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(ThreadUncaughtExceptionHandler.jvmName))
@@ -1293,7 +1293,7 @@ object BackendObjType {
       mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void), None)
   }
 
-  case object Result extends BackendObjType {
+  case object Result extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
@@ -1313,7 +1313,7 @@ object BackendObjType {
     }
   }
 
-  case object Value extends BackendObjType {
+  case object Value extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Result.jvmName))
@@ -1373,7 +1373,7 @@ object BackendObjType {
   }
 
   /** Frame is really just java.util.Function<Value, Result> **/
-  case object Frame extends BackendObjType {
+  case object Frame extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
@@ -1386,7 +1386,7 @@ object BackendObjType {
     def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor(Value.toTpe)(Result.toTpe))
   }
 
-  case object Thunk extends BackendObjType {
+  case object Thunk extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkAbstractClass(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
@@ -1414,7 +1414,7 @@ object BackendObjType {
     ))
   }
 
-  case object Frames extends BackendObjType {
+  case object Frames extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
@@ -1442,7 +1442,7 @@ object BackendObjType {
     }
   }
 
-  case object FramesCons extends BackendObjType {
+  case object FramesCons extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
@@ -1476,7 +1476,7 @@ object BackendObjType {
     ))
   }
 
-  case object FramesNil extends BackendObjType {
+  case object FramesNil extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
@@ -1498,4 +1498,8 @@ object BackendObjType {
       )
     ))
   }
+}
+
+sealed trait Generatable extends BackendObjType {
+  def genByteCode()(implicit flix: Flix): Array[Byte]
 }

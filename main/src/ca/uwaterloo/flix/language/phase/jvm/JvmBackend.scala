@@ -54,12 +54,12 @@ object JvmBackend {
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
 
+      // Compute the set of anonymous classes (NewObjects) in the program.
+      val anonClassDefs = root.anonClasses
+
       //
       // Second, generate classes.
       //
-
-      // Compute the set of anonymous classes (NewObjects) in the program.
-      val anonClassDefs = root.anonClasses
 
       // Generate the main class.
       val mainClass = GenMainClass.gen()
@@ -68,7 +68,7 @@ object JvmBackend {
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       // Generate function classes.
-      val functionInterfaces = GenFunctionAbstractClasses.gen(erasedFunctionTypes)
+      val functionInterfaces = erasedFunctionTypes.map(genClass).toMap
       val functionClasses = GenFunctionClasses.gen(root.defs)
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
       val closureClasses = GenClosureClasses.gen(root.defs)
@@ -81,12 +81,12 @@ object JvmBackend {
       val tupleClasses = GenTupleClasses.gen(types)
 
       // Generate record classes.
-      val recordInterfaces = GenRecordInterface.gen()
-      val recordEmptyClasses = GenRecordEmptyClass.gen()
-      val recordExtendClasses = GenRecordExtendClasses.gen(erasedExtendTypes)
+      val recordInterfaces = Map(genClass(BackendObjType.Record))
+      val recordEmptyClasses = Map(genClass(BackendObjType.RecordEmpty))
+      val recordExtendClasses = erasedExtendTypes.map(genClass).toMap
 
       // Generate references classes.
-      val refClasses = GenRefClasses.gen(erasedRefTypes)
+      val refClasses = erasedRefTypes.map(genClass).toMap
 
       // Generate lazy classes.
       val lazyClasses = GenLazyClasses.gen(types)
@@ -94,8 +94,7 @@ object JvmBackend {
       // Generate anonymous classes.
       val anonClasses = GenAnonymousClasses.gen(anonClassDefs)
 
-      // Generate the Unit class.
-      val unitClass = GenUnitClass.gen()
+      val unitClass = Map(genClass(BackendObjType.Unit))
 
       // Generate error classes.
       val flixErrorClass = GenFlixErrorClass.gen()
@@ -103,23 +102,20 @@ object JvmBackend {
       val holeErrorClass = GenHoleErrorClass.gen()
       val matchErrorClass = GenMatchErrorClass.gen()
 
-      // Generate the Global class.
-      val globalClass = GenGlobalClass.gen()
+      val globalClass = Map(genClass(BackendObjType.Global))
 
-      // Generate the Region class.
-      val regionClass = GenRegionClass.gen()
+      val regionClass = Map(genClass(BackendObjType.Region))
 
-      // Generate the UncaughtExceptionHandler class.
-      val uncaughtExceptionHandlerClass = GenUncaughtExceptionHandlerClass.gen()
+      val uncaughtExceptionHandlerClass = Map(genClass(BackendObjType.UncaughtExceptionHandler))
 
       // Generate new (unused) effect handler classes.
-      val resultInterface = Map(BackendObjType.Result.jvmName -> JvmClass(BackendObjType.Result.jvmName, BackendObjType.Result.genByteCode()))
-      val valueClass = Map(BackendObjType.Value.jvmName -> JvmClass(BackendObjType.Value.jvmName, BackendObjType.Value.genByteCode()))
-      val frameInterface = Map(BackendObjType.Frame.jvmName -> JvmClass(BackendObjType.Frame.jvmName, BackendObjType.Frame.genByteCode()))
-      val thunkAbstractClass = Map(BackendObjType.Thunk.jvmName -> JvmClass(BackendObjType.Thunk.jvmName, BackendObjType.Thunk.genByteCode()))
-      val framesInterface = Map(BackendObjType.Frames.jvmName -> JvmClass(BackendObjType.Frames.jvmName, BackendObjType.Frames.genByteCode()))
-      val framesConsClass = Map(BackendObjType.FramesCons.jvmName -> JvmClass(BackendObjType.FramesCons.jvmName, BackendObjType.FramesCons.genByteCode()))
-      val framesNilClass = Map(BackendObjType.FramesNil.jvmName -> JvmClass(BackendObjType.FramesNil.jvmName, BackendObjType.FramesNil.genByteCode()))
+      val resultInterface = Map(genClass(BackendObjType.Result))
+      val valueClass = Map(genClass(BackendObjType.Value))
+      val frameInterface = Map(genClass(BackendObjType.Frame))
+      val thunkAbstractClass = Map(genClass(BackendObjType.Thunk))
+      val framesInterface = Map(genClass(BackendObjType.Frames))
+      val framesConsClass = Map(genClass(BackendObjType.FramesCons))
+      val framesNilClass = Map(genClass(BackendObjType.FramesNil))
 
       // Collect all the classes and interfaces together.
       List(
@@ -183,6 +179,10 @@ object JvmBackend {
       // Return the compilation result.
       new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes)
     }
+  }
+
+  def genClass(g: Generatable)(implicit flix: Flix): (JvmName, JvmClass) = {
+    (g.jvmName, JvmClass(g.jvmName, g.genByteCode()))
   }
 
   /**
