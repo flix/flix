@@ -214,46 +214,118 @@ object Desugar {
     * Desugars the given [[WeededAst.Type]] `tpe0`.
     */
   private def visitType(tpe0: WeededAst.Type): DesugaredAst.Type = tpe0 match {
-    case WeededAst.Type.Var(ident, loc) => DesugaredAst.Type.Var(ident, loc)
-    case WeededAst.Type.Ambiguous(qname, loc) => DesugaredAst.Type.Ambiguous(qname, loc)
-    case WeededAst.Type.Unit(loc) => DesugaredAst.Type.Unit(loc)
-    case WeededAst.Type.Tuple(elms, loc) => DesugaredAst.Type.Tuple(elms.map(visitType), loc)
-    case WeededAst.Type.RecordRowEmpty(loc) => DesugaredAst.Type.RecordRowEmpty(loc)
-    case WeededAst.Type.RecordRowExtend(label, tpe, rest, loc) =>
-      DesugaredAst.Type.RecordRowExtend(label, visitType(tpe), visitType(rest), loc)
+    case WeededAst.Type.Var(ident, loc) =>
+      DesugaredAst.Type.Var(ident, loc)
 
-    case WeededAst.Type.Record(row, loc) => DesugaredAst.Type.Record(visitType(row), loc)
-    case WeededAst.Type.SchemaRowEmpty(loc) => DesugaredAst.Type.SchemaRowEmpty(loc)
+    case WeededAst.Type.Ambiguous(qname, loc) =>
+      DesugaredAst.Type.Ambiguous(qname, loc)
+
+    case WeededAst.Type.Unit(loc) =>
+      DesugaredAst.Type.Unit(loc)
+
+    case WeededAst.Type.Tuple(elms, loc) =>
+      val e1s = elms.map(visitType)
+      DesugaredAst.Type.Tuple(e1s, loc)
+
+    case WeededAst.Type.RecordRowEmpty(loc) =>
+      DesugaredAst.Type.RecordRowEmpty(loc)
+
+    case WeededAst.Type.RecordRowExtend(label, tpe, rest, loc) =>
+      val t1 = visitType(tpe)
+      val r1 = visitType(rest)
+      DesugaredAst.Type.RecordRowExtend(label, t1, r1, loc)
+
+    case WeededAst.Type.Record(row, loc) =>
+      DesugaredAst.Type.Record(visitType(row), loc)
+
+    case WeededAst.Type.SchemaRowEmpty(loc) =>
+      DesugaredAst.Type.SchemaRowEmpty(loc)
     case WeededAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
-      DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs.map(visitType), visitType(rest), loc)
+      val targs1 = targs.map(visitType)
+      val r1 = visitType(rest)
+      DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs1, r1, loc)
 
     case WeededAst.Type.SchemaRowExtendByTypes(name, den, tpes, rest, loc) =>
-      DesugaredAst.Type.SchemaRowExtendByTypes(name, den, tpes.map(visitType), visitType(rest), loc)
+      val t1s = tpes.map(visitType)
+      val r1 = visitType(rest)
+      DesugaredAst.Type.SchemaRowExtendByTypes(name, den, t1s, r1, loc)
 
-    case WeededAst.Type.Schema(row, loc) => DesugaredAst.Type.Schema(visitType(row), loc)
-    case WeededAst.Type.Native(fqn, loc) => DesugaredAst.Type.Native(fqn, loc)
+    case WeededAst.Type.Schema(row, loc) =>
+      val r1 = visitType(row)
+      DesugaredAst.Type.Schema(r1, loc)
+
+    case WeededAst.Type.Native(fqn, loc) =>
+      DesugaredAst.Type.Native(fqn, loc)
+
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
-      DesugaredAst.Type.Arrow(tparams.map(visitType), eff.map(visitType), visitType(tresult), loc)
+      val tparams1 = tparams.map(visitType)
+      val eff1 = eff.map(visitType)
+      val t1 = visitType(tresult)
+      DesugaredAst.Type.Arrow(tparams1, eff1, t1, loc)
 
-    case WeededAst.Type.Apply(tpe1, tpe2, loc) => DesugaredAst.Type.Apply(visitType(tpe1), visitType(tpe2), loc)
-    case WeededAst.Type.True(loc) => DesugaredAst.Type.True(loc)
-    case WeededAst.Type.False(loc) => DesugaredAst.Type.False(loc)
-    case WeededAst.Type.Not(tpe, loc) => DesugaredAst.Type.Not(visitType(tpe), loc)
-    case WeededAst.Type.And(tpe1, tpe2, loc) => DesugaredAst.Type.And(visitType(tpe1), visitType(tpe2), loc)
-    case WeededAst.Type.Or(tpe1, tpe2, loc) => DesugaredAst.Type.Or(visitType(tpe1), visitType(tpe2), loc)
-    case WeededAst.Type.Complement(tpe, loc) => DesugaredAst.Type.Complement(visitType(tpe), loc)
-    case WeededAst.Type.Union(tpe1, tpe2, loc) => DesugaredAst.Type.Union(visitType(tpe1), visitType(tpe2), loc)
+    case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.Apply(t1, t2, loc)
+
+    case WeededAst.Type.True(loc) =>
+      DesugaredAst.Type.True(loc)
+
+    case WeededAst.Type.False(loc) =>
+      DesugaredAst.Type.False(loc)
+
+    case WeededAst.Type.Not(tpe, loc) =>
+      val t1 = visitType(tpe)
+      DesugaredAst.Type.Not(t1, loc)
+
+    case WeededAst.Type.And(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.And(t1, t2, loc)
+
+    case WeededAst.Type.Or(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.Or(t1, t2, loc)
+
+    case WeededAst.Type.Complement(tpe, loc) =>
+      val t1 = visitType(tpe)
+      DesugaredAst.Type.Complement(t1, loc)
+
+    case WeededAst.Type.Union(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.Union(t1, t2, loc)
+
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) =>
-      DesugaredAst.Type.Intersection(visitType(tpe1), visitType(tpe2), loc)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.Intersection(t1, t2, loc)
 
-    case WeededAst.Type.Pure(loc) => DesugaredAst.Type.Pure(loc)
-    case WeededAst.Type.CaseSet(cases, loc) => DesugaredAst.Type.CaseSet(cases, loc)
-    case WeededAst.Type.CaseUnion(tpe1, tpe2, loc) => DesugaredAst.Type.CaseUnion(visitType(tpe1), visitType(tpe2), loc)
+    case WeededAst.Type.Pure(loc) =>
+      DesugaredAst.Type.Pure(loc)
+
+    case WeededAst.Type.CaseSet(cases, loc) =>
+      DesugaredAst.Type.CaseSet(cases, loc)
+
+    case WeededAst.Type.CaseUnion(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.CaseUnion(t1, t2, loc)
+
     case WeededAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
-      DesugaredAst.Type.CaseIntersection(visitType(tpe1), visitType(tpe2), loc)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      DesugaredAst.Type.CaseIntersection(t1, t2, loc)
 
-    case WeededAst.Type.CaseComplement(tpe, loc) => DesugaredAst.Type.CaseComplement(visitType(tpe), loc)
-    case WeededAst.Type.Ascribe(tpe, kind, loc) => DesugaredAst.Type.Ascribe(visitType(tpe), visitKind(kind), loc)
+    case WeededAst.Type.CaseComplement(tpe, loc) =>
+      val t1 = visitType(tpe)
+      DesugaredAst.Type.CaseComplement(t1, loc)
+
+    case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+      val t1 = visitType(tpe)
+      val k1 = visitKind(kind)
+      DesugaredAst.Type.Ascribe(t1, k1, loc)
   }
 
   /**
