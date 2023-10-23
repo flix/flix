@@ -199,14 +199,7 @@ object TypeInference {
       // only infer the stale defs
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-      val results = ParOps.parMap(staleDefs) {
-        case (sym, defn) => visitDefn(defn, Nil, root, classEnv, eqEnv).map {
-          case subst => sym -> subst
-        }
-      }
-      Validation.sequence(results).map {
-        case substs => substs.toMap
-      }
+      ParOps.parMapValuesSeq(staleDefs)(visitDefn(_, Nil, root, classEnv, eqEnv))
     }
 
   /**
