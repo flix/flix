@@ -945,6 +945,7 @@ object Desugar {
     */
   private def visitRecordLabelPattern(pat0: WeededAst.Pattern.Record.RecordLabelPattern): DesugaredAst.Pattern.Record.RecordLabelPattern = pat0 match {
     case WeededAst.Pattern.Record.RecordLabelPattern(label, pat, loc) =>
-      DesugaredAst.Pattern.Record.RecordLabelPattern(label, pat.map(visitPattern), loc)
+      val p = pat.map(visitPattern)
+      DesugaredAst.Pattern.Record.RecordLabelPattern(label, p, loc)
   }
 }
