@@ -224,16 +224,16 @@ object Desugar {
       DesugaredAst.Type.Unit(loc)
 
     case WeededAst.Type.Tuple(elms, loc) =>
-      val e1s = elms.map(visitType)
-      DesugaredAst.Type.Tuple(e1s, loc)
+      val ts = elms.map(visitType)
+      DesugaredAst.Type.Tuple(ts, loc)
 
     case WeededAst.Type.RecordRowEmpty(loc) =>
       DesugaredAst.Type.RecordRowEmpty(loc)
 
     case WeededAst.Type.RecordRowExtend(label, tpe, rest, loc) =>
-      val t1 = visitType(tpe)
-      val r1 = visitType(rest)
-      DesugaredAst.Type.RecordRowExtend(label, t1, r1, loc)
+      val t = visitType(tpe)
+      val r = visitType(rest)
+      DesugaredAst.Type.RecordRowExtend(label, t, r, loc)
 
     case WeededAst.Type.Record(row, loc) =>
       DesugaredAst.Type.Record(visitType(row), loc)
@@ -243,17 +243,17 @@ object Desugar {
 
     case WeededAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
       val targs1 = targs.map(visitType)
-      val r1 = visitType(rest)
-      DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs1, r1, loc)
+      val r = visitType(rest)
+      DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs1, r, loc)
 
     case WeededAst.Type.SchemaRowExtendByTypes(name, den, tpes, rest, loc) =>
-      val t1s = tpes.map(visitType)
-      val r1 = visitType(rest)
-      DesugaredAst.Type.SchemaRowExtendByTypes(name, den, t1s, r1, loc)
+      val ts = tpes.map(visitType)
+      val r = visitType(rest)
+      DesugaredAst.Type.SchemaRowExtendByTypes(name, den, ts, r, loc)
 
     case WeededAst.Type.Schema(row, loc) =>
-      val r1 = visitType(row)
-      DesugaredAst.Type.Schema(r1, loc)
+      val r = visitType(row)
+      DesugaredAst.Type.Schema(r, loc)
 
     case WeededAst.Type.Native(fqn, loc) =>
       DesugaredAst.Type.Native(fqn, loc)
@@ -261,8 +261,8 @@ object Desugar {
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
       val tparams1 = tparams.map(visitType)
       val eff1 = eff.map(visitType)
-      val t1 = visitType(tresult)
-      DesugaredAst.Type.Arrow(tparams1, eff1, t1, loc)
+      val t = visitType(tresult)
+      DesugaredAst.Type.Arrow(tparams1, eff1, t, loc)
 
     case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -276,8 +276,8 @@ object Desugar {
       DesugaredAst.Type.False(loc)
 
     case WeededAst.Type.Not(tpe, loc) =>
-      val t1 = visitType(tpe)
-      DesugaredAst.Type.Not(t1, loc)
+      val t = visitType(tpe)
+      DesugaredAst.Type.Not(t, loc)
 
     case WeededAst.Type.And(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -290,8 +290,8 @@ object Desugar {
       DesugaredAst.Type.Or(t1, t2, loc)
 
     case WeededAst.Type.Complement(tpe, loc) =>
-      val t1 = visitType(tpe)
-      DesugaredAst.Type.Complement(t1, loc)
+      val t = visitType(tpe)
+      DesugaredAst.Type.Complement(t, loc)
 
     case WeededAst.Type.Union(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -320,13 +320,13 @@ object Desugar {
       DesugaredAst.Type.CaseIntersection(t1, t2, loc)
 
     case WeededAst.Type.CaseComplement(tpe, loc) =>
-      val t1 = visitType(tpe)
-      DesugaredAst.Type.CaseComplement(t1, loc)
+      val t = visitType(tpe)
+      DesugaredAst.Type.CaseComplement(t, loc)
 
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
-      val t1 = visitType(tpe)
-      val k1 = visitKind(kind)
-      DesugaredAst.Type.Ascribe(t1, k1, loc)
+      val t = visitType(tpe)
+      val k = visitKind(kind)
+      DesugaredAst.Type.Ascribe(t, k, loc)
   }
 
   /**
