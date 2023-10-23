@@ -240,6 +240,7 @@ object Desugar {
 
     case WeededAst.Type.SchemaRowEmpty(loc) =>
       DesugaredAst.Type.SchemaRowEmpty(loc)
+
     case WeededAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
       val targs1 = targs.map(visitType)
       val r1 = visitType(rest)
