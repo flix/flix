@@ -1234,7 +1234,7 @@ object GenExpression {
               s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
-          BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
+          BackendObjType.Result.unwindThunkToType(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1274,7 +1274,7 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
+        BackendObjType.Result.unwindThunkToType(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
