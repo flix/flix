@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
+import org.objectweb.asm
 
 object BytecodeInstructions {
 
@@ -35,6 +36,10 @@ object BytecodeInstructions {
 
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor): Unit =
       visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, opcode == Opcodes.INVOKEINTERFACE)
+
+    // TODO: sanitize varags
+    def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
+      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments:_*)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
@@ -65,6 +70,12 @@ object BytecodeInstructions {
   implicit class ComposeOps(i1: InstructionSet) {
     def ~(i2: InstructionSet): InstructionSet =
       compose(i1, i2)
+  }
+
+  sealed case class Handle(handle: asm.Handle)
+
+  def mkStaticHandle(m: StaticMethod): Handle = {
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, false))
   }
 
   //
@@ -259,6 +270,18 @@ object BytecodeInstructions {
 
   def INSTANCEOF(tpe: JvmName): InstructionSet = f => {
     f.visitTypeInstruction(Opcodes.INSTANCEOF, tpe)
+    f
+  }
+
+  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticMethod): InstructionSet = f => {
+    f.visitInvokeDynamicInstruction(
+      lambdaMethod.name,
+      mkDescriptor(call.d.arguments: _*)(lambdaMethod.clazz.toTpe),
+      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
+      lambdaMethod.d.toAsmType,
+      mkStaticHandle(call).handle,
+      lambdaMethod.d.toAsmType
+    )
     f
   }
 
