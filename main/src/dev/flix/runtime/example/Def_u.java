@@ -46,18 +46,18 @@ public class Def_u {
 
                     // Invariant: We know that vResult must now be Value(v) or a Suspension.
 
-                    if (vResult instanceof Value) {
-                        name = (String) (((Value) vResult).o);
-                        pc = 1;
-                        continue jump;
-                    } else if (vResult instanceof Suspension) {
+
+                    if (vResult instanceof Suspension) {
                         // Build frame, and then return new suspension.
                         Suspension s = (Suspension) vResult;
                         var t = new Frame_u(new Locals_u(11, name, greetings));
                         return new Suspension(s.effSym, s.effOp, s.prefix.push(t), s.resumption);
-                    } else { /* impossible: we have already dealt with all the thunks. */ }
+                    }
 
-                    break;
+                    // must be value now
+                    name = (String) (((Value) vResult).o);
+                    pc = 1;
+                    continue jump;
 
                 case 11:
                     name = (String) Integer.toString(resumeArg.i32);

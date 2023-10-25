@@ -188,6 +188,11 @@ object BytecodeInstructions {
     f
   }
 
+  def DUP2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP2)
+    f
+  }
+
   def DUP_X1(): InstructionSet = f => {
     f.visitInstruction(Opcodes.DUP_X1)
     f

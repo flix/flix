@@ -74,6 +74,7 @@ sealed trait BackendObjType {
     case BackendObjType.Value => JvmName(DevFlixRuntime, "Value")
     case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
     case BackendObjType.Thunk => JvmName(DevFlixRuntime, "Thunk")
+    case BackendObjType.Suspension => JvmName(DevFlixRuntime, "Suspension")
     case BackendObjType.Frames => JvmName(DevFlixRuntime, "Frames")
     case BackendObjType.FramesCons => JvmName(DevFlixRuntime, "FramesCons")
     case BackendObjType.FramesNil => JvmName(DevFlixRuntime, "FramesNil")
@@ -81,6 +82,7 @@ sealed trait BackendObjType {
     case BackendObjType.ResumptionCons => JvmName(DevFlixRuntime, "ResumptionCons")
     case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, "ResumptionNil")
     case BackendObjType.Handler => JvmName(DevFlixRuntime, "Handler")
+    case BackendObjType.EffectCall => JvmName(DevFlixRuntime, "EffectCall")
   }
 
   /**
@@ -212,105 +214,105 @@ object BackendObjType {
           Some(
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(BackendType.Int32) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int32) ~ IRETURN()
           ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(BackendType.Int64) ~ LRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int64) ~ LRETURN()
           ))
         case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
           mkDescriptor(BackendType.Float64)(BackendType.Float64),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunkToType(BackendType.Float64) ~ DRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Float64) ~ DRETURN()
           ))
 
       }
@@ -1324,6 +1326,7 @@ object BackendObjType {
 
     /**
       * Expects a Thunk on the stack and leaves a non-Thunk Result.
+      * [..., Result] --> [..., Suspension|Value]
       */
     def unwindThunk(): InstructionSet = {
       INVOKEVIRTUAL(Thunk.InvokeMethod) ~
@@ -1334,10 +1337,72 @@ object BackendObjType {
     }
 
     /**
-      * Expects a Thunk on the stack and leaves something of the given tpe but erased.
+      * Expects a Result on the stack.
+      * If the result is a Suspension, this will return a modified Suspension.
+      * If the result in NOT a Suspension, this will leave it on the stack.
+      * [..., Result] --> [..., Thunk|Value]
+      * side effect: might return
+      */
+    def handleSuspension(): InstructionSet = {
+      DUP() ~ INSTANCEOF(Suspension.jvmName) ~
+      ifTrue(Condition.NE) {
+        DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
+        // Add our new frame
+        NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~ // [..., s, s']
+        SWAP() ~ // [..., s', s]
+        DUP2() ~ // [..., s', s, s', s]
+        GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(Suspension.ResumptionField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
+        // Make the new frame and push it
+        pushNull() ~ // TODO
+        INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
+        PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
+        POP() ~ // [..., s']
+        // Return the suspension up the stack
+        ARETURN()
+      }
+    }
+
+    /**
+      * Expects a Result on the stack and crashes if it is a Suspension, otherwise leaves it on the stack.
+      * [..., Result] --> [..., Thunk|Value]
+      * side effect: might crash
+      */
+    def crashIfSuspension(): InstructionSet = {
+      val errorMessage = "function was assumed control-pure for java interop but suspension was returned"
+      DUP() ~ INSTANCEOF(Suspension.jvmName) ~
+      ifTrue(Condition.NE) {
+        // If Suspension is found, fail hard.
+        NEW(FlixError.jvmName) ~
+        DUP() ~ pushString(errorMessage) ~ INVOKESPECIAL(FlixError.Constructor) ~
+        ATHROW()
+      }
+    }
+
+    /**
+      * Expects a Result on the stack and leaves something of the given tpe but erased.
+      * This might return if a Suspension is encountered.
+      * [..., Result] --> [..., Value.value: tpe]
+      * side effect: Might return
       */
     def unwindThunkToType(tpe: BackendType): InstructionSet = {
-      unwindThunk() ~ CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+      unwindThunk() ~
+      handleSuspension() ~
+      CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+    }
+
+    /**
+      * Expects a Thunk on the stack and leaves something of the given tpe but erased.
+      * Assumes that the thunk is control-pure, i.e. never returns a suspension.
+      * [..., Result] --> [..., Value.value: tpe]
+      * side effect: might crash
+      */
+    def unwindSuspensionFreeThunkToType(tpe: BackendType): InstructionSet = {
+      unwindThunk() ~
+      crashIfSuspension() ~
+      CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
     }
   }
 
@@ -1431,8 +1496,31 @@ object BackendObjType {
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(Result.toTpe))
 
     def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(
-      thisLoad() ~ Result.unwindThunk() ~ RETURN()
+      thisLoad() ~ Result.unwindThunk() ~ Result.crashIfSuspension() ~ POP() ~ RETURN()
     ))
+  }
+
+  case object Suspension extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Result.jvmName))
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(EffSymField)
+      cm.mkField(EffOpField)
+      cm.mkField(PrefixField)
+      cm.mkField(ResumptionField)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    def EffSymField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "effSym", String.toTpe)
+    def EffOpField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "effOp", EffectCall.toTpe)
+    def PrefixField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "prefix", Frames.toTpe)
+    def ResumptionField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "resumption", Resumption.toTpe)
+
   }
 
   case object Frames extends BackendObjType with Generatable {
@@ -1614,10 +1702,30 @@ object BackendObjType {
       mkDescriptor(String.toTpe, Handler.toTpe, Frames.toTpe, Thunk.toTpe)(Result.toTpe),
       Some(withName(1, String.toTpe){effSym => withName(2, Handler.toTpe){handler =>
         withName(3, Frames.toTpe){frames => withName(4, Thunk.toTpe){thunk =>
-          pushNull() ~ ARETURN() // TODO
+          thunk.load() ~
+          // Thunk|Value|Suspension
+          Result.unwindThunk() ~
+          // Value|Suspension
+          Result.handleSuspension() ~
+          // Value
+          CHECKCAST(Value.jvmName) ~
+          // TODO
+          pushNull() ~ ATHROW() ~ pushNull() ~ ARETURN()
       }}}}
       )
     )
+  }
+
+  case object EffectCall extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
+      cm.mkInterfaceMethod(ApplyMethod)
+      cm.closeClassMaker()
+    }
+
+    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor(Handler.toTpe, Resumption.toTpe)(Result.toTpe))
+
   }
 }
 
