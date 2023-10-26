@@ -999,7 +999,6 @@ object Desugar {
     }
   }
 
-
   /**
     * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
     *
@@ -1031,7 +1030,6 @@ object Desugar {
     val lambda = DesugaredAst.Expr.Ambiguous(Name.mkQName(fqn), l)
     DesugaredAst.Expr.Apply(lambda, args, l)
   }
-
 
   /**
     * Splits the [[SourceLocation]] `loc` into two [[SourcePosition]]s `sp1` and `sp2`.
