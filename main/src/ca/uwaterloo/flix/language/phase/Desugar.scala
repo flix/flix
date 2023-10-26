@@ -1040,5 +1040,4 @@ object Desugar {
       val sp2 = SourcePosition(source, endLine, endCol, input)
       (sp1, sp2)
   }
-
 }
