@@ -93,7 +93,7 @@ public class Def_u {
 /**
  * A thunk for `def u`. Simply holds a reference to the locals and implements `Thunk`.
  */
-class Frame_u implements Frame {
+class Frame_u extends Frame {
     Locals_u locals;
 
     public Frame_u(Locals_u locals) {

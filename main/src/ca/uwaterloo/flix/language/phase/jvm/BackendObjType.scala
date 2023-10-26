@@ -99,10 +99,10 @@ sealed trait BackendObjType {
     this.jvmName,
     IsPublic,
     Nil,
-    Some(thisLoad() ~ INVOKESPECIAL(superClass) ~ RETURN())
+    Some(_ => thisLoad() ~ INVOKESPECIAL(superClass) ~ RETURN())
   )
 
-  protected def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField): StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+  protected def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField): StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(_ =>
     NEW(this.jvmName) ~
       DUP() ~ INVOKESPECIAL(thisConstructor) ~
       PUTSTATIC(singleton) ~
@@ -146,7 +146,7 @@ object BackendObjType {
 
     def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       pushString("()") ~ ARETURN()
     ))
   }
@@ -211,105 +211,105 @@ object BackendObjType {
       def functionMethod: InstanceMethod = this match {
         case ObjFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(JavaObject.toTpe)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(BackendType.Int32) ~ IRETURN()
           ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(BackendType.Int64) ~ LRETURN()
           ))
         case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
           mkDescriptor(BackendType.Float64)(BackendType.Float64),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               Result.unwindSuspensionFreeThunkToType(BackendType.Float64) ~ DRETURN()
@@ -418,7 +418,7 @@ object BackendObjType {
         case arg :: Nil => arg.toErasedString
         case _ => args.map(_.toErasedString).mkString("(", ", ", ")")
       }
-      JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+      JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
         pushString(s"$argString -> ${result.toErasedString}") ~
           ARETURN()
       ))
@@ -448,21 +448,21 @@ object BackendObjType {
 
     def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       throwUnsupportedOperationException(
         s"${Record.LookupFieldMethod.name} method shouldn't be called")
     ))
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       throwUnsupportedOperationException(
         s"${Record.RestrictFieldMethod.name} method shouldn't be called")
     ))
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       pushString("{}") ~ ARETURN()
     ))
 
-    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(
+    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, StringBuilder.toTpe) { sb =>
         sb.load() ~ pushString("}") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
           INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
@@ -494,7 +494,7 @@ object BackendObjType {
 
     def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "rest", Record.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad() ~ ARETURN()
@@ -506,7 +506,7 @@ object BackendObjType {
       }
     ))
 
-    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad() ~ GETFIELD(RestField) ~ ARETURN()
@@ -523,7 +523,7 @@ object BackendObjType {
       }
     ))
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       // save the `rest` for the last recursive call
       thisLoad() ~ GETFIELD(this.RestField) ~
         // build this segment of the string
@@ -535,7 +535,7 @@ object BackendObjType {
         INVOKEINTERFACE(Record.ToTailStringMethod) ~ ARETURN()
     ))
 
-    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(
+    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, StringBuilder.toTpe) { sb =>
         // save the `rest` for the last recursive call
         thisLoad() ~ GETFIELD(this.RestField) ~
@@ -617,7 +617,7 @@ object BackendObjType {
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
-      List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32), Some(
+      List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32), Some(_ =>
         thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
           thisLoad() ~ ALOAD(1) ~ PUTFIELD(SourceField) ~
           thisLoad() ~ ILOAD(2) ~ PUTFIELD(BeginLineField) ~
@@ -642,7 +642,7 @@ object BackendObjType {
     def EndColField: InstanceField =
       InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endCol", BackendType.Int32)
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       // create string builder
       NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
         // build string
@@ -655,37 +655,37 @@ object BackendObjType {
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
     ))
 
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
       withName(1, JavaObject.toTpe) { otherObj =>
         // check exact equality
         thisLoad() ~
           otherObj.load() ~
-          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
           // check `other == null`
           otherObj.load() ~
-          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
           // the class equality
           thisLoad() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
           otherObj.load() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
           // check individual fields
           otherObj.load() ~
           CHECKCAST(this.jvmName) ~
           storeWithName(2, this.toTpe) { otherLoc =>
             thisLoad() ~ GETFIELD(BeginLineField) ~
               otherLoc.load() ~ GETFIELD(BeginLineField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(BeginColField) ~
               otherLoc.load() ~ GETFIELD(BeginColField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(EndLineField) ~
               otherLoc.load() ~ GETFIELD(EndLineField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(EndColField) ~
               otherLoc.load() ~ GETFIELD(EndColField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(SourceField) ~
               otherLoc.load() ~ GETFIELD(SourceField) ~
               INVOKESTATIC(Objects.EqualsMethod) ~
@@ -694,7 +694,7 @@ object BackendObjType {
       }
     ))
 
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
       ICONST_5() ~ ANEWARRAY(JavaObject.jvmName) ~
         DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(SourceField) ~ AASTORE() ~
         DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(BeginLineField) ~ boxInt() ~ AASTORE() ~
@@ -728,7 +728,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
-    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(_ =>
       NEW(JvmName.AtomicLong) ~
         DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
         PUTSTATIC(CounterField) ~
@@ -739,7 +739,7 @@ object BackendObjType {
     ))
 
     def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "newId",
-      mkDescriptor()(BackendType.Int64), Some(
+      mkDescriptor()(BackendType.Int64), Some(_ =>
         GETSTATIC(CounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
             MethodDescriptor(Nil, BackendType.Int64)) ~
@@ -747,7 +747,7 @@ object BackendObjType {
       ))
 
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
-      mkDescriptor()(BackendType.Array(String.toTpe)), Some(
+      mkDescriptor()(BackendType.Array(String.toTpe)), Some(_ =>
         GETSTATIC(ArgsField) ~ ARRAYLENGTH() ~ ANEWARRAY(String.jvmName) ~ ASTORE(0) ~
           // the new array is now created, now to copy the args
           GETSTATIC(ArgsField) ~
@@ -760,7 +760,7 @@ object BackendObjType {
       ))
 
     def SetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "setArgs",
-      mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(
+      mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(_ =>
         ALOAD(0) ~ ARRAYLENGTH() ~ ANEWARRAY(String.jvmName) ~ ASTORE(1) ~
           ALOAD(0) ~
           ICONST_0() ~
@@ -796,7 +796,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), Some(_ =>
       thisLoad() ~
         ALOAD(1) ~
         invokeConstructor(JvmName.Error, mkDescriptor(String.toTpe)(VoidableType.Void)) ~
@@ -818,7 +818,7 @@ object BackendObjType {
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
-      List(String.toTpe, ReifiedSourceLocation.toTpe), Some(
+      List(String.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
         withName(1, String.toTpe) { hole =>
           withName(2, ReifiedSourceLocation.toTpe) { loc =>
             thisLoad() ~
@@ -845,20 +845,20 @@ object BackendObjType {
     private def LocationField: InstanceField =
       InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
       withName(1, JavaObject.toTpe) { other =>
         // check exact equality
         thisLoad() ~ other.load() ~
-          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
           // check for null
           other.load() ~
-          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
           // check for class equality
           thisLoad() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
           other.load() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
           // cast the other obj
           other.load() ~ CHECKCAST(this.jvmName) ~
           storeWithName(2, HoleError.toTpe) { otherHoleError =>
@@ -866,7 +866,7 @@ object BackendObjType {
             thisLoad() ~ GETFIELD(HoleField) ~
               otherHoleError.load() ~ GETFIELD(HoleField) ~
               INVOKESTATIC(Objects.EqualsMethod) ~
-              ifTrue(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
               // compare the location field
               thisLoad() ~ GETFIELD(LocationField) ~
               otherHoleError.load() ~ GETFIELD(LocationField) ~
@@ -876,7 +876,7 @@ object BackendObjType {
       }
     ))
 
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
       ICONST_2() ~
         ANEWARRAY(JavaObject.jvmName) ~
         // store hole
@@ -904,7 +904,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(_ =>
       thisLoad() ~
         NEW(StringBuilder.jvmName) ~
         DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
@@ -922,21 +922,21 @@ object BackendObjType {
 
     def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
       withName(1, JavaObject.toTpe) { otherObj =>
         // check exact equality
         thisLoad() ~
           otherObj.load() ~
-          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
           // check `other == null`
           otherObj.load() ~
-          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
           // the class equality
           thisLoad() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
           otherObj.load() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
           // check individual fields
           ALOAD(1) ~ CHECKCAST(this.jvmName) ~
           storeWithName(2, this.toTpe) { otherErr =>
@@ -948,7 +948,7 @@ object BackendObjType {
       }
     ))
 
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
       ICONST_1() ~ ANEWARRAY(JavaObject.jvmName) ~
         DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
         INVOKESTATIC(Objects.HashMethod) ~
@@ -989,7 +989,7 @@ object BackendObjType {
     // private volatile Throwable childException = null;
     def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
       thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
@@ -1010,7 +1010,7 @@ object BackendObjType {
     //   t.start();
     //   threads.add(t);
     // }
-    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
+    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       (
         // TODO: VirtualThreads: Enable by default once JDK 21+ becomes a requirement.
         if (false) {
@@ -1039,7 +1039,7 @@ object BackendObjType {
     //   for (Runnable r: onExit)
     //     r.run();
     // }
-    def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "exit", MethodDescriptor.NothingToVoid, Some(
+    def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "exit", MethodDescriptor.NothingToVoid, Some(_ =>
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad() ~ GETFIELD(ThreadsField) ~
@@ -1068,7 +1068,7 @@ object BackendObjType {
     //   childException = e;
     //   regionThread.interrupt();
     // }
-    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
+    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(_ =>
       thisLoad() ~ ALOAD(1) ~
       PUTFIELD(ChildExceptionField) ~
       thisLoad() ~ GETFIELD(RegionThreadField) ~
@@ -1080,9 +1080,9 @@ object BackendObjType {
     //   if (childException != null)
     //     throw childException;
     // }
-    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(
+    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(_ =>
       thisLoad() ~ GETFIELD(ChildExceptionField) ~
-      ifTrue(Condition.NONNULL) {
+      ifCondition(Condition.NONNULL) {
         thisLoad() ~ GETFIELD(ChildExceptionField) ~
         ATHROW()
       } ~
@@ -1092,7 +1092,7 @@ object BackendObjType {
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
     // }
-    def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(
+    def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
       INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
       RETURN()
@@ -1115,14 +1115,14 @@ object BackendObjType {
     def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "r", BackendObjType.Region.toTpe)
 
     // UncaughtExceptionHandler(Region r) { this.r = r; }
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
       thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
       RETURN()
     ))
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
-    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(
+    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(_ =>
       thisLoad() ~ GETFIELD(RegionField) ~
       ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
       RETURN()
@@ -1345,7 +1345,7 @@ object BackendObjType {
       */
     def handleSuspension(): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
-      ifTrue(Condition.NE) {
+      ifCondition(Condition.NE) {
         DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
         // Add our new frame
         NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~ // [..., s, s']
@@ -1373,7 +1373,7 @@ object BackendObjType {
     def crashIfSuspension(): InstructionSet = {
       val errorMessage = "function was assumed control-pure for java interop but suspension was returned"
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
-      ifTrue(Condition.NE) {
+      ifCondition(Condition.NE) {
         // If Suspension is found, fail hard.
         NEW(FlixError.jvmName) ~
         DUP() ~ pushString(errorMessage) ~ INVOKESPECIAL(FlixError.Constructor) ~
@@ -1469,14 +1469,28 @@ object BackendObjType {
   case object Frame extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.jvmName)
+      val cm = mkAbstractClass(this.jvmName)
 
-      cm.mkInterfaceMethod(ApplyMethod)
+      cm.mkConstructor(Constructor)
+      cm.mkAbstractMethod(ApplyMethod)
+      cm.mkStaticMethod(StaticApplyMethod)
 
       cm.closeClassMaker()
     }
 
-    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor(Value.toTpe)(Result.toTpe))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    def ApplyMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "apply", mkDescriptor(Value.toTpe)(Result.toTpe))
+
+    def StaticApplyMethod: StaticMethod = StaticMethod(
+      this.jvmName,
+      IsPublic,
+      IsFinal,
+      "apply",
+      mkDescriptor(Frame.toTpe, Value.toTpe)(Result.toTpe),
+      Some(_ => withName(0, Frame.toTpe){f => withName(1, Value.toTpe){resumeArg => {
+        f.load() ~ resumeArg.load() ~ INVOKEVIRTUAL(Frame.ApplyMethod) ~ ARETURN()
+      }}}))
   }
 
   case object Thunk extends BackendObjType with Generatable {
@@ -1495,7 +1509,7 @@ object BackendObjType {
 
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(Result.toTpe))
 
-    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(
+    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
       thisLoad() ~ Result.unwindThunk() ~ Result.crashIfSuspension() ~ POP() ~ RETURN()
     ))
   }
@@ -1541,7 +1555,7 @@ object BackendObjType {
 
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
 
-    def pushImplementation: InstructionSet = {
+    val pushImplementation: Unit => InstructionSet = _ => {
       withName(1, Frame.toTpe)(frame =>
         NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
           DUP() ~ frame.load() ~ PUTFIELD(FramesCons.HeadField) ~
@@ -1573,7 +1587,7 @@ object BackendObjType {
 
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(Frames.pushImplementation))
 
-    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
+    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, Frames.toTpe)(rest =>
         thisLoad() ~ GETFIELD(TailField) ~
         NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
@@ -1601,7 +1615,7 @@ object BackendObjType {
 
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(Frames.pushImplementation))
 
-    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
+    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, Frames.toTpe)(rest =>
         rest.load() ~ xReturn(rest.tpe)
       )
@@ -1618,7 +1632,7 @@ object BackendObjType {
 
     def RewindMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "rewind", mkDescriptor(Value.toTpe)(Result.toTpe))
 
-    def StaticRewindMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe), Some(
+    def StaticRewindMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe), Some(_ =>
       withName(0, Resumption.toTpe) { resumption =>
         withName(1, Value.toTpe) { v => {
           resumption.load() ~ v.load() ~ INVOKEINTERFACE(Resumption.RewindMethod) ~ ARETURN()
@@ -1652,7 +1666,7 @@ object BackendObjType {
     def FramesField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "frames", Frames.toTpe)
     def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tail", Resumption.toTpe)
 
-    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(
+    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, Value.toTpe) { v =>
         thisLoad() ~ GETFIELD(SymField) ~
           thisLoad() ~ GETFIELD(HandlerField) ~
@@ -1679,7 +1693,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
-    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(
+    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, Value.toTpe) { v =>
         v.load() ~ xReturn(v.tpe)
       }
@@ -1700,17 +1714,59 @@ object BackendObjType {
       NotFinal,
       "installHandler",
       mkDescriptor(String.toTpe, Handler.toTpe, Frames.toTpe, Thunk.toTpe)(Result.toTpe),
-      Some(withName(1, String.toTpe){effSym => withName(2, Handler.toTpe){handler =>
-        withName(3, Frames.toTpe){frames => withName(4, Thunk.toTpe){thunk =>
+      Some(_ => withName(0, String.toTpe){effSym => withName(1, Handler.toTpe){handler =>
+        withName(2, Frames.toTpe){frames => withName(3, Thunk.toTpe){thunk =>
           thunk.load() ~
           // Thunk|Value|Suspension
           Result.unwindThunk() ~
           // Value|Suspension
-          Result.handleSuspension() ~
+          { // handle suspension
+            DUP() ~ INSTANCEOF(Suspension.jvmName) ~ ifCondition(Condition.NE) {
+              DUP() ~ CHECKCAST(Suspension.jvmName) ~ storeWithName(4, Suspension.toTpe) {s =>
+                NEW(ResumptionCons.jvmName) ~ DUP() ~ INVOKESPECIAL(ResumptionCons.Constructor) ~
+                  DUP() ~ effSym.load() ~ PUTFIELD(ResumptionCons.SymField) ~
+                  DUP() ~ handler.load() ~ PUTFIELD(ResumptionCons.HandlerField) ~
+                  DUP() ~
+                  s.load() ~ GETFIELD(Suspension.PrefixField) ~ frames.load() ~ INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+                  PUTFIELD(ResumptionCons.FramesField) ~
+                  DUP() ~ s.load() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(ResumptionCons.TailField) ~
+                  storeWithName(5, ResumptionCons.toTpe){r =>
+                    s.load() ~ GETFIELD(Suspension.EffSymField) ~ effSym.load() ~ INVOKEVIRTUAL(JavaObject.EqualsMethod) ~
+                    ifCondition(Condition.NE){
+                      s.load() ~ GETFIELD(Suspension.EffOpField) ~ handler.load() ~ r.load() ~
+                      INVOKEINTERFACE(EffectCall.ApplyMethod) ~ xReturn(Result.toTpe)
+                    } ~
+                    NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
+                    DUP() ~ s.load() ~ GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~
+                    DUP() ~ s.load() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~
+                    DUP() ~ NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~ PUTFIELD(Suspension.PrefixField) ~
+                    DUP() ~ r.load() ~ PUTFIELD(Suspension.ResumptionField) ~
+                    xReturn(Suspension.toTpe)
+                  }
+              }
+            }
+          } ~
           // Value
-          CHECKCAST(Value.jvmName) ~
-          // TODO
-          pushNull() ~ ATHROW() ~ pushNull() ~ ARETURN()
+          CHECKCAST(Value.jvmName) ~ storeWithName(6, Value.toTpe) {res =>
+            //
+            // Case on frames
+            // FramesNil
+            frames.load() ~ INSTANCEOF(FramesNil.jvmName) ~ ifCondition(Condition.NE) {
+              res.load() ~ xReturn(Value.toTpe)
+            } ~
+              // FramesCons
+              frames.load() ~ CHECKCAST(FramesCons.jvmName) ~ storeWithName(7, FramesCons.toTpe) { cons => {
+              effSym.load() ~
+              handler.load() ~
+              cons.load() ~ GETFIELD(FramesCons.TailField) ~
+              // thunk
+              cons.load() ~ GETFIELD(FramesCons.HeadField) ~
+              res.load() ~
+              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod) ~
+              INVOKESTATIC(InstallHandlerMethod) ~
+              ARETURN()
+            }
+          }}
       }}}}
       )
     )

@@ -443,7 +443,7 @@ object BytecodeInstructions {
     f
   }
 
-  def ifTrue(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
+  def ifCondition(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
     var f = f0
     val jumpLabel = new Label()
     f.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
