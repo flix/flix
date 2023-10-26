@@ -881,17 +881,15 @@ object Weeder {
 
     case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val fs = mapN(traverse(frags)(visitForFragment(_, senv))) {
-        case fs1 =>
-          // This is ensured by the parser
-          fs1.collect { case t: WeededAst.ForFragment.Generator => t }
-      }
-      val e = visitExp(exp, senv)
-      flatMapN(fs, e) {
-        case (Nil, _) =>
-          val err = WeederError.IllegalEmptyForFragment(loc)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
-        case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
+      if (frags.isEmpty) {
+        val err = WeederError.IllegalEmptyForFragment(loc)
+        WeededAst.Expr.Error(err).toSoftFailure(err)
+      } else {
+        val fs = traverse(frags)(visitForFragmentGenerator(_, senv))
+        val e = visitExp(exp, senv)
+        mapN(fs, e) {
+          case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc)
+        }
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
@@ -3133,22 +3131,15 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given [[ParsedAst.ForFragment]] `frag0`.
+    * Performs weeding on the given [[ParsedAst.ForFragment.Generator]] `frag0`.
     */
-  private def visitForFragment(frag0: ParsedAst.ForFragment, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment, WeederError] = frag0 match {
+  private def visitForFragmentGenerator(frag0: ParsedAst.ForFragment.Generator, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment.Generator, WeederError] = frag0 match {
     case ParsedAst.ForFragment.Generator(sp1, pat, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       val p = visitPattern(pat)
       val e = visitExp(exp, senv)
       mapN(p, e) {
         case (p1, e1) => WeededAst.ForFragment.Generator(p1, e1, loc)
-      }
-
-    case ParsedAst.ForFragment.Guard(sp1, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val e = visitExp(exp, senv)
-      mapN(e) {
-        case e1 => WeededAst.ForFragment.Guard(e1, loc)
       }
   }
 
