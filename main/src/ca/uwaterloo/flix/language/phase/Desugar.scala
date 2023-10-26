@@ -1008,9 +1008,8 @@ object Desugar {
     * @return A lambda that matches on its parameter i.e. a [[DesugaredAst.Expr.Lambda]] that has a pattern match in its body.
     */
   private def mkLambdaMatch(p: DesugaredAst.Pattern, e: DesugaredAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
-    val (sp1, sp2) = splitSL(loc)
     // The name of the lambda parameter.
-    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
+    val ident = Name.Ident(loc.sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), loc.sp2).asSynthetic
 
     // Construct the body of the lambda expression.
     val varOrRef = DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc)
@@ -1028,15 +1027,5 @@ object Desugar {
     val l = loc.asSynthetic
     val lambda = DesugaredAst.Expr.Ambiguous(Name.mkQName(fqn), l)
     DesugaredAst.Expr.Apply(lambda, args, l)
-  }
-
-  /**
-    * Splits the [[SourceLocation]] `loc` into two [[SourcePosition]]s `sp1` and `sp2`.
-    */
-  private def splitSL(loc: SourceLocation): (SourcePosition, SourcePosition) = loc match {
-    case SourceLocation(input, source, locationKind, beginLine, beginCol, endLine, endCol) =>
-      val sp1 = SourcePosition(source, beginLine, beginCol, input)
-      val sp2 = SourcePosition(source, endLine, endCol, input)
-      (sp1, sp2)
   }
 }
