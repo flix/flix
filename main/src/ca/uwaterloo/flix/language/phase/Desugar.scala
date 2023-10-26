@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
+import ca.uwaterloo.flix.language.ast.WeededAst.ForFragment
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.ParOps
 
@@ -536,40 +537,7 @@ object Desugar {
       Expr.RestrictableChoose(star, e, rs, loc)
 
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
-      //
-      // Rewrites a ForA loop into a series of Applicative.ap calls:
-      //
-      //     forA (
-      //         x <- xs;
-      //         y <- ys
-      //     ) yield exp
-      //
-      // desugars to
-      //
-      //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
-      //
-
-      val fqnAp = "Applicative.ap"
-      val fqnMap = "Functor.map"
-      val yieldExp = visitExp(exp)
-
-      // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
-      val lambda = frags.foldRight(yieldExp) {
-        case (WeededAst.ForFragment.Generator(pat, _, loc1), acc) =>
-          val p = visitPattern(pat)
-          mkLambdaMatch(p, acc, loc1)
-      }
-
-      // Apply first fragment to Functor.map
-      val xs = visitExp(frags.head.exp)
-      val baseExp = mkApplyFqn(fqnMap, List(lambda, xs), loc)
-
-      // Apply rest of fragments to Applicative.ap
-      frags.tail.foldLeft(baseExp) {
-        case (acc, WeededAst.ForFragment.Generator(_, fexp, loc1)) =>
-          val e = visitExp(fexp)
-          mkApplyFqn(fqnAp, List(acc, e), loc1)
-      }
+      desugarApplicativeFor(frags, exp, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
@@ -991,6 +959,46 @@ object Desugar {
       val p = pat.map(visitPattern)
       DesugaredAst.Pattern.Record.RecordLabelPattern(label, p, loc)
   }
+
+  /**
+    * Rewrites a `ForA` loop into a series of `Applicative.ap` calls.
+    * {{{
+    *   forA (
+    *         x <- xs;
+    *         y <- ys
+    *     ) yield exp
+    *
+    * }}}
+    * desugars to
+    * {{{
+    * Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
+    * }}}
+    *
+    */
+  private def desugarApplicativeFor(frags: List[ForFragment.Generator], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val fqnAp = "Applicative.ap"
+    val fqnMap = "Functor.map"
+    val yieldExp = visitExp(exp)
+
+    // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
+    val lambda = frags.foldRight(yieldExp) {
+      case (WeededAst.ForFragment.Generator(pat, _, loc1), acc) =>
+        val p = visitPattern(pat)
+        mkLambdaMatch(p, acc, loc1)
+    }
+
+    // Apply first fragment to Functor.map
+    val xs = visitExp(frags.head.exp)
+    val baseExp = mkApplyFqn(fqnMap, List(lambda, xs), loc)
+
+    // Apply rest of fragments to Applicative.ap
+    frags.tail.foldLeft(baseExp) {
+      case (acc, WeededAst.ForFragment.Generator(_, fexp, loc1)) =>
+        val e = visitExp(fexp)
+        mkApplyFqn(fqnAp, List(acc, e), loc1)
+    }
+  }
+
 
   /**
     * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
