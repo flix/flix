@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast.WeededAst.ForFragment
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, Name, SourceLocation, SourcePosition, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
@@ -975,7 +974,7 @@ object Desugar {
     * }}}
     *
     */
-  private def desugarApplicativeFor(frags: List[ForFragment.Generator], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarApplicativeFor(frags: List[WeededAst.ForFragment.Generator], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val fqnAp = "Applicative.ap"
     val fqnMap = "Functor.map"
     val yieldExp = visitExp(exp)
