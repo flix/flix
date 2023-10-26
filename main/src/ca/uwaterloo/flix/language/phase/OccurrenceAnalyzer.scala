@@ -221,11 +221,11 @@ object OccurrenceAnalyzer {
       val o4 = o3.copy(vars = o3.vars - sym)
       (OccurrenceAst.Expression.Let(sym, e1, e2, occur, tpe, purity, loc), o4.increaseSizeByOne())
 
-    case Expr.LetRec(varSym, ann, index, defSym, exp1, exp2, tpe, purity, loc) =>
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.LetRec(varSym, ann, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expr.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)

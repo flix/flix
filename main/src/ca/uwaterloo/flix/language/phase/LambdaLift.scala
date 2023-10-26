@@ -164,7 +164,7 @@ object LambdaLift {
         val e2 = visitExp(exp2)
         LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
-      case SimplifiedAst.Expr.LetRec(varSym, ann, exp1, exp2, tpe, purity, loc) =>
+      case SimplifiedAst.Expr.LetRec(varSym, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         e1 match {
@@ -177,7 +177,7 @@ object LambdaLift {
               // function never calls itself
               LiftedAst.Expr.Let(varSym, e1, e2, tpe, purity, loc)
             } else
-              LiftedAst.Expr.LetRec(varSym, ann, index, defSym, e1, e2, tpe, purity, loc)
+              LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
           case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
         }

@@ -349,11 +349,11 @@ object Monomorph {
       val env1 = env0 + (sym -> freshSym)
       Expr.Let(freshSym, mod, visitExp(exp1, env0, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
 
-    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
       // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      Expr.LetRec(freshSym, ann, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+      Expr.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
 
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
