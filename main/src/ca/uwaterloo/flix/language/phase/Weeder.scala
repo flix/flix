@@ -880,49 +880,16 @@ object Weeder {
       }
 
     case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
-      //
-      // Rewrites a ForA loop into a series of Applicative.ap calls:
-      //
-      //     forA (
-      //         x <- xs;
-      //         y <- ys
-      //     ) yield exp
-      //
-      // desugars to
-      //
-      //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
-      //
-      val loc = mkSL(sp1, sp2).asSynthetic
-
-      if (frags.nonEmpty) {
-        val fqnAp = "Applicative.ap"
-        val fqnMap = "Functor.map"
-        val yieldExp = visitExp(exp, senv)
-
-        // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
-        val lambda = foldRight(frags)(yieldExp) {
-          case (ParsedAst.ForFragment.Generator(sp11, pat, _, sp12), acc) =>
-            mapN(visitPattern(pat)) {
-              case p => mkLambdaMatch(sp11, p, acc, sp12)
-            }
-        }
-
-        // Apply first fragment to Functor.map
-        val xs = visitExp(frags.head.exp, senv)
-        val baseExp = mapN(lambda, xs) {
-          case (l, x) => mkApplyFqn(fqnMap, List(l, x), loc)
-        }
-
-        // Apply rest of fragments to Applicative.ap
-        frags.tail.foldLeft(baseExp) {
-          case (acc, ParsedAst.ForFragment.Generator(sp11, _, fexp, sp12)) =>
-            mapN(acc, visitExp(fexp, senv)) {
-              case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
-            }
-        }
-      } else {
+      val loc = mkSL(sp1, sp2)
+      if (frags.isEmpty) {
         val err = WeederError.IllegalEmptyForFragment(loc)
         WeededAst.Expr.Error(err).toSoftFailure(err)
+      } else {
+        val fs = traverse(frags)(visitForFragmentGenerator(_, senv))
+        val e = visitExp(exp, senv)
+        mapN(fs, e) {
+          case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc)
+        }
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
@@ -3160,6 +3127,19 @@ object Weeder {
       val expVal = visitExp(exp0, senv)
       mapN(fparamsVal, tpeVal, effVal, expVal) {
         case (fparams, tpe, eff, exp) => WeededAst.JvmMethod(ident, fparams, exp, tpe, eff, mkSL(sp1, sp2))
+      }
+  }
+
+  /**
+    * Performs weeding on the given [[ParsedAst.ForFragment.Generator]] `frag0`.
+    */
+  private def visitForFragmentGenerator(frag0: ParsedAst.ForFragment.Generator, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment.Generator, WeederError] = frag0 match {
+    case ParsedAst.ForFragment.Generator(sp1, pat, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val p = visitPattern(pat)
+      val e = visitExp(exp, senv)
+      mapN(p, e) {
+        case (p1, e1) => WeededAst.ForFragment.Generator(p1, e1, loc)
       }
   }
 
