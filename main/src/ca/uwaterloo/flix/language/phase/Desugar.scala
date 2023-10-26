@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, WeededAst}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
@@ -115,7 +115,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Law]] `law0`.
     */
-  private def visitLaw(law0: WeededAst.Declaration.Law): DesugaredAst.Declaration.Law = law0 match {
+  private def visitLaw(law0: WeededAst.Declaration.Law)(implicit flix: Flix): DesugaredAst.Declaration.Law = law0 match {
     case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
       val tparams = visitKindedTypeParams(tparams0)
       val fparams = visitFormalParams(fparams0)
@@ -200,7 +200,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Declaration.Sig]] `sig0`.
     */
-  private def visitSig(sig0: WeededAst.Declaration.Sig): DesugaredAst.Declaration.Sig = sig0 match {
+  private def visitSig(sig0: WeededAst.Declaration.Sig)(implicit flix: Flix): DesugaredAst.Declaration.Sig = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
       val tparams = visitKindedTypeParams(tparams0)
       val fparams = visitFormalParams(fparams0)
@@ -438,7 +438,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
     */
-  private def visitExp(exp0: WeededAst.Expr): DesugaredAst.Expr = exp0 match {
+  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
     case WeededAst.Expr.Ambiguous(qname, loc) =>
       Expr.Ambiguous(qname, loc)
 
@@ -535,53 +535,41 @@ object Desugar {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, loc)
 
-    case WeededAst.Expr.ApplicativeFor(frags, exp, loc) => ???
-    /*
-    //
-    // Rewrites a ForA loop into a series of Applicative.ap calls:
-    //
-    //     forA (
-    //         x <- xs;
-    //         y <- ys
-    //     ) yield exp
-    //
-    // desugars to
-    //
-    //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
-    //
-    val loc = mkSL(sp1, sp2).asSynthetic
+    case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
+      //
+      // Rewrites a ForA loop into a series of Applicative.ap calls:
+      //
+      //     forA (
+      //         x <- xs;
+      //         y <- ys
+      //     ) yield exp
+      //
+      // desugars to
+      //
+      //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
+      //
 
-    if (frags.nonEmpty) {
       val fqnAp = "Applicative.ap"
       val fqnMap = "Functor.map"
-      val yieldExp = visitExp(exp, senv)
+      val yieldExp = visitExp(exp)
 
       // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
-      val lambda = foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat, _, sp12), acc) =>
-          mapN(visitPattern(pat)) {
-            case p => mkLambdaMatch(sp11, p, acc, sp12)
-          }
+      val lambda = frags.foldRight(yieldExp) {
+        case (WeededAst.ForFragment.Generator(pat, _, loc1), acc) =>
+          val p = visitPattern(pat)
+          mkLambdaMatch(p, acc, loc1)
       }
 
       // Apply first fragment to Functor.map
-      val xs = visitExp(frags.head.exp, senv)
-      val baseExp = mapN(lambda, xs) {
-        case (l, x) => mkApplyFqn(fqnMap, List(l, x), loc)
-      }
+      val xs = visitExp(frags.head.exp)
+      val baseExp = mkApplyFqn(fqnMap, List(lambda, xs), loc)
 
       // Apply rest of fragments to Applicative.ap
       frags.tail.foldLeft(baseExp) {
-        case (acc, ParsedAst.ForFragment.Generator(sp11, _, fexp, sp12)) =>
-          mapN(acc, visitExp(fexp, senv)) {
-            case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
-          }
+        case (acc, WeededAst.ForFragment.Generator(_, fexp, loc1)) =>
+          val e = visitExp(fexp)
+          mkApplyFqn(fqnAp, List(acc, e), loc1)
       }
-    } else {
-      val err = WeederError.IllegalEmptyForFragment(loc)
-      WeededAst.Expr.Error(err).toSoftFailure(err)
-    }
-     */
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
@@ -816,13 +804,13 @@ object Desugar {
   /**
     * Desugars the given list of [[WeededAst.Expr]] `exps`.
     */
-  private def visitExps(exps: List[WeededAst.Expr]): List[DesugaredAst.Expr] =
+  private def visitExps(exps: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Expr] =
     exps.map(visitExp)
 
   /**
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
     */
-  private def visitMatchRule(rule0: WeededAst.MatchRule): DesugaredAst.MatchRule = rule0 match {
+  private def visitMatchRule(rule0: WeededAst.MatchRule)(implicit flix: Flix): DesugaredAst.MatchRule = rule0 match {
     case WeededAst.MatchRule(pat, exp1, exp2) =>
       val p = visitPattern(pat)
       val e1 = exp1.map(visitExp)
@@ -863,7 +851,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.TypeMatchRule]] `rule0`.
     */
-  private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule): DesugaredAst.TypeMatchRule = rule0 match {
+  private def visitTypeMatchRule(rule0: WeededAst.TypeMatchRule)(implicit flix: Flix): DesugaredAst.TypeMatchRule = rule0 match {
     case WeededAst.TypeMatchRule(ident, tpe, exp) =>
       val t = visitType(tpe)
       val e = visitExp(exp)
@@ -873,7 +861,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.RestrictableChooseRule]] `rule0`.
     */
-  private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule): DesugaredAst.RestrictableChooseRule = rule0 match {
+  private def visitRestrictableChooseRule(rule0: WeededAst.RestrictableChooseRule)(implicit flix: Flix): DesugaredAst.RestrictableChooseRule = rule0 match {
     case WeededAst.RestrictableChooseRule(pat, exp) =>
       val p = visitRestrictableChoosePattern(pat)
       val e = visitExp(exp)
@@ -903,7 +891,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.CatchRule]] `rule0`.
     */
-  private def visitCatchRule(rule0: WeededAst.CatchRule): DesugaredAst.CatchRule = rule0 match {
+  private def visitCatchRule(rule0: WeededAst.CatchRule)(implicit flix: Flix): DesugaredAst.CatchRule = rule0 match {
     case WeededAst.CatchRule(ident, className, exp) =>
       val e = visitExp(exp)
       DesugaredAst.CatchRule(ident, className, e)
@@ -912,7 +900,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.HandlerRule]] `rule0`.
     */
-  private def visitHandlerRule(rule0: WeededAst.HandlerRule): DesugaredAst.HandlerRule = rule0 match {
+  private def visitHandlerRule(rule0: WeededAst.HandlerRule)(implicit flix: Flix): DesugaredAst.HandlerRule = rule0 match {
     case WeededAst.HandlerRule(op, fparams, exp) =>
       val fps = visitFormalParams(fparams)
       val e = visitExp(exp)
@@ -922,7 +910,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.JvmMethod]] `method0`.
     */
-  private def visitJvmMethod(method0: WeededAst.JvmMethod): DesugaredAst.JvmMethod = method0 match {
+  private def visitJvmMethod(method0: WeededAst.JvmMethod)(implicit flix: Flix): DesugaredAst.JvmMethod = method0 match {
     case WeededAst.JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       val fps = visitFormalParams(fparams)
       val e = visitExp(exp)
@@ -934,7 +922,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.SelectChannelRule]] `rule0`.
     */
-  private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule): DesugaredAst.SelectChannelRule = rule0 match {
+  private def visitSelectChannelRule(rule0: WeededAst.SelectChannelRule)(implicit flix: Flix): DesugaredAst.SelectChannelRule = rule0 match {
     case WeededAst.SelectChannelRule(ident, exp1, exp2) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -944,7 +932,7 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.ParYieldFragment]] `frag0`.
     */
-  private def visitParYieldFragment(frag0: WeededAst.ParYieldFragment): DesugaredAst.ParYieldFragment = frag0 match {
+  private def visitParYieldFragment(frag0: WeededAst.ParYieldFragment)(implicit flix: Flix): DesugaredAst.ParYieldFragment = frag0 match {
     case WeededAst.ParYieldFragment(pat, exp, loc) =>
       val p = visitPattern(pat)
       val e = visitExp(exp)
@@ -954,14 +942,14 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Constraint]] `constraint0`.
     */
-  private def visitConstraint(constraint0: WeededAst.Constraint): DesugaredAst.Constraint = {
+  private def visitConstraint(constraint0: WeededAst.Constraint)(implicit flix: Flix): DesugaredAst.Constraint = {
     def visitHead(head0: WeededAst.Predicate.Head): DesugaredAst.Predicate.Head = head0 match {
       case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
         val e = visitExps(exps)
         DesugaredAst.Predicate.Head.Atom(pred, den, e, loc)
     }
 
-    def visitBody(body0: WeededAst.Predicate.Body): DesugaredAst.Predicate.Body = body0 match {
+    def visitBody(body0: WeededAst.Predicate.Body)(implicit flix: Flix): DesugaredAst.Predicate.Body = body0 match {
       case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
         val ts = terms.map(visitPattern)
         DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
@@ -1003,4 +991,48 @@ object Desugar {
       val p = pat.map(visitPattern)
       DesugaredAst.Pattern.Record.RecordLabelPattern(label, p, loc)
   }
+
+  /**
+    * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
+    *
+    * This is also known as `ParsedAst.Expression.LambdaMatch`
+    *
+    * @param p the pattern of the parameter
+    * @param e the body of the lambda
+    * @return A lambda that matches on its parameter i.e. a [[DesugaredAst.Expr.Lambda]] that has a pattern match in its body.
+    */
+  private def mkLambdaMatch(p: DesugaredAst.Pattern, e: DesugaredAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+    val (sp1, sp2) = splitSL(loc)
+    // The name of the lambda parameter.
+    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
+
+    // Construct the body of the lambda expression.
+    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc)
+    val rule = DesugaredAst.MatchRule(p, None, e)
+
+    val fparam = DesugaredAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
+    val body = DesugaredAst.Expr.Match(varOrRef, List(rule), loc)
+    DesugaredAst.Expr.Lambda(fparam, body, loc)
+  }
+
+  /**
+    * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
+    */
+  private def mkApplyFqn(fqn: String, args: List[DesugaredAst.Expr], loc: SourceLocation): DesugaredAst.Expr = {
+    val l = loc.asSynthetic
+    val lambda = DesugaredAst.Expr.Ambiguous(Name.mkQName(fqn), l)
+    DesugaredAst.Expr.Apply(lambda, args, l)
+  }
+
+
+  /**
+    * Splits the [[SourceLocation]] `loc` into two [[SourcePosition]]s `sp1` and `sp2`.
+    */
+  private def splitSL(loc: SourceLocation): (SourcePosition, SourcePosition) = loc match {
+    case SourceLocation(input, source, locationKind, beginLine, beginCol, endLine, endCol) =>
+      val sp1 = SourcePosition(source, beginLine, beginCol, input)
+      val sp2 = SourcePosition(source, endLine, endCol, input)
+      (sp1, sp2)
+  }
+
 }
