@@ -121,7 +121,7 @@ object WeededAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class ApplicativeFor(frags: List[ForFragment.Generator], exp: WeededAst.Expr, loc: SourceLocation) extends WeededAst.Expr
+    case class ApplicativeFor(frags: List[ForFragment.Generator], exp: Expr, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -437,9 +437,9 @@ object WeededAst {
 
   object ForFragment {
 
-    case class Generator(pat: WeededAst.Pattern, exp: WeededAst.Expr, loc: SourceLocation) extends ForFragment
+    case class Generator(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
 
-    case class Guard(exp: WeededAst.Expr, loc: SourceLocation) extends ForFragment
+    case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
 
   }
 
