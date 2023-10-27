@@ -140,8 +140,11 @@ body.light {
     --show-hide-color: var(--light-show-hide-color);
     --show-hide-hover-color: var(--light-show-hide-hover-color);
     --module-color: var(--light-module-color);
+    --signature-color: var(--light-signature-color);
+    --class-def-color: var(--light-class-def-color);
     --classes-color: var(--light-classes-color);
     --enum-color: var(--light-enum-color);
+    --op-color: var(--light-op-color);
     --eff-color: var(--light-eff-color);
     --type-alias-color: var(--light-type-alias-color);
     --def-color: var(--light-def-color);
@@ -168,8 +171,11 @@ body.dark {
     --show-hide-color: var(--dark-show-hide-color);
     --show-hide-hover-color: var(--dark-show-hide-hover-color);
     --module-color: var(--dark-module-color);
+    --signature-color: var(--dark-signature-color);
+    --class-def-color: var(--dark-class-def-color);
     --classes-color: var(--dark-classes-color);
     --enum-color: var(--dark-enum-color);
+    --op-color: var(--dark-op-color);
     --eff-color: var(--dark-eff-color);
     --type-alias-color: var(--dark-type-alias-color);
     --def-color: var(--dark-def-color);
