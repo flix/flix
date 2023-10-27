@@ -503,10 +503,10 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.Let(ident, mod, e1, e2, loc)
 
-    case WeededAst.Expr.LetRec(ident, mod, exp1, exp2, loc) =>
+    case WeededAst.Expr.LetRec(ident, ann, mod, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.LetRec(ident, mod, e1, e2, loc)
+      Expr.LetRec(ident, ann, mod, e1, e2, loc)
 
     case WeededAst.Expr.Region(tpe, loc) =>
       Expr.Region(tpe, loc)

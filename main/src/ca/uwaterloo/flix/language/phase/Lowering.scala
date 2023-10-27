@@ -392,7 +392,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Let(sym, mod, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)

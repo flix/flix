@@ -1098,9 +1098,20 @@ object Weeder {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
-    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetRecDef(sp1, ann, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
+      val annVal = flatMapN(visitAnnotations(ann)) {
+        case Ast.Annotations(annotations) if annotations.nonEmpty =>
+          val onlyTailrec = annotations.forall(_.isInstanceOf[Ast.Annotation.TailRecursive])
+          if (onlyTailrec) {
+            Ast.Annotations(annotations).toSuccess
+          }
+          else {
+            WeederError.IllegalInnerFunctionAnnotation(loc).toFailure
+          }
+        case anns => anns.toSuccess
+      }
 
       val tpeOpt = tpeAndEff.map(_._1)
       val effOpt = tpeAndEff.flatMap(_._2)
@@ -1111,8 +1122,8 @@ object Weeder {
       val tpeVal = traverseOpt(tpeOpt)(visitType)
       val effVal = traverseOpt(effOpt)(visitType)
 
-      mapN(fpVal, e1Val, e2Val, tpeVal, effVal) {
-        case (fp, e1, e2, tpe, eff) =>
+      mapN(fpVal, annVal, e1Val, e2Val, tpeVal, effVal) {
+        case (fp, a1, e1, e2, tpe, eff) =>
           // skip ascription if it's empty
           val ascription = if (tpe.isDefined || eff.isDefined) {
             WeededAst.Expr.Ascribe(e1, tpe, eff, e1.loc)
@@ -1120,7 +1131,7 @@ object Weeder {
             e1
           }
           val lambda = mkCurried(fp, ascription, e1.loc)
-          WeededAst.Expr.LetRec(ident, mod, lambda, e2, loc)
+          WeededAst.Expr.LetRec(ident, a1, mod, lambda, e2, loc)
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
@@ -2522,6 +2533,7 @@ object Weeder {
     case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
     case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
     case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
+    case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
     case name => WeederError.UndefinedAnnotation(name, ident.loc).toFailure
   }
 
@@ -3294,7 +3306,7 @@ object Weeder {
     * Attempts to compile the given regular expression into a Pattern.
     */
   private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.InvalidRegularExpression] = try {
-    var patt = JPattern.compile(regex)
+    val patt = JPattern.compile(regex)
     patt.toSuccess
   } catch {
     case ex: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, ex.getMessage, loc).toFailure
@@ -3332,7 +3344,7 @@ object Weeder {
     case ParsedAst.Expression.MonadicFor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ForEachYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewObject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Static(sp1, _) => sp1
