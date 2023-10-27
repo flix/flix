@@ -1361,7 +1361,7 @@ object BackendObjType {
         PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
         POP() ~ // [..., s']
         // Return the suspension up the stack
-        ARETURN()
+        xReturn(Suspension.toTpe)
       }
     }
 
@@ -1676,7 +1676,7 @@ object BackendObjType {
           v.load() ~
           mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod) ~
           mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod) ~
-          ARETURN()
+          xReturn(Thunk.toTpe)
       }))
   }
 
@@ -1764,7 +1764,7 @@ object BackendObjType {
               res.load() ~
               mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod) ~
               INVOKESTATIC(InstallHandlerMethod) ~
-              ARETURN()
+              xReturn(Result.toTpe)
             }
           }}
       }}}}
