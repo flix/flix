@@ -27,7 +27,7 @@ object Desugar {
     * Performs desugaring on `program`.
     */
   def run(program: WeededAst.Root)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
-    val units = ParOps.mapValues(program.units)(visitUnit)
+    val units = ParOps.parMapValues(program.units)(visitUnit)
     DesugaredAst.Root(units, program.entryPoint, program.names)
   }
 
