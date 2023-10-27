@@ -248,6 +248,9 @@ object Ast {
       override def toString: String = "@Test"
     }
 
+    case class TailRecursive(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Tailrec"
+    }
   }
 
   /**

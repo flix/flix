@@ -88,10 +88,10 @@ object JvmBackend {
       val unitClass = Map(genClass(BackendObjType.Unit))
 
       // Generate error classes.
-      val flixErrorClass = GenFlixErrorClass.gen()
-      val rslClass = GenReifiedSourceLocationClass.gen()
-      val holeErrorClass = GenHoleErrorClass.gen()
-      val matchErrorClass = GenMatchErrorClass.gen()
+      val flixErrorClass = Map(genClass(BackendObjType.FlixError))
+      val rslClass = Map(genClass(BackendObjType.ReifiedSourceLocation))
+      val holeErrorClass = Map(genClass(BackendObjType.HoleError))
+      val matchErrorClass = Map(genClass(BackendObjType.MatchError))
 
       val globalClass = Map(genClass(BackendObjType.Global))
 

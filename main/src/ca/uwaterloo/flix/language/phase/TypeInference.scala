@@ -704,7 +704,7 @@ object TypeInference {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
+      case KindedAst.Expr.LetRec(sym, _, _, exp1, exp2, loc) =>
         // Note 1: We do not have to ensure that `exp1` is a lambda because it is syntactically ensured.
         // Note 2: We purify the letrec bound function to simplify its inferred effect.
         for {
