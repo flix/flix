@@ -19,8 +19,8 @@ mod Test.Kind.Def {
         }
 
         mod TypeConstraint {
-            class CStar[a: Type]
-            class CStarToStar[a: Type -> Type]
+            trait CStar[a: Type]
+            trait CStarToStar[a: Type -> Type]
 
             pub def star(x: a): Int32 with CStar[a] = ???
 
@@ -78,9 +78,9 @@ mod Test.Kind.Def {
         }
 
         mod TypeConstraint {
-            class CStar[a: Type]
-            class CStarToStar[a: Type -> Type]
-            class CBoolToStar[a: Eff -> Type]
+            trait CStar[a: Type]
+            trait CStarToStar[a: Type -> Type]
+            trait CBoolToStar[a: Eff -> Type]
 
             pub def star[a: Type](x: a): Int32 with CStar[a] = ???
 
@@ -135,7 +135,7 @@ mod Test.Kind.Def {
 
             pub enum PredSym
             pub enum Datalog[_a]
-            pub class Foldable[a: Type -> Type]
+            pub trait Foldable[a: Type -> Type]
         }
     }
 

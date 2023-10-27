@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types that can be passed to `Channel.send`.
+/// A trait for types that can be passed to `Channel.send`.
 ///
-pub class Sendable[a]
+pub trait Sendable[a]
 
 instance Sendable[Unit]
 

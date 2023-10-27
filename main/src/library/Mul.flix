@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for multiplication.
+/// A trait for multiplication.
 ///
-pub class Mul[a] {
+pub trait Mul[a] {
     ///
     /// Returns `x` multiplied by `y`.
     ///

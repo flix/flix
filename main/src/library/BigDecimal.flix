@@ -17,7 +17,7 @@
 
 /// Represents arbitrary-precision signed decimal numbers.
 /// The representation consists of both a "value" and a "scale". Standard
-/// equality (`==` and the `Eq` typeclass) consider both value and scale,
+/// equality (`==` and the `Eq` trait) consider both value and scale,
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
 mod BigDecimal {

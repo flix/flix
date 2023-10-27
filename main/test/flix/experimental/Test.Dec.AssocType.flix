@@ -1,6 +1,6 @@
 mod Test.Dec.AssocType {
 
-    class Coll[a] {
+    trait Coll[a] {
         type Elem[a]: Type
 
         pub def contains(x: Coll.Elem[a], c: a): Bool
@@ -35,7 +35,7 @@ mod Test.Dec.AssocType {
     @test
     def testHead01(): Bool = Coll.head("ABC") == Some('A')
 
-    class Iterable2[a] {
+    trait Iterable2[a] {
         type Eff[a]: Eff
         type Elem[a]: Type
 
@@ -56,7 +56,7 @@ mod Test.Dec.AssocType {
         pub def iterator(rc: Region[r2], x: MutList[a, r]): Iterator[a, r + r2, r2] \ r + r2 = MutList.iterator(rc, x)
     }
 
-    class C[a] {
+    trait C[a] {
         type T[a]: Type
         pub def f(x: a): C.T[a]
     }

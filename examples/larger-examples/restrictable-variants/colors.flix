@@ -8,7 +8,7 @@ mod Colors {
 
     // To run this function press the floating "Run" button right below these
     // three lines. This can be done for any function that is `pub` and does not
-    // take arguments. (It doesnt not appear until the code is sucessfully compiled)
+    // take arguments. (It doesnt not appear until the code is successfully compiled)
     pub def main(): Unit \ IO = {
         // create the color red
         let red = Color.Red;
@@ -93,7 +93,7 @@ mod Colors {
 
 }
 
-// Type Class Instances
+// Trait Instances
 
 instance ToString[Colors.Color[i]] {
     pub def toString(x: Colors.Color[i]): String = choose x {

@@ -1,6 +1,6 @@
 mod Test.Assoc.Type {
 
-    class Collection[t] {
+    trait Collection[t] {
         type Elm[t]: Type
 
         pub def isEmpty(x: t): Bool
@@ -16,7 +16,7 @@ mod Test.Assoc.Type {
         pub def head(x: String): Option[Char] = if (String.isEmpty(x)) None else Some(String.charAt(0, x))
     }
 
-    class Collection2[t] {
+    trait Collection2[t] {
         type Elm: Type
 
         pub def isEmpty(x: t): Bool
@@ -32,7 +32,7 @@ mod Test.Assoc.Type {
         pub def head(x: String): Option[Char] = if (String.isEmpty(x)) None else Some(String.charAt(0, x))
     }
 
-    class Collection3[t] {
+    trait Collection3[t] {
         type Elm
 
         pub def isEmpty(x: t): Bool

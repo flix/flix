@@ -1,13 +1,11 @@
-// TODO this module is replicated by `Test.Integ.Trait.Schema.flix` for the `trait` keyword.
-// Remove this module at the end of the transition period from `class` to `trait`.
-mod Test.Integ.Class.Schema {
-    class C[a] {
+mod Test.Integ.Trait.Schema {
+    trait C[a] {
         pub def f(_x: a): #{ R(Int32, Bool) } = #{
             R(1, true).
         }
     }
 
-    class D[a] {
+    trait D[a] {
         pub def f(x: a): #{ R(Int32, Bool) }
     }
 
@@ -21,13 +19,13 @@ mod Test.Integ.Class.Schema {
 
     @test
     def testSchemaInSig01(): Bool = {
-        let _ = Test.Integ.Class.Schema.C.f(5);
+        let _ = Test.Integ.Trait.Schema.C.f(5);
         true
     }
 
     @test
     def testSchemaInSig02(): Bool = {
-        let _ = Test.Integ.Class.Schema.D.f(5);
+        let _ = Test.Integ.Trait.Schema.D.f(5);
         true
     }
 }
