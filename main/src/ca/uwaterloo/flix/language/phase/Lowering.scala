@@ -147,17 +147,17 @@ object Lowering {
   def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
     implicit val r: TypedAst.Root = root
 
-    val defs = ParOps.mapValues(root.defs)(visitDef)
-    val sigs = ParOps.mapValues(root.sigs)(visitSig)
-    val instances = ParOps.mapValues(root.instances)(insts => insts.map(visitInstance))
-    val enums = ParOps.mapValues(root.enums)(visitEnum)
-    val restrictableEnums = ParOps.mapValues(root.restrictableEnums)(visitRestrictableEnum)
-    val effects = ParOps.mapValues(root.effects)(visitEffect)
-    val aliases = ParOps.mapValues(root.typeAliases)(visitTypeAlias)
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val sigs = ParOps.parMapValues(root.sigs)(visitSig)
+    val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
 
     // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.mapValues(root.classes)(c => visitClass(c, sigs))
+    val classes = ParOps.parMapValues(root.classes)(c => visitClass(c, sigs))
 
     val newEnums = enums ++ restrictableEnums.map {
       case (_, v) => v.sym -> v
