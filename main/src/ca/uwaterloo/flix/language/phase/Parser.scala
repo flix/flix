@@ -51,10 +51,10 @@ object Parser {
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
 
       // Parse each stale source in parallel.
-      val results = ParOps.parMap(stale.keys)(parseRoot)
+      val result = ParOps.parMapSeq(stale.keys)(parseRoot)
 
-      // Sequence and combine the ASTs into one abstract syntax tree.
-      Validation.sequence(results) map {
+      // Combine the ASTs into one abstract syntax tree.
+      result.map {
         case as =>
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)

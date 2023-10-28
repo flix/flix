@@ -98,8 +98,8 @@ object TypeInference {
     flix.subphase("Classes") {
       // Don't bother to infer the fresh classes
       val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      val results = ParOps.parMap(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
-      Validation.sequence(results).map {
+      val result = ParOps.parMapSeq(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
+      result.map {
         case substs =>
           val (sigSubsts, defSubsts) = substs.unzip
           (sigSubsts.fold(Map.empty)(_ ++ _), defSubsts.fold(Map.empty)(_ ++ _))
@@ -136,9 +136,9 @@ object TypeInference {
         inst <- insts
       } yield inst
 
-      val results = ParOps.parMap(instances)(visitInstance(_, root, classEnv, eqEnv))
+      val result = ParOps.parMapSeq(instances)(visitInstance(_, root, classEnv, eqEnv))
 
-      Validation.sequence(results).map {
+      result.map {
         case substs => substs.fold(Map.empty)(_ ++ _)
       }
     }
