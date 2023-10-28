@@ -104,6 +104,7 @@ object JvmBackend {
       val valueClass = Map(genClass(BackendObjType.Value))
       val frameInterface = Map(genClass(BackendObjType.Frame))
       val thunkAbstractClass = Map(genClass(BackendObjType.Thunk))
+      val suspensionClass = Map(genClass(BackendObjType.Suspension))
       val framesInterface = Map(genClass(BackendObjType.Frames))
       val framesConsClass = Map(genClass(BackendObjType.FramesCons))
       val framesNilClass = Map(genClass(BackendObjType.FramesNil))
@@ -111,6 +112,7 @@ object JvmBackend {
       val resumptionConsClass = Map(genClass(BackendObjType.ResumptionCons))
       val resumptionNilClass = Map(genClass(BackendObjType.ResumptionNil))
       val handlerInterface = Map(genClass(BackendObjType.Handler))
+      val effectCallClass = Map(genClass(BackendObjType.EffectCall))
 
       // Collect all the classes and interfaces together.
       List(
@@ -141,13 +143,15 @@ object JvmBackend {
         valueClass,
         frameInterface,
         thunkAbstractClass,
+        suspensionClass,
         framesInterface,
         framesConsClass,
         framesNilClass,
         resumptionInterface,
         resumptionConsClass,
         resumptionNilClass,
-        handlerInterface
+        handlerInterface,
+        effectCallClass
       ).reduce(_ ++ _)
     }
 

@@ -188,6 +188,11 @@ object BytecodeInstructions {
     f
   }
 
+  def DUP2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.DUP2)
+    f
+  }
+
   def DUP_X1(): InstructionSet = f => {
     f.visitInstruction(Opcodes.DUP_X1)
     f
@@ -438,7 +443,7 @@ object BytecodeInstructions {
     f
   }
 
-  def ifTrue(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
+  def ifCondition(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
     var f = f0
     val jumpLabel = new Label()
     f.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
