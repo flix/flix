@@ -15,10 +15,10 @@
  */
 
 ///
-/// A type class for data structures that can be traversed in left-to-right
+/// A trait for data structures that can be traversed in left-to-right
 /// order with an applicative functor.
 ///
-pub class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
+pub trait Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the

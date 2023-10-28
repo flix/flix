@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for subtraction.
+/// A trait for subtraction.
 ///
-pub class Sub[a] {
+pub trait Sub[a] {
     ///
     /// Returns the difference of `x` and `y`.
     ///

@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for partially ordered types that have an upper bound.
+/// A trait for partially ordered types that have an upper bound.
 ///
-pub class UpperBound[a] {
+pub trait UpperBound[a] {
     ///
     /// Returns the largest value of `a`.
     ///

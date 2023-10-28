@@ -1,4 +1,4 @@
-/// We derive the type classes Eq, Order, and ToString for the enum Month
+/// We derive the traits Eq, Order, and ToString for the enum Month
 enum Month with Eq, Order, ToString {
     case January
     case February
@@ -17,7 +17,7 @@ enum Month with Eq, Order, ToString {
 type alias Year = Int32
 type alias Day = Int32
 
-/// The Date type derives the type classes Eq and Order
+/// The Date type derives the traits Eq and Order
 enum Date(Year, Month, Day) with Eq, Order
 
 /// We implement our own instance of ToString for Date
@@ -28,10 +28,10 @@ instance ToString[Date] {
         "${d} ${m}, ${y}"
 }
 
-/// Thanks to the Eq and Order type classes, we can easily compare dates.
+/// Thanks to the Eq and Order traits, we can easily compare dates.
 def earlierDate(d1: Date, d2: Date): Date = Order.min(d1, d2)
 
-/// Thanks to the ToString type class, we can easily convert dates to strings.
+/// Thanks to the ToString trait, we can easily convert dates to strings.
 def printDate(d: Date): Unit \ IO =
     let message = "The date is ${d}!";
     println(message)

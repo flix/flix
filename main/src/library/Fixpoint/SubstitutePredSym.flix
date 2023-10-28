@@ -19,9 +19,9 @@ mod Fixpoint {
     use Fixpoint.Shared.PredSym
 
     ///
-    /// A type class for types with predicate symbols that can be substituted.
+    /// A trait for types with predicate symbols that can be substituted.
     ///
-    pub class SubstitutePredSym[t] {
+    pub trait SubstitutePredSym[t] {
         pub def substitute(x: t, s: Map[PredSym, PredSym]): t
     }
 
