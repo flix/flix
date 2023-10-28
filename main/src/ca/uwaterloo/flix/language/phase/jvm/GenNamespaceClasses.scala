@@ -106,7 +106,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    BackendObjType.Result.unwindThunkToType(BackendType.toErasedBackendType(defn.tpe))(new BytecodeInstructions.F(method))
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.tpe))(new BytecodeInstructions.F(method))
     // no erasure here because the ns function works on erased values
 
     // Return
