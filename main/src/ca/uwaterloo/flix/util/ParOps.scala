@@ -31,8 +31,8 @@ object ParOps {
     */
   @inline
   def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    val in: Vector[A] = xs.toVector
-    val out: ArrayBuffer[B] = ArrayBuffer.fill(in.size)(null.asInstanceOf[B])
+    val in = xs.toVector
+    val out = ArrayBuffer.fill(in.size)(null.asInstanceOf[B])
 
     val executorService: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
     val futures = ArrayBuffer.empty[Future[?]]
