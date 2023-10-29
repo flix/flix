@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.util
 
 import java.util
-import java.util.concurrent.{Callable, Executors}
-
+import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
+
+import scala.collection.mutable.ArrayBuffer
 
 object ParOps {
 
@@ -30,17 +31,23 @@ object ParOps {
     */
   @inline
   def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    // Build the parallel array.
-    val parArray = xs.toParArray
+    val in: Vector[A] = xs.toVector
+    val out: ArrayBuffer[B] = ArrayBuffer.fill(in.size)(null.asInstanceOf[B])
 
-    // Configure the task support.
-    parArray.tasksupport = flix.forkJoinTaskSupport
+    val executorService: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
+    val futures = ArrayBuffer.empty[Future[?]]
+    for ((elm, idx) <- xs.zipWithIndex) {
+      futures += executorService.submit(new Runnable {
+        override def run(): Unit = {
+          out(idx) = f(elm)
+        }
+      })
+    }
+    for (future <- futures) {
+      future.get()
+    }
 
-    // Apply the function `f` in parallel.
-    val result = parArray.map(f)
-
-    // Return the result as an iterable.
-    result.seq
+    out
   }
 
   /**
