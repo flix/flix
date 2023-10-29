@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
+import java.util.concurrent.{ExecutorService, Executors}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -335,6 +336,11 @@ class Flix {
   var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
 
   /**
+    * The thread pool executor service for `this` Flix instance.
+    */
+  var threadPool: ExecutorService = _
+
+  /**
     * The symbol generator associated with this Flix instance.
     */
   val genSym = new GenSym()
@@ -519,6 +525,9 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
+    // Initialize the thread pool.
+    initThreadPool()
+
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
@@ -563,6 +572,9 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
+    // Shutdown thread pool.
+    shutdownThreadPool()
+
     // Reset the progress bar.
     progressBar.complete()
 
@@ -589,6 +601,9 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
+    // Initialize thread pool.
+    initThreadPool()
+
     cachedLoweringAst = Lowering.run(typedAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
@@ -608,6 +623,9 @@ class Flix {
 
     // Shutdown fork join pool.
     shutdownForkJoin()
+
+    // Shutdown thread pool.
+    shutdownThreadPool()
 
     // Reset the progress bar.
     progressBar.complete()
@@ -718,10 +736,24 @@ class Flix {
   }
 
   /**
+    * Initializes the thread pool.
+    */
+  private def initThreadPool(): Unit = {
+    threadPool = Executors.newFixedThreadPool(options.threads)
+  }
+
+  /**
     * Shuts down the fork join pools.
     */
   private def shutdownForkJoin(): Unit = {
     forkJoinPool.shutdown()
+  }
+
+  /**
+    * Shuts down the thread pools.
+    */
+  private def shutdownThreadPool(): Unit = {
+    threadPool.shutdown()
   }
 
 }

@@ -34,10 +34,10 @@ object ParOps {
     val in = xs.toVector
     val out = ArrayBuffer.fill(in.size)(null.asInstanceOf[B])
 
-    val executorService: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
+    val threadPool = flix.threadPool
     val futures = ArrayBuffer.empty[Future[?]]
     for ((elm, idx) <- xs.zipWithIndex) {
-      futures += executorService.submit(new Runnable {
+      futures += threadPool.submit(new Runnable {
         override def run(): Unit = {
           out(idx) = f(elm)
         }
