@@ -20,6 +20,7 @@ import org.scalatest.Suites
 
 class UtilSuite extends Suites(
   new TestGraph,
+  new TestParOps,
   new TestResult,
   new TestValidation
 )
