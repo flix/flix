@@ -34,8 +34,11 @@ object ParOps {
     val in = xs.toVector
     val out = ArrayBuffer.fill(in.size)(null.asInstanceOf[B])
 
+    val futuresBuilder = ArrayBuffer.newBuilder[Future[?]]
+    futuresBuilder.sizeHint(in.size)
+    val futures = futuresBuilder.result()
+
     val threadPool = flix.threadPool
-    val futures = ArrayBuffer.empty[Future[?]]
     for ((elm, idx) <- xs.zipWithIndex) {
       futures += threadPool.submit(new Runnable {
         override def run(): Unit = {
@@ -43,9 +46,9 @@ object ParOps {
         }
       })
     }
-    for (future <- futures) {
-      future.get()
-    }
+
+    // Await all
+    futures.foreach(_.get())
 
     out
   }
