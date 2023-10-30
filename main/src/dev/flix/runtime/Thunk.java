@@ -18,6 +18,10 @@ public abstract class Thunk implements Result, Runnable {
         while (result instanceof Thunk) {
             result = ((Thunk) result).invoke();
         }
+
+        if (result instanceof Suspension) {
+            throw new RuntimeException("function was assumed control-pure for java interop but suspension was returned");
+        }
     }
 }
 

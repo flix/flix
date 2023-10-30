@@ -1543,15 +1543,12 @@ object BackendObjType {
       val cm = mkInterface(this.jvmName)
 
       cm.mkInterfaceMethod(PushMethod)
-      cm.mkInterfaceMethod(ReverseMethod)
       cm.mkInterfaceMethod(ReverseOntoMethod)
 
       cm.closeClassMaker()
     }
 
     def PushMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "push", mkDescriptor(Frame.toTpe)(Frames.toTpe))
-
-    def ReverseMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverse", mkDescriptor()(Frames.toTpe))
 
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
 
