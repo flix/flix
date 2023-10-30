@@ -62,14 +62,12 @@ object OccurrenceAnalyzer {
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
 
-    // Visit every definition in the program in parallel and transform to type 'OccurrenceAst.Def'
     val defs = visitDefs(root.defs)
-
-    // Visit every enum in the program and transform to type 'OccurrenceAst.Enum'
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
+    val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
     // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, root.entryPoint, root.sources)
+    val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.sources)
 
     result.toSuccess
   }
@@ -90,6 +88,18 @@ object OccurrenceAnalyzer {
     */
   private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
     OccurrenceAst.Case(case0.sym, case0.tpe, case0.loc)
+  }
+
+  private def visitEffect(effect: LiftedAst.Effect): OccurrenceAst.Effect = effect match {
+    case LiftedAst.Effect(ann, mod, sym, ops0, loc) =>
+      val ops = ops0.map(visitEffectOp)
+      OccurrenceAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitEffectOp(op: LiftedAst.Op): OccurrenceAst.Op = op match {
+    case LiftedAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      OccurrenceAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
   /**

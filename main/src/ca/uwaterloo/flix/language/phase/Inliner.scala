@@ -48,20 +48,13 @@ object Inliner {
     * Performs inlining on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.subphase("Inliner") {
-    // Visit every definition in the program.
-    val defs = root.defs.map {
-      case (sym, defn) => sym -> visitDef(defn)(flix, root)
-    }
-
-    // Visit every enum in the program.
-    val enums = root.enums.map {
-      case (sym, enum) => sym -> visitEnum(enum)
-    }
+    val defs = root.defs.map { case (sym, defn) => sym -> visitDef(defn)(flix, root) }
+    val enums = root.enums.map { case (sym, enum) => sym -> visitEnum(enum) }
+    val effects = root.effects.map { case (sym, effect) => sym -> visitEffect(effect) }
 
     // TODO RESTR-VARS add restrictable enums
 
-    // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
+    val result = LiftedAst.Root(defs, enums, effects, root.entryPoint, root.sources)
 
     result.toSuccess
   }
@@ -90,6 +83,18 @@ object Inliner {
         sym -> LiftedAst.Case(sym, caze.tpe, caze.loc)
     }
     LiftedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
+  }
+
+  private def visitEffect(effect: OccurrenceAst.Effect): LiftedAst.Effect = effect match {
+    case OccurrenceAst.Effect(ann, mod, sym, ops0, loc) =>
+      val ops = ops0.map(visitEffectOp)
+      LiftedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitEffectOp(op: OccurrenceAst.Op): LiftedAst.Op = op match {
+    case OccurrenceAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
   /**
