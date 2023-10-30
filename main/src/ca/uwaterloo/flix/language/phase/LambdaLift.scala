@@ -48,9 +48,14 @@ object LambdaLift {
       case (sym, enum0) => sym -> visitEnum(enum0)
     }
 
+    val newEffects = root.effects.map {
+      case (sym, effect0) => sym -> visitEffect(effect0)
+    }
+
     LiftedAst.Root(
       newDefs ++ m,
       newEnums,
+      newEffects,
       root.entryPoint,
       root.sources
     )
@@ -75,6 +80,18 @@ object LambdaLift {
         case (tag, SimplifiedAst.Case(caseSym, caseTpe, loc)) => tag -> LiftedAst.Case(caseSym, caseTpe, loc)
       }
       LiftedAst.Enum(ann, mod, sym, cs, tpe, loc)
+  }
+
+  private def visitEffect(effect: SimplifiedAst.Effect): LiftedAst.Effect = effect match {
+    case SimplifiedAst.Effect(ann, mod, sym, ops0, loc) =>
+      val ops = ops0.map(visitEffectOp)
+      LiftedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitEffectOp(op: SimplifiedAst.Op): LiftedAst.Op = op match {
+    case SimplifiedAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
   /**

@@ -32,8 +32,11 @@ object Reducer {
     val newEnums = root.enums.map {
       case (sym, d) => sym -> visitEnum(d)
     }
+    val newEffects = root.effects.map {
+      case (sym, effect) => sym -> visitEffect(effect)
+    }
 
-    ReducedAst.Root(newDefs, newEnums, ctx.anonClasses.toList, root.entryPoint, root.sources)
+    ReducedAst.Root(newDefs, newEnums, newEffects, ctx.anonClasses.toList, root.entryPoint, root.sources)
   }
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: Context): ReducedAst.Def = d match {
@@ -52,6 +55,18 @@ object Reducer {
       }
       val t = tpe
       ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
+  }
+
+  private def visitEffect(effect: LiftedAst.Effect): ReducedAst.Effect = effect match {
+    case LiftedAst.Effect(ann, mod, sym, ops0, loc) =>
+      val ops = ops0.map(visitEffectOp)
+      ReducedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitEffectOp(op: LiftedAst.Op): ReducedAst.Op = op match {
+    case LiftedAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      ReducedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
   private def visitExpr(exp0: LiftedAst.Expr)(implicit ctx: Context): ReducedAst.Expr = exp0 match {

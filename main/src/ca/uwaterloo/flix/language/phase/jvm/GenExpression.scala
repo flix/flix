@@ -1459,8 +1459,8 @@ object GenExpression {
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      // TODO (temp unhandled code)
+      compileExpr(exp)
 
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
@@ -1469,8 +1469,9 @@ object GenExpression {
 
 
     case Expr.Resume(exp, tpe, loc) =>
-      // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      // TODO (temp throw null)
+      mv.visitInsn(Opcodes.ACONST_NULL)
+      mv.visitInsn(Opcodes.ATHROW)
 
 
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
