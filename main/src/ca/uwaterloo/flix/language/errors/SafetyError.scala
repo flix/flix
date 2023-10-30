@@ -605,7 +605,7 @@ object SafetyError {
     * @param sym the symbol of the function annotated with `@Tailrec`.
     * @param loc the location of the non-tail-recursive call.
     */
-  case class NonTailRecursiveFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends SafetyError {
+  case class NonTailRecursiveFunction(sym: Symbol, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"Function '$sym' annotated with @Tailrec can only have recursive calls in tail position."
 
     override def message(formatter: Formatter): String = {
@@ -646,7 +646,7 @@ object SafetyError {
     * @param sym the symbol of the function annotated with `@Tailrec`.
     * @param loc the location of the function body.
     */
-  case class TailRecursiveFunctionWithoutRecursiveCall(sym: Symbol.DefnSym, loc: SourceLocation) extends SafetyError {
+  case class TailRecursiveFunctionWithoutRecursiveCall(sym: Symbol, loc: SourceLocation) extends SafetyError {
     override def summary: String = s"Function '$sym' annotated with @Tailrec must contain a recursive call."
 
     override def message(formatter: Formatter): String = {

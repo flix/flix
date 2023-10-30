@@ -108,7 +108,7 @@ object Safety {
     */
   private sealed trait CallPosition
 
-  private case class TailPosition(sym: Symbol.DefnSym) extends CallPosition
+  private case class TailPosition(sym: Symbol) extends CallPosition
 
   private case object NonTailPosition extends CallPosition
 
@@ -402,16 +402,17 @@ object Safety {
     }
 
     val visitorErrors = visit(e0, expectedCallPosition)
+    val recursiveCallError = checkRecursiveCall(expectedCallPosition, containsRecursiveCall, e0.loc, root)
+    visitorErrors ++ recursiveCallError
 
-    val recursiveCallError = expectedCallPosition match {
+  }
+
+  private def checkRecursiveCall(expectedCallPosition: CallPosition, containsRecursiveCall: Boolean, loc: SourceLocation, root: Root): List[SafetyError] = {
+    expectedCallPosition match {
       case TailPosition(sym) if !containsRecursiveCall =>
-        val loc = root.defs(sym).spec.loc
         SafetyError.TailRecursiveFunctionWithoutRecursiveCall(sym, loc) :: Nil
       case _ => Nil
     }
-
-    visitorErrors ++ recursiveCallError
-
   }
 
   /**
