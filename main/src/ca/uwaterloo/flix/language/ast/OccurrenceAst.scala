@@ -70,6 +70,14 @@ object OccurrenceAst {
 
     case class TryCatch(exp: OccurrenceAst.Expression, rules: List[OccurrenceAst.CatchRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
+    case class TryWith(exp: OccurrenceAst.Expression, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+
+    case class Do(op: Ast.OpSymUse, exps: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+
+    case class Resume(exp: OccurrenceAst.Expression, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Pure
+    }
+
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
 
   }
@@ -79,6 +87,8 @@ object OccurrenceAst {
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: OccurrenceAst.Expression)
+
+  case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: OccurrenceAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: MonoType, loc: SourceLocation)
 
