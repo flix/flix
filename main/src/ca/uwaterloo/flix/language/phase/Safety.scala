@@ -114,9 +114,17 @@ object Safety {
 
   private def checkTailCallAnnotation(expectedPosition: CallPosition, actualPosition: CallPosition, actualSym: Option[Symbol], loc: SourceLocation): List[CompilationMessage] =
     (expectedPosition, actualPosition, actualSym) match {
-      case (TailPosition(sym), NonTailPosition, Some(asym)) if sym == asym => SafetyError.NonTailRecursiveFunction(sym, loc) :: Nil
+      case (TailPosition(sym), NonTailPosition, Some(asym)) if sym == asym =>
+        SafetyError.NonTailRecursiveFunction(sym, loc) :: Nil
       case _ => Nil
     }
+
+  @tailrec
+  def peelLambdas(exp1: Expr): Expr = exp1 match {
+    case Expr.Lambda(fparam, exp, tpe, loc) =>
+      peelLambdas(exp)
+    case _ => exp1
+  }
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
@@ -183,7 +191,7 @@ object Safety {
 
       case Expr.LetRec(sym, ann, _, exp1, exp2, _, _, _) =>
         val e1 = if (ann.isTailRecursive) {
-          visitExp(exp1, renv, TailPosition(sym), root)
+          visitExp(peelLambdas(exp1), renv, TailPosition(sym), root)
         } else {
           visit(exp1, NonTailPosition)
         }
