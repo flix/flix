@@ -1459,19 +1459,17 @@ object GenExpression {
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      // TODO (temp unit value)
-      mv.visitInsn(Opcodes.ACONST_NULL)
-      mv.visitInsn(Opcodes.ATHROW)
+      // TODO (temp unhandled code)
+      compileExpr(exp)
 
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
       // TODO (temp unit value)
-      mv.visitInsn(Opcodes.ACONST_NULL)
-      mv.visitInsn(Opcodes.ATHROW)
+      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
 
     case Expr.Resume(exp, tpe, loc) =>
-      // TODO (temp unit value)
+      // TODO (temp throw null)
       mv.visitInsn(Opcodes.ACONST_NULL)
       mv.visitInsn(Opcodes.ATHROW)
 
