@@ -151,7 +151,7 @@ object TypeReconstruction {
   private def visitDefs(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
     flix.subphase("Defs") {
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-      ParOps.mapValues(staleDefs) {
+      ParOps.parMapValues(staleDefs) {
         case defn => visitDef(defn, root, substs(defn.sym))
       } ++ freshDefs
     }
@@ -163,7 +163,7 @@ object TypeReconstruction {
   private def visitClasses(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.ClassSym, TypedAst.Class] = {
     flix.subphase("Classes") {
       val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      ParOps.mapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
+      ParOps.parMapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
     }
   }
 
@@ -172,7 +172,7 @@ object TypeReconstruction {
     */
   private def visitInstances(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, List[TypedAst.Instance]] = {
     flix.subphase("Instances") {
-      ParOps.mapValues(root.instances) {
+      ParOps.parMapValues(root.instances) {
         case insts => insts.map(visitInstance(_, root, defSubsts))
       }
     }
@@ -449,12 +449,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
+    case KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.Region(tpe, loc) =>
       TypedAst.Expr.Region(tpe, loc)

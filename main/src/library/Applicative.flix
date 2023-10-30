@@ -15,7 +15,7 @@
  */
 
 ///
-/// A type class for functors that support application, i.e. allow to:
+/// A trait for functors that support application, i.e. allow to:
 ///
 /// - Make an applicative value out of a normal value (embed it into a default context), e.g. embed `5` into `Some(5)`.
 /// - Apply a function-type applicative to a matching argument-type applicative, resulting in an applicative of
@@ -34,7 +34,7 @@
 ///     `ap(f: m[a -> b \ e], x: m[a]): m[b] \ ef = map2(identity, f, x)`
 ///     `map2(f: a -> b -> c \ e, x: m[a], y: m[b]): m[c] \ ef = ap(Functor.map(f, x), y)`
 ///
-pub lawful class Applicative[m : Type -> Type] with Functor[m] {
+pub lawful trait Applicative[m : Type -> Type] with Functor[m] {
     ///
     /// Puts `x` into a default context.
     ///

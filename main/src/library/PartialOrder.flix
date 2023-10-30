@@ -19,7 +19,7 @@ use Bool.{==>}
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
-pub lawful class PartialOrder[a] {
+pub lawful trait PartialOrder[a] {
 
     ///
     /// Returns `true` if `x` is smaller or equal to `y`.

@@ -15,11 +15,11 @@
  */
 
 ///
-/// A type class for zipping Monads, typically container monads like `List`.
+/// A trait for zipping Monads, typically container monads like `List`.
 ///
 /// A minimal implementation must define `zipWith` and `zipWithA`.
 ///
-class MonadZip[m: Type -> Type] with Monad[m] {
+trait MonadZip[m: Type -> Type] with Monad[m] {
 
     ///
     /// Returns single monad where the element (or elements) of `ma` and `mb` are combined

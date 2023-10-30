@@ -322,7 +322,7 @@ mod List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, identity)
+        loop(l, eidentity)
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -651,7 +651,7 @@ mod List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, identity)
+        loop(l, eidentity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -691,7 +691,7 @@ mod List {
                 case Some(v) => Some(f(x, v))
             }))
         };
-        loop(l, identity)
+        loop(l, eidentity)
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
@@ -957,7 +957,7 @@ mod List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, identity)
+        loop(xs, ys, eidentity)
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`
@@ -1034,7 +1034,7 @@ mod List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), identity)
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), eidentity)
 
     ///
     /// Returns the result of mapping each element and combining the results.

@@ -9,6 +9,10 @@ package dev.flix.runtime;
  * That is, to implement `resume(v)` for some value `v` where the resumption happens inside some function `f`.
  * Then the frame represents the ability to call into `f` at the right place with the value `resumeArg`.
  */
-public interface Frame {
-    Result apply(Value resumeArg);
+public abstract class Frame {
+    public abstract Result apply(Value resumeArg);
+
+    public static Result staticApply(Frame f, Value resumeArg) {
+        return f.apply(resumeArg);
+    }
 }

@@ -22,13 +22,6 @@ object Loader {
     //
     val loadedClasses = BytecodeLoader.loadAll(classes)
 
-    //
-    // Print the number of loaded classes, if debugging and verbosity is enabled.
-    //
-    if (flix.options.debug) {
-      Console.println(s"Loaded: ${loadedClasses.size} classes.")
-    }
-
     flix.subphase("LoadMethods") {
       //
       // Computes a map from classes and method names to method objects.

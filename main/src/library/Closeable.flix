@@ -15,8 +15,8 @@
  */
 
 ///
-/// A type class for types that can be closed.
+/// A trait for types that can be closed.
 ///
-pub class Closeable[a] {
+pub trait Closeable[a] {
     pub def close(x: a): Unit \ IO
 }

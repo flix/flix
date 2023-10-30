@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, Is
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaLangInvoke, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import org.objectweb.asm.Opcodes
 
 /**
@@ -61,6 +61,7 @@ sealed trait BackendObjType {
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
+    case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetaFactory")
     case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
@@ -69,12 +70,19 @@ sealed trait BackendObjType {
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
     case BackendObjType.Result => JvmName(DevFlixRuntime, "Result")
+    // Effects Runtime
     case BackendObjType.Value => JvmName(DevFlixRuntime, "Value")
     case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
     case BackendObjType.Thunk => JvmName(DevFlixRuntime, "Thunk")
+    case BackendObjType.Suspension => JvmName(DevFlixRuntime, "Suspension")
     case BackendObjType.Frames => JvmName(DevFlixRuntime, "Frames")
     case BackendObjType.FramesCons => JvmName(DevFlixRuntime, "FramesCons")
     case BackendObjType.FramesNil => JvmName(DevFlixRuntime, "FramesNil")
+    case BackendObjType.Resumption => JvmName(DevFlixRuntime, "Resumption")
+    case BackendObjType.ResumptionCons => JvmName(DevFlixRuntime, "ResumptionCons")
+    case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, "ResumptionNil")
+    case BackendObjType.Handler => JvmName(DevFlixRuntime, "Handler")
+    case BackendObjType.EffectCall => JvmName(DevFlixRuntime, "EffectCall")
   }
 
   /**
@@ -91,10 +99,10 @@ sealed trait BackendObjType {
     this.jvmName,
     IsPublic,
     Nil,
-    Some(thisLoad() ~ INVOKESPECIAL(superClass) ~ RETURN())
+    Some(_ => thisLoad() ~ INVOKESPECIAL(superClass) ~ RETURN())
   )
 
-  protected def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField): StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+  protected def singletonStaticConstructor(thisConstructor: ConstructorMethod, singleton: StaticField): StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(_ =>
     NEW(this.jvmName) ~
       DUP() ~ INVOKESPECIAL(thisConstructor) ~
       PUTSTATIC(singleton) ~
@@ -120,7 +128,7 @@ object BackendObjType {
   private def mkName(prefix: String): String =
     mkName(prefix, Nil)
 
-  case object Unit extends BackendObjType {
+  case object Unit extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal)
 
@@ -138,7 +146,7 @@ object BackendObjType {
 
     def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       pushString("()") ~ ARETURN()
     ))
   }
@@ -149,7 +157,7 @@ object BackendObjType {
 
   case class Lazy(tpe: BackendType) extends BackendObjType
 
-  case class Ref(tpe: BackendType) extends BackendObjType {
+  case class Ref(tpe: BackendType) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
@@ -168,7 +176,7 @@ object BackendObjType {
 
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
-  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
 
 
     /**
@@ -203,108 +211,108 @@ object BackendObjType {
       def functionMethod: InstanceMethod = this match {
         case ObjFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(JavaObject.toTpe)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(BackendType.Int32) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int32) ~ IRETURN()
           ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(BackendType.Int64) ~ LRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int64) ~ LRETURN()
           ))
         case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
           ))
         case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
           ))
         case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
           ))
         case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
           mkDescriptor(BackendType.Float64)(BackendType.Float64),
-          Some(
+          Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindThunk(BackendType.Float64) ~ DRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Float64) ~ DRETURN()
           ))
 
       }
@@ -410,14 +418,14 @@ object BackendObjType {
         case arg :: Nil => arg.toErasedString
         case _ => args.map(_.toErasedString).mkString("(", ", ", ")")
       }
-      JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+      JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
         pushString(s"$argString -> ${result.toErasedString}") ~
           ARETURN()
       ))
     }
   }
 
-  case object RecordEmpty extends BackendObjType {
+  case object RecordEmpty extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(this.interface.jvmName))
 
@@ -440,21 +448,21 @@ object BackendObjType {
 
     def SingletonField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       throwUnsupportedOperationException(
         s"${Record.LookupFieldMethod.name} method shouldn't be called")
     ))
 
-    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       throwUnsupportedOperationException(
         s"${Record.RestrictFieldMethod.name} method shouldn't be called")
     ))
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       pushString("{}") ~ ARETURN()
     ))
 
-    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(
+    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, StringBuilder.toTpe) { sb =>
         sb.load() ~ pushString("}") ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
           INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
@@ -462,7 +470,7 @@ object BackendObjType {
     ))
   }
 
-  case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
+  case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(Record.jvmName))
 
@@ -486,7 +494,7 @@ object BackendObjType {
 
     def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "rest", Record.toTpe)
 
-    def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad() ~ ARETURN()
@@ -498,7 +506,7 @@ object BackendObjType {
       }
     ))
 
-    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(
+    def RestrictFieldMethod: InstanceMethod = Record.RestrictFieldMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       caseOnLabelEquality {
         case TrueBranch =>
           thisLoad() ~ GETFIELD(RestField) ~ ARETURN()
@@ -515,7 +523,7 @@ object BackendObjType {
       }
     ))
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       // save the `rest` for the last recursive call
       thisLoad() ~ GETFIELD(this.RestField) ~
         // build this segment of the string
@@ -527,7 +535,7 @@ object BackendObjType {
         INVOKEINTERFACE(Record.ToTailStringMethod) ~ ARETURN()
     ))
 
-    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(
+    private def ToTailStringMethod: InstanceMethod = Record.ToTailStringMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, StringBuilder.toTpe) { sb =>
         // save the `rest` for the last recursive call
         thisLoad() ~ GETFIELD(this.RestField) ~
@@ -552,7 +560,7 @@ object BackendObjType {
         branch(Condition.Bool)(cases)
   }
 
-  case object Record extends BackendObjType {
+  case object Record extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkInterface(this.jvmName)
 
@@ -589,7 +597,7 @@ object BackendObjType {
   case class Native(className: JvmName) extends BackendObjType
 
 
-  case object ReifiedSourceLocation extends BackendObjType {
+  case object ReifiedSourceLocation extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
@@ -609,7 +617,7 @@ object BackendObjType {
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
-      List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32), Some(
+      List(String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32), Some(_ =>
         thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
           thisLoad() ~ ALOAD(1) ~ PUTFIELD(SourceField) ~
           thisLoad() ~ ILOAD(2) ~ PUTFIELD(BeginLineField) ~
@@ -634,7 +642,7 @@ object BackendObjType {
     def EndColField: InstanceField =
       InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endCol", BackendType.Int32)
 
-    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
+    private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ =>
       // create string builder
       NEW(StringBuilder.jvmName) ~ DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
         // build string
@@ -647,37 +655,37 @@ object BackendObjType {
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
     ))
 
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
       withName(1, JavaObject.toTpe) { otherObj =>
         // check exact equality
         thisLoad() ~
           otherObj.load() ~
-          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
           // check `other == null`
           otherObj.load() ~
-          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
           // the class equality
           thisLoad() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
           otherObj.load() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
           // check individual fields
           otherObj.load() ~
           CHECKCAST(this.jvmName) ~
           storeWithName(2, this.toTpe) { otherLoc =>
             thisLoad() ~ GETFIELD(BeginLineField) ~
               otherLoc.load() ~ GETFIELD(BeginLineField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(BeginColField) ~
               otherLoc.load() ~ GETFIELD(BeginColField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(EndLineField) ~
               otherLoc.load() ~ GETFIELD(EndLineField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(EndColField) ~
               otherLoc.load() ~ GETFIELD(EndColField) ~
-              ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
               thisLoad() ~ GETFIELD(SourceField) ~
               otherLoc.load() ~ GETFIELD(SourceField) ~
               INVOKESTATIC(Objects.EqualsMethod) ~
@@ -686,7 +694,7 @@ object BackendObjType {
       }
     ))
 
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
       ICONST_5() ~ ANEWARRAY(JavaObject.jvmName) ~
         DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(SourceField) ~ AASTORE() ~
         DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(BeginLineField) ~ boxInt() ~ AASTORE() ~
@@ -701,7 +709,7 @@ object BackendObjType {
       mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
   }
 
-  case object Global extends BackendObjType {
+  case object Global extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
@@ -720,7 +728,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
-    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(
+    def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(_ =>
       NEW(JvmName.AtomicLong) ~
         DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
         PUTSTATIC(CounterField) ~
@@ -731,7 +739,7 @@ object BackendObjType {
     ))
 
     def NewIdMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "newId",
-      mkDescriptor()(BackendType.Int64), Some(
+      mkDescriptor()(BackendType.Int64), Some(_ =>
         GETSTATIC(CounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement",
             MethodDescriptor(Nil, BackendType.Int64)) ~
@@ -739,7 +747,7 @@ object BackendObjType {
       ))
 
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
-      mkDescriptor()(BackendType.Array(String.toTpe)), Some(
+      mkDescriptor()(BackendType.Array(String.toTpe)), Some(_ =>
         GETSTATIC(ArgsField) ~ ARRAYLENGTH() ~ ANEWARRAY(String.jvmName) ~ ASTORE(0) ~
           // the new array is now created, now to copy the args
           GETSTATIC(ArgsField) ~
@@ -752,7 +760,7 @@ object BackendObjType {
       ))
 
     def SetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "setArgs",
-      mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(
+      mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(_ =>
         ALOAD(0) ~ ARRAYLENGTH() ~ ANEWARRAY(String.jvmName) ~ ASTORE(1) ~
           ALOAD(0) ~
           ICONST_0() ~
@@ -779,7 +787,7 @@ object BackendObjType {
 
   case object Regex extends BackendObjType
 
-  case object FlixError extends BackendObjType {
+  case object FlixError extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName, JvmName.Error)
 
@@ -788,7 +796,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(String.toTpe), Some(_ =>
       thisLoad() ~
         ALOAD(1) ~
         invokeConstructor(JvmName.Error, mkDescriptor(String.toTpe)(VoidableType.Void)) ~
@@ -796,7 +804,7 @@ object BackendObjType {
     ))
   }
 
-  case object HoleError extends BackendObjType {
+  case object HoleError extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
 
@@ -810,7 +818,7 @@ object BackendObjType {
     }
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
-      List(String.toTpe, ReifiedSourceLocation.toTpe), Some(
+      List(String.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
         withName(1, String.toTpe) { hole =>
           withName(2, ReifiedSourceLocation.toTpe) { loc =>
             thisLoad() ~
@@ -837,20 +845,20 @@ object BackendObjType {
     private def LocationField: InstanceField =
       InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
       withName(1, JavaObject.toTpe) { other =>
         // check exact equality
         thisLoad() ~ other.load() ~
-          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
           // check for null
           other.load() ~
-          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
           // check for class equality
           thisLoad() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
           other.load() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
           // cast the other obj
           other.load() ~ CHECKCAST(this.jvmName) ~
           storeWithName(2, HoleError.toTpe) { otherHoleError =>
@@ -858,7 +866,7 @@ object BackendObjType {
             thisLoad() ~ GETFIELD(HoleField) ~
               otherHoleError.load() ~ GETFIELD(HoleField) ~
               INVOKESTATIC(Objects.EqualsMethod) ~
-              ifTrue(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
+              ifCondition(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
               // compare the location field
               thisLoad() ~ GETFIELD(LocationField) ~
               otherHoleError.load() ~ GETFIELD(LocationField) ~
@@ -868,7 +876,7 @@ object BackendObjType {
       }
     ))
 
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
       ICONST_2() ~
         ANEWARRAY(JavaObject.jvmName) ~
         // store hole
@@ -881,7 +889,7 @@ object BackendObjType {
     ))
   }
 
-  case object MatchError extends BackendObjType {
+  case object MatchError extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
@@ -896,7 +904,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(_ =>
       thisLoad() ~
         NEW(StringBuilder.jvmName) ~
         DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
@@ -914,21 +922,21 @@ object BackendObjType {
 
     def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
+    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
       withName(1, JavaObject.toTpe) { otherObj =>
         // check exact equality
         thisLoad() ~
           otherObj.load() ~
-          ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
           // check `other == null`
           otherObj.load() ~
-          ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
           // the class equality
           thisLoad() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
           otherObj.load() ~
           INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
           // check individual fields
           ALOAD(1) ~ CHECKCAST(this.jvmName) ~
           storeWithName(2, this.toTpe) { otherErr =>
@@ -940,7 +948,7 @@ object BackendObjType {
       }
     ))
 
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(
+    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
       ICONST_1() ~ ANEWARRAY(JavaObject.jvmName) ~
         DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
         INVOKESTATIC(Objects.HashMethod) ~
@@ -948,7 +956,7 @@ object BackendObjType {
     ))
   }
 
-  case object Region extends BackendObjType {
+  case object Region extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal)
@@ -981,7 +989,7 @@ object BackendObjType {
     // private volatile Throwable childException = null;
     def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
       thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
@@ -1002,9 +1010,10 @@ object BackendObjType {
     //   t.start();
     //   threads.add(t);
     // }
-    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
+    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       (
-        if (flix.options.xvirtualthreads) {
+        // TODO: VirtualThreads: Enable by default once JDK 21+ becomes a requirement.
+        if (false) {
           INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
         } else {
           NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
@@ -1030,7 +1039,7 @@ object BackendObjType {
     //   for (Runnable r: onExit)
     //     r.run();
     // }
-    def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "exit", MethodDescriptor.NothingToVoid, Some(
+    def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "exit", MethodDescriptor.NothingToVoid, Some(_ =>
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
           thisLoad() ~ GETFIELD(ThreadsField) ~
@@ -1059,7 +1068,7 @@ object BackendObjType {
     //   childException = e;
     //   regionThread.interrupt();
     // }
-    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
+    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(_ =>
       thisLoad() ~ ALOAD(1) ~
       PUTFIELD(ChildExceptionField) ~
       thisLoad() ~ GETFIELD(RegionThreadField) ~
@@ -1071,9 +1080,9 @@ object BackendObjType {
     //   if (childException != null)
     //     throw childException;
     // }
-    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(
+    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(_ =>
       thisLoad() ~ GETFIELD(ChildExceptionField) ~
-      ifTrue(Condition.NONNULL) {
+      ifCondition(Condition.NONNULL) {
         thisLoad() ~ GETFIELD(ChildExceptionField) ~
         ATHROW()
       } ~
@@ -1083,14 +1092,14 @@ object BackendObjType {
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
     // }
-    def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(
+    def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(_ =>
       thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
       INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
       RETURN()
     ))
   }
 
-  case object UncaughtExceptionHandler extends BackendObjType {
+  case object UncaughtExceptionHandler extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(ThreadUncaughtExceptionHandler.jvmName))
@@ -1106,14 +1115,14 @@ object BackendObjType {
     def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "r", BackendObjType.Region.toTpe)
 
     // UncaughtExceptionHandler(Region r) { this.r = r; }
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(_ =>
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
       thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
       RETURN()
     ))
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
-    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(
+    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(_ =>
       thisLoad() ~ GETFIELD(RegionField) ~
       ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
       RETURN()
@@ -1226,6 +1235,22 @@ object BackendObjType {
 
   }
 
+  case object LambdaMetaFactory extends BackendObjType {
+    private def methodHandlesLookup: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodHandles$Lookup")).toTpe
+
+    private def methodType: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodType")).toTpe
+
+    private def methodHandle: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodHandle")).toTpe
+
+    private def callSite: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "CallSite")).toTpe
+
+    def MetaFactoryMethod: StaticMethod = StaticMethod(
+      this.jvmName, IsPublic, IsFinal, "metaFactory",
+      mkDescriptor(methodHandlesLookup, String.toTpe, methodType, methodType, methodHandle, methodType)(callSite),
+      None
+    )
+  }
+
   case object LinkedList extends BackendObjType {
 
     def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "addFirst",
@@ -1292,7 +1317,7 @@ object BackendObjType {
       mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void), None)
   }
 
-  case object Result extends BackendObjType {
+  case object Result extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
@@ -1300,19 +1325,88 @@ object BackendObjType {
     }
 
     /**
-      * Expects a Thunk on the stack and leaves something of the given tpe but erased.
+      * Expects a Thunk on the stack and leaves a non-Thunk Result.
+      * [..., Result] --> [..., Suspension|Value]
       */
-    def unwindThunk(tpe: BackendType): InstructionSet = {
+    def unwindThunk(): InstructionSet = {
       INVOKEVIRTUAL(Thunk.InvokeMethod) ~
-      whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
-        CHECKCAST(Thunk.jvmName) ~
-        INVOKEVIRTUAL(Thunk.InvokeMethod)
-      } ~
+        whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
+          CHECKCAST(Thunk.jvmName) ~
+            INVOKEVIRTUAL(Thunk.InvokeMethod)
+        }
+    }
+
+    /**
+      * Expects a Result on the stack.
+      * If the result is a Suspension, this will return a modified Suspension.
+      * If the result in NOT a Suspension, this will leave it on the stack.
+      * [..., Result] --> [..., Thunk|Value]
+      * side effect: might return
+      */
+    def handleSuspension(): InstructionSet = {
+      DUP() ~ INSTANCEOF(Suspension.jvmName) ~
+      ifCondition(Condition.NE) {
+        DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
+        // Add our new frame
+        NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~ // [..., s, s']
+        SWAP() ~ // [..., s', s]
+        DUP2() ~ // [..., s', s, s', s]
+        GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(Suspension.ResumptionField) ~ // [..., s', s]
+        DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
+        // Make the new frame and push it
+        pushNull() ~ // TODO
+        INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
+        PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
+        POP() ~ // [..., s']
+        // Return the suspension up the stack
+        xReturn(Suspension.toTpe)
+      }
+    }
+
+    /**
+      * Expects a Result on the stack and crashes if it is a Suspension, otherwise leaves it on the stack.
+      * [..., Result] --> [..., Thunk|Value]
+      * side effect: might crash
+      */
+    def crashIfSuspension(): InstructionSet = {
+      val errorMessage = "function was assumed control-pure for java interop but suspension was returned"
+      DUP() ~ INSTANCEOF(Suspension.jvmName) ~
+      ifCondition(Condition.NE) {
+        // If Suspension is found, fail hard.
+        NEW(FlixError.jvmName) ~
+        DUP() ~ pushString(errorMessage) ~ INVOKESPECIAL(FlixError.Constructor) ~
+        ATHROW()
+      }
+    }
+
+    /**
+      * Expects a Result on the stack and leaves something of the given tpe but erased.
+      * This might return if a Suspension is encountered.
+      * [..., Result] --> [..., Value.value: tpe]
+      * side effect: Might return
+      */
+    def unwindThunkToType(tpe: BackendType): InstructionSet = {
+      unwindThunk() ~
+      handleSuspension() ~
+      CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+    }
+
+    /**
+      * Expects a Thunk on the stack and leaves something of the given tpe but erased.
+      * Assumes that the thunk is control-pure, i.e. never returns a suspension.
+      * [..., Result] --> [..., Value.value: tpe]
+      * side effect: might crash
+      */
+    def unwindSuspensionFreeThunkToType(tpe: BackendType): InstructionSet = {
+      unwindThunk() ~
+      crashIfSuspension() ~
       CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
     }
   }
 
-  case object Value extends BackendObjType {
+  case object Value extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Result.jvmName))
@@ -1372,20 +1466,34 @@ object BackendObjType {
   }
 
   /** Frame is really just java.util.Function<Value, Result> **/
-  case object Frame extends BackendObjType {
+  case object Frame extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkInterface(this.jvmName)
+      val cm = mkAbstractClass(this.jvmName)
 
-      cm.mkInterfaceMethod(ApplyMethod)
+      cm.mkConstructor(Constructor)
+      cm.mkAbstractMethod(ApplyMethod)
+      cm.mkStaticMethod(StaticApplyMethod)
 
       cm.closeClassMaker()
     }
 
-    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor(Value.toTpe)(Result.toTpe))
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    def ApplyMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "apply", mkDescriptor(Value.toTpe)(Result.toTpe))
+
+    def StaticApplyMethod: StaticMethod = StaticMethod(
+      this.jvmName,
+      IsPublic,
+      IsFinal,
+      "apply",
+      mkDescriptor(Frame.toTpe, Value.toTpe)(Result.toTpe),
+      Some(_ => withName(0, Frame.toTpe){f => withName(1, Value.toTpe){resumeArg => {
+        f.load() ~ resumeArg.load() ~ INVOKEVIRTUAL(Frame.ApplyMethod) ~ ARETURN()
+      }}}))
   }
 
-  case object Thunk extends BackendObjType {
+  case object Thunk extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkAbstractClass(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
@@ -1401,19 +1509,35 @@ object BackendObjType {
 
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(Result.toTpe))
 
-    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(
-      thisLoad() ~ INVOKEVIRTUAL(InvokeMethod) ~ storeWithName(1, Result.toTpe)(vResult =>
-        whileLoop(Condition.NE)(vResult.load() ~ INSTANCEOF(Thunk.jvmName)){
-          vResult.load() ~ CHECKCAST(Thunk.jvmName) ~
-          INVOKEVIRTUAL(InvokeMethod) ~
-          vResult.store()
-        } ~
-        RETURN()
-      )
+    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
+      thisLoad() ~ Result.unwindThunk() ~ Result.crashIfSuspension() ~ POP() ~ RETURN()
     ))
   }
 
-  case object Frames extends BackendObjType {
+  case object Suspension extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Result.jvmName))
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(EffSymField)
+      cm.mkField(EffOpField)
+      cm.mkField(PrefixField)
+      cm.mkField(ResumptionField)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    def EffSymField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "effSym", String.toTpe)
+    def EffOpField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "effOp", EffectCall.toTpe)
+    def PrefixField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "prefix", Frames.toTpe)
+    def ResumptionField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "resumption", Resumption.toTpe)
+
+  }
+
+  case object Frames extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
@@ -1431,7 +1555,7 @@ object BackendObjType {
 
     def ReverseOntoMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "reverseOnto", mkDescriptor(Frames.toTpe)(Frames.toTpe))
 
-    def pushImplementation: InstructionSet = {
+    val pushImplementation: Unit => InstructionSet = _ => {
       withName(1, Frame.toTpe)(frame =>
         NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
           DUP() ~ frame.load() ~ PUTFIELD(FramesCons.HeadField) ~
@@ -1441,7 +1565,7 @@ object BackendObjType {
     }
   }
 
-  case object FramesCons extends BackendObjType {
+  case object FramesCons extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
@@ -1463,7 +1587,7 @@ object BackendObjType {
 
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(Frames.pushImplementation))
 
-    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
+    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, Frames.toTpe)(rest =>
         thisLoad() ~ GETFIELD(TailField) ~
         NEW(FramesCons.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesCons.Constructor) ~
@@ -1475,7 +1599,7 @@ object BackendObjType {
     ))
   }
 
-  case object FramesNil extends BackendObjType {
+  case object FramesNil extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Frames.jvmName))
@@ -1491,10 +1615,176 @@ object BackendObjType {
 
     def PushMethod: InstanceMethod = Frames.PushMethod.implementation(this.jvmName, IsFinal, Some(Frames.pushImplementation))
 
-    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(
+    def ReverseOntoMethod: InstanceMethod = Frames.ReverseOntoMethod.implementation(this.jvmName, IsFinal, Some(_ =>
       withName(1, Frames.toTpe)(rest =>
         rest.load() ~ xReturn(rest.tpe)
       )
     ))
   }
+
+  case object Resumption extends BackendObjType with Generatable {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
+      cm.mkInterfaceMethod(RewindMethod)
+      cm.mkStaticMethod(StaticRewindMethod)
+      cm.closeClassMaker()
+    }
+
+    def RewindMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "rewind", mkDescriptor(Value.toTpe)(Result.toTpe))
+
+    def StaticRewindMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe), Some(_ =>
+      withName(0, Resumption.toTpe) { resumption =>
+        withName(1, Value.toTpe) { v => {
+          resumption.load() ~ v.load() ~ INVOKEINTERFACE(Resumption.RewindMethod) ~ ARETURN()
+        }
+        }
+      }
+    ))
+  }
+
+  case object ResumptionCons extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Resumption.jvmName))
+
+      cm.mkConstructor(Constructor)
+
+      cm.mkField(SymField)
+      cm.mkField(HandlerField)
+      cm.mkField(FramesField)
+      cm.mkField(TailField)
+
+      cm.mkMethod(RewindMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    def SymField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "sym", String.toTpe)
+    def HandlerField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "handler", Handler.toTpe)
+    def FramesField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "frames", Frames.toTpe)
+    def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tail", Resumption.toTpe)
+
+    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(_ =>
+      withName(1, Value.toTpe) { v =>
+        thisLoad() ~ GETFIELD(SymField) ~
+          thisLoad() ~ GETFIELD(HandlerField) ~
+          thisLoad() ~ GETFIELD(FramesField) ~
+          // () -> tail.rewind(v)
+          thisLoad() ~ GETFIELD(TailField) ~
+          v.load() ~
+          mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod) ~
+          mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod) ~
+          xReturn(Thunk.toTpe)
+      }))
+  }
+
+  case object ResumptionNil extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(Resumption.jvmName))
+
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(RewindMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    def RewindMethod: InstanceMethod = Resumption.RewindMethod.implementation(this.jvmName, IsFinal, Some(_ =>
+      withName(1, Value.toTpe) { v =>
+        v.load() ~ xReturn(v.tpe)
+      }
+    ))
+  }
+
+  case object Handler extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
+      cm.mkStaticMethod(InstallHandlerMethod)
+      cm.closeClassMaker()
+    }
+
+    def InstallHandlerMethod: StaticMethod = StaticMethod(
+      this.jvmName,
+      IsPublic,
+      NotFinal,
+      "installHandler",
+      mkDescriptor(String.toTpe, Handler.toTpe, Frames.toTpe, Thunk.toTpe)(Result.toTpe),
+      Some(_ => withName(0, String.toTpe){effSym => withName(1, Handler.toTpe){handler =>
+        withName(2, Frames.toTpe){frames => withName(3, Thunk.toTpe){thunk =>
+          thunk.load() ~
+          // Thunk|Value|Suspension
+          Result.unwindThunk() ~
+          // Value|Suspension
+          { // handle suspension
+            DUP() ~ INSTANCEOF(Suspension.jvmName) ~ ifCondition(Condition.NE) {
+              DUP() ~ CHECKCAST(Suspension.jvmName) ~ storeWithName(4, Suspension.toTpe) {s =>
+                NEW(ResumptionCons.jvmName) ~ DUP() ~ INVOKESPECIAL(ResumptionCons.Constructor) ~
+                  DUP() ~ effSym.load() ~ PUTFIELD(ResumptionCons.SymField) ~
+                  DUP() ~ handler.load() ~ PUTFIELD(ResumptionCons.HandlerField) ~
+                  DUP() ~
+                  s.load() ~ GETFIELD(Suspension.PrefixField) ~ frames.load() ~ INVOKEINTERFACE(Frames.ReverseOntoMethod) ~
+                  PUTFIELD(ResumptionCons.FramesField) ~
+                  DUP() ~ s.load() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(ResumptionCons.TailField) ~
+                  storeWithName(5, ResumptionCons.toTpe){r =>
+                    s.load() ~ GETFIELD(Suspension.EffSymField) ~ effSym.load() ~ INVOKEVIRTUAL(JavaObject.EqualsMethod) ~
+                    ifCondition(Condition.NE){
+                      s.load() ~ GETFIELD(Suspension.EffOpField) ~ handler.load() ~ r.load() ~
+                      INVOKEINTERFACE(EffectCall.ApplyMethod) ~ xReturn(Result.toTpe)
+                    } ~
+                    NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
+                    DUP() ~ s.load() ~ GETFIELD(Suspension.EffSymField) ~ PUTFIELD(Suspension.EffSymField) ~
+                    DUP() ~ s.load() ~ GETFIELD(Suspension.EffOpField) ~ PUTFIELD(Suspension.EffOpField) ~
+                    DUP() ~ NEW(FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(FramesNil.Constructor) ~ PUTFIELD(Suspension.PrefixField) ~
+                    DUP() ~ r.load() ~ PUTFIELD(Suspension.ResumptionField) ~
+                    xReturn(Suspension.toTpe)
+                  }
+              }
+            }
+          } ~
+          // Value
+          CHECKCAST(Value.jvmName) ~ storeWithName(6, Value.toTpe) {res =>
+            //
+            // Case on frames
+            // FramesNil
+            frames.load() ~ INSTANCEOF(FramesNil.jvmName) ~ ifCondition(Condition.NE) {
+              res.load() ~ xReturn(Value.toTpe)
+            } ~
+              // FramesCons
+              frames.load() ~ CHECKCAST(FramesCons.jvmName) ~ storeWithName(7, FramesCons.toTpe) { cons => {
+              effSym.load() ~
+              handler.load() ~
+              cons.load() ~ GETFIELD(FramesCons.TailField) ~
+              // thunk
+              cons.load() ~ GETFIELD(FramesCons.HeadField) ~
+              res.load() ~
+              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod) ~
+              INVOKESTATIC(InstallHandlerMethod) ~
+              xReturn(Result.toTpe)
+            }
+          }}
+      }}}}
+      )
+    )
+  }
+
+  case object EffectCall extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkInterface(this.jvmName)
+      cm.mkInterfaceMethod(ApplyMethod)
+      cm.closeClassMaker()
+    }
+
+    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor(Handler.toTpe, Resumption.toTpe)(Result.toTpe))
+
+  }
+}
+
+sealed trait Generatable extends BackendObjType {
+  def genByteCode()(implicit flix: Flix): Array[Byte]
 }

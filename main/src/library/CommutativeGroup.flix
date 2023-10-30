@@ -15,12 +15,12 @@
  */
 
 ///
-/// A type class for types that form a commutative group (abelian group)
+/// A trait for types that form a commutative group (abelian group)
 /// i.e. groups where the `combine` function is commutative.
 ///
 /// The default instances for number define the additive inverse in the real numbers.
 ///
-pub lawful class CommutativeGroup[a] with Group[a], CommutativeMonoid[a] {}
+pub lawful trait CommutativeGroup[a] with Group[a], CommutativeMonoid[a] {}
 
 instance CommutativeGroup[Unit]
 

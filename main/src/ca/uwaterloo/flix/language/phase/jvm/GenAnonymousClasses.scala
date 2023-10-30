@@ -148,7 +148,7 @@ object GenAnonymousClasses {
       }
 
       // Invoke the closure
-      BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(methodVisitor))
+      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(methodVisitor))
 
       tpe match {
         case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))

@@ -173,8 +173,14 @@ object Safety {
       case Expr.Let(_, _, exp1, exp2, _, _, _) =>
         visit(exp1, NonTailPosition) ++ visit(exp2, currentCallPosition)
 
-      case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
-        visit(exp1, NonTailPosition) ++ visit(exp2, currentCallPosition)
+      case Expr.LetRec(sym, ann, _, exp1, exp2, _, _, _) =>
+        val e1 =     if (ann.isTailRecursive) {
+          visitExp(exp1, renv, TailPosition(sym), root)
+        } else {
+          visit(exp1, NonTailPosition)
+        }
+        val e2 = visit(exp2, currentCallPosition)
+        e1 ++ e2
 
       case Expr.Region(_, _) => Nil
 
@@ -202,7 +208,7 @@ object Safety {
         val missingDefault = rules.last match {
           case TypeMatchRule(_, tpe, _) => tpe match {
             case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
-            case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
+            case _ => List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
           }
         }
         visit(exp, NonTailPosition) ++ missingDefault ++

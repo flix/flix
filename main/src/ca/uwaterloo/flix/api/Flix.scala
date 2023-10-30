@@ -73,6 +73,7 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
+  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
@@ -208,8 +209,9 @@ class Flix {
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
-    "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
+    "MutQueue.flix" -> LocalResource.get("/src/library/MutQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
+    "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
@@ -473,8 +475,8 @@ class Flix {
     */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
-      ignorePur = options.xnobooleffects,
-      ignoreEff = options.xnoseteffects,
+      ignorePur = false,
+      ignoreEff = false,
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
     )
   }
@@ -526,25 +528,25 @@ class Flix {
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader)
+      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      afterNamer <- Namer.run(afterWeeder)
+      afterDesugar = Desugar.run(afterWeeder)
+      afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
-      afterStatistics <- Statistics.run(afterEntryPoint)
-      _ <- Instances.run(afterStatistics, cachedTyperAst, changeSet)
-      afterStratifier <- Stratifier.run(afterStatistics)
-      _ <- Regions.run(afterStratifier)
+      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      afterStratifier <- Stratifier.run(afterEntryPoint)
       afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
+        this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
         this.cachedWeederAst = afterWeeder
         this.cachedKinderAst = afterKinder
@@ -599,8 +601,7 @@ class Flix {
     cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
     cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
-    val afterJvmBackend = JvmBackend.run(cachedVarNumberingAst)
-    val result = Finish.run(afterJvmBackend)
+    val result = JvmBackend.run(cachedVarNumberingAst)
 
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()
@@ -612,7 +613,7 @@ class Flix {
     progressBar.complete()
 
     // Return the result.
-    result
+    Validation.Success(result)
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -651,25 +652,6 @@ class Flix {
 
     // And add it to the list of executed phases.
     phaseTimers += currentPhase
-
-    // Print performance information if in verbose mode.
-    if (options.debug) {
-      // Print information about the phase.
-      val d = new Duration(e)
-      val emojiPart = formatter.blue("✓ ")
-      val phasePart = formatter.blue(f"$phase%-40s")
-      val timePart = f"${d.fmtMilliSeconds}%8s"
-      Console.println(emojiPart + phasePart + timePart)
-
-      // Print information about each subphase.
-      for ((subphase, e) <- currentPhase.subphases.reverse) {
-        val d = new Duration(e)
-        val emojiPart = "    "
-        val phasePart = formatter.magenta(f"$subphase%-37s")
-        val timePart = f"(${d.fmtMilliSeconds}%8s)"
-        Console.println(emojiPart + phasePart + timePart)
-      }
-    }
 
     // Return the result computed by the phase.
     r

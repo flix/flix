@@ -173,23 +173,15 @@ object Redundancy {
     */
   private def checkUnusedEnumsAndTags(used: Used)(implicit root: Root): Used = {
     root.enums.foldLeft(used) {
-      case (acc, (sym, decl)) if decl.mod.isPublic =>
-        // Enum is public. No usage requirements.
-        acc
+      case (acc, (sym, decl)) if deadEnum(decl, used) =>
+        // The enum is private and never used
+        acc + UnusedEnumSym(sym)
+
       case (acc, (sym, decl)) =>
-        // Enum is non-public.
-        // Lookup usage information for this specific enum.
-        used.enumSyms.get(sym) match {
-          case None =>
-            // Case 1: Enum is never used.
-            acc + UnusedEnumSym(sym)
-          case Some(usedTags) =>
-            // Case 2: Enum is used and here are its used tags.
-            // Check if there is any unused tag.
-            decl.cases.foldLeft(acc) {
-              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.sym)
-              case (innerAcc, _) => innerAcc
-            }
+        // Check for unused cases
+        decl.cases.foldLeft(acc) {
+          case (innerAcc, (tag, caze)) if deadTag(decl, tag, used) => innerAcc + UnusedEnumTag(sym, caze.sym)
+          case (innerAcc, _) => innerAcc
         }
     }
   }
@@ -321,7 +313,7 @@ object Redundancy {
       // Visit the expression with the extended environment
       val innerUsed = visitExp(exp, env, rc)
 
-     // TODO NS-REFACTOR check for unused syms
+      // TODO NS-REFACTOR check for unused syms
       innerUsed ++ shadowedName
 
     case Expr.Lambda(fparam, exp, _, _) =>
@@ -370,7 +362,7 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LetRec(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -1089,11 +1081,21 @@ object Redundancy {
       !used.effectSyms.contains(decl.sym)
 
   /**
-    * Returns `true` if the given `tag` is unused according to the `usedTags`.
+    * Returns `true` if the given `enm` is unused according to `used`.
     */
-  private def deadTag(tag: Symbol.CaseSym, usedTags: Set[Symbol.CaseSym]): Boolean =
-    !tag.name.startsWith("_") &&
-      !usedTags.contains(tag)
+  private def deadEnum(enm: Enum, used: Used): Boolean =
+    !enm.sym.name.startsWith("_") &&
+      !enm.mod.isPublic &&
+      used.enumSyms(enm.sym).isEmpty
+
+  /**
+    * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
+    */
+  private def deadTag(enm: Enum, tag: Symbol.CaseSym, used: Used): Boolean =
+    !enm.sym.name.startsWith("_") &&
+      !enm.mod.isPublic &&
+      !tag.name.startsWith("_") &&
+      !used.enumSyms(enm.sym).contains(tag)
 
   /**
     * Returns `true` if the given `tag` is unused according to the `usedTags`.

@@ -48,7 +48,7 @@ object Weeder {
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "instanceof", "into", "law", "lawful", "lazy", "let", "let*", "match",
     "null", "override", "pub", "ref", "region",
-    "sealed", "set", "spawn", "Static", "true",
+    "sealed", "set", "spawn", "Static", "trait", "true",
     "type", "use", "where", "with", "discard", "object"
   )
 
@@ -65,12 +65,9 @@ object Weeder {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
-      val results = ParOps.parMap(stale)(kv => visitCompilationUnit(kv._1, kv._2))
-      Validation.sequence(results) map {
-        case rs =>
-          val m = rs.foldLeft(fresh) {
-            case (acc, (k, v)) => acc + (k -> v)
-          }
+      ParOps.parMapValuesSeq(stale)(visitCompilationUnit).map {
+        result =>
+          val m = fresh ++ result
           WeededAst.Root(m, root.entryPoint, root.names)
       }
     }
@@ -78,14 +75,14 @@ object Weeder {
   /**
     * Weeds the given abstract syntax tree.
     */
-  private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
+  private def visitCompilationUnit(unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[WeededAst.CompilationUnit, WeederError] = {
     val usesAndImportsVal = traverse(unit.usesOrImports)(visitUseOrImport)
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
     mapN(usesAndImportsVal, declarationsVal) {
       case (usesAndImports, decls) =>
-        src -> WeededAst.CompilationUnit(usesAndImports.flatten, decls.flatten, loc)
+        WeededAst.CompilationUnit(usesAndImports.flatten, decls.flatten, loc)
     }
   }
 
@@ -883,49 +880,16 @@ object Weeder {
       }
 
     case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
-      //
-      // Rewrites a ForA loop into a series of Applicative.ap calls:
-      //
-      //     forA (
-      //         x <- xs;
-      //         y <- ys
-      //     ) yield exp
-      //
-      // desugars to
-      //
-      //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
-      //
-      val loc = mkSL(sp1, sp2).asSynthetic
-
-      if (frags.nonEmpty) {
-        val fqnAp = "Applicative.ap"
-        val fqnMap = "Functor.map"
-        val yieldExp = visitExp(exp, senv)
-
-        // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
-        val lambda = foldRight(frags)(yieldExp) {
-          case (ParsedAst.ForFragment.Generator(sp11, pat, _, sp12), acc) =>
-            mapN(visitPattern(pat)) {
-              case p => mkLambdaMatch(sp11, p, acc, sp12)
-            }
-        }
-
-        // Apply first fragment to Functor.map
-        val xs = visitExp(frags.head.exp, senv)
-        val baseExp = mapN(lambda, xs) {
-          case (l, x) => mkApplyFqn(fqnMap, List(l, x), loc)
-        }
-
-        // Apply rest of fragments to Applicative.ap
-        frags.tail.foldLeft(baseExp) {
-          case (acc, ParsedAst.ForFragment.Generator(sp11, _, fexp, sp12)) =>
-            mapN(acc, visitExp(fexp, senv)) {
-              case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
-            }
-        }
-      } else {
+      val loc = mkSL(sp1, sp2)
+      if (frags.isEmpty) {
         val err = WeederError.IllegalEmptyForFragment(loc)
         WeededAst.Expr.Error(err).toSoftFailure(err)
+      } else {
+        val fs = traverse(frags)(visitForFragmentGenerator(_, senv))
+        val e = visitExp(exp, senv)
+        mapN(fs, e) {
+          case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc)
+        }
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
@@ -937,8 +901,8 @@ object Weeder {
       if (frags.nonEmpty) {
         val fqnForEach = "Iterator.forEach"
         val fqnIterator = "Iterable.iterator"
-        val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-        val regVar = WeededAst.Expr.Ambiguous(Name.mkQName(regIdent), loc)
+        val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
+        val regVar = WeededAst.Expr.Ambiguous(Name.mkQName(regIdent), loc.asSynthetic)
 
         val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
           case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
@@ -1134,9 +1098,20 @@ object Weeder {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
-    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetRecDef(sp1, ann, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
+      val annVal = flatMapN(visitAnnotations(ann)) {
+        case Ast.Annotations(annotations) if annotations.nonEmpty =>
+          val onlyTailrec = annotations.forall(_.isInstanceOf[Ast.Annotation.TailRecursive])
+          if (onlyTailrec) {
+            Ast.Annotations(annotations).toSuccess
+          }
+          else {
+            WeederError.IllegalInnerFunctionAnnotation(loc).toFailure
+          }
+        case anns => anns.toSuccess
+      }
 
       val tpeOpt = tpeAndEff.map(_._1)
       val effOpt = tpeAndEff.flatMap(_._2)
@@ -1147,8 +1122,8 @@ object Weeder {
       val tpeVal = traverseOpt(tpeOpt)(visitType)
       val effVal = traverseOpt(effOpt)(visitType)
 
-      mapN(fpVal, e1Val, e2Val, tpeVal, effVal) {
-        case (fp, e1, e2, tpe, eff) =>
+      mapN(fpVal, annVal, e1Val, e2Val, tpeVal, effVal) {
+        case (fp, a1, e1, e2, tpe, eff) =>
           // skip ascription if it's empty
           val ascription = if (tpe.isDefined || eff.isDefined) {
             WeededAst.Expr.Ascribe(e1, tpe, eff, e1.loc)
@@ -1156,7 +1131,7 @@ object Weeder {
             e1
           }
           val lambda = mkCurried(fp, ascription, e1.loc)
-          WeededAst.Expr.LetRec(ident, mod, lambda, e2, loc)
+          WeededAst.Expr.LetRec(ident, a1, mod, lambda, e2, loc)
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
@@ -3168,6 +3143,19 @@ object Weeder {
   }
 
   /**
+    * Performs weeding on the given [[ParsedAst.ForFragment.Generator]] `frag0`.
+    */
+  private def visitForFragmentGenerator(frag0: ParsedAst.ForFragment.Generator, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment.Generator, WeederError] = frag0 match {
+    case ParsedAst.ForFragment.Generator(sp1, pat, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val p = visitPattern(pat)
+      val e = visitExp(exp, senv)
+      mapN(p, e) {
+        case (p1, e1) => WeededAst.ForFragment.Generator(p1, e1, loc)
+      }
+  }
+
+  /**
     * Returns true iff the type is composed only of type variables possibly applied to other type variables.
     */
   private def isAllVars(tpe: ParsedAst.Type): Boolean = tpe match {
@@ -3318,7 +3306,7 @@ object Weeder {
     * Attempts to compile the given regular expression into a Pattern.
     */
   private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.InvalidRegularExpression] = try {
-    var patt = JPattern.compile(regex)
+    val patt = JPattern.compile(regex)
     patt.toSuccess
   } catch {
     case ex: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, ex.getMessage, loc).toFailure
@@ -3356,7 +3344,7 @@ object Weeder {
     case ParsedAst.Expression.MonadicFor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ForEachYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewObject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Static(sp1, _) => sp1

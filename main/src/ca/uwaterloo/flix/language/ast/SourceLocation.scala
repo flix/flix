@@ -70,6 +70,16 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   def asReal: SourceLocation = copy(locationKind = SourceKind.Real)
 
   /**
+    * Returns the left-most [[SourcePosition]] of `this` [[SourceLocation]].
+    */
+  def sp1: SourcePosition = SourcePosition(source, beginLine, beginCol, input)
+
+  /**
+    * Returns the left-most [[SourcePosition]] of `this` [[SourceLocation]].
+    */
+  def sp2: SourcePosition = SourcePosition(source, endLine, endCol, input)
+
+  /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
     */
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
@@ -128,5 +138,12 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
         this.endCol == that.endCol
     case _ => false
   }
+
+  /**
+    * Returns a human-readable representation of `this` source location.
+    *
+    * Note: The `toString` method should only be used for debugging.
+    */
+  override def toString: String = format
 
 }

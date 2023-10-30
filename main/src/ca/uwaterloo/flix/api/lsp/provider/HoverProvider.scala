@@ -174,15 +174,10 @@ object HoverProvider {
     // TODO deduplicate with CompletionProvider
     val t = FormatType.formatType(tpe0)
 
-    // don't show purity if bool effects are turned off
-    val p = if (flix.options.xnobooleffects) {
-      ""
-    } else {
-      eff0 match {
-        case Type.Cst(TypeConstructor.Pure, _) => ""
-        case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
-        case eff => raw" \ " + FormatType.formatType(eff)
-      }
+    val p = eff0 match {
+      case Type.Cst(TypeConstructor.Pure, _) => ""
+      case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
+      case eff => raw" \ " + FormatType.formatType(eff)
     }
 
     s"$t$p"

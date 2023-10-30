@@ -98,8 +98,8 @@ object TypeInference {
     flix.subphase("Classes") {
       // Don't bother to infer the fresh classes
       val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      val results = ParOps.parMap(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
-      Validation.sequence(results).map {
+      val result = ParOps.parMapSeq(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
+      result.map {
         case substs =>
           val (sigSubsts, defSubsts) = substs.unzip
           (sigSubsts.fold(Map.empty)(_ ++ _), defSubsts.fold(Map.empty)(_ ++ _))
@@ -136,9 +136,9 @@ object TypeInference {
         inst <- insts
       } yield inst
 
-      val results = ParOps.parMap(instances)(visitInstance(_, root, classEnv, eqEnv))
+      val result = ParOps.parMapSeq(instances)(visitInstance(_, root, classEnv, eqEnv))
 
-      Validation.sequence(results).map {
+      result.map {
         case substs => substs.fold(Map.empty)(_ ++ _)
       }
     }
@@ -199,14 +199,7 @@ object TypeInference {
       // only infer the stale defs
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-      val results = ParOps.parMap(staleDefs) {
-        case (sym, defn) => visitDefn(defn, Nil, root, classEnv, eqEnv).map {
-          case subst => sym -> subst
-        }
-      }
-      Validation.sequence(results).map {
-        case substs => substs.toMap
-      }
+      ParOps.parMapValuesSeq(staleDefs)(visitDefn(_, Nil, root, classEnv, eqEnv))
     }
 
   /**
@@ -240,10 +233,9 @@ object TypeInference {
           ///
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromSpec(spec0)
-          val initialLenv = LevelEnv.Top
 
-          run(initialSubst, Nil, initialRenv, initialLenv) match { // TODO ASSOC-TYPES initial econstrs?
-            case Ok((subst0, partialEconstrs, renv0, _, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
+          run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
+            case Ok((subst0, partialEconstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -333,12 +325,12 @@ object TypeInference {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  def inferExp(exp0: KindedAst.Expr, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  def inferExp(exp0: KindedAst.Expr, root: KindedAst.Root, level0: Level)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: KindedAst.Expr): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
+    def visitExp(e0: KindedAst.Expr)(implicit level: Level): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
       case KindedAst.Expr.Var(sym, loc) =>
         liftM(List.empty, sym.tvar, Type.Pure)
@@ -712,16 +704,13 @@ object TypeInference {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
-        // Ensure that `exp1` is a lambda.
-        val a = Type.freshVar(Kind.Star, loc)
-        val b = Type.freshVar(Kind.Star, loc)
-        val p = Type.freshVar(Kind.Eff, loc)
-        val expectedType = Type.mkArrowWithEffect(a, p, b, loc)
+      case KindedAst.Expr.LetRec(sym, _, _, exp1, exp2, loc) =>
+        // Note 1: We do not have to ensure that `exp1` is a lambda because it is syntactically ensured.
+        // Note 2: We purify the letrec bound function to simplify its inferred effect.
         for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
-          arrowTyp <- unifyTypeM(expectedType, tpe1, exp1.loc)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)(level.incr)
           boundVar <- unifyTypeM(sym.tvar, tpe1, exp1.loc)
+          _ <- purifyLetRec(boundVar)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
           resultEff = Type.mkUnion(eff1, eff2, loc)
@@ -732,13 +721,15 @@ object TypeInference {
 
       case KindedAst.Expr.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
-          // don't make the region var rigid if the --Xflexible-regions flag is set
-          _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
-          _ <- enterScopeM(regionVar.sym)
+          _ <- rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
-          (constrs, tpe, eff) <- visitExp(exp)
-          _ <- exitScopeM(regionVar.sym)
-          resultEff <- unifyTypeM(pvar, eff, loc)
+          // Increase the level environment as we enter the region
+          (constrs, tpe, eff) <- visitExp(exp)(level.incr)
+          // Purify the region's effect and unbind free local effect variables from the substitution.
+          // This ensures that the substitution cannot re-introduce the region
+          // in place of the free local effect variables.
+          purifiedEff <- purifyEffAndUnbindM(regionVar, eff)
+          resultEff <- unifyTypeM(pvar, purifiedEff, loc)
           _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
@@ -1464,7 +1455,7 @@ object TypeInference {
     /**
       * Infers the type of the given constraint `con0` inside the inference monad.
       */
-    def visitConstraint(con0: KindedAst.Constraint): InferMonad[(List[Ast.TypeConstraint], Type)] = {
+    def visitConstraint(con0: KindedAst.Constraint)(implicit level: Level): InferMonad[(List[Ast.TypeConstraint], Type)] = {
       val KindedAst.Constraint(cparams, head0, body0, loc) = con0
       //
       //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -1479,7 +1470,7 @@ object TypeInference {
       } yield (constrs1 ++ constrs2.flatten, resultType)
     }
 
-    visitExp(exp0)
+    visitExp(exp0)(level0)
   }
 
   /**
@@ -1487,7 +1478,7 @@ object TypeInference {
     */
   private def inferExpectedExp(exp: KindedAst.Expr, tpe0: Type, eff0: Type, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
     for {
-      (tconstrs, tpe, eff) <- inferExp(exp, root)
+      (tconstrs, tpe, eff) <- inferExp(exp, root, Level.Top)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
       _ <- expectEffectM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, eff)
@@ -1496,7 +1487,7 @@ object TypeInference {
   /**
     * Infers the type of the given pattern `pat0`.
     */
-  private def inferPattern(pat0: KindedAst.Pattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferPattern(pat0: KindedAst.Pattern, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[Type] = {
 
     /**
       * Local pattern visitor.
@@ -1589,14 +1580,14 @@ object TypeInference {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferPatterns(pats0: List[KindedAst.Pattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+  private def inferPatterns(pats0: List[KindedAst.Pattern], root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferPattern(_, root))
   }
 
   /**
     * Infers the type of the given [[KindedAst.Pattern.Record.RecordLabelPattern]] `pat`.
     */
-  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(Name.Label, Type, SourceLocation)] = pat match {
+  private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(Name.Label, Type, SourceLocation)] = pat match {
     case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
       // { Label = Pattern ... }
       for {
@@ -1608,12 +1599,12 @@ object TypeInference {
   /**
     * Infers the type of the given head predicate.
     */
-  private def inferHeadPredicate(head: KindedAst.Predicate.Head, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
+  private def inferHeadPredicate(head: KindedAst.Predicate.Head, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
       // Adds additional type constraints if the denotation is a lattice.
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
       for {
-        (termConstrs, termTypes, termEffs) <- traverseM(terms)(inferExp(_, root)).map(_.unzip3)
+        (termConstrs, termTypes, termEffs) <- traverseM(terms)(inferExp(_, root, level)).map(_.unzip3)
         pureTermEffs <- unifyEffM(Type.Pure, Type.mkUnion(termEffs, loc), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
@@ -1623,7 +1614,7 @@ object TypeInference {
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = {
+  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = {
 
     body0 match {
       case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
@@ -1638,14 +1629,14 @@ object TypeInference {
         val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         for {
-          (constrs, tpe, eff) <- inferExp(exp, root)
+          (constrs, tpe, eff) <- inferExp(exp, root, level)
           expTyp <- unifyTypeM(expectedType, tpe, loc)
           expEff <- unifyEffM(Type.Pure, eff, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
 
       case KindedAst.Predicate.Body.Guard(exp, loc) =>
         for {
-          (constrs, tpe, eff) <- inferExp(exp, root)
+          (constrs, tpe, eff) <- inferExp(exp, root, level)
           expEff <- unifyEffM(Type.Pure, eff, loc)
           expTyp <- unifyTypeM(Type.Bool, tpe, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
@@ -1706,7 +1697,7 @@ object TypeInference {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(declaredType))
+        macc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(declaredType)(Level.Top, flix))
     }
   }
 
@@ -1715,7 +1706,7 @@ object TypeInference {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit level: Level, flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
@@ -1751,7 +1742,7 @@ object TypeInference {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit level: Level, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 
   /**
     * Computes and prints statistics about the given substitution.

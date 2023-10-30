@@ -44,13 +44,34 @@ object ParOps {
   }
 
   /**
+    * Apply the given fallible function `f` to each element in the list `xs` in parallel,
+    * returning the resulting iterable if all calls are successful.
+    */
+  @inline
+  def parMapSeq[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
+    val results = parMap(xs)(f)
+    Validation.sequence(results)
+  }
+
+  /**
     * Apply the given function `f` to each value in the map `m` in parallel.
     */
   @inline
-  def mapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
+  def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
       case (k, v) => (k, f(v))
     }.toMap
+
+  /**
+    * Apply the given fallible function `f` to each value in the map `m` in parallel,
+    * returning the resulting map if all calls are successful.
+    */
+  @inline
+  def parMapValuesSeq[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
+    parMapSeq(m) {
+      case (k, v) => f(v).map((k, _))
+    }.map(_.toMap)
+  }
 
   /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.

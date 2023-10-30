@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.inference
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.TypeInference.inferExp
 import ca.uwaterloo.flix.language.phase.unification.InferMonad
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.traverseM
@@ -72,7 +72,7 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable choose expression.
     */
-  def infer(exp: KindedAst.Expr.RestrictableChoose, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  def infer(exp: KindedAst.Expr.RestrictableChoose, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
 
     exp match {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
@@ -90,7 +90,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, eff) <- inferExp(exp0, root)
+          (constrs, tpe, eff) <- inferExp(exp0, root, level)
           patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -101,7 +101,7 @@ object RestrictableChooseInference {
           _ <- if (domSet != universe) unifySubset(indexVar, domM, enumSym, root, loc.asSynthetic) else InferMonad.point(())
 
           // Γ, x_i: τ_i ⊢ e_i: τ_out
-          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
+          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root, level)).map(_.unzip3)
           resultTconstrs = constrs ::: constrss.flatten
 
           // τ_out
@@ -135,7 +135,7 @@ object RestrictableChooseInference {
 
         for {
           // Γ ⊢ e: τ_in
-          (constrs, tpe, eff) <- inferExp(exp0, root)
+          (constrs, tpe, eff) <- inferExp(exp0, root, level)
           patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
           _ <- unifyTypeM(tpe :: patTpes, loc)
 
@@ -146,7 +146,7 @@ object RestrictableChooseInference {
           _ <- unifySubset(indexInVar, domM, enumSym, root, loc.asSynthetic)
 
           // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
-          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(_.unzip3)
+          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root, level)).map(_.unzip3)
           _ <- traverseM(tpes.zip(bodyTypes)) { case (t1, t2) => unifyTypeM(t1, t2, loc) }
 
           // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
@@ -178,7 +178,7 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def inferRestrictableTag(exp: KindedAst.Expr.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp match {
+  def inferRestrictableTag(exp: KindedAst.Expr.RestrictableTag, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp match {
     case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
 
       // Lookup the enum declaration.
@@ -232,7 +232,7 @@ object RestrictableChooseInference {
       //
       for {
         // Γ ⊢ e: τ
-        (constrs, tpe, eff) <- inferExp(exp, root)
+        (constrs, tpe, eff) <- inferExp(exp, root, level)
         _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
         _ <- traverseM(targs.zip(targsOut)) { case (targ, targOut) => unifyTypeM(targ, targOut, loc) }
         _ <- indexUnification
@@ -252,7 +252,7 @@ object RestrictableChooseInference {
     * -------------------------------------
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
-  def inferOpenAs(exp0: KindedAst.Expr.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
+  def inferOpenAs(exp0: KindedAst.Expr.OpenAs, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
     case KindedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
       val `enum` = root.restrictableEnums(sym)
 
@@ -262,7 +262,7 @@ object RestrictableChooseInference {
 
       for {
         // infer the inner expression type τ
-        (constrs, tpe, eff) <- inferExp(exp, root)
+        (constrs, tpe, eff) <- inferExp(exp, root, level)
 
         // make sure the expression has type EnumType[s][α1 ... αn]
         _ <- expectTypeM(expected = enumType, actual = tpe, loc)
@@ -290,7 +290,7 @@ object RestrictableChooseInference {
     *
     * The first and the second instantiation share all variables except the index.
     */
-  private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit flix: Flix): (Type, Type.Var, List[Type]) = {
+  private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit level: Level, flix: Flix): (Type, Type.Var, List[Type]) = {
     // TODO RESTR-VARS can get rid of enumSym since it's in the decl
     // Make fresh vars for all the type parameters
     // This will unify with the enum type to extract the index
@@ -315,7 +315,7 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[Type] = {
 
     /**
       * Local pattern visitor.
@@ -356,7 +356,7 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+  private def inferRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern], root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferRestrictableChoosePattern(_, root))
   }
 

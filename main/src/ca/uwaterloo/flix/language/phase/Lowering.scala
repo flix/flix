@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, Level, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -38,6 +38,9 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 // - Decide which expressions to allow as head and body terms.
 
 object Lowering {
+
+  // Post type inference, level is irrelevant.
+  private implicit val DefaultLevel: Level = Level.Default
 
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
@@ -144,17 +147,17 @@ object Lowering {
   def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
     implicit val r: TypedAst.Root = root
 
-    val defs = ParOps.mapValues(root.defs)(visitDef)
-    val sigs = ParOps.mapValues(root.sigs)(visitSig)
-    val instances = ParOps.mapValues(root.instances)(insts => insts.map(visitInstance))
-    val enums = ParOps.mapValues(root.enums)(visitEnum)
-    val restrictableEnums = ParOps.mapValues(root.restrictableEnums)(visitRestrictableEnum)
-    val effects = ParOps.mapValues(root.effects)(visitEffect)
-    val aliases = ParOps.mapValues(root.typeAliases)(visitTypeAlias)
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val sigs = ParOps.parMapValues(root.sigs)(visitSig)
+    val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
 
     // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.mapValues(root.classes)(c => visitClass(c, sigs))
+    val classes = ParOps.parMapValues(root.classes)(c => visitClass(c, sigs))
 
     val newEnums = enums ++ restrictableEnums.map {
       case (_, v) => v.sym -> v
@@ -389,7 +392,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Let(sym, mod, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
@@ -435,7 +438,7 @@ object Lowering {
 
     case TypedAst.Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
-      val rs = rules.map(visitMatchTypeRule)
+      val rs = rules.map(visitTypeMatchRule)
       val t = visitType(tpe)
       LoweredAst.Expr.TypeMatch(e, rs, t, eff, loc)
 
@@ -961,7 +964,7 @@ object Lowering {
   /**
     * Lowers the given match rule `rule0`.
     */
-  private def visitMatchTypeRule(rule0: TypedAst.TypeMatchRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
+  private def visitTypeMatchRule(rule0: TypedAst.TypeMatchRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeMatchRule = rule0 match {
     case TypedAst.TypeMatchRule(sym, tpe, exp) =>
       val e = visitExp(exp)
       LoweredAst.TypeMatchRule(sym, tpe, e)
