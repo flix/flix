@@ -180,7 +180,7 @@ object Safety {
         visit(exp1, NonTailPosition) ++ visit(exp2, currentCallPosition)
 
       case Expr.LetRec(sym, ann, _, exp1, exp2, _, _, _) =>
-        val e1 =     if (ann.isTailRecursive) {
+        val e1 = if (ann.isTailRecursive) {
           visitExp(exp1, renv, TailPosition(sym), root)
         } else {
           visit(exp1, NonTailPosition)
