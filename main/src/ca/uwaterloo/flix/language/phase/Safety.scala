@@ -133,17 +133,19 @@ object Safety {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(sym, _, _) =>
-        currentCallSym = Some(sym)
         expectedCallPosition match {
-          case TailPosition(esym) if sym == esym => containsRecursiveCall = true
+          case TailPosition(esym) if sym == esym =>
+            currentCallSym = Some(sym)
+            containsRecursiveCall = true
           case _ => ()
         }
         Nil
 
       case Expr.Def(sym, _, _) =>
-        currentCallSym = Some(sym)
         expectedCallPosition match {
-          case TailPosition(esym) if sym == esym => containsRecursiveCall = true
+          case TailPosition(esym) if sym == esym =>
+            currentCallSym = Some(sym)
+            containsRecursiveCall = true
           case _ => ()
         }
         Nil
