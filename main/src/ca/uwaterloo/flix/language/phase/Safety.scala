@@ -112,7 +112,7 @@ object Safety {
 
   private case object NonTailPosition extends CallPosition
 
-  private def checkTailCallAnnotation(expectedPosition: CallPosition, actualPosition: CallPosition, actualSym: Option[Symbol.DefnSym], loc: SourceLocation): List[CompilationMessage] =
+  private def checkTailCallAnnotation(expectedPosition: CallPosition, actualPosition: CallPosition, actualSym: Option[Symbol], loc: SourceLocation): List[CompilationMessage] =
     (expectedPosition, actualPosition, actualSym) match {
       case (TailPosition(sym), NonTailPosition, Some(asym)) if sym == asym => SafetyError.NonTailRecursiveFunction(sym, loc) :: Nil
       case _ => Nil
@@ -123,7 +123,7 @@ object Safety {
     */
   private def visitExp(e0: Expr, renv: RigidityEnv, expectedCallPosition: CallPosition, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
 
-    var currentCallSym: Option[Symbol.DefnSym] = None
+    var currentCallSym: Option[Symbol] = None
     var containsRecursiveCall = false
 
     /**
@@ -132,7 +132,13 @@ object Safety {
     def visit(exp0: Expr, currentCallPosition: CallPosition): List[CompilationMessage] = exp0 match {
       case Expr.Cst(_, _, _) => Nil
 
-      case Expr.Var(_, _, _) => Nil
+      case Expr.Var(sym, _, _) =>
+        currentCallSym = Some(sym)
+        expectedCallPosition match {
+          case TailPosition(esym) if sym == esym => containsRecursiveCall = true
+          case _ => ()
+        }
+        Nil
 
       case Expr.Def(sym, _, _) =>
         currentCallSym = Some(sym)
