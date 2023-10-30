@@ -176,6 +176,7 @@ mod List {
     /// Returns the length of `l`.
     ///
     pub def length(l: List[a]): Int32 =
+        @Tailrec
         def loop(ll, acc) = match ll {
             case Nil     => acc
             case _ :: xs => loop(xs, acc + 1)
@@ -235,6 +236,7 @@ mod List {
     /// Optionally returns the position of `x` in `l`.
     ///
     pub def indexOf(a: a, l: List[a]): Option[Int32] with Eq[a] =
+        @Tailrec
         def loop(ll, acc) = match ll {
             case Nil     => None
             case x :: xs => if (a == x) Some(acc) else loop(xs, acc + 1)
@@ -259,6 +261,7 @@ mod List {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
@@ -271,6 +274,7 @@ mod List {
     /// Returns `Nil` if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): List[Int32] =
+        @Tailrec
         def loop(i, acc) =
             if (i < b)
                 acc
@@ -284,6 +288,7 @@ mod List {
     /// Returns `Nil` if `n < 0`.
     ///
     pub def repeat(n: Int32, a: a): List[a] =
+        @Tailrec
         def loop(i, acc) =
             if (i >= n)
                 acc
@@ -302,6 +307,7 @@ mod List {
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
+        @Tailrec
         def loop(ll, k, acc) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
@@ -316,6 +322,7 @@ mod List {
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(s :: Nil)
             case x :: xs => loop(xs, ks -> match ks {
@@ -330,6 +337,7 @@ mod List {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     pub def map(f: a -> b \ ef, l: List[a]): List[b] \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => {
@@ -388,6 +396,7 @@ mod List {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: List[a]): List[b] \ ef =
+        @Tailrec
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
@@ -400,6 +409,7 @@ mod List {
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
     pub def flatMap(f: a -> List[b] \ ef, l: List[a]): List[b] \ ef =
+        @Tailrec
         def loop(ll, acc) = match ll {
             case Nil     => acc
             case x :: xs => loop(xs, acc ::: f(x))
@@ -410,6 +420,7 @@ mod List {
     /// Returns the reverse of `l`.
     ///
     pub def reverse(l: List[a]): List[a] =
+        @Tailrec
         def loop(ll, acc) = match ll {
             case Nil     => acc
             case x :: xs => loop(xs, x :: acc)
@@ -446,6 +457,7 @@ mod List {
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
     pub def update(i: Int32, a: a, l: List[a]): List[a] =
+        @Tailrec
         def loop(ll, j, k) = match (j, ll) {
             case (_, Nil)     => k(Nil)
             case (0, _ :: xs) => k(a :: xs)
@@ -466,6 +478,7 @@ mod List {
     /// If patching occurs at index `i+j` in `l2`, then the element at index `j` in `l1` is used.
     ///
     pub def patch(i: Int32, n: Int32, l1: List[a], l2: List[a]): List[a] =
+        @Tailrec
         def loop(ll1, ll2, c, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
                 if (c >= i and c < i + n)
@@ -533,6 +546,7 @@ mod List {
     /// Returns `l` with `x` added to the beginning of each element in `l`.
     ///
     def applyHelper(a: a, l: List[List[a]]): List[List[a]] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => loop(xs, ks -> k((a :: x) :: ks))
@@ -543,6 +557,7 @@ mod List {
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
     pub def intersperse(a: a, l: List[a]): List[a] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case x1 :: x2 :: xs => loop(x2 :: xs, ks -> k(x1 :: a :: ks))
             case _              => k(ll)
@@ -555,6 +570,7 @@ mod List {
     /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
     pub def intercalate(l1: List[a], l2: List[List[a]]): List[a] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil            => k(Nil)
             case y :: Nil       => k(y)
@@ -647,6 +663,7 @@ mod List {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
@@ -684,6 +701,7 @@ mod List {
     /// Returns `None` if `l` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, l: List[a]): Option[a] \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(None)
             case x :: xs => loop(xs, ks -> k(match ks {
@@ -703,6 +721,7 @@ mod List {
     /// Returns the concatenation of the elements in `l`.
     ///
     pub def flatten(l: List[List[a]]): List[a] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => loop(xs, ks -> k(x ::: ks))
@@ -735,6 +754,7 @@ mod List {
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else loop(xs, k)
@@ -746,6 +766,7 @@ mod List {
     /// Returns `None` if the list `l` is `Nil`.
     ///
     pub def init(l: List[a]): Option[List[a]] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil      => None
             case _ :: Nil => Some(k(Nil))
@@ -760,6 +781,7 @@ mod List {
     /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, l: List[a]): List[a] =
+        @Tailrec
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
@@ -779,6 +801,7 @@ mod List {
     /// `l2` contains all elements of `l` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, l: List[a]): (List[a], List[a]) \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k((Nil, Nil))
             case x :: xs =>
@@ -798,6 +821,7 @@ mod List {
     /// The function `f` must be pure.
     ///
     pub def span(f: a -> Bool, l: List[a]): (List[a], List[a]) =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k((Nil, Nil))
             case x :: xs =>
@@ -837,6 +861,7 @@ mod List {
     /// Returns `Nil` if `n < 0`.
     ///
     pub def take(n: Int32, l: List[a]): List[a] =
+        @Tailrec
         def loop(ll, i, k) =
             if (i <= 0)
                 k(Nil)
@@ -851,6 +876,7 @@ mod List {
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
     pub def takeWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else k(Nil)
@@ -878,6 +904,7 @@ mod List {
     /// The function `f` must be pure.
     ///
     pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
@@ -893,6 +920,7 @@ mod List {
     /// We have no choice but to reverse it.
     ///
     def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a]): (List[a], List[a]) =
+        @Tailrec
         def loop(ll, ll2, k) = match ll {
             case Nil     => (reverse(ll2), k(Nil))
             case x :: xs => if (agreeHelper(f, x, ll2)) loop(xs, x :: ll2, k) else loop(xs, ll2, ks -> k(x :: ks))
@@ -915,6 +943,7 @@ mod List {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     pub def zip(l1: List[a], l2: List[b]): List[(a, b)] =
+        @Tailrec
         def loop(ll1, ll2, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => loop(xs, ys, ks -> k((x, y) :: ks))
             case _                  => k(Nil)
@@ -928,6 +957,7 @@ mod List {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     pub def zipWith(f: (a, b) -> c \ ef, l1: List[a], l2: List[b]): List[c] \ ef =
+        @Tailrec
         def loop(ll1, ll2, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) =>
                 let z = f(x, y);
@@ -941,6 +971,7 @@ mod List {
     /// is the index of `e`.
     ///
     pub def zipWithIndex(l: List[a]): List[(Int32, a)] =
+        @Tailrec
         def loop(ll, i, k) = match ll {
             case Nil       => k(Nil)
             case (x :: xs) => loop(xs, i + 1, ks -> k((i, x) :: ks))
@@ -953,6 +984,7 @@ mod List {
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: List[a], ys: List[b]): f[List[c]] \ ef with Applicative[f] =
         use Functor.{<$>};
         use Applicative.{<*>};
+        @Tailrec
         def loop(l1, l2, k) = match (l1, l2) {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
@@ -964,6 +996,7 @@ mod List {
     /// and the second containing all second components in `l`.
     ///
     pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil            => k((Nil, Nil))
             case (x1, x2) :: xs => loop(xs, match (ks, ls) -> k((x1 :: ks, x2 :: ls)))
@@ -988,6 +1021,7 @@ mod List {
     /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     ///
     pub def zipWith3(f: (a, b, c) -> d \ ef, l1: List[a], l2: List[b], l3: List[c]): List[d] \ ef =
+        @Tailrec
         def loop(ll1, ll2, ll3, k) = match (ll1, ll2, ll3) {
             case (x :: xs, y :: ys, z :: zs) =>
                 let r = f(x, y, z);
@@ -1002,6 +1036,7 @@ mod List {
     /// third components in `l`.
     ///
     pub def unzip3(l: List[(a, b, c)]): (List[a], List[b], List[c]) =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil             => k((Nil, Nil, Nil))
             case (x, y, z) :: xs => loop(xs, match (ks, ls, ms) -> k((x :: ks, y :: ls, z :: ms)))
@@ -1028,6 +1063,7 @@ mod List {
     /// starting with the initial value `c` and going from right to left.
     ///
     pub def foldRight2(f: (a, b, c) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef =
+        @Tailrec
         def loop(ll1, ll2, k) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => loop(xs, ys, ks -> k(f(x, y, ks)))
             case _                  => k(c)
@@ -1046,6 +1082,7 @@ mod List {
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
     pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => match f(x) {
@@ -1150,6 +1187,7 @@ mod List {
     /// Applies `f` to every element of `l` along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: List[a]): Unit \ ef =
+        @Tailrec
         def loop(ll, i) = match ll {
             case Nil     => ()
             case x :: xs => f(i, x); loop(xs, i+1)
@@ -1237,6 +1275,7 @@ mod List {
     /// `f` should return `None` to signal the end of building the list.
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
+        @Tailrec
         def loop(sst, k) = match f(sst) {
             case None         => k(Nil)
             case Some(a, st1) => loop(st1, ks -> k(a :: ks))
@@ -1252,6 +1291,7 @@ mod List {
     /// `next` should return `None` to signal the end of building the list.
     ///
     pub def unfoldWithIter(next: Unit -> Option[a] \ ef): List[a] \ ef =
+        @Tailrec
         def loop(k) = match next() {
             case None    => k(Nil)
             case Some(x) => loop(ks -> k(x :: ks))
@@ -1269,6 +1309,7 @@ mod List {
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
     pub def unfoldWithOkIter(next: Unit -> Result[e, Option[a]] \ ef): Result[e, List[a]] \ ef =
+        @Tailrec
         def loop(k) = match next() {
             case Ok(None)    => k(Ok(Nil))
             case Err(e)      => k(Err(e))
@@ -1285,6 +1326,7 @@ mod List {
     /// need a custom equality test.
     ///
     pub def distinct(l: List[a]): List[a] with Eq[a] =
+        @Tailrec
         def loop(ll1, ll2, k) = match ll1 {
             case Nil     => k(Nil)
             case x :: xs =>
@@ -1301,6 +1343,7 @@ mod List {
     /// for the removal of subsequent duplicates the order of `l` is preserved.
     ///
     pub def distinctWith(f: (a, a) -> Bool, l: List[a]): List[a] =
+        @Tailrec
         def loop(ll1, ll2, k) = match ll1 {
             case Nil     => k(Nil)
             case x :: xs =>
@@ -1367,6 +1410,7 @@ mod List {
     /// to right.
     ///
     pub def sequence(l: List[m[a]]): m[List[a]] with Applicative[m] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil      => k(Applicative.point(Nil))
             case mx :: rs => loop(rs, ks -> k(consA(mx, ks)))
@@ -1378,6 +1422,7 @@ mod List {
     /// list `l` going from left to right.
     ///
     pub def traverse(f: a -> m[b] \ ef, l: List[a]): m[List[b]] \ ef with Applicative[m] =
+        @Tailrec
         def loop(ll, k) = match ll {
             case Nil     => k(Applicative.point(Nil))
             case x :: xs => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
@@ -1389,6 +1434,7 @@ mod List {
     /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
     ///
     pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
+        @Tailrec
         def loop(acc1, acc2, k) = match (acc1, acc2) {
             case (x :: xs, y :: ys) => {
                 let cmp = x <=> y;
