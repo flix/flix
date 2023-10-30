@@ -1460,17 +1460,20 @@ object GenExpression {
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      mv.visitInsn(Opcodes.ACONST_NULL)
+      mv.visitInsn(Opcodes.ATHROW)
 
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
       // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      mv.visitInsn(Opcodes.ACONST_NULL)
+      mv.visitInsn(Opcodes.ATHROW)
 
 
     case Expr.Resume(exp, tpe, loc) =>
       // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      mv.visitInsn(Opcodes.ACONST_NULL)
+      mv.visitInsn(Opcodes.ATHROW)
 
 
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>

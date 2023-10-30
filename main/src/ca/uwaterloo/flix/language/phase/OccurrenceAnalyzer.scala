@@ -252,16 +252,23 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      // TODO AE erasing to unit for now
-      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, MonoType.Unit, loc), OccurInfo.Empty)
+      val (e, o1) = visitExp(sym0, exp)
+      val (rs, o2) = rules.map {
+        case LiftedAst.HandlerRule(op, fparams, exp) =>
+          val (e, o3) = visitExp(sym0, exp)
+          val fps = fparams.map(visitFormalParam)
+          (OccurrenceAst.HandlerRule(op, fps, e), o3)
+      }.unzip
+      val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
+      (OccurrenceAst.Expression.TryWith(e, effUse, rs, tpe, purity, loc), o4.copy(defs = o4.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
-      // TODO AE erasing to unit for now
-      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, MonoType.Unit, loc), OccurInfo.Empty)
+      val (es, o1) = visitExps(sym0, exps)
+      (OccurrenceAst.Expression.Do(op, es, tpe, purity, loc), o1.increaseSizeByOne())
 
     case Expr.Resume(exp, tpe, loc) =>
-      // TODO AE erasing to unit for now
-      (OccurrenceAst.Expression.Constant(Ast.Constant.Unit, MonoType.Unit, loc), OccurInfo.Empty)
+      val (e, o1) = visitExp(sym0, exp)
+      (OccurrenceAst.Expression.Resume(e, tpe, loc), o1.increaseSizeByOne())
 
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {
