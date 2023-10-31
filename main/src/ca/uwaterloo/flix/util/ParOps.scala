@@ -87,7 +87,7 @@ object ParOps {
       elmsBuilder.result()
     }
     val iterator = xs.iterator
-    val (l1, l2) = threadElms.splitAt(xs.size % threads)
+    val (l1, l2) = threadElms.splitAt(threads - (xs.size % threads))
     l1.foreach {
       l => l.appendAll(iterator.take(xs.size / threads))
     }
