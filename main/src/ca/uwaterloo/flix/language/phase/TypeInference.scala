@@ -98,8 +98,8 @@ object TypeInference {
     flix.subphase("Classes") {
       // Don't bother to infer the fresh classes
       val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      val results = ParOps.parMap(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
-      Validation.sequence(results).map {
+      val result = ParOps.parMapSeq(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
+      result.map {
         case substs =>
           val (sigSubsts, defSubsts) = substs.unzip
           (sigSubsts.fold(Map.empty)(_ ++ _), defSubsts.fold(Map.empty)(_ ++ _))
@@ -136,9 +136,9 @@ object TypeInference {
         inst <- insts
       } yield inst
 
-      val results = ParOps.parMap(instances)(visitInstance(_, root, classEnv, eqEnv))
+      val result = ParOps.parMapSeq(instances)(visitInstance(_, root, classEnv, eqEnv))
 
-      Validation.sequence(results).map {
+      result.map {
         case substs => substs.fold(Map.empty)(_ ++ _)
       }
     }
@@ -199,14 +199,7 @@ object TypeInference {
       // only infer the stale defs
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-      val results = ParOps.parMap(staleDefs) {
-        case (sym, defn) => visitDefn(defn, Nil, root, classEnv, eqEnv).map {
-          case subst => sym -> subst
-        }
-      }
-      Validation.sequence(results).map {
-        case substs => substs.toMap
-      }
+      ParOps.parMapValuesSeq(staleDefs)(visitDefn(_, Nil, root, classEnv, eqEnv))
     }
 
   /**
@@ -711,7 +704,7 @@ object TypeInference {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
+      case KindedAst.Expr.LetRec(sym, _, _, exp1, exp2, loc) =>
         // Note 1: We do not have to ensure that `exp1` is a lambda because it is syntactically ensured.
         // Note 2: We purify the letrec bound function to simplify its inferred effect.
         for {
@@ -728,8 +721,7 @@ object TypeInference {
 
       case KindedAst.Expr.Scope(sym, regionVar, exp, pvar, loc) =>
         for {
-          // don't make the region var rigid if the --Xflexible-regions flag is set
-          _ <- if (flix.options.xflexibleregions) InferMonad.point(()) else rigidifyM(regionVar)
+          _ <- rigidifyM(regionVar)
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           // Increase the level environment as we enter the region
           (constrs, tpe, eff) <- visitExp(exp)(level.incr)

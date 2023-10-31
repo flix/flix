@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for filtering container functors.
+/// A trait for filtering container functors.
 ///
-pub class Filterable[m : Type -> Type] with Functor[m] {
+pub trait Filterable[m : Type -> Type] with Functor[m] {
 
     ///
     /// Applies the partial function `f` to every element in `x` collecting the results.

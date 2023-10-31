@@ -59,20 +59,14 @@ object Stratifier {
 
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = flix.subphase("Stratify Defs") {
-      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(root, g, flix).map(d => kv._1 -> d))
-      Validation.sequence(result)
+      ParOps.parMapValuesSeq(root.defs)(visitDef(_)(root, g, flix))
     }
     val newInstances = flix.subphase("Stratify Instance Defs") {
-      val result = ParOps.parMap(root.instances) {
-        case (sym, is) =>
-          val x = traverse(is)(i => visitInstance(i)(root, g, flix))
-          x.map(d => sym -> d)
-      }
-      Validation.sequence(result)
+      ParOps.parMapValuesSeq(root.instances)(traverse(_)(i => visitInstance(i)(root, g, flix)))
     }
 
     mapN(newDefs, newInstances) {
-      case (ds, is) => root.copy(defs = ds.toMap, instances = is.toMap)
+      case (ds, is) => root.copy(defs = ds, instances = is)
     }
   }
 
@@ -146,9 +140,9 @@ object Stratifier {
         case (e1, e2) => Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
       }
 
-    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
       }
 
     case Expr.Region(_, _) =>
@@ -578,7 +572,7 @@ object Stratifier {
     case Expr.Let(_, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expr.Region(_, _) =>

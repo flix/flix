@@ -220,7 +220,7 @@ object Indexer {
     case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.LetRec(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.Region(_, _) =>

@@ -145,7 +145,7 @@ object Safety {
       case Expr.Let(_, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+      case Expr.LetRec(_, ann, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
       case Expr.Region(_, _) =>

@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for marshaling values to Java.
+/// A trait for marshaling values to Java.
 ///
-pub class ToJava[t: Type] {
+pub trait ToJava[t: Type] {
     type O
     pub def toJava(t: t): ToJava.O[t] \ IO
 }

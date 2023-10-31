@@ -109,9 +109,9 @@ object VarNumbering {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-        // TODO
-        i0
+      case Expr.TryWith(exp, _, rules, _, _, _) =>
+        val i1 = visitExp(exp, i0)
+        visitExps(rules.map(_.exp), i1)
 
       case Expr.Do(_, exps, _, _, _) =>
         visitExps(exps, i0)

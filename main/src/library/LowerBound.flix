@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for partially ordered types that have a lower bound.
+/// A trait for partially ordered types that have a lower bound.
 ///
-pub class LowerBound[a] {
+pub trait LowerBound[a] {
     ///
     /// Returns the smallest value of `a`.
     ///

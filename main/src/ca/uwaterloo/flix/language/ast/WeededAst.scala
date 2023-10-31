@@ -107,7 +107,7 @@ object WeededAst {
 
     case class Let(ident: Name.Ident, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetRec(ident: Name.Ident, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LetRec(ident: Name.Ident, ann: Ast.Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
@@ -120,6 +120,8 @@ object WeededAst {
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
+
+    case class ApplicativeFor(frags: List[ForFragment.Generator], exp: Expr, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -429,5 +431,16 @@ object WeededAst {
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
   case class Derivations(classes: List[Name.QName], loc: SourceLocation)
+
+
+  sealed trait ForFragment
+
+  object ForFragment {
+
+    case class Generator(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
+
+    case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
+
+  }
 
 }

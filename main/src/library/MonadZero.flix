@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for Monads that have a zero element.
+/// A trait for Monads that have a zero element.
 ///
-class MonadZero[m: Type -> Type] with Monad[m] {
+trait MonadZero[m: Type -> Type] with Monad[m] {
 
     ///
     /// Returns the zero element of the monad.

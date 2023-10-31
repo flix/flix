@@ -7,9 +7,9 @@ mod Test.Assoc.Eff.Contravariance {
     pub eff Network
 
     ///
-    /// A type class for container types which can have their elements counted.
+    /// A trait for container types which can have their elements counted.
     ///
-    class Countable[m: Type -> Type] {
+    trait Countable[m: Type -> Type] {
         /// An associated effect which specifies an *upperbound* on the permitted effects.
         type UpperBound: Eff
 

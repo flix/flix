@@ -9,12 +9,12 @@ import dev.flix.runtime.Value;
 public class ConsoleHandler17 implements Console, Handler {
 
     public Result read(Unit opArg, Resumption k) {
-        return Resumption.rewind(k, new Value("John"));    // resume("John")
+        return k.rewind(new Value("John"));    // resume("John")
     }
 
     public Result print(String opArg, Resumption k) {
         System.out.println("STDOUT: " + opArg);
-        return Resumption.rewind(k, new Value(Unit.instance));  // resume()
+        return k.rewind(new Value(Unit.instance));  // resume()
     }
 
 }

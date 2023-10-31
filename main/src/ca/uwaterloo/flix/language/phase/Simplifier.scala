@@ -639,6 +639,20 @@ object Simplifier {
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
       }
 
+    def visitEffect(eff: LoweredAst.Effect): SimplifiedAst.Effect = eff match {
+      case LoweredAst.Effect(_, ann, mod, sym, ops0, loc) =>
+        val ops = ops0.map(visitEffOp)
+        SimplifiedAst.Effect(ann, mod, sym, ops, loc)
+    }
+
+    def visitEffOp(op: LoweredAst.Op): SimplifiedAst.Op = op match {
+      case LoweredAst.Op(sym, LoweredAst.Spec(_, ann, mod, _, fparams0, _, retTpe0, eff0, _, loc)) =>
+        val fparams = fparams0.map(visitFormalParam)
+        val retTpe = visitType(retTpe0)
+        val eff = simplifyEffect(eff0)
+        SimplifiedAst.Op(sym, ann, mod, fparams, retTpe, eff, loc)
+    }
+
     //
     // Main computation.
     //
@@ -650,8 +664,9 @@ object Simplifier {
         }
         k -> SimplifiedAst.Enum(ann, mod, sym, cases, visitType(enumType), loc)
     }
+    val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.sources)
+    SimplifiedAst.Root(defns ++ toplevel, enums, effects, root.entryPoint, root.sources)
   }
 
   /**
