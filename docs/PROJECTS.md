@@ -6,10 +6,6 @@ If you are interested in working on any of these projects, feel free to reach
 out to us on Gitter. If you are a bachelor or master student at Aarhus
 University you can reach out to Magnus directly.
 
-## Something with Datalog
-
-
-
 ## QuickCheck
 
 QuickCheck frameworks are testing tools used in software development to perform
@@ -27,7 +23,7 @@ frameworks and to (2) design and implement a QuickChecker for the Flix
 programming language. The work will include reading papers, language design, and
 implementation in a real-world programming language.
 
-# Package Management
+## Package Management
 
 Today, programs are rarely written from scratch, but rather build on a large
 collection of external libraries. Different languages have different package
@@ -49,9 +45,9 @@ Compilers are large and complex pieces of software. The correctness of a
 compiler is paramount: A compiler that silent mis-compiles (i.e. wrongly
 translates) a program is dangerous: We cannot trust the programs we compile and
 run! We can test compilers by writing unit tests, but unfortunately such tests
-tend to only test the 'happy path' of the compiler. Moreover, the amount of unit
+tend to only test the 'happy path' of the compiler. Moreover, the number of unit
 tests that can be written is limited. Instead, compiler fuzzing techniques have
-been proposed. A compiler fuzzy typically takes a test suite as input and subtly
+been proposed. A compiler fuzzer typically takes a test suite as input and subtly
 changes the programs in a systematic fashion and then re-compiles the test
 suite. This process is fully automatic and can be run for hours. Often such
 techniques, with suitably clever 'mutation strategies', are able to find
