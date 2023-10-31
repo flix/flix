@@ -6,11 +6,13 @@ on:
 jobs:
   check-title:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     env:
       regex: "^(chore|ci|docs|feat|fix|refactor|style|test): "
     steps:
       - name: Check title
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
@@ -18,5 +20,3 @@ jobs:
             if (title.match(process.env.regex) === null) {
               throw new Error("Invalid commit message '" + title + "'.")
             }
-            
-      
