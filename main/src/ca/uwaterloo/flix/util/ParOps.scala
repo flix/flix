@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import java.util
-import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
+import java.util.concurrent.{Callable, Future}
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
@@ -107,8 +107,7 @@ object ParOps {
       override def call(): Set[T] = next(t)
     }
 
-    // Initialize a new executor service.
-    val executorService = Executors.newFixedThreadPool(flix.options.threads)
+    val threadPool = flix.threadPool
 
     // A mutable variable that holds the currently reachable Ts.
     var reach = init
@@ -126,7 +125,7 @@ object ParOps {
       }
 
       // Invoke all callables in parallel.
-      val futures = executorService.invokeAll(callables)
+      val futures = threadPool.invokeAll(callables)
 
       // Compute the set of all inferred Ts in this iteration.
       // May include Ts discovered in previous iterations.
@@ -138,9 +137,6 @@ object ParOps {
       delta = newReach -- reach
       reach = reach ++ delta
     }
-
-    // Shutdown the executor service.
-    executorService.shutdown()
 
     // Return the set of reachable Ts.
     reach
