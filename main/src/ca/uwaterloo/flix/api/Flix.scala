@@ -326,16 +326,6 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The fork join pool for `this` Flix instance.
-    */
-  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
-
-  /**
-    * The fork join task support for `this` Flix instance.
-    */
-  var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
-
-  /**
     * The thread pool executor service for `this` Flix instance.
     */
   var threadPool: ExecutorService = _
@@ -522,9 +512,6 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
-
     // Initialize the thread pool.
     initThreadPool()
 
@@ -569,9 +556,6 @@ class Flix {
     // (Possible duplicate files in codeGen will just be empty and overwritten there)
     AstPrinter.printAsts()
 
-    // Shutdown fork join pool.
-    shutdownForkJoin()
-
     // Shutdown thread pool.
     shutdownThreadPool()
 
@@ -598,9 +582,6 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
-
     // Initialize thread pool.
     initThreadPool()
 
@@ -620,9 +601,6 @@ class Flix {
 
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()
-
-    // Shutdown fork join pool.
-    shutdownForkJoin()
 
     // Shutdown thread pool.
     shutdownThreadPool()
@@ -728,25 +706,10 @@ class Flix {
   }
 
   /**
-    * Initializes the fork join pools.
-    */
-  private def initForkJoin(): Unit = {
-    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
-    forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
-  }
-
-  /**
     * Initializes the thread pool.
     */
   private def initThreadPool(): Unit = {
     threadPool = Executors.newFixedThreadPool(options.threads)
-  }
-
-  /**
-    * Shuts down the fork join pools.
-    */
-  private def shutdownForkJoin(): Unit = {
-    forkJoinPool.shutdown()
   }
 
   /**
