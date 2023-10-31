@@ -31,11 +31,10 @@ object ParOps {
     */
   @inline
   def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    val in = xs.toVector
-    val out = ArrayBuffer.fill(in.size)(null.asInstanceOf[B])
+    val out = ArrayBuffer.fill(xs.size)(null.asInstanceOf[B])
 
     val futuresBuilder = ArrayBuffer.newBuilder[Future[?]]
-    futuresBuilder.sizeHint(in.size)
+    futuresBuilder.sizeHint(xs.size)
     val futures = futuresBuilder.result()
 
     val threadPool = flix.threadPool
@@ -98,6 +97,7 @@ object ParOps {
       override def call(): Set[T] = next(t)
     }
 
+    // Use global thread pool.
     val threadPool = flix.threadPool
 
     // A mutable variable that holds the currently reachable Ts.
