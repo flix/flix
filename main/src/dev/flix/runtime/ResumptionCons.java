@@ -1,13 +1,13 @@
 package dev.flix.runtime;
 
 public class ResumptionCons implements Resumption {
-    public final String effSym; // TODO: Could be classObject.
+    public final String sym; // TODO: Could be classObject.
     public final Handler handler;
     public final Frames frames;
     public final Resumption tail;
 
-    public ResumptionCons(String effSym, Handler handler, Frames frames, Resumption tail) {
-        this.effSym = effSym;
+    public ResumptionCons(String sym, Handler handler, Frames frames, Resumption tail) {
+        this.sym = sym;
         this.handler = handler;
         this.frames = frames;
         this.tail = tail;
@@ -18,7 +18,7 @@ public class ResumptionCons implements Resumption {
         return new Thunk() { // Return thunk to avoid increase the stack.
             @Override
             public Result invoke() {
-                return Handler.installHandler(effSym, handler, frames, new Thunk() {
+                return Handler.installHandler(sym, handler, frames, new Thunk() {
                     @Override
                     public Result invoke() {
                         return Resumption.staticRewind(tail, v);

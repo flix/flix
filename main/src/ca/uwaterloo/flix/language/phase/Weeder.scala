@@ -48,7 +48,7 @@ object Weeder {
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "instanceof", "into", "law", "lawful", "lazy", "let", "let*", "match",
     "null", "override", "pub", "ref", "region",
-    "sealed", "set", "spawn", "Static", "true",
+    "sealed", "set", "spawn", "Static", "trait", "true",
     "type", "use", "where", "with", "discard", "object"
   )
 
