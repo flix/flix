@@ -10,27 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Acknowledge request
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
-              github.issues.createComment({
+              github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body: 'Building JAR...'
               })
       - name: Install JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '21'
       - name: Lookup branches
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
-            var pull_promise = github.pulls.get({
+            var pull_promise = github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number
@@ -42,7 +42,7 @@ jobs:
               core.exportVariable("master_ref", pull.data.base.ref);
             });
       - name: Check out feature branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: ${{ env.feature_repo }}
           ref: ${{ env.feature_ref }}
@@ -54,11 +54,11 @@ jobs:
           name: JAR
           path: build/libs/flix.jar
       - name: Comment phase report
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
-              github.issues.createComment({
+              github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
