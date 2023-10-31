@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.util
 import java.util
 import java.util.concurrent.{Callable, Future}
 import scala.jdk.CollectionConverters._
-import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
 
 import scala.collection.mutable.ArrayBuffer
@@ -78,14 +77,45 @@ object ParOps {
     */
   @inline
   def parAgg[A, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
-    // Build the parallel array.
-    val parArray = xs.toParArray
+    val threads = flix.options.threads
+    val threadPool = flix.threadPool
 
-    // Configure the task support.
-    parArray.tasksupport = flix.forkJoinTaskSupport
+    // Distribute elements about equally between the threads
+    val threadElms = ArrayBuffer.fill(threads) {
+      val elmsBuilder = ArrayBuffer.newBuilder[A]
+      elmsBuilder.sizeHint(xs.size / threads)
+      elmsBuilder.result()
+    }
+    val iterator = xs.iterator
+    val (l1, l2) = threadElms.splitAt(xs.size % threads)
+    l1.foreach {
+      l => l.appendAll(iterator.take(xs.size / threads))
+    }
+    l2.foreach {
+      l => l.appendAll(iterator.take(xs.size / threads + 1))
+    }
 
-    // Aggregate the result in parallel.
-    parArray.aggregate(z)(seq, comb)
+    // Combing is done one after the other,
+    // as in task 2 combs the result of 1 and 2,
+    // task 3 combs the result of 2 and 3 and so on.
+    //
+    // This is found to be slightly faster than doing it sequentially,
+    // but it could be improved to be more parallel.
+    val futuresBuilder = ArrayBuffer.newBuilder[Future[S]]
+    futuresBuilder.sizeHint(threads)
+    val futures = futuresBuilder.result()
+    for ((elms, idx) <- threadElms.zipWithIndex) {
+      futures += threadPool.submit(() => {
+        val result = elms.foldLeft(z)(seq)
+        if (idx > 0)
+          comb(futures(idx - 1).get(), result)
+        else
+          result
+      })
+    }
+
+    // Assume that threads isn't 0
+    futures.last.get()
   }
 
   /**

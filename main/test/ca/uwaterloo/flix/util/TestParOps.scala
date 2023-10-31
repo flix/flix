@@ -38,4 +38,23 @@ class TestParOps extends AnyFunSuite {
     }
     assert(result.toList == List(List(2, 4), List(6, 8)))
   }
+
+  test("parAgg01") {
+    val list = List(1, 2, 3, 4)
+    val result = ParOps.parAgg(list, List.empty[Int])(
+      (acc, x) => acc :+ x * 2,
+      (l1, l2) => l1 ++ l2,
+    )
+    assert(result == List(2, 4, 6, 8))
+  }
+
+  test("parAgg02") {
+    val range = 1 to 100
+    val result = ParOps.parAgg(range, List.empty[Int])(
+      (acc, x) => acc :+ x * 2,
+      (l1, l2) => l1 ++ l2,
+    )
+    val doubledRange = range.map(_ * 2)
+    assert(result == doubledRange)
+  }
 }
