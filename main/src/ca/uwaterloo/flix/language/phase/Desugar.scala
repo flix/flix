@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, Name, SourceLocation, SourcePosition, WeededAst}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
@@ -538,7 +538,8 @@ object Desugar {
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
 
-    case WeededAst.Expr.ForEach(frags, exp, loc) => ???
+    case WeededAst.Expr.ForEach(frags, exp, loc) =>
+      desugarForEach(frags, exp, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
@@ -998,6 +999,41 @@ object Desugar {
         val e = visitExp(fexp)
         mkApplyFqn(fqnAp, List(acc, e), loc1)
     }
+  }
+
+  /**
+    * Rewrites a `ForEach` loop into a series of `Iterator.forEach` calls.
+    * {{{
+    *   foreach (
+    *           x <- xs;
+    *           y <- ys
+    *       ) println(x + y)
+    * }}}
+    * desugars to (omitting regions)
+    * {{{
+    *   Iterator.foreach(x -> Iterator.foreach(y -> println(x + y), Iterable.iterator(ys)), Iterable.iterator(xs))
+    * }}}
+    */
+  private def desugarForEach(frags: List[WeededAst.ForFragment], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val fqnForEach = "Iterator.forEach"
+    val fqnIterator = "Iterable.iterator"
+    val regIdent = Name.Ident(loc.sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), loc.sp2).asSynthetic
+    val regVar = DesugaredAst.Expr.Ambiguous(Name.mkQName(regIdent), loc.asSynthetic)
+
+    val foreachExp = frags.foldRight(visitExp(exp)) {
+      case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
+        val p1 = visitPattern(pat1)
+        val e1 = visitExp(exp1)
+        val lambda = mkLambdaMatch(p1, acc, loc1)
+        val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
+        val fparams = List(lambda, iterable)
+        mkApplyFqn(fqnForEach, fparams, loc1.asSynthetic)
+
+      case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
+        val e1 = visitExp(exp1)
+        DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
+    }
+    DesugaredAst.Expr.Scope(regIdent, foreachExp, loc)
   }
 
   /**
