@@ -538,6 +538,8 @@ object Desugar {
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
 
+    case WeededAst.Expr.ForEach(frags, exp, loc) => ???
+
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
       Expr.Tuple(es, loc)
