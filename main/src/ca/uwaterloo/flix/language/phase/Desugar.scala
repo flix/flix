@@ -1006,12 +1006,13 @@ object Desugar {
     * {{{
     *   foreach (
     *           x <- xs;
+    *           if x > 0;
     *           y <- ys
     *       ) println(x + y)
     * }}}
     * desugars to (omitting regions)
     * {{{
-    *   Iterator.foreach(x -> Iterator.foreach(y -> println(x + y), Iterable.iterator(ys)), Iterable.iterator(xs))
+    *   Iterator.foreach(x -> if (x > 0) Iterator.foreach(y -> println(x + y), Iterable.iterator(ys)) else (), Iterable.iterator(xs))
     * }}}
     */
   private def desugarForEach(frags: List[WeededAst.ForFragment], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
