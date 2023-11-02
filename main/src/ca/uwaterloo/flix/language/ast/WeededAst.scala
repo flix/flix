@@ -123,6 +123,8 @@ object WeededAst {
 
     case class ApplicativeFor(frags: List[ForFragment.Generator], exp: Expr, loc: SourceLocation) extends Expr
 
+    case class ForEach(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
+
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
