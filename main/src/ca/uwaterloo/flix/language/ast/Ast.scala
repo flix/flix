@@ -322,6 +322,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@Test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Tailrec` annotation.
+      */
+    def isTailRecursive: Boolean = annotations exists (_.isInstanceOf[Annotation.TailRecursive])
   }
 
   /**

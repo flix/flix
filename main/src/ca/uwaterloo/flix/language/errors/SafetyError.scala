@@ -567,7 +567,7 @@ object SafetyError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Test entry point must not have parameters.
-
+         |
          |${code(loc, "Parameter for test function occurs here.")}
          |
          |""".stripMargin
@@ -596,5 +596,69 @@ object SafetyError {
          |
          |""".stripMargin
     )
+  }
+
+  /**
+    * An error raised to indicate that a function marked with the `@Tailrec` annotation
+    * has at least non-tail-recursive function call.
+    *
+    * @param sym the symbol of the function annotated with `@Tailrec`.
+    * @param loc the location of the non-tail-recursive call.
+    */
+  case class NonTailRecursiveFunction(sym: Symbol, loc: SourceLocation) extends SafetyError {
+    override def summary: String = s"Function '$sym' annotated with @Tailrec can only have recursive calls in tail position."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Function '$sym' annotated with @Tailrec can only have recursive calls in tail position.
+         |
+         |${code(loc, "A recursive call in non-tail position occurs here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """"
+        |The @Tailrec annotation checks that a function is indeed tail recursive.
+        |
+        |A function that calls itself directly is tail recursive.
+        |The fibonacci function can be written as below:
+        |
+        |  def fib(n: Int32): Int32 =
+        |      if (n < 1) 1 else n * fib(n - 1)
+        |
+        |However, this grows the stack with each recursive call.
+        |This can be fixed by adding an additional argument, allowing
+        |the last expression to be a directly recursive call.
+        |
+        |  def fib(n: Int32, acc: Int32): Int32 =
+        |      if (n < 1) acc else fib(n - 1, n * acc)
+        |
+        |"""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate that a function marked with the `@Tailrec` annotation
+    * does not contain a recursive call.
+    *
+    * @param sym the symbol of the function annotated with `@Tailrec`.
+    * @param loc the location of the function body.
+    */
+  case class TailRecursiveFunctionWithoutRecursiveCall(sym: Symbol, loc: SourceLocation) extends SafetyError {
+    override def summary: String = s"Function '$sym' annotated with @Tailrec must contain a recursive call."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Function '$sym' annotated with @Tailrec must contain a recursive call.
+         |
+         |${code(loc, "The function does not contain a recursive call.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }

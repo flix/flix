@@ -714,4 +714,101 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalTestParameters](result)
   }
 
+  test("NonTailRecursiveFunction.01") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 = 1 + f()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.NonTailRecursiveFunction](result)
+  }
+
+  test("NonTailRecursiveFunction.02") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 = 1
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.TailRecursiveFunctionWithoutRecursiveCall](result)
+  }
+
+  test("NonTailRecursiveFunction.03") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 = f()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+
+  test("NonTailRecursiveFunction.04") {
+    val input =
+      """
+        |@Tailrec
+        |def g(): Int32 = 1
+        |
+        |@Tailrec
+        |def f(): Int32 =
+        | let x = g();
+        | x + f()
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.NonTailRecursiveFunction](result)
+  }
+
+  test("NonTailRecursiveFunction.05") {
+    val input =
+      """
+        |@Tailrec
+        |def f(): Int32 \ IO = { println("") ; f() }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("NonTailRecursiveFunction.06") {
+    val input =
+      """
+        |def g(): Int32 \ IO = { println("") ; 1 }
+        |
+        |@Tailrec
+        |def f(): Int32 \ IO =
+        | let _ = g();
+        | let _ = { let _ = g(); g() };
+        | { g(); g(); let _ = { g(); g() }; f() }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("NonTailRecursiveFunction.07") {
+    val input =
+      """
+        |def g(): Int32 \ IO = { println("") ; 1 }
+        |
+        |@Tailrec
+        |def f(): Int32 \ IO =
+        | let _ = g();
+        | let _ = { let _ = g(); g() };
+        | { g(); g(); let _ = { g(); g() }; g() }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[SafetyError.TailRecursiveFunctionWithoutRecursiveCall](result)
+  }
+
+  test("NonTailRecursiveFunction.08") {
+    val input =
+      """
+        |def g(x: Int32): Int32 = 1 + x
+        |
+        |@Tailrec
+        |def f(x: Int32): Int32 = f(g(x))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
 }
