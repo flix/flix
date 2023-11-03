@@ -190,8 +190,19 @@ object BenchmarkCompiler {
     // Compute the ration between the slowest and fastest run.
     val bestWorstRatio = timings.max.toDouble / timings.min.toDouble
 
+    // TODO: files we want:
+    // phases.json
+    // iterations.json
+    // summary.json
+
+    // TODO: What about the flags: incremental? threads?
+
+    // TODO: What about A/B comparisons?
+
     val resultsJSON =
-      ("runs" -> results.map(x => ("time" -> x.time)))
+      ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("iter" -> results.map(x => ("time" -> x.time)))
     val s2 = JsonMethods.pretty(JsonMethods.render(resultsJSON))
     writeToDisk("iterations", s2)(flix)
 
