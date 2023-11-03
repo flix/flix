@@ -142,7 +142,7 @@ object BenchmarkCompiler {
     // Collect data from N iterations.
     //
     val results = (0 until N).map { _ =>
-      val flix = newFlix(o)
+      flix = newFlix(o)
 
       // Benchmark frontend or entire compiler?
       if (frontend) {
@@ -190,13 +190,18 @@ object BenchmarkCompiler {
     // Compute the ration between the slowest and fastest run.
     val bestWorstRatio = timings.max.toDouble / timings.min.toDouble
 
-    val json =
+    val resultsJSON =
+      ("runs" -> results.map(x => ("time" -> x.time)))
+    val s2 = JsonMethods.pretty(JsonMethods.render(resultsJSON))
+    writeToDisk("iterations", s2)(flix)
+
+    val summaryJSON =
       ("threads" -> threads) ~
         ("lines" -> lines) ~
         ("iterations" -> N) ~
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
-    val s = JsonMethods.pretty(JsonMethods.render(json))
-    writeToDisk("data", s)(flix)
+    val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
+    writeToDisk("summary", s)(flix)
 
     println("====================== Flix Compiler Throughput ======================")
     println()
