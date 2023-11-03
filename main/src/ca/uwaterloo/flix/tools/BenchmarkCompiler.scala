@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
-import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, Options, StatUtils}
-import org.json4s.{JArray, JInt, JValue}
+import org.json4s.{JInt, JValue}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
@@ -60,7 +59,7 @@ object BenchmarkCompiler {
       |
       |""".stripMargin
 
-  case class Run(lines: Int, time: Long)
+  case class Run(lines: Int, time: Long, phases: Map[String, Long])
 
   def run(o: Options, frontend: Boolean): Unit = {
 
@@ -72,17 +71,11 @@ object BenchmarkCompiler {
     val results = (0 until N).map { _ =>
       flix = newFlix(o)
 
-      // Benchmark frontend or entire compiler?
-      if (frontend) {
-        val root = flix.check().toHardFailure.get
-        val totalLines = root.sources.foldLeft(0) {
-          case (acc, (_, sl)) => acc + sl.endLine
-        }
-        Run(totalLines, flix.getTotalTime)
-      } else {
-        val compilationResult = flix.compile().toHardFailure.get
-        Run(compilationResult.getTotalLines, compilationResult.totalTime)
-      }
+      val compilationResult = flix.compile().toHardFailure.get
+      val phases = flix.phaseTimers.map {
+        case PhaseTime(phase, time, _) => phase -> time
+      }.toMap
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases)
     }
 
     // The number of threads used.
@@ -129,15 +122,27 @@ object BenchmarkCompiler {
 
     writeToDisk("graphs.py", Python)(flix)
 
+    val timestamp = System.currentTimeMillis() / 1000
+
     val iterations =
-      ("timestamp" -> System.currentTimeMillis() / 1000) ~
+      ("timestamp" -> timestamp) ~
         ("threads" -> threads) ~
         ("lines" -> lines) ~
         ("results" -> results.zipWithIndex.map(x => ("i" -> x._2) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
     writeToDisk("iterations.json", iterations)(flix)
 
+    val phases =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("results" -> results.last.phases.map {
+          case (phase, time) => ("phase" -> phase) ~ ("time" -> time / 1000)
+        })
+    writeToDisk("phases.json", phases)(flix)
+
     val summaryJSON =
-      ("threads" -> threads) ~
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
         ("lines" -> lines) ~
         ("iterations" -> N) ~
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
