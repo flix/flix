@@ -85,6 +85,27 @@ object BenchmarkCompiler {
       |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
       |    plt.savefig('phases.png')  # Change the filename and format as needed
       |
+      |
+      |with open('phases.json', 'r') as file:
+      |    data = json.load(file)
+      |    df = pd.DataFrame(data['results'])
+      |    print(df)
+      |    df.plot(x='phase', y='ratio')
+      |
+      |    # Plot the DataFrame as a bar chart
+      |    fig, ax = plt.subplots()
+      |
+      |    ax.bar(df["phase"], df["ratio"])
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('Time')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(0, 1)
+      |
+      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
+      |    plt.savefig('incrementalism.png')  # Change the filename and format as needed
+      |
       |""".stripMargin
 
   case class Run(lines: Int, time: Long, phases: List[(String, Long)])
@@ -151,6 +172,12 @@ object BenchmarkCompiler {
     // Compute the ration between the slowest and fastest run.
     val bestWorstRatio = timings.max.toDouble / timings.min.toDouble
 
+    // Graphs i want:
+    // Parallelism: Per phase speedup 1thread versus N threads.
+    // Incrementalism: Per phase speedup?
+    // throughput: loc/sec per iteration
+    // Maybe throughput per phase, but ignoring fast phases?
+
     // TODO: files we want:
     // phases.json
     // iterations.json
@@ -176,7 +203,10 @@ object BenchmarkCompiler {
         ("threads" -> threads) ~
         ("lines" -> lines) ~
         ("results" -> results.last.phases.zip(incrementalResults.last.phases).map {
-          case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~ ("time" -> milliseconds(time)) ~ ("incremental" -> milliseconds(incrementalTime))
+          case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~
+            ("time" -> milliseconds(time)) ~
+            ("incremental" -> milliseconds(incrementalTime)) ~
+              ("ratio" -> incrementalTime.toDouble / (time.toDouble))
         })
     writeToDisk("phases.json", phases)(flix)
 
