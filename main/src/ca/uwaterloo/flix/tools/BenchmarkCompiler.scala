@@ -89,14 +89,26 @@ object BenchmarkCompiler {
 
   def run(o: Options, frontend: Boolean): Unit = {
 
-    var flix = newFlix(o)
-
-    //
-    // Collect data from N iterations.
-    //
+    var flix: Flix = null
     val results = (0 until N).map { _ =>
-      flix = newFlix(o)
+      flix = new Flix()
+      flix.setOptions(o.copy(loadClassFiles = false))
+      flushCaches()
 
+      addInputs(flix)
+      val compilationResult = flix.compile().toHardFailure.get
+      val phases = flix.phaseTimers.map {
+        case PhaseTime(phase, time, _) => phase -> time
+      }
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    }
+
+    flix = new Flix()
+    flix.setOptions(flix.options.copy(incremental = true, loadClassFiles = false))
+    val incrementalResults = (0 until N).map { _ =>
+      flushCaches()
+
+      addInputs(flix)
       val compilationResult = flix.compile().toHardFailure.get
       val phases = flix.phaseTimers.map {
         case PhaseTime(phase, time, _) => phase -> time
@@ -161,8 +173,8 @@ object BenchmarkCompiler {
       ("timestamp" -> timestamp) ~
         ("threads" -> threads) ~
         ("lines" -> lines) ~
-        ("results" -> results.last.phases.map {
-          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+        ("results" -> results.last.phases.zip(incrementalResults.last.phases).map {
+          case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~ ("time" -> milliseconds(time)) ~ ("incremental" -> milliseconds(incrementalTime))
         })
     writeToDisk("phases.json", phases)(flix)
 
@@ -194,20 +206,6 @@ object BenchmarkCompiler {
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
   private def milliseconds(l: Long): Long = l / 1_000_000
-
-  /**
-    * Returns a Flix object configured with the benchmark program.
-    */
-  private def newFlix(o: Options): Flix = {
-    val flix = new Flix()
-    flushCaches()
-
-    flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
-
-    addInputs(flix)
-
-    flix
-  }
 
   /**
     * Flushes (clears) all caches.
