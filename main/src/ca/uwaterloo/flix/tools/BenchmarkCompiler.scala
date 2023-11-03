@@ -231,7 +231,7 @@ object BenchmarkCompiler {
           case ((phase, time), (_, oneThreadTime)) => ("phase" -> phase) ~
             ("speedup" -> oneThreadTime.toDouble / time.toDouble)
         })
-    writeToDisk("concurrency.json", phases)(flix)
+    writeToDisk("concurrency.json", phasesConcurrency)(flix)
 
     val summaryJSON =
       ("timestamp" -> timestamp) ~
