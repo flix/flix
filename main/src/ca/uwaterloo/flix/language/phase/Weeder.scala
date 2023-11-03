@@ -909,11 +909,11 @@ object Weeder {
       val loc = mkSL(sp1, sp2).asSynthetic
       val fs = traverse(frags)(visitForFragment(_, senv))
       val e = visitExp(exp, senv)
-      mapN(fs, e) {
+      flatMapN(fs, e) {
         case _ if frags.isEmpty =>
           val err = WeederError.IllegalEmptyForFragment(loc)
           WeededAst.Expr.Error(err).toSoftFailure(err)
-        case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc)
+        case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
       }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => {
