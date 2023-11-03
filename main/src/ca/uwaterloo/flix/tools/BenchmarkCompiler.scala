@@ -34,6 +34,7 @@ object BenchmarkCompiler {
 
   private val Python =
     """
+      |
       |# $ pip install pandas
       |
       |import json
@@ -55,6 +56,25 @@ object BenchmarkCompiler {
       |
       |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
       |    plt.savefig('iterations.png')  # Change the filename and format as needed
+      |
+      |
+      |with open('phases.json', 'r') as file:
+      |    data = json.load(file)
+      |    df = pd.DataFrame(data['results'])
+      |    print(df)
+      |    df.plot(x='phase', y='time')
+      |
+      |    # Plot the DataFrame as a bar chart
+      |    fig, ax = plt.subplots()
+      |
+      |    p = ax.bar(df["phase"], df["time"])
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('Time')
+      |
+      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
+      |    plt.savefig('phases.png')  # Change the filename and format as needed
+      |
+      |
       |
       |
       |""".stripMargin
