@@ -162,7 +162,7 @@ object BenchmarkCompiler {
         ("threads" -> threads) ~
         ("lines" -> lines) ~
         ("results" -> results.last.phases.map {
-          case (phase, time) => ("phase" -> phase) ~ ("time" -> time / 1000)
+          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
         })
     writeToDisk("phases.json", phases)(flix)
 
@@ -192,6 +192,8 @@ object BenchmarkCompiler {
     * Returns the throughput per second.
     */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
+
+  private def milliseconds(l: Long): Long = l / 1_000_000
 
   /**
     * Returns a Flix object configured with the benchmark program.
