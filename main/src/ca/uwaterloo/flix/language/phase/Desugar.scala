@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, Name, SourceLocation, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
