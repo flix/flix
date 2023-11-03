@@ -32,31 +32,31 @@ object SimpleRunner {
 
     // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
-      BenchmarkCompiler.benchmarkCodeSize(options)
+      BenchmarkCompilerOld.benchmarkCodeSize(options)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-incremental flag was passed.
     if (cmdOpts.xbenchmarkIncremental) {
-      BenchmarkCompiler.benchmarkIncremental(options)
+      BenchmarkCompilerOld.benchmarkIncremental(options)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
-      BenchmarkCompiler.benchmarkPhases(options)
+      BenchmarkCompilerOld.benchmarkPhases(options)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-frontend flag was passed.
     if (cmdOpts.xbenchmarkFrontend) {
-      BenchmarkCompiler.benchmarkThroughput(options, frontend = true)
+      BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput(options, frontend = false)
+      BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
       System.exit(0)
     }
 
