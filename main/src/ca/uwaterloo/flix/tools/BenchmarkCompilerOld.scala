@@ -10,7 +10,7 @@ import org.json4s.native.JsonMethods
 /**
   * A collection of internal utilities to measure the performance of the Flix compiler itself.
   */
-object BenchmarkCompiler {
+object BenchmarkCompilerOld {
 
   /**
     * The number of compilations to perform when collecting statistics.
