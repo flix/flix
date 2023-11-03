@@ -206,7 +206,7 @@ object BenchmarkCompiler {
           case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~
             ("time" -> milliseconds(time)) ~
             ("incremental" -> milliseconds(incrementalTime)) ~
-              ("ratio" -> (1.0 - (Math.min(incrementalTime.toDouble, time.toDouble) / (time.toDouble)) ))
+              ("ratio" -> (time.toDouble - incrementalTime.toDouble) / (time.toDouble))
         })
     writeToDisk("phases.json", phases)(flix)
 
