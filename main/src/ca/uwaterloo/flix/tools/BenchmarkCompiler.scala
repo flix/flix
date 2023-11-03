@@ -106,6 +106,28 @@ object BenchmarkCompiler {
       |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
       |    plt.savefig('incrementalism.png')  # Change the filename and format as needed
       |
+      |with open('concurrency.json', 'r') as file:
+      |    data = json.load(file)
+      |    df = pd.DataFrame(data['results'])
+      |    print(df)
+      |    df.plot(x='phase', y='speedup')
+      |
+      |    # Plot the DataFrame as a bar chart
+      |    fig, ax = plt.subplots()
+      |
+      |    ax.bar(df["phase"], df["speedup"])
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('speedup')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1)
+      |
+      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
+      |    plt.savefig('concurrency.png')  # Change the filename and format as needed
+      |
+      |
+      |
       |""".stripMargin
 
   case class Run(lines: Int, time: Long, phases: List[(String, Long)])
