@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, Options, StatUtils}
-import org.json4s.JValue
+import org.json4s.{JArray, JInt, JValue}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
@@ -31,7 +31,34 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 2
+  val N = 3
+
+  private val Python =
+    """
+      |# $ pip install pandas
+      |
+      |import json
+      |import pandas as pd
+      |import matplotlib.pyplot as plt
+      |
+      |with open('iterations.json', 'r') as file:
+      |    data = json.load(file)
+      |    df = pd.DataFrame(data['results'])
+      |    print(df)
+      |    df.plot(x='i', y='time')
+      |
+      |    # Plot the DataFrame as a bar chart
+      |    fig, ax = plt.subplots()
+      |
+      |    p = ax.bar(list(map(lambda x: "Iter " + str(x), df["i"])), df["time"])
+      |    ax.set_xlabel('Iteration')
+      |    ax.set_ylabel('Throughput')
+      |
+      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
+      |    plt.savefig('iterations.png')  # Change the filename and format as needed
+      |
+      |
+      |""".stripMargin
 
   case class Run(lines: Int, time: Long)
 
@@ -100,12 +127,14 @@ object BenchmarkCompiler {
 
     // TODO: What about A/B comparisons?
 
+    writeToDisk("graphs.py", Python)(flix)
+
     val iterations =
-      ("time" -> System.currentTimeMillis() / 1000) ~
+      ("timestamp" -> System.currentTimeMillis() / 1000) ~
         ("threads" -> threads) ~
         ("lines" -> lines) ~
-        ("time" -> results.map(_.time))
-    writeToDisk("iterations", iterations)(flix)
+        ("results" -> results.zipWithIndex.map(x => ("i" -> x._2) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
+    writeToDisk("iterations.json", iterations)(flix)
 
     val summaryJSON =
       ("threads" -> threads) ~
@@ -113,7 +142,7 @@ object BenchmarkCompiler {
         ("iterations" -> N) ~
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-    writeToDisk("summary", s)(flix)
+    writeToDisk("summary.json", s)(flix)
 
     println("~~~~ Flix Compiler Throughput ~~~~")
     println()
@@ -198,7 +227,7 @@ object BenchmarkCompiler {
   case class SummaryStatistics(min: Double, max: Double, mean: Double, median: Double, stdDev: Double)
 
   private def writeToDisk(fileName: String, json: JValue)(implicit flix: Flix): Unit = {
-    JsonMethods.pretty(JsonMethods.render(j))
+    writeToDisk(fileName, JsonMethods.pretty(JsonMethods.render(json)))
   }
 
   // TODO: Drop flix.output?
@@ -206,7 +235,7 @@ object BenchmarkCompiler {
   // TODO: Reconcile with ASTPrinter
   private def writeToDisk(fileName: String, s: String)(implicit flix: Flix): Unit = {
     val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("perf/")
-    val filePath = buildAstsPath.resolve(s"$fileName.json")
+    val filePath = buildAstsPath.resolve(s"$fileName")
     Files.createDirectories(buildAstsPath)
 
     // Check if the file already exists.
