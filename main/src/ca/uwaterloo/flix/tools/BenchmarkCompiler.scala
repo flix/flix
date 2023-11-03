@@ -39,6 +39,7 @@ object BenchmarkCompiler {
       |
       |import json
       |import pandas as pd
+      |import matplotlib
       |import matplotlib.pyplot as plt
       |
       |with open('iterations.json', 'r') as file:
@@ -53,6 +54,10 @@ object BenchmarkCompiler {
       |    p = ax.bar(list(map(lambda x: "Iter " + str(x), df["i"])), df["time"])
       |    ax.set_xlabel('Iteration')
       |    ax.set_ylabel('Throughput')
+      |    ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |
       |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
       |    plt.savefig('iterations.png')  # Change the filename and format as needed
@@ -70,16 +75,17 @@ object BenchmarkCompiler {
       |    p = ax.bar(df["phase"], df["time"])
       |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Time')
+      |    ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |
       |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
       |    plt.savefig('phases.png')  # Change the filename and format as needed
       |
-      |
-      |
-      |
       |""".stripMargin
 
-  case class Run(lines: Int, time: Long, phases: Map[String, Long])
+  case class Run(lines: Int, time: Long, phases: List[(String, Long)])
 
   def run(o: Options, frontend: Boolean): Unit = {
 
@@ -94,8 +100,8 @@ object BenchmarkCompiler {
       val compilationResult = flix.compile().toHardFailure.get
       val phases = flix.phaseTimers.map {
         case PhaseTime(phase, time, _) => phase -> time
-      }.toMap
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases)
+      }
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
     }
 
     // The number of threads used.
