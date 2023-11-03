@@ -56,7 +56,7 @@ object SimpleRunner {
 
     // check if the --Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput(options, frontend = false)
+      BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
       System.exit(0)
     }
 

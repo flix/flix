@@ -253,6 +253,9 @@ object Main {
           }
           System.exit(0)
 
+        case Command.BenchmarkCompiler =>
+          BenchmarkCompiler.run(Options.Default, false)
+
       }
     }
 
@@ -325,6 +328,7 @@ object Main {
 
     case class Lsp(port: Int) extends Command
 
+    case object BenchmarkCompiler extends Command
   }
 
   /**
@@ -371,6 +375,8 @@ object Main {
           arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
             .required()
         )
+
+      cmd("Xbench-compiler").action((_, c) => c.copy(command = Command.BenchmarkCompiler)).hidden()
 
       note("")
 
