@@ -35,6 +35,7 @@ object BenchmarkCompiler {
   private val Python =
     """
       |
+      |
       |# $ pip install pandas
       |
       |import json
@@ -72,7 +73,8 @@ object BenchmarkCompiler {
       |    # Plot the DataFrame as a bar chart
       |    fig, ax = plt.subplots()
       |
-      |    p = ax.bar(df["phase"], df["time"])
+      |    ax.bar(df["phase"], df["time"], color = 'r')
+      |    ax.bar(df["phase"], df["incremental"], color = 'g')
       |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Time')
       |    ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
