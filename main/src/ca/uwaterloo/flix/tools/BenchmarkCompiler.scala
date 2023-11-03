@@ -115,7 +115,20 @@ object BenchmarkCompiler {
     var flix: Flix = null
     val results = (0 until N).map { _ =>
       flix = new Flix()
-      flix.setOptions(o.copy(loadClassFiles = false))
+      flix.setOptions(o.copy(incremental = false, loadClassFiles = false))
+      flushCaches()
+
+      addInputs(flix)
+      val compilationResult = flix.compile().toHardFailure.get
+      val phases = flix.phaseTimers.map {
+        case PhaseTime(phase, time, _) => phase -> time
+      }
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    }
+
+    val resultsOneThread = (0 until N).map { _ =>
+      flix = new Flix()
+      flix.setOptions(o.copy(incremental = false, loadClassFiles = false, threads = 1))
       flushCaches()
 
       addInputs(flix)
@@ -209,6 +222,16 @@ object BenchmarkCompiler {
               ("ratio" -> (time.toDouble - incrementalTime.toDouble) / (time.toDouble))
         })
     writeToDisk("phases.json", phases)(flix)
+
+    val phasesConcurrency =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("results" -> results.last.phases.zip(resultsOneThread.last.phases).map {
+          case ((phase, time), (_, oneThreadTime)) => ("phase" -> phase) ~
+            ("speedup" -> oneThreadTime.toDouble / time.toDouble)
+        })
+    writeToDisk("concurrency.json", phases)(flix)
 
     val summaryJSON =
       ("timestamp" -> timestamp) ~
