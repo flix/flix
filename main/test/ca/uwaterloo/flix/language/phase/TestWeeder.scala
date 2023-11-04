@@ -800,7 +800,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalForFragment.01") {
     val input =
       """
-        |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
+        |def f(x: Int32): List[Int32] =
+        | foreach (if x > 0) yield 1
+        |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
@@ -809,7 +811,53 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalForFragment.02") {
     val input =
       """
-        |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) yield y
+        |def f(x: Int32, ys: List[Int32]): List[Int32] =
+        | foreach (if x > 0; y <- ys) yield y
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalForFragment.03") {
+    val input =
+      """
+        |def f(x: Int32): List[Int32] =
+        | foreach (if x > 0) println(x)
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalForFragment.04") {
+    val input =
+      """
+        |def f(x: Int32, ys: List[Int32]): List[Int32] =
+        | foreach (if x > 0; y <- ys) println(y)
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalForFragment.05") {
+    val input =
+      """
+        |def f(x: Int32): List[Int32] =
+        | forM (if x > 0) yield x
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalForFragment.06") {
+    val input =
+      """
+        |def f(x: Int32, ys: List[Int32]): List[Int32] =
+        | forM (if x > 0; y <- ys) yield y
+        |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
@@ -1212,11 +1260,11 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = {
         | @Test
-        | def g(i) = if (i <= 0) 0 else 1 + g(i - 1);
+        | def g(i) = if (i <= 0) 0 else g(i - 1);
         | g(10)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInnerFunctionAnnotation](result)
   }
 
@@ -1225,11 +1273,11 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = {
         | @benchmark @Tailrec
-        | def g(i) = if (i <= 0) 0 else 1 + g(i - 1);
+        | def g(i) = if (i <= 0) 0 else g(i - 1);
         | g(10)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInnerFunctionAnnotation](result)
   }
 
@@ -1238,11 +1286,11 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = {
         | @Tailrec @Tailrec
-        | def g(i) = if (i <= 0) 0 else 1 + g(i - 1);
+        | def g(i) = if (i <= 0) 0 else g(i - 1);
         | g(10)
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
