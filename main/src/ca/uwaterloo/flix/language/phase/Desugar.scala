@@ -602,7 +602,7 @@ object Desugar {
       val resultExp = mkApplyFqn(fqnCollect, List(loop), loc)
 
       // Wrap in region
-      DesugaredAst.Expr.Scope(regionIdent, e, loc)
+      DesugaredAst.Expr.Scope(regionIdent, resultExp, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
