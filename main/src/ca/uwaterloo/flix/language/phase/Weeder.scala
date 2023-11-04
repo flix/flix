@@ -924,7 +924,7 @@ object Weeder {
         case _ if frags.isEmpty =>
           val err = WeederError.IllegalEmptyForFragment(loc)
           WeededAst.Expr.Error(err).toSoftFailure(err)
-        case (WeededAst.ForFragment.Guard(_, loc1) :: Nil, _) =>
+        case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = WeederError.IllegalForFragment(loc1)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (fs1, e1) => WeededAst.Expr.ForEachYield(fs1, e1, loc).toSuccess
