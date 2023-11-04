@@ -37,53 +37,8 @@ object BenchmarkCompiler {
       |# $ pip install pandas
       |
       |import json
-      |import pandas as pd
       |import matplotlib
       |import matplotlib.pyplot as plt
-      |
-      |
-      |with open('phases.json', 'r') as file:
-      |    data = json.load(file)
-      |    df = pd.DataFrame(data['results'])
-      |    print(df)
-      |    df.plot(x='phase', y='time')
-      |
-      |    # Plot the DataFrame as a bar chart
-      |    fig, ax = plt.subplots()
-      |
-      |    ax.bar(df["phase"], df["time"], color = 'r')
-      |    ax.bar(df["phase"], df["incremental"], color = 'g')
-      |    ax.set_xlabel('Phase')
-      |    ax.set_ylabel('Time')
-      |    ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
-      |
-      |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |
-      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
-      |    plt.savefig('phases.png')  # Change the filename and format as needed
-      |
-      |
-      |with open('phases.json', 'r') as file:
-      |    data = json.load(file)
-      |    df = pd.DataFrame(data['results'])
-      |    print(df)
-      |    df.plot(x='phase', y='ratio')
-      |
-      |    # Plot the DataFrame as a bar chart
-      |    fig, ax = plt.subplots()
-      |
-      |    ax.bar(df["phase"], df["ratio"])
-      |    ax.set_xlabel('Phase')
-      |    ax.set_ylabel('Time')
-      |
-      |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |    plt.ylim(0, 1)
-      |
-      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
-      |    plt.savefig('incrementalism.png')  # Change the filename and format as needed
-      |
       |
       |
       |
@@ -152,7 +107,24 @@ object BenchmarkCompiler {
       |
       |    plt.savefig('speedup_par.png')
       |
+      |with open('time_phases.json', 'r') as file:
+      |    data = json.load(file)
+      |    threads = data['threads']
+      |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['time'], data['results']))
       |
+      |    fig, ax = plt.subplots()
+      |    ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Time ({threads} threads)')
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('Total Time (ms)')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1)
+      |
+      |    plt.savefig('time_phases.png')
       |
       |""".stripMargin
 
@@ -254,6 +226,27 @@ object BenchmarkCompiler {
 
     val timestamp = System.currentTimeMillis() / 1000
 
+    val timePhases =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("results" -> maxThreadResults.last.phases.map {
+          case ((phase, time)) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+        })
+    writeToDisk("time_phases.json", timePhases)(flix)
+
+    val speedupPhases =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("results" -> maxThreadResults.last.phases.zip(incrementalResults.last.phases).map {
+          case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~
+            ("time" -> milliseconds(time)) ~
+            ("incremental" -> milliseconds(incrementalTime)) ~
+            ("ratio" -> (time.toDouble - incrementalTime.toDouble) / (time.toDouble))
+        })
+    writeToDisk("speedup_phases_inc.json", speedupPhases)(flix)
+
     val throughputSingleThread =
       ("timestamp" -> timestamp) ~
         ("threads" -> MinThreads) ~
@@ -268,17 +261,6 @@ object BenchmarkCompiler {
         ("results" -> maxThreadResults.zipWithIndex.map(x => ("i" -> ("Iter " + x._2.toString)) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
     writeToDisk("throughput_par.json", throughputMaxThread)(flix)
 
-    val phases =
-      ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
-        ("lines" -> lines) ~
-        ("results" -> maxThreadResults.last.phases.zip(incrementalResults.last.phases).map {
-          case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~
-            ("time" -> milliseconds(time)) ~
-            ("incremental" -> milliseconds(incrementalTime)) ~
-            ("ratio" -> (time.toDouble - incrementalTime.toDouble) / (time.toDouble))
-        })
-    writeToDisk("phases.json", phases)(flix)
 
     val parallelismJSON =
       ("timestamp" -> timestamp) ~
