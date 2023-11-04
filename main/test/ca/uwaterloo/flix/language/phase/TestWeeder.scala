@@ -833,8 +833,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalForFragment.04") {
     val input =
       """
-        |def g(_: Int32): Unit \ IO = checked_ecast(())
-        |
         |def f(x: Int32, ys: List[Int32]): List[Int32] =
         | foreach (if x > 0; y <- ys) println(y)
         |
