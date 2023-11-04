@@ -881,15 +881,13 @@ object Weeder {
 
     case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      if (frags.isEmpty) {
-        val err = WeederError.IllegalEmptyForFragment(loc)
-        WeededAst.Expr.Error(err).toSoftFailure(err)
-      } else {
-        val fs = traverse(frags)(visitForFragmentGenerator(_, senv))
-        val e = visitExp(exp, senv)
-        mapN(fs, e) {
-          case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc)
-        }
+      val fs = traverse(frags)(visitForFragmentGenerator(_, senv))
+      val e = visitExp(exp, senv)
+      flatMapN(fs, e) {
+        case _ if frags.isEmpty =>
+          val err = WeederError.IllegalEmptyForFragment(loc)
+          WeededAst.Expr.Error(err).toSoftFailure(err)
+        case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
