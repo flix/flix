@@ -544,6 +544,8 @@ object Desugar {
     case WeededAst.Expr.MonadicFor(frags, exp, loc) =>
       desugarMonadicFor(frags, exp, loc)
 
+    case WeededAst.Expr.ForEachYield(frags, exp, loc) => ???
+
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
       Expr.Tuple(es, loc)
