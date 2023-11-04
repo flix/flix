@@ -18,17 +18,21 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, Name, SourceLocation, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
 
   /**
-    * Performs desugaring on `program`.
+    * Performs desugaring on `root`.
     */
-  def run(program: WeededAst.Root)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
-    val units = ParOps.parMapValues(program.units)(visitUnit)
-    DesugaredAst.Root(units, program.entryPoint, program.names)
+  def run(root: WeededAst.Root, oldRoot: DesugaredAst.Root, changeSet: ChangeSet)(implicit flix: Flix): DesugaredAst.Root = flix.phase("Desugar") {
+    // Compute the stale and fresh sources.
+    val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
+
+    val units = ParOps.parMapValues(stale)(visitUnit)
+    val allUnits = units ++ fresh
+    DesugaredAst.Root(allUnits, root.entryPoint, root.names)
   }
 
   /**
