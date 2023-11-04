@@ -106,26 +106,26 @@ object BenchmarkCompiler {
       |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
       |    plt.savefig('incrementalism.png')  # Change the filename and format as needed
       |
-      |with open('concurrency.json', 'r') as file:
+      |with open('parallelism.json', 'r') as file:
       |    data = json.load(file)
-      |    df = pd.DataFrame(data['results'])
-      |    print(df)
-      |    df.plot(x='phase', y='speedup')
+      |    minThreads = data['minThreads']
+      |    maxThreads = data['maxThreads']
+      |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
       |
-      |    # Plot the DataFrame as a bar chart
       |    fig, ax = plt.subplots()
+      |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.bar(df["phase"], df["speedup"])
+      |    ax.set_title(f'Speedup ({minThreads} vs. {maxThreads} threads)')
       |    ax.set_xlabel('Phase')
-      |    ax.set_ylabel('speedup')
+      |    ax.set_ylabel('Speedup')
+      |    ax.bar_label(bars, fmt='\n%.1fx')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1)
       |
-      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
-      |    plt.savefig('concurrency.png')  # Change the filename and format as needed
-      |
+      |    plt.savefig('speedup_parallelism.png')
       |
       |
       |""".stripMargin
@@ -207,6 +207,9 @@ object BenchmarkCompiler {
     // Compute the ration between the slowest and fastest run.
     val bestWorstRatio = timings.max.toDouble / timings.min.toDouble
 
+    val MinThreads = 1
+    val MaxThreads = o.threads
+
     // Graphs i want:
     // Parallelism: Per phase speedup 1thread versus N threads.
     // Incrementalism: Per phase speedup?
@@ -247,13 +250,14 @@ object BenchmarkCompiler {
 
     val phasesConcurrency =
       ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
         ("lines" -> lines) ~
+        ("minThreads" -> MinThreads) ~
+        ("maxThreads" -> MaxThreads) ~
         ("results" -> results.last.phases.zip(resultsOneThread.last.phases).map {
           case ((phase, time), (_, oneThreadTime)) => ("phase" -> phase) ~
             ("speedup" -> oneThreadTime.toDouble / time.toDouble)
         })
-    writeToDisk("concurrency.json", phasesConcurrency)(flix)
+    writeToDisk("parallelism.json", phasesConcurrency)(flix)
 
     val summaryJSON =
       ("timestamp" -> timestamp) ~
