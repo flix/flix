@@ -34,15 +34,12 @@ object BenchmarkCompiler {
 
   private val Python =
     """
-      |
-      |
       |# $ pip install pandas
       |
       |import json
       |import pandas as pd
       |import matplotlib
       |import matplotlib.pyplot as plt
-      |
       |
       |
       |with open('phases.json', 'r') as file:
@@ -90,6 +87,50 @@ object BenchmarkCompiler {
       |
       |
       |
+      |
+      |
+      |
+      |
+      |
+      |
+      |with open('throughput_seq.json', 'r') as file:
+      |    data = json.load(file)
+      |    threads = data['threads']
+      |    xvalues = list(map(lambda obj: obj['i'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['time'], data['results']))
+      |
+      |    fig, ax = plt.subplots()
+      |    ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Throughput ({threads} threads)')
+      |    ax.set_xlabel('Iteration')
+      |    ax.set_ylabel('Time (ms)')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1)
+      |
+      |    plt.savefig('throughput_seq.png')
+      |
+      |with open('throughput_par.json', 'r') as file:
+      |    data = json.load(file)
+      |    threads = data['threads']
+      |    xvalues = list(map(lambda obj: obj['i'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['time'], data['results']))
+      |
+      |    fig, ax = plt.subplots()
+      |    ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Throughput ({threads} threads)')
+      |    ax.set_xlabel('Iteration')
+      |    ax.set_ylabel('Time (ms)')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1)
+      |
+      |    plt.savefig('throughput_par.png')
+      |
       |with open('speedup_par.json', 'r') as file:
       |    data = json.load(file)
       |    minThreads = data['minThreads']
@@ -109,7 +150,8 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1)
       |
-      |    plt.savefig('speedup_parallelism.png')
+      |    plt.savefig('speedup_par.png')
+      |
       |
       |
       |""".stripMargin
@@ -216,15 +258,15 @@ object BenchmarkCompiler {
       ("timestamp" -> timestamp) ~
         ("threads" -> MinThreads) ~
         ("lines" -> lines) ~
-        ("results" -> minThreadResults.zipWithIndex.map(x => ("i" -> x._2.toString) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
+        ("results" -> minThreadResults.zipWithIndex.map(x => ("i" -> ("Iter " + x._2.toString)) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
     writeToDisk("throughput_seq.json", throughputSingleThread)(flix)
 
     val throughputMaxThread =
       ("timestamp" -> timestamp) ~
         ("threads" -> MaxThreads) ~
         ("lines" -> lines) ~
-        ("results" -> maxThreadResults.zipWithIndex.map(x => ("i" -> x._2.toString) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
-    writeToDisk("throughput_par.json", throughputSingleThread)(flix)
+        ("results" -> maxThreadResults.zipWithIndex.map(x => ("i" -> ("Iter " + x._2.toString)) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
+    writeToDisk("throughput_par.json", throughputMaxThread)(flix)
 
     val phases =
       ("timestamp" -> timestamp) ~
