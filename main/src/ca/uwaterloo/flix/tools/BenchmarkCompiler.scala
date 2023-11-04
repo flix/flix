@@ -43,25 +43,6 @@ object BenchmarkCompiler {
       |import matplotlib
       |import matplotlib.pyplot as plt
       |
-      |with open('iterations.json', 'r') as file:
-      |    data = json.load(file)
-      |    df = pd.DataFrame(data['results'])
-      |    print(df)
-      |    df.plot(x='i', y='time')
-      |
-      |    # Plot the DataFrame as a bar chart
-      |    fig, ax = plt.subplots()
-      |
-      |    p = ax.bar(list(map(lambda x: "Iter " + str(x), df["i"])), df["time"])
-      |    ax.set_xlabel('Iteration')
-      |    ax.set_ylabel('Throughput')
-      |    ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
-      |
-      |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |
-      |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
-      |    plt.savefig('iterations.png')  # Change the filename and format as needed
       |
       |
       |with open('phases.json', 'r') as file:
@@ -106,7 +87,10 @@ object BenchmarkCompiler {
       |    # Save the plot as an image file (e.g., PNG, PDF, SVG, etc.)
       |    plt.savefig('incrementalism.png')  # Change the filename and format as needed
       |
-      |with open('parallelism.json', 'r') as file:
+      |
+      |
+      |
+      |with open('speedup_par.json', 'r') as file:
       |    data = json.load(file)
       |    minThreads = data['minThreads']
       |    maxThreads = data['maxThreads']
@@ -135,7 +119,7 @@ object BenchmarkCompiler {
   def run(o: Options, frontend: Boolean): Unit = {
 
     var flix: Flix = null
-    val results = (0 until N).map { _ =>
+    val maxThreadResults = (0 until N).map { _ =>
       flix = new Flix()
       flix.setOptions(o.copy(incremental = false, loadClassFiles = false))
       flushCaches()
@@ -148,7 +132,7 @@ object BenchmarkCompiler {
       Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
     }
 
-    val resultsOneThread = (0 until N).map { _ =>
+    val minThreadResults = (0 until N).map { _ =>
       flix = new Flix()
       flix.setOptions(o.copy(incremental = false, loadClassFiles = false, threads = 1))
       flushCaches()
@@ -178,10 +162,10 @@ object BenchmarkCompiler {
     val threads = o.threads
 
     // Find the number of lines of source code.
-    val lines = results.head.lines.toLong
+    val lines = maxThreadResults.head.lines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.time).toList
+    val timings = maxThreadResults.map(_.time).toList
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -218,7 +202,6 @@ object BenchmarkCompiler {
 
     // TODO: files we want:
     // phases.json
-    // iterations.json
     // summary.json
 
     // TODO: What about the flags: incremental? threads?
@@ -229,35 +212,42 @@ object BenchmarkCompiler {
 
     val timestamp = System.currentTimeMillis() / 1000
 
-    val iterations =
+    val throughputSingleThread =
       ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
+        ("threads" -> MinThreads) ~
         ("lines" -> lines) ~
-        ("results" -> results.zipWithIndex.map(x => ("i" -> x._2) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
-    writeToDisk("iterations.json", iterations)(flix)
+        ("results" -> minThreadResults.zipWithIndex.map(x => ("i" -> x._2.toString) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
+    writeToDisk("throughput_seq.json", throughputSingleThread)(flix)
+
+    val throughputMaxThread =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MaxThreads) ~
+        ("lines" -> lines) ~
+        ("results" -> maxThreadResults.zipWithIndex.map(x => ("i" -> x._2.toString) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
+    writeToDisk("throughput_par.json", throughputSingleThread)(flix)
 
     val phases =
       ("timestamp" -> timestamp) ~
         ("threads" -> threads) ~
         ("lines" -> lines) ~
-        ("results" -> results.last.phases.zip(incrementalResults.last.phases).map {
+        ("results" -> maxThreadResults.last.phases.zip(incrementalResults.last.phases).map {
           case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~
             ("time" -> milliseconds(time)) ~
             ("incremental" -> milliseconds(incrementalTime)) ~
-              ("ratio" -> (time.toDouble - incrementalTime.toDouble) / (time.toDouble))
+            ("ratio" -> (time.toDouble - incrementalTime.toDouble) / (time.toDouble))
         })
     writeToDisk("phases.json", phases)(flix)
 
-    val phasesConcurrency =
+    val parallelismJSON =
       ("timestamp" -> timestamp) ~
         ("lines" -> lines) ~
         ("minThreads" -> MinThreads) ~
         ("maxThreads" -> MaxThreads) ~
-        ("results" -> results.last.phases.zip(resultsOneThread.last.phases).map {
+        ("results" -> maxThreadResults.last.phases.zip(minThreadResults.last.phases).map {
           case ((phase, time), (_, oneThreadTime)) => ("phase" -> phase) ~
             ("speedup" -> oneThreadTime.toDouble / time.toDouble)
         })
-    writeToDisk("parallelism.json", phasesConcurrency)(flix)
+    writeToDisk("speedup_par.json", parallelismJSON)(flix)
 
     val summaryJSON =
       ("timestamp" -> timestamp) ~
