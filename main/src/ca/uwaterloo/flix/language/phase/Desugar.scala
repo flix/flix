@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{Ast, DesugaredAst, Name, SourceLocation, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
@@ -541,6 +541,9 @@ object Desugar {
     case WeededAst.Expr.ForEach(frags, exp, loc) =>
       desugarForEach(frags, exp, loc)
 
+    case WeededAst.Expr.MonadicFor(frags, exp, loc) =>
+      desugarMonadicFor(frags, exp, loc)
+
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
       Expr.Tuple(es, loc)
@@ -1036,6 +1039,42 @@ object Desugar {
     }
     DesugaredAst.Expr.Scope(regIdent, foreachExp, loc)
   }
+
+  /**
+    * Rewrites a `MonadicFor` loop into a series of `Monad.flatMap` calls.
+    * {{{
+    *   forM (
+    *           x <- xs;
+    *           if x > 0;
+    *           y <- ys
+    *       ) yield x + y
+    * }}}
+    * desugars to
+    * {{{
+    *   Monad.flatMap(x -> if (x > 0) Monad.flatMap(y -> Applicative.point(x + y), ys) else MonadZero.empty(), xs)
+    * }}}
+    */
+  private def desugarMonadicFor(frags: List[WeededAst.ForFragment], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): Expr = {
+    val fqnFlatMap = "Monad.flatMap"
+    val fqnPoint = "Applicative.point"
+    val fqnZero = "MonadZero.empty"
+    val e = visitExp(exp)
+    val yieldExp = mkApplyFqn(fqnPoint, List(e), loc)
+    frags.foldRight(yieldExp) {
+      case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
+        val p1 = visitPattern(pat1)
+        val e1 = visitExp(exp1)
+        val lambda = mkLambdaMatch(p1, acc, loc1)
+        val fparams = List(lambda, e1)
+        mkApplyFqn(fqnFlatMap, fparams, loc1)
+
+      case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
+        val e1 = visitExp(exp1)
+        val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
+        DesugaredAst.Expr.IfThenElse(e1, acc, zero, loc1.asSynthetic)
+    }
+  }
+
 
   /**
     * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
