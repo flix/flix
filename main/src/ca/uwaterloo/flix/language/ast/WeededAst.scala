@@ -127,6 +127,8 @@ object WeededAst {
 
     case class MonadicFor(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
 
+    case class ForEachYield(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
+
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
@@ -228,6 +230,7 @@ object WeededAst {
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
     }
+
   }
 
   sealed trait Pattern {
