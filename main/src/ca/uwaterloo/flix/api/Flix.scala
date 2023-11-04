@@ -83,7 +83,6 @@ class Flix {
 
   def getParserAst: ParsedAst.Root = cachedParserAst
   def getWeederAst: WeededAst.Root = cachedWeederAst
-
   def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
   def getKinderAst: KindedAst.Root = cachedKinderAst
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
