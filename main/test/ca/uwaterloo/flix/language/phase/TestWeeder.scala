@@ -800,7 +800,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalForFragment.01") {
     val input =
       """
-        |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
+        |def f(x: Int32): List[Int32] =
+        | foreach (if x > 0) yield 1
+        |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
@@ -809,7 +811,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalForFragment.02") {
     val input =
       """
-        |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) yield y
+        |def f(x: Int32, ys: List[Int32]): List[Int32] =
+        | foreach (if x > 0; y <- ys) yield y
+        |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
@@ -818,7 +822,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalForFragment.03") {
     val input =
       """
-        |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0) println(x)
+        |def f(x: Int32): List[Int32] =
+        | foreach (if x > 0) println(x)
+        |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
@@ -827,7 +833,33 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalForFragment.04") {
     val input =
       """
-        |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) println(x + y)
+        |def g(_: Int32): Unit \ IO = checked_ecast(())
+        |
+        |def f(x: Int32, ys: List[Int32]): List[Int32] =
+        | foreach (if x > 0; y <- ys) println(y)
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalForFragment.05") {
+    val input =
+      """
+        |def f(x: Int32): List[Int32] =
+        | forM (if x > 0) yield x
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalForFragment.06") {
+    val input =
+      """
+        |def f(x: Int32, ys: List[Int32]): List[Int32] =
+        | forM (if x > 0; y <- ys) yield y
+        |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
