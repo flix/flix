@@ -30,7 +30,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 3
+  val N = 4
 
   private val Python =
     """
