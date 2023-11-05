@@ -105,6 +105,7 @@ object BenchmarkCompiler {
       |with open('throughput.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
+      |    maxy = data['plot']['maxy']
       |    xvalues = list(map(lambda obj: obj['i'], data['results']))
       |    yvalues = list(map(lambda obj: obj['throughput'], data['results']))
       |
@@ -117,13 +118,14 @@ object BenchmarkCompiler {
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |    plt.ylim(1)
+      |    plt.ylim(1, maxy)
       |
       |    plt.savefig('throughput.json.png')
       |
       |with open('throughputPar.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
+      |    maxy = data['plot']['maxy']
       |    xvalues = list(map(lambda obj: obj['i'], data['results']))
       |    yvalues = list(map(lambda obj: obj['throughput'], data['results']))
       |
@@ -136,13 +138,14 @@ object BenchmarkCompiler {
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |    plt.ylim(1)
+      |    plt.ylim(1, maxy)
       |
       |    plt.savefig('throughputPar.json.png')
       |
       |with open('throughputParInc.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
+      |    maxy = data['plot']['maxy']
       |    xvalues = list(map(lambda obj: obj['i'], data['results']))
       |    yvalues = list(map(lambda obj: obj['throughput'], data['results']))
       |
@@ -155,7 +158,7 @@ object BenchmarkCompiler {
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |    plt.ylim(1)
+      |    plt.ylim(1, maxy)
       |
       |    plt.savefig('throughputParInc.json.png')
       |
@@ -282,6 +285,8 @@ object BenchmarkCompiler {
     val MinThreads = 1
     val MaxThreads = o.threads
 
+    val MaxThroughput = throughput(lines, Math.max(baseline.last.time, Math.max(baselineWithPar.last.time, baselineWithParInc.last.time)))
+
     // Graphs i want:
     // Parallelism: Per phase speedup 1thread versus N threads.
     // Incrementalism: Per phase speedup?
@@ -318,6 +323,7 @@ object BenchmarkCompiler {
         ("threads" -> MinThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
+        ("plot" -> ("maxy" -> MaxThroughput)) ~
         ("results" -> baseline.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
@@ -328,6 +334,7 @@ object BenchmarkCompiler {
         ("threads" -> MaxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
+        ("plot" -> ("maxy" -> MaxThroughput)) ~
         ("results" -> baselineWithPar.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
@@ -338,6 +345,7 @@ object BenchmarkCompiler {
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
+        ("plot" -> ("maxy" -> MaxThroughput)) ~
         ("results" -> baselineWithParInc.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
