@@ -203,32 +203,9 @@ object BenchmarkCompiler {
 
     var flix: Flix = null
 
-    val baseline = (0 until N).map { _ =>
-      flix = new Flix()
-      flix.setOptions(o.copy(incremental = false, loadClassFiles = false, threads = 1))
-      flushCaches()
+    val baseline = perfBaseLine(o)
 
-      addInputs(flix)
-      val compilationResult = flix.compile().toHardFailure.get
-      val phases = flix.phaseTimers.map {
-        case PhaseTime(phase, time, _) => phase -> time
-      }
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
-    }
-
-    val baselineWithPar = (0 until N).map { _ =>
-      flix = new Flix()
-      flix.setOptions(o.copy(incremental = false, loadClassFiles = false))
-      flushCaches()
-
-      addInputs(flix)
-      val compilationResult = flix.compile().toHardFailure.get
-      val phases = flix.phaseTimers.map {
-        case PhaseTime(phase, time, _) => phase -> time
-      }
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
-    }
-
+    val baselineWithPar = perfBaseLineWithPar(o)
 
     flix = new Flix()
     flix.setOptions(flix.options.copy(incremental = true, loadClassFiles = false))
@@ -408,6 +385,40 @@ object BenchmarkCompiler {
     println()
     println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
 
+  }
+
+  // TODO: DOC
+  private def perfBaseLine(o: Options): IndexedSeq[Run] = {
+    (0 until N).map { _ =>
+      flushCaches()
+
+      val flix = new Flix()
+      flix.setOptions(o.copy(incremental = false, loadClassFiles = false, threads = 1))
+      addInputs(flix)
+
+      val compilationResult = flix.compile().toHardFailure.get
+      val phases = flix.phaseTimers.map {
+        case PhaseTime(phase, time, _) => phase -> time
+      }
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    }
+  }
+
+    // TODO: DOC
+  private def perfBaseLineWithPar(o: Options): IndexedSeq[Run] = {
+    (0 until N).map { _ =>
+      flushCaches()
+
+      val flix = new Flix()
+      flix.setOptions(o.copy(incremental = false, loadClassFiles = false))
+      addInputs(flix)
+
+      val compilationResult = flix.compile().toHardFailure.get
+      val phases = flix.phaseTimers.map {
+        case PhaseTime(phase, time, _) => phase -> time
+      }
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    }
   }
 
   /**
