@@ -117,7 +117,6 @@ object BenchmarkCompiler {
       |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1, maxy)
       |
       |    plt.savefig('throughput.json.png')
@@ -137,7 +136,6 @@ object BenchmarkCompiler {
       |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1, maxy)
       |
       |    plt.savefig('throughputPar.json.png')
@@ -157,7 +155,6 @@ object BenchmarkCompiler {
       |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1, maxy)
       |
       |    plt.savefig('throughputParInc.json.png')
