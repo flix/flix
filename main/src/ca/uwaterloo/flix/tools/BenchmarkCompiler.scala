@@ -168,9 +168,9 @@ object BenchmarkCompiler {
       |    fig, ax = plt.subplots()
       |    ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Time ({threads} threads, non-incremental)')
+      |    ax.set_title(f'Time per Phase ({threads} threads, non-incremental)')
       |    ax.set_xlabel('Phase')
-      |    ax.set_ylabel('Total Time (ms)')
+      |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
@@ -187,9 +187,9 @@ object BenchmarkCompiler {
       |    fig, ax = plt.subplots()
       |    ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Time ({threads} threads, non-incremental)')
+      |    ax.set_title(f'Time per Phase ({threads} threads, non-incremental)')
       |    ax.set_xlabel('Phase')
-      |    ax.set_ylabel('Total Time (ms)')
+      |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
@@ -206,9 +206,9 @@ object BenchmarkCompiler {
       |    fig, ax = plt.subplots()
       |    ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Time ({threads} threads, incremental)')
+      |    ax.set_title(f'Time per Phase ({threads} threads, incremental)')
       |    ax.set_xlabel('Phase')
-      |    ax.set_ylabel('Total Time (ms)')
+      |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
