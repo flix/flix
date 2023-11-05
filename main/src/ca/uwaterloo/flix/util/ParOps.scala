@@ -30,10 +30,11 @@ object ParOps {
     */
   @inline
   def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    val out = ArrayBuffer.fill(xs.size)(null.asInstanceOf[B])
+    val size = xs.size
+    val out = ArrayBuffer.fill(size)(null.asInstanceOf[B])
 
     val futuresBuilder = ArrayBuffer.newBuilder[Future[?]]
-    futuresBuilder.sizeHint(xs.size)
+    futuresBuilder.sizeHint(size)
     val futures = futuresBuilder.result()
 
     val threadPool = flix.threadPool
@@ -77,22 +78,23 @@ object ParOps {
     */
   @inline
   def parAgg[A, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
+    val size = xs.size
     val threads = flix.options.threads
     val threadPool = flix.threadPool
 
     // Distribute elements about equally between the threads
     val threadElms = ArrayBuffer.fill(threads) {
       val elmsBuilder = ArrayBuffer.newBuilder[A]
-      elmsBuilder.sizeHint(xs.size / threads)
+      elmsBuilder.sizeHint(size / threads)
       elmsBuilder.result()
     }
     val iterator = xs.iterator
-    val (l1, l2) = threadElms.splitAt(threads - (xs.size % threads))
+    val (l1, l2) = threadElms.splitAt(threads - (size % threads))
     l1.foreach {
-      l => l.appendAll(iterator.take(xs.size / threads))
+      l => l.appendAll(iterator.take(size / threads))
     }
     l2.foreach {
-      l => l.appendAll(iterator.take(xs.size / threads + 1))
+      l => l.appendAll(iterator.take(size / threads + 1))
     }
 
     // Combing is done one after the other,
