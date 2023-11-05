@@ -32,7 +32,7 @@ import scala.collection.mutable
   * - Specializes polymorphic enums with the specific types that it is used as.
   * - Removes all type aliases in types
   */
-object MonomorphEnums {
+object MonoTypes {
 
   /**
     * Holds the mutable data used throughout monomorphization.
@@ -72,7 +72,7 @@ object MonomorphEnums {
   /**
     * Performs monomorphization of enums on the given AST `root` and removes alias types.
     */
-  def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonomorphEnums") {
+  def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonoTypes") {
     // Assumptions:
     // - All typeclass information have been transformed into defs - this
     //   phase only looks at types and expressions in defs.

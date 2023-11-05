@@ -93,8 +93,8 @@ class Flix {
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonomorphEnumsAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonoDefsAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonoTypesAst: LoweredAst.Root = LoweredAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
@@ -106,8 +106,8 @@ class Flix {
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
   def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
-  def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
-  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
+  def getMonomorphAst: LoweredAst.Root = cachedMonoDefsAst
+  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonoTypesAst
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
   def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
@@ -594,9 +594,9 @@ class Flix {
 
     cachedLoweringAst = Lowering.run(typedAst)
     cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
-    cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
-    cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)
-    cachedSimplifierAst = Simplifier.run(cachedMonomorphEnumsAst)
+    cachedMonoDefsAst = MonoDefs.run(cachedEarlyTreeShakerAst)
+    cachedMonoTypesAst = MonoTypes.run(cachedMonoDefsAst)
+    cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
     cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
