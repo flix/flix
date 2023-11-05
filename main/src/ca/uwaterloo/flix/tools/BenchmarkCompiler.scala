@@ -294,7 +294,7 @@ object BenchmarkCompiler {
 
     // TODO: What about A/B comparisons?
 
-    writeToDisk("graphs.py", Python)(flix)
+    writeToDisk("plots.py", Python)(flix)
 
     val timestamp = System.currentTimeMillis() / 1000
 
