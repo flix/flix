@@ -92,7 +92,7 @@ class Flix {
     * A cache of ASTs for debugging.
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
   private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
   private var cachedMonomorphEnumsAst: LoweredAst.Root = LoweredAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
@@ -100,12 +100,12 @@ class Flix {
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
-  def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
+  def getEarlyTreeShakerAst: LoweredAst.Root = cachedTreeShaker1Ast
   def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
   def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
@@ -113,7 +113,7 @@ class Flix {
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
   def getTailrecAst: LiftedAst.Root = cachedTailrecAst
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
-  def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
+  def getLateTreeShakerAst: LiftedAst.Root = cachedTreeShaker2Ast
   def getReducerAst: ReducedAst.Root = cachedReducerAst
   def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
 
@@ -593,16 +593,16 @@ class Flix {
     initForkJoin()
 
     cachedLoweringAst = Lowering.run(typedAst)
-    cachedEarlyTreeShakerAst = TreeShaker1.run(cachedLoweringAst)
-    cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
+    cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
+    cachedMonomorphAst = Monomorph.run(cachedTreeShaker1Ast)
     cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)
     cachedSimplifierAst = Simplifier.run(cachedMonomorphEnumsAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
     cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
-    cachedLateTreeShakerAst = TreeShaker2.run(cachedOptimizerAst)
-    cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
+    cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
+    cachedReducerAst = Reducer.run(cachedTreeShaker2Ast)
     cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
     val result = JvmBackend.run(cachedVarNumberingAst)
 
