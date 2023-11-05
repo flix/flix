@@ -285,7 +285,7 @@ object BenchmarkCompiler {
     val MinThreads = 1
     val MaxThreads = o.threads
 
-    val MaxThroughput = throughput(lines, Math.max(baseline.last.time, Math.max(baselineWithPar.last.time, baselineWithParInc.last.time)))
+    val MaxThroughput = throughput(lines, Math.min(baseline.last.time, Math.min(baselineWithPar.last.time, baselineWithParInc.last.time)))
 
     // Graphs i want:
     // Parallelism: Per phase speedup 1thread versus N threads.
