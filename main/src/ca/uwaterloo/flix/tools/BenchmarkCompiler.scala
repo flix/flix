@@ -388,15 +388,9 @@ object BenchmarkCompiler {
         })
     writeToDisk("speedup_inc_par.json", speedupWithIncrWithPar)(flix)
 
-    val summaryJSON =
-      ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
-        ("lines" -> lines) ~
-        ("iterations" -> N) ~
-        ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
-    val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-    writeToDisk("summary.json", s)(flix)
-
+    //
+    // Time
+    //
     val timeBaseline =
       ("timestamp" -> timestamp) ~
         ("threads" -> MinThreads) ~
@@ -426,6 +420,19 @@ object BenchmarkCompiler {
           case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
         })
     writeToDisk("timeWithParInc.json", timeWithParInc)(flix)
+
+    //
+    // Summary
+    //
+    val summaryJSON =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("iterations" -> N) ~
+        ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
+    val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
+    writeToDisk("summary.json", s)(flix)
+
 
     println("~~~~ Flix Compiler Throughput ~~~~")
     println()
