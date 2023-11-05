@@ -278,24 +278,10 @@ object BenchmarkCompiler {
     // Compute the ration between the slowest and fastest run.
     val bestWorstRatio = timings.max.toDouble / timings.min.toDouble
 
-    val MinThreads = 1
-    val MaxThreads = o.threads
+    val minThreads = 1
+    val maxThreads = o.threads
 
-    val MaxThroughput = throughput(lines, Math.min(baseline.last.time, Math.min(baselineWithPar.last.time, baselineWithParInc.last.time)))
-
-    // Graphs i want:
-    // Parallelism: Per phase speedup 1thread versus N threads.
-    // Incrementalism: Per phase speedup?
-    // throughput: loc/sec per iteration
-    // Maybe throughput per phase, but ignoring fast phases?
-
-    // TODO: files we want:
-    // phases.json
-    // summary.json
-
-    // TODO: What about the flags: incremental? threads?
-
-    // TODO: What about A/B comparisons?
+    val maxObservedThroughput = throughput(lines, Math.min(baseline.last.time, Math.min(baselineWithPar.last.time, baselineWithParInc.last.time)))
 
     val timestamp = System.currentTimeMillis() / 1000
 
@@ -305,25 +291,25 @@ object BenchmarkCompiler {
     //
     val speedupPar =
     ("timestamp" -> timestamp) ~
-      ("minThreads" -> MinThreads) ~
-      ("maxThreads" -> MaxThreads) ~
+      ("minThreads" -> minThreads) ~
+      ("maxThreads" -> maxThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
       ("results" -> baseline.last.phases.zip(baselineWithPar.last.phases).map {
-        case ((phase, time1), (_, time2)) => ("phase" -> phase) ~
-          ("speedup" -> time2.toDouble / time1.toDouble)
+        case ((phase, time1), (_, time2)) =>
+          ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
       })
     writeToDisk("speedupPar.json", speedupPar)(flix)
 
     val speedupParInc =
       ("timestamp" -> timestamp) ~
-        ("minThreads" -> MinThreads) ~
-        ("maxThreads" -> MaxThreads) ~
+        ("minThreads" -> minThreads) ~
+        ("maxThreads" -> maxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baseline.last.phases.zip(baselineWithParInc.last.phases).map {
-          case ((phase, time1), (_, time2)) => ("phase" -> phase) ~
-            ("speedup" -> time2.toDouble / time1.toDouble)
+          case ((phase, time1), (_, time2)) =>
+            ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
         })
     writeToDisk("speedupParInc.json", speedupParInc)(flix)
 
@@ -332,10 +318,10 @@ object BenchmarkCompiler {
     ///
     val throughoutBaseLine =
     ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
+      ("threads" -> minThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
-      ("plot" -> ("maxy" -> MaxThroughput)) ~
+      ("plot" -> ("maxy" -> maxObservedThroughput)) ~
       ("results" -> baseline.zipWithIndex.map({
         case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
       }))
@@ -343,10 +329,10 @@ object BenchmarkCompiler {
 
     val throughputPar =
       ("timestamp" -> timestamp) ~
-        ("threads" -> MaxThreads) ~
+        ("threads" -> maxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
-        ("plot" -> ("maxy" -> MaxThroughput)) ~
+        ("plot" -> ("maxy" -> maxObservedThroughput)) ~
         ("results" -> baselineWithPar.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
@@ -354,10 +340,10 @@ object BenchmarkCompiler {
 
     val throughputParInc =
       ("timestamp" -> timestamp) ~
-        ("threads" -> MaxThreads) ~
+        ("threads" -> maxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("plot" -> ("maxy" -> MaxThroughput)) ~
+        ("plot" -> ("maxy" -> maxObservedThroughput)) ~
         ("results" -> baselineWithParInc.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
@@ -368,7 +354,7 @@ object BenchmarkCompiler {
     //
     val timeBaseline =
     ("timestamp" -> timestamp) ~
-      ("threads" -> MinThreads) ~
+      ("threads" -> minThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
       ("results" -> baseline.last.phases.map {
@@ -378,7 +364,7 @@ object BenchmarkCompiler {
 
     val timeWithPar =
       ("timestamp" -> timestamp) ~
-        ("threads" -> MaxThreads) ~
+        ("threads" -> maxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.last.phases.map {
@@ -388,7 +374,7 @@ object BenchmarkCompiler {
 
     val timeWithParInc =
       ("timestamp" -> timestamp) ~
-        ("threads" -> MaxThreads) ~
+        ("threads" -> maxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithParInc.last.phases.map {
