@@ -108,7 +108,7 @@ object PatMatch {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
-    flix.phase("PatternExhaustiveness") {
+    flix.phase("PatMatch") {
       val defErrs = root.defs.values.flatMap(defn => visitExp(defn.exp, root))
       val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitExp(defn.exp, root))
       // Only need to check sigs with implementations
