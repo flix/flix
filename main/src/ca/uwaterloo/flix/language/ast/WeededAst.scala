@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.errors.WeederError
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
@@ -92,6 +94,8 @@ object WeededAst {
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class Infix(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 

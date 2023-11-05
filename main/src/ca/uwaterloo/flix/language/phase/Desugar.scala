@@ -473,6 +473,8 @@ object Desugar {
       val es = visitExps(exps)
       Expr.Apply(e, es, loc)
 
+    case WeededAst.Expr.Infix(exp1, exp2, exp3, loc) => ???
+
     case WeededAst.Expr.Lambda(fparam, exp, loc) =>
       val fparam1 = visitFormalParam(fparam)
       val e = visitExp(exp)
