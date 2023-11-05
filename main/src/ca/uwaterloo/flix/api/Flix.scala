@@ -593,7 +593,7 @@ class Flix {
     initForkJoin()
 
     cachedLoweringAst = Lowering.run(typedAst)
-    cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
+    cachedEarlyTreeShakerAst = TreeShaker1.run(cachedLoweringAst)
     cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
     cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)
     cachedSimplifierAst = Simplifier.run(cachedMonomorphEnumsAst)
@@ -601,7 +601,7 @@ class Flix {
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
     cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
-    cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
+    cachedLateTreeShakerAst = TreeShaker2.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
     cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
     val result = JvmBackend.run(cachedVarNumberingAst)

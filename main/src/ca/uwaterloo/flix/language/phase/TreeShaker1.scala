@@ -37,12 +37,12 @@ import ca.uwaterloo.flix.util.ParOps
   * for the monomorph to work.
   *
   */
-object EarlyTreeShaker {
+object TreeShaker1 {
 
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("EarlyTreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
