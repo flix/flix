@@ -22,6 +22,7 @@ import scala.jdk.CollectionConverters._
 import ca.uwaterloo.flix.api.Flix
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 object ParOps {
 
@@ -83,7 +84,7 @@ object ParOps {
     val threadPool = flix.threadPool
 
     // Distribute elements about equally between the threads
-    val threadElms = ArrayBuffer.fill(threads) {
+    val threadElms = Array.fill(threads) {
       val elmsBuilder = ArrayBuffer.newBuilder[A]
       elmsBuilder.sizeHint(size / threads)
       elmsBuilder.result()
