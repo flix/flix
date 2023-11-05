@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, Options, StatUtils}
-import org.json4s.{JInt, JValue}
+import org.json4s.JValue
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
 
@@ -159,7 +159,7 @@ object BenchmarkCompiler {
       |
       |    plt.savefig('throughputParInc.json.png')
       |
-      |with open('time_phases.json', 'r') as file:
+      |with open('time.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
@@ -176,9 +176,28 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1)
       |
-      |    plt.savefig('time_phases.png')
+      |    plt.savefig('time.json.png')
       |
-      |with open('time_phases_incr.json', 'r') as file:
+      |with open('timeWithPar.json', 'r') as file:
+      |    data = json.load(file)
+      |    threads = data['threads']
+      |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['time'], data['results']))
+      |
+      |    fig, ax = plt.subplots()
+      |    ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Time ({threads} threads, non-incremental)')
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('Total Time (ms)')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1)
+      |
+      |    plt.savefig('timeWithPar.json.png')
+      |
+      |with open('timeWithParInc.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
@@ -195,7 +214,7 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1)
       |
-      |    plt.savefig('time_phases_incr.png')
+      |    plt.savefig('timeWithParInc.json.png')
       |
       |""".stripMargin
 
@@ -230,7 +249,6 @@ object BenchmarkCompiler {
       }
       Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
     }
-
 
 
     flix = new Flix()
@@ -316,14 +334,14 @@ object BenchmarkCompiler {
     /// Throughput
     ///
     val throughoutBaseLine =
-      ("timestamp" -> timestamp) ~
-        ("threads" -> MinThreads) ~
-        ("incremental" -> false) ~
-        ("lines" -> lines) ~
-        ("plot" -> ("maxy" -> MaxThroughput)) ~
-        ("results" -> baseline.zipWithIndex.map({
-          case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
-        }))
+    ("timestamp" -> timestamp) ~
+      ("threads" -> MinThreads) ~
+      ("incremental" -> false) ~
+      ("lines" -> lines) ~
+      ("plot" -> ("maxy" -> MaxThroughput)) ~
+      ("results" -> baseline.zipWithIndex.map({
+        case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+      }))
     writeToDisk("throughput.json", throughoutBaseLine)(flix)
 
     val throughputPar =
@@ -379,23 +397,35 @@ object BenchmarkCompiler {
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
     writeToDisk("summary.json", s)(flix)
 
-    val timePhases =
+    val timeBaseline =
       ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
+        ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
+        ("lines" -> lines) ~
+        ("results" -> baseline.last.phases.map {
+          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+        })
+    writeToDisk("time.json", timeBaseline)(flix)
+
+    val timeWithPar =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> MaxThreads) ~
+        ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.last.phases.map {
-          case ((phase, time)) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
         })
-    writeToDisk("time_phases.json", timePhases)(flix)
+    writeToDisk("timeWithPar.json", timeWithPar)(flix)
 
-    val timePhasesIncr =
+    val timeWithParInc =
       ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
+        ("threads" -> MaxThreads) ~
+        ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithParInc.last.phases.map {
-          case ((phase, time)) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
         })
-    writeToDisk("time_phases_incr.json", timePhasesIncr)(flix)
+    writeToDisk("timeWithParInc.json", timeWithParInc)(flix)
 
     println("~~~~ Flix Compiler Throughput ~~~~")
     println()
