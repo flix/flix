@@ -102,6 +102,25 @@ object BenchmarkCompiler {
       |
       |    plt.savefig('speedup_phases_inc.json.png')
       |
+      |with open('throughput.json', 'r') as file:
+      |    data = json.load(file)
+      |    threads = data['threads']
+      |    xvalues = list(map(lambda obj: obj['i'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['throughput'], data['results']))
+      |
+      |    fig, ax = plt.subplots()
+      |    ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Throughput ({threads} threads, non-incremental)')
+      |    ax.set_xlabel('Iteration')
+      |    ax.set_ylabel('Throughput (lines/sec)')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1)
+      |
+      |    plt.savefig('throughput.json.png')
+      |
       |with open('throughput_incr_par.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
@@ -119,28 +138,8 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1)
       |
-      |    plt.savefig('throughput_incr_par.png')
-      |
-      |with open('throughput_seq_full.json', 'r') as file:
-      |    data = json.load(file)
-      |    threads = data['threads']
-      |    xvalues = list(map(lambda obj: obj['i'], data['results']))
-      |    yvalues = list(map(lambda obj: obj['time'], data['results']))
-      |
-      |    fig, ax = plt.subplots()
-      |    ax.bar(xvalues, yvalues)
-      |
-      |    ax.set_title(f'Throughput ({threads} threads, non-incremental)')
-      |    ax.set_xlabel('Iteration')
-      |    ax.set_ylabel('Throughput (lines/sec)')
-      |
-      |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |    plt.ylim(1)
-      |
-      |    plt.savefig('throughput_seq_full.png')
-      |
-      |
+      |    plt.savefig('throughput_incr_par.json.png')
+
       |with open('throughput_full_par.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
@@ -158,7 +157,7 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1)
       |
-      |    plt.savefig('throughput_full_par.png')
+      |    plt.savefig('throughput_full_par.json.png')
       |
       |with open('time_phases.json', 'r') as file:
       |    data = json.load(file)
@@ -205,6 +204,20 @@ object BenchmarkCompiler {
   def run(o: Options, frontend: Boolean): Unit = {
 
     var flix: Flix = null
+
+    val baseline = (0 until N).map { _ =>
+      flix = new Flix()
+      flix.setOptions(o.copy(incremental = false, loadClassFiles = false, threads = 1))
+      flushCaches()
+
+      addInputs(flix)
+      val compilationResult = flix.compile().toHardFailure.get
+      val phases = flix.phaseTimers.map {
+        case PhaseTime(phase, time, _) => phase -> time
+      }
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    }
+
     val maxThreadResults = (0 until N).map { _ =>
       flix = new Flix()
       flix.setOptions(o.copy(incremental = false, loadClassFiles = false))
@@ -218,18 +231,7 @@ object BenchmarkCompiler {
       Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
     }
 
-    val minThreadResults = (0 until N).map { _ =>
-      flix = new Flix()
-      flix.setOptions(o.copy(incremental = false, loadClassFiles = false, threads = 1))
-      flushCaches()
 
-      addInputs(flix)
-      val compilationResult = flix.compile().toHardFailure.get
-      val phases = flix.phaseTimers.map {
-        case PhaseTime(phase, time, _) => phase -> time
-      }
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
-    }
 
     flix = new Flix()
     flix.setOptions(flix.options.copy(incremental = true, loadClassFiles = false))
@@ -308,12 +310,18 @@ object BenchmarkCompiler {
         })
     writeToDisk("speedup_phases_inc.json", speedupPhases)(flix)
 
-    val throughputSingleThread =
+    ///
+    /// Throughput
+    ///
+    val throughoutBaseLine =
       ("timestamp" -> timestamp) ~
         ("threads" -> MinThreads) ~
+        ("incremental" -> false) ~
         ("lines" -> lines) ~
-        ("results" -> minThreadResults.zipWithIndex.map(x => ("i" -> ("Iter " + x._2.toString)) ~ ("time" -> JInt(throughput(lines, x._1.time)))))
-    writeToDisk("throughput_seq_full.json", throughputSingleThread)(flix)
+        ("results" -> baseline.zipWithIndex.map({
+          case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+        }))
+    writeToDisk("throughput.json", throughoutBaseLine)(flix)
 
     val throughputMaxThread =
       ("timestamp" -> timestamp) ~
@@ -334,7 +342,7 @@ object BenchmarkCompiler {
         ("lines" -> lines) ~
         ("minThreads" -> MinThreads) ~
         ("maxThreads" -> MaxThreads) ~
-        ("results" -> maxThreadResults.last.phases.zip(minThreadResults.last.phases).map {
+        ("results" -> maxThreadResults.last.phases.zip(baseline.last.phases).map {
           case ((phase, time), (_, oneThreadTime)) => ("phase" -> phase) ~
             ("speedup" -> oneThreadTime.toDouble / time.toDouble)
         })
