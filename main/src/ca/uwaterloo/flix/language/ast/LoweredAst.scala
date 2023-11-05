@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
-import ca.uwaterloo.flix.language.phase.Monomorph
+import ca.uwaterloo.flix.language.phase.MonoDefs
 import ca.uwaterloo.flix.util.collection.ListMap
 
 object LoweredAst {
@@ -82,7 +82,7 @@ object LoweredAst {
       def eff: Type = Type.Pure
     }
 
-    @EliminatedBy(Monomorph.getClass)
+    @EliminatedBy(MonoDefs.getClass)
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
