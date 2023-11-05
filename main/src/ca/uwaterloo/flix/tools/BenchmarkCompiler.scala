@@ -70,7 +70,7 @@ object BenchmarkCompiler {
       |    fig, ax = plt.subplots()
       |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Incremental Speedup (both {threads} threads)')
+      |    ax.set_title(f'Incremental Speedup ({threads} threads)')
       |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Speedup')
       |    ax.bar_label(bars, fmt='\n%.1fx')
