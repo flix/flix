@@ -38,7 +38,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * pattern match and returns the result.
   *
   */
-object PatternExhaustiveness {
+object PatMatch {
 
   /**
     * An ADT to make matching Type Constructors easier. We need to
