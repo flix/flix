@@ -22,7 +22,6 @@ import scala.jdk.CollectionConverters._
 import ca.uwaterloo.flix.api.Flix
 
 import scala.collection.mutable.ArrayBuffer
-import scala.reflect.ClassTag
 
 object ParOps {
 
