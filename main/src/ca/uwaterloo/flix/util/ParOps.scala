@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import java.util
-import java.util.concurrent.{Callable, Future}
+import java.util.concurrent.{Callable, CountDownLatch, Future}
 import scala.jdk.CollectionConverters._
 import ca.uwaterloo.flix.api.Flix
 
@@ -34,21 +34,19 @@ object ParOps {
     val size = xs.size
     val out = ArrayBuffer.fill(size)(null.asInstanceOf[B])
 
-    val futuresBuilder = ArrayBuffer.newBuilder[Future[?]]
-    futuresBuilder.sizeHint(size)
-    val futures = futuresBuilder.result()
-
     val threadPool = flix.threadPool
+    val latch = new CountDownLatch(size)
     for ((elm, idx) <- xs.zipWithIndex) {
-      futures += threadPool.submit(new Runnable {
+      threadPool.submit(new Runnable {
         override def run(): Unit = {
           out(idx) = f(elm)
+          latch.countDown()
         }
       })
     }
 
     // Await all
-    futures.foreach(_.get())
+    latch.await()
 
     out
   }
