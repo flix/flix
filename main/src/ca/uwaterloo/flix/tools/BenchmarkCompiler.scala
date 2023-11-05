@@ -40,7 +40,7 @@ object BenchmarkCompiler {
       |import matplotlib
       |import matplotlib.pyplot as plt
       |
-      |with open('speedup_full_par.json', 'r') as file:
+      |with open('speedupPar.json', 'r') as file:
       |    data = json.load(file)
       |    minThreads = data['minThreads']
       |    maxThreads = data['maxThreads']
@@ -59,9 +59,9 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1, 10)
       |
-      |    plt.savefig('speedup_full_par.png')
+      |    plt.savefig('speedupPar.json.png')
       |
-      |with open('speedup_inc_par.json', 'r') as file:
+      |with open('speedupParInc.json', 'r') as file:
       |    data = json.load(file)
       |    minThreads = data['minThreads']
       |    maxThreads = data['maxThreads']
@@ -71,7 +71,7 @@ object BenchmarkCompiler {
       |    fig, ax = plt.subplots()
       |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Parallel Speedup ({minThreads} vs. {maxThreads} threads, incremental)')
+      |    ax.set_title(f'Parallel & Incremental Speedup ({minThreads} vs. {maxThreads} threads, incremental)')
       |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Speedup')
       |    ax.bar_label(bars, fmt='\n%.1fx')
@@ -80,27 +80,8 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1, 10)
       |
-      |    plt.savefig('speedup_inc_par.png')
+      |    plt.savefig('speedupParInc.json.png')
       |
-      |with open('speedup_phases_inc.json', 'r') as file:
-      |    data = json.load(file)
-      |    threads = data['threads']
-      |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
-      |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
-      |
-      |    fig, ax = plt.subplots()
-      |    bars = ax.bar(xvalues, yvalues)
-      |
-      |    ax.set_title(f'Incremental Speedup ({threads} threads, incremental)')
-      |    ax.set_xlabel('Phase')
-      |    ax.set_ylabel('Speedup')
-      |    ax.bar_label(bars, fmt='\n%.1fx')
-      |
-      |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |    plt.ylim(1, 10)
-      |
-      |    plt.savefig('speedup_phases_inc.json.png')
       |
       |with open('throughput.json', 'r') as file:
       |    data = json.load(file)
@@ -316,19 +297,35 @@ object BenchmarkCompiler {
 
     // TODO: What about A/B comparisons?
 
-    writeToDisk("plots.py", Python)(flix)
-
     val timestamp = System.currentTimeMillis() / 1000
 
-    val speedupPhases =
+
+    //
+    // Speedup
+    //
+    val speedupPar =
+    ("timestamp" -> timestamp) ~
+      ("minThreads" -> MinThreads) ~
+      ("maxThreads" -> MaxThreads) ~
+      ("incremental" -> false) ~
+      ("lines" -> lines) ~
+      ("results" -> baseline.last.phases.zip(baselineWithPar.last.phases).map {
+        case ((phase, time1), (_, time2)) => ("phase" -> phase) ~
+          ("speedup" -> time2.toDouble / time1.toDouble)
+      })
+    writeToDisk("speedupPar.json", speedupPar)(flix)
+
+    val speedupParInc =
       ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
+        ("minThreads" -> MinThreads) ~
+        ("maxThreads" -> MaxThreads) ~
+        ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> baselineWithPar.last.phases.zip(baselineWithParInc.last.phases).map {
-          case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~
-            ("speedup" -> time.toDouble / incrementalTime.toDouble)
+        ("results" -> baseline.last.phases.zip(baselineWithParInc.last.phases).map {
+          case ((phase, time1), (_, time2)) => ("phase" -> phase) ~
+            ("speedup" -> time2.toDouble / time1.toDouble)
         })
-    writeToDisk("speedup_phases_inc.json", speedupPhases)(flix)
+    writeToDisk("speedupParInc.json", speedupParInc)(flix)
 
     ///
     /// Throughput
@@ -366,39 +363,17 @@ object BenchmarkCompiler {
         }))
     writeToDisk("throughputParInc.json", throughputParInc)(flix)
 
-    val parallelismJSON =
-      ("timestamp" -> timestamp) ~
-        ("lines" -> lines) ~
-        ("minThreads" -> MinThreads) ~
-        ("maxThreads" -> MaxThreads) ~
-        ("results" -> baselineWithPar.last.phases.zip(baseline.last.phases).map {
-          case ((phase, time), (_, oneThreadTime)) => ("phase" -> phase) ~
-            ("speedup" -> oneThreadTime.toDouble / time.toDouble)
-        })
-    writeToDisk("speedup_full_par.json", parallelismJSON)(flix)
-
-    val speedupWithIncrWithPar =
-      ("timestamp" -> timestamp) ~
-        ("lines" -> lines) ~
-        ("minThreads" -> MinThreads) ~
-        ("maxThreads" -> MaxThreads) ~
-        ("results" -> baselineWithParInc.last.phases.zip(baselineWithPar.last.phases).map {
-          case ((phase, time1), (_, time2)) => ("phase" -> phase) ~
-            ("speedup" -> time2.toDouble / time1.toDouble)
-        })
-    writeToDisk("speedup_inc_par.json", speedupWithIncrWithPar)(flix)
-
     //
     // Time
     //
     val timeBaseline =
-      ("timestamp" -> timestamp) ~
-        ("threads" -> MinThreads) ~
-        ("incremental" -> false) ~
-        ("lines" -> lines) ~
-        ("results" -> baseline.last.phases.map {
-          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
-        })
+    ("timestamp" -> timestamp) ~
+      ("threads" -> MinThreads) ~
+      ("incremental" -> false) ~
+      ("lines" -> lines) ~
+      ("results" -> baseline.last.phases.map {
+        case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+      })
     writeToDisk("time.json", timeBaseline)(flix)
 
     val timeWithPar =
@@ -425,14 +400,18 @@ object BenchmarkCompiler {
     // Summary
     //
     val summaryJSON =
-      ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
-        ("lines" -> lines) ~
-        ("iterations" -> N) ~
-        ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
+    ("timestamp" -> timestamp) ~
+      ("threads" -> threads) ~
+      ("lines" -> lines) ~
+      ("iterations" -> N) ~
+      ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
     writeToDisk("summary.json", s)(flix)
 
+    //
+    // Python Plot
+    //
+    writeToDisk("plots.py", Python)(flix)
 
     println("~~~~ Flix Compiler Throughput ~~~~")
     println()
