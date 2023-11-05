@@ -626,6 +626,8 @@ object Weeder {
       val eVal = visitExp(exp, senv)
       mapN(eVal) {
         case e => WeededAst.Expr.OpenAs(qname, e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
@@ -815,6 +817,8 @@ object Weeder {
         case (e1, lambda, e2) =>
           val loc = mkSL(leftMostSourcePosition(exp1), sp2)
           WeededAst.Expr.Apply(lambda, List(e1, e2), loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
@@ -843,12 +847,14 @@ object Weeder {
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      visitExp(exp, senv) map {
+      visitExp(exp, senv).map {
         case e => visitUnaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expr.Unary(o, e, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e), loc)
         }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
@@ -860,23 +866,31 @@ object Weeder {
           case OperatorResult.Operator(o) => WeededAst.Expr.Binary(o, e1, e2, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), loc)
         }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
       mapN(visitExp(exp1, senv), visitExp(exp2, senv), visitExp(exp3, senv)) {
         case (e1, e2, e3) => WeededAst.Expr.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Stm(exp1, exp2, sp2) =>
       val sp1 = leftMostSourcePosition(exp1)
       mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (e1, e2) => WeededAst.Expr.Stm(e1, e2, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Discard(sp1, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      visitExp(exp, senv) map {
+      visitExp(exp, senv).map {
         case e => WeededAst.Expr.Discard(e, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
@@ -888,6 +902,8 @@ object Weeder {
           val err = WeederError.IllegalEmptyForFragment(loc)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
@@ -902,6 +918,8 @@ object Weeder {
           val err = WeederError.IllegalForFragment(loc1)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (fs1, e1) => WeededAst.Expr.ForEach(fs1, e1, loc).toSuccess
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.MonadicFor(sp1, frags, exp, sp2) =>
@@ -916,6 +934,8 @@ object Weeder {
           val err = WeederError.IllegalForFragment(loc1)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) =>
@@ -930,6 +950,8 @@ object Weeder {
           val err = WeederError.IllegalForFragment(loc1)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (fs1, e1) => WeededAst.Expr.ForEachYield(fs1, e1, loc).toSuccess
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe0, exp1, exp2, sp2) =>
@@ -1047,6 +1069,8 @@ object Weeder {
                 val e1 = mkCurried(fs, lambdaBody, loc)
                 WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
               }
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
 
         case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
@@ -1091,6 +1115,8 @@ object Weeder {
               val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
 
         case ParsedAst.JvmOp.StaticMethod(fqn, sig0, tpe0, eff0, identOpt) =>
@@ -1140,6 +1166,8 @@ object Weeder {
               val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
 
         case ParsedAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
@@ -1162,6 +1190,8 @@ object Weeder {
               val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
               val e1 = WeededAst.Expr.Lambda(objectParam, lambdaBody, loc)
               WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
 
         case ParsedAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
@@ -1187,6 +1217,8 @@ object Weeder {
               val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
               val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
               WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
 
         case ParsedAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
@@ -1208,6 +1240,8 @@ object Weeder {
               val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
               val e1 = WeededAst.Expr.Lambda(unitParam, lambdaBody, loc)
               WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
 
         case ParsedAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
@@ -1230,6 +1264,8 @@ object Weeder {
               val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
               val e1 = WeededAst.Expr.Lambda(valueParam, lambdaBody, loc)
               WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
       }
 
@@ -1251,6 +1287,8 @@ object Weeder {
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expr.Scope(ident, e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
@@ -1279,6 +1317,8 @@ object Weeder {
       }
       mapN(visitExp(exp, senv), rulesVal) {
         case (e, rs) => WeededAst.Expr.TypeMatch(e, rs, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.RestrictableChoose(sp1, star, exp, rules, sp2) =>
@@ -1299,13 +1339,13 @@ object Weeder {
       /*
        * Rewrites empty tuples to Unit and eliminate single-element tuples.
        */
-      traverse(elms)(visitArgument(_, senv)) map {
+      traverse(elms)(visitArgument(_, senv)).map {
         case Nil =>
           val loc = mkSL(sp1, sp2)
           WeededAst.Expr.Cst(Ast.Constant.Unit, loc)
         case x :: Nil => x
         case xs => WeededAst.Expr.Tuple(xs, mkSL(sp1, sp2))
-      } recoverOne {
+      }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
@@ -1313,7 +1353,6 @@ object Weeder {
       val labelsVal = traverse(labels) {
         case ParsedAst.RecordLabel(_, ident, exp, _) =>
           val expVal = visitExp(exp, senv)
-
           mapN(expVal, visitName(ident)) {
             case (e, _) => ident -> e
           }
@@ -1326,12 +1365,16 @@ object Weeder {
           ls.foldRight(zero: WeededAst.Expr) {
             case ((ident, e), acc) => WeededAst.Expr.RecordExtend(Name.mkLabel(ident), e, acc, mkSL(sp1, sp2))
           }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.RecordSelect(exp, ident, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp, senv), visitName(ident)) {
         case (e, _) => WeededAst.Expr.RecordSelect(e, Name.mkLabel(ident), mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.RecordOperation(_, ops, rest, _) =>
@@ -1355,16 +1398,22 @@ object Weeder {
               val inner = WeededAst.Expr.RecordRestrict(Name.mkLabel(ident), acc, mkSL(sp1, sp2))
               WeededAst.Expr.RecordExtend(Name.mkLabel(ident), e, inner, mkSL(sp1, sp2))
           }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
         case (es, e) => WeededAst.Expr.ArrayLit(es, e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.VectorLit(sp1, exps, sp2) =>
       mapN(traverse(exps)(visitExp(_, senv))) {
         case es => WeededAst.Expr.VectorLit(es, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
@@ -1375,6 +1424,8 @@ object Weeder {
         case (e1, e2) =>
           val loc = mkSL(sp1, sp2)
           mkApplyFqn("List.Cons", List(e1, e2), loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FAppend(exp1, sp1, sp2, exp2) =>
@@ -1388,6 +1439,8 @@ object Weeder {
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
           mkApplyFqn("List.append", List(e1, e2), loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ListLit(sp1, sp2, exps) =>
@@ -1396,13 +1449,15 @@ object Weeder {
        */
       val loc = mkSL(sp1, sp2).asSynthetic
 
-      traverse(exps)(e => visitExp(e, senv)) map {
+      traverse(exps)(e => visitExp(e, senv)).map {
         case es =>
           val nil: WeededAst.Expr = WeededAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
           es.foldRight(nil) {
             case (elm, acc) =>
               mkApplyFqn("List.Cons", List(elm, acc), loc)
           }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.SetLit(sp1, sp2, exps) =>
@@ -1411,12 +1466,14 @@ object Weeder {
        */
       val loc = mkSL(sp1, sp2).asSynthetic
 
-      traverse(exps)(e => visitExp(e, senv)) map {
+      traverse(exps)(e => visitExp(e, senv)).map {
         case es =>
           val empty = mkApplyFqn("Set.empty", List(WeededAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
           es.foldLeft(empty) {
             case (acc, elm) => mkApplyFqn("Set.insert", List(elm, acc), loc)
           }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.MapLit(sp1, sp2, exps) =>
@@ -1431,12 +1488,14 @@ object Weeder {
         }
       }
 
-      elmsVal map {
+      elmsVal.map {
         case es =>
           val empty = mkApplyFqn("Map.empty", List(WeededAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
           es.foldLeft(empty) {
             case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc)
           }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
@@ -1473,7 +1532,7 @@ object Weeder {
       parts match {
         case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
           // Special case: We have a constant string. Check the contents and return it.
-          weedCharSequence(chars) map {
+          weedCharSequence(chars).map {
             string => WeededAst.Expr.Cst(Ast.Constant.Str(string), mkSL(innerSp1, innerSp2))
           }
 
@@ -1510,6 +1569,8 @@ object Weeder {
             case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
               val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
               WeededAst.Expr.Error(err).toSoftFailure(err)
+          }.recoverOne {
+            case err: WeederError => WeededAst.Expr.Error(err)
           }
       }
 
@@ -1519,6 +1580,8 @@ object Weeder {
       val exp2Val = visitExp(exp2, senv)
       mapN(exp1Val, exp2Val) {
         case (e1, e2) => WeededAst.Expr.Ref(e1, e2, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
@@ -1532,6 +1595,8 @@ object Weeder {
       val exp2Val = visitExp(exp2, senv)
       mapN(exp1Val, exp2Val) {
         case (e1, e2) => WeededAst.Expr.Assign(e1, e2, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Ascribe(exp, expectedType, expectedEff, sp2) =>
@@ -1540,23 +1605,31 @@ object Weeder {
       val fVal = traverseOpt(expectedEff)(visitType)
       mapN(eVal, tVal, fVal) {
         case (e, t, f) => WeededAst.Expr.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       val loc = mkSL(sp1, sp2)
-      visitExp(exp, senv) map {
+      visitExp(exp, senv).map {
         case e => WeededAst.Expr.InstanceOf(e, className.toString, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expr.CheckedCast(Ast.CheckedCastType.TypeCast, e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.CheckedEffectCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expr.CheckedCast(Ast.CheckedCastType.EffectCast, e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.UncheckedCast(sp1, exp, declaredType, declaredEff, sp2) =>
@@ -1566,11 +1639,15 @@ object Weeder {
       mapN(eVal, tVal, fVal) {
         case (e, t, f) =>
           WeededAst.Expr.UncheckedCast(e, t, f, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.UncheckedMaskingCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expr.UncheckedMaskingCast(e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Without(exp, effs, sp2) =>
@@ -1582,6 +1659,8 @@ object Weeder {
           effs.tail.foldLeft(base) {
             case (acc, eff) => WeededAst.Expr.Without(acc, eff, loc.asSynthetic)
           }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
@@ -1623,6 +1702,8 @@ object Weeder {
 
       mapN(expVal, rulesVal) {
         case (e, rs) => WeededAst.Expr.TryCatch(e, rs, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     // not handling these rules yet
@@ -1659,6 +1740,8 @@ object Weeder {
 
       mapN(rulesVal, defaultVal) {
         case (rs, d) => WeededAst.Expr.SelectChannel(rs, d, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Spawn(sp1, exp1, exp2, sp2) =>
@@ -1667,6 +1750,8 @@ object Weeder {
       val exp2Val = visitExp(exp2, senv)
       mapN(exp1Val, exp2Val) {
         case (e1, e2) => WeededAst.Expr.Spawn(e1, e2, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ParYield(sp1, frags, exp, sp2) =>
@@ -1683,18 +1768,21 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>
-      visitExp(exp, senv) map {
+      visitExp(exp, senv).map {
         case e => WeededAst.Expr.Lazy(e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Force(sp1, exp, sp2) =>
-      visitExp(exp, senv) map {
+      visitExp(exp, senv).map {
         case e => WeededAst.Expr.Force(e, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointConstraint(sp1, con, sp2) =>
       val loc = mkSL(sp1, sp2)
-
       mapN(visitConstraint(con, senv)) {
         case c => WeededAst.Expr.FixpointConstraintSet(c :: Nil, loc)
       }.recoverOne {
@@ -1703,10 +1791,9 @@ object Weeder {
 
     case ParsedAst.Expression.FixpointConstraintSet(sp1, cs0, sp2) =>
       val loc = mkSL(sp1, sp2)
-
-      traverse(cs0)(visitConstraint(_, senv)) map {
+      traverse(cs0)(visitConstraint(_, senv)).map {
         case cs => WeededAst.Expr.FixpointConstraintSet(cs, loc)
-      } recoverOne {
+      }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
@@ -1716,6 +1803,8 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       mapN(psVal, eVal) {
         case (ps, e) => WeededAst.Expr.FixpointLambda(ps, e, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
@@ -1723,6 +1812,8 @@ object Weeder {
         case (e1, e2) =>
           val sp1 = leftMostSourcePosition(exp1)
           WeededAst.Expr.FixpointMerge(e1, e2, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointInjectInto(sp1, exps, idents, sp2) =>
@@ -1745,6 +1836,8 @@ object Weeder {
               val innerExp = WeededAst.Expr.FixpointInject(exp, pred, loc)
               WeededAst.Expr.FixpointMerge(innerExp, acc, loc)
           }
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
@@ -1794,6 +1887,8 @@ object Weeder {
 
           // Bind the tmp% variable to the minimal model and combine it with the body expression.
           WeededAst.Expr.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc.asReal)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
@@ -1862,6 +1957,8 @@ object Weeder {
           val e1 = WeededAst.Expr.Cst(Ast.Constant.Str(prefix), loc)
           val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
           WeededAst.Expr.UncheckedMaskingCast(call, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
   }
