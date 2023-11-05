@@ -40,6 +40,27 @@ object BenchmarkCompiler {
       |import matplotlib
       |import matplotlib.pyplot as plt
       |
+      |with open('speedup_full_par.json', 'r') as file:
+      |    data = json.load(file)
+      |    minThreads = data['minThreads']
+      |    maxThreads = data['maxThreads']
+      |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
+      |
+      |    fig, ax = plt.subplots()
+      |    bars = ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Parallel Speedup ({minThreads} vs. {maxThreads} threads, non-incremental)')
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('Speedup')
+      |    ax.bar_label(bars, fmt='\n%.1fx')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1, 10)
+      |
+      |    plt.savefig('speedup_full_par.png')
+      |
       |with open('speedup_inc_par.json', 'r') as file:
       |    data = json.load(file)
       |    minThreads = data['minThreads']
@@ -50,7 +71,7 @@ object BenchmarkCompiler {
       |    fig, ax = plt.subplots()
       |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Speedup ({minThreads} vs. {maxThreads} threads, incremental)')
+      |    ax.set_title(f'Parallel Speedup ({minThreads} vs. {maxThreads} threads, incremental)')
       |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Speedup')
       |    ax.bar_label(bars, fmt='\n%.1fx')
