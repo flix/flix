@@ -31,10 +31,11 @@ object ParOps {
     */
   @inline
   def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    val out = ArrayBuffer.fill(xs.size)(null.asInstanceOf[B])
+    val size = xs.size
+    val out = ArrayBuffer.fill(size)(null.asInstanceOf[B])
 
     val futuresBuilder = ArrayBuffer.newBuilder[Future[?]]
-    futuresBuilder.sizeHint(xs.size)
+    futuresBuilder.sizeHint(size)
     val futures = futuresBuilder.result()
 
     val threadPool = flix.threadPool
