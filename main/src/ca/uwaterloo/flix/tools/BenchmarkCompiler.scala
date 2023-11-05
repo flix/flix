@@ -56,7 +56,7 @@ object BenchmarkCompiler {
       |    ax.bar_label(bars, fmt='\n%.1fx')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(1, 10)
       |
       |    plt.savefig('speedupPar.json.png')
@@ -76,7 +76,7 @@ object BenchmarkCompiler {
       |    ax.bar_label(bars, fmt='\n%.1fx')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(1, 10)
       |
       |    plt.savefig('speedupInc.json.png')
