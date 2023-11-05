@@ -173,7 +173,7 @@ object BenchmarkCompiler {
       |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(1)
       |
       |    plt.savefig('time.json.png')
@@ -192,7 +192,7 @@ object BenchmarkCompiler {
       |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(1)
       |
       |    plt.savefig('timeWithPar.json.png')
@@ -211,7 +211,7 @@ object BenchmarkCompiler {
       |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
-      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(1)
       |
       |    plt.savefig('timeWithParInc.json.png')
