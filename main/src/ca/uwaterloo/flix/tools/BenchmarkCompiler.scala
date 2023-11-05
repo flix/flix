@@ -82,6 +82,26 @@ object BenchmarkCompiler {
       |
       |    plt.savefig('speedup_inc_par.png')
       |
+      |with open('speedup_phases_inc.json', 'r') as file:
+      |    data = json.load(file)
+      |    threads = data['threads']
+      |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
+      |
+      |    fig, ax = plt.subplots()
+      |    bars = ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Incremental Speedup ({threads} threads, incremental)')
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('Speedup')
+      |    ax.bar_label(bars, fmt='\n%.1fx')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1, 10)
+      |
+      |    plt.savefig('speedup_phases_inc.json.png')
+      |
       |with open('throughput_incr_par.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
@@ -284,9 +304,7 @@ object BenchmarkCompiler {
         ("lines" -> lines) ~
         ("results" -> maxThreadResults.last.phases.zip(incrementalResults.last.phases).map {
           case ((phase, time), (_, incrementalTime)) => ("phase" -> phase) ~
-            ("time" -> milliseconds(time)) ~
-            ("incremental" -> milliseconds(incrementalTime)) ~
-            ("ratio" -> (time.toDouble - incrementalTime.toDouble) / (time.toDouble))
+            ("speedup" -> time.toDouble / incrementalTime.toDouble)
         })
     writeToDisk("speedup_phases_inc.json", speedupPhases)(flix)
 
