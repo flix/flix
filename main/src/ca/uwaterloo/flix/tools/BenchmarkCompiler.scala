@@ -159,6 +159,25 @@ object BenchmarkCompiler {
       |
       |    plt.savefig('time_phases.png')
       |
+      |with open('time_phases_incr.json', 'r') as file:
+      |    data = json.load(file)
+      |    threads = data['threads']
+      |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
+      |    yvalues = list(map(lambda obj: obj['time'], data['results']))
+      |
+      |    fig, ax = plt.subplots()
+      |    ax.bar(xvalues, yvalues)
+      |
+      |    ax.set_title(f'Time ({threads} threads, incremental)')
+      |    ax.set_xlabel('Phase')
+      |    ax.set_ylabel('Total Time (ms)')
+      |
+      |    plt.xticks(rotation=90)
+      |    plt.subplots_adjust(left=0.15, bottom=0.35)
+      |    plt.ylim(1)
+      |
+      |    plt.savefig('time_phases_incr.png')
+      |
       |""".stripMargin
 
   case class Run(lines: Int, time: Long, phases: List[(String, Long)])
@@ -259,15 +278,6 @@ object BenchmarkCompiler {
 
     val timestamp = System.currentTimeMillis() / 1000
 
-    val timePhases =
-      ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
-        ("lines" -> lines) ~
-        ("results" -> maxThreadResults.last.phases.map {
-          case ((phase, time)) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
-        })
-    writeToDisk("time_phases.json", timePhases)(flix)
-
     val speedupPhases =
       ("timestamp" -> timestamp) ~
         ("threads" -> threads) ~
@@ -331,6 +341,24 @@ object BenchmarkCompiler {
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
     writeToDisk("summary.json", s)(flix)
+
+    val timePhases =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("results" -> maxThreadResults.last.phases.map {
+          case ((phase, time)) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+        })
+    writeToDisk("time_phases.json", timePhases)(flix)
+
+    val timePhasesIncr =
+      ("timestamp" -> timestamp) ~
+        ("threads" -> threads) ~
+        ("lines" -> lines) ~
+        ("results" -> incrementalResults.last.phases.map {
+          case ((phase, time)) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+        })
+    writeToDisk("time_phases_incr.json", timePhasesIncr)(flix)
 
     println("~~~~ Flix Compiler Throughput ~~~~")
     println()
