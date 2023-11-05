@@ -72,7 +72,7 @@ object BenchmarkCompiler {
       |
       |    ax.set_title(f'Throughput ({threads} threads, incremental)')
       |    ax.set_xlabel('Iteration')
-      |    ax.set_ylabel('Time (ms)')
+      |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
@@ -91,7 +91,7 @@ object BenchmarkCompiler {
       |
       |    ax.set_title(f'Throughput ({threads} threads, non-incremental)')
       |    ax.set_xlabel('Iteration')
-      |    ax.set_ylabel('Time (ms)')
+      |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
@@ -111,7 +111,7 @@ object BenchmarkCompiler {
       |
       |    ax.set_title(f'Throughput ({threads} threads, non-incremental)')
       |    ax.set_xlabel('Iteration')
-      |    ax.set_ylabel('Time (ms)')
+      |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
