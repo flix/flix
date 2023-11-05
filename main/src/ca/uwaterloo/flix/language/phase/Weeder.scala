@@ -1304,7 +1304,7 @@ object Weeder {
           WeededAst.Expr.Cst(Ast.Constant.Unit, loc)
         case x :: Nil => x
         case xs => WeededAst.Expr.Tuple(xs, mkSL(sp1, sp2))
-      } recoverOne {
+      }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
