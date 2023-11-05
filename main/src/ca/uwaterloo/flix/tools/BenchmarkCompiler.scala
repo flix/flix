@@ -61,17 +61,16 @@ object BenchmarkCompiler {
       |
       |    plt.savefig('speedupPar.json.png')
       |
-      |with open('speedupParInc.json', 'r') as file:
+      |with open('speedupInc.json', 'r') as file:
       |    data = json.load(file)
-      |    minThreads = data['minThreads']
-      |    maxThreads = data['maxThreads']
+      |    threads = data['threads']
       |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
       |    yvalues = list(map(lambda obj: obj['speedup'], data['results']))
       |
       |    fig, ax = plt.subplots()
       |    bars = ax.bar(xvalues, yvalues)
       |
-      |    ax.set_title(f'Parallel & Incremental Speedup ({minThreads} vs. {maxThreads} threads, incremental)')
+      |    ax.set_title(f'Incremental Speedup (both {threads} threads)')
       |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Speedup')
       |    ax.bar_label(bars, fmt='\n%.1fx')
@@ -80,8 +79,7 @@ object BenchmarkCompiler {
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
       |    plt.ylim(1, 10)
       |
-      |    plt.savefig('speedupParInc.json.png')
-      |
+      |    plt.savefig('speedupInc.json.png')
       |
       |with open('throughput.json', 'r') as file:
       |    data = json.load(file)
@@ -307,11 +305,11 @@ object BenchmarkCompiler {
         ("maxThreads" -> maxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> baseline.last.phases.zip(baselineWithParInc.last.phases).map {
+        ("results" -> baselineWithPar.last.phases.zip(baselineWithParInc.last.phases).map {
           case ((phase, time1), (_, time2)) =>
             ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
         })
-    writeToDisk("speedupParInc.json", speedupParInc)(flix)
+    writeToDisk("speedupInc.json", speedupParInc)(flix)
 
     ///
     /// Throughput
