@@ -57,7 +57,7 @@ object BenchmarkCompiler {
       |
       |    plt.xticks(rotation=90)
       |    plt.subplots_adjust(left=0.15, bottom=0.35)
-      |    plt.ylim(1)
+      |    plt.ylim(1, 10)
       |
       |    plt.savefig('speedup_inc_par.png')
       |
