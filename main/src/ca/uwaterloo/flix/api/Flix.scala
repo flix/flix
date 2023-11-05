@@ -542,7 +542,7 @@ class Flix {
       afterEntryPoint <- EntryPoint.run(afterTyper)
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
       afterStratifier <- Stratifier.run(afterEntryPoint)
-      afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
+      afterPatMatch <- PatMatch.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
