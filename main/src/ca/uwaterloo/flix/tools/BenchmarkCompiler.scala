@@ -299,17 +299,17 @@ object BenchmarkCompiler {
       })
     writeToDisk("speedupPar.json", speedupPar)(flix)
 
-    val speedupParInc =
+    // Note: Baseline is withPar.
+    val speedupInc =
       ("timestamp" -> timestamp) ~
-        ("minThreads" -> minThreads) ~
-        ("maxThreads" -> maxThreads) ~
+        ("threads" -> threads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.last.phases.zip(baselineWithParInc.last.phases).map {
           case ((phase, time1), (_, time2)) =>
             ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
         })
-    writeToDisk("speedupInc.json", speedupParInc)(flix)
+    writeToDisk("speedupInc.json", speedupInc)(flix)
 
     ///
     /// Throughput
