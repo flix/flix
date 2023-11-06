@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
-import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
+import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
@@ -63,7 +64,6 @@ object CompilerPerf {
       |    bars = ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Parallel Speedup ({minThreads} vs. {maxThreads} threads, non-incremental)')
-      |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Speedup')
       |    ax.bar_label(bars, fmt='\n%.1fx')
       |
@@ -83,7 +83,6 @@ object CompilerPerf {
       |    bars = ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Incremental Speedup ({threads} threads)')
-      |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Speedup')
       |    ax.bar_label(bars, fmt='\n%.1fx')
       |
@@ -104,7 +103,6 @@ object CompilerPerf {
       |    ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Throughput ({threads} threads, non-incremental)')
-      |    ax.set_xlabel('Iteration')
       |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
@@ -123,7 +121,6 @@ object CompilerPerf {
       |    ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Throughput ({threads} threads, non-incremental)')
-      |    ax.set_xlabel('Iteration')
       |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
@@ -142,7 +139,6 @@ object CompilerPerf {
       |    ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Throughput ({threads} threads, incremental)')
-      |    ax.set_xlabel('Iteration')
       |    ax.set_ylabel('Throughput (lines/sec)')
       |
       |    plt.xticks(rotation=90)
@@ -160,7 +156,6 @@ object CompilerPerf {
       |    ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Time per Phase ({threads} threads, non-incremental)')
-      |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
@@ -179,7 +174,6 @@ object CompilerPerf {
       |    ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Time per Phase ({threads} threads, non-incremental)')
-      |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
@@ -198,7 +192,6 @@ object CompilerPerf {
       |    ax.bar(xvalues, yvalues)
       |
       |    ax.set_title(f'Time per Phase ({threads} threads, incremental)')
-      |    ax.set_xlabel('Phase')
       |    ax.set_ylabel('Time (ms)')
       |
       |    plt.xticks(rotation=90)
@@ -211,11 +204,12 @@ object CompilerPerf {
 
   case class Run(lines: Int, time: Long, phases: List[(String, Long)])
 
+  case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
+
   /**
    * Run compiler performance experiments.
    */
   def run(o: Options): Unit = {
-
     val baseline = perfBaseLine(o)
     val baselineWithPar = perfBaseLineWithPar(o)
     val baselineWithParInc = perfBaseLineWithParInc(o)
@@ -429,6 +423,25 @@ object CompilerPerf {
       case PhaseTime(phase, time, _) => phase -> time
     }
     Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+  }
+
+  /**
+   * Merges a sequences of runs `l`.
+   */
+  private def runs(l: IndexedSeq[Run]): Runs = {
+    if (l.isEmpty) {
+      throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
+    }
+
+    val lines = l.head.lines
+    val times = l.map(_.time).toList
+    val phases = l.head.phases.map(_._1)
+
+    val phaseMatrix = l.map(_.phases.map(_._2))
+    val transposedMatrix = phaseMatrix.transpose.map(_.toList).toList
+    val transposedWithPhases = phases.zip(transposedMatrix)
+
+    Runs(lines, times, transposedWithPhases)
   }
 
   /**
