@@ -31,6 +31,19 @@ object CompilerPerf {
    */
   val N = 4
 
+  /**
+   * The number of threads to use for the single-thread experiment.
+   */
+  val MinThreads = 1
+
+  /**
+   * The number of threads to use for the multi-threaded experiment.
+   */
+  val MaxThreads = Runtime.getRuntime.availableProcessors()
+
+  /**
+   * The Python program used to generate graphs.
+   */
   private val Python =
     """
       |# $ pip install pandas
@@ -207,9 +220,6 @@ object CompilerPerf {
     val baselineWithPar = perfBaseLineWithPar(o)
     val baselineWithParInc = perfBaseLineWithParInc(o)
 
-    // The number of threads used.
-    val threads = o.threads
-
     // Find the number of lines of source code.
     val lines = baselineWithPar.head.lines.toLong
 
@@ -234,12 +244,6 @@ object CompilerPerf {
     // Compute the median throughput (per second).
     val median = StatUtils.median(throughputs.map(_.toLong)).toInt
 
-    // Minimum number of threads used.
-    val minThreads = 1
-
-    // Maximum number of threads used.
-    val maxThreads = Runtime.getRuntime.availableProcessors()
-
     // Best observed throughput.
     val maxObservedThroughput = throughput(lines, Math.min(baseline.last.time, Math.min(baselineWithPar.last.time, baselineWithParInc.last.time)))
 
@@ -251,8 +255,8 @@ object CompilerPerf {
     //
     val speedupPar =
     ("timestamp" -> timestamp) ~
-      ("minThreads" -> minThreads) ~
-      ("maxThreads" -> maxThreads) ~
+      ("minThreads" -> MinThreads) ~
+      ("maxThreads" -> MaxThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
       ("results" -> baseline.last.phases.zip(baselineWithPar.last.phases).map {
@@ -264,7 +268,7 @@ object CompilerPerf {
     // Note: Baseline is withPar.
     val speedupInc =
       ("timestamp" -> timestamp) ~
-        ("threads" -> threads) ~
+        ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.last.phases.zip(baselineWithParInc.last.phases).map {
@@ -278,7 +282,7 @@ object CompilerPerf {
     ///
     val throughoutBaseLine =
     ("timestamp" -> timestamp) ~
-      ("threads" -> minThreads) ~
+      ("threads" -> MinThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
       ("plot" -> ("maxy" -> maxObservedThroughput)) ~
@@ -289,7 +293,7 @@ object CompilerPerf {
 
     val throughputPar =
       ("timestamp" -> timestamp) ~
-        ("threads" -> maxThreads) ~
+        ("threads" -> MaxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("plot" -> ("maxy" -> maxObservedThroughput)) ~
@@ -300,7 +304,7 @@ object CompilerPerf {
 
     val throughputParInc =
       ("timestamp" -> timestamp) ~
-        ("threads" -> maxThreads) ~
+        ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("plot" -> ("maxy" -> maxObservedThroughput)) ~
@@ -314,7 +318,7 @@ object CompilerPerf {
     //
     val timeBaseline =
     ("timestamp" -> timestamp) ~
-      ("threads" -> minThreads) ~
+      ("threads" -> MinThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
       ("results" -> baseline.last.phases.map {
@@ -324,7 +328,7 @@ object CompilerPerf {
 
     val timeWithPar =
       ("timestamp" -> timestamp) ~
-        ("threads" -> maxThreads) ~
+        ("threads" -> MaxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.last.phases.map {
@@ -334,7 +338,7 @@ object CompilerPerf {
 
     val timeWithParInc =
       ("timestamp" -> timestamp) ~
-        ("threads" -> maxThreads) ~
+        ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("results" -> baselineWithParInc.last.phases.map {
@@ -347,7 +351,7 @@ object CompilerPerf {
     //
     val summaryJSON =
     ("timestamp" -> timestamp) ~
-      ("threads" -> threads) ~
+      ("threads" -> MaxThreads) ~
       ("lines" -> lines) ~
       ("iterations" -> N) ~
       ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
@@ -361,7 +365,7 @@ object CompilerPerf {
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
-    println(f"Throughput (best): $max%,6d lines/sec (with $threads threads.)")
+    println(f"Throughput (best): $max%,6d lines/sec (with $MaxThreads threads.)")
     println()
     println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $median%,6d")
     println()
@@ -378,7 +382,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = 1, incremental = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MinThreads, incremental = false, loadClassFiles = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -394,7 +398,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(threads = Runtime.getRuntime.availableProcessors(), incremental = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = MaxThreads, incremental = false, loadClassFiles = false))
 
       addInputs(flix)
       runSingle(flix)
@@ -407,7 +411,7 @@ object CompilerPerf {
   private def perfBaseLineWithParInc(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
-    flix.setOptions(o.copy(threads = Runtime.getRuntime.availableProcessors(), incremental = true, loadClassFiles = false))
+    flix.setOptions(o.copy(threads = MaxThreads, incremental = true, loadClassFiles = false))
     (0 until N).map { _ =>
       flushCaches()
 
