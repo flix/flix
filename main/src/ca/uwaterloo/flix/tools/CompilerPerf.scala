@@ -28,8 +28,8 @@ import java.nio.file.{Files, LinkOption, Path}
 object CompilerPerf {
 
   /**
-    * The number of compilations to perform when collecting statistics.
-    */
+   * The number of compilations to perform when collecting statistics.
+   */
   val N = 4
 
   private val Python =
@@ -203,7 +203,7 @@ object CompilerPerf {
    * Runs compiler performance experiments.
    *
    * @param frontend if set, only evaluates performance of the frontend.
-   * @param o the Flix options object.
+   * @param o        the Flix options object.
    */
   def run(frontend: Boolean, o: Options): Unit = {
 
@@ -380,75 +380,77 @@ object CompilerPerf {
 
   // TODO: DOC
   private def perfBaseLine(o: Options): IndexedSeq[Run] = {
+    // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
       flushCaches()
 
       val flix = new Flix()
       flix.setOptions(o.copy(threads = 1, incremental = false, loadClassFiles = false))
-      addInputs(flix)
 
-      val compilationResult = flix.compile().toHardFailure.get
-      val phases = flix.phaseTimers.map {
-        case PhaseTime(phase, time, _) => phase -> time
-      }
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+      addInputs(flix)
+      runSingle(flix)
     }
   }
 
-    // TODO: DOC
+  // TODO: DOC
   private def perfBaseLineWithPar(o: Options): IndexedSeq[Run] = {
+    // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
       flushCaches()
 
       val flix = new Flix()
       flix.setOptions(o.copy(threads = Runtime.getRuntime.availableProcessors(), incremental = false, loadClassFiles = false))
-      addInputs(flix)
 
-      val compilationResult = flix.compile().toHardFailure.get
-      val phases = flix.phaseTimers.map {
-        case PhaseTime(phase, time, _) => phase -> time
-      }
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+      addInputs(flix)
+      runSingle(flix)
     }
   }
 
   // TODO: DOC
   private def perfBaseLineWithParInc(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
-
     val flix: Flix = new Flix()
     flix.setOptions(o.copy(threads = Runtime.getRuntime.availableProcessors(), incremental = true, loadClassFiles = false))
-
     (0 until N).map { _ =>
       flushCaches()
 
       addInputs(flix)
-      val compilationResult = flix.compile().toHardFailure.get
-      val phases = flix.phaseTimers.map {
-        case PhaseTime(phase, time, _) => phase -> time
-      }
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+      runSingle(flix)
     }
   }
 
   /**
-    * Returns the throughput per second.
-    */
+   * Runs Flix once.
+   */
+  private def runSingle(flix: Flix): Run = {
+    val compilationResult = flix.compile().toHardFailure.get
+    val phases = flix.phaseTimers.map {
+      case PhaseTime(phase, time, _) => phase -> time
+    }
+    Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+  }
+
+  /**
+   * Returns the throughput per second.
+   */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
+  /**
+   * Returns the given time `l` in milliseconds.
+   */
   private def milliseconds(l: Long): Long = l / 1_000_000
 
   /**
-    * Flushes (clears) all caches.
-    */
+   * Flushes (clears) all caches.
+   */
   private def flushCaches(): Unit = {
     UnificationCache.GlobalBool.clear()
     UnificationCache.GlobalBdd.clear()
   }
 
   /**
-    * Adds test code to the benchmarking suite.
-    */
+   * Adds test code to the benchmarking suite.
+   */
   private def addInputs(flix: Flix): Unit = {
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
@@ -470,8 +472,8 @@ object CompilerPerf {
 
   case object SummaryStatistics {
     /**
-      * Builds the summary statistics from the given data.
-      */
+     * Builds the summary statistics from the given data.
+     */
     def from[T](data: Seq[T])(implicit numeric: Numeric[T]): SummaryStatistics = {
       SummaryStatistics(
         min = numeric.toDouble(data.min),
@@ -484,8 +486,8 @@ object CompilerPerf {
   }
 
   /**
-    * A collection of summary statistics.
-    */
+   * A collection of summary statistics.
+   */
   case class SummaryStatistics(min: Double, max: Double, mean: Double, median: Double, stdDev: Double)
 
   private def writeToDisk(fileName: String, json: JValue): Unit = {
