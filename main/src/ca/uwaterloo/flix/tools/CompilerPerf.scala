@@ -234,17 +234,16 @@ object CompilerPerf {
     // Compute the median throughput (per second).
     val median = StatUtils.median(throughputs.map(_.toLong)).toInt
 
-    // Compute the fastest iteration.
-    val bestIter = timings.indexOf(timings.min)
-
-    // Compute the ration between the slowest and fastest run.
-    val bestWorstRatio = timings.max.toDouble / timings.min.toDouble
-
+    // Minimum number of threads used.
     val minThreads = 1
-    val maxThreads = o.threads
 
+    // Maximum number of threads used.
+    val maxThreads = Runtime.getRuntime.availableProcessors()
+
+    // Best observed throughput.
     val maxObservedThroughput = throughput(lines, Math.min(baseline.last.time, Math.min(baselineWithPar.last.time, baselineWithParInc.last.time)))
 
+    // Timestamp (in seconds) when the experiment was run.
     val timestamp = System.currentTimeMillis() / 1000
 
     //
@@ -360,14 +359,11 @@ object CompilerPerf {
     //
     FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
 
-    println("~~~~ Flix Compiler Throughput ~~~~")
+    println("~~~~ Flix Compiler Performance ~~~~")
     println()
     println(f"Throughput (best): $max%,6d lines/sec (with $threads threads.)")
     println()
     println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $median%,6d")
-    println()
-    println(f"  The highest throughput was in iteration: $bestIter (out of $N).")
-    println(f"  The ratio between the best and worst iteration was: $bestWorstRatio%1.1fx.")
     println()
     println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
 
