@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.errors.WeederError
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 object WeededAst {
