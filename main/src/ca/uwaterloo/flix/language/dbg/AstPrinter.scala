@@ -43,19 +43,17 @@ object AstPrinter {
       if (asts.contains("TypedAst")) () // wip
       if (asts.contains("Documentor")) () // wip
       if (asts.contains("Lowering")) () // wip
-      if (asts.contains("EarlyTreeShaker")) () // wip
-      if (asts.contains("Monomorph")) () // wip
-      if (asts.contains("MonomorphEnums")) () // wip
+      if (asts.contains("TreeShaker1")) () // wip
       if (asts.contains("Lowering")) writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
-      if (asts.contains("EarlyTreeShaker")) writeToDisk("EarlyTreeShaker", formatLoweredAst(flix.getEarlyTreeShakerAst))
-      if (asts.contains("Monomorph")) writeToDisk("Monomorph", formatLoweredAst(flix.getMonomorphAst))
-      if (asts.contains("MonomorphEnums")) writeToDisk("MonomorphEnums", formatLoweredAst(flix.getMonomorphEnumsAst))
+      if (asts.contains("TreeShaker1")) writeToDisk("TreeShaker1", formatLoweredAst(flix.getTreeShaker1Ast))
+      if (asts.contains("MonoDefs")) writeToDisk("MonoDefs", formatLoweredAst(flix.getMonoDefsAst))
+      if (asts.contains("MonoTypes")) writeToDisk("MonoTypes", formatLoweredAst(flix.getMonoTypesAst))
       if (asts.contains("Simplifier")) writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
       if (asts.contains("ClosureConv")) writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
       if (asts.contains("LambdaLift")) writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
       if (asts.contains("Tailrec")) writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
       if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
-      if (asts.contains("LateTreeShaker")) writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
+      if (asts.contains("TreeShaker2")) writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
       if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
       if (asts.contains("VarNumbering")) writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
     }
@@ -72,15 +70,15 @@ object AstPrinter {
     // TypedAst wip
     // Documentor wip
     writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
-    writeToDisk("EarlyTreeShaker", formatLoweredAst(flix.getEarlyTreeShakerAst))
-    writeToDisk("Monomorph", formatLoweredAst(flix.getMonomorphAst))
-    writeToDisk("MonomorphEnums", formatLoweredAst(flix.getMonomorphEnumsAst))
+    writeToDisk("EarlyTreeShaker", formatLoweredAst(flix.getTreeShaker1Ast))
+    writeToDisk("Monomorph", formatLoweredAst(flix.getMonoDefsAst))
+    writeToDisk("MonomorphEnums", formatLoweredAst(flix.getMonoTypesAst))
     writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
     writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
     writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
     writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
     writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
-    writeToDisk("LateTreeShaker", formatLiftedAst(flix.getLateTreeShakerAst))
+    writeToDisk("LateTreeShaker", formatLiftedAst(flix.getTreeShaker2Ast))
     writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
     writeToDisk("VarNumbering", formatReducedAst(flix.getVarNumberingAst))
   }
