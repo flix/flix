@@ -25,7 +25,7 @@ import org.json4s.native.JsonMethods
 
 import java.nio.file.{Files, LinkOption, Path}
 
-object BenchmarkCompiler {
+object CompilerPerf {
 
   /**
     * The number of compilations to perform when collecting statistics.
@@ -199,7 +199,7 @@ object BenchmarkCompiler {
 
   case class Run(lines: Int, time: Long, phases: List[(String, Long)])
 
-  def run(o: Options, frontend: Boolean): Unit = {
+  def run(frontend: Boolean, o: Options): Unit = {
 
     var flix: Flix = null
 
