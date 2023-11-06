@@ -1910,32 +1910,6 @@ object Weeder {
   }
 
   /**
-    * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
-    *
-    * This is also known as `ParsedAst.Expression.LambdaMatch`
-    *
-    * @param sp1 the position of the first character in the expression
-    * @param p   the pattern of the parameter
-    * @param e   the body of the lambda
-    * @param sp2 the position of the last character in the expression
-    * @return A lambda that matches on its parameter i.e. a `WeededAst.Expression.Lambda` that has a pattern match in its body.
-    */
-  private def mkLambdaMatch(sp1: SourcePosition, p: WeededAst.Pattern, e: WeededAst.Expr, sp2: SourcePosition)(implicit flix: Flix): WeededAst.Expr.Lambda = {
-    val loc = mkSL(sp1, sp2).asSynthetic
-
-    // The name of the lambda parameter.
-    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
-
-    // Construct the body of the lambda expression.
-    val varOrRef = WeededAst.Expr.Ambiguous(Name.mkQName(ident), loc)
-    val rule = WeededAst.MatchRule(p, None, e)
-
-    val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-    val body = WeededAst.Expr.Match(varOrRef, List(rule), loc)
-    WeededAst.Expr.Lambda(fparam, body, loc)
-  }
-
-  /**
     * Performs weeding on the given argument.
     *
     * Named arguments are transformed into records.

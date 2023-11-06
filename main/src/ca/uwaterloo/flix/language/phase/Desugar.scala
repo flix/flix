@@ -481,6 +481,11 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Lambda(fparam1, e, loc)
 
+    case WeededAst.Expr.LambdaMatch(pat, exp, loc) =>
+      val p = visitPattern(pat)
+      val e = visitExp(exp)
+      mkLambdaMatch(p, e, loc)
+
     case WeededAst.Expr.Unary(sop, exp, loc) =>
       val e = visitExp(exp)
       Expr.Unary(sop, e, loc)
@@ -757,8 +762,6 @@ object Desugar {
       val ps = pparams.map(visitPredicateParam)
       val e = visitExp(exp)
       Expr.FixpointLambda(ps, e, loc)
-
-    case WeededAst.Expr.LambdaMatch(pat, exp, loc) => ???
 
     case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
