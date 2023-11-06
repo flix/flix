@@ -268,7 +268,7 @@ object CompilerPerf {
       ("lines" -> lines) ~
       ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
         case ((phase, times1), (_, times2)) =>
-          ("phase" -> phase) ~ ("speedup" -> combine(times1) / combine(times2))
+          ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1 / p._2)))
       })
     writeFile("speedupWithPar.json", speedupPar)
 
@@ -280,7 +280,7 @@ object CompilerPerf {
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(times1) / combine(times2))
+            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1 / p._2)))
         })
     writeFile("speedupWithInc.json", speedupInc)
 
