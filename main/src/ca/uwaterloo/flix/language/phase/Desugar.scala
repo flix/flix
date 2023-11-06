@@ -473,6 +473,9 @@ object Desugar {
       val es = visitExps(exps)
       Expr.Apply(e, es, loc)
 
+    case WeededAst.Expr.Infix(exp1, exp2, exp3, loc) =>
+      desugarInfix(exp1, exp2, exp3, loc)
+
     case WeededAst.Expr.Lambda(fparam, exp, loc) =>
       val fparam1 = visitFormalParam(fparam)
       val e = visitExp(exp)
@@ -970,6 +973,23 @@ object Desugar {
     case WeededAst.Pattern.Record.RecordLabelPattern(label, pat, loc) =>
       val p = pat.map(visitPattern)
       DesugaredAst.Pattern.Record.RecordLabelPattern(label, p, loc)
+  }
+
+  /**
+    * Rewrites an infix expression into a normal function application.
+    * {{{
+    *   a `f` b
+    * }}}
+    * desugars to
+    * {{{
+    *   f(a, b)
+    * }}}
+    */
+  private def desugarInfix(exp1: WeededAst.Expr, exp2: WeededAst.Expr, exp3: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Apply = {
+    val e1 = visitExp(exp1)
+    val e2 = visitExp(exp2)
+    val e3 = visitExp(exp3)
+    Expr.Apply(e2, List(e1, e3), loc)
   }
 
   /**
