@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
+import ca.uwaterloo.flix.util.StatUtils.median
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL._
@@ -207,18 +208,27 @@ object CompilerPerf {
   case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
 
   /**
+   * The combine function uses to merge data from different runs.
+   */
+  def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
+    if (N <= 5)
+      numeric.toDouble(xs.last)
+    else
+      StatUtils.median(xs)
+
+  /**
    * Run compiler performance experiments.
    */
   def run(o: Options): Unit = {
-    val baseline = perfBaseLine(o)
-    val baselineWithPar = perfBaseLineWithPar(o)
-    val baselineWithParInc = perfBaseLineWithParInc(o)
+    val baseline = aggregate(perfBaseLine(o))
+    val baselineWithPar = aggregate(perfBaseLineWithPar(o))
+    val baselineWithParInc = aggregate(perfBaseLineWithParInc(o))
 
     // Find the number of lines of source code.
-    val lines = baselineWithPar.head.lines.toLong
+    val lines = baselineWithPar.lines.toLong
 
     // Find the timings of each run.
-    val timings = baselineWithPar.map(_.time).toList
+    val timings = baselineWithPar.times
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -236,10 +246,12 @@ object CompilerPerf {
     val avg = StatUtils.avg(throughputs.map(_.toLong)).toInt
 
     // Compute the median throughput (per second).
-    val median = StatUtils.median(throughputs.map(_.toLong)).toInt
+    val mdn = median(throughputs.map(_.toLong)).toInt
 
     // Best observed throughput.
-    val maxObservedThroughput = throughput(lines, Math.min(baseline.last.time, Math.min(baselineWithPar.last.time, baselineWithParInc.last.time)))
+    val maxObservedThroughput = throughput(lines,
+      Math.min(baseline.times.min,
+        Math.min(baselineWithPar.times.min, baselineWithParInc.times.min)))
 
     // Timestamp (in seconds) when the experiment was run.
     val timestamp = System.currentTimeMillis() / 1000
@@ -253,9 +265,9 @@ object CompilerPerf {
       ("maxThreads" -> MaxThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
-      ("results" -> baseline.last.phases.zip(baselineWithPar.last.phases).map {
-        case ((phase, time1), (_, time2)) =>
-          ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
+      ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
+        case ((phase, times1), (_, times2)) =>
+          ("phase" -> phase) ~ ("speedup" -> combine(times1) / combine(times2))
       })
     writeFile("speedupWithPar.json", speedupPar)
 
@@ -265,9 +277,9 @@ object CompilerPerf {
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> baselineWithPar.last.phases.zip(baselineWithParInc.last.phases).map {
-          case ((phase, time1), (_, time2)) =>
-            ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
+        ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
+          case ((phase, times1), (_, times2)) =>
+            ("phase" -> phase) ~ ("speedup" -> combine(times1) / combine(times2))
         })
     writeFile("speedupWithInc.json", speedupInc)
 
@@ -280,8 +292,8 @@ object CompilerPerf {
       ("incremental" -> false) ~
       ("lines" -> lines) ~
       ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-      ("results" -> baseline.zipWithIndex.map({
-        case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+      ("results" -> baseline.times.zipWithIndex.map({
+        case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
       }))
     writeFile("throughput.json", throughoutBaseLine)
 
@@ -291,8 +303,8 @@ object CompilerPerf {
         ("incremental" -> false) ~
         ("lines" -> lines) ~
         ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-        ("results" -> baselineWithPar.zipWithIndex.map({
-          case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+        ("results" -> baselineWithPar.times.zipWithIndex.map({
+          case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
     writeFile("throughputWithPar.json", throughputPar)
 
@@ -302,8 +314,8 @@ object CompilerPerf {
         ("incremental" -> true) ~
         ("lines" -> lines) ~
         ("plot" -> ("maxy" -> maxObservedThroughput)) ~
-        ("results" -> baselineWithParInc.zipWithIndex.map({
-          case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
+        ("results" -> baselineWithParInc.times.zipWithIndex.map({
+          case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
     writeFile("throughputWithParInc.json", throughputParInc)
 
@@ -315,8 +327,8 @@ object CompilerPerf {
       ("threads" -> MinThreads) ~
       ("incremental" -> false) ~
       ("lines" -> lines) ~
-      ("results" -> baseline.last.phases.map {
-        case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+      ("results" -> baseline.phases.map {
+        case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
       })
     writeFile("time.json", timeBaseline)
 
@@ -325,8 +337,8 @@ object CompilerPerf {
         ("threads" -> MaxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
-        ("results" -> baselineWithPar.last.phases.map {
-          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+        ("results" -> baselineWithPar.phases.map {
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
     writeFile("timeWithPar.json", timeWithPar)
 
@@ -335,8 +347,8 @@ object CompilerPerf {
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> baselineWithParInc.last.phases.map {
-          case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
+        ("results" -> baselineWithParInc.phases.map {
+          case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
     writeFile("timeWithParInc.json", timeWithParInc)
 
@@ -348,7 +360,7 @@ object CompilerPerf {
       ("threads" -> MaxThreads) ~
       ("lines" -> lines) ~
       ("iterations" -> N) ~
-      ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
+      ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
     writeFile("summary.json", s)
 
@@ -361,7 +373,7 @@ object CompilerPerf {
     println()
     println(f"Throughput (best): $max%,6d lines/sec (with $MaxThreads threads.)")
     println()
-    println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $median%,6d")
+    println(f"  min: $min%,6d, max: $max%,6d, avg: $avg%,6d, median: $mdn%,6d")
     println()
     println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
 
@@ -428,7 +440,7 @@ object CompilerPerf {
   /**
    * Merges a sequences of runs `l`.
    */
-  private def runs(l: IndexedSeq[Run]): Runs = {
+  private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
       throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
     }
@@ -452,7 +464,7 @@ object CompilerPerf {
   /**
    * Returns the given time `l` in milliseconds.
    */
-  private def milliseconds(l: Long): Long = l / 1_000_000
+  private def milliseconds(l: Double): Double = l / 1_000_000.0
 
   /**
    * Flushes (clears) all caches.
@@ -483,26 +495,6 @@ object CompilerPerf {
     flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
     flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
   }
-
-  case object SummaryStatistics {
-    /**
-     * Builds the summary statistics from the given data.
-     */
-    def from[T](data: Seq[T])(implicit numeric: Numeric[T]): SummaryStatistics = {
-      SummaryStatistics(
-        min = numeric.toDouble(data.min),
-        max = numeric.toDouble(data.max),
-        mean = StatUtils.avg(data),
-        median = StatUtils.median(data),
-        stdDev = StatUtils.stdDev(data)
-      )
-    }
-  }
-
-  /**
-   * A collection of summary statistics.
-   */
-  case class SummaryStatistics(min: Double, max: Double, mean: Double, median: Double, stdDev: Double)
 
   /**
    * Writes the given `json` to the given `file`.
