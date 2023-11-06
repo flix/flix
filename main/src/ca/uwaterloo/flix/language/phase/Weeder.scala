@@ -1726,16 +1726,11 @@ object Weeder {
 
     case ParsedAst.Expression.FixpointInjectInto(sp1, exps, idents, sp2) =>
       val loc = mkSL(sp1, sp2)
-
-      ///
-      /// Check for [[MismatchedArity]].
-      ///
-      if (exps.length != idents.length) {
-        val err = WeederError.MismatchedArity(exps.length, idents.length, loc)
-        return WeededAst.Expr.Error(err).toSoftFailure(err)
-      }
-
-      mapN(traverse(exps)(visitExp(_, senv))) {
+      flatMapN(traverse(exps)(visitExp(_, senv))) {
+        case _ if exps.length != idents.length =>
+          // Check for mismatched arity
+          val err = WeederError.MismatchedArity(exps.length, idents.length, loc)
+          WeededAst.Expr.Error(err).toSoftFailure(err)
         case es =>
           val init = WeededAst.Expr.FixpointConstraintSet(Nil, loc)
           es.zip(idents.toList).foldRight(init: WeededAst.Expr) {
@@ -1743,7 +1738,9 @@ object Weeder {
               val pred = Name.mkPred(ident)
               val innerExp = WeededAst.Expr.FixpointInject(exp, pred, loc)
               WeededAst.Expr.FixpointMerge(innerExp, acc, loc)
-          }
+          }.toSuccess
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
