@@ -920,6 +920,8 @@ object Weeder {
           val err = WeederError.IllegalForFragment(loc1)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) =>
