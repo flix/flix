@@ -92,7 +92,7 @@ class Flix {
     * A cache of ASTs for debugging.
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
   private var cachedMonoDefsAst: LoweredAst.Root = LoweredAst.empty
   private var cachedMonoTypesAst: LoweredAst.Root = LoweredAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
@@ -100,20 +100,20 @@ class Flix {
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
-  def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
-  def getMonomorphAst: LoweredAst.Root = cachedMonoDefsAst
-  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonoTypesAst
+  def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
+  def getMonoDefsAst: LoweredAst.Root = cachedMonoDefsAst
+  def getMonoTypesAst: LoweredAst.Root = cachedMonoTypesAst
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
   def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
   def getTailrecAst: LiftedAst.Root = cachedTailrecAst
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
-  def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
+  def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
   def getReducerAst: ReducedAst.Root = cachedReducerAst
   def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
 
@@ -593,16 +593,16 @@ class Flix {
     initForkJoin()
 
     cachedLoweringAst = Lowering.run(typedAst)
-    cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
-    cachedMonoDefsAst = MonoDefs.run(cachedEarlyTreeShakerAst)
+    cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
+    cachedMonoDefsAst = MonoDefs.run(cachedTreeShaker1Ast)
     cachedMonoTypesAst = MonoTypes.run(cachedMonoDefsAst)
     cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
     cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
-    cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
-    cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
+    cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
+    cachedReducerAst = Reducer.run(cachedTreeShaker2Ast)
     cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
     val result = JvmBackend.run(cachedVarNumberingAst)
 
