@@ -31,17 +31,17 @@ object CompilerPerf {
   /**
    * The number of compilations to perform when collecting statistics.
    */
-  val N = 4
+  val N: Int = 8
 
   /**
    * The number of threads to use for the single-thread experiment.
    */
-  val MinThreads = 1
+  val MinThreads: Int = 1
 
   /**
    * The number of threads to use for the multi-threaded experiment.
    */
-  val MaxThreads = Runtime.getRuntime.availableProcessors()
+  val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
 
   /**
    * The Python program used to generate graphs.
@@ -211,10 +211,11 @@ object CompilerPerf {
    * The combine function uses to merge data from different runs.
    */
   def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
-    if (N <= 5)
+    if (N <= 4)
       numeric.toDouble(xs.last)
-    else
-      StatUtils.median(xs)
+    else {
+      StatUtils.avg(xs.drop(1))
+    }
 
   /**
    * Run compiler performance experiments.
