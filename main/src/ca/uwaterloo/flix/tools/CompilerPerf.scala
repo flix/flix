@@ -31,17 +31,17 @@ object CompilerPerf {
   /**
    * The number of compilations to perform when collecting statistics.
    */
-  val N: Int = 8
+  private val N: Int = 5
 
   /**
    * The number of threads to use for the single-thread experiment.
    */
-  val MinThreads: Int = 1
+  private val MinThreads: Int = 1
 
   /**
    * The number of threads to use for the multi-threaded experiment.
    */
-  val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
+  private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
 
   /**
    * The Python program used to generate graphs.
@@ -214,7 +214,7 @@ object CompilerPerf {
     if (N <= 4)
       numeric.toDouble(xs.last)
     else {
-      StatUtils.avg(xs.drop(1))
+      StatUtils.median(xs)
     }
 
   /**
