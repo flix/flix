@@ -808,13 +808,12 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
-      /*
-       * Rewrites infix expressions to apply expressions.
-       */
-      mapN(visitExp(exp1, senv), visitExp(name, senv), visitExp(exp2, senv)) {
-        case (e1, lambda, e2) =>
-          val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-          WeededAst.Expr.Apply(lambda, List(e1, e2), loc)
+      val loc = mkSL(leftMostSourcePosition(exp1), sp2)
+      val e1 = visitExp(exp1, senv)
+      val e2 = visitExp(name, senv)
+      val e3 = visitExp(exp2, senv)
+      mapN(e1, e2, e3) {
+        case (e11, e22, e33) => WeededAst.Expr.Infix(e11, e22, e33, loc)
       }
 
     case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
