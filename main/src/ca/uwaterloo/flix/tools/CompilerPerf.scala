@@ -200,12 +200,9 @@ object CompilerPerf {
   case class Run(lines: Int, time: Long, phases: List[(String, Long)])
 
   /**
-   * Runs compiler performance experiments.
-   *
-   * @param frontend if set, only evaluates performance of the frontend.
-   * @param o        the Flix options object.
+   * Run compiler performance experiments.
    */
-  def run(frontend: Boolean, o: Options): Unit = {
+  def run(o: Options): Unit = {
 
     val baseline = perfBaseLine(o)
     val baselineWithPar = perfBaseLineWithPar(o)
@@ -250,7 +247,6 @@ object CompilerPerf {
     val maxObservedThroughput = throughput(lines, Math.min(baseline.last.time, Math.min(baselineWithPar.last.time, baselineWithParInc.last.time)))
 
     val timestamp = System.currentTimeMillis() / 1000
-
 
     //
     // Speedup
@@ -378,7 +374,9 @@ object CompilerPerf {
 
   }
 
-  // TODO: DOC
+  /**
+   * Runs Flix with one thread and non-incremental.
+   */
   private def perfBaseLine(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
@@ -392,7 +390,9 @@ object CompilerPerf {
     }
   }
 
-  // TODO: DOC
+  /**
+   * Runs Flix with n threads and non-incremental.
+   */
   private def perfBaseLineWithPar(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
@@ -406,7 +406,9 @@ object CompilerPerf {
     }
   }
 
-  // TODO: DOC
+  /**
+   * Runs Flix with n threads and incrementally.
+   */
   private def perfBaseLineWithParInc(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
