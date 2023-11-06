@@ -43,12 +43,14 @@ sealed trait Type {
     * Returns the type variables in `this` type.
     *
     * Returns a sorted set to ensure that the compiler is deterministic.
+    *
+    * Note: This is a lazy val because it improves performance.
     */
-  def typeVars: SortedSet[Type.Var] = this match {
+  lazy val typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
-    case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
+    case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
   }
 
