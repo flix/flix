@@ -39,7 +39,7 @@ object CompilerPerf {
       |import matplotlib
       |import matplotlib.pyplot as plt
       |
-      |with open('speedupPar.json', 'r') as file:
+      |with open('speedupWithPar.json', 'r') as file:
       |    data = json.load(file)
       |    minThreads = data['minThreads']
       |    maxThreads = data['maxThreads']
@@ -58,9 +58,9 @@ object CompilerPerf {
       |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(1, 10)
       |
-      |    plt.savefig('speedupPar.json.png')
+      |    plt.savefig('speedupWithPar.json.png')
       |
-      |with open('speedupInc.json', 'r') as file:
+      |with open('speedupWithInc.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    xvalues = list(map(lambda obj: obj['phase'], data['results']))
@@ -78,7 +78,7 @@ object CompilerPerf {
       |    plt.subplots_adjust(bottom=0.30)
       |    plt.ylim(1, 10)
       |
-      |    plt.savefig('speedupInc.json.png')
+      |    plt.savefig('speedupWithInc.json.png')
       |
       |with open('throughput.json', 'r') as file:
       |    data = json.load(file)
@@ -99,7 +99,7 @@ object CompilerPerf {
       |
       |    plt.savefig('throughput.json.png')
       |
-      |with open('throughputPar.json', 'r') as file:
+      |with open('throughputWithPar.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    maxy = data['plot']['maxy']
@@ -116,9 +116,9 @@ object CompilerPerf {
       |    plt.xticks(rotation=90)
       |    plt.ylim(1, maxy)
       |
-      |    plt.savefig('throughputPar.json.png')
+      |    plt.savefig('throughputWithPar.json.png')
       |
-      |with open('throughputParInc.json', 'r') as file:
+      |with open('throughputWithParInc.json', 'r') as file:
       |    data = json.load(file)
       |    threads = data['threads']
       |    maxy = data['plot']['maxy']
@@ -135,7 +135,7 @@ object CompilerPerf {
       |    plt.xticks(rotation=90)
       |    plt.ylim(1, maxy)
       |
-      |    plt.savefig('throughputParInc.json.png')
+      |    plt.savefig('throughputWithParInc.json.png')
       |
       |with open('time.json', 'r') as file:
       |    data = json.load(file)
@@ -260,7 +260,7 @@ object CompilerPerf {
         case ((phase, time1), (_, time2)) =>
           ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
       })
-    writeFile("speedupPar.json", speedupPar)
+    writeFile("speedupWithPar.json", speedupPar)
 
     // Note: Baseline is withPar.
     val speedupInc =
@@ -272,7 +272,7 @@ object CompilerPerf {
           case ((phase, time1), (_, time2)) =>
             ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
         })
-    writeFile("speedupInc.json", speedupInc)
+    writeFile("speedupWithInc.json", speedupInc)
 
     ///
     /// Throughput
@@ -297,7 +297,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputPar.json", throughputPar)
+    writeFile("throughputWithPar.json", throughputPar)
 
     val throughputParInc =
       ("timestamp" -> timestamp) ~
@@ -308,7 +308,7 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputParInc.json", throughputParInc)
+    writeFile("throughputWithParInc.json", throughputParInc)
 
     //
     // Time
