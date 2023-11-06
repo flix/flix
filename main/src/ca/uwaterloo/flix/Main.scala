@@ -254,7 +254,7 @@ object Main {
           System.exit(0)
 
         case Command.CompilerPerf =>
-          CompilerPerf.run(false, Options.Default)
+          CompilerPerf.run(Options.Default)
 
       }
     }
