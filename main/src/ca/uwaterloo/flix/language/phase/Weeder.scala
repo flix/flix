@@ -1522,9 +1522,11 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
-      for {
-        e <- visitExp(exp, senv)
-      } yield WeededAst.Expr.Deref(e, mkSL(sp1, sp2))
+      val loc = mkSL(sp1, sp2)
+      val e = visitExp(exp, senv)
+      mapN(e) {
+        case e1 => WeededAst.Expr.Deref(e1, loc)
+      }
 
     case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
       val sp1 = leftMostSourcePosition(exp1)
