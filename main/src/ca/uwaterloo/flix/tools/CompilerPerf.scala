@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
-import ca.uwaterloo.flix.util.StatUtils.median
+import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL._
@@ -31,7 +31,7 @@ object CompilerPerf {
   /**
    * The number of compilations to perform when collecting statistics.
    */
-  private val N: Int = 5
+  private val N: Int = 7
 
   /**
    * The number of threads to use for the single-thread experiment.
@@ -244,7 +244,7 @@ object CompilerPerf {
     val max = throughputs.max
 
     // Compute the average throughput (per second).
-    val avg = StatUtils.avg(throughputs.map(_.toLong)).toInt
+    val avg = average(throughputs.map(_.toLong)).toInt
 
     // Compute the median throughput (per second).
     val mdn = median(throughputs.map(_.toLong)).toInt
