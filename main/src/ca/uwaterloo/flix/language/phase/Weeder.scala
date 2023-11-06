@@ -830,14 +830,11 @@ object Weeder {
       }
 
     case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
-      /*
-       * Rewrites lambda pattern match expressions into a lambda expression with a nested pattern match.
-       */
-      mapN(visitPattern(pat), visitExp(exp, senv)) {
-        case (p, e) =>
-          mkLambdaMatch(sp1, p, e, sp2)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val p = visitPattern(pat)
+      val e = visitExp(exp, senv)
+      mapN(p, e) {
+        case (p1, e1) => WeededAst.Expr.LambdaMatch(p1, e1, loc)
       }
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>

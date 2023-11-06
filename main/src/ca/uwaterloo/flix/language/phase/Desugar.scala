@@ -758,6 +758,8 @@ object Desugar {
       val e = visitExp(exp)
       Expr.FixpointLambda(ps, e, loc)
 
+    case WeededAst.Expr.LambdaMatch(pat, exp, loc) => ???
+
     case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
