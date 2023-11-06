@@ -199,26 +199,17 @@ object CompilerPerf {
 
   case class Run(lines: Int, time: Long, phases: List[(String, Long)])
 
+  /**
+   * Runs compiler performance experiments.
+   *
+   * @param frontend if set, only evaluates performance of the frontend.
+   * @param o the Flix options object.
+   */
   def run(frontend: Boolean, o: Options): Unit = {
 
-    var flix: Flix = null
-
     val baseline = perfBaseLine(o)
-
     val baselineWithPar = perfBaseLineWithPar(o)
-
-    flix = new Flix()
-    flix.setOptions(flix.options.copy(incremental = true, loadClassFiles = false))
-    val baselineWithParInc = (0 until N).map { _ =>
-      flushCaches()
-
-      addInputs(flix)
-      val compilationResult = flix.compile().toHardFailure.get
-      val phases = flix.phaseTimers.map {
-        case PhaseTime(phase, time, _) => phase -> time
-      }
-      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
-    }
+    val baselineWithParInc = perfBaseLineWithParInc(o)
 
     // The number of threads used.
     val threads = o.threads
@@ -274,7 +265,7 @@ object CompilerPerf {
         case ((phase, time1), (_, time2)) =>
           ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
       })
-    writeToDisk("speedupPar.json", speedupPar)(flix)
+    writeToDisk("speedupPar.json", speedupPar)
 
     // Note: Baseline is withPar.
     val speedupInc =
@@ -286,7 +277,7 @@ object CompilerPerf {
           case ((phase, time1), (_, time2)) =>
             ("phase" -> phase) ~ ("speedup" -> time1.toDouble / time2.toDouble)
         })
-    writeToDisk("speedupInc.json", speedupInc)(flix)
+    writeToDisk("speedupInc.json", speedupInc)
 
     ///
     /// Throughput
@@ -300,7 +291,7 @@ object CompilerPerf {
       ("results" -> baseline.zipWithIndex.map({
         case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
       }))
-    writeToDisk("throughput.json", throughoutBaseLine)(flix)
+    writeToDisk("throughput.json", throughoutBaseLine)
 
     val throughputPar =
       ("timestamp" -> timestamp) ~
@@ -311,7 +302,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeToDisk("throughputPar.json", throughputPar)(flix)
+    writeToDisk("throughputPar.json", throughputPar)
 
     val throughputParInc =
       ("timestamp" -> timestamp) ~
@@ -322,7 +313,7 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.zipWithIndex.map({
           case (Run(_, time, _), i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeToDisk("throughputParInc.json", throughputParInc)(flix)
+    writeToDisk("throughputParInc.json", throughputParInc)
 
     //
     // Time
@@ -335,7 +326,7 @@ object CompilerPerf {
       ("results" -> baseline.last.phases.map {
         case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
       })
-    writeToDisk("time.json", timeBaseline)(flix)
+    writeToDisk("time.json", timeBaseline)
 
     val timeWithPar =
       ("timestamp" -> timestamp) ~
@@ -345,7 +336,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.last.phases.map {
           case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
         })
-    writeToDisk("timeWithPar.json", timeWithPar)(flix)
+    writeToDisk("timeWithPar.json", timeWithPar)
 
     val timeWithParInc =
       ("timestamp" -> timestamp) ~
@@ -355,7 +346,7 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.last.phases.map {
           case (phase, time) => ("phase" -> phase) ~ ("time" -> milliseconds(time))
         })
-    writeToDisk("timeWithParInc.json", timeWithParInc)(flix)
+    writeToDisk("timeWithParInc.json", timeWithParInc)
 
     //
     // Summary
@@ -367,12 +358,12 @@ object CompilerPerf {
       ("iterations" -> N) ~
       ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> median))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-    writeToDisk("summary.json", s)(flix)
+    writeToDisk("summary.json", s)
 
     //
     // Python Plot
     //
-    writeToDisk("plots.py", Python)(flix)
+    writeToDisk("plots.py", Python)
 
     println("~~~~ Flix Compiler Throughput ~~~~")
     println()
@@ -393,7 +384,7 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(incremental = false, loadClassFiles = false, threads = 1))
+      flix.setOptions(o.copy(threads = 1, incremental = false, loadClassFiles = false))
       addInputs(flix)
 
       val compilationResult = flix.compile().toHardFailure.get
@@ -410,9 +401,28 @@ object CompilerPerf {
       flushCaches()
 
       val flix = new Flix()
-      flix.setOptions(o.copy(incremental = false, loadClassFiles = false))
+      flix.setOptions(o.copy(threads = Runtime.getRuntime.availableProcessors(), incremental = false, loadClassFiles = false))
       addInputs(flix)
 
+      val compilationResult = flix.compile().toHardFailure.get
+      val phases = flix.phaseTimers.map {
+        case PhaseTime(phase, time, _) => phase -> time
+      }
+      Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    }
+  }
+
+  // TODO: DOC
+  private def perfBaseLineWithParInc(o: Options): IndexedSeq[Run] = {
+    // Note: The Flix object is created _once_.
+
+    val flix: Flix = new Flix()
+    flix.setOptions(o.copy(threads = Runtime.getRuntime.availableProcessors(), incremental = true, loadClassFiles = false))
+
+    (0 until N).map { _ =>
+      flushCaches()
+
+      addInputs(flix)
       val compilationResult = flix.compile().toHardFailure.get
       val phases = flix.phaseTimers.map {
         case PhaseTime(phase, time, _) => phase -> time
@@ -478,15 +488,15 @@ object CompilerPerf {
     */
   case class SummaryStatistics(min: Double, max: Double, mean: Double, median: Double, stdDev: Double)
 
-  private def writeToDisk(fileName: String, json: JValue)(implicit flix: Flix): Unit = {
+  private def writeToDisk(fileName: String, json: JValue): Unit = {
     writeToDisk(fileName, JsonMethods.pretty(JsonMethods.render(json)))
   }
 
   // TODO: Drop flix.output?
   // TODO: Move into FileOps
   // TODO: Reconcile with ASTPrinter
-  private def writeToDisk(fileName: String, s: String)(implicit flix: Flix): Unit = {
-    val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("perf/")
+  private def writeToDisk(fileName: String, s: String): Unit = {
+    val buildAstsPath = Path.of("./build/").resolve("perf/")
     val filePath = buildAstsPath.resolve(s"$fileName")
     Files.createDirectories(buildAstsPath)
 
