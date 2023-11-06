@@ -1525,8 +1525,6 @@ object Weeder {
       val e = visitExp(exp, senv)
       mapN(e) {
         case e1 => WeededAst.Expr.Deref(e1, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
