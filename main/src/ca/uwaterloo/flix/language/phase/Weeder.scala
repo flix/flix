@@ -830,14 +830,11 @@ object Weeder {
       }
 
     case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
-      /*
-       * Rewrites lambda pattern match expressions into a lambda expression with a nested pattern match.
-       */
-      mapN(visitPattern(pat), visitExp(exp, senv)) {
-        case (p, e) =>
-          mkLambdaMatch(sp1, p, e, sp2)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val p = visitPattern(pat)
+      val e = visitExp(exp, senv)
+      mapN(p, e) {
+        case (p1, e1) => WeededAst.Expr.LambdaMatch(p1, e1, loc)
       }
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
@@ -1910,32 +1907,6 @@ object Weeder {
     mapN(gVal, pVal) {
       case (_, p) => WeededAst.RestrictableChooseRule(p, b0)
     }
-  }
-
-  /**
-    * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
-    *
-    * This is also known as `ParsedAst.Expression.LambdaMatch`
-    *
-    * @param sp1 the position of the first character in the expression
-    * @param p   the pattern of the parameter
-    * @param e   the body of the lambda
-    * @param sp2 the position of the last character in the expression
-    * @return A lambda that matches on its parameter i.e. a `WeededAst.Expression.Lambda` that has a pattern match in its body.
-    */
-  private def mkLambdaMatch(sp1: SourcePosition, p: WeededAst.Pattern, e: WeededAst.Expr, sp2: SourcePosition)(implicit flix: Flix): WeededAst.Expr.Lambda = {
-    val loc = mkSL(sp1, sp2).asSynthetic
-
-    // The name of the lambda parameter.
-    val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2).asSynthetic
-
-    // Construct the body of the lambda expression.
-    val varOrRef = WeededAst.Expr.Ambiguous(Name.mkQName(ident), loc)
-    val rule = WeededAst.MatchRule(p, None, e)
-
-    val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-    val body = WeededAst.Expr.Match(varOrRef, List(rule), loc)
-    WeededAst.Expr.Lambda(fparam, body, loc)
   }
 
   /**
