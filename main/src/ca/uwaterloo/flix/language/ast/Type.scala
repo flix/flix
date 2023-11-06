@@ -44,7 +44,7 @@ sealed trait Type {
     *
     * Returns a sorted set to ensure that the compiler is deterministic.
     *
-    * Note: This is a lazy val because it improves performance.
+    * Note: We cache `typeVars` to improve performance.
     */
   lazy val typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
