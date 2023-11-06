@@ -1298,13 +1298,13 @@ object Weeder {
       /*
        * Rewrites empty tuples to Unit and eliminate single-element tuples.
        */
-      traverse(elms)(visitArgument(_, senv)).map {
+      traverse(elms)(visitArgument(_, senv)) map {
         case Nil =>
           val loc = mkSL(sp1, sp2)
           WeededAst.Expr.Cst(Ast.Constant.Unit, loc)
         case x :: Nil => x
         case xs => WeededAst.Expr.Tuple(xs, mkSL(sp1, sp2))
-      }.recoverOne {
+      } recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
@@ -1521,11 +1521,9 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val e = visitExp(exp, senv)
-      mapN(e) {
-        case e1 => WeededAst.Expr.Deref(e1, loc)
-      }
+      for {
+        e <- visitExp(exp, senv)
+      } yield WeededAst.Expr.Deref(e, mkSL(sp1, sp2))
 
     case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
       val sp1 = leftMostSourcePosition(exp1)
