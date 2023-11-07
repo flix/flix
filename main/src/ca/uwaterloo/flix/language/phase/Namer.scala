@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
@@ -71,9 +71,9 @@ object Namer {
   private def visitUnit(unit: DesugaredAst.CompilationUnit)(implicit flix: Flix): Validation[NamedAst.CompilationUnit, NameError] = unit match {
     case DesugaredAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val declsVal = traverse(decls0)(visitDecl(_, Name.RootNS))
+      val declsVal = ParOps.parMapSeq(decls0)(visitDecl(_, Name.RootNS))
       mapN(declsVal) {
-        case decls => NamedAst.CompilationUnit(usesAndImports, decls, loc)
+        case decls => NamedAst.CompilationUnit(usesAndImports, decls.toList, loc)
       }
   }
 
@@ -99,10 +99,10 @@ object Namer {
     case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
       val ns = Name.NName(ident.sp1, ns0.idents :+ ident, ident.sp2)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
-      val declsVal = traverse(decls0)(visitDecl(_, ns))
+      val declsVal = ParOps.parMapSeq(decls0)(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts)
       mapN(declsVal) {
-        case decls => NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
+        case decls => NamedAst.Declaration.Namespace(sym, usesAndImports, decls.toList, loc)
       }
   }
 
