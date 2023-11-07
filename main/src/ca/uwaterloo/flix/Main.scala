@@ -253,6 +253,9 @@ object Main {
           }
           System.exit(0)
 
+        case Command.CompilerPerf =>
+          CompilerPerf.run(Options.Default)
+
       }
     }
 
@@ -325,6 +328,7 @@ object Main {
 
     case class Lsp(port: Int) extends Command
 
+    case object CompilerPerf extends Command
   }
 
   /**
@@ -371,6 +375,8 @@ object Main {
           arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
             .required()
         )
+
+      cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).hidden()
 
       note("")
 
