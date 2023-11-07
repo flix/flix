@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
@@ -170,32 +171,38 @@ object MonoDefs {
      * -   (f$1, f, [a -> Int])
      *
      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+     *
+     * Note: We use a concurrent linked queue (which is non-blocking) so threads can enqueue items without contention.
      */
-    private val defQueue: mutable.Set[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Set.empty
+    private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, Def, StrictSubstitution)] = new ConcurrentLinkedQueue
 
     /**
      * Returns `true` if the queue is non-empty.
+     *
+     * Note: This is not synchronized.
      */
-    def nonEmpty: Boolean = synchronized {
-      defQueue.nonEmpty
+    def nonEmpty: Boolean = {
+      !defQueue.isEmpty
     }
 
     /**
      * Enqueues the given symbol, def, and substitution triple.
+     *
+     * Note: This is not synchronized.
      */
-    def enqueue(sym: Symbol.DefnSym, defn: Def, subst: StrictSubstitution): Unit = synchronized {
-      defQueue += ((sym, defn, subst))
+    def enqueue(sym: Symbol.DefnSym, defn: Def, subst: StrictSubstitution): Unit = {
+      defQueue.add((sym, defn, subst))
     }
 
     /**
      * Dequeues an element from the queue.
      *
-     * Note: The queue must be non-empty.
+     * Note: This is not synchronized.
      */
-    def dequeueAll: List[(Symbol.DefnSym, Def, StrictSubstitution)] = synchronized {
-      val l = defQueue.toList
+    def dequeueAll: Array[(Symbol.DefnSym, Def, StrictSubstitution)] = {
+      val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, Def, StrictSubstitution)])
       defQueue.clear()
-      l
+      r
     }
 
     /**
@@ -252,6 +259,7 @@ object MonoDefs {
 
     implicit val r: Root = root
     implicit val ctx: Context = new Context()
+    val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
 
     /*
      * Collect all non-parametric function definitions.
@@ -263,15 +271,19 @@ object MonoDefs {
     try {
       /*
        * Perform specialization of all non-parametric function definitions.
+       *
+       * We perform specialization in parallel.
+       *
+       * This will enqueue additional functions for specialization.
        */
-      for ((sym, defn) <- nonParametricDefns) {
-        // We use an empty to perform type reductions.
-        val subst = StrictSubstitution(Substitution.empty, root.eqEnv)
-        mkFreshDefn(sym, defn, subst)
+      ParOps.parMap(nonParametricDefns) {
+        case (sym, defn) =>
+          // We use an empty substitution because the defs are non-parametric.
+          mkFreshDefn(sym, defn, empty)
       }
 
       /*
-       * Performs function specialization until the queue is empty.
+       * Perform function specialization until the queue is empty.
        *
        * We perform specialization in parallel along the frontier, i.e. each frontier is done in parallel.
        */
