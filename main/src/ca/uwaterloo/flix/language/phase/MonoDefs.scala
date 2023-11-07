@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Schem
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -192,10 +192,10 @@ object MonoDefs {
      *
      * Note: The queue must be non-empty.
      */
-    def dequeue: (Symbol.DefnSym, Def, StrictSubstitution) = synchronized {
-      val head = defQueue.head
-      defQueue -= head
-      head
+    def dequeueAll: List[(Symbol.DefnSym, Def, StrictSubstitution)] = synchronized {
+      val l = defQueue.toList
+      defQueue.clear()
+      l
     }
 
     /**
@@ -271,12 +271,16 @@ object MonoDefs {
       }
 
       /*
-       * Performs function specialization until both queues are empty.
+       * Performs function specialization until the queue is empty.
+       *
+       * We perform specialization in parallel along the frontier, i.e. each frontier is done in parallel.
        */
       while (ctx.nonEmpty) {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = ctx.dequeue
-        mkFreshDefn(freshSym, defn, subst)
+        val queue = ctx.dequeueAll
+        ParOps.parMap(queue) {
+          case (freshSym, defn, subst) => mkFreshDefn(freshSym, defn, subst)
+        }
       }
 
       // Reassemble the AST.
