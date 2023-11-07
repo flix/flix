@@ -1755,7 +1755,7 @@ object TypeInference {
     for ((sym, subst) <- m) {
       val size = subst.m.size
       val sizes = subst.m.values.map(_.size.toLong).toList
-      val mean = StatUtils.avg(sizes)
+      val mean = StatUtils.average(sizes)
       val median = StatUtils.median(sizes)
       val total = sizes.sum
       t.mkRow(List(sym.toString, size, f"$mean%2.1f", median, total))
