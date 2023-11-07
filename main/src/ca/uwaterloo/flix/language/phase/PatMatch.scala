@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern,
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The Pattern Exhaustiveness phase checks pattern matches for exhaustiveness
@@ -109,8 +109,8 @@ object PatMatch {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
     flix.phase("PatMatch") {
-      val defErrs = root.defs.values.flatMap(defn => visitExp(defn.exp, root))
-      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitExp(defn.exp, root))
+      val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp, root)).flatten
+      val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp, root)).flatten
       // Only need to check sigs with implementations
       val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp(_, root))
 
