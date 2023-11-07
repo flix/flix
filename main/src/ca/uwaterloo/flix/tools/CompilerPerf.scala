@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.UnificationCache
-import ca.uwaterloo.flix.util.StatUtils.median
+import ca.uwaterloo.flix.util.StatUtils.{average, median}
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL._
@@ -29,23 +29,23 @@ import java.nio.file.Path
 object CompilerPerf {
 
   /**
-   * The number of compilations to perform when collecting statistics.
-   */
-  val N = 4
+    * The number of compilations to perform when collecting statistics.
+    */
+  private val N: Int = 7
 
   /**
-   * The number of threads to use for the single-thread experiment.
-   */
-  val MinThreads = 1
+    * The number of threads to use for the single-thread experiment.
+    */
+  private val MinThreads: Int = 1
 
   /**
-   * The number of threads to use for the multi-threaded experiment.
-   */
-  val MaxThreads = Runtime.getRuntime.availableProcessors()
+    * The number of threads to use for the multi-threaded experiment.
+    */
+  private val MaxThreads: Int = Runtime.getRuntime.availableProcessors()
 
   /**
-   * The Python program used to generate graphs.
-   */
+    * The Python program used to generate graphs.
+    */
   private val Python =
     """
       |# $ pip install pandas
@@ -208,17 +208,17 @@ object CompilerPerf {
   case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
 
   /**
-   * The combine function uses to merge data from different runs.
-   */
+    * The combine function uses to merge data from different runs.
+    */
   def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
-    if (N <= 5)
+    if (N <= 4)
       numeric.toDouble(xs.last)
     else
       StatUtils.median(xs)
 
   /**
-   * Run compiler performance experiments.
-   */
+    * Run compiler performance experiments.
+    */
   def run(o: Options): Unit = {
     val baseline = aggregate(perfBaseLine(o))
     val baselineWithPar = aggregate(perfBaseLineWithPar(o))
@@ -243,7 +243,7 @@ object CompilerPerf {
     val max = throughputs.max
 
     // Compute the average throughput (per second).
-    val avg = StatUtils.avg(throughputs.map(_.toLong)).toInt
+    val avg = average(throughputs.map(_.toLong)).toInt
 
     // Compute the median throughput (per second).
     val mdn = median(throughputs.map(_.toLong)).toInt
@@ -267,7 +267,7 @@ object CompilerPerf {
       ("lines" -> lines) ~
       ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
         case ((phase, times1), (_, times2)) =>
-          ("phase" -> phase) ~ ("speedup" -> combine(times1) / combine(times2))
+          ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
       })
     writeFile("speedupWithPar.json", speedupPar)
 
@@ -279,7 +279,7 @@ object CompilerPerf {
         ("lines" -> lines) ~
         ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(times1) / combine(times2))
+            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
         })
     writeFile("speedupWithInc.json", speedupInc)
 
@@ -380,8 +380,8 @@ object CompilerPerf {
   }
 
   /**
-   * Runs Flix with one thread and non-incremental.
-   */
+    * Runs Flix with one thread and non-incremental.
+    */
   private def perfBaseLine(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
@@ -396,8 +396,8 @@ object CompilerPerf {
   }
 
   /**
-   * Runs Flix with n threads and non-incremental.
-   */
+    * Runs Flix with n threads and non-incremental.
+    */
   private def perfBaseLineWithPar(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
@@ -412,8 +412,8 @@ object CompilerPerf {
   }
 
   /**
-   * Runs Flix with n threads and incrementally.
-   */
+    * Runs Flix with n threads and incrementally.
+    */
   private def perfBaseLineWithParInc(o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
@@ -427,8 +427,8 @@ object CompilerPerf {
   }
 
   /**
-   * Runs Flix once.
-   */
+    * Runs Flix once.
+    */
   private def runSingle(flix: Flix): Run = {
     val compilationResult = flix.compile().toHardFailure.get
     val phases = flix.phaseTimers.map {
@@ -438,8 +438,8 @@ object CompilerPerf {
   }
 
   /**
-   * Merges a sequences of runs `l`.
-   */
+    * Merges a sequences of runs `l`.
+    */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
       throw InternalCompilerException("'l' must be non-empty.", SourceLocation.Unknown)
@@ -457,26 +457,26 @@ object CompilerPerf {
   }
 
   /**
-   * Returns the throughput per second.
-   */
+    * Returns the throughput per second.
+    */
   private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
 
   /**
-   * Returns the given time `l` in milliseconds.
-   */
+    * Returns the given time `l` in milliseconds.
+    */
   private def milliseconds(l: Double): Double = l / 1_000_000.0
 
   /**
-   * Flushes (clears) all caches.
-   */
+    * Flushes (clears) all caches.
+    */
   private def flushCaches(): Unit = {
     UnificationCache.GlobalBool.clear()
     UnificationCache.GlobalBdd.clear()
   }
 
   /**
-   * Adds test code to the benchmarking suite.
-   */
+    * Adds test code to the benchmarking suite.
+    */
   private def addInputs(flix: Flix): Unit = {
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
@@ -497,8 +497,8 @@ object CompilerPerf {
   }
 
   /**
-   * Writes the given `json` to the given `file`.
-   */
+    * Writes the given `json` to the given `file`.
+    */
   private def writeFile(file: String, json: JValue): Unit = {
     val directory = Path.of("./build/").resolve("perf/")
     val filePath = directory.resolve(s"$file")
