@@ -252,15 +252,15 @@ object TypedAst {
 
     case class Force(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointConstraintSet(cs: List[Constraint], stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends Expr {
+    case class FixpointConstraintSet(cs: List[Constraint], tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
 
-    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointMerge(exp1: Expr, exp2: Expr, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointMerge(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointSolve(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

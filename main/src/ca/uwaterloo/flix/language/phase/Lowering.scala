@@ -724,10 +724,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
-    case TypedAst.Expr.FixpointConstraintSet(cs, _, _, loc) =>
+    case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       mkDatalog(cs, loc)
 
-    case TypedAst.Expr.FixpointLambda(pparams, exp, _, _, eff, loc) =>
+    case TypedAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = LoweredAst.Expr.Def(defn.sym, Types.RenameType, loc)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.mkList(Types.PredSym, loc), loc)
@@ -735,14 +735,14 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.Apply(defExp, argExps, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
+    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
       val defExp = LoweredAst.Expr.Def(defn.sym, Types.MergeType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
       LoweredAst.Expr.Apply(defExp, argExps, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointSolve(exp, _, _, eff, loc) =>
+    case TypedAst.Expr.FixpointSolve(exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Solve)
       val defExp = LoweredAst.Expr.Def(defn.sym, Types.SolveType, loc)
       val argExps = visitExp(exp) :: Nil

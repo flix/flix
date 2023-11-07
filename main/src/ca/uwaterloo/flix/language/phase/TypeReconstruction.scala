@@ -819,27 +819,27 @@ object TypeReconstruction {
 
     case KindedAst.Expr.FixpointConstraintSet(cs0, tvar, loc) =>
       val cs = cs0.map(visitConstraint)
-      TypedAst.Expr.FixpointConstraintSet(cs, Stratification.empty, subst(tvar), loc)
+      TypedAst.Expr.FixpointConstraintSet(cs, subst(tvar), loc)
 
     case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
       val ps = pparams.map(visitPredicateParam)
       val e = visitExp(exp)
       val tpe = subst(tvar)
       val eff = e.eff
-      TypedAst.Expr.FixpointLambda(ps, e, Stratification.empty, tpe, eff, loc)
+      TypedAst.Expr.FixpointLambda(ps, e, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = e1.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.FixpointMerge(e1, e2, Stratification.empty, tpe, eff, loc)
+      TypedAst.Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointSolve(exp, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
       val eff = e.eff
-      TypedAst.Expr.FixpointSolve(e, Stratification.empty, tpe, eff, loc)
+      TypedAst.Expr.FixpointSolve(e, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -854,15 +854,14 @@ object TypeReconstruction {
     case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val stf = Stratification.empty
       val tpe = subst(tvar)
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
 
       // Note: This transformation should happen in the Weeder but it is here because
       // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
       // See Weeder for more details.
-      val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, stf, e1.tpe, eff, loc)
-      val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, stf, e1.tpe, eff, loc)
+      val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
+      val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, e1.tpe, eff, loc)
       TypedAst.Expr.FixpointProject(pred, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, pvar) =>

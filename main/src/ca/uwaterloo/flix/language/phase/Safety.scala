@@ -331,16 +331,16 @@ object Safety {
       case Expr.Force(exp, _, _, _) =>
         visit(exp)
 
-      case Expr.FixpointConstraintSet(cs, _, _, _) =>
+      case Expr.FixpointConstraintSet(cs, _, _) =>
         cs.flatMap(checkConstraint(_, renv, root))
 
-      case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+      case Expr.FixpointLambda(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+      case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _, _) =>
+      case Expr.FixpointSolve(exp, _, _, _) =>
         visit(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) =>
