@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Purity._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
 
@@ -33,21 +33,14 @@ object Simplifier {
   private implicit val DefaultLevel: Level = Level.Default
 
   def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
-
-    val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
-    val enums = root.enums.map {
-      case (k, LoweredAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, loc)) =>
-        val cases = cases0 map {
-          case (tag, LoweredAst.Case(caseSym, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, visitType(tagType), tagLoc)
-        }
-        k -> SimplifiedAst.Enum(ann, mod, sym, cases, visitType(enumType), loc)
-    }
-    val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     SimplifiedAst.Root(defs, enums, effects, root.entryPoint, root.sources)
   }
 
-  private def visitDef(defn: LoweredAst.Def)(implicit flix: Flix): SimplifiedAst.Def = defn match {
+  private def visitDef(decl: LoweredAst.Def)(implicit flix: Flix): SimplifiedAst.Def = decl match {
     case LoweredAst.Def(sym, spec, exp) =>
       val fs = spec.fparams.map(visitFormalParam)
       val e = visitExp(exp)
@@ -55,6 +48,20 @@ object Simplifier {
       val retType = visitType(funType.arrowResultType)
       val eff = simplifyEffect(funType.arrowEffectType)
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
+  }
+
+  private def visitEnum(decl: LoweredAst.Enum)(implicit flix: Flix): SimplifiedAst.Enum = decl match {
+    case LoweredAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, loc) =>
+      val cases = cases0.map {
+        case (tag, LoweredAst.Case(caseSym, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, visitType(tagType), tagLoc)
+      }
+      SimplifiedAst.Enum(ann, mod, sym, cases, visitType(enumType), loc)
+  }
+
+  private def visitEffect(decl: LoweredAst.Effect)(implicit flix: Flix): SimplifiedAst.Effect = decl match {
+    case LoweredAst.Effect(_, ann, mod, sym, ops0, loc) =>
+      val ops = ops0.map(visitEffOp)
+      SimplifiedAst.Effect(ann, mod, sym, ops, loc)
   }
 
   private def visitExp(exp0: LoweredAst.Expr)(implicit flix: Flix): SimplifiedAst.Expr = exp0 match {
@@ -623,12 +630,6 @@ object Simplifier {
 
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
     }
-
-  private def visitEffect(eff: LoweredAst.Effect)(implicit flix: Flix): SimplifiedAst.Effect = eff match {
-    case LoweredAst.Effect(_, ann, mod, sym, ops0, loc) =>
-      val ops = ops0.map(visitEffOp)
-      SimplifiedAst.Effect(ann, mod, sym, ops, loc)
-  }
 
   private def visitEffOp(op: LoweredAst.Op)(implicit flix: Flix): SimplifiedAst.Op = op match {
     case LoweredAst.Op(sym, LoweredAst.Spec(_, ann, mod, _, fparams0, _, retTpe0, eff0, _, loc)) =>
