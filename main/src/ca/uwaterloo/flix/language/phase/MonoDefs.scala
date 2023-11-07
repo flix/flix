@@ -157,6 +157,8 @@ object MonoDefs {
 
   /**
     * Holds the mutable data used throughout monomorphization.
+   *
+   * This class is thread-safe.
     */
   private class Context() {
 
@@ -169,7 +171,32 @@ object MonoDefs {
       *
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
       */
-    val defQueue: mutable.Set[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Set.empty
+    private val defQueue: mutable.Set[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Set.empty
+
+    /**
+     * Returns `true` if the queue is non-empty.
+     */
+    def nonEmpty: Boolean = synchronized {
+      defQueue.nonEmpty
+    }
+
+    /**
+     * Enqueues the given symbol, def, and substitution triple.
+     */
+    def enqueue(sym: Symbol.DefnSym, defn: Def, subst: StrictSubstitution): Unit = synchronized {
+      defQueue += ((sym, defn, subst))
+    }
+
+    /**
+     * Dequeues an element from the queue.
+     *
+     * Note: The queue must be non-empty.
+     */
+    def dequeue: (Symbol.DefnSym, Def, StrictSubstitution) = synchronized {
+      val head = defQueue.head
+      defQueue -= head
+      head
+    }
 
     /**
       * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
@@ -182,26 +209,40 @@ object MonoDefs {
       *
       * -   (fst, (Int, Str) -> Int) -> fst$1
       */
-    val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
+    private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
+
+    /**
+     * Optionally returns the specialized def symbol for the given symbol `sym` and type `tpe`.
+     */
+    def getDef2Def(sym: Symbol.DefnSym, tpe: Type): Option[Symbol.DefnSym] = synchronized {
+      def2def.get((sym, tpe))
+    }
+
+    /**
+     * Adds a new def2def binding for the given symbol `sym1` and type `tpe`.
+     */
+    def putDef2Def(sym1: Symbol.DefnSym, tpe: Type, sym2: Symbol.DefnSym): Unit = synchronized {
+      def2def.put((sym1, tpe), sym2)
+    }
 
     /**
       * A map used to collect specialized definitions, etc.
       */
-    val specializedDefns: mutable.Map[Symbol.DefnSym, LoweredAst.Def] = mutable.Map.empty
-  }
+    private val specializedDefns: mutable.Map[Symbol.DefnSym, LoweredAst.Def] = mutable.Map.empty
 
-  /**
-    * Enqueues the element `x` in `xs`.
-    */
-  private def enqueue[A](x: A, xs: mutable.Set[A]): Unit = xs += x
+    /**
+     * Adds a new specialized definition for the given def symbol `sym`.
+     */
+    def putSpecializedDef(sym: Symbol.DefnSym, defn: LoweredAst.Def): Unit = synchronized {
+      specializedDefns.put(sym, defn)
+    }
 
-  /**
-    * Dequeues an element from a non-empty `xs`.
-    */
-  private def dequeue[A](xs: mutable.Set[A]): A = {
-    val elm = xs.head
-    xs -= elm
-    elm
+    /**
+     * Returns the specialized definitions as an immutable map.
+     */
+    def toMap: Map[Symbol.DefnSym, LoweredAst.Def] = synchronized {
+      specializedDefns.toMap
+    }
   }
 
   /**
@@ -250,15 +291,15 @@ object MonoDefs {
         )
         // Reassemble the definition.
         val newDefn = LoweredAst.Def(defn.sym, spec, body)
-        ctx.specializedDefns.put(sym, newDefn)
+        ctx.putSpecializedDef(sym, newDefn)
       }
 
       /*
        * Performs function specialization until both queues are empty.
        */
-      while (ctx.defQueue.nonEmpty) {
+      while (ctx.nonEmpty) {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = dequeue(ctx.defQueue)
+        val (freshSym, defn, subst) = ctx.dequeue
 
         flix.subtask(freshSym.toString, sample = true)
 
@@ -286,12 +327,12 @@ object MonoDefs {
         val specializedDefn = defn.copy(sym = freshSym, spec = spec, exp = specializedExp)
 
         // Save the specialized function.
-        ctx.specializedDefns.put(freshSym, specializedDefn)
+        ctx.putSpecializedDef(freshSym, specializedDefn)
       }
 
       // Reassemble the AST.
       root.copy(
-        defs = ctx.specializedDefns.toMap,
+        defs = ctx.toMap,
         classes = Map.empty,
         instances = Map.empty,
         sigs = Map.empty
@@ -593,17 +634,17 @@ object MonoDefs {
     val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe)
 
     // Check whether the function definition has already been specialized.
-    ctx.def2def.get((defn.sym, tpe)) match {
+    ctx.getDef2Def(defn.sym, tpe) match {
       case None =>
         // Case 1: The function has not been specialized.
         // Generate a fresh specialized definition symbol.
         val freshSym = Symbol.freshDefnSym(defn.sym)
 
         // Register the fresh symbol (and actual type) in the symbol2symbol map.
-        ctx.def2def.put((defn.sym, tpe), freshSym)
+        ctx.putDef2Def(defn.sym, tpe, freshSym)
 
         // Enqueue the fresh symbol with the definition and substitution.
-        enqueue((freshSym, defn, subst), ctx.defQueue)
+        ctx.enqueue(freshSym, defn, subst)
 
         // Now simply refer to the freshly generated symbol.
         freshSym
