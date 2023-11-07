@@ -184,7 +184,7 @@ object BenchmarkCompilerOld {
     val max = throughputs.max
 
     // Compute the average throughput (per second).
-    val avg = StatUtils.avg(throughputs.map(_.toLong)).toInt
+    val avg = StatUtils.average(throughputs.map(_.toLong)).toInt
 
     // Compute the median throughput (per second).
     val median = StatUtils.median(throughputs.map(_.toLong)).toInt
@@ -275,7 +275,7 @@ object BenchmarkCompilerOld {
       SummaryStatistics(
         min = numeric.toDouble(data.min),
         max = numeric.toDouble(data.max),
-        mean = StatUtils.avg(data),
+        mean = StatUtils.average(data),
         median = StatUtils.median(data),
         stdDev = StatUtils.stdDev(data)
       )
