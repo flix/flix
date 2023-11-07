@@ -531,18 +531,18 @@ object SemanticTokensProvider {
 
     case Expr.Force(exp, _, _, _) => visitExp(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, c) => acc ++ visitConstraint(c)
       }
 
-    case Expr.FixpointLambda(pparams, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(pparams, exp, _, _, _) =>
       visitPredicateParams(pparams) ++ visitExp(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

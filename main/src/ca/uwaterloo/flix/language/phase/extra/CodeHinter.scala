@@ -295,16 +295,16 @@ object CodeHinter {
     case Expr.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.flatMap(visitConstraint)
 
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

@@ -758,20 +758,20 @@ object Redundancy {
 
     case Expr.Force(exp, _, _, _) => visitExp(exp, env0, rc)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used ++ visitConstraint(con, env0, rc: RecursionContext)
       }
 
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
