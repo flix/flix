@@ -17,29 +17,24 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.ParOps
 
-import scala.collection.mutable
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters._
 
 object Reducer {
 
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Reducer") {
+    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue)
 
-    implicit val ctx: Context = Context(mutable.ListBuffer.empty)
+    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
+    val newEffs = ParOps.parMapValues(root.effects)(visitEff)
 
-    val newDefs = root.defs.map {
-      case (sym, d) => sym -> visitDef(d)
-    }
-    val newEnums = root.enums.map {
-      case (sym, d) => sym -> visitEnum(d)
-    }
-    val newEffects = root.effects.map {
-      case (sym, effect) => sym -> visitEffect(effect)
-    }
-
-    ReducedAst.Root(newDefs, newEnums, newEffects, ctx.anonClasses.toList, root.entryPoint, root.sources)
+    ReducedAst.Root(newDefs, newEnums, newEffs, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
   }
 
-  private def visitDef(d: LiftedAst.Def)(implicit ctx: Context): ReducedAst.Def = d match {
+  private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
     case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, loc) =>
       val cs = cparams.map(visitFormalParam)
       val fs = fparams.map(visitFormalParam)
@@ -57,7 +52,7 @@ object Reducer {
       ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
-  private def visitEffect(effect: LiftedAst.Effect): ReducedAst.Effect = effect match {
+  private def visitEff(effect: LiftedAst.Effect): ReducedAst.Effect = effect match {
     case LiftedAst.Effect(ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitEffectOp)
       ReducedAst.Effect(ann, mod, sym, ops, loc)
@@ -69,7 +64,7 @@ object Reducer {
       ReducedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExpr(exp0: LiftedAst.Expr)(implicit ctx: Context): ReducedAst.Expr = exp0 match {
+  private def visitExpr(exp0: LiftedAst.Expr)(implicit ctx: SharedContext): ReducedAst.Expr = exp0 match {
     case LiftedAst.Expr.Cst(cst, tpe, loc) =>
       ReducedAst.Expr.Cst(cst, tpe, loc)
 
@@ -135,7 +130,7 @@ object Reducer {
 
     case LiftedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
-      val rs = rules.map{
+      val rs = rules.map {
         case LiftedAst.HandlerRule(op, fparams, exp) =>
           val fps = fparams.map(visitFormalParam)
           val e = visitExpr(exp)
@@ -158,7 +153,7 @@ object Reducer {
           val f = fparams.map(visitFormalParam)
           ReducedAst.JvmMethod(ident, f, retTpe, purity, loc)
       }
-      ctx.anonClasses += ReducedAst.AnonClass(name, clazz, tpe, specs, loc)
+      ctx.anonClasses.add(ReducedAst.AnonClass(name, clazz, tpe, specs, loc))
 
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, specs, es, loc)
 
@@ -174,6 +169,11 @@ object Reducer {
       ReducedAst.FormalParam(sym, mod, tpe, loc)
   }
 
-  private case class Context(anonClasses: mutable.ListBuffer[ReducedAst.AnonClass])
+  /**
+    * A context shared across threads.
+    *
+    * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
+    */
+  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[ReducedAst.AnonClass])
 
 }
