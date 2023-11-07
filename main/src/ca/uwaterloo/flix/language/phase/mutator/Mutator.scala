@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase.mutator
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Root}
+import ca.uwaterloo.flix.language.phase.mutator.arithmetic.ArithBinaryMutator
 import ca.uwaterloo.flix.language.phase.mutator.boolean.{BoolBinaryMutator, BoolCstMutator, BoolUnaryMutator}
 import ca.uwaterloo.flix.language.phase.mutator.numbers.{Decrementer, Incrementer}
 import ca.uwaterloo.flix.util.Validation
@@ -15,6 +16,7 @@ object Mutator {
     BoolCstMutator,
     BoolUnaryMutator,
     BoolBinaryMutator,
+    ArithBinaryMutator,
   )
 
   def run(root: Root)(implicit flix: Flix): List[Validation[Root, CompilationMessage]] = flix.phase("Mutator") {
