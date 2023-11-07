@@ -481,6 +481,11 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Lambda(fparam1, e, loc)
 
+    case WeededAst.Expr.LambdaMatch(pat, exp, loc) =>
+      val p = visitPattern(pat)
+      val e = visitExp(exp)
+      mkLambdaMatch(p, e, loc)
+
     case WeededAst.Expr.Unary(sop, exp, loc) =>
       val e = visitExp(exp)
       Expr.Unary(sop, e, loc)
