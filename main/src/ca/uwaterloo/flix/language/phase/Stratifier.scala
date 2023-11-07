@@ -442,37 +442,37 @@ object Stratifier {
         case e => Expr.Force(e, tpe, eff, loc)
       }
 
-    case Expr.FixpointConstraintSet(cs0, _, tpe, loc) =>
+    case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(stf) {
-        case s =>
+        case _ =>
           val cs = cs0.map(reorder)
-          Expr.FixpointConstraintSet(cs, s, tpe, loc)
+          Expr.FixpointConstraintSet(cs, tpe, loc)
       }
 
-    case Expr.FixpointLambda(pparams, exp, _, tpe, eff, loc) =>
+    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
       mapN(stf) {
-        case s => Expr.FixpointLambda(pparams, exp, s, tpe, eff, loc)
+        case _ => Expr.FixpointLambda(pparams, exp, tpe, eff, loc)
       }
 
-    case Expr.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, s) => Expr.FixpointMerge(e1, e2, s, tpe, eff, loc)
+        case (e1, e2, _) => Expr.FixpointMerge(e1, e2, tpe, eff, loc)
       }
 
-    case Expr.FixpointSolve(exp, _, tpe, eff, loc) =>
+    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp), stf) {
-        case (e, s) => Expr.FixpointSolve(e, s, tpe, eff, loc)
+        case (e, s) => Expr.FixpointSolve(e, tpe, eff, loc)
       }
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
@@ -771,18 +771,18 @@ object Stratifier {
     case Expr.Force(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(LabelledGraph.empty) {
         case (dg, c) => dg + labelledGraphOfConstraint(c)
       }
 
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -802,7 +802,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Stratification, StratificationError] = {
+  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Unit, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -810,7 +810,7 @@ object Stratifier {
     val rg = g.restrict(key, labelEq(_, _))
 
     // Compute the stratification.
-    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
+    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc).map(_ => ()).recoverOne[Unit](_ => ())
   }
 
   /**

@@ -421,16 +421,16 @@ object Indexer {
     case Expr.Force(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
+    case Expr.FixpointConstraintSet(cs, _, _) => traverse(cs)(visitConstraint)
 
-    case Expr.FixpointLambda(pparams, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(pparams, exp, _, _, _) =>
       val i0 = traverse(pparams)(visitPredicateParam)
       i0 ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
