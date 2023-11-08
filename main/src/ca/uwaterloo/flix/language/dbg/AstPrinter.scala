@@ -36,14 +36,28 @@ object AstPrinter {
     else if (asts.contains("all") || asts.contains("All"))
       printAllAsts()
     else {
+      //
+      // Front-end
+      //
       if (asts.contains("Parser")) () // wip
       if (asts.contains("Weeder")) () // wip
-      if (asts.contains("Kinder")) () // wip
+      if (asts.contains("Desugar")) () // wip
+      if (asts.contains("Namer")) () // wip
       if (asts.contains("Resolver")) () // wip
-      if (asts.contains("TypedAst")) () // wip
-      if (asts.contains("Documentor")) () // wip
+      if (asts.contains("Kinder")) () // wip
+      if (asts.contains("Deriver")) () // wip
+      if (asts.contains("Typer")) () // wip
+      if (asts.contains("Entrypoint")) () // wip
+      if (asts.contains("DatalogDependencies")) () // wip
+      if (asts.contains("Stratifier")) () // wip
+      if (asts.contains("PatMatch")) () // wip
+      if (asts.contains("Redundancy")) () // wip
+      if (asts.contains("Safety")) () // wip
       if (asts.contains("Lowering")) () // wip
       if (asts.contains("TreeShaker1")) () // wip
+      //
+      // Back-end
+      //
       if (asts.contains("Lowering")) writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
       if (asts.contains("TreeShaker1")) writeToDisk("TreeShaker1", formatLoweredAst(flix.getTreeShaker1Ast))
       if (asts.contains("MonoDefs")) writeToDisk("MonoDefs", formatLoweredAst(flix.getMonoDefsAst))
@@ -56,6 +70,7 @@ object AstPrinter {
       if (asts.contains("TreeShaker2")) writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
       if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
       if (asts.contains("VarOffsets")) writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
+      if (asts.contains("JvmBackend")) () // wip
     }
   }
 
@@ -65,10 +80,20 @@ object AstPrinter {
   def printAllAsts()(implicit flix: Flix): Unit = {
     // Parser wip
     // Weeder wip
-    // Kinder wip
+    // Desugar wip
+    // Namer wip
     // Resolver wip
-    // TypedAst wip
-    // Documentor wip
+    // Kinder wip
+    // Deriver wip
+    // Typer wip
+    // Entrypoint wip
+    // DatalogDependencies wip
+    // Stratifier wip
+    // PatMatch wip
+    // Redundancy wip
+    // Safety wip
+    // Lowering wip
+    // TreeShaker1 wip
     writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
     writeToDisk("TreeShaker1", formatLoweredAst(flix.getTreeShaker1Ast))
     writeToDisk("MonoDefs", formatLoweredAst(flix.getMonoDefsAst))
