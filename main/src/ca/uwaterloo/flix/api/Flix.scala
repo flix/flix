@@ -603,7 +603,7 @@ class Flix {
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
     cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedTreeShaker2Ast)
-    cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
+    cachedVarNumberingAst = VarOffsets.run(cachedReducerAst)
     val result = JvmBackend.run(cachedVarNumberingAst)
 
     // Write formatted asts to disk based on options.
