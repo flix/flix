@@ -40,10 +40,9 @@ object ShowAstProvider {
       flix.codeGen(r)
 
       val phases = List("Parser", "Weeder", "Kinder", "Resolver", "TypedAst",
-        "Documentor", "Lowering", "EarlyTreeShaker", "Monomorph",
-        "MonomorphEnums", "Simplifier", "ClosureConv", "LambdaLift", "Tailrec",
-        "Optimizer", "LateTreeShaker", "Reducer", "VarNumbering", "MonoTyper",
-        "Eraser")
+        "Documentor", "Lowering", "TreeShaker1", "MonoDefs",
+        "MonoTypes", "Simplifier", "ClosureConv", "LambdaLift", "Tailrec",
+        "Optimizer", "TreeShaker2", "Reducer", "VarOffsets", "Eraser")
 
       phase match {
         case "Parser" => astObject(phase, "Work In Progress")
@@ -63,8 +62,7 @@ object ShowAstProvider {
         case "Optimizer" => astObject(phase, AstPrinter.formatLiftedAst(flix.getOptimizerAst))
         case "TreeShaker2" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTreeShaker2Ast))
         case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
-        case "VarNumbering" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarNumberingAst))
-        case "MonoTyper" => astObject(phase, "Work In Progress")
+        case "VarOffsets" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarOffsetsAst))
         case "Eraser" => astObject(phase, "Work In Progress")
         case _ =>
           astObject(phase, s"Unknown phase: '$phase'. Try one of these ${phases.map(s => s"'$s'").mkString(", ")}")
