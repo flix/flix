@@ -559,6 +559,9 @@ object Desugar {
     case WeededAst.Expr.ForEachYield(frags, exp, loc) =>
       desugarForEachYield(frags, exp, loc)
 
+    case WeededAst.Expr.LetMatch(pat, mod, tpe, exp1, exp2, loc) =>
+      desugarLetMatch(pat, mod, tpe, exp1, exp2, loc)
+
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
       Expr.Tuple(es, loc)
@@ -1189,6 +1192,25 @@ object Desugar {
   }
 
   /**
+    * Rewrites a let-match to a regular let-binding or a full pattern match.
+    */
+  private def desugarLetMatch(pat: WeededAst.Pattern, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): Expr = {
+    val p = visitPattern(pat)
+    val t = tpe.map(visitType)
+    val e1 = visitExp(exp1)
+    val e2 = visitExp(exp2)
+    p match {
+      case DesugaredAst.Pattern.Var(ident, _) =>
+        // No pattern match
+        DesugaredAst.Expr.Let(ident, mod, withAscription(e1, t), e2, loc)
+      case _ =>
+        // Full pattern match
+        val rule = DesugaredAst.MatchRule(p, None, e2)
+        DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc)
+    }
+  }
+
+  /**
     * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
     *
     * This is also known as `ParsedAst.Expression.LambdaMatch`
@@ -1217,5 +1239,16 @@ object Desugar {
     val l = loc.asSynthetic
     val lambda = DesugaredAst.Expr.Ambiguous(Name.mkQName(fqn), l)
     DesugaredAst.Expr.Apply(lambda, args, l)
+  }
+
+  /**
+    * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
+    */
+  private def withAscription(exp0: DesugaredAst.Expr, tpe0: Option[DesugaredAst.Type]): DesugaredAst.Expr = {
+    val l = exp0.loc.asSynthetic
+    tpe0 match {
+      case None => exp0
+      case Some(t) => DesugaredAst.Expr.Ascribe(exp0, Some(t), None, l)
+    }
   }
 }

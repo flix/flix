@@ -937,27 +937,14 @@ object Weeder {
       }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe0, exp1, exp2, sp2) =>
-      //
-      // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
-      //
       val loc = mkSL(sp1, sp2)
-
       val patVal = visitPattern(pat)
+      val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
       val tpeVal = traverseOpt(tpe0)(visitType)
       val exp1Val = visitExp(exp1, senv)
       val exp2Val = visitExp(exp2, senv)
-      val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
-
-      mapN(patVal, tpeVal, exp1Val, exp2Val, modVal) {
-        case (WeededAst.Pattern.Var(ident, _), tpe, value, body, mod) =>
-          // No pattern match.
-          WeededAst.Expr.Let(ident, mod, withAscription(value, tpe), body, loc)
-        case (pat, tpe, value, body, _) =>
-          // Full-blown pattern match.
-          val rule = WeededAst.MatchRule(pat, None, body)
-          WeededAst.Expr.Match(withAscription(value, tpe), List(rule), loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
+      mapN(patVal, modVal, tpeVal, exp1Val, exp2Val) {
+        case (p, m, t, e1, e2) => WeededAst.Expr.LetMatch(p, m, t, e1, e2, loc)
       }
 
     case ParsedAst.Expression.LetRecDef(sp1, ann, ident, fparams, tpeAndEff, exp1, exp2, sp2) =>
@@ -3048,17 +3035,6 @@ object Weeder {
     args0 match {
       case Nil => List(WeededAst.Expr.Cst(Ast.Constant.Unit, l))
       case as => as
-    }
-  }
-
-  /**
-    * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
-    */
-  private def withAscription(exp0: WeededAst.Expr, tpe0: Option[WeededAst.Type])(implicit flix: Flix): WeededAst.Expr = {
-    val l = exp0.loc.asSynthetic
-    tpe0 match {
-      case None => exp0
-      case Some(t) => WeededAst.Expr.Ascribe(exp0, Some(t), None, l)
     }
   }
 
