@@ -19,10 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Level, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.jdk.CollectionConverters._
-
 import java.util.concurrent.ConcurrentLinkedQueue
 
 object LambdaLift {
@@ -36,19 +35,11 @@ object LambdaLift {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
 
-    val defs = root.defs.map {
-      case (sym, decl) => sym -> visitDef(decl)
-    }
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    val enums = root.enums.map {
-      case (sym, enum0) => sym -> visitEnum(enum0)
-    }
-
-    val effects = root.effects.map {
-      case (sym, effect0) => sym -> visitEffect(effect0)
-    }
-
-    // Add lifted defs to existing defs.
+    // Add lifted defs from the shared context to the existing defs.
     val newDefs = ctx.liftedDefs.asScala.foldLeft(defs) {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
@@ -56,9 +47,6 @@ object LambdaLift {
     LiftedAst.Root(newDefs, enums, effects, root.entryPoint, root.sources)
   }
 
-  /**
-    * Performs lambda lifting on the given definition `def0`.
-    */
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
       val fs = fparams.map(visitFormalParam)
@@ -66,9 +54,6 @@ object LambdaLift {
       LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
   }
 
-  /**
-    * Translates the given simplified enum declaration `enum0` into a lifted enum declaration.
-    */
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
     case SimplifiedAst.Enum(ann, mod, sym, cases, tpe, loc) =>
       val cs = cases.map {
@@ -79,11 +64,11 @@ object LambdaLift {
 
   private def visitEffect(effect: SimplifiedAst.Effect): LiftedAst.Effect = effect match {
     case SimplifiedAst.Effect(ann, mod, sym, ops0, loc) =>
-      val ops = ops0.map(visitEffectOp)
+      val ops = ops0.map(visitOp)
       LiftedAst.Effect(ann, mod, sym, ops, loc)
   }
 
-  private def visitEffectOp(op: SimplifiedAst.Op): LiftedAst.Op = op match {
+  private def visitOp(op: SimplifiedAst.Op): LiftedAst.Op = op match {
     case SimplifiedAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
       val fparams = fparams0.map(visitFormalParam)
       LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
