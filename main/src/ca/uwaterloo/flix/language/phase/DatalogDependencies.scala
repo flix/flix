@@ -39,9 +39,12 @@ object DatalogDependencies {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defs = root.defs.values.toList
     val instanceDefs = root.instances.values.flatten.flatMap(_.defs)
-    val g = ParOps.parAgg(defs ++ instanceDefs, LabelledGraph.empty)({
+    val allDefs = defs ++ instanceDefs
+
+    val g = ParOps.parAgg(allDefs, LabelledGraph.empty)({
       case (acc, d) => acc + labelledGraphOfDef(d)
     }, _ + _)
+
     root.copy(datalogGlobalGraph = g).toSuccess
   }
 
