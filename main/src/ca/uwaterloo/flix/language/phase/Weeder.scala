@@ -3039,17 +3039,6 @@ object Weeder {
   }
 
   /**
-    * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
-    */
-  private def withAscription(exp0: WeededAst.Expr, tpe0: Option[WeededAst.Type])(implicit flix: Flix): WeededAst.Expr = {
-    val l = exp0.loc.asSynthetic
-    tpe0 match {
-      case None => exp0
-      case Some(t) => WeededAst.Expr.Ascribe(exp0, Some(t), None, l)
-    }
-  }
-
-  /**
     * Removes underscores from the given string of digits.
     */
   private def stripUnderscores(digits: String): String = {
