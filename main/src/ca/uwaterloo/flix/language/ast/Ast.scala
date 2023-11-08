@@ -504,13 +504,6 @@ object Ast {
     */
   case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
 
-  object LabelledGraph {
-    /**
-      * The empty labelled graph.
-      */
-    val empty: LabelledGraph = LabelledGraph(Vector.empty)
-  }
-
   /**
     * Represents a labelled graph; the dependency graph with additional labels
     * on the edges allowing more accurate filtering. The rule `A :- not B, C` would
@@ -548,6 +541,13 @@ object Ast {
         case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
       })
     }
+  }
+
+  object LabelledGraph {
+    /**
+      * The empty labelled graph.
+      */
+    val empty: LabelledGraph = LabelledGraph(Vector.empty)
   }
 
   object Stratification {

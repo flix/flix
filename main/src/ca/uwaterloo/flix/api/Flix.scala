@@ -527,7 +527,7 @@ class Flix {
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
-    // The compiler pipeline.
+    /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
@@ -541,7 +541,8 @@ class Flix {
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      afterStratifier <- Stratifier.run(afterEntryPoint)
+      afterDatalogDependencies <- DatalogDependencies.run(afterEntryPoint)
+      afterStratifier <- Stratifier.run(afterDatalogDependencies)
       afterPatMatch <- PatMatch.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
@@ -592,6 +593,7 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
+    /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
     cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
     cachedMonoDefsAst = MonoDefs.run(cachedTreeShaker1Ast)
