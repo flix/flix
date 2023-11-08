@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.language.phase.DatalogDependencies.termTypesAndDenotation
+import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -51,8 +51,8 @@ object Stratifier {
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
 
     // Compute the stratification at every datalog expression in the ast.
-    val newDefs = ParOps.parMapValuesSeq(root.defs)(visitDef(_)(root, root.datalogGlobalGraph, flix))
-    val newInstances = ParOps.parMapValuesSeq(root.instances)(traverse(_)(i => visitInstance(i)(root, root.datalogGlobalGraph, flix)))
+    val newDefs = ParOps.parMapValuesSeq(root.defs)(visitDef(_)(root, root.precedenceGraph, flix))
+    val newInstances = ParOps.parMapValuesSeq(root.instances)(traverse(_)(i => visitInstance(i)(root, root.precedenceGraph, flix)))
 
     mapN(newDefs, newInstances) {
       case (ds, is) => root.copy(defs = ds, instances = is)
@@ -62,13 +62,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
     traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, CompilationMessage] =
     visitExp(def0.exp) map {
       case e => def0.copy(exp = e)
     }
@@ -78,7 +78,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
     case Expr.Cst(_, _, _) => exp0.toSuccess
 
     case Expr.Var(_, _, _) => exp0.toSuccess
@@ -486,7 +486,7 @@ object Stratifier {
 
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, eff, loc)
@@ -517,7 +517,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Unit, StratificationError] = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Unit, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -566,7 +566,7 @@ object Stratifier {
     * Computes the dependency graph from the labelled graph, throwing the labels away.
     * If a labelled edge is either negative or fixed it is transformed to a strong edge.
     */
-  private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
+  private def labelledGraphToDependencyGraph(g: LabelledPrecedenceGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
       case LabelledEdge(head, Polarity.Positive, Fixity.Loose, _, body, loc) =>
         // Positive, loose edges require that the strata of the head is equal to,

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Label, LabelledEdge, LabelledGraph}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Label, LabelledEdge, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -27,25 +27,24 @@ import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
-  * The [[DatalogDependencies]] class computes the [[LabelledGraph]] of the
-  * whole program, which represents all static dependencies between datalog
-  * predicates.
+  * The [[PredDeps]] class computes the [[LabelledPrecedenceGraph]] of the whole program,
+  * which represents all static dependencies between datalog predicates.
   *
-  * The computed [[LabelledGraph]] is used in [[Stratifier]].
+  * The computed [[LabelledPrecedenceGraph]] is used in [[Stratifier]].
   */
-object DatalogDependencies {
+object PredDeps {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("DatalogDependencies") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defs = root.defs.values.toList
     val instanceDefs = root.instances.values.flatten.flatMap(_.defs)
     val allDefs = defs ++ instanceDefs
 
-    val g = ParOps.parAgg(allDefs, LabelledGraph.empty)({
-      case (acc, d) => acc + labelledGraphOfDef(d)
+    val g = ParOps.parAgg(allDefs, LabelledPrecedenceGraph.empty)({
+      case (acc, d) => acc + visitDef(d)
     }, _ + _)
 
-    root.copy(datalogGlobalGraph = g).toSuccess
+    root.copy(precedenceGraph = g).toSuccess
   }
 
   /**
@@ -72,283 +71,281 @@ object DatalogDependencies {
   /**
     * Returns the labelled graph of the given definition `def0`.
     */
-  private def labelledGraphOfDef(def0: Def): LabelledGraph =
-    labelledGraphOfExp(def0.exp)
-
+  private def visitDef(def0: Def): LabelledPrecedenceGraph =
+    visitExp(def0.exp)
 
   /**
     * Returns the labelled graph of the given expression `exp0`.
     */
-  private def labelledGraphOfExp(exp0: Expr): LabelledGraph = exp0 match {
-    case Expr.Cst(_, _, _) => LabelledGraph.empty
+  private def visitExp(exp0: Expr): LabelledPrecedenceGraph = exp0 match {
+    case Expr.Cst(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Var(_, _, _) => LabelledGraph.empty
+    case Expr.Var(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Def(_, _, _) => LabelledGraph.empty
+    case Expr.Def(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Sig(_, _, _) => LabelledGraph.empty
+    case Expr.Sig(_, _, _) => LabelledPrecedenceGraph.empty
 
-    case Expr.Hole(_, _, _) => LabelledGraph.empty
+    case Expr.Hole(_, _, _) => LabelledPrecedenceGraph.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.OpenAs(_, exp, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Use(_, _, exp, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Lambda(_, exp, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Apply(exp, exps, _, _, _) =>
-      val init = labelledGraphOfExp(exp)
+      val init = visitExp(exp)
       exps.foldLeft(init) {
-        case (acc, exp) => acc + labelledGraphOfExp(exp)
+        case (acc, exp) => acc + visitExp(exp)
       }
 
     case Expr.Unary(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Binary(_, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Let(_, _, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Region(_, _) =>
-      LabelledGraph.empty
+      LabelledPrecedenceGraph.empty
 
     case Expr.Scope(_, _, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
+      visitExp(exp1) + visitExp(exp2) + visitExp(exp3)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Discard(exp, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Match(exp, rules, _, _, _) =>
-      val dg = labelledGraphOfExp(exp)
+      val dg = visitExp(exp)
       rules.foldLeft(dg) {
-        case (acc, MatchRule(_, g, b)) => acc + g.map(labelledGraphOfExp).getOrElse(LabelledGraph.empty) + labelledGraphOfExp(b)
+        case (acc, MatchRule(_, g, b)) => acc + g.map(visitExp).getOrElse(LabelledPrecedenceGraph.empty) + visitExp(b)
       }
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
-      val dg = labelledGraphOfExp(exp)
+      val dg = visitExp(exp)
       rules.foldLeft(dg) {
-        case (acc, TypeMatchRule(_, _, b)) => acc + labelledGraphOfExp(b)
+        case (acc, TypeMatchRule(_, _, b)) => acc + visitExp(b)
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-      val dg1 = labelledGraphOfExp(exp)
-      val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RestrictableChooseRule(_, body)) => acc + labelledGraphOfExp(body)
+      val dg1 = visitExp(exp)
+      val dg2 = rules.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, RestrictableChooseRule(_, body)) => acc + visitExp(body)
       }
       dg1 + dg2
 
     case Expr.Tag(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.RestrictableTag(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Tuple(elms, _, _, _) =>
-      elms.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
+      elms.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, e) => acc + visitExp(e)
       }
 
     case Expr.RecordEmpty(_, _) =>
-      LabelledGraph.empty
+      LabelledPrecedenceGraph.empty
 
     case Expr.RecordSelect(base, _, _, _, _) =>
-      labelledGraphOfExp(base)
+      visitExp(base)
 
     case Expr.RecordExtend(_, value, rest, _, _, _) =>
-      labelledGraphOfExp(value) + labelledGraphOfExp(rest)
+      visitExp(value) + visitExp(rest)
 
     case Expr.RecordRestrict(_, rest, _, _, _) =>
-      labelledGraphOfExp(rest)
+      visitExp(rest)
 
     case Expr.ArrayLit(elms, exp, _, _, _) =>
-      elms.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
+      elms.foldLeft(visitExp(exp)) {
+        case (acc, e) => acc + visitExp(e)
       }
 
     case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
+      visitExp(exp1) + visitExp(exp2) + visitExp(exp3)
 
     case Expr.ArrayLoad(base, index, _, _, _) =>
-      labelledGraphOfExp(base) + labelledGraphOfExp(index)
+      visitExp(base) + visitExp(index)
 
     case Expr.ArrayLength(base, _, _) =>
-      labelledGraphOfExp(base)
+      visitExp(base)
 
     case Expr.ArrayStore(base, index, elm, _, _) =>
-      labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
+      visitExp(base) + visitExp(index) + visitExp(elm)
 
     case Expr.VectorLit(exps, _, _, _) =>
-      exps.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, e) => acc + visitExp(e)
       }
 
     case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.VectorLength(exp, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Ref(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Deref(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Assign(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.Ascribe(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.InstanceOf(exp, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.CheckedCast(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, CatchRule(_, _, e)) => acc + labelledGraphOfExp(e)
+      rules.foldLeft(visitExp(exp)) {
+        case (acc, CatchRule(_, _, e)) => acc + visitExp(e)
       }
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
-      rules.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, HandlerRule(_, _, e)) => acc + labelledGraphOfExp(e)
+      rules.foldLeft(visitExp(exp)) {
+        case (acc, HandlerRule(_, _, e)) => acc + visitExp(e)
       }
 
     case Expr.Do(_, exps, _, _, _) =>
-      exps.foldLeft(LabelledGraph.empty) {
-        case (acc, exp) => acc + labelledGraphOfExp(exp)
+      exps.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, exp) => acc + visitExp(exp)
       }
 
     case Expr.Resume(exp, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.InvokeConstructor(_, args, _, _, _) =>
-      args.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
+      args.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, e) => acc + visitExp(e)
       }
 
     case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-      args.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
+      args.foldLeft(visitExp(exp)) {
+        case (acc, e) => acc + visitExp(e)
       }
 
     case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-      args.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
+      args.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (acc, e) => acc + visitExp(e)
       }
 
     case Expr.GetField(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.PutField(_, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.GetStaticField(_, _, _, _) =>
-      LabelledGraph.empty
+      LabelledPrecedenceGraph.empty
 
     case Expr.PutStaticField(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.NewObject(_, _, _, _, _, _) =>
-      LabelledGraph.empty
+      LabelledPrecedenceGraph.empty
 
     case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.GetChannel(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.PutChannel(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.SelectChannel(rules, default, _, _, _) =>
       val dg = default match {
-        case None => LabelledGraph.empty
-        case Some(d) => labelledGraphOfExp(d)
+        case None => LabelledPrecedenceGraph.empty
+        case Some(d) => visitExp(d)
       }
 
       rules.foldLeft(dg) {
-        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + visitExp(exp1) + visitExp(exp2)
       }
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.ParYield(frags, exp, _, _, _) =>
-      frags.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, ParYieldFragment(_, e, _)) => acc + labelledGraphOfExp(e)
+      frags.foldLeft(visitExp(exp)) {
+        case (acc, ParYieldFragment(_, e, _)) => acc + visitExp(e)
       }
 
     case Expr.Lazy(exp, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Force(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.FixpointConstraintSet(cs, _, _) =>
-      cs.foldLeft(LabelledGraph.empty) {
-        case (dg, c) => dg + labelledGraphOfConstraint(c)
+      cs.foldLeft(LabelledPrecedenceGraph.empty) {
+        case (dg, c) => dg + visitConstraint(c)
       }
 
     case Expr.FixpointLambda(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+      visitExp(exp1) + visitExp(exp2)
 
     case Expr.FixpointSolve(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.FixpointInject(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.FixpointProject(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
+      visitExp(exp)
 
     case Expr.Error(_, _, _) =>
-      LabelledGraph.empty
+      LabelledPrecedenceGraph.empty
 
   }
-
 
   /**
     * Returns the labelled graph of the given constraint `c0`.
     */
-  private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
+  private def visitConstraint(c: Constraint): LabelledPrecedenceGraph = c match {
     case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
       val (headTerms, _) = termTypesAndDenotation(headTpe)
 
@@ -370,7 +367,7 @@ object DatalogDependencies {
         }
       }
 
-      LabelledGraph(edges)
+      LabelledPrecedenceGraph(edges)
   }
 
 }
