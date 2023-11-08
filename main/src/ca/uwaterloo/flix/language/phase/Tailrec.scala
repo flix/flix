@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.util.ParOps
 
 /**
   * The Tailrec phase identifies function calls that are in tail recursive position.
@@ -32,31 +33,27 @@ object Tailrec {
     * Identifies tail recursive calls in the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Tailrec") {
-    //
-    // Rewrite tail calls.
-    //
-    val defns = root.defs.map {
-      case (sym, defn) => sym -> tailrec(defn)
-    }
+    val defns = ParOps.parMapValues(root.defs)(visitDef)
+
     root.copy(defs = defns)
   }
 
   /**
     * Identifies tail recursive calls in the given definition `defn`.
     */
-  private def tailrec(defn: Def): Def = {
+  private def visitDef(defn: Def): Def = {
     /**
       * Introduces tail recursive calls in the given expression `exp0`.
       *
       * Replaces every `ApplyRef`, which calls the same function and occurs in tail position, with `ApplyTail`.
       */
-    def visit(exp0: Expr): Expr = exp0 match {
+    def visitExp(exp0: Expr): Expr = exp0 match {
       /*
        * Let: The body expression is in tail position.
        * (The value expression is *not* in tail position).
        */
       case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
-        val e2 = visit(exp2)
+        val e2 = visitExp(exp2)
         Expr.Let(sym, exp1, e2, tpe, purity, loc)
 
       /*
@@ -64,8 +61,8 @@ object Tailrec {
        * (The condition is *not* in tail position).
        */
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-        val e2 = visit(exp2)
-        val e3 = visit(exp3)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
         Expr.IfThenElse(exp1, e2, e3, tpe, purity, loc)
 
       /*
@@ -73,7 +70,7 @@ object Tailrec {
        */
       case Expr.Branch(e0, br0, tpe, purity, loc) =>
         val br = br0 map {
-          case (sym, exp) => sym -> visit(exp)
+          case (sym, exp) => sym -> visitExp(exp)
         }
         Expr.Branch(e0, br, tpe, purity, loc)
 
@@ -102,7 +99,7 @@ object Tailrec {
       case _ => exp0
     }
 
-    defn.copy(exp = visit(defn.exp))
+    defn.copy(exp = visitExp(defn.exp))
   }
 
 }
