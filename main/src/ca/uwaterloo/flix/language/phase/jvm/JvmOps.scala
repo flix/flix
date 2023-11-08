@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.nio.file.{Files, LinkOption, Path}
 
@@ -581,8 +581,8 @@ object JvmOps {
     // TODO: Magnus: Look for types in other places.
 
     // Visit every definition.
-    val defTypes = root.defs.foldLeft(Set.empty[MonoType]) {
-      case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
+    val defTypes = ParOps.parMap(root.defs.values)(visitDefn).foldLeft(Set.empty[MonoType]) {
+      case (sacc, xs) => sacc ++ xs
     }
 
     val enumTypes = root.enums.foldLeft(Set.empty[MonoType]) {
