@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, sequence, traverse}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, sequence}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * Constructs instances derived from enums.
@@ -35,13 +35,11 @@ object Deriver {
   private implicit val DefaultLevel: Level = Level.Default
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
-    val derivedInstances = traverse(root.enums.values) {
-      enum => getDerivedInstances(enum, root)
-    }.map(_.flatten)
+    val derivedInstances = ParOps.parMapSeq(root.enums.values)(getDerivedInstances(_, root))
 
-    derivedInstances.map {
+    mapN(derivedInstances) {
       instances =>
-        val newInstances = instances.foldLeft(root.instances) {
+        val newInstances = instances.flatten.foldLeft(root.instances) {
           case (acc, inst) =>
             val accInsts = acc.getOrElse(inst.clazz.sym, Nil)
             acc + (inst.clazz.sym -> (inst :: accInsts))
