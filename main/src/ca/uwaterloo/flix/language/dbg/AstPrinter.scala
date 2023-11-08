@@ -55,7 +55,7 @@ object AstPrinter {
       if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
       if (asts.contains("TreeShaker2")) writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
       if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
-      if (asts.contains("VarNumbering")) writeToDisk("VarNumbering", formatReducedAst(flix.getVarOffsetsAst))
+      if (asts.contains("VarOffsets")) writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
     }
   }
 
