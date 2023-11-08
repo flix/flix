@@ -17,14 +17,14 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, LabelledGraph, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, LabelledPrecedenceGraph, Source}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, LabelledGraph.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty, LabelledPrecedenceGraph.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
                   classes: Map[Symbol.ClassSym, Class],
@@ -33,7 +33,6 @@ object TypedAst {
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
-                  datalogGlobalGraph: LabelledGraph,
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
@@ -41,7 +40,8 @@ object TypedAst {
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
                   eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef],
-                  names: MultiMap[List[String], String])
+                  names: MultiMap[List[String], String],
+                  precedenceGraph: LabelledPrecedenceGraph)
 
   case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
 
