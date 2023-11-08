@@ -102,7 +102,7 @@ class Flix {
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
   def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
@@ -115,7 +115,7 @@ class Flix {
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
   def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
   def getReducerAst: ReducedAst.Root = cachedReducerAst
-  def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
+  def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -603,8 +603,8 @@ class Flix {
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
     cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedTreeShaker2Ast)
-    cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
-    val result = JvmBackend.run(cachedVarNumberingAst)
+    cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
+    val result = JvmBackend.run(cachedVarOffsetsAst)
 
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()
