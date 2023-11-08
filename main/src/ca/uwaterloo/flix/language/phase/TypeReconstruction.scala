@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, LabelledGraph, Stratification}
+import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, LabelledPrecedenceGraph, Stratification}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -42,17 +42,17 @@ object TypeReconstruction {
     val defs = visitDefs(root, defSubsts, oldRoot, changeSet)
     val enums = visitEnums(root)
     val restrictableEnums = visitRestrictableEnums(root)
-    val datalogDependencies = LabelledGraph.empty
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
     val sigs = classes.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-
     val modules = collectModules(root)
 
     val classEnv = mkClassEnv(root.classes, root.instances)
-    val eqEnv = mkEqualityEnv(root.classes, root.instances)
 
-    TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, datalogDependencies, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names).toSuccess
+    val eqEnv = mkEqualityEnv(root.classes, root.instances)
+    val precedenceGraph = LabelledPrecedenceGraph.empty
+
+    TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names, precedenceGraph).toSuccess
   }
 
   /**

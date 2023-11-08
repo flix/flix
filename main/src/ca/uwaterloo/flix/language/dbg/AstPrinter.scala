@@ -48,7 +48,7 @@ object AstPrinter {
       if (asts.contains("Deriver")) () // wip
       if (asts.contains("Typer")) () // wip
       if (asts.contains("Entrypoint")) () // wip
-      if (asts.contains("DatalogDependencies")) () // wip
+      if (asts.contains("PredDeps")) () // wip
       if (asts.contains("Stratifier")) () // wip
       if (asts.contains("PatMatch")) () // wip
       if (asts.contains("Redundancy")) () // wip
@@ -89,7 +89,7 @@ object AstPrinter {
     // Deriver wip
     // Typer wip
     // Entrypoint wip
-    // DatalogDependencies wip
+    // PredDeps wip
     // Stratifier wip
     // PatMatch wip
     // Redundancy wip
