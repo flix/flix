@@ -36,7 +36,7 @@ object MonoTypes {
   /**
     * Holds the mutable data used throughout monomorphization.
     *
-    * The context is shared and must be guarded by locks and/or use thread-safe constructs.
+    * The context is shared and must be guarded by locks (synchronized) to ensure thread-safety.
     */
   private class SharedContext() {
 
@@ -73,7 +73,8 @@ object MonoTypes {
       * Lookup `sym` specialized to `tpe`.
       *
       * If the enum is already specialized, return its fresh symbol.
-      * Otherwise, invoke `f` to produce a fresh enum symbol and specialized enum.
+      *
+      * Otherwise, invoke `f` with a fresh symbol to produce its declaration.
       */
     def getOrPut(sym: Symbol.EnumSym, tpe: Type, nonParametric: Boolean)(f: Symbol.EnumSym => LoweredAst.Enum)(implicit flix: Flix): Symbol.EnumSym = synchronized {
       enum2enum.get((sym, tpe)) match {
