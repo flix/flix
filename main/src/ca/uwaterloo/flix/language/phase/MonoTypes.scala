@@ -430,6 +430,8 @@ object MonoTypes {
         // non-specialized enums.
         val args = tpe0.typeArguments
         val freshSym = specializeEnum(sym, args, loc)
+        // visit args
+        args.foreach(visitInner)
         Type.mkEnum(freshSym, Nil, loc)
       case _ => tpe0 match { // non-enum
         case Type.Cst(tc, loc) => Type.Cst(tc, loc)
