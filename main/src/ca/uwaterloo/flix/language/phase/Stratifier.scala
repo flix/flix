@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
@@ -49,15 +47,39 @@ object Stratifier {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
-
+    implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
+    implicit val r: Root = root
     // Compute the stratification at every datalog expression in the ast.
-    val newDefs = ParOps.parMapValuesSeq(root.defs)(visitDef(_)(root, root.precedenceGraph, flix))
-    val newInstances = ParOps.parMapValuesSeq(root.instances)(traverse(_)(i => visitInstance(i)(root, root.precedenceGraph, flix)))
+    val newDefs = ParOps.parMapValuesSeq(root.defs)(visitDef(_))
+    val newInstances = ParOps.parMapValuesSeq(root.instances)(traverse(_)(visitInstance(_)))
+    val newClasses = ParOps.parMapValuesSeq(root.classes)(visitClass(_))
 
-    mapN(newDefs, newInstances) {
-      case (ds, is) => root.copy(defs = ds, instances = is)
+    mapN(newDefs, newInstances, newClasses) {
+      case (ds, is, cs) => root.copy(defs = ds, instances = is, classes = cs)
     }
   }
+
+  /**
+    * Performs Stratification of the given class `c0`.
+    */
+  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, CompilationMessage] = {
+    val newLaws = traverse(c0.laws)(visitDef(_))
+    val newSigs = traverse(c0.sigs)(visitSig(_))
+    mapN(newLaws, newSigs) {
+      case (nl, ns) => c0.copy(laws = nl, sigs = ns)
+    }
+  }
+
+  /**
+    * Performs Stratification of the given sig `s0`.
+    */
+  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, CompilationMessage] = {
+    val newExp = traverseOpt(s0.exp)(visitExp(_))
+    mapN(newExp){
+      case ne => s0.copy(exp = ne)
+    }
+  }
+
 
   /**
     * Performs Stratification of the given instance `i0`.
@@ -461,7 +483,7 @@ object Stratifier {
       val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp), stf) {
-        case (e, s) => Expr.FixpointSolve(e, tpe, eff, loc)
+        case (e, _) => Expr.FixpointSolve(e, tpe, eff, loc)
       }
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
