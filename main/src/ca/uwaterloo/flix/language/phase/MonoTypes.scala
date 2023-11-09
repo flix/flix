@@ -62,7 +62,7 @@ object MonoTypes {
       * 2b. Pure + Pure and Pure should not both be present (formulas should be fully evaluated)
       * 3. Contain no specialized enums, i.e. should use List[Int32] instead of List$32
       */
-    private val enum2enum: mutable.Map[(Symbol.EnumSym, Type), Symbol.EnumSym] = mutable.Map.empty
+    private val enum2enum: mutable.Map[(Symbol.EnumSym, Type), (Symbol.EnumSym, List[Type])] = mutable.Map.empty
 
     /**
       * A map used to collect specialized definitions.
@@ -74,21 +74,22 @@ object MonoTypes {
       *
       * If the enum is already specialized, return its fresh symbol.
       *
-      * Otherwise, invoke `f` with a fresh symbol to produce its declaration.
+      * Otherwise, create a fresh symbol.
       */
-    def getOrPut(sym: Symbol.EnumSym, tpe: Type, nonParametric: Boolean)(f: Symbol.EnumSym => LoweredAst.Enum)(implicit flix: Flix): Symbol.EnumSym = synchronized {
+    def getOrPut(sym: Symbol.EnumSym, args: List[Type], tpe: Type, nonParametric: Boolean)(implicit flix: Flix): Symbol.EnumSym = synchronized {
       enum2enum.get((sym, tpe)) match {
         case None =>
-          // Note: We must register the fresh symbol before we call `f`.
           val freshSym = if (nonParametric) sym else Symbol.freshEnumSym(sym)
-          enum2enum.put((sym, tpe), freshSym)
-
-          val decl = f(freshSym)
-          specializedEnums.put(freshSym, decl)
+          enum2enum.put((sym, tpe), (freshSym, args))
           freshSym
-        case Some(freshSym) => freshSym
+        case Some((freshSym, _)) => freshSym
       }
     }
+
+    def specializations: Map[(Symbol.EnumSym, Type), (Symbol.EnumSym, List[Type])] =
+      enum2enum.toMap
+
+    def clearSpecializations(): Unit = enum2enum.clear()
 
     /**
       * Returns the specialized enums as a map.
@@ -96,12 +97,19 @@ object MonoTypes {
     def toMap: Map[Symbol.EnumSym, LoweredAst.Enum] = synchronized {
       specializedEnums.toMap
     }
+
+    def addSpecializedEnum(e: LoweredAst.Enum): Unit = synchronized {
+      specializedEnums.put(e.sym, e)
+    }
   }
 
   /**
     * Performs monomorphization of enums on the given AST `root` and removes alias types.
     */
   def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonoTypes") {
+    // Goal:
+    //   The goal of MonoTypes is to replace polymorphic enums with specialized enums.
+    //   For example replacing `List[Int32]` with `List$152` with cases specified to `Int32`.
     // Assumptions:
     // - All typeclass information have been transformed into defs - this
     //   phase only looks at types and expressions in defs.
@@ -112,22 +120,40 @@ object MonoTypes {
     //   - tconstrs
     //   - econstrs
 
-    // monomorphization works by finding ground enum types in expressions and
-    // types.
-    // When such an enum is found, its symbol is bound in `ctx.enum2enum` and
-    // the is specialized and put into `ctx.specializedEnums`. This process
-    // might be recursive which is why the symbol is put into enum2enum before
-    // the work is actually done.
 
     implicit val r: LoweredAst.Root = root
     implicit val ctx: SharedContext = new SharedContext()
 
+    // phase 1
+    //   A) Find all enum types via all types and expressions in defs
+    //   B) Build a mappping (enum2enum) from enum types to new specialized names (`List[Int32]` |-> `List$152`)
+    //   C) Replace enum expressions and enum types with their new name.
     val defs = ParOps.parMapValues(root.defs)(visitDef)
+
+    // phase 2
+    //   A) These new specializations (in enum2enum) might lead to more specializations when looking
+    //      at the enum definitions. `MyEnum[Char]` might have a case which mentions
+    //      `List[MyEnum[Char]]` which could be a new specialization of `List`.
+
+    // phase 3
+    //   A) Look through all the specializations (in enum2enum) and generate the new enums.
+
+    // phase 2 & 3 combined
+    while (ctx.specializations.nonEmpty) {
+      ParOps.parMap(ctx.specializations) {
+        case ((oldSym, tpe), (specializedSym, specializedArgs)) =>
+          createSpecialization(oldSym, specializedArgs, specializedSym, tpe.loc)
+      }
+      ctx.clearSpecializations()
+    }
+
     root.copy(defs = defs, enums = ctx.toMap)
   }
 
   /**
     * Returns a [[LoweredAst.Def]] with specialized enums and without aliases in its types.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def visitDef(defn: LoweredAst.Def)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Def = defn match {
     case LoweredAst.Def(sym, spec, exp) =>
@@ -138,6 +164,8 @@ object MonoTypes {
 
   /**
     * Returns a [[LoweredAst.Spec]] with specialized enums and without aliases in its types.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def visitSpec(spec: LoweredAst.Spec)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, loc) =>
@@ -149,7 +177,9 @@ object MonoTypes {
   }
 
   /**
-    * Returns an expression with specialized enums and without aliases in its types
+    * Returns an expression with specialized enums and without aliases in its types.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def visitExp(exp: LoweredAst.Expr)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
@@ -345,6 +375,8 @@ object MonoTypes {
 
   /**
     * Returns a pattern with specialized enums in its type and no aliases.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def visitPat(pat: LoweredAst.Pattern)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Pattern = pat match {
     case Pattern.Wild(tpe, loc) =>
@@ -388,6 +420,8 @@ object MonoTypes {
 
   /**
     * Returns a type with specialized enums and no aliases.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def visitType(tpe: Type)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Type = {
     def visitInner(tpe0: Type): Type = tpe0.baseType match {
@@ -411,6 +445,8 @@ object MonoTypes {
 
   /**
     * Returns a formal param with specialized enums in its type and no aliases.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def visitFormalParam(p: LoweredAst.FormalParam)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.FormalParam = p match {
     case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
@@ -420,6 +456,8 @@ object MonoTypes {
 
   /**
     * Returns a scheme with specialized enums in its base and no aliases.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def visitScheme(sc: Scheme)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
@@ -446,21 +484,32 @@ object MonoTypes {
     val tpe = Type.mkEnum(sym, args, loc)
 
     // reuse specialization if possible
-    ctx.getOrPut(sym, tpe, args.isEmpty) { freshSym =>
-      // do the specialization
-      // The enum is parametric on its type parameters, so we must instantiate
-      // e.g. for List[a] and List[Int32] we substitute [a -> Int32]
-      val decl = root.enums(sym)
-      val subst = Substitution(decl.tparams.map(_.sym).zip(args).toMap)
-      val cases = decl.cases.foldLeft(Map.empty[Symbol.CaseSym, LoweredAst.Case]) {
-        case (macc, (_, caze)) => macc + specializeCase(freshSym, caze, subst)
-      }
-      decl.copy(sym = freshSym, tparams = Nil, cases = cases, tpe = Type.mkEnum(freshSym, Nil, loc))
+    ctx.getOrPut(sym, args, tpe, args.isEmpty)
+  }
+
+  /**
+    * Creates the specialized enum `specializedSym` based on the `oldSym[args...]` enum.
+    * The new enum is put into `ctx.specializedEnums`.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
+    */
+  private def createSpecialization(oldSym: Symbol.EnumSym, args: List[Type], specializedSym: Symbol.EnumSym, loc: SourceLocation)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Unit = {
+    // do the specialization
+    // The enum is parametric on its type parameters, so we must instantiate
+    // e.g. for List[a] and List[Int32] we substitute [a -> Int32]
+    val decl = root.enums(oldSym)
+    val subst = Substitution(decl.tparams.map(_.sym).zip(args).toMap)
+    val cases = decl.cases.foldLeft(Map.empty[Symbol.CaseSym, LoweredAst.Case]) {
+      case (macc, (_, caze)) => macc + specializeCase(specializedSym, caze, subst)
     }
+    val specializedEnum = decl.copy(sym = specializedSym, tparams = Nil, cases = cases, tpe = Type.mkEnum(specializedSym, Nil, loc))
+    ctx.addSpecializedEnum(specializedEnum)
   }
 
   /**
     * Specialize the given case `caze` belonging to the given enum `enumSym`.
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def specializeCase(enumSym: Symbol.EnumSym, caze: LoweredAst.Case, subst: Substitution)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): (Symbol.CaseSym, LoweredAst.Case) = caze match {
     case LoweredAst.Case(caseSym, caseTpe, caseSc, caseLoc) =>
@@ -472,6 +521,8 @@ object MonoTypes {
 
   /**
     * Specializes the symbol and the enum it uses via [[specializeEnum]].
+    *
+    * `ctx.enums2enums` is filled with the enums that need specialization.
     */
   private def specializeCaseSymUse(sym: CaseSymUse, args: List[Type], loc: SourceLocation)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): CaseSymUse = {
     val freshEnumSym = specializeEnum(sym.sym.enumSym, args, loc)
