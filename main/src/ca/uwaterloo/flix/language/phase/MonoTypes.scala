@@ -69,6 +69,10 @@ object MonoTypes {
       */
     private val specializedEnums: mutable.Map[Symbol.EnumSym, LoweredAst.Enum] = mutable.Map.empty
 
+    def get(sym: Symbol.EnumSym, tpe: Type): Option[Symbol.EnumSym] = {
+      enum2enum.get((sym, tpe)).map(_._1)
+    }
+
     /**
       * Lookup `sym` specialized to `tpe`.
       *
@@ -486,7 +490,10 @@ object MonoTypes {
     val tpe = Type.mkEnum(sym, args, loc)
 
     // reuse specialization if possible
-    ctx.getOrPut(sym, args, tpe, args.isEmpty)
+    ctx.get(sym, tpe) match {
+      case None => ctx.getOrPut(sym, args, tpe, args.isEmpty)
+      case Some(s) => s
+    }
   }
 
   /**
