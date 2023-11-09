@@ -36,12 +36,13 @@ object PredDeps {
 
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("PredDeps") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val defs = root.defs.values.toList
-    val instanceDefs = root.instances.values.flatten.flatMap(_.defs)
-    val allDefs = defs ++ instanceDefs
+    val defExps = root.defs.values.map(_.exp)
+    val instanceExps = root.instances.values.flatten.flatMap(_.defs).map(_.exp)
+    val classExps = root.classes.values.flatMap(c => c.laws.map(_.exp) ++ c.sigs.flatMap(_.exp))
+    val allExps = defExps ++ instanceExps ++ classExps
 
-    val g = ParOps.parAgg(allDefs, LabelledPrecedenceGraph.empty)({
-      case (acc, d) => acc + visitDef(d)
+    val g = ParOps.parAgg(allExps, LabelledPrecedenceGraph.empty)({
+      case (acc, d) => acc + visitExp(d)
     }, _ + _)
 
     root.copy(precedenceGraph = g).toSuccess
@@ -67,12 +68,6 @@ object PredDeps {
       (Nil, Denotation.Relational)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
   }
-
-  /**
-    * Returns the labelled graph of the given definition `def0`.
-    */
-  private def visitDef(def0: Def): LabelledPrecedenceGraph =
-    visitExp(def0.exp)
 
   /**
     * Returns the labelled graph of the given expression `exp0`.
