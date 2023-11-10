@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import java.util
-import java.util.concurrent.{Callable, CountDownLatch, Future}
+import java.util.concurrent.{Callable, CountDownLatch}
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
