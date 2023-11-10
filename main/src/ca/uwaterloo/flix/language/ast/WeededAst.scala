@@ -93,7 +93,11 @@ object WeededAst {
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class Infix(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
+
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
+
+    case class LambdaMatch(pat: Pattern, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -128,6 +132,8 @@ object WeededAst {
     case class MonadicFor(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
 
     case class ForEachYield(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
+
+    case class LetMatch(pat: Pattern, mod: Ast.Modifiers, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 

@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern,
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The Pattern Exhaustiveness phase checks pattern matches for exhaustiveness
@@ -109,8 +109,8 @@ object PatMatch {
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
     flix.phase("PatMatch") {
-      val defErrs = root.defs.values.flatMap(defn => visitExp(defn.exp, root))
-      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitExp(defn.exp, root))
+      val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp, root)).flatten
+      val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp, root)).flatten
       // Only need to check sigs with implementations
       val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp(_, root))
 
@@ -227,10 +227,10 @@ object PatMatch {
 
       case Expr.Lazy(exp, _, _) => visitExp(exp, root)
       case Expr.Force(exp, _, _, _) => visitExp(exp, root)
-      case Expr.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, root))
-      case Expr.FixpointLambda(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expr.FixpointMerge(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
-      case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp, root)
+      case Expr.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, root))
+      case Expr.FixpointLambda(_, exp, _, _, _) => visitExp(exp, root)
+      case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
+      case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp, root)
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp, root)
       case Expr.FixpointInject(exp, _, _, _, _) => visitExp(exp, root)
       case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp, root)

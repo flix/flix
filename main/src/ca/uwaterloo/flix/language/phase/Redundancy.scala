@@ -234,35 +234,25 @@ object Redundancy {
     * Checks for redundant type constraints in the given `root`.
     */
   private def checkRedundantTypeConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
-    def findRedundantTypeConstraints(tconstrs: List[Ast.TypeConstraint]): List[RedundancyError] = {
-      for {
-        (tconstr1, i1) <- tconstrs.zipWithIndex
-        (tconstr2, i2) <- tconstrs.zipWithIndex
-        // don't compare a constraint against itself
-        if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
-      } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
-    }
+    val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTypeConstraints(defn.spec.declaredScheme.tconstrs))
+    val classErrors = ParOps.parMap(root.classes.values)(clazz => redundantTypeConstraints(clazz.superClasses))
+    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTypeConstraints(inst.tconstrs))
+    val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTypeConstraints(sig.spec.declaredScheme.tconstrs))
 
-    val instErrors = root.instances.values.flatten.flatMap {
-      inst => findRedundantTypeConstraints(inst.tconstrs)
-    }
-
-    val defErrors = root.defs.values.flatMap {
-      defn => findRedundantTypeConstraints(defn.spec.declaredScheme.tconstrs)
-    }
-
-    val classErrors = root.classes.values.flatMap {
-      clazz =>
-        findRedundantTypeConstraints(clazz.superClasses)
-    }
-
-    val sigErrors = root.sigs.values.flatMap {
-      sig => findRedundantTypeConstraints(sig.spec.declaredScheme.tconstrs)
-    }
-
-    (instErrors ++ defErrors ++ classErrors ++ sigErrors).toList
+    (defErrors.flatten ++ classErrors.flatten ++ instErrors.flatten ++ sigErrors.flatten).toList
   }
 
+  /**
+    * Finds redundant type constraints in `tconstrs`.
+    */
+  private def redundantTypeConstraints(tconstrs: List[Ast.TypeConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
+    for {
+      (tconstr1, i1) <- tconstrs.zipWithIndex
+      (tconstr2, i2) <- tconstrs.zipWithIndex
+      // don't compare a constraint against itself
+      if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
+    } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
+  }
 
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
@@ -758,20 +748,20 @@ object Redundancy {
 
     case Expr.Force(exp, _, _, _) => visitExp(exp, env0, rc)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used ++ visitConstraint(con, env0, rc: RecursionContext)
       }
 
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

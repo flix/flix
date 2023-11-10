@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSoftFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.util.Objects

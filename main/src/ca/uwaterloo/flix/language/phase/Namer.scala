@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
@@ -40,7 +40,7 @@ object Namer {
       case (macc, root) => macc + (root.loc.source -> root.loc)
     }
 
-    val unitsVal = traverseValues(program.units)(visitUnit)
+    val unitsVal = ParOps.parMapValuesSeq(program.units)(visitUnit)
 
     flatMapN(unitsVal) {
       case units =>

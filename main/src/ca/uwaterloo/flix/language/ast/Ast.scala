@@ -504,13 +504,6 @@ object Ast {
     */
   case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
 
-  object LabelledGraph {
-    /**
-      * The empty labelled graph.
-      */
-    val empty: LabelledGraph = LabelledGraph(Vector.empty)
-  }
-
   /**
     * Represents a labelled graph; the dependency graph with additional labels
     * on the edges allowing more accurate filtering. The rule `A :- not B, C` would
@@ -521,17 +514,24 @@ object Ast {
     * we can also rule out `B -x> A`. The labelled edges would be `B -[C]-x> A`
     * and `C -[B]-> A`.
     */
-  case class LabelledGraph(edges: Vector[LabelledEdge]) {
+  object LabelledPrecedenceGraph {
+    /**
+      * The empty labelled graph.
+      */
+    val empty: LabelledPrecedenceGraph = LabelledPrecedenceGraph(Vector.empty)
+  }
+
+  case class LabelledPrecedenceGraph(edges: Vector[LabelledEdge]) {
     /**
       * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
       */
-    def +(that: LabelledGraph): LabelledGraph = {
-      if (this eq LabelledGraph.empty)
+    def +(that: LabelledPrecedenceGraph): LabelledPrecedenceGraph = {
+      if (this eq LabelledPrecedenceGraph.empty)
         that
-      else if (that eq LabelledGraph.empty)
+      else if (that eq LabelledPrecedenceGraph.empty)
         this
       else
-        LabelledGraph(this.edges ++ that.edges)
+        LabelledPrecedenceGraph(this.edges ++ that.edges)
     }
 
     /**
@@ -541,10 +541,10 @@ object Ast {
       * A rule like `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
       * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEq(syms(A), la)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Label], labelEq: (Label, Label) => Boolean): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, Label], labelEq: (Label, Label) => Boolean): LabelledPrecedenceGraph = {
       def include(l: Label): Boolean = syms.get(l.pred).exists(l2 => labelEq(l, l2))
 
-      LabelledGraph(edges.filter {
+      LabelledPrecedenceGraph(edges.filter {
         case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
       })
     }

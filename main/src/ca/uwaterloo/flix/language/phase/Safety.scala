@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.math.BigInteger
 import scala.annotation.tailrec
@@ -29,10 +29,13 @@ object Safety {
     * Performs safety and well-formedness checks on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Safety") {
+
     //
     // Collect all errors.
     //
-    val errors = visitDefs(root) ++ visitSendable(root)
+    val defErrors = ParOps.parMap(root.defs.values)(visitDef(_, root)).flatten.toList
+
+    val errors = defErrors ++ visitSendable(root)
 
     //
     // Check if any errors were found.
@@ -47,7 +50,6 @@ object Safety {
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
   private def visitSendable(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
-
     val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
@@ -57,15 +59,6 @@ object Safety {
         else
           Nil
     }
-  }
-
-  /**
-    * Performs safety and well-formedness checks all defs in the given AST `root`.
-    */
-  private def visitDefs(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
-    root.defs.flatMap {
-      case (_, defn) => visitDef(defn, root)
-    }.toList
   }
 
   /**
@@ -338,16 +331,16 @@ object Safety {
       case Expr.Force(exp, _, _, _) =>
         visit(exp)
 
-      case Expr.FixpointConstraintSet(cs, _, _, _) =>
+      case Expr.FixpointConstraintSet(cs, _, _) =>
         cs.flatMap(checkConstraint(_, renv, root))
 
-      case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+      case Expr.FixpointLambda(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+      case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _, _) =>
+      case Expr.FixpointSolve(exp, _, _, _) =>
         visit(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) =>

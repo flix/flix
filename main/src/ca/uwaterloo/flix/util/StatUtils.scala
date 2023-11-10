@@ -22,7 +22,7 @@ object StatUtils {
   /**
     * Returns the average of `xs`.
     */
-  def avg[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
+  def average[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
     if (xs.isEmpty) return 0.0
     numeric.toDouble(xs.sum) / xs.length.toDouble
   }
@@ -49,9 +49,9 @@ object StatUtils {
     * Returns the standard deviation of `xs`.
     */
   def stdDev[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
-    val mean = avg(xs)
+    val mean = average(xs)
     val deviations = xs.map(mean - numeric.toDouble(_))
-    val variance = avg(deviations.map { x => x * x })
+    val variance = average(deviations.map { x => x * x })
     Math.sqrt(variance)
   }
 
