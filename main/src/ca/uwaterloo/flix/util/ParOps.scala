@@ -22,7 +22,7 @@ import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
 
-import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 object ParOps {
 
@@ -30,9 +30,9 @@ object ParOps {
     * Apply the given function `f` to each element in the list `xs` in parallel.
     */
   @inline
-  def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
+  def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
     val size = xs.size
-    val out = ArrayBuffer.fill(size)(null.asInstanceOf[B])
+    val out: Array[B] = new Array(size)
 
     val threadPool = flix.threadPool
     val latch = new CountDownLatch(size)
