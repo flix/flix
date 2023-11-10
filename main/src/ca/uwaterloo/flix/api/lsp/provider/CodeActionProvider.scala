@@ -66,6 +66,8 @@ object CodeActionProvider {
       mkUnusedTypeParamCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedEffectSym(sym) if onSameLine(range, sym.loc) =>
       mkUnusedEffectCodeAction(sym, uri) :: Nil
+    case RedundancyError.UnusedEnumSym(sym) if onSameLine(range, sym.loc) =>
+      mkUnusedEnumCodeAction(sym, uri) :: Nil
     case RedundancyError.UnusedEnumTag(_, caseSym) if onSameLine(range, caseSym.loc) =>
       mkUnusedEnumTagCodeAction(caseSym, uri) :: Nil
 
@@ -247,6 +249,16 @@ object CodeActionProvider {
   private def mkUnusedEffectCodeAction(sym: Symbol.EffectSym, uri: String): CodeAction =
     mkPrefixWithUnderscore(
       "Prefix unused effect with underscore",
+      Position.fromBegin(sym.loc),
+      uri,
+    )
+
+  /**
+    * Returns a code action that proposes to prefix the name of an unused enum by an underscore.
+    */
+  private def mkUnusedEnumCodeAction(sym: Symbol.EnumSym, uri: String): CodeAction =
+    mkPrefixWithUnderscore(
+      s"Prefix unused enum with underscore",
       Position.fromBegin(sym.loc),
       uri,
     )
