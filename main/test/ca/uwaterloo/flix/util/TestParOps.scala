@@ -22,7 +22,7 @@ import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
 class TestParOps extends AnyFunSuite {
 
-  implicit var flix: Flix = new Flix()
+  implicit val flix: Flix = new Flix()
   flix.threadPool = Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
 
   test("parMap01") {
