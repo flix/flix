@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.Flix
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
 class TestParOps extends AnyFunSuite {
 
   implicit var flix: Flix = new Flix()
-  flix.threadPool = Executors.newFixedThreadPool(8)
+  flix.threadPool = Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
 
   test("parMap01") {
     val list = List(1, 2, 3, 4)
