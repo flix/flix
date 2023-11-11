@@ -34,14 +34,12 @@ object ParOps {
     val size = xs.size
     val out: Array[B] = new Array(size)
 
-    val threadPool = flix.threadPool
+    val pool = flix.threadPool
     val latch = new CountDownLatch(size)
     for ((elm, idx) <- xs.zipWithIndex) {
-      threadPool.submit(new Runnable {
-        override def run(): Unit = {
-          out(idx) = f(elm)
-          latch.countDown()
-        }
+      pool.execute(() => {
+        out(idx) = f(elm)
+        latch.countDown()
       })
     }
 

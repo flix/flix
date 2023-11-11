@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
-import java.util.concurrent.{ExecutorService, Executors}
+import java.util.concurrent.{Executors, ThreadPoolExecutor}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -330,7 +330,7 @@ class Flix {
   /**
     * The fork join pool for `this` Flix instance.
     */
-  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
+  var forkJoinPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The fork join task support for `this` Flix instance.
@@ -340,7 +340,7 @@ class Flix {
   /**
     * The thread pool executor service for `this` Flix instance.
     */
-  var threadPool: ExecutorService = _
+  var threadPool: java.util.concurrent.ThreadPoolExecutor = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -744,7 +744,7 @@ class Flix {
     * Initializes the thread pool.
     */
   private def initThreadPool(): Unit = {
-    threadPool = Executors.newFixedThreadPool(options.threads)
+    threadPool = Executors.newFixedThreadPool(options.threads).asInstanceOf[ThreadPoolExecutor]
   }
 
   /**
