@@ -212,7 +212,7 @@ object CompilerPerf {
     */
   def run(o: Options): Unit = {
     // The number of iterations.
-    val N = o.xperfn.getOrElse(DefaultN)
+    val N = o.XPerfN.getOrElse(DefaultN)
 
     // Run the experiments.
     val baseline = aggregate(perfBaseLine(N, o))
@@ -434,11 +434,23 @@ object CompilerPerf {
     * Runs Flix once.
     */
   private def runSingle(flix: Flix): Run = {
-    val compilationResult = flix.compile().toHardFailure.get
+    val frontendOnly = flix.options.XPerfFrontend
+
+    val totalLines =
+      if (frontendOnly) {
+        flix.check().toHardFailure.get.sources.foldLeft(0) {
+          case (acc, (_, sl)) => acc + sl.endLine
+        }
+      } else {
+        flix.compile().toHardFailure.get.getTotalLines
+      }
+
     val phases = flix.phaseTimers.map {
       case PhaseTime(phase, time, _) => phase -> time
     }
-    Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    val totalTime = flix.getTotalTime
+
+    Run(totalLines, totalTime, phases.toList)
   }
 
   /**
