@@ -330,7 +330,7 @@ class Flix {
   /**
     * The fork join pool for `this` Flix instance.
     */
-  var forkJoinPool: java.util.concurrent.ForkJoinPool = _
+  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The fork join task support for `this` Flix instance.
