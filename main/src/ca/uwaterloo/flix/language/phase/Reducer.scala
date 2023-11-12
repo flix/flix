@@ -31,7 +31,9 @@ object Reducer {
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffs = ParOps.parMapValues(root.effects)(visitEff)
 
-    ReducedAst.Root(newDefs, newEnums, newEffs, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
+    val newRoot = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
+    val types = typesOf(newRoot)
+    newRoot.copy(types = types)
   }
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
@@ -175,5 +177,141 @@ object Reducer {
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
   private case class SharedContext(anonClasses: ConcurrentLinkedQueue[ReducedAst.AnonClass])
+
+  /**
+    * Returns the set of all instantiated types in the given AST `root`.
+    *
+    * This include type components. For example, if the program contains
+    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
+    */
+  private def typesOf(root: ReducedAst.Root)(implicit flix: Flix): Set[MonoType] = {
+    /**
+      * Returns the set of types which occur in the given definition `defn0`.
+      */
+    def visitDefn(defn: ReducedAst.Def): Set[MonoType] = {
+      // Compute the types in the captured formal parameters.
+      val cParamTypes = defn.cparams.foldLeft(Set.empty[MonoType]) {
+        case (sacc, ReducedAst.FormalParam(_, _, tpe, _)) => sacc + tpe
+      }
+
+      // Compute the types in the expression.
+      val expressionTypes = visitStmt(defn.stmt)
+
+      // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
+
+      // Return the types in the defn.
+      cParamTypes ++ expressionTypes + defn.arrowType
+    }
+
+    def visitExp(exp0: ReducedAst.Expr): Set[MonoType] = (exp0 match {
+      case ReducedAst.Expr.Cst(_, tpe, _) => Set(tpe)
+
+      case ReducedAst.Expr.Var(_, tpe, _) => Set(tpe)
+
+      case ReducedAst.Expr.ApplyClo(exp, exps, _, tpe, _, _) => visitExp(exp) ++ visitExps(exps) ++ Set(tpe)
+
+      case ReducedAst.Expr.ApplyDef(_, exps, _, tpe, _, _) => visitExps(exps) ++ Set(tpe)
+
+      case ReducedAst.Expr.ApplySelfTail(_, _, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
+
+      case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case ReducedAst.Expr.Branch(exp, branches, _, _, _) =>
+        val exps = branches.map {
+          case (_, e) => e
+        }
+        visitExp(exp) ++ visitExps(exps)
+
+      case ReducedAst.Expr.JumpTo(_, _, _, _) => Set.empty
+
+      case ReducedAst.Expr.Let(_, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case ReducedAst.Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case ReducedAst.Expr.Scope(_, exp, _, _, _) => visitExp(exp)
+
+      case ReducedAst.Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+      case ReducedAst.Expr.TryWith(exp, _, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+      case ReducedAst.Expr.Do(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
+
+      case ReducedAst.Expr.Resume(exp, tpe, _) => visitExp(exp) ++ Set(tpe)
+
+      case ReducedAst.Expr.NewObject(_, _, _, _, _, exps, _) =>
+        visitExps(exps)
+
+      case ReducedAst.Expr.ApplyAtomic(_, exps, tpe, _, _) => visitExps(exps) + tpe
+
+    }) ++ Set(exp0.tpe)
+
+    def visitExps(exps: Iterable[ReducedAst.Expr]): Set[MonoType] = {
+      exps.foldLeft(Set.empty[MonoType]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+    }
+
+    def visitStmt(s: ReducedAst.Stmt): Set[MonoType] = s match {
+      case ReducedAst.Stmt.Ret(e, tpe, loc) => visitExp(e)
+    }
+
+    // Visit every definition.
+    val defTypes = ParOps.parMap(root.defs.values)(visitDefn).foldLeft(Set.empty[MonoType]) {
+      case (sacc, xs) => sacc ++ xs
+    }
+
+    val enumTypes = root.enums.foldLeft(Set.empty[MonoType]) {
+      case (sacc, (_, e)) =>
+        // the enum type itself
+        val eType = e.tpe
+        // the types inside the cases
+        val caseTypes = e.cases.values.flatMap(c => nestedTypesOf(c.tpe)(root, flix))
+        sacc + eType ++ caseTypes
+    }
+
+    val result = defTypes ++ enumTypes
+
+    result.flatMap(t => nestedTypesOf(t)(root, flix))
+  }
+
+  /**
+    * Returns all the type components of the given type `tpe`.
+    *
+    * For example, if the given type is `Array[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Array[(Bool, Char, Int)]`.
+    */
+  private def nestedTypesOf(tpe: MonoType)(implicit root: ReducedAst.Root, flix: Flix): Set[MonoType] = {
+    tpe match {
+      case MonoType.Unit => Set(tpe)
+      case MonoType.Bool => Set(tpe)
+      case MonoType.Char => Set(tpe)
+      case MonoType.Float32 => Set(tpe)
+      case MonoType.Float64 => Set(tpe)
+      case MonoType.BigDecimal => Set(tpe)
+      case MonoType.Int8 => Set(tpe)
+      case MonoType.Int16 => Set(tpe)
+      case MonoType.Int32 => Set(tpe)
+      case MonoType.Int64 => Set(tpe)
+      case MonoType.BigInt => Set(tpe)
+      case MonoType.String => Set(tpe)
+      case MonoType.Regex => Set(tpe)
+      case MonoType.Region => Set(tpe)
+
+      case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Enum(_) => Set(tpe)
+      case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
+
+      case MonoType.RecordEmpty => Set(tpe)
+      case MonoType.RecordExtend(_, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
+
+      case MonoType.SchemaEmpty => Set(tpe)
+      case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
+
+      case MonoType.Native(_) => Set(tpe)
+    }
+  }
 
 }

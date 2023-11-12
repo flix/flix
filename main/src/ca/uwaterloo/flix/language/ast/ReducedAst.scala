@@ -23,11 +23,12 @@ import java.lang.reflect.Method
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   effects: Map[Symbol.EffectSym, Effect],
+                  types: Set[MonoType],
                   anonClasses: List[AnonClass],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
