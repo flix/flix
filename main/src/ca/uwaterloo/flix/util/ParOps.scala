@@ -26,12 +26,12 @@ import scala.reflect.ClassTag
 object ParOps {
 
   /**
-    * The size at which we switch from parallel to sequential evaluation in parAgg.
+    * The threshold at which `parAgg` switches from parallel to sequential evaluation.
     */
   private val SequentialThreshold: Int = 4
 
   /**
-    * Apply the given function `f` to each element in the list `xs` in parallel.
+    * Applies the function `f` to every element in `xs` in parallel.
     */
   def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
     // Compute the size of the input and construct a new empty array to hold the result.
@@ -58,16 +58,7 @@ object ParOps {
   }
 
   /**
-    * Apply the given fallible function `f` to each element in the list `xs` in parallel,
-    * returning the resulting iterable if all calls are successful.
-    */
-  def parMapSeq[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
-    val results = parMap(xs)(f)
-    Validation.sequence(results)
-  }
-
-  /**
-    * Apply the given function `f` to each value in the map `m` in parallel.
+    * Applies the function `f` to every value in the map `m` in parallel.
     */
   def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
@@ -75,11 +66,18 @@ object ParOps {
     }.toMap
 
   /**
-    * Apply the given fallible function `f` to each value in the map `m` in parallel,
-    * returning the resulting map if all calls are successful.
+    * Applies the function `f` to every element in `xs` in parallel. Aggregates the result using the applicative instance for Validation.
     */
-  def parMapValuesSeq[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
-    parMapSeq(m) {
+  def parTraverse[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
+    val results = parMap(xs)(f)
+    Validation.sequence(results)
+  }
+
+  /**
+    * Applies the function `f` to every element in the map `m` in parallel. Aggregates the result using the applicative instance for Validation.
+    */
+  def parTraverseValues[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
+    parTraverse(m) {
       case (k, v) => f(v).map((k, _))
     }.map(_.toMap)
   }
@@ -125,7 +123,7 @@ object ParOps {
   /**
     * Computes the set of reachables Ts starting from `init` and using the `next` function.
     */
-  def parReachable[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
+  def parReach[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
     // A wrapper for the next function.
     class NextCallable(t: T) extends Callable[Set[T]] {
       override def call(): Set[T] = next(t)

@@ -40,7 +40,7 @@ object Namer {
       case (macc, root) => macc + (root.loc.source -> root.loc)
     }
 
-    val unitsVal = ParOps.parMapValuesSeq(program.units)(visitUnit)
+    val unitsVal = ParOps.parTraverseValues(program.units)(visitUnit)
 
     flatMapN(unitsVal) {
       case units =>

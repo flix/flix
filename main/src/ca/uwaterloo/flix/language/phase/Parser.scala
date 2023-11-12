@@ -51,7 +51,7 @@ object Parser {
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
 
       // Parse each stale source in parallel.
-      val result = ParOps.parMapSeq(stale.keys)(parseRoot)
+      val result = ParOps.parTraverse(stale.keys)(parseRoot)
 
       // Combine the ASTs into one abstract syntax tree.
       result.map {

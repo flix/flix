@@ -98,7 +98,7 @@ object TypeInference {
     flix.subphase("Classes") {
       // Don't bother to infer the fresh classes
       val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      val result = ParOps.parMapSeq(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
+      val result = ParOps.parTraverse(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
       result.map {
         case substs =>
           val (sigSubsts, defSubsts) = substs.unzip
@@ -136,7 +136,7 @@ object TypeInference {
         inst <- insts
       } yield inst
 
-      val result = ParOps.parMapSeq(instances)(visitInstance(_, root, classEnv, eqEnv))
+      val result = ParOps.parTraverse(instances)(visitInstance(_, root, classEnv, eqEnv))
 
       result.map {
         case substs => substs.fold(Map.empty)(_ ++ _)
@@ -199,7 +199,7 @@ object TypeInference {
       // only infer the stale defs
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-      ParOps.parMapValuesSeq(staleDefs)(visitDefn(_, Nil, root, classEnv, eqEnv))
+      ParOps.parTraverseValues(staleDefs)(visitDefn(_, Nil, root, classEnv, eqEnv))
     }
 
   /**
