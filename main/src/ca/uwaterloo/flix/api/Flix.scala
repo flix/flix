@@ -340,7 +340,7 @@ class Flix {
   /**
     * The thread pool executor service for `this` Flix instance.
     */
-  var threadPool: java.util.concurrent.ExecutorService = _
+  var threadPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The symbol generator associated with this Flix instance.
