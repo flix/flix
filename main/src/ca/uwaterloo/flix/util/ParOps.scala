@@ -31,7 +31,7 @@ object ParOps {
   private val SequentialThreshold: Int = 4
 
   /**
-    * Applies the function `f` to every element in `xs` in parallel.
+    * Applies the function `f` to every element of `xs` in parallel.
     */
   def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
     // Compute the size of the input and construct a new empty array to hold the result.
@@ -58,7 +58,7 @@ object ParOps {
   }
 
   /**
-    * Applies the function `f` to every value in the map `m` in parallel.
+    * Applies the function `f` to every value of the map `m` in parallel.
     */
   def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
@@ -66,7 +66,7 @@ object ParOps {
     }.toMap
 
   /**
-    * Applies the function `f` to every element in `xs` in parallel. Aggregates the result using the applicative instance for Validation.
+    * Applies the function `f` to every element of `xs` in parallel. Aggregates the result using the applicative instance for [[Validation]].
     */
   def parTraverse[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
     val results = parMap(xs)(f)
@@ -74,7 +74,7 @@ object ParOps {
   }
 
   /**
-    * Applies the function `f` to every element in the map `m` in parallel. Aggregates the result using the applicative instance for Validation.
+    * Applies the function `f` to every element of the map `m` in parallel. Aggregates the result using the applicative instance for [[Validation]].
     */
   def parTraverseValues[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
     parTraverse(m) {
