@@ -49,7 +49,8 @@ object Options {
     xnoqmc = false,
     xsummary = false,
     xparser = false,
-    xperfn = None
+    XPerfN = None,
+    XPerfFrontend = false
   )
 
   /**
@@ -123,7 +124,8 @@ case class Options(lib: LibLevel,
                    xprintphase: Set[String],
                    xsummary: Boolean,
                    xparser: Boolean,
-                   xperfn: Option[Int]
+                   XPerfFrontend: Boolean,
+                   XPerfN: Option[Int],
                   )
 
 /**

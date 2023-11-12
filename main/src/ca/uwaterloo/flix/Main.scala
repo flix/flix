@@ -95,7 +95,8 @@ object Main {
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser,
-      xperfn = cmdOpts.xperfn
+      XPerfFrontend = cmdOpts.XPerfFrontend,
+      XPerfN = cmdOpts.XPerfN
     )
 
     // Don't use progress bar if benchmarking.
@@ -296,7 +297,8 @@ object Main {
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
-                     xperfn: Option[Int] = None,
+                     XPerfN: Option[Int] = None,
+                     XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -379,9 +381,12 @@ object Main {
         )
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
+        opt[Unit]("frontend")
+          .action((_, c) => c.copy(XPerfFrontend = true))
+          .text("benchmark only frontend"),
         opt[Int]("n")
-          .action((v, c) => c.copy(xperfn = Some(v)))
-          .text("number of iterations")
+          .action((v, c) => c.copy(XPerfN = Some(v)))
+          .text("number of compilations")
       ).hidden()
 
       note("")
