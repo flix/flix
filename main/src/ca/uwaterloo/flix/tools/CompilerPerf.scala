@@ -31,7 +31,7 @@ object CompilerPerf {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  private val N: Int = 7
+  private val N: Int = 17
 
   /**
     * The number of threads to use for the single-thread experiment.
