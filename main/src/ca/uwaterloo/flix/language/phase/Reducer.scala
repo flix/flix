@@ -256,9 +256,9 @@ object Reducer {
     }
 
     // Visit every definition.
-    val defTypes = ParOps.parMap(root.defs.values)(visitDefn).foldLeft(Set.empty[MonoType]) {
-      case (sacc, xs) => sacc ++ xs
-    }
+    val defTypes = ParOps.parAgg(root.defs.values, Set.empty[MonoType])({
+      case (sacc, defn) => sacc ++ visitDefn(defn)
+    }, _ ++ _)
 
     val enumTypes = root.enums.foldLeft(Set.empty[MonoType]) {
       case (sacc, (_, e)) =>
