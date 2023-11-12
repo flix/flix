@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.util
 
 import java.util
-import java.util.concurrent.{Callable, Executors}
-
+import java.util.concurrent.{Callable, CountDownLatch}
 import scala.jdk.CollectionConverters._
 import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
+
+import scala.reflect.ClassTag
 
 object ParOps {
 
@@ -29,18 +30,28 @@ object ParOps {
     * Apply the given function `f` to each element in the list `xs` in parallel.
     */
   @inline
-  def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    // Build the parallel array.
-    val parArray = xs.toParArray
+  def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
+    // Compute the size of the input and construct a new empty array to hold the result.
+    val size = xs.size
+    val out: Array[B] = new Array(size)
 
-    // Configure the task support.
-    parArray.tasksupport = flix.forkJoinTaskSupport
+    // Construct a new count down latch to track the number of threads.
+    val latch = new CountDownLatch(size)
 
-    // Apply the function `f` in parallel.
-    val result = parArray.map(f)
+    // Iterate through the elements of `xs`. Use a local variable to track the index.
+    var idx = 0
+    for (elm <- xs) {
+      val i = idx // Ensure proper scope of i.
+      flix.threadPool.execute(() => {
+        out(i) = f(elm)
+        latch.countDown()
+      })
+      idx = idx + 1
+    }
 
-    // Return the result as an iterable.
-    result.seq
+    // Await all threads to finish and return the result.
+    latch.await()
+    out
   }
 
   /**
@@ -97,8 +108,8 @@ object ParOps {
       override def call(): Set[T] = next(t)
     }
 
-    // Initialize a new executor service.
-    val executorService = Executors.newFixedThreadPool(flix.options.threads)
+    // Use global thread pool.
+    val threadPool = flix.threadPool
 
     // A mutable variable that holds the currently reachable Ts.
     var reach = init
@@ -116,7 +127,7 @@ object ParOps {
       }
 
       // Invoke all callables in parallel.
-      val futures = executorService.invokeAll(callables)
+      val futures = threadPool.invokeAll(callables)
 
       // Compute the set of all inferred Ts in this iteration.
       // May include Ts discovered in previous iterations.
@@ -128,9 +139,6 @@ object ParOps {
       delta = newReach -- reach
       reach = reach ++ delta
     }
-
-    // Shutdown the executor service.
-    executorService.shutdown()
 
     // Return the set of reachable Ts.
     reach

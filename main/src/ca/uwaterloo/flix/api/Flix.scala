@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
+import java.util.concurrent.{Executors, ForkJoinPool, ThreadPoolExecutor}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -337,6 +338,11 @@ class Flix {
   var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
 
   /**
+    * The thread pool executor service for `this` Flix instance.
+    */
+  var threadPool: java.util.concurrent.ExecutorService = _
+
+  /**
     * The symbol generator associated with this Flix instance.
     */
   val genSym = new GenSym()
@@ -521,6 +527,9 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
+    // Initialize the thread pool.
+    initThreadPool()
+
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
@@ -567,6 +576,9 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
+    // Shutdown thread pool.
+    shutdownThreadPool()
+
     // Reset the progress bar.
     progressBar.complete()
 
@@ -593,6 +605,9 @@ class Flix {
     // Initialize fork join pool.
     initForkJoin()
 
+    // Initialize thread pool.
+    initThreadPool()
+
     /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
     cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
@@ -613,6 +628,9 @@ class Flix {
 
     // Shutdown fork join pool.
     shutdownForkJoin()
+
+    // Shutdown thread pool.
+    shutdownThreadPool()
 
     // Reset the progress bar.
     progressBar.complete()
@@ -723,10 +741,24 @@ class Flix {
   }
 
   /**
+    * Initializes the thread pool.
+    */
+  private def initThreadPool(): Unit = {
+    threadPool = new ForkJoinPool(options.threads)
+  }
+
+  /**
     * Shuts down the fork join pools.
     */
   private def shutdownForkJoin(): Unit = {
     forkJoinPool.shutdown()
+  }
+
+  /**
+    * Shuts down the thread pools.
+    */
+  private def shutdownThreadPool(): Unit = {
+    threadPool.shutdown()
   }
 
 }
