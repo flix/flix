@@ -31,21 +31,26 @@ object ParOps {
     */
   @inline
   def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
+    // Compute the size of the input and construct a new empty array to hold the result.
     val size = xs.size
     val out: Array[B] = new Array(size)
 
-    val pool = flix.threadPool
+    // Construct a new count down latch to track the number of threads.
     val latch = new CountDownLatch(size)
-    for ((elm, idx) <- xs.zipWithIndex) {
-      pool.execute(() => {
-        out(idx) = f(elm)
+
+    // Iterate through the elements of `xs`. Use a local variable to track the index.
+    var idx = 0
+    for (elm <- xs) {
+      val i = idx // Ensure proper scope of i.
+      flix.threadPool.execute(() => {
+        out(i) = f(elm)
         latch.countDown()
       })
+      idx = idx + 1
     }
 
-    // Await all
+    // Await all threads to finish and return the result.
     latch.await()
-
     out
   }
 
