@@ -35,7 +35,7 @@ object Deriver {
   private implicit val DefaultLevel: Level = Level.Default
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
-    val derivedInstances = ParOps.parMapSeq(root.enums.values)(getDerivedInstances(_, root))
+    val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
 
     mapN(derivedInstances) {
       instances =>

@@ -98,7 +98,7 @@ object Resolver {
     flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
-        val unitsVal = ParOps.parMapSeq(root.units.values)(visitUnit(_, taenv, defaultUses, root))
+        val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, taenv, defaultUses, root))
         flatMapN(unitsVal) {
           case units =>
             val table = SymbolTable.traverse(units)(tableUnit)
