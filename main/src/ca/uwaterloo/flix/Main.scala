@@ -94,7 +94,8 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
-      xparser = cmdOpts.xparser
+      xparser = cmdOpts.xparser,
+      xperfn = cmdOpts.xperfn
     )
 
     // Don't use progress bar if benchmarking.
@@ -254,7 +255,7 @@ object Main {
           System.exit(0)
 
         case Command.CompilerPerf =>
-          CompilerPerf.run(Options.Default)
+          CompilerPerf.run(options)
 
       }
     }
@@ -295,6 +296,7 @@ object Main {
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
+                     xperfn: Option[Int] = None,
                      files: Seq[File] = Seq())
 
   /**
@@ -376,7 +378,11 @@ object Main {
             .required()
         )
 
-      cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).hidden()
+      cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
+        opt[Int]("n")
+          .action((v, c) => c.copy(xperfn = Some(v)))
+          .text("number of iterations")
+      ).hidden()
 
       note("")
 
