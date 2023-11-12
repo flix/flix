@@ -21,7 +21,6 @@ dependencies {
     implementation('org.ow2.asm:asm:9.6')
     implementation('org.parboiled:parboiled_2.13:2.4.1')
     implementation('org.scalactic:scalactic_2.13:3.2.15')
-    implementation("org.scala-lang.modules:scala-parallel-collections_2.13:0.2.0")
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('com.google.guava:guava:31.1-jre')
