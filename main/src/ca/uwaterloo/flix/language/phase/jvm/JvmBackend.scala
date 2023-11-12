@@ -45,9 +45,8 @@ object JvmBackend {
       // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
-      // Compute the set of flattened types in the program.
-      // All inner types will also be present in the set.
-      val types = JvmOps.typesOf(root)
+      // Retrieve all the types in the program.
+      val types = root.types
 
       // Filter the program types into different sets
       val erasedRefTypes = JvmOps.getErasedRefsOf(types)
