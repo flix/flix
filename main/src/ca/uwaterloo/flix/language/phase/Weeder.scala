@@ -1291,11 +1291,7 @@ object Weeder {
        * Rewrites empty tuples to Unit and eliminate single-element tuples.
        */
       traverse(elms)(visitArgument(_, senv)).map {
-        case Nil =>
-          val loc = mkSL(sp1, sp2)
-          WeededAst.Expr.Cst(Ast.Constant.Unit, loc)
-        case x :: Nil => x
-        case xs => WeededAst.Expr.Tuple(xs, mkSL(sp1, sp2))
+        case args => WeededAst.Expr.Tuple(args, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordLit(sp1, labels, sp2) =>
