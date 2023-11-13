@@ -622,6 +622,7 @@ object Desugar {
       Expr.VectorLength(e, loc)
 
     case WeededAst.Expr.SetLit(exps, loc) =>
+      // Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
       val es = visitExps(exps)
       val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
       es.foldLeft(empty) {

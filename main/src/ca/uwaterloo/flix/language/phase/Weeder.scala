@@ -1397,9 +1397,6 @@ object Weeder {
       }
 
     case ParsedAst.Expression.SetLit(sp1, sp2, exps) =>
-      /*
-       * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
-       */
       val loc = mkSL(sp1, sp2).asSynthetic
       val esVal = traverse(exps)(visitExp(_, senv))
       mapN(esVal) {
