@@ -563,6 +563,7 @@ object Desugar {
       desugarLetMatch(pat, mod, tpe, exp1, exp2, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
+      // Rewrites empty tuples to Unit and eliminate single-element tuples.
       val es = visitExps(exps)
       es match {
         case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)
@@ -624,6 +625,11 @@ object Desugar {
     case WeededAst.Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
+
+    case WeededAst.Expr.FCons(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.Cons", List(e1, e2), loc)
 
     case WeededAst.Expr.FAppend(exp1, exp2, loc) =>
       // Rewrites a `FAppend` expr into a call to `List.append`.
