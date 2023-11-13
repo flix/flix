@@ -1386,14 +1386,9 @@ object Weeder {
        * Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
        */
       val loc = mkSL(sp1, sp2).asSynthetic
-
-      traverse(exps)(e => visitExp(e, senv)).map {
-        case es =>
-          val nil: WeededAst.Expr = WeededAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
-          es.foldRight(nil) {
-            case (elm, acc) =>
-              mkApplyFqn("List.Cons", List(elm, acc), loc)
-          }
+      val esVal = traverse(exps)(visitExp(_, senv))
+      mapN(esVal) {
+        case es => WeededAst.Expr.ListLit(es, loc)
       }
 
     case ParsedAst.Expression.SetLit(sp1, sp2, exps) =>

@@ -621,6 +621,13 @@ object Desugar {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
+    case WeededAst.Expr.ListLit(exps, loc) =>
+      val es = visitExps(exps)
+      val nil: DesugaredAst.Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
+      es.foldRight(nil){
+        case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc)
+      }
+
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
