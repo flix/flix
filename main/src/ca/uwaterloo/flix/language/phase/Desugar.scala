@@ -625,6 +625,14 @@ object Desugar {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
+    case WeededAst.Expr.FAppend(exp1, exp2, loc) =>
+      // Rewrites a `FAppend` expr into a call to `List.append`.
+      // NB: We painstakingly construct the qualified name
+      // to ensure that source locations are available.
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.append", List(e1, e2), loc)
+
     case WeededAst.Expr.ListLit(exps, loc) =>
       // Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
       val es = visitExps(exps)
