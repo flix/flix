@@ -1360,16 +1360,11 @@ object Weeder {
       }
 
     case ParsedAst.Expression.FAppend(exp1, sp1, sp2, exp2) =>
-      /*
-       * Rewrites a `FAppend` expression into a call to `List/append`.
-       */
       val loc = mkSL(sp1, sp2).asSynthetic
-
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
-        case (e1, e2) =>
-          // NB: We painstakingly construct the qualified name
-          // to ensure that source locations are available.
-          mkApplyFqn("List.append", List(e1, e2), loc)
+      val e1Val = visitExp(exp1, senv)
+      val e2Val = visitExp(exp2, senv)
+      mapN(e1Val, e2Val) {
+        case (e1, e2) => WeededAst.Expr.FAppend(e1, e2, loc)
       }
 
     case ParsedAst.Expression.ListLit(sp1, sp2, exps) =>

@@ -631,6 +631,14 @@ object Desugar {
       val e2 = visitExp(exp2)
       mkApplyFqn("List.Cons", List(e1, e2), loc)
 
+    case WeededAst.Expr.FAppend(exp1, exp2, loc) =>
+      // Rewrites a `FAppend` expr into a call to `List.append`.
+      // NB: We painstakingly construct the qualified name
+      // to ensure that source locations are available.
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.append", List(e1, e2), loc)
+
     case WeededAst.Expr.SetLit(exps, loc) =>
       // Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
       val es = visitExps(exps)
