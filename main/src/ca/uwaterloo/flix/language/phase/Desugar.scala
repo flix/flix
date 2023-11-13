@@ -564,7 +564,11 @@ object Desugar {
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
-      Expr.Tuple(es, loc)
+      es match {
+        case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)
+        case x :: Nil => x
+        case xs => DesugaredAst.Expr.Tuple(xs, loc)
+      }
 
     case WeededAst.Expr.RecordEmpty(loc) =>
       Expr.RecordEmpty(loc)
@@ -627,6 +631,14 @@ object Desugar {
       val nil: DesugaredAst.Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
       es.foldRight(nil) {
         case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc)
+      }
+
+    case WeededAst.Expr.SetLit(exps, loc) =>
+      // Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
+      val es = visitExps(exps)
+      val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
+      es.foldLeft(empty) {
+        case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc)
       }
 
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
