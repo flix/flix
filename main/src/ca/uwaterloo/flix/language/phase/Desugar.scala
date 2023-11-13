@@ -563,6 +563,7 @@ object Desugar {
       desugarLetMatch(pat, mod, tpe, exp1, exp2, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
+      // ARewrites empty tuples to Unit and eliminate single-element tuples.
       val es = visitExps(exps)
       es match {
         case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)
