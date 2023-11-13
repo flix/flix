@@ -564,7 +564,11 @@ object Desugar {
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       val es = visitExps(exps)
-      Expr.Tuple(es, loc)
+      es match {
+        case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)
+        case x :: Nil => x
+        case xs => DesugaredAst.Expr.Tuple(xs, loc)
+      }
 
     case WeededAst.Expr.RecordEmpty(loc) =>
       Expr.RecordEmpty(loc)
