@@ -1296,8 +1296,6 @@ object Weeder {
           WeededAst.Expr.Cst(Ast.Constant.Unit, loc)
         case x :: Nil => x
         case xs => WeededAst.Expr.Tuple(xs, mkSL(sp1, sp2))
-      } recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.RecordLit(sp1, labels, sp2) =>
@@ -1699,7 +1697,7 @@ object Weeder {
 
       traverse(cs0)(visitConstraint(_, senv)).map {
         case cs => WeededAst.Expr.FixpointConstraintSet(cs, loc)
-      } recoverOne {
+      }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
