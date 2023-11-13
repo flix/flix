@@ -1382,9 +1382,6 @@ object Weeder {
       }
 
     case ParsedAst.Expression.ListLit(sp1, sp2, exps) =>
-      /*
-       * Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
-       */
       val loc = mkSL(sp1, sp2).asSynthetic
       val esVal = traverse(exps)(visitExp(_, senv))
       mapN(esVal) {

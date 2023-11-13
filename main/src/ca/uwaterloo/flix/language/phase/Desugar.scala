@@ -622,9 +622,10 @@ object Desugar {
       Expr.VectorLength(e, loc)
 
     case WeededAst.Expr.ListLit(exps, loc) =>
+      // Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
       val es = visitExps(exps)
       val nil: DesugaredAst.Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
-      es.foldRight(nil){
+      es.foldRight(nil) {
         case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc)
       }
 
