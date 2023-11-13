@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Level, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.immutable.SortedSet
@@ -131,7 +131,9 @@ object ClosureConv {
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
           val b = visitExp(body)
-          HandlerRule(opUse, fparams, b)
+          val cloType = MonoType.Arrow(fparams.map(_.tpe), b.tpe)
+          val clo = mkLambdaClosure(fparams, b, cloType, opUse.loc)
+          HandlerRule(opUse, fparams, clo)
       }
       Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
@@ -146,8 +148,9 @@ object ClosureConv {
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
+          val e = visitExp(exp)
           val cloType = MonoType.Arrow(fparams.map(_.tpe), retTpe)
-          val clo = mkLambdaClosure(fparams, exp, cloType, loc)
+          val clo = mkLambdaClosure(fparams, e, cloType, loc)
           JvmMethod(ident, fparams, clo, retTpe, purity, loc)
       }
       Expr.NewObject(name, clazz, tpe, purity, methods, loc)
