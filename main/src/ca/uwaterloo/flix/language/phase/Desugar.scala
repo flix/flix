@@ -639,6 +639,14 @@ object Desugar {
       val e2 = visitExp(exp2)
       mkApplyFqn("List.append", List(e1, e2), loc)
 
+    case WeededAst.Expr.ListLit(exps, loc) =>
+      // Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
+      val es = visitExps(exps)
+      val nil: DesugaredAst.Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
+      es.foldRight(nil) {
+        case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc)
+      }
+
     case WeededAst.Expr.SetLit(exps, loc) =>
       // Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
       val es = visitExps(exps)
