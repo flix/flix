@@ -621,6 +621,11 @@ object Desugar {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
+    case WeededAst.Expr.FCons(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.Cons", List(e1, e2), loc)
+
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

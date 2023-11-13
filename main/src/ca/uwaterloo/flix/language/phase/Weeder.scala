@@ -1359,13 +1359,13 @@ object Weeder {
       }
 
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
+      val loc = mkSL(sp1, sp2)
       /*
        * Rewrites a `FCons` expression into a tag expression.
        */
       mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (e1, e2) =>
-          val loc = mkSL(sp1, sp2)
-          mkApplyFqn("List.Cons", List(e1, e2), loc)
+          WeededAst.Expr.FCons(e1, e2, loc)
       }
 
     case ParsedAst.Expression.FAppend(exp1, sp1, sp2, exp2) =>
