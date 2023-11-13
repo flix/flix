@@ -621,6 +621,13 @@ object Desugar {
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
 
+    case WeededAst.Expr.SetLit(exps, loc) =>
+      val es = visitExps(exps)
+      val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
+      es.foldLeft(empty) {
+        case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc)
+      }
+
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
