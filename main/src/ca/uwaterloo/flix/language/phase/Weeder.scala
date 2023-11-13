@@ -1391,17 +1391,10 @@ object Weeder {
       }
 
     case ParsedAst.Expression.SetLit(sp1, sp2, exps) =>
-      /*
-       * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
-       */
       val loc = mkSL(sp1, sp2).asSynthetic
-
-      traverse(exps)(e => visitExp(e, senv)).map {
-        case es =>
-          val empty = mkApplyFqn("Set.empty", List(WeededAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
-          es.foldLeft(empty) {
-            case (acc, elm) => mkApplyFqn("Set.insert", List(elm, acc), loc)
-          }
+      val esVal = traverse(exps)(visitExp(_, senv))
+      mapN(esVal) {
+        case es => WeededAst.Expr.SetLit(es, loc)
       }
 
     case ParsedAst.Expression.MapLit(sp1, sp2, exps) =>
