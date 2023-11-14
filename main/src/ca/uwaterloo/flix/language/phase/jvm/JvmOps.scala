@@ -80,27 +80,25 @@ object JvmOps {
 
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
+    *
+    * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
-  def getErasedJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = {
-    /**
-      * Returns the erased JvmType of the given JvmType `tpe`.
-      *
-      * Every primitive type is mapped to itself and every other type is mapped to Object.
-      */
-    def erase(tpe: JvmType): JvmType = tpe match {
-      case JvmType.Void => JvmType.Void
-      case JvmType.PrimBool => JvmType.PrimBool
-      case JvmType.PrimChar => JvmType.PrimChar
-      case JvmType.PrimByte => JvmType.PrimByte
-      case JvmType.PrimShort => JvmType.PrimShort
-      case JvmType.PrimInt => JvmType.PrimInt
-      case JvmType.PrimLong => JvmType.PrimLong
-      case JvmType.PrimFloat => JvmType.PrimFloat
-      case JvmType.PrimDouble => JvmType.PrimDouble
-      case JvmType.Reference(_) => JvmType.Object
+  def getErasedJvmType(tpe: MonoType): JvmType = {
+    import MonoType._
+    tpe match {
+      case Bool => JvmType.PrimBool
+      case Char => JvmType.PrimChar
+      case Float32 => JvmType.PrimFloat
+      case Float64 => JvmType.PrimDouble
+      case Int8 => JvmType.PrimByte
+      case Int16 => JvmType.PrimShort
+      case Int32 => JvmType.PrimInt
+      case Int64 => JvmType.PrimLong
+      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+           Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
+           RecordExtend(_, _, _) | SchemaEmpty | SchemaExtend(_, _, _) |
+           Native(_) => JvmType.Object
     }
-
-    erase(getJvmType(tpe))
   }
 
   /**
