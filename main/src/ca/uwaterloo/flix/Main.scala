@@ -253,6 +253,9 @@ object Main {
           }
           System.exit(0)
 
+        case Command.Release(semVerIncr) =>
+          println(semVerIncr)
+
         case Command.CompilerPerf =>
           CompilerPerf.run(Options.Default)
 
@@ -328,7 +331,25 @@ object Main {
 
     case class Lsp(port: Int) extends Command
 
+    case class Release(semVerIncr: SemVerIncr) extends Command
+
     case object CompilerPerf extends Command
+  }
+
+  /**
+    * A representation of semantic version increment types.
+    */
+  sealed trait SemVerIncr
+
+  object SemVerIncr {
+    /** 1.1.1 -> 1.1.2 */
+    case object Patch extends SemVerIncr
+
+    /** 1.1.1 -> 1.2.0 */
+    case object Minor extends SemVerIncr
+
+    /** 1.1.1 -> 2.0.0 */
+    case object Major extends SemVerIncr
   }
 
   /**
@@ -373,6 +394,24 @@ object Main {
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(
           arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
+            .required()
+        )
+
+      cmd("release").text("  release a new version to GitHub.")
+        .children(
+          cmd("patch")
+            .text("  release a new patch to GitHub, incrementing the version number: 1.1.1 -> 1.1.2")
+            .action((_, c) => c.copy(command = Command.Release(SemVerIncr.Patch)))
+            .required(),
+
+          cmd("minor")
+            .text("  release a new minor version to GitHub, incrementing the version: 1.1.1 -> 1.2.0")
+            .action((_, c) => c.copy(command = Command.Release(SemVerIncr.Minor)))
+            .required(),
+
+          cmd("major")
+            .text("  release a new major version to GitHub, incrementing the version: 1.1.1 -> 2.0.0")
+            .action((_, c) => c.copy(command = Command.Release(SemVerIncr.Major)))
             .required()
         )
 

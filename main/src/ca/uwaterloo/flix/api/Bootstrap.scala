@@ -321,7 +321,7 @@ object Bootstrap {
     * Creates a new Bootstrap object and initializes it.
     * If a `flix.toml` file exists, parses that to a Manifest and
     * downloads all required files. Otherwise checks the /lib folder
-    * to see what dependencies are already downloadet. Also finds
+    * to see what dependencies are already downloaded. Also finds
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
