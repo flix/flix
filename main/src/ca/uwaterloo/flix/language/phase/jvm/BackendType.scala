@@ -28,12 +28,13 @@ import scala.annotation.tailrec
 sealed trait BackendType extends VoidableType {
 
   def toDescriptor: String = {
+    /** Returns the nesting degree of the array type together with the element type. */
     @tailrec
-    def visit(t: BackendType, acc: String): String = t match {
+    def findArrayNesting(t: BackendType, arrayNesting: Int): (Int, BackendType) = t match {
       case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
            BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 |
-           BackendType.Reference(_) => acc + t.toDescriptor
-      case BackendType.Array(tt) => visit(tt, acc + "[")
+           BackendType.Reference(_) => (arrayNesting, t)
+      case BackendType.Array(tt) => findArrayNesting(tt, arrayNesting + 1)
     }
 
     this match {
@@ -45,7 +46,9 @@ sealed trait BackendType extends VoidableType {
       case BackendType.Int64 => "J"
       case BackendType.Float32 => "F"
       case BackendType.Float64 => "D"
-      case BackendType.Array(tpe) => visit(tpe, "[")
+      case BackendType.Array(tpe) =>
+        val (nesting, base) = findArrayNesting(tpe, 1)
+        s"${"[" * nesting}${base.toDescriptor}"
       case BackendType.Reference(ref) => ref.toDescriptor
     }
   }
