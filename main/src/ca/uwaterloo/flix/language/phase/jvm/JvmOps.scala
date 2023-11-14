@@ -107,26 +107,36 @@ object JvmOps {
     * For example:
     *
     * Int -> Int          =>  Fn2$Int$Int
-    * (Int, Int) -> Int   =>  Fn3$Int$Int$Int
+    * (Int, String) -> Int   =>  Fn3$Int$Obj$Int
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      // Compute the arity of the function abstract class.
-      // We subtract one since the last argument is the return type.
-      val arity = targs.length
+      getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+    case _ =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
+  }
 
-      // Compute the stringified erased type of each type argument.
-      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
-
-      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
-      val name = "Fn" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
-
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
+  /**
+    * Returns the function abstract class type `FnX$Y$Z` for the given types.
+    *
+    * For example:
+    *
+    * (Int)(Int)          =>  Fn2$Int$Int
+    * (Int, String)(Int)   =>  Fn3$Int$Obj$Int
+    */
+  def getFunctionInterfaceType(args: List[JvmType], res: JvmType): JvmType.Reference = {
+    getFunctionInterfaceType(args.map(_.toErased).map(stringify), stringify(res.toErased))
+  }
+  /**
+    * The JVM name is of the form `FnArity$argTypes0$argTypes1$..$resType`
+    */
+  private def getFunctionInterfaceType(argTypes: List[String], resType: String): JvmType.Reference = {
+    val arity = argTypes.length
+    val typeStrings = argTypes :+ resType
+    val name = "Fn" + arity + Flix.Delimiter + typeStrings.mkString(Flix.Delimiter)
+    JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
@@ -139,7 +149,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getClosureAbstractClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getClosureAbstractClassType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       // Compute the arity of the function abstract class.
       // We subtract one since the last argument is the return type.
@@ -372,6 +382,27 @@ object JvmOps {
   }
 
   /**
+    * Returns the effect definition class for the given symbol.
+    *
+    * For example:
+    *
+    * Print       =>  Eff$Print
+    * List.Crash  =>  List.Eff$Crash
+    */
+  def getEffectDefinitionClassType(sym: Symbol.EffectSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    val pkg = sym.namespace
+    val name = "Eff" + Flix.Delimiter + mangle(sym.name)
+    JvmType.Reference(JvmName(pkg, name))
+  }
+
+  /**
+    * Returns the op name of the given symbol.
+    */
+  def getEffectOpName(op: Symbol.OpSym): String = {
+    mangle(op.name)
+  }
+
+  /**
     * Returns the namespace type for the given namespace `ns`.
     *
     * For example:
@@ -441,7 +472,7 @@ object JvmOps {
   /**
     * Returns the namespace info of the given definition symbol `sym`.
     */
-  def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
+  def getNamespace(sym: Symbol.DefnSym): NamespaceInfo = {
     NamespaceInfo(sym.namespace, Map.empty) // TODO: Magnus: Empty map.
   }
 
@@ -466,7 +497,7 @@ object JvmOps {
   /**
     * Returns the set of erased ref types in `types` without searching recursively.
     */
-  def getErasedRefsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] =
+  def getErasedRefsOf(types: Iterable[MonoType]): Set[BackendObjType.Ref] =
     types.foldLeft(Set.empty[BackendObjType.Ref]) {
       case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.toErasedBackendType(tpe))
       case (acc, _) => acc
@@ -475,7 +506,7 @@ object JvmOps {
   /**
     * Returns the set of erased record extend types in `types` without searching recursively.
     */
-  def getErasedRecordExtendsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] =
+  def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(field, value, _)) =>
         // TODO: should use mono -> backend transformation on `rest`
@@ -486,7 +517,7 @@ object JvmOps {
   /**
     * Returns the set of erased function types in `types` without searching recursively.
     */
-  def getErasedArrowsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Arrow] =
+  def getErasedArrowsOf(types: Iterable[MonoType]): Set[BackendObjType.Arrow] =
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, MonoType.Arrow(args, result)) =>
         acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
