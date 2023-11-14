@@ -31,13 +31,39 @@ object UnstructuredTree {
 
     case object Parameter extends TreeKind
 
+    case object Statement extends TreeKind
+
+    case object Arguments extends TreeKind
+
+    case object Argument extends TreeKind
+
+    /////// EXPRESSIONS //////
     case object ExprLiteral extends TreeKind
 
     case object ExprName extends TreeKind
 
     case object ExprParen extends TreeKind
 
-    case object ExprType extends TreeKind
+    case object ExprBlock extends TreeKind
+
+    case object ExprBinary extends TreeKind
+
+    case object ExprUnary extends TreeKind
+
+    case object ExprCall extends TreeKind
+
+    ////// TYPES //////
+    case object ExprType extends  TreeKind
+
+    case object TypeVariable extends TreeKind
+
+    case object TypeName extends TreeKind
+
+    case object TypeQualified extends TreeKind
+
+    case object TypeTuple extends TreeKind
+
+    case object TypeFunction extends TreeKind
 
     /**
      * A tree representing a parse-error.
