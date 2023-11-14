@@ -1594,10 +1594,16 @@ object Weeder {
       val expVal = visitExp(exp0, senv)
       val rulesVal = traverse(rules0.getOrElse(Seq.empty)) {
         case ParsedAst.HandlerRule(op, fparams0, body0) =>
-          val fparamsVal = visitFormalParams(fparams0, Presence.Forbidden)
+          // In this case, we want an extra resumption argument
+          // so both an empty list and a singleton list should be padded with unit
+          // [] --> [_unit]
+          // [x] --> [_unit, x]
+          // [x, ...] --> [x, ...]
+          val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Nil.toSuccess
+          val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
           val bodyVal = visitExp(body0, SyntacticEnv.Handler)
-          mapN(fparamsVal, bodyVal) {
-            case (fparams, body) => WeededAst.HandlerRule(op, fparams, body)
+          mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
+            case (fparamsPrefix, fparamsSuffix, body) => WeededAst.HandlerRule(op, fparamsPrefix ++ fparamsSuffix, body)
           }
       }
       val loc = mkSL(sp1, sp2)

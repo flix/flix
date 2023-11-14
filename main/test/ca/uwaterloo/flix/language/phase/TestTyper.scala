@@ -654,7 +654,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |def foo(): Unit = {
         |    try () with E {
-        |        def op(x, y) = ()
+        |        def op(x, y, cont) = ()
         |    }
         |}
         |""".stripMargin
