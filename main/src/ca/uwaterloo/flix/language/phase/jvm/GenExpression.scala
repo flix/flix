@@ -1468,10 +1468,9 @@ object GenExpression {
       mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
 
-    case Expr.Resume(exp, tpe, loc) =>
-      // TODO (temp throw null)
-      mv.visitInsn(Opcodes.ACONST_NULL)
-      mv.visitInsn(Opcodes.ATHROW)
+    case Expr.Resume(_, _, loc) =>
+      // TODO
+      throw InternalCompilerException(s"Explicit 'resume' not supported. Use the parameter bound resumption.", loc)
 
 
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
