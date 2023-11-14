@@ -48,7 +48,7 @@ sealed trait BackendType extends VoidableType {
       case BackendType.Float64 => "D"
       case BackendType.Array(tpe) =>
         val (nesting, base) = findArrayNesting(tpe, 1)
-        s"${nesting * "["}${base.toDescriptor}"
+        s"${"[" * nesting}${base.toDescriptor}"
       case BackendType.Reference(ref) => ref.toDescriptor
     }
   }
