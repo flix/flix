@@ -147,17 +147,17 @@ object Lowering {
   def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
     implicit val r: TypedAst.Root = root
 
-    val defs = ParOps.mapValues(root.defs)(visitDef)
-    val sigs = ParOps.mapValues(root.sigs)(visitSig)
-    val instances = ParOps.mapValues(root.instances)(insts => insts.map(visitInstance))
-    val enums = ParOps.mapValues(root.enums)(visitEnum)
-    val restrictableEnums = ParOps.mapValues(root.restrictableEnums)(visitRestrictableEnum)
-    val effects = ParOps.mapValues(root.effects)(visitEffect)
-    val aliases = ParOps.mapValues(root.typeAliases)(visitTypeAlias)
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val sigs = ParOps.parMapValues(root.sigs)(visitSig)
+    val instances = ParOps.parMapValues(root.instances)(insts => insts.map(visitInstance))
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
 
     // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.mapValues(root.classes)(c => visitClass(c, sigs))
+    val classes = ParOps.parMapValues(root.classes)(c => visitClass(c, sigs))
 
     val newEnums = enums ++ restrictableEnums.map {
       case (_, v) => v.sym -> v
@@ -392,7 +392,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Let(sym, mod, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case TypedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
@@ -724,10 +724,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.Force, List(e), t, eff, loc)
 
-    case TypedAst.Expr.FixpointConstraintSet(cs, _, _, loc) =>
+    case TypedAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       mkDatalog(cs, loc)
 
-    case TypedAst.Expr.FixpointLambda(pparams, exp, _, _, eff, loc) =>
+    case TypedAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = LoweredAst.Expr.Def(defn.sym, Types.RenameType, loc)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.mkList(Types.PredSym, loc), loc)
@@ -735,14 +735,14 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.Apply(defExp, argExps, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
+    case TypedAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
       val defExp = LoweredAst.Expr.Def(defn.sym, Types.MergeType, loc)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
       LoweredAst.Expr.Apply(defExp, argExps, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointSolve(exp, _, _, eff, loc) =>
+    case TypedAst.Expr.FixpointSolve(exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Solve)
       val defExp = LoweredAst.Expr.Def(defn.sym, Types.SolveType, loc)
       val argExps = visitExp(exp) :: Nil

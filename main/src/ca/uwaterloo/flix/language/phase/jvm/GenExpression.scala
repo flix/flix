@@ -1234,7 +1234,7 @@ object GenExpression {
               s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
-          BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
+          BackendObjType.Result.unwindThunkToType(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1274,7 +1274,7 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
+        BackendObjType.Result.unwindThunkToType(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
@@ -1459,8 +1459,8 @@ object GenExpression {
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      // TODO (temp unhandled code)
+      compileExpr(exp)
 
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
@@ -1468,9 +1468,9 @@ object GenExpression {
       mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
 
-    case Expr.Resume(exp, tpe, loc) =>
-      // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+    case Expr.Resume(_, _, loc) =>
+      // TODO
+      throw InternalCompilerException(s"Explicit 'resume' not supported. Use the parameter bound resumption.", loc)
 
 
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>

@@ -20,10 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 /**
@@ -31,12 +30,12 @@ import ca.uwaterloo.flix.util.Validation._
   */
 object Inliner {
 
-  sealed trait Expression
+  sealed trait Expr
 
-  object Expression {
-    case class LiftedExp(exp: LiftedAst.Expr) extends Expression
+  object Expr {
+    case class LiftedExp(exp: LiftedAst.Expr) extends Expr
 
-    case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expression
+    case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expr
   }
 
   /**
@@ -48,29 +47,20 @@ object Inliner {
     * Performs inlining on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.subphase("Inliner") {
-    // Visit every definition in the program.
-    val defs = root.defs.map {
-      case (sym, defn) => sym -> visitDef(defn)(flix, root)
-    }
-
-    // Visit every enum in the program.
-    val enums = root.enums.map {
-      case (sym, enum) => sym -> visitEnum(enum)
-    }
+    val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     // TODO RESTR-VARS add restrictable enums
 
-    // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
-
-    result.toSuccess
+    LiftedAst.Root(defs, enums, effects, root.entryPoint, root.sources).toSuccess
   }
 
   /**
     * Performs expression inlining on the given definition `def0`.
     * Converts definition from OccurrenceAst to LiftedAst.
     */
-  private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: Root): LiftedAst.Def = {
+  private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: OccurrenceAst.Root): LiftedAst.Def = {
     val convertedExp = visitExp(def0.exp, Map.empty)(root, flix)
     val cparams = def0.cparams.map {
       case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
@@ -78,7 +68,7 @@ object Inliner {
     val fparams = def0.fparams.map {
       case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
-    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe,  convertedExp.purity, def0.loc)
+    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, convertedExp.purity, def0.loc)
   }
 
   /**
@@ -92,11 +82,23 @@ object Inliner {
     LiftedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
   }
 
+  private def visitEffect(effect: OccurrenceAst.Effect): LiftedAst.Effect = effect match {
+    case OccurrenceAst.Effect(ann, mod, sym, ops0, loc) =>
+      val ops = ops0.map(visitEffectOp)
+      LiftedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitEffectOp(op: OccurrenceAst.Op): LiftedAst.Op = op match {
+    case OccurrenceAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
+  }
+
   /**
     * Performs inlining operations on the expression `exp0` of Monotype OccurrenceAst.Expression.
     * Returns an expression of Monotype Expression
     */
-  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix): LiftedAst.Expr = exp0 match {
+  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = exp0 match {
     case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) =>
@@ -109,9 +111,9 @@ object Inliner {
         case Some(e1) =>
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case Expression.LiftedExp(exp) => exp
+            case Expr.LiftedExp(exp) => exp
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-            case Expression.OccurrenceExp(exp) => visitExp(exp, subst0)
+            case Expr.OccurrenceExp(exp) => visitExp(exp, subst0)
           }
       }
 
@@ -201,7 +203,7 @@ object Inliner {
         /// There is a small decrease in code size and runtime.
         val wantToPreInline = isUsedOnceAndPure(occur, exp1.purity)
         if (wantToPreInline) {
-          val subst1 = subst0 + (sym -> Expression.OccurrenceExp(exp1))
+          val subst1 = subst0 + (sym -> Expr.OccurrenceExp(exp1))
           visitExp(exp2, subst1)
         } else {
           val e1 = visitExp(exp1, subst0)
@@ -212,7 +214,7 @@ object Inliner {
           if (wantToPostInline) {
             /// If `e1` is to be inlined:
             /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
-            val subst1 = subst0 + (sym -> Expression.LiftedExp(e1))
+            val subst1 = subst0 + (sym -> Expr.LiftedExp(e1))
             visitExp(exp2, subst1)
           } else {
             /// Case 4:
@@ -241,6 +243,24 @@ object Inliner {
           LiftedAst.CatchRule(sym, clazz, e)
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      val e = visitExp(exp, subst0)
+      val rs = rules.map {
+        case OccurrenceAst.HandlerRule(op, fparams, exp) =>
+          val fps = fparams.map(visitFormalParam)
+          val e = visitExp(exp, subst0)
+          LiftedAst.HandlerRule(op, fps, e)
+      }
+      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Do(op, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Resume(exp, tpe, loc) =>
+      val e = visitExp(exp, subst0)
+      LiftedAst.Expr.Resume(e, tpe, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
@@ -299,7 +319,7 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     * Substitute variables in `exp0` via the filled substitution map `env0`
     */
-  private def bindFormals(exp0: OccurrenceAst.Expression, symbols: List[Symbol.VarSym], args: List[LiftedAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): LiftedAst.Expr = {
+  private def bindFormals(exp0: OccurrenceAst.Expression, symbols: List[Symbol.VarSym], args: List[LiftedAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = {
     (symbols, args) match {
       case (sym :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
@@ -365,7 +385,7 @@ object Inliner {
   /**
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
-  private def substituteExp(exp0: OccurrenceAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): LiftedAst.Expr = exp0 match {
+  private def substituteExp(exp0: OccurrenceAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = exp0 match {
     case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
@@ -441,6 +461,24 @@ object Inliner {
           LiftedAst.CatchRule(freshVar, clazz, e)
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      val e = substituteExp(exp, env0)
+      val rs = rules.map {
+        case OccurrenceAst.HandlerRule(op, fparams, exp) =>
+          val fps = fparams.map(visitFormalParam)
+          val e = substituteExp(exp, env0)
+          LiftedAst.HandlerRule(op, fps, e)
+      }
+      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Do(op, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Resume(exp, tpe, loc) =>
+      val e = substituteExp(exp, env0)
+      LiftedAst.Expr.Resume(e, tpe, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
@@ -529,7 +567,7 @@ object Inliner {
     * Helper function for dealing with [[AtomicOp]].
     * Returns `true` if `sym` is an enum with one case and `exps` is pure.
     */
-  private def isSingleCaseEnum(sym: Symbol.CaseSym, exps: List[LiftedAst.Expr])(implicit root: Root, flix: Flix): Boolean =
+  private def isSingleCaseEnum(sym: Symbol.CaseSym, exps: List[LiftedAst.Expr])(implicit root: OccurrenceAst.Root, flix: Flix): Boolean =
     exps match {
       case e :: Nil =>
         val enum0 = root.enums(sym.enumSym)

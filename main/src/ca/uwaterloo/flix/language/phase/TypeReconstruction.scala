@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, Stratification}
+import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, LabelledPrecedenceGraph, Stratification}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -45,13 +45,14 @@ object TypeReconstruction {
     val effs = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
     val sigs = classes.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-
     val modules = collectModules(root)
 
     val classEnv = mkClassEnv(root.classes, root.instances)
-    val eqEnv = mkEqualityEnv(root.classes, root.instances)
 
-    TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names).toSuccess
+    val eqEnv = mkEqualityEnv(root.classes, root.instances)
+    val precedenceGraph = LabelledPrecedenceGraph.empty
+
+    TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names, precedenceGraph).toSuccess
   }
 
   /**
@@ -151,7 +152,7 @@ object TypeReconstruction {
   private def visitDefs(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
     flix.subphase("Defs") {
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-      ParOps.mapValues(staleDefs) {
+      ParOps.parMapValues(staleDefs) {
         case defn => visitDef(defn, root, substs(defn.sym))
       } ++ freshDefs
     }
@@ -163,7 +164,7 @@ object TypeReconstruction {
   private def visitClasses(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.ClassSym, TypedAst.Class] = {
     flix.subphase("Classes") {
       val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      ParOps.mapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
+      ParOps.parMapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
     }
   }
 
@@ -172,7 +173,7 @@ object TypeReconstruction {
     */
   private def visitInstances(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, List[TypedAst.Instance]] = {
     flix.subphase("Instances") {
-      ParOps.mapValues(root.instances) {
+      ParOps.parMapValues(root.instances) {
         case insts => insts.map(visitInstance(_, root, defSubsts))
       }
     }
@@ -449,12 +450,12 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
+    case KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = e2.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+      TypedAst.Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.Region(tpe, loc) =>
       TypedAst.Expr.Region(tpe, loc)
@@ -819,27 +820,27 @@ object TypeReconstruction {
 
     case KindedAst.Expr.FixpointConstraintSet(cs0, tvar, loc) =>
       val cs = cs0.map(visitConstraint)
-      TypedAst.Expr.FixpointConstraintSet(cs, Stratification.empty, subst(tvar), loc)
+      TypedAst.Expr.FixpointConstraintSet(cs, subst(tvar), loc)
 
     case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
       val ps = pparams.map(visitPredicateParam)
       val e = visitExp(exp)
       val tpe = subst(tvar)
       val eff = e.eff
-      TypedAst.Expr.FixpointLambda(ps, e, Stratification.empty, tpe, eff, loc)
+      TypedAst.Expr.FixpointLambda(ps, e, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = e1.tpe
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-      TypedAst.Expr.FixpointMerge(e1, e2, Stratification.empty, tpe, eff, loc)
+      TypedAst.Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointSolve(exp, loc) =>
       val e = visitExp(exp)
       val tpe = e.tpe
       val eff = e.eff
-      TypedAst.Expr.FixpointSolve(e, Stratification.empty, tpe, eff, loc)
+      TypedAst.Expr.FixpointSolve(e, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -854,15 +855,14 @@ object TypeReconstruction {
     case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val stf = Stratification.empty
       val tpe = subst(tvar)
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
 
       // Note: This transformation should happen in the Weeder but it is here because
       // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
       // See Weeder for more details.
-      val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, stf, e1.tpe, eff, loc)
-      val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, stf, e1.tpe, eff, loc)
+      val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
+      val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, e1.tpe, eff, loc)
       TypedAst.Expr.FixpointProject(pred, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, pvar) =>

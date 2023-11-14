@@ -31,17 +31,17 @@ import ca.uwaterloo.flix.util.ParOps
   * (c) Appears in a function which itself is reachable.
   *
   */
-object LateTreeShaker {
+object TreeShaker2 {
 
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("LateTreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker2") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
     // Compute the symbols that are transitively reachable.
-    val allReachable = ParOps.parReachable(initReach, visitSym(_, root))
+    val allReachable = ParOps.parReach(initReach, visitSym(_, root))
 
     // Filter the reachable definitions.
     val newDefs = root.defs.filter {

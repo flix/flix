@@ -4,9 +4,9 @@ mod Test.Assoc.Eff.Covariance {
     pub enum MutList[_r: Region, _t: Type]  // A mutable data type with a region.
 
     ///
-    /// A type class for container types that can have their elements mapped.
+    /// A trait for container types that can have their elements mapped.
     ///
-    class Functor[m: Type -> Type] {
+    trait Functor[m: Type -> Type] {
         // An associated effect which represents the effect of accessing the data structure.
         type Eff: Eff
 

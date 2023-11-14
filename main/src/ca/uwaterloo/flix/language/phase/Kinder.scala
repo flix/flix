@@ -72,17 +72,17 @@ object Kinder {
     flatMapN(visitTypeAliases(root.taOrder, root)) {
       taenv =>
 
-        val enumsVal = ParOps.parMapValuesSeq(root.enums)(visitEnum(_, taenv, root))
+        val enumsVal = ParOps.parTraverseValues(root.enums)(visitEnum(_, taenv, root))
 
-        val restrictableEnumsVal = ParOps.parMapValuesSeq(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
+        val restrictableEnumsVal = ParOps.parTraverseValues(root.restrictableEnums)(visitRestrictableEnum(_, taenv, root))
 
         val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
-        val instancesVal = ParOps.parMapValuesSeq(root.instances)(traverse(_)(i => visitInstance(i, taenv, root)))
+        val instancesVal = ParOps.parTraverseValues(root.instances)(traverse(_)(i => visitInstance(i, taenv, root)))
 
-        val effectsVal = ParOps.parMapValuesSeq(root.effects)(visitEffect(_, taenv, root))
+        val effectsVal = ParOps.parTraverseValues(root.effects)(visitEffect(_, taenv, root))
 
         mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, restrictableEnums, classes, defs, instances, effects) =>
@@ -208,7 +208,7 @@ object Kinder {
   private def visitClasses(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, KindedAst.Class], KindError] = {
     val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
 
-    val result = ParOps.parMapValuesSeq(staleClasses)(visitClass(_, taenv, root))
+    val result = ParOps.parTraverseValues(staleClasses)(visitClass(_, taenv, root))
     result.map(freshClasses ++ _)
   }
 
@@ -275,7 +275,7 @@ object Kinder {
   private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-    val result = ParOps.parMapValuesSeq(staleDefs)(visitDef(_, Nil, KindEnv.empty, taenv, root))
+    val result = ParOps.parTraverseValues(staleDefs)(visitDef(_, Nil, KindEnv.empty, taenv, root))
     result.map(freshDefs ++ _)
   }
 
@@ -522,11 +522,11 @@ object Kinder {
         case (exp1, exp2) => KindedAst.Expr.Let(sym, mod, exp1, exp2, loc)
       }
 
-    case ResolvedAst.Expr.LetRec(sym, mod, exp10, exp20, loc) =>
+    case ResolvedAst.Expr.LetRec(sym, ann, mod, exp10, exp20, loc) =>
       val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)(level.incr, flix)
       val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
       mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.LetRec(sym, mod, exp1, exp2, loc)
+        case (exp1, exp2) => KindedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc)
       }
 
     case ResolvedAst.Expr.Region(tpe, loc) =>

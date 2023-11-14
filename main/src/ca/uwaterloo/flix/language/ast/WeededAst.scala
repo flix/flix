@@ -93,7 +93,11 @@ object WeededAst {
 
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class Infix(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
+
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
+
+    case class LambdaMatch(pat: Pattern, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp, exp: Expr, loc: SourceLocation) extends Expr
 
@@ -107,7 +111,7 @@ object WeededAst {
 
     case class Let(ident: Name.Ident, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetRec(ident: Name.Ident, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LetRec(ident: Name.Ident, ann: Ast.Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
@@ -120,6 +124,16 @@ object WeededAst {
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
+
+    case class ApplicativeFor(frags: List[ForFragment.Generator], exp: Expr, loc: SourceLocation) extends Expr
+
+    case class ForEach(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
+
+    case class MonadicFor(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
+
+    case class ForEachYield(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
+
+    case class LetMatch(pat: Pattern, mod: Ast.Modifiers, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -146,6 +160,14 @@ object WeededAst {
     case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
+
+    case class FCons(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+
+    case class FAppend(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+
+    case class ListLit(exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class SetLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Ref(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
@@ -429,5 +451,16 @@ object WeededAst {
   case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
   case class Derivations(classes: List[Name.QName], loc: SourceLocation)
+
+
+  sealed trait ForFragment
+
+  object ForFragment {
+
+    case class Generator(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
+
+    case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
+
+  }
 
 }

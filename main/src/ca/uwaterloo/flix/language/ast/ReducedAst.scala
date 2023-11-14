@@ -23,10 +23,12 @@ import java.lang.reflect.Method
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, List.empty, None, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
+                  effects: Map[Symbol.EffectSym, Effect],
+                  types: Set[MonoType],
                   anonClasses: List[AnonClass],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
@@ -37,6 +39,10 @@ object ReducedAst {
   }
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: MonoType, loc: SourceLocation)
+
+  case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
+
+  case class Op(sym: Symbol.OpSym, ann: Ast.Annotations, mod: Ast.Modifiers, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: MonoType

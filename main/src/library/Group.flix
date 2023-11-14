@@ -15,11 +15,11 @@
  */
 
 ///
-/// A type class for types that form a group.
+/// A trait for types that form a group.
 ///
 /// The default instances for numbers define the additive inverse in the real numbers.
 ///
-pub class Group[a] with Monoid[a] {
+pub trait Group[a] with Monoid[a] {
 
     ///
     /// Returns the neutral element.

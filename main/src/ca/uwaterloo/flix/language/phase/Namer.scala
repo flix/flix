@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
@@ -40,7 +40,7 @@ object Namer {
       case (macc, root) => macc + (root.loc.source -> root.loc)
     }
 
-    val unitsVal = traverseValues(program.units)(visitUnit)
+    val unitsVal = ParOps.parTraverseValues(program.units)(visitUnit)
 
     flatMapN(unitsVal) {
       case units =>
@@ -673,10 +673,10 @@ object Namer {
         case (e1, e2) => NamedAst.Expr.Let(sym, mod, e1, e2, loc)
       }
 
-    case DesugaredAst.Expr.LetRec(ident, mod, exp1, exp2, loc) =>
+    case DesugaredAst.Expr.LetRec(ident, ann, mod, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, ns0)(level.incr, flix), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.LetRec(sym, mod, e1, e2, loc)
+        case (e1, e2) => NamedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
       }
 
     case DesugaredAst.Expr.Region(tpe, loc) =>

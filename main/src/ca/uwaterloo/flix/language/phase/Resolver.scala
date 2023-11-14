@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
@@ -98,7 +98,7 @@ object Resolver {
     flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
-        val unitsVal = traverse(root.units.values)(visitUnit(_, taenv, defaultUses, root))
+        val unitsVal = ParOps.parTraverse(root.units.values)(visitUnit(_, taenv, defaultUses, root))
         flatMapN(unitsVal) {
           case units =>
             val table = SymbolTable.traverse(units)(tableUnit)
@@ -1100,12 +1100,12 @@ object Resolver {
             case (e1, e2) => ResolvedAst.Expr.Let(sym, mod, e1, e2, loc)
           }
 
-        case NamedAst.Expr.LetRec(sym, mod, exp1, exp2, loc) =>
+        case NamedAst.Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
           val env = env0 ++ mkVarEnv(sym)
           val e1Val = visitExp(exp1, env)(level.incr)
           val e2Val = visitExp(exp2, env)
           mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expr.LetRec(sym, mod, e1, e2, loc)
+            case (e1, e2) => ResolvedAst.Expr.LetRec(sym, ann, mod, e1, e2, loc)
           }
 
         case NamedAst.Expr.Region(tpe, loc) =>

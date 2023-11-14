@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types that form a commutative monoid.
+/// A trait for types that form a commutative monoid.
 ///
-pub lawful class CommutativeMonoid[a] with Monoid[a] {
+pub lawful trait CommutativeMonoid[a] with Monoid[a] {
 
     ///
     /// Returns a neutral element.

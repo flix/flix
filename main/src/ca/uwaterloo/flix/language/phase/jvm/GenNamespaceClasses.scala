@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
+import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -33,13 +34,13 @@ object GenNamespaceClasses {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
     //
-    namespaces.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, ns) =>
+    ParOps.parMap(namespaces) {
+      case ns =>
         val jvmType = JvmOps.getNamespaceClassType(ns)
         val jvmName = jvmType.name
         val bytecode = genBytecode(ns)
-        macc + (jvmName -> JvmClass(jvmName, bytecode))
-    }
+        jvmName -> JvmClass(jvmName, bytecode)
+    }.toMap
   }
 
   /**
@@ -106,7 +107,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    BackendObjType.Result.unwindThunk(BackendType.toErasedBackendType(defn.tpe))(new BytecodeInstructions.F(method))
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.tpe))(new BytecodeInstructions.F(method))
     // no erasure here because the ns function works on erased values
 
     // Return

@@ -1,3 +1,5 @@
+// TODO this module is replicated by `Test.Kind.Trait.flix` for the `trait` keyword.
+// Remove this module at the end of the transition period from `class` to `trait`.
 mod Test.Kind.Class {
 
     mod Implicit {

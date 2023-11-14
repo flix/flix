@@ -20,22 +20,21 @@ public interface Handler {
                 // forward, not right handler.
                 return new Suspension(s.effSym, s.effOp, new FramesNil(), r);
             }
-        } else if (vResult instanceof Value) {
-            Value res = (Value) vResult;
-
-            if (frames instanceof FramesNil) {
-                return vResult; // We are completely done!
-                // This means that we are returning through the handler and drop the handler.
-            } else if (frames instanceof FramesCons) {
-                FramesCons cons = ((FramesCons) frames);
-                return installHandler(effSym, handler, cons.tail, new Thunk() {
-                    @Override
-                    public Result invoke() {
-                        return cons.head.apply(res);
-                    }
-                });
-            }
         }
-        throw new RuntimeException("Impossible");
+        // we know vResult instanceof Value
+        Value res = (Value) vResult;
+
+        if (frames instanceof FramesNil) {
+            return vResult; // We are completely done!
+            // This means that we are returning through the handler and drop the handler.
+        }
+        // we know frames instanceof FramesCons
+        FramesCons cons = ((FramesCons) frames);
+        return installHandler(effSym, handler, cons.tail, new Thunk() {
+            @Override
+            public Result invoke() {
+                return Frame.staticApply(cons.head, res);
+            }
+        });
     }
 }

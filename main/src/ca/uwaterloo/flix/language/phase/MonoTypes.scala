@@ -22,8 +22,7 @@ import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
 
@@ -32,12 +31,14 @@ import scala.collection.mutable
   * - Specializes polymorphic enums with the specific types that it is used as.
   * - Removes all type aliases in types
   */
-object MonomorphEnums {
+object MonoTypes {
 
   /**
     * Holds the mutable data used throughout monomorphization.
+    *
+    * The context is shared and must be guarded by locks (synchronized) to ensure thread-safety.
     */
-  private class Context() {
+  private class SharedContext() {
 
     /**
       * A map from a symbol and a ground normalized type to the fresh symbol for
@@ -61,18 +62,46 @@ object MonomorphEnums {
       * 2b. Pure + Pure and Pure should not both be present (formulas should be fully evaluated)
       * 3. Contain no specialized enums, i.e. should use List[Int32] instead of List$32
       */
-    val enum2enum: mutable.Map[(Symbol.EnumSym, Type), Symbol.EnumSym] = mutable.Map.empty
+    private val enum2enum: mutable.Map[(Symbol.EnumSym, Type), Symbol.EnumSym] = mutable.Map.empty
 
     /**
       * A map used to collect specialized definitions.
       */
-    val specializedEnums: mutable.Map[Symbol.EnumSym, LoweredAst.Enum] = mutable.Map.empty
+    private val specializedEnums: mutable.Map[Symbol.EnumSym, LoweredAst.Enum] = mutable.Map.empty
+
+    /**
+      * Lookup `sym` specialized to `tpe`.
+      *
+      * If the enum is already specialized, return its fresh symbol.
+      *
+      * Otherwise, invoke `f` with a fresh symbol to produce its declaration.
+      */
+    def getOrPut(sym: Symbol.EnumSym, tpe: Type, nonParametric: Boolean)(f: Symbol.EnumSym => LoweredAst.Enum)(implicit flix: Flix): Symbol.EnumSym = synchronized {
+      enum2enum.get((sym, tpe)) match {
+        case None =>
+          // Note: We must register the fresh symbol before we call `f`.
+          val freshSym = if (nonParametric) sym else Symbol.freshEnumSym(sym)
+          enum2enum.put((sym, tpe), freshSym)
+
+          val decl = f(freshSym)
+          specializedEnums.put(freshSym, decl)
+          freshSym
+        case Some(freshSym) => freshSym
+      }
+    }
+
+    /**
+      * Returns the specialized enums as a map.
+      */
+    def toMap: Map[Symbol.EnumSym, LoweredAst.Enum] = synchronized {
+      specializedEnums.toMap
+    }
   }
 
   /**
     * Performs monomorphization of enums on the given AST `root` and removes alias types.
     */
-  def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonomorphEnums") {
+  def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonoTypes") {
     // Assumptions:
     // - All typeclass information have been transformed into defs - this
     //   phase only looks at types and expressions in defs.
@@ -91,18 +120,16 @@ object MonomorphEnums {
     // the work is actually done.
 
     implicit val r: LoweredAst.Root = root
+    implicit val ctx: SharedContext = new SharedContext()
 
-    implicit val ctx: Context = new Context()
-
-    val defs = MapOps.mapValues(root.defs)(visitDef)
-    val enums = ctx.specializedEnums.toMap
-    root.copy(defs = defs, enums = enums)
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    root.copy(defs = defs, enums = ctx.toMap)
   }
 
   /**
     * Returns a [[LoweredAst.Def]] with specialized enums and without aliases in its types.
     */
-  private def visitDef(defn: LoweredAst.Def)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Def = defn match {
+  private def visitDef(defn: LoweredAst.Def)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Def = defn match {
     case LoweredAst.Def(sym, spec, exp) =>
       val s = visitSpec(spec)
       val e = visitExp(exp)
@@ -112,7 +139,7 @@ object MonomorphEnums {
   /**
     * Returns a [[LoweredAst.Spec]] with specialized enums and without aliases in its types.
     */
-  private def visitSpec(spec: LoweredAst.Spec)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Spec = spec match {
+  private def visitSpec(spec: LoweredAst.Spec)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
@@ -124,30 +151,36 @@ object MonomorphEnums {
   /**
     * Returns an expression with specialized enums and without aliases in its types
     */
-  private def visitExp(exp: LoweredAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Expr = exp match {
+  private def visitExp(exp: LoweredAst.Expr)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       Expr.Cst(cst, t, loc)
+
     case Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       Expr.Var(sym, t, loc)
+
     case Expr.Def(sym, tpe, loc) =>
       val t = visitType(tpe)
       Expr.Def(sym, t, loc)
+
     case Expr.Sig(sym, tpe, loc) =>
       val t = visitType(tpe)
       Expr.Sig(sym, t, loc)
+
     case Expr.Lambda(fparam, exp, tpe, loc) =>
       val fs = visitFormalParam(fparam)
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expr.Lambda(fs, e, t, loc)
+
     case Expr.Apply(exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Apply(e, es, t, p, loc)
+
     case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val op1 = op match {
         case AtomicOp.Tag(sym) =>
@@ -162,18 +195,21 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.ApplyAtomic(op1, es, t, p, loc)
+
     case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Let(sym, mod, e1, e2, t, p, loc)
+
     case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.LetRec(sym, mod, e1, e2, t, p, loc)
+
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       // The region variable has been rendered redundant by Monomorph.
       // It has replaced the region with pure/impure and the variable could
@@ -182,6 +218,7 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Scope(sym, regionVar, e, t, p, loc)
+
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -189,16 +226,19 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.IfThenElse(e1, e2, e3, t, p, loc)
+
     case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Stm(e1, e2, t, p, loc)
+
     case Expr.Discard(exp, eff, loc) =>
       val e = visitExp(exp)
       val p = visitType(eff)
       Expr.Discard(e, p, loc)
+
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
@@ -211,6 +251,7 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Match(e, rs, t, p, loc)
+
     case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
@@ -222,25 +263,30 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.TypeMatch(e, rs, t, p, loc)
+
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.VectorLit(es, t, p, loc)
+
     case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.VectorLoad(e1, e2, t, p, loc)
+
     case Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
+
     case Expr.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Ascribe(e, t, p, loc)
+
     case Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
@@ -248,6 +294,7 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Cast(e, dt, dp, t, p, loc)
+
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
@@ -258,6 +305,7 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.TryCatch(e, rs, t, p, loc)
+
     case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
@@ -269,15 +317,18 @@ object MonomorphEnums {
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.TryWith(e, effUse, rs, t, p, loc)
+
     case Expr.Do(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       val p = visitType(eff)
       Expr.Do(op, es, t, p, loc)
+
     case Expr.Resume(exp, tpe, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expr.Resume(e, t, loc)
+
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val t = visitType(tpe)
       val p = visitType(eff)
@@ -295,16 +346,19 @@ object MonomorphEnums {
   /**
     * Returns a pattern with specialized enums in its type and no aliases.
     */
-  private def visitPat(pat: LoweredAst.Pattern)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.Pattern = pat match {
+  private def visitPat(pat: LoweredAst.Pattern)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Pattern = pat match {
     case Pattern.Wild(tpe, loc) =>
       val t = visitType(tpe)
       Pattern.Wild(t, loc)
+
     case Pattern.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       Pattern.Var(sym, t, loc)
+
     case Pattern.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       Pattern.Cst(cst, t, loc)
+
     case Pattern.Tag(sym, tagPat, tpe, loc) =>
       //
       // Specialize the enum
@@ -313,10 +367,12 @@ object MonomorphEnums {
       val tp = visitPat(tagPat)
       val t = visitType(tpe)
       Pattern.Tag(freshCaseSym, tp, t, loc)
+
     case Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       Pattern.Tuple(es, t, loc)
+
     case Pattern.Record(pats, pat, tpe, loc) =>
       val ps = pats.map {
         case Pattern.Record.RecordLabelPattern(label, tpe1, pat1, loc1) =>
@@ -325,6 +381,7 @@ object MonomorphEnums {
       val p = visitPat(pat)
       val t = visitType(tpe)
       Pattern.Record(ps, p, t, loc)
+
     case Pattern.RecordEmpty(tpe, loc) =>
       Pattern.RecordEmpty(visitType(tpe), loc)
   }
@@ -332,13 +389,15 @@ object MonomorphEnums {
   /**
     * Returns a type with specialized enums and no aliases.
     */
-  private def visitType(tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Type = {
+  private def visitType(tpe: Type)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Type = {
     def visitInner(tpe0: Type): Type = tpe0.baseType match {
       case Type.Cst(TypeConstructor.Enum(sym, _), loc) => // enum
         // args cannot be visited yet, because specialization works on
         // non-specialized enums.
         val args = tpe0.typeArguments
         val freshSym = specializeEnum(sym, args, loc)
+        // visit args
+        args.foreach(visitInner)
         Type.mkEnum(freshSym, Nil, loc)
       case _ => tpe0 match { // non-enum
         case Type.Cst(tc, loc) => Type.Cst(tc, loc)
@@ -355,7 +414,7 @@ object MonomorphEnums {
   /**
     * Returns a formal param with specialized enums in its type and no aliases.
     */
-  private def visitFormalParam(p: LoweredAst.FormalParam)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): LoweredAst.FormalParam = p match {
+  private def visitFormalParam(p: LoweredAst.FormalParam)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.FormalParam = p match {
     case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
       val t = visitType(tpe)
       LoweredAst.FormalParam(sym, mod, t, src, loc)
@@ -364,7 +423,7 @@ object MonomorphEnums {
   /**
     * Returns a scheme with specialized enums in its base and no aliases.
     */
-  private def visitScheme(sc: Scheme)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Scheme = sc match {
+  private def visitScheme(sc: Scheme)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       // Since the types are expected to be specialized, all except base should be "unused"/empty
       val b = visitType(base)
@@ -381,54 +440,42 @@ object MonomorphEnums {
     * - may have aliases
     * - may be un-normalized
     */
-  private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
+  private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
+    // type arguments
     val args = args0.map(eraseAliases).map(TypeNormalization.normalizeType)
+
     // assemble enum type (e.g. `List[Int32]`)
     val tpe = Type.mkEnum(sym, args, loc)
-    // reuse specialization if possible
-    ctx.enum2enum.get((sym, tpe)) match {
-      case Some(freshSym) =>
-        // specialization was already done
-        freshSym
-      case None =>
-        // reuse the existing symbol if the enum is non-parametric
-        val freshSym = if (args.isEmpty) sym else Symbol.freshEnumSym(sym)
-        // insert the symbol for reuse
-        // (inserted before the work is done to avoid infinite recursion)
-        ctx.enum2enum.put((sym, tpe), freshSym)
 
-        // do the specialization
-        // The enum is parametric on its type parameters, so we must instantiate
-        // e.g. for List[a] and List[Int32] we substitute [a -> Int32]
-        val e = root.enums(sym)
-        val subst = Substitution(e.tparams.map(_.sym).zip(args).toMap)
-        val cases = e.cases.map {
-          case (caseSym, LoweredAst.Case(_, caseTpe, caseSc, caseLoc)) =>
-            val freshCaseSym = new Symbol.CaseSym(freshSym, caseSym.name, caseSym.loc)
-            val newCaseSc = Scheme(caseSc.quantifiers, caseSc.tconstrs, caseSc.econstrs, subst(caseSc.base))
-            val caze = LoweredAst.Case(freshCaseSym, visitType(subst(caseTpe)), visitScheme(newCaseSc), caseLoc)
-            (freshCaseSym, caze)
-        }
-        val freshEnum = LoweredAst.Enum(
-          e.doc,
-          e.ann,
-          e.mod,
-          freshSym,
-          Nil,
-          e.derives,
-          cases,
-          Type.mkEnum(freshSym, Nil, loc),
-          e.loc
-        )
-        ctx.specializedEnums.put(freshSym, freshEnum)
-        freshSym
+    // reuse specialization if possible
+    ctx.getOrPut(sym, tpe, args.isEmpty) { freshSym =>
+      // do the specialization
+      // The enum is parametric on its type parameters, so we must instantiate
+      // e.g. for List[a] and List[Int32] we substitute [a -> Int32]
+      val decl = root.enums(sym)
+      val subst = Substitution(decl.tparams.map(_.sym).zip(args).toMap)
+      val cases = decl.cases.foldLeft(Map.empty[Symbol.CaseSym, LoweredAst.Case]) {
+        case (macc, (_, caze)) => macc + specializeCase(freshSym, caze, subst)
+      }
+      decl.copy(sym = freshSym, tparams = Nil, cases = cases, tpe = Type.mkEnum(freshSym, Nil, loc))
     }
+  }
+
+  /**
+    * Specialize the given case `caze` belonging to the given enum `enumSym`.
+    */
+  private def specializeCase(enumSym: Symbol.EnumSym, caze: LoweredAst.Case, subst: Substitution)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): (Symbol.CaseSym, LoweredAst.Case) = caze match {
+    case LoweredAst.Case(caseSym, caseTpe, caseSc, caseLoc) =>
+      val freshCaseSym = new Symbol.CaseSym(enumSym, caseSym.name, caseSym.loc)
+      val newCaseSc = Scheme(caseSc.quantifiers, caseSc.tconstrs, caseSc.econstrs, subst(caseSc.base))
+      val caze = LoweredAst.Case(freshCaseSym, visitType(subst(caseTpe)), visitScheme(newCaseSc), caseLoc)
+      (freshCaseSym, caze)
   }
 
   /**
     * Specializes the symbol and the enum it uses via [[specializeEnum]].
     */
-  private def specializeCaseSymUse(sym: CaseSymUse, args: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): CaseSymUse = {
+  private def specializeCaseSymUse(sym: CaseSymUse, args: List[Type], loc: SourceLocation)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): CaseSymUse = {
     val freshEnumSym = specializeEnum(sym.sym.enumSym, args, loc)
     Ast.CaseSymUse(new Symbol.CaseSym(freshEnumSym, sym.sym.name, sym.sym.loc), sym.loc)
   }

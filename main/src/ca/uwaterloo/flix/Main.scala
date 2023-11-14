@@ -94,7 +94,9 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
-      xparser = cmdOpts.xparser
+      xparser = cmdOpts.xparser,
+      XPerfFrontend = cmdOpts.XPerfFrontend,
+      XPerfN = cmdOpts.XPerfN
     )
 
     // Don't use progress bar if benchmarking.
@@ -253,6 +255,9 @@ object Main {
           }
           System.exit(0)
 
+        case Command.CompilerPerf =>
+          CompilerPerf.run(options)
+
       }
     }
 
@@ -292,6 +297,8 @@ object Main {
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
+                     XPerfN: Option[Int] = None,
+                     XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -325,6 +332,7 @@ object Main {
 
     case class Lsp(port: Int) extends Command
 
+    case object CompilerPerf extends Command
   }
 
   /**
@@ -371,6 +379,15 @@ object Main {
           arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
             .required()
         )
+
+      cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
+        opt[Unit]("frontend")
+          .action((_, c) => c.copy(XPerfFrontend = true))
+          .text("benchmark only frontend"),
+        opt[Int]("n")
+          .action((v, c) => c.copy(XPerfN = Some(v)))
+          .text("number of compilations")
+      ).hidden()
 
       note("")
 

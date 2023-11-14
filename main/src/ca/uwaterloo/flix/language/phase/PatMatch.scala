@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ParYieldFragment, Pattern,
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The Pattern Exhaustiveness phase checks pattern matches for exhaustiveness
@@ -38,7 +38,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * pattern match and returns the result.
   *
   */
-object PatternExhaustiveness {
+object PatMatch {
 
   /**
     * An ADT to make matching Type Constructors easier. We need to
@@ -108,9 +108,9 @@ object PatternExhaustiveness {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
-    flix.phase("PatternExhaustiveness") {
-      val defErrs = root.defs.values.flatMap(defn => visitExp(defn.exp, root))
-      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitExp(defn.exp, root))
+    flix.phase("PatMatch") {
+      val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp, root)).flatten
+      val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp, root)).flatten
       // Only need to check sigs with implementations
       val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp(_, root))
 
@@ -141,7 +141,7 @@ object PatternExhaustiveness {
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp, root)
       case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expr.Let(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
-      case Expr.LetRec(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expr.Region(_, _) => Nil
       case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp, root)
       case Expr.ScopeExit(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
@@ -227,10 +227,10 @@ object PatternExhaustiveness {
 
       case Expr.Lazy(exp, _, _) => visitExp(exp, root)
       case Expr.Force(exp, _, _, _) => visitExp(exp, root)
-      case Expr.FixpointConstraintSet(cs, _, _, _) => cs.flatMap(visitConstraint(_, root))
-      case Expr.FixpointLambda(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expr.FixpointMerge(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
-      case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp, root)
+      case Expr.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, root))
+      case Expr.FixpointLambda(_, exp, _, _, _) => visitExp(exp, root)
+      case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
+      case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp, root)
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp, root)
       case Expr.FixpointInject(exp, _, _, _, _) => visitExp(exp, root)
       case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp, root)

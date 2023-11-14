@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
+import java.util.concurrent.ForkJoinPool
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -76,44 +77,62 @@ class Flix {
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
+  private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   def getParserAst: ParsedAst.Root = cachedParserAst
+
   def getWeederAst: WeededAst.Root = cachedWeederAst
+
+  def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
+
   def getKinderAst: KindedAst.Root = cachedKinderAst
+
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
+
   def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
     * A cache of ASTs for debugging.
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonomorphEnumsAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonoDefsAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonoTypesAst: LoweredAst.Root = LoweredAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
-  def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
-  def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
-  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
+
+  def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
+
+  def getMonoDefsAst: LoweredAst.Root = cachedMonoDefsAst
+
+  def getMonoTypesAst: LoweredAst.Root = cachedMonoTypesAst
+
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
+
   def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
+
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
+
   def getTailrecAst: LiftedAst.Root = cachedTailrecAst
+
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
-  def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
+
+  def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
+
   def getReducerAst: ReducedAst.Root = cachedReducerAst
-  def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
+
+  def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -211,6 +230,7 @@ class Flix {
 
     "MutQueue.flix" -> LocalResource.get("/src/library/MutQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
+    "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
@@ -324,14 +344,9 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The fork join pool for `this` Flix instance.
+    * The thread pool executor service for `this` Flix instance.
     */
-  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
-
-  /**
-    * The fork join task support for `this` Flix instance.
-    */
-  var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
+  var threadPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -515,8 +530,8 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
 
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
@@ -524,13 +539,13 @@ class Flix {
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
-    // The compiler pipeline.
+    /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      afterDesugar = Desugar.run(afterWeeder)
+      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -538,8 +553,9 @@ class Flix {
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
-      afterStratifier <- Stratifier.run(afterEntryPoint)
-      afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
+      afterPredDeps <- PredDeps.run(afterEntryPoint)
+      afterStratifier <- Stratifier.run(afterPredDeps)
+      afterPatMatch <- PatMatch.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
@@ -548,6 +564,7 @@ class Flix {
         this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
         this.cachedWeederAst = afterWeeder
+        this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
@@ -559,8 +576,8 @@ class Flix {
     // (Possible duplicate files in codeGen will just be empty and overwritten there)
     AstPrinter.printAsts()
 
-    // Shutdown fork join pool.
-    shutdownForkJoin()
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
 
     // Reset the progress bar.
     progressBar.complete()
@@ -585,28 +602,29 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
 
+    /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
-    cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
-    cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
-    cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)
-    cachedSimplifierAst = Simplifier.run(cachedMonomorphEnumsAst)
+    cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
+    cachedMonoDefsAst = MonoDefs.run(cachedTreeShaker1Ast)
+    cachedMonoTypesAst = MonoTypes.run(cachedMonoDefsAst)
+    cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
     cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
-    cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
-    cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
-    cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
-    val result = JvmBackend.run(cachedVarNumberingAst)
+    cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
+    cachedReducerAst = Reducer.run(cachedTreeShaker2Ast)
+    cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
+    val result = JvmBackend.run(cachedVarOffsetsAst)
 
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()
 
-    // Shutdown fork join pool.
-    shutdownForkJoin()
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
 
     // Reset the progress bar.
     progressBar.complete()
@@ -709,18 +727,17 @@ class Flix {
   }
 
   /**
-    * Initializes the fork join pools.
+    * Initializes the fork-join thread pool.
     */
-  private def initForkJoin(): Unit = {
-    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
-    forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
+  private def initForkJoinPool(): Unit = {
+    threadPool = new ForkJoinPool(options.threads)
   }
 
   /**
-    * Shuts down the fork join pools.
+    * Shuts down the fork-join thread pools.
     */
-  private def shutdownForkJoin(): Unit = {
-    forkJoinPool.shutdown()
+  private def shutdownForkJoinPool(): Unit = {
+    threadPool.shutdown()
   }
 
 }

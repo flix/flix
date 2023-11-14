@@ -48,7 +48,7 @@ object TypedAstOps {
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Region(_, _) => Set.empty
     case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.ScopeExit(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -102,10 +102,10 @@ object TypedAstOps {
     case Expr.ParYield(frags, exp, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expr.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expr.Force(exp, _, _, _) => sigSymsOf(exp)
-    case Expr.FixpointConstraintSet(_, _, _, _) => Set.empty
-    case Expr.FixpointLambda(_, exp, _, _, _, _) => sigSymsOf(exp)
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expr.FixpointConstraintSet(_, _, _) => Set.empty
+    case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.FixpointSolve(exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
@@ -163,7 +163,7 @@ object TypedAstOps {
     case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
-    case Expr.LetRec(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
     case Expr.Region(_, _) =>
@@ -357,18 +357,18 @@ object TypedAstOps {
     case Expr.Force(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, c) => acc ++ freeVars(c)
       }
 
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       freeVars(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

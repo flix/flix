@@ -34,10 +34,10 @@ import scala.annotation.tailrec
   * INVARIANT: No rule should comsume trailing whitespace
   *
   * REASON: Consuming trailing whitespace might consume the documentation of the
-  *         next def/class/etc.
+  * next def/class/etc.
   *
   * EXAMPLE: Do not write `... ~ optWS ~ optional(":" ~ optWS ~ Type)`,
-  *          instead write `... ~ optional(optWS ~ ":" ~ optWS ~ Type)`.
+  * instead write `... ~ optional(optWS ~ ":" ~ optWS ~ Type)`.
   */
 object Parser {
 
@@ -51,10 +51,10 @@ object Parser {
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
 
       // Parse each stale source in parallel.
-      val results = ParOps.parMap(stale.keys)(parseRoot)
+      val result = ParOps.parTraverse(stale.keys)(parseRoot)
 
-      // Sequence and combine the ASTs into one abstract syntax tree.
-      Validation.sequence(results) map {
+      // Combine the ASTs into one abstract syntax tree.
+      result.map {
         case as =>
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)
@@ -335,7 +335,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ WithClause
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ (keyword("trait") | keyword("class")) ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ WithClause
       }
 
       def EmptyBody = namedRule("ClassBody") {
@@ -885,7 +885,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ (SomeTypeAndEffect | NoTypeAndEffect) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
+        SP ~ Annotations ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParamList ~ optWS ~ (SomeTypeAndEffect | NoTypeAndEffect) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
       }
     }
 

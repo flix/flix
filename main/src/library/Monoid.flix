@@ -15,10 +15,10 @@
  */
 
 ///
-/// A type class for Monoids, objects that support an associative binary
+/// A trait for Monoids, objects that support an associative binary
 /// operation `combine` and neutral element `empty`.
 ///
-pub lawful class Monoid[a] with SemiGroup[a] {
+pub lawful trait Monoid[a] with SemiGroup[a] {
     ///
     /// Returns a neutral element.
     ///
