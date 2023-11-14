@@ -409,12 +409,12 @@ object Main {
             .required(),
 
           cmd("minor")
-            .text("  release a new minor version to GitHub, incrementing the version: 1.1.1 -> 1.2.0")
+            .text("  release a new minor version to GitHub, incrementing the version number: 1.1.1 -> 1.2.0")
             .action((_, c) => c.copy(command = Command.Release(SemVerIncr.Minor)))
             .required(),
 
           cmd("major")
-            .text("  release a new major version to GitHub, incrementing the version: 1.1.1 -> 2.0.0")
+            .text("  release a new major version to GitHub, incrementing the version number: 1.1.1 -> 2.0.0")
             .action((_, c) => c.copy(command = Command.Release(SemVerIncr.Major)))
             .required()
         )
