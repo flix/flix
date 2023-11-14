@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
+import java.util.concurrent.ForkJoinPool
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -82,10 +83,15 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   def getParserAst: ParsedAst.Root = cachedParserAst
+
   def getWeederAst: WeededAst.Root = cachedWeederAst
+
   def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
+
   def getKinderAst: KindedAst.Root = cachedKinderAst
+
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
+
   def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
@@ -105,16 +111,27 @@ class Flix {
   private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
+
   def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
+
   def getMonoDefsAst: LoweredAst.Root = cachedMonoDefsAst
+
   def getMonoTypesAst: LoweredAst.Root = cachedMonoTypesAst
+
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
+
   def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
+
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
+
   def getTailrecAst: LiftedAst.Root = cachedTailrecAst
+
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
+
   def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
+
   def getReducerAst: ReducedAst.Root = cachedReducerAst
+
   def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
   /**
@@ -327,14 +344,9 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The fork join pool for `this` Flix instance.
+    * The thread pool executor service for `this` Flix instance.
     */
-  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
-
-  /**
-    * The fork join task support for `this` Flix instance.
-    */
-  var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
+  var threadPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -518,8 +530,8 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
 
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
@@ -564,8 +576,8 @@ class Flix {
     // (Possible duplicate files in codeGen will just be empty and overwritten there)
     AstPrinter.printAsts()
 
-    // Shutdown fork join pool.
-    shutdownForkJoin()
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
 
     // Reset the progress bar.
     progressBar.complete()
@@ -590,8 +602,8 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
@@ -611,8 +623,8 @@ class Flix {
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()
 
-    // Shutdown fork join pool.
-    shutdownForkJoin()
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
 
     // Reset the progress bar.
     progressBar.complete()
@@ -715,18 +727,17 @@ class Flix {
   }
 
   /**
-    * Initializes the fork join pools.
+    * Initializes the fork-join thread pool.
     */
-  private def initForkJoin(): Unit = {
-    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
-    forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
+  private def initForkJoinPool(): Unit = {
+    threadPool = new ForkJoinPool(options.threads)
   }
 
   /**
-    * Shuts down the fork join pools.
+    * Shuts down the fork-join thread pools.
     */
-  private def shutdownForkJoin(): Unit = {
-    forkJoinPool.shutdown()
+  private def shutdownForkJoinPool(): Unit = {
+    threadPool.shutdown()
   }
 
 }

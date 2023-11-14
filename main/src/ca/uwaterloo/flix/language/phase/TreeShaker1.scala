@@ -47,7 +47,7 @@ object TreeShaker1 {
     val initReach = initReachable(root)
 
     // Compute the symbols that are transitively reachable.
-    val allReachable = ParOps.parReachable(initReach, visitSym(_, root))
+    val allReachable = ParOps.parReach(initReach, visitSym(_, root))
 
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {

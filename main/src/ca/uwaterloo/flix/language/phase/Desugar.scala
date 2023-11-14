@@ -563,8 +563,13 @@ object Desugar {
       desugarLetMatch(pat, mod, tpe, exp1, exp2, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
+      // Rewrites empty tuples to Unit and eliminate single-element tuples.
       val es = visitExps(exps)
-      Expr.Tuple(es, loc)
+      es match {
+        case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)
+        case x :: Nil => x
+        case xs => DesugaredAst.Expr.Tuple(xs, loc)
+      }
 
     case WeededAst.Expr.RecordEmpty(loc) =>
       Expr.RecordEmpty(loc)
@@ -620,6 +625,35 @@ object Desugar {
     case WeededAst.Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       Expr.VectorLength(e, loc)
+
+    case WeededAst.Expr.FCons(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.Cons", List(e1, e2), loc)
+
+    case WeededAst.Expr.FAppend(exp1, exp2, loc) =>
+      // Rewrites a `FAppend` expr into a call to `List.append`.
+      // NB: We painstakingly construct the qualified name
+      // to ensure that source locations are available.
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("List.append", List(e1, e2), loc)
+
+    case WeededAst.Expr.ListLit(exps, loc) =>
+      // Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
+      val es = visitExps(exps)
+      val nil: DesugaredAst.Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
+      es.foldRight(nil) {
+        case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc)
+      }
+
+    case WeededAst.Expr.SetLit(exps, loc) =>
+      // Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
+      val es = visitExps(exps)
+      val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
+      es.foldLeft(empty) {
+        case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc)
+      }
 
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)

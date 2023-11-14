@@ -5,14 +5,14 @@ mod Test.Exp.Effect {
     // @test
     pub def handleEff01(): Bool = {
         try true with Fail {
-            def fail(_) = false
+            def fail(_, _cont) = false
         }
     }
 
     // @test
     pub def handleEff02(): Unit = {
         try () with Fail {
-            def fail(_) = resume()
+            def fail(_, cont) = cont()
         }
     }
 
@@ -33,14 +33,14 @@ mod Test.Exp.Effect {
             do Test.Exp.Effect.Console.println("bye");
             true
         } with Console {
-            def println(_) = resume()
+            def println(_, cont) = cont()
         }
     }
 
     // @test
     pub def handlePerform01(): Unit = {
         try do Test.Exp.Effect.Fail.fail("rats") with Fail {
-            def fail(_) = ()
+            def fail(_, _cont) = ()
         }
     }
 
@@ -50,7 +50,7 @@ mod Test.Exp.Effect {
             let _ = do Test.Exp.Effect.Console.println("It was the best of times");
             true
         } with Console {
-            def println(_) = resume()
+            def println(_, cont) = cont()
         }
     }
 

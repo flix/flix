@@ -50,9 +50,9 @@ object Stratifier {
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
     // Compute the stratification at every datalog expression in the ast.
-    val newDefs = ParOps.parMapValuesSeq(root.defs)(visitDef(_))
-    val newInstances = ParOps.parMapValuesSeq(root.instances)(traverse(_)(visitInstance(_)))
-    val newClasses = ParOps.parMapValuesSeq(root.classes)(visitClass(_))
+    val newDefs = ParOps.parTraverseValues(root.defs)(visitDef(_))
+    val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
+    val newClasses = ParOps.parTraverseValues(root.classes)(visitClass(_))
 
     mapN(newDefs, newInstances, newClasses) {
       case (ds, is, cs) => root.copy(defs = ds, instances = is, classes = cs)

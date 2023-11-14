@@ -29,9 +29,9 @@ import java.nio.file.Path
 object CompilerPerf {
 
   /**
-    * The number of compilations to perform when collecting statistics.
+    * The default number of compilations.
     */
-  private val N: Int = 7
+  private val DefaultN: Int = 7
 
   /**
     * The number of threads to use for the single-thread experiment.
@@ -208,21 +208,16 @@ object CompilerPerf {
   case class Runs(lines: Int, times: List[Long], phases: List[(String, List[Long])])
 
   /**
-    * The combine function uses to merge data from different runs.
-    */
-  def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
-    if (N <= 4)
-      numeric.toDouble(xs.last)
-    else
-      StatUtils.median(xs)
-
-  /**
     * Run compiler performance experiments.
     */
   def run(o: Options): Unit = {
-    val baseline = aggregate(perfBaseLine(o))
-    val baselineWithPar = aggregate(perfBaseLineWithPar(o))
-    val baselineWithParInc = aggregate(perfBaseLineWithParInc(o))
+    // The number of iterations.
+    val N = o.XPerfN.getOrElse(DefaultN)
+
+    // Run the experiments.
+    val baseline = aggregate(perfBaseLine(N, o))
+    val baselineWithPar = aggregate(perfBaseLineWithPar(N, o))
+    val baselineWithParInc = aggregate(perfBaseLineWithParInc(N, o))
 
     // Find the number of lines of source code.
     val lines = baselineWithPar.lines.toLong
@@ -255,6 +250,15 @@ object CompilerPerf {
 
     // Timestamp (in seconds) when the experiment was run.
     val timestamp = System.currentTimeMillis() / 1000
+
+    //
+    // The combine function uses to merge data from different runs.
+    //
+    def combine[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double =
+      if (N <= 4)
+        numeric.toDouble(xs.last)
+      else
+        StatUtils.median(xs)
 
     //
     // Speedup
@@ -382,7 +386,7 @@ object CompilerPerf {
   /**
     * Runs Flix with one thread and non-incremental.
     */
-  private def perfBaseLine(o: Options): IndexedSeq[Run] = {
+  private def perfBaseLine(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
       flushCaches()
@@ -398,7 +402,7 @@ object CompilerPerf {
   /**
     * Runs Flix with n threads and non-incremental.
     */
-  private def perfBaseLineWithPar(o: Options): IndexedSeq[Run] = {
+  private def perfBaseLineWithPar(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _for every iteration._
     (0 until N).map { _ =>
       flushCaches()
@@ -414,7 +418,7 @@ object CompilerPerf {
   /**
     * Runs Flix with n threads and incrementally.
     */
-  private def perfBaseLineWithParInc(o: Options): IndexedSeq[Run] = {
+  private def perfBaseLineWithParInc(N: Int, o: Options): IndexedSeq[Run] = {
     // Note: The Flix object is created _once_.
     val flix: Flix = new Flix()
     flix.setOptions(o.copy(threads = MaxThreads, incremental = true, loadClassFiles = false))
@@ -430,11 +434,23 @@ object CompilerPerf {
     * Runs Flix once.
     */
   private def runSingle(flix: Flix): Run = {
-    val compilationResult = flix.compile().toHardFailure.get
+    val frontendOnly = flix.options.XPerfFrontend
+
+    val totalLines =
+      if (frontendOnly) {
+        flix.check().toHardFailure.get.sources.foldLeft(0) {
+          case (acc, (_, sl)) => acc + sl.endLine
+        }
+      } else {
+        flix.compile().toHardFailure.get.getTotalLines
+      }
+
     val phases = flix.phaseTimers.map {
       case PhaseTime(phase, time, _) => phase -> time
     }
-    Run(compilationResult.getTotalLines, compilationResult.totalTime, phases.toList)
+    val totalTime = flix.getTotalTime
+
+    Run(totalLines, totalTime, phases.toList)
   }
 
   /**

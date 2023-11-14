@@ -17,58 +17,67 @@
 package ca.uwaterloo.flix.util
 
 import java.util
-import java.util.concurrent.{Callable, Executors}
-
+import java.util.concurrent.{Callable, CountDownLatch, RecursiveTask}
 import scala.jdk.CollectionConverters._
-import scala.collection.parallel._
 import ca.uwaterloo.flix.api.Flix
+
+import scala.reflect.ClassTag
 
 object ParOps {
 
   /**
-    * Apply the given function `f` to each element in the list `xs` in parallel.
+    * The threshold at which `parAgg` switches from parallel to sequential evaluation.
     */
-  @inline
-  def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
-    // Build the parallel array.
-    val parArray = xs.toParArray
+  private val SequentialThreshold: Int = 4
 
-    // Configure the task support.
-    parArray.tasksupport = flix.forkJoinTaskSupport
+  /**
+    * Applies the function `f` to every element of `xs` in parallel.
+    */
+  def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
+    // Compute the size of the input and construct a new empty array to hold the result.
+    val size = xs.size
+    val out: Array[B] = new Array(size)
 
-    // Apply the function `f` in parallel.
-    val result = parArray.map(f)
+    // Construct a new count down latch to track the number of threads.
+    val latch = new CountDownLatch(size)
 
-    // Return the result as an iterable.
-    result.seq
+    // Iterate through the elements of `xs`. Use a local variable to track the index.
+    var idx = 0
+    for (elm <- xs) {
+      val i = idx // Ensure proper scope of i.
+      flix.threadPool.execute(() => {
+        out(i) = f(elm)
+        latch.countDown()
+      })
+      idx = idx + 1
+    }
+
+    // Await all threads to finish and return the result.
+    latch.await()
+    out
   }
 
   /**
-    * Apply the given fallible function `f` to each element in the list `xs` in parallel,
-    * returning the resulting iterable if all calls are successful.
+    * Applies the function `f` to every value of the map `m` in parallel.
     */
-  @inline
-  def parMapSeq[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
-    val results = parMap(xs)(f)
-    Validation.sequence(results)
-  }
-
-  /**
-    * Apply the given function `f` to each value in the map `m` in parallel.
-    */
-  @inline
   def parMapValues[K, A, B](m: Map[K, A])(f: A => B)(implicit flix: Flix): Map[K, B] =
     parMap(m) {
       case (k, v) => (k, f(v))
     }.toMap
 
   /**
-    * Apply the given fallible function `f` to each value in the map `m` in parallel,
-    * returning the resulting map if all calls are successful.
+    * Applies the function `f` to every element of `xs` in parallel. Aggregates the result using the applicative instance for [[Validation]].
     */
-  @inline
-  def parMapValuesSeq[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
-    parMapSeq(m) {
+  def parTraverse[A, B, E](xs: Iterable[A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Iterable[B], E] = {
+    val results = parMap(xs)(f)
+    Validation.sequence(results)
+  }
+
+  /**
+    * Applies the function `f` to every element of the map `m` in parallel. Aggregates the result using the applicative instance for [[Validation]].
+    */
+  def parTraverseValues[K, A, B, E](m: Map[K, A])(f: A => Validation[B, E])(implicit flix: Flix): Validation[Map[K, B], E] = {
+    parTraverse(m) {
       case (k, v) => f(v).map((k, _))
     }.map(_.toMap)
   }
@@ -76,29 +85,52 @@ object ParOps {
   /**
     * Aggregates the result of applying `seq` and `comb` to `xs`.
     */
-  @inline
-  def parAgg[A, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
-    // Build the parallel array.
-    val parArray = xs.toParArray
+  def parAgg[A: ClassTag, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
+    /**
+      * A ForkJoin task that operates on the array `a` from the interval `b` to `e`.
+      */
+    case class Task(a: Array[A], b: Int, e: Int) extends RecursiveTask[S] {
+      override def compute(): S = {
+        val span = e - b
 
-    // Configure the task support.
-    parArray.tasksupport = flix.forkJoinTaskSupport
+        if (span < SequentialThreshold) {
+          // Case: Sequential, fold over the `Limit` elements.
+          (b until e).foldLeft(z) {
+            case (acc, idx) => seq(acc, a(idx))
+          }
+        } else {
+          // Case: Parallel, Fork-Join style.
+          val m = span / 2
+          val left = Task(a, b, b + m)
+          left.fork()
+          val right = Task(a, b + m, e)
+          right.fork()
+          comb(left.join(), right.join())
+        }
+      }
+    }
 
-    // Aggregate the result in parallel.
-    parArray.aggregate(z)(seq, comb)
+    if (xs.isEmpty) {
+      // Case 1: The iterable `xs` is empty. We simply return the neutral element z.
+      z
+    } else {
+      // Case 2: We convert `xs` to an array and start a recursive task.
+      val a = xs.toArray
+      flix.threadPool.invoke(Task(a, 0, a.length))
+    }
   }
 
   /**
     * Computes the set of reachables Ts starting from `init` and using the `next` function.
     */
-  def parReachable[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
+  def parReach[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
     // A wrapper for the next function.
     class NextCallable(t: T) extends Callable[Set[T]] {
       override def call(): Set[T] = next(t)
     }
 
-    // Initialize a new executor service.
-    val executorService = Executors.newFixedThreadPool(flix.options.threads)
+    // Use global thread pool.
+    val threadPool = flix.threadPool
 
     // A mutable variable that holds the currently reachable Ts.
     var reach = init
@@ -116,7 +148,7 @@ object ParOps {
       }
 
       // Invoke all callables in parallel.
-      val futures = executorService.invokeAll(callables)
+      val futures = threadPool.invokeAll(callables)
 
       // Compute the set of all inferred Ts in this iteration.
       // May include Ts discovered in previous iterations.
@@ -128,9 +160,6 @@ object ParOps {
       delta = newReach -- reach
       reach = reach ++ delta
     }
-
-    // Shutdown the executor service.
-    executorService.shutdown()
 
     // Return the set of reachable Ts.
     reach

@@ -1366,22 +1366,6 @@ object BackendObjType {
     }
 
     /**
-      * Expects a Result on the stack and crashes if it is a Suspension, otherwise leaves it on the stack.
-      * [..., Result] --> [..., Thunk|Value]
-      * side effect: might crash
-      */
-    def crashIfSuspension(): InstructionSet = {
-      val errorMessage = "function was assumed control-pure for java interop but suspension was returned"
-      DUP() ~ INSTANCEOF(Suspension.jvmName) ~
-      ifCondition(Condition.NE) {
-        // If Suspension is found, fail hard.
-        NEW(FlixError.jvmName) ~
-        DUP() ~ pushString(errorMessage) ~ INVOKESPECIAL(FlixError.Constructor) ~
-        ATHROW()
-      }
-    }
-
-    /**
       * Expects a Result on the stack and leaves something of the given tpe but erased.
       * This might return if a Suspension is encountered.
       * [..., Result] --> [..., Value.value: tpe]
@@ -1400,9 +1384,7 @@ object BackendObjType {
       * side effect: might crash
       */
     def unwindSuspensionFreeThunkToType(tpe: BackendType): InstructionSet = {
-      unwindThunk() ~
-      crashIfSuspension() ~
-      CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+      unwindThunk() ~ CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
     }
   }
 
@@ -1510,7 +1492,7 @@ object BackendObjType {
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(Result.toTpe))
 
     def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
-      thisLoad() ~ Result.unwindThunk() ~ Result.crashIfSuspension() ~ POP() ~ RETURN()
+      thisLoad() ~ Result.unwindThunk() ~ CHECKCAST(Value.jvmName) ~ POP() ~ RETURN()
     ))
   }
 

@@ -27,7 +27,7 @@ object Parser2 {
   def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, UnstructuredTree.Tree], CompilationMessage] =
     flix.phase("Parser2") {
       // Parse each source file in parallel.
-      ParOps.parMapValuesSeq(root)(parse)
+      ParOps.parTraverseValues(root)(parse)
     }
 
   private def parse(ts: Array[Token]): Validation[UnstructuredTree.Tree, CompilationMessage] = {

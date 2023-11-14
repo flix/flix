@@ -130,8 +130,9 @@ object ClosureConv {
       val e = visitExp(exp)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
-          val b = visitExp(body)
-          HandlerRule(opUse, fparams, b)
+          val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
+          val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
+          HandlerRule(opUse, fparams, clo)
       }
       Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
@@ -161,6 +162,8 @@ object ClosureConv {
 
   /**
     * Returns a LambdaClosure under the given formal parameters fparams for the body expression exp where the overall lambda has type tpe.
+    *
+    * `exp` is visited inside this function and should not be visited before.
     */
   private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.

@@ -38,6 +38,19 @@ sealed trait JvmType {
     case JvmType.PrimDouble => "D"
     case JvmType.Reference(name) => name.toDescriptor
   }
+
+  def toErased: JvmType = this match {
+    case JvmType.Void => JvmType.Void
+    case JvmType.PrimBool => JvmType.PrimBool
+    case JvmType.PrimChar => JvmType.PrimChar
+    case JvmType.PrimByte => JvmType.PrimByte
+    case JvmType.PrimShort => JvmType.PrimShort
+    case JvmType.PrimInt => JvmType.PrimInt
+    case JvmType.PrimLong => JvmType.PrimLong
+    case JvmType.PrimFloat => JvmType.PrimFloat
+    case JvmType.PrimDouble => JvmType.PrimDouble
+    case JvmType.Reference(_) => JvmType.Object
+  }
 }
 
 object JvmType {
