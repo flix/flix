@@ -163,7 +163,7 @@ object ClosureConv {
   /**
     * Returns a LambdaClosure under the given formal parameters fparams for the body expression exp where the overall lambda has type tpe.
     *
-    * `exp` is visited inside this function and should not be done before this function.
+    * `exp` is visited inside this function and should not be visited before.
     */
   private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
