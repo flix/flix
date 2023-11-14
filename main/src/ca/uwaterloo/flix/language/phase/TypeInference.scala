@@ -1067,14 +1067,20 @@ object TypeInference {
           }
         }
 
-        def visitHandlerRule(rule: KindedAst.HandlerRule): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = rule match {
-          case KindedAst.HandlerRule(op, actualFparams, body, opTvar) =>
+        def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, tryBlockEff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = rule match {
+          case KindedAst.HandlerRule(op, actualFparams0, body, opTvar) =>
             // Don't need to generalize since ops are monomorphic
             // Don't need to handle unknown op because resolver would have caught this
+            val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
             ops(op.sym) match {
-              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, expectedPur, _, _, _)) =>
+              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _, _)) =>
+                val resumptionArgType = opTpe
+                val resumptionResType = tryBlockTpe
+                val resumptionEff = tryBlockEff
+                val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
                 for {
                   _ <- unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams)
+                  _ <- expectTypeM(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
                   (actualTconstrs, actualTpe, actualEff) <- visitExp(body)
 
                   // unify the operation return type with its tvar
@@ -1082,18 +1088,18 @@ object TypeInference {
 
                   // unify the handler result type with the whole block's tvar
                   resultTpe <- expectTypeM(expected = tvar, actual = actualTpe, body.loc)
-                  resultEff <- expectTypeM(expected = expectedPur, actual = actualEff, body.loc) // MATT improve error message for this
-                } yield (actualTconstrs, resultTpe, resultEff)
+                } yield (actualTconstrs, resultTpe, actualEff)
             }
         }
 
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         for {
-          (tconstrs, tpe, eff) <- visitExp(exp)
-          (tconstrss, _, effs) <- traverseM(rules)(visitHandlerRule).map(_.unzip3)
+          (tconstrs, tpe, bodyEff) <- visitExp(exp)
+          (tconstrss, _, effs) <- traverseM(rules)(visitHandlerRule(_, tpe, bodyEff)).map(_.unzip3)
           resultTconstrs = (tconstrs :: tconstrss).flatten
           resultTpe <- unifyTypeM(tvar, tpe, loc)
-          resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
+          compositeEff = Type.mkUnion(bodyEff :: effs, bodyEff.loc.asSynthetic)
+          resultEff = Type.mkDifference(compositeEff, effType, loc)
         } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expr.Do(op, args, tvar, loc) =>
