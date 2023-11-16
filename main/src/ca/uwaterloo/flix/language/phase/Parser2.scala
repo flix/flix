@@ -29,7 +29,6 @@ import scala.annotation.tailrec
 
 // TODO: Add a way to transform Tree into a weededAst
 
-
 /**
  * Errors reside both within the produced `Tree` but are also kept in an array in `state.errors`
  * to make it easy to return them as a `CompilationMessage` after parsing.
@@ -60,13 +59,6 @@ object Parser2 {
     case class Opened(index: Int) extends Mark
 
     case class Closed(index: Int) extends Mark
-  }
-
-  private object Name {
-    val Definition: List[TokenKind] = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek)
-    val Parameter: List[TokenKind] = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-    val Variable: List[TokenKind] = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-    val Type: List[TokenKind] = List(TokenKind.NameUpperCase)
   }
 
   def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, Tree], CompilationMessage] = {
@@ -244,6 +236,10 @@ object Parser2 {
   }
 
   ////////// GRAMMAR ///////////////
+
+  /**
+   * source -> definition*
+   */
   private def source()(implicit s: State): Unit = {
     val mark = open()
     while (!eof()) {
@@ -257,20 +253,20 @@ object Parser2 {
     close(mark, TreeKind.Source)
   }
 
-  // definition -> 'def' name parameters ':' ttype '=' expression (';' expression)*
-  private def definition()(implicit s: State): Unit = {
+  /**
+   * definition -> 'def' name parameters ':' ttype '=' expression (';' expression)*
+   */
+  private def definition()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.KeywordDef))
     val mark = open()
     expect(TokenKind.KeywordDef)
-    expectAny(Name.Definition)
+    nameDefinition()
     if (at(TokenKind.ParenL)) {
       parameters()
     }
-
     expect(TokenKind.Colon)
     ttype()
     expect(TokenKind.Equal)
-
     expression()
     while (at(TokenKind.Semi) && !eof()) {
       expect(TokenKind.Semi)
@@ -279,32 +275,36 @@ object Parser2 {
     close(mark, TreeKind.Def)
   }
 
-  private def parameters()(implicit s: State): Unit = {
+  /**
+   * parameters -> '(' (parameter (',' parameter)* )? ')'
+   */
+  private def parameters()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.ParenL))
     val mark = open()
     expect(TokenKind.ParenL)
     var continue = true
     while (continue && !at(TokenKind.ParenR) && !eof()) {
-      if (atAny(Name.Parameter)) {
-        parameter()
-      } else {
-        continue = false
-      }
+        if (atAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore))) {
+          parameter()
+        } else {
+          continue = false
+        }
     }
 
     if (at(TokenKind.Comma)) {
-      //TODO: trailing comma error
-      println("error: trailing comma")
+      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
     }
 
     expect(TokenKind.ParenR)
     close(mark, TreeKind.Parameters)
   }
 
-  private def parameter()(implicit s: State): Unit = {
-    assert(atAny(Name.Parameter))
+  /**
+   * parameter -> expression ':' ttype
+   */
+  private def parameter()(implicit s: State): Mark.Closed = {
     val mark = open()
-    expectAny(Name.Parameter)
+    nameParameter()
     expect(TokenKind.Colon)
     ttype()
     if (at(TokenKind.Comma)) {
@@ -313,12 +313,14 @@ object Parser2 {
     close(mark, TreeKind.Parameter)
   }
 
-  // expression ->
+  /**
+   * expression -> TODO
+   */
   private def expression(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
     var lhs = exprDelimited()
     while (at(TokenKind.ParenL)) {
       val mark = openBefore(lhs)
-      argList()
+      arguments()
       lhs = close(mark, TreeKind.ExprCall)
     }
 
@@ -372,18 +374,24 @@ object Parser2 {
     rt > lt
   }
 
-  private def argList()(implicit s: State): Unit = {
+  /**
+   * arguments -> '(' (argument (',' argument)* )?
+   */
+  private def arguments()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.ParenL))
     val mark = open()
     expect(TokenKind.ParenL)
     while (!at(TokenKind.ParenR) && !eof()) {
-      arg()
+      argument()
     }
     expect(TokenKind.ParenR)
     close(mark, TreeKind.Arguments)
   }
 
-  private def arg()(implicit s: State): Unit = {
+  /**
+   * argument -> expression
+   */
+  private def argument()(implicit s: State): Mark.Closed = {
     val mark = open()
     expression()
     if (!at(TokenKind.ParenR)) {
@@ -411,7 +419,7 @@ object Parser2 {
            | TokenKind.KeywordFalse =>
         advance()
         close(mark, TreeKind.ExprLiteral)
-      case t if Name.Definition.contains(t) =>
+      case t if List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek).contains(t) =>
         // TODO: Check for qualified name
         advance()
         close(mark, TreeKind.ExprName)
@@ -432,16 +440,9 @@ object Parser2 {
     }
   }
 
-  @tailrec
-  private def statement()(implicit s: State): Unit = {
-    val lhs = expression()
-    if (eat(TokenKind.Semi)) {
-      val mark  = openBefore(lhs)
-      close(mark, TreeKind.Statement)
-      statement()
-    }
-  }
-
+  /**
+   * exprParen -> '(' expression? ')'
+   */
   private def exprParen()(implicit s: State): TreeKind = {
     assert(at(TokenKind.ParenL))
     expect(TokenKind.ParenL)
@@ -453,6 +454,9 @@ object Parser2 {
     TreeKind.ExprParen
   }
 
+  /**
+   * exprBlock -> '{' statement? '}'
+   */
   private def exprBlock()(implicit s: State): Unit = {
     assert(at(TokenKind.CurlyL))
     expect(TokenKind.CurlyL)
@@ -463,33 +467,41 @@ object Parser2 {
     expect(TokenKind.CurlyR)
   }
 
+  /**
+   * statement -> expression (';' statement)?
+   */
+  @tailrec
+  private def statement()(implicit s: State): Unit = {
+    val lhs = expression()
+    if (eat(TokenKind.Semi)) {
+      val mark = openBefore(lhs)
+      close(mark, TreeKind.Statement)
+      statement()
+    }
+  }
+
   /////////// TYPES //////////////
-  private def ttype()(implicit s: State): Unit = {
+  private def ttype()(implicit s: State): Mark.Closed = {
     val mark = open()
-    typePrimary()
+    typeDelimited()
+    // TODO: try to parse type arguments
+    // TODO: try to parse a function type
     close(mark, TreeKind.ExprType)
   }
 
-  private def typePrimary()(implicit s: State): Unit = {
+  /**
+   * Detects clearly delimited types such as names, records and tuples
+   */
+  private def typeDelimited()(implicit s: State): Mark.Closed = {
     nth(0) match {
       // TODO: Do we need Primary.True and Primary.False ?
-
-      case TokenKind.ParenL =>
-        val mark = open()
-        typeList()
-        close(mark, TreeKind.TypeTuple)
-
-      case t if (Name.Variable ++ Name.Type).contains(t) =>
-        val mark = open()
-        advance()
-        if (nth(0) == TokenKind.Dot) {
-          typeQualified()
-          close(mark, TreeKind.TypeQualified)
-        } else {
-          val kind = if (Name.Type.contains(t)) TreeKind.TypeName else TreeKind.TypeVariable
-          close(mark, kind)
-        }
-
+      case TokenKind.CurlyL => typeRecord()
+      case TokenKind.ParenL => typeTuple()
+      case TokenKind.NameUpperCase => typeName()
+      case TokenKind.NameLowerCase
+           | TokenKind.NameMath
+           | TokenKind.NameGreek
+           | TokenKind.Underscore => nameVariable()
       case _ =>
         val mark = open()
         if (!eof()) {
@@ -499,8 +511,33 @@ object Parser2 {
     }
   }
 
-  private def typeList()(implicit s: State): Unit = {
+  /**
+   * typeName -> NameType | typeQualifiedName
+   * A type name, type variable or a qualified type.
+   * IE. `Map`, `MyModule.MyEnum`.
+   */
+  private def typeName()(implicit s: State): Mark.Closed = {
+    val first = nameType()
+    var wasQualified = false
+    while (eat(TokenKind.Dot) && !eof()) {
+      wasQualified = true
+      nameType()
+    }
+
+    if (wasQualified) {
+      val mark = openBefore(first)
+      close(mark, TreeKind.TypeQualified)
+    } else {
+      first
+    }
+  }
+
+  /**
+   * typeTuple -> '(' (type (',' type)* )? ')'
+   */
+  private def typeTuple()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.ParenL))
+    val mark = open()
     expect(TokenKind.ParenL)
     while (!at(TokenKind.ParenR) && !eof()) {
       ttype()
@@ -510,21 +547,89 @@ object Parser2 {
     }
 
     if (at(TokenKind.Comma)) {
-      //TODO: trailing comma error
-      println("error: trailing comma")
+      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
     }
     expect(TokenKind.ParenR)
+    close(mark, TreeKind.TypeTuple)
   }
 
-  // A helper for qualified names such as `List.map`.
-  private def typeQualified()(implicit s: State): Unit = {
-    assert(at(TokenKind.Dot))
-    while (at(TokenKind.Dot) && !eof()) {
-      expect(TokenKind.Dot)
-      if (Name.Variable.contains(nth(0))) {
-        advance()
-      }
+  /**
+   * typeRecord -> '{' (typeRecordField (',' typeRecordField)* )? ('|' Name.Variable)| '}'
+   */
+  private def typeRecord()(implicit s: State): Mark.Closed = {
+    // TODO: What does RecordRow do?
+
+    assert(at(TokenKind.CurlyL))
+    val mark = open()
+    expect(TokenKind.CurlyL)
+    while (!atAny(List(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
+      typeRecordField()
     }
-    expectAny(Name.Type)
+
+    if (at(TokenKind.Comma)) {
+      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+    }
+
+    if (at(TokenKind.Bar)) {
+      val mark = open()
+      expect(TokenKind.Bar)
+      nameVariable()
+      close(mark, TreeKind.TypeRecordVariable)
+    }
+
+    expect(TokenKind.CurlyR)
+    close(mark, TreeKind.TypeRecord)
+  }
+
+  /**
+   * typeRecordField -> Names.Field '=' ttype
+   */
+  private def typeRecordField()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    nameField()
+    expect(TokenKind.Equal)
+    ttype()
+    if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
+      expect(TokenKind.Comma)
+    }
+    close(mark, TreeKind.TypeRecordField)
+  }
+
+
+  /////// NAMES ////////////
+  private def nameDefinition()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek))
+    close(mark, TreeKind.Name.Definition)
+  }
+
+  private def nameParameter()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    if (eat(TokenKind.Underscore)) {
+      close(mark, TreeKind.Name.Wildcard)
+    }
+    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek))
+    close(mark, TreeKind.Name.Parameter)
+  }
+
+  private def nameVariable()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    if (eat(TokenKind.Underscore)) {
+      close(mark, TreeKind.Name.Wildcard)
+    }
+    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek))
+    close(mark, TreeKind.Name.Variable)
+  }
+
+  private def nameField()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    expect(TokenKind.NameLowerCase)
+    close(mark, TreeKind.Name.Field)
+  }
+
+  private def nameType()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    expect(TokenKind.NameUpperCase)
+    close(mark, TreeKind.Name.Type)
   }
 }
