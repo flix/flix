@@ -37,6 +37,24 @@ object UnstructuredTree {
 
     case object Argument extends TreeKind
 
+    /////// NAMES ///////
+    sealed trait Name extends TreeKind
+
+    object Name {
+
+      case object Wildcard extends Name
+
+      case object Field extends Name
+
+      case object Definition extends Name
+
+      case object Parameter extends Name
+
+      case object Variable extends Name
+
+      case object Type extends Name
+    }
+
     /////// EXPRESSIONS //////
     case object ExprLiteral extends TreeKind
 
@@ -55,13 +73,15 @@ object UnstructuredTree {
     ////// TYPES //////
     case object ExprType extends  TreeKind
 
-    case object TypeVariable extends TreeKind
-
-    case object TypeName extends TreeKind
-
     case object TypeQualified extends TreeKind
 
     case object TypeTuple extends TreeKind
+
+    case object TypeRecord extends TreeKind
+
+    case object TypeRecordVariable extends TreeKind
+
+    case object TypeRecordField extends TreeKind
 
     case object TypeFunction extends TreeKind
 
