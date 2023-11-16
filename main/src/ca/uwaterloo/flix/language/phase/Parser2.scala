@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
-import scala.annotation.tailrec
-
 // TODO: Add change set support
 
 // TODO: Add a way to transform Tree into a weededAst
@@ -235,6 +233,54 @@ object Parser2 {
     }
   }
 
+  // A precedence table for binary operators, lower is higher precedence
+  private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
+    List(TokenKind.BackArrow), // TODO: This goes here?
+    List(TokenKind.KeywordOr),
+    List(TokenKind.KeywordAnd),
+    List(TokenKind.TripleBar), // |||
+    List(TokenKind.TripleCaret), // ^^^
+    List(TokenKind.TripleAmpersand), // &&&
+    List(TokenKind.EqualEqual, TokenKind.AngledEqual), // ==, <=>  // TODO: !=
+    List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
+    List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
+    List(TokenKind.Plus, TokenKind.Minus), // +, -
+    List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod // TODO: rem?
+    List(TokenKind.AngledPlus), // <+>
+    List(TokenKind.InfixFunction), // `my_function`
+    List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
+  )
+
+  // A precedence table for unary operators, lower is higher precedence
+  private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
+    List(TokenKind.Plus, TokenKind.Minus), // +, -, ~~~
+    List(TokenKind.KeywordNot)
+  )
+
+  private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
+    def unaryTightness(kind: TokenKind): Int = {
+      // Unary operators all bind tighter than binary ones.
+      // This is done by adding the length of the binary precedence table here:
+      UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
+    }
+
+    def tightness(kind: TokenKind): Int = {
+      BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
+    }
+
+    val rt = tightness(right)
+    if (rt == -1) {
+      return false
+    }
+    val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
+    if (lt == -1) {
+      assert(left == TokenKind.Eof)
+      return true
+    }
+
+    rt > lt
+  }
+
   ////////// GRAMMAR ///////////////
 
   /**
@@ -338,54 +384,6 @@ object Parser2 {
     }
 
     lhs
-  }
-
-  // A precedence table for binary operators, lower is higher precedence
-  private def BINARY_PRECEDENCE:List[List[TokenKind]] = List(
-    List(TokenKind.BackArrow), // TODO: This goes here?
-    List(TokenKind.KeywordOr),
-    List(TokenKind.KeywordAnd),
-    List(TokenKind.TripleBar), // |||
-    List(TokenKind.TripleCaret), // ^^^
-    List(TokenKind.TripleAmpersand), // &&&
-    List(TokenKind.EqualEqual, TokenKind.AngledEqual), // ==, <=>  // TODO: !=
-    List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
-    List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
-    List(TokenKind.Plus, TokenKind.Minus), // +, -
-    List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod // TODO: rem?
-    List(TokenKind.AngledPlus), // <+>
-    List(TokenKind.InfixFunction), // `my_function`
-    List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
-  )
-
-  // A precedence table for unary operators, lower is higher precedence
-  private def UNARY_PRECEDENCE:List[List[TokenKind]] = List(
-    List(TokenKind.Plus, TokenKind.Minus), // +, -, ~~~
-    List(TokenKind.KeywordNot)
-  )
-
-  private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
-    def unaryTightness(kind: TokenKind): Int = {
-      // Unary operators all bind tighter than binary ones.
-      // This is done by adding the length of the binary precedence table here:
-      UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
-    }
-
-    def tightness(kind: TokenKind): Int = {
-      BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
-    }
-
-    val rt = tightness(right)
-    if (rt == -1) {
-      return false
-    }
-    val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
-    if (lt == -1) {
-      assert(left == TokenKind.Eof)
-      return true
-    }
-
-    rt > lt
   }
 
   /**
@@ -530,11 +528,9 @@ object Parser2 {
 
   /////////// TYPES //////////////
   private def ttype()(implicit s: State): Mark.Closed = {
-    val mark = open()
     typeDelimited()
     // TODO: try to parse type arguments
     // TODO: try to parse a function type
-    close(mark, TreeKind.ExprType)
   }
 
   /**
@@ -598,7 +594,7 @@ object Parser2 {
       advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
     }
     expect(TokenKind.ParenR)
-    close(mark, TreeKind.TypeTuple)
+    close(mark, TreeKind.Type.Tuple)
   }
 
   /**
@@ -622,11 +618,11 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.Bar)
       nameVariable()
-      close(mark, TreeKind.TypeRecordVariable)
+      close(mark, TreeKind.Type.RecordVariable)
     }
 
     expect(TokenKind.CurlyR)
-    close(mark, TreeKind.TypeRecord)
+    close(mark, TreeKind.Type.Record)
   }
 
   /**
@@ -640,7 +636,7 @@ object Parser2 {
     if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
       expect(TokenKind.Comma)
     }
-    close(mark, TreeKind.TypeRecordField)
+    close(mark, TreeKind.Type.RecordField)
   }
 
 

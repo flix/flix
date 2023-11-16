@@ -19,7 +19,9 @@ import ca.uwaterloo.flix.language.errors.Parse2Error
 
 object UnstructuredTree {
 
-  sealed trait TreeKind
+  sealed trait TreeKind {
+    def debug_name:Option[String] = None
+  }
 
   object TreeKind {
 
@@ -27,18 +29,20 @@ object UnstructuredTree {
 
     case object Def extends TreeKind
 
+    case object Statement extends TreeKind
+
     case object Parameters extends TreeKind
 
     case object Parameter extends TreeKind
-
-    case object Statement extends TreeKind
 
     case object Arguments extends TreeKind
 
     case object Argument extends TreeKind
 
     /////// NAMES ///////
-    sealed trait Name extends TreeKind
+    sealed trait Name extends TreeKind {
+      override def debug_name: Option[String] = Some("Name")
+    }
 
     object Name {
 
@@ -58,7 +62,9 @@ object UnstructuredTree {
     }
 
     /////// EXPRESSIONS //////
-    sealed trait Expr extends TreeKind
+    sealed trait Expr extends TreeKind {
+      override def debug_name: Option[String] = Some("Expr")
+    }
 
     object Expr {
 
@@ -77,17 +83,21 @@ object UnstructuredTree {
     }
 
     ////// TYPES //////
-    case object ExprType extends  TreeKind
+    sealed trait Type extends TreeKind {
+      override def debug_name: Option[String] = Some("Type")
+    }
 
-    case object TypeTuple extends TreeKind
+    object Type {
 
-    case object TypeRecord extends TreeKind
+      case object Tuple extends Type
 
-    case object TypeRecordVariable extends TreeKind
+      case object Record extends Type
 
-    case object TypeRecordField extends TreeKind
+      case object RecordVariable extends Type
 
-    case object TypeFunction extends TreeKind
+      case object RecordField extends Type
+
+    }
 
     /**
      * A tree representing a parse-error.
@@ -101,13 +111,19 @@ object UnstructuredTree {
   }
 
   case class Tree(kind: TreeKind, var children: Array[Child]) {
-    def toDebugString(nesting: Int = 1): String =
-      s"$kind ${
+    def toDebugString(nesting: Int = 1): String = {
+      val kindName = kind.debug_name match {
+        case Some(name) => s"$name.$kind"
+        case None => s"$kind"
+      }
+
+      s"$kindName ${
         children.map {
           case Child.Token(token) => s"\n${"  " * nesting}'${token.text}'"
           case Child.Tree(tree) => s"\n${"  " * nesting}${tree.toDebugString(nesting + 1)}"
         }.mkString("")
       }"
+    }
   }
 
   sealed trait Child
