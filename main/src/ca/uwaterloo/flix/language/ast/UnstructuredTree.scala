@@ -53,27 +53,31 @@ object UnstructuredTree {
       case object Variable extends Name
 
       case object Type extends Name
+
+      case object Qualified extends Name
     }
 
     /////// EXPRESSIONS //////
-    case object ExprLiteral extends TreeKind
+    sealed trait Expr extends TreeKind
 
-    case object ExprName extends TreeKind
+    object Expr {
 
-    case object ExprParen extends TreeKind
+      case object Literal extends Expr
 
-    case object ExprBlock extends TreeKind
+      case object Paren extends Expr
 
-    case object ExprBinary extends TreeKind
+      case object Block extends Expr
 
-    case object ExprUnary extends TreeKind
+      case object Binary extends Expr
 
-    case object ExprCall extends TreeKind
+      case object Unary extends Expr
+
+      case object Call extends Expr
+
+    }
 
     ////// TYPES //////
     case object ExprType extends  TreeKind
-
-    case object TypeQualified extends TreeKind
 
     case object TypeTuple extends TreeKind
 

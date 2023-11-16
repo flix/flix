@@ -316,22 +316,22 @@ object Parser2 {
   /**
    * expression -> TODO
    */
-  private def expression(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
+  private def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
     var lhs = exprDelimited()
     while (at(TokenKind.ParenL)) {
       val mark = openBefore(lhs)
       arguments()
-      lhs = close(mark, TreeKind.ExprCall)
+      lhs = close(mark, TreeKind.Expr.Call)
     }
 
     var continue = true
     while (continue) {
       val right = nth(0)
-      if (rightBindsTighter(left, right)) {
+      if (rightBindsTighter(left, right, leftIsUnary)) {
         val mark = openBefore(lhs)
         advance()
         expression(right)
-        lhs = close(mark, TreeKind.ExprBinary)
+        lhs = close(mark, TreeKind.Expr.Binary)
       } else {
         continue = false
       }
@@ -340,32 +340,46 @@ object Parser2 {
     lhs
   }
 
-  private def rightBindsTighter(left: TokenKind, right: TokenKind): Boolean = {
+  // A precedence table for binary operators, lower is higher precedence
+  private def BINARY_PRECEDENCE:List[List[TokenKind]] = List(
+    List(TokenKind.BackArrow), // TODO: This goes here?
+    List(TokenKind.KeywordOr),
+    List(TokenKind.KeywordAnd),
+    List(TokenKind.TripleBar), // |||
+    List(TokenKind.TripleCaret), // ^^^
+    List(TokenKind.TripleAmpersand), // &&&
+    List(TokenKind.EqualEqual, TokenKind.AngledEqual), // ==, <=>  // TODO: !=
+    List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
+    List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
+    List(TokenKind.Plus, TokenKind.Minus), // +, -
+    List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod // TODO: rem?
+    List(TokenKind.AngledPlus), // <+>
+    List(TokenKind.InfixFunction), // `my_function`
+    List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
+  )
+
+  // A precedence table for unary operators, lower is higher precedence
+  private def UNARY_PRECEDENCE:List[List[TokenKind]] = List(
+    List(TokenKind.Plus, TokenKind.Minus), // +, -, ~~~
+    List(TokenKind.KeywordNot)
+  )
+
+  private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
+    def unaryTightness(kind: TokenKind): Int = {
+      // Unary operators all bind tighter than binary ones.
+      // This is done by adding the length of the binary precedence table here:
+      UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
+    }
+
     def tightness(kind: TokenKind): Int = {
-      // A precedence table, lower is higher precedence
-      List(
-        List(TokenKind.BackArrow), // TODO: This goes here?
-        List(TokenKind.KeywordOr),
-        List(TokenKind.KeywordAnd),
-        List(TokenKind.TripleBar), // |||
-        List(TokenKind.TripleCaret), // ^^^
-        List(TokenKind.TripleAmpersand), // &&&
-        List(TokenKind.EqualEqual, TokenKind.AngledEqual), // ==, <=>  // TODO: !=
-        List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
-        List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
-        List(TokenKind.Plus, TokenKind.Minus), // +, -
-        List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod // TODO: rem?
-        List(TokenKind.AngledPlus), // <+>
-        List(TokenKind.InfixFunction), // `my_function`
-        List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
-      ).indexWhere(l => l.contains(kind))
+      BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
     }
 
     val rt = tightness(right)
     if (rt == -1) {
       return false
     }
-    val lt = tightness(left)
+    val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
     if (lt == -1) {
       assert(left == TokenKind.Eof)
       return true
@@ -402,9 +416,9 @@ object Parser2 {
 
   private def exprDelimited()(implicit s: State): Mark.Closed = {
     // Handle clearly delimited expressions
-    val mark = open()
-
     nth(0) match {
+      case TokenKind.ParenL => exprParen()
+      case TokenKind.CurlyL => exprBlock()
       case TokenKind.LiteralString
            | TokenKind.LiteralChar
            | TokenKind.LiteralFloat32
@@ -416,23 +430,17 @@ object Parser2 {
            | TokenKind.LiteralInt64
            | TokenKind.LiteralBigInt
            | TokenKind.KeywordTrue
-           | TokenKind.KeywordFalse =>
-        advance()
-        close(mark, TreeKind.ExprLiteral)
-      case t if List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek).contains(t) =>
-        // TODO: Check for qualified name
-        advance()
-        close(mark, TreeKind.ExprName)
-      case TokenKind.ParenL =>
-        close(mark, exprParen())
-      case TokenKind.CurlyL =>
-        exprBlock()
-        close(mark, TreeKind.ExprBlock)
-      case TokenKind.Minus | TokenKind.KeywordNot | TokenKind.Plus | TokenKind.TripleTilde =>
-        advance()
-        exprDelimited()
-        close(mark, TreeKind.ExprUnary)
+           | TokenKind.KeywordFalse => exprLiteral()
+      case TokenKind.NameLowerCase
+           | TokenKind.NameUpperCase
+           | TokenKind.NameMath
+           | TokenKind.NameGreek => exprName()
+      case TokenKind.Minus
+           | TokenKind.KeywordNot
+           | TokenKind.Plus
+           | TokenKind.TripleTilde => exprUnary()
       case _ =>
+        val mark = open()
         if (!eof()) {
           advance()
         }
@@ -441,43 +449,83 @@ object Parser2 {
   }
 
   /**
+   * exprLiteral -> integer | float | boolean
+   */
+  private def exprLiteral()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    advance()
+    close(mark, TreeKind.Expr.Literal)
+  }
+
+  /**
+   * exprName -> Name.Definition ('.' Name.Definition)*
+   */
+  private def exprName()(implicit s: State): Mark.Closed = {
+    val first = nameDefinition()
+    var wasQualified = false
+    while (eat(TokenKind.Dot) && !eof()) {
+      wasQualified = true
+      nameDefinition()
+    }
+
+    if (wasQualified) {
+      val mark = openBefore(first)
+      close(mark, TreeKind.Name.Qualified)
+    } else {
+      first
+    }
+  }
+
+  /**
    * exprParen -> '(' expression? ')'
    */
-  private def exprParen()(implicit s: State): TreeKind = {
+  private def exprParen()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.ParenL))
+    val mark = open()
     expect(TokenKind.ParenL)
     if (eat(TokenKind.ParenR)) { // Handle unit literal `()`
-      return TreeKind.ExprLiteral
+      return close(mark, TreeKind.Expr.Literal)
     }
     expression()
     expect(TokenKind.ParenR)
-    TreeKind.ExprParen
+    close(mark, TreeKind.Expr.Paren)
   }
 
   /**
    * exprBlock -> '{' statement? '}'
    */
-  private def exprBlock()(implicit s: State): Unit = {
+  private def exprBlock()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.CurlyL))
+    val mark = open()
     expect(TokenKind.CurlyL)
     if (eat(TokenKind.CurlyR)) { // Handle empty block
-      return
+      return close(mark, TreeKind.Expr.Block)
     }
     statement()
     expect(TokenKind.CurlyR)
+    close(mark, TreeKind.Expr.Block)
   }
 
   /**
    * statement -> expression (';' statement)?
    */
-  @tailrec
-  private def statement()(implicit s: State): Unit = {
+  private def statement()(implicit s: State): Mark.Closed = {
     val lhs = expression()
-    if (eat(TokenKind.Semi)) {
+    var last = lhs
+    while (eat(TokenKind.Semi)) {
       val mark = openBefore(lhs)
       close(mark, TreeKind.Statement)
-      statement()
+      last = expression()
     }
+    last
+  }
+
+  private def exprUnary()(implicit s:State): Mark.Closed = {
+    val mark = open()
+    val op = nth(0)
+    expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde))
+    expression(left = op, leftIsUnary = true)
+    close(mark, TreeKind.Expr.Unary)
   }
 
   /////////// TYPES //////////////
@@ -526,7 +574,7 @@ object Parser2 {
 
     if (wasQualified) {
       val mark = openBefore(first)
-      close(mark, TreeKind.TypeQualified)
+      close(mark, TreeKind.Name.Qualified)
     } else {
       first
     }
