@@ -444,6 +444,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
+      case _ if isKeyword("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
       // User defined operators.
@@ -796,6 +797,23 @@ object Lexer {
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
+  }
+
+  /**
+   * Moves current position past a regex literal.
+   * If the regex  is unterminated a `TokenKind.Err` is returned.
+   */
+  private def acceptRegex()(implicit s: State): TokenKind = {
+    while (!eof()) {
+      val p = escapedPeek()
+      if (p.contains('"')) {
+        advance()
+        return TokenKind.LiteralRegex
+      }
+      advance()
+    }
+
+    TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
   }
 
   /**

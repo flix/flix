@@ -263,6 +263,8 @@ object TokenKind {
 
   case object LiteralInt64 extends TokenKind
 
+  case object LiteralRegex extends TokenKind
+
   case object LiteralString extends TokenKind
 
   case object LiteralStringInterpolationL extends TokenKind
