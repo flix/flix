@@ -27,6 +27,8 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 // TODO: Add a way to transform Tree into a weededAst
 
+// TODO: Add source code in Parser2Errors
+
 /**
  * Errors reside both within the produced `Tree` but are also kept in an array in `state.errors`
  * to make it easy to return them as a `CompilationMessage` after parsing.
@@ -162,13 +164,15 @@ object Parser2 {
   }
 
   private def advance()(implicit s: State): Unit = {
-    assert(!eof())
+    if (eof()) {
+      return
+    }
     s.fuel = 256
     s.events = s.events :+ Event.Advance
     s.position += 1
   }
 
-  private def advanceWithError(error: Parse2Error)(implicit s: State): Unit = {
+  private def advanceWithError(error: Parse2Error)(implicit s: State): Mark.Closed = {
     val mark = open()
     advance()
     closeWithError(mark, error)
@@ -292,7 +296,7 @@ object Parser2 {
       if (at(TokenKind.KeywordDef)) {
         definition()
       } else {
-        advanceWithError(Parse2Error.UnexpectedToken(currentSourceLocation(), TokenKind.KeywordDef))
+        advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected definition, found ${nth(0)}"))
       }
     }
 
@@ -363,6 +367,7 @@ object Parser2 {
    * expression -> TODO
    */
   private def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
+    val mark = open()
     var lhs = exprDelimited()
     while (at(TokenKind.ParenL)) {
       val mark = openBefore(lhs)
@@ -383,11 +388,11 @@ object Parser2 {
       }
     }
 
-    lhs
+    close(mark, TreeKind.Expr.Expr)
   }
 
   /**
-   * arguments -> '(' (argument (',' argument)* )?
+   * arguments -> '(' (argument (',' argument)* )? ')'
    */
   private def arguments()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.ParenL))
@@ -437,12 +442,7 @@ object Parser2 {
            | TokenKind.KeywordNot
            | TokenKind.Plus
            | TokenKind.TripleTilde => exprUnary()
-      case _ =>
-        val mark = open()
-        if (!eof()) {
-          advance()
-        }
-        closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), "Expected expression."))
+      case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
     }
   }
 
@@ -527,14 +527,98 @@ object Parser2 {
   }
 
   /////////// TYPES //////////////
+
+  /**
+   * ttype -> (typeDelimited typeArguments? | typeFunction) ( '\' effectSet )?
+   */
   private def ttype()(implicit s: State): Mark.Closed = {
-    typeDelimited()
-    // TODO: try to parse type arguments
-    // TODO: try to parse a function type
+    val mark = open()
+    val lhs = typeDelimited()
+
+    // handle Type argument application
+    if (at(TokenKind.BracketL)) {
+      typeArguments()
+    }
+
+    // Handle function types
+    if (at(TokenKind.Arrow)) {
+      val mark = openBefore(lhs)
+      ttype()
+      if (at(TokenKind.Slash)) {
+        effectSet()
+      }
+      close(mark, TreeKind.Type.Function)
+    }
+
+    println(s"${nth(0)}")
+
+    // Handle effect
+    if (at(TokenKind.Backslash)) {
+        effectSet()
+    }
+
+    close(mark, TreeKind.Type.Type)
   }
 
   /**
-   * Detects clearly delimited types such as names, records and tuples
+   * effectSet -> '\' effect | '{' ( effect ( ',' effect )* )? '}'
+   */
+  private def effectSet()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.Backslash))
+    val mark = open()
+    expect(TokenKind.Backslash)
+    if (eat(TokenKind.CurlyL)) {
+      while(!at(TokenKind.CurlyR) && !eof()) {
+        effect()
+        if (!at(TokenKind.CurlyR)) {
+          expect(TokenKind.Comma)
+        }
+      }
+      expect(TokenKind.CurlyR)
+    } else {
+      effect()
+    }
+
+    close(mark, TreeKind.Type.Effect)
+  }
+
+  private def effect()(implicit s: State): Mark.Closed = {
+    nth(0) match {
+      case TokenKind.NameUpperCase => nameEffect()
+      case TokenKind.NameLowerCase => nameVariable()
+      case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected effect, found $t"))
+    }
+  }
+
+  /**
+   * typeArguments -> '[' ( argument ( ',' argument )* ) ']'?
+   */
+  private def typeArguments()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.BracketL))
+    val mark = open()
+    expect(TokenKind.BracketL)
+    while (!at(TokenKind.BracketR) && !eof()) {
+      typeArgument()
+    }
+    expect(TokenKind.BracketR)
+    close(mark, TreeKind.Type.Arguments)
+  }
+
+  /**
+   * typeArgument -> ttype
+   */
+  private def typeArgument()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    ttype()
+    if (!at(TokenKind.BracketR)) {
+      expect(TokenKind.Comma)
+    }
+    close(mark, TreeKind.Type.Argument)
+  }
+
+  /**
+   * typeDelimited -> typeRecord | typeTuple | typeName | typeVariable
+   *  Detects clearly delimited types such as names, records and tuples
    */
   private def typeDelimited()(implicit s: State): Mark.Closed = {
     nth(0) match {
@@ -546,12 +630,7 @@ object Parser2 {
            | TokenKind.NameMath
            | TokenKind.NameGreek
            | TokenKind.Underscore => nameVariable()
-      case _ =>
-        val mark = open()
-        if (!eof()) {
-          advance()
-        }
-        closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), "Expected type."))
+      case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
     }
   }
 
@@ -675,5 +754,11 @@ object Parser2 {
     val mark = open()
     expect(TokenKind.NameUpperCase)
     close(mark, TreeKind.Name.Type)
+  }
+
+  private def nameEffect()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    expect(TokenKind.NameUpperCase)
+    close(mark, TreeKind.Name.Effect)
   }
 }

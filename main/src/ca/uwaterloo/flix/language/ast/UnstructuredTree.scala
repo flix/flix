@@ -58,6 +58,8 @@ object UnstructuredTree {
 
       case object Type extends Name
 
+      case object Effect extends Name
+
       case object Qualified extends Name
     }
 
@@ -67,6 +69,8 @@ object UnstructuredTree {
     }
 
     object Expr {
+
+      case object Expr extends Expr
 
       case object Literal extends Expr
 
@@ -89,6 +93,8 @@ object UnstructuredTree {
 
     object Type {
 
+      case object Type extends Type
+
       case object Tuple extends Type
 
       case object Record extends Type
@@ -97,6 +103,13 @@ object UnstructuredTree {
 
       case object RecordField extends Type
 
+      case object Arguments extends Type
+
+      case object Argument extends Type
+
+      case object Function extends Type
+
+      case object Effect extends Type
     }
 
     /**
