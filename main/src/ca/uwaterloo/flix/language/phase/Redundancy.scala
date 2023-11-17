@@ -50,7 +50,7 @@ object Redundancy {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
-    implicit val ctx: SharedContext = new SharedContext(new ConcurrentHashMap())
+    implicit val ctx: SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
 
     // Computes all used symbols in all top-level defs (in parallel).
     val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
@@ -284,9 +284,10 @@ object Redundancy {
 
     case Expr.Sig(sym, _, _) =>
       // Recursive calls do not count as uses.
-      if (!rc.sig.contains(sym))
-        Used.of(sym)
-      else
+      if (!rc.sig.contains(sym)) {
+        ctx.sigSyms.put(sym, ())
+        Used.empty
+      } else
         Used.empty
 
     case Expr.Hole(sym, _, _) => Used.of(sym)
@@ -1161,7 +1162,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -1172,11 +1173,6 @@ object Redundancy {
       * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
       */
     def of(sym: Symbol.RestrictableEnumSym, caze: Symbol.RestrictableCaseSym): Used = empty.copy(restrictableEnumSyms = MultiMap.singleton(sym, caze))
-
-    /**
-      * Returns an object where the given sig symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = Set(sym))
 
     /**
       * Returns an object where the given hole symbol `sym` is marked as used.
@@ -1209,7 +1205,6 @@ object Redundancy {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Symbol.CaseSym],
                           restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
-                          sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           effectSyms: Set[Symbol.EffectSym],
@@ -1231,7 +1226,6 @@ object Redundancy {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.restrictableEnumSyms ++ that.restrictableEnumSyms,
-          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.effectSyms ++ that.effectSyms,
@@ -1309,8 +1303,10 @@ object Redundancy {
   /**
     * A global shared context. Must be thread-safe.
     *
-    * @param defSyms the definition symbols used anywhere in the program.
+    * @param defSyms the def symbols used anywhere in the program.
+    * @param sigSyms the sig symbols used anywhere in the program.
     */
-  class SharedContext(val defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit])
+  class SharedContext(val defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
+                      val sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit])
 
 }
