@@ -47,13 +47,17 @@ object TokenKind {
 
   case object Arrow extends TokenKind
 
+  case object ArrowThin extends TokenKind
+
   case object At extends TokenKind
 
-  case object BackArrow extends TokenKind
+  case object BackArrowThin extends TokenKind
 
   case object Backslash extends TokenKind
 
   case object Bang extends TokenKind
+
+  case object BangEqual extends TokenKind
 
   case object Bar extends TokenKind
 
