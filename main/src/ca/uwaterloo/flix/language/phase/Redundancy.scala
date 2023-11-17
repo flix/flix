@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
 
 /**
@@ -49,25 +50,27 @@ object Redundancy {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
+    implicit val ctx: SharedContext = new SharedContext(new ConcurrentHashMap())
+
     // Computes all used symbols in all top-level defs (in parallel).
     val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
-      case (acc, (_, decl)) => acc ++ visitDef(decl)(root, flix)
+      case (acc, (_, decl)) => acc ++ visitDef(decl)(ctx, root, flix)
     }, _ ++ _)
 
     // Compute all used symbols in all instance defs (in parallel).
     val usedInstDefs = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
-      case (acc, decl) => acc ++ visitDef(decl)(root, flix)
+      case (acc, decl) => acc ++ visitDef(decl)(ctx, root, flix)
     }, _ ++ _)
 
     val usedSigs = ParOps.parAgg(root.sigs, Used.empty)({
-      case (acc, (_, decl)) => acc ++ visitSig(decl)(root, flix)
+      case (acc, (_, decl)) => acc ++ visitSig(decl)(ctx, root, flix)
     }, _ ++ _)
 
     val usedAll = usedDefs ++ usedInstDefs ++ usedSigs
 
     // Check for unused symbols.
     val usedRes =
-      checkUnusedDefs(usedAll)(root) ++
+      checkUnusedDefs(usedAll)(ctx, root) ++
         checkUnusedEnumsAndTags(usedAll)(root) ++
         checkUnusedRestrictableEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
@@ -78,10 +81,12 @@ object Redundancy {
     usedRes.toValidation(root)
   }
 
+  class SharedContext(val defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit])
+
   /**
     * Checks for unused symbols in the given signature and returns all used symbols.
     */
-  private def visitSig(sig: Sig)(implicit root: Root, flix: Flix): Used = {
+  private def visitSig(sig: Sig)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the signature.
     val usedExp = sig.exp match {
@@ -109,7 +114,7 @@ object Redundancy {
   /**
     * Checks for unused symbols in the given definition and returns all used symbols.
     */
-  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
+  private def visitDef(defn: Def)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the definition.
     val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
@@ -151,7 +156,7 @@ object Redundancy {
   /**
     * Checks for unused definition symbols.
     */
-  private def checkUnusedDefs(used: Used)(implicit root: Root): Used = {
+  private def checkUnusedDefs(used: Used)(implicit ctx: SharedContext, root: Root): Used = {
     root.defs.foldLeft(used) {
       case (acc, (_, decl)) if deadDef(decl, used) => acc + UnusedDefSym(decl.sym)
       case (acc, _) => acc
@@ -257,7 +262,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
-  private def visitExp(e0: Expr, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = e0 match {
+  private def visitExp(e0: Expr, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.Cst(_, _, _) => Used.empty
 
     case Expr.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
@@ -273,9 +278,10 @@ object Redundancy {
 
     case Expr.Def(sym, _, _) =>
       // Recursive calls do not count as uses.
-      if (!rc.defn.contains(sym))
-        Used.of(sym)
-      else
+      if (!rc.defn.contains(sym)) {
+        ctx.defSyms.put(sym, ())
+        Used.empty
+      } else
         Used.empty
 
     case Expr.Sig(sym, _, _) =>
@@ -789,7 +795,7 @@ object Redundancy {
     *
     * 3. All the free variables.
     */
-  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
+  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
       case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
         // Find free vars in pattern
@@ -833,7 +839,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
     */
-  private def visitExps(es: List[Expr], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used =
+  private def visitExps(es: List[Expr], env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }
@@ -871,7 +877,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
     */
-  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = {
+  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
     val head = visitHeadPred(c0.head, env0, rc: RecursionContext)
     val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0, rc: RecursionContext)
@@ -900,7 +906,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
-  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = h0 match {
+  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0, rc)
   }
@@ -908,7 +914,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
-  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = b0 match {
+  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = b0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
         case (acc, term) => acc ++ Used.of(freeVars(term))
@@ -1049,12 +1055,12 @@ object Redundancy {
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
-  private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
+  private def deadDef(decl: Def, used: Used)(implicit ctx: SharedContext, root: Root): Boolean =
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
-      !used.defSyms.contains(decl.sym)
+      !ctx.defSyms.containsKey(decl.sym)
 
   /**
     * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
@@ -1157,7 +1163,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -1168,11 +1174,6 @@ object Redundancy {
       * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
       */
     def of(sym: Symbol.RestrictableEnumSym, caze: Symbol.RestrictableCaseSym): Used = empty.copy(restrictableEnumSyms = MultiMap.singleton(sym, caze))
-
-    /**
-      * Returns an object where the given defn symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
     /**
       * Returns an object where the given sig symbol `sym` is marked as used.
@@ -1210,7 +1211,6 @@ object Redundancy {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Symbol.CaseSym],
                           restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
-                          defSyms: Set[Symbol.DefnSym],
                           sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
@@ -1233,7 +1233,6 @@ object Redundancy {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.restrictableEnumSyms ++ that.restrictableEnumSyms,
-          this.defSyms ++ that.defSyms,
           this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
