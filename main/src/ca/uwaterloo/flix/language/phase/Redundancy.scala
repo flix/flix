@@ -50,7 +50,7 @@ object Redundancy {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
-    implicit val ctx: SharedContext = new SharedContext(new ConcurrentHashMap(), new ConcurrentHashMap())
+    implicit val ctx: SharedContext = SharedContext.mk()
 
     // Computes all used symbols in all top-level defs (in parallel).
     val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
@@ -71,7 +71,7 @@ object Redundancy {
     // Check for unused symbols.
     val usedRes =
       checkUnusedDefs(usedAll)(ctx, root) ++
-        checkUnusedEnumsAndTags(usedAll)(root) ++
+        checkUnusedEnumsAndTags(usedAll)(ctx, root) ++
         checkUnusedRestrictableEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
         checkRedundantTypeConstraints()(root, flix) ++
@@ -174,7 +174,7 @@ object Redundancy {
   /**
     * Checks for unused enum symbols and tags.
     */
-  private def checkUnusedEnumsAndTags(used: Used)(implicit root: Root): Used = {
+  private def checkUnusedEnumsAndTags(used: Used)(implicit ctx: SharedContext, root: Root): Used = {
     root.enums.foldLeft(used) {
       case (acc, (sym, decl)) if deadEnum(decl, used) =>
         // The enum is private and never used
@@ -524,7 +524,9 @@ object Redundancy {
 
     case Expr.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _) =>
       val us = visitExp(exp, env0, rc)
-      Used.of(sym.enumSym, sym) ++ us
+      ctx.enumSyms.put(sym.enumSym, ())
+      ctx.caseSyms.put(sym, ())
+      us
 
     case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _) =>
       val us = visitExp(exp, env0, rc)
@@ -846,11 +848,14 @@ object Redundancy {
   /**
     * Returns the symbols used in the given pattern `pat`.
     */
-  private def visitPat(pat0: Pattern): Used = pat0 match {
+  private def visitPat(pat0: Pattern)(implicit ctx: SharedContext): Used = pat0 match {
     case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
     case Pattern.Cst(_, _, _) => Used.empty
-    case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
+    case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) =>
+      ctx.enumSyms.put(sym.enumSym, ())
+      ctx.caseSyms.put(sym, ())
+      Used.empty
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
       visitPats(pats.map(_.pat)) ++ visitPat(pat)
@@ -869,7 +874,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of pattern `ps`.
     */
-  private def visitPats(ps: List[Pattern]): Used = ps.foldLeft(Used.empty) {
+  private def visitPats(ps: List[Pattern])(implicit ctx: SharedContext): Used = ps.foldLeft(Used.empty) {
     case (acc, pat) => acc ++ visitPat(pat)
   }
 
@@ -1078,19 +1083,19 @@ object Redundancy {
   /**
     * Returns `true` if the given `enm` is unused according to `used`.
     */
-  private def deadEnum(enm: Enum, used: Used): Boolean =
+  private def deadEnum(enm: Enum, used: Used)(implicit ctx: SharedContext): Boolean =
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
-      !used.enumSyms.contains(enm.sym)
+      !ctx.enumSyms.containsKey(enm.sym)
 
   /**
     * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
     */
-  private def deadTag(enm: Enum, tag: Symbol.CaseSym, used: Used): Boolean =
+  private def deadTag(enm: Enum, tag: Symbol.CaseSym, used: Used)(implicit ctx: SharedContext): Boolean =
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
       !tag.name.startsWith("_") &&
-      !used.tagSyms.contains(tag)
+      !ctx.caseSyms.containsKey(tag)
 
   /**
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
@@ -1162,12 +1167,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(Set.empty, Set.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
-
-    /**
-      * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
-      */
-    def of(sym: Symbol.EnumSym, caze: Symbol.CaseSym): Used = empty.copy(enumSyms = Set(sym), tagSyms = Set(caze))
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
       * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
@@ -1203,9 +1203,7 @@ object Redundancy {
   /**
     * A representation of used symbols.
     */
-  private case class Used(enumSyms: Set[Symbol.EnumSym],
-                          tagSyms: Set[Symbol.CaseSym],
-                          restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
+  private case class Used(restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           effectSyms: Set[Symbol.EffectSym],
@@ -1225,8 +1223,6 @@ object Redundancy {
         this
       } else {
         Used(
-          this.enumSyms ++ that.enumSyms,
-          this.tagSyms ++ that.tagSyms,
           this.restrictableEnumSyms ++ that.restrictableEnumSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
@@ -1303,12 +1299,30 @@ object Redundancy {
   }
 
   /**
+    * Companion object for [[SharedContext]]
+    */
+  object SharedContext {
+    /**
+      * Returns a fresh shared context.
+      */
+    def mk(): SharedContext = new SharedContext(
+      new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
+      new ConcurrentHashMap(),
+      new ConcurrentHashMap())
+  }
+
+  /**
     * A global shared context. Must be thread-safe.
     *
-    * @param defSyms the def symbols used anywhere in the program.
-    * @param sigSyms the sig symbols used anywhere in the program.
+    * @param defSyms  the def symbols used anywhere in the program.
+    * @param sigSyms  the sig symbols used anywhere in the program.
+    * @param enumSyms the enum symbols used anywhere in the program.
+    * @param caseSyms the case symbols used anywhere in the program.
     */
   class SharedContext(val defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
-                      val sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit])
+                      val sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
+                      val enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
+                      val caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 
 }
