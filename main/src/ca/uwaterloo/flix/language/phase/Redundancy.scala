@@ -81,8 +81,6 @@ object Redundancy {
     usedRes.toValidation(root)
   }
 
-  class SharedContext(val defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit])
-
   /**
     * Checks for unused symbols in the given signature and returns all used symbols.
     */
@@ -1307,4 +1305,12 @@ object Redundancy {
       */
     def ofSig(sig: Symbol.SigSym): RecursionContext = RecursionContext(defn = None, sig = Some(sig), vars = Set.empty)
   }
+
+  /**
+    * A global shared context. Must be thread-safe.
+    *
+    * @param defSyms the definition symbols used anywhere in the program.
+    */
+  class SharedContext(val defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit])
+
 }
