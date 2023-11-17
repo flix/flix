@@ -1081,7 +1081,7 @@ object Redundancy {
   private def deadEnum(enm: Enum, used: Used): Boolean =
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
-      used.enumSyms(enm.sym).isEmpty
+      !used.enumSyms.contains(enm.sym)
 
   /**
     * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
@@ -1090,7 +1090,7 @@ object Redundancy {
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
       !tag.name.startsWith("_") &&
-      !used.enumSyms(enm.sym).contains(tag)
+      !used.tagSyms.contains(tag)
 
   /**
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
@@ -1162,12 +1162,12 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
+    val empty: Used = Used(Set.empty, Set.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
-    def of(sym: Symbol.EnumSym, caze: Symbol.CaseSym): Used = empty.copy(enumSyms = MultiMap.singleton(sym, caze))
+    def of(sym: Symbol.EnumSym, caze: Symbol.CaseSym): Used = empty.copy(enumSyms = Set(sym), tagSyms = Set(caze))
 
     /**
       * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
@@ -1203,7 +1203,8 @@ object Redundancy {
   /**
     * A representation of used symbols.
     */
-  private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Symbol.CaseSym],
+  private case class Used(enumSyms: Set[Symbol.EnumSym],
+                          tagSyms: Set[Symbol.CaseSym],
                           restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
@@ -1225,6 +1226,7 @@ object Redundancy {
       } else {
         Used(
           this.enumSyms ++ that.enumSyms,
+          this.tagSyms ++ that.tagSyms,
           this.restrictableEnumSyms ++ that.restrictableEnumSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
