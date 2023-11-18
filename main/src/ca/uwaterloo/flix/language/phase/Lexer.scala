@@ -354,11 +354,13 @@ object Lexer {
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isKeyword("**") => TokenKind.StarStar
-      case _ if isKeyword("<-") => TokenKind.BackArrow
+      case _ if isKeyword("<-") => TokenKind.BackArrowThin
       case _ if isKeyword("=>") => TokenKind.Arrow
+      case _ if isKeyword("->") => TokenKind.ArrowThin
       case _ if isKeyword("<=") => TokenKind.AngleLEqual
       case _ if isKeyword(">=") => TokenKind.AngleREqual
       case _ if isKeyword("==") => TokenKind.EqualEqual
+      case _ if isKeyword("!=") => TokenKind.BangEqual
       case _ if isKeyword("&&&") => TokenKind.TripleAmpersand
       case _ if isKeyword("<<<") => TokenKind.TripleAngleL
       case _ if isKeyword(">>>") => TokenKind.TripleAngleR
@@ -444,6 +446,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
+      case _ if isKeyword("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
       // User defined operators.
@@ -796,6 +799,23 @@ object Lexer {
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
+  }
+
+  /**
+   * Moves current position past a regex literal.
+   * If the regex  is unterminated a `TokenKind.Err` is returned.
+   */
+  private def acceptRegex()(implicit s: State): TokenKind = {
+    while (!eof()) {
+      val p = escapedPeek()
+      if (p.contains('"')) {
+        advance()
+        return TokenKind.LiteralRegex
+      }
+      advance()
+    }
+
+    TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
   }
 
   /**

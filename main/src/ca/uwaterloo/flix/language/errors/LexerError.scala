@@ -153,6 +153,27 @@ object LexerError {
   }
 
   /**
+   * An error raised when an unterminated regex is encountered.
+   *
+   * @param loc The location of the opening `"`.
+   */
+  case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated regex."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing `"` in regex.
+         |
+         |${code(loc, "Regex starts here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
    * An error raised when an unterminated infix function is encountered.
    *
    * @param loc The location of the opening '&#96;'.
