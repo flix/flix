@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -72,7 +72,6 @@ object Redundancy {
     val usedRes =
       checkUnusedDefs(usedAll)(ctx, root) ++
         checkUnusedEnumsAndTags(usedAll)(ctx, root) ++
-        checkUnusedRestrictableEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
         checkRedundantTypeConstraints()(root, flix) ++
         checkUnusedEffects(usedAll)(root)
@@ -156,7 +155,7 @@ object Redundancy {
     */
   private def checkUnusedDefs(used: Used)(implicit ctx: SharedContext, root: Root): Used = {
     root.defs.foldLeft(used) {
-      case (acc, (_, decl)) if deadDef(decl, used) => acc + UnusedDefSym(decl.sym)
+      case (acc, (_, decl)) if deadDef(decl) => acc + UnusedDefSym(decl.sym)
       case (acc, _) => acc
     }
   }
@@ -176,41 +175,15 @@ object Redundancy {
     */
   private def checkUnusedEnumsAndTags(used: Used)(implicit ctx: SharedContext, root: Root): Used = {
     root.enums.foldLeft(used) {
-      case (acc, (sym, decl)) if deadEnum(decl, used) =>
+      case (acc, (sym, decl)) if deadEnum(decl) =>
         // The enum is private and never used
         acc + UnusedEnumSym(sym)
 
       case (acc, (sym, decl)) =>
         // Check for unused cases
         decl.cases.foldLeft(acc) {
-          case (innerAcc, (tag, caze)) if deadTag(decl, tag, used) => innerAcc + UnusedEnumTag(sym, caze.sym)
+          case (innerAcc, (tag, caze)) if deadTag(decl, tag) => innerAcc + UnusedEnumTag(sym, caze.sym)
           case (innerAcc, _) => innerAcc
-        }
-    }
-  }
-
-  /**
-    * Checks for unused enum symbols and tags.
-    */
-  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = {
-    root.restrictableEnums.foldLeft(used) {
-      case (acc, (sym, decl)) if decl.mod.isPublic =>
-        // Enum is public. No usage requirements.
-        acc
-      case (acc, (sym, decl)) =>
-        // Enum is non-public.
-        // Lookup usage information for this specific enum.
-        used.restrictableEnumSyms.get(sym) match {
-          case None =>
-            // Case 1: Enum is never used.
-            acc + UnusedRestrictableEnumSym(sym)
-          case Some(usedTags) =>
-            // Case 2: Enum is used and here are its used tags.
-            // Check if there is any unused tag.
-            decl.cases.foldLeft(acc) {
-              case (innerAcc, (tag, caze)) if deadRestrictableTag(tag, usedTags) => innerAcc + UnusedRestrictableEnumTag(sym, caze.sym)
-              case (innerAcc, _) => innerAcc
-            }
         }
     }
   }
@@ -505,7 +478,7 @@ object Redundancy {
           val extendedEnv = env0 ++ fvs
 
           // Visit the pattern, guard and body.
-          val usedPat = visitRestrictablePat(pat)
+          val usedPat = Used.empty
           val usedBody = visitExp(body, extendedEnv, rc)
           val usedPatAndBody = usedPat ++ usedBody
 
@@ -528,9 +501,8 @@ object Redundancy {
       ctx.caseSyms.put(sym, ())
       us
 
-    case Expr.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _) =>
-      val us = visitExp(exp, env0, rc)
-      Used.of(sym.enumSym, sym) ++ us
+    case Expr.RestrictableTag(_, exp, _, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -863,15 +835,6 @@ object Redundancy {
   }
 
   /**
-    * Returns the symbols used in the given pattern `pat`.
-    */
-  private def visitRestrictablePat(pat0: RestrictableChoosePattern): Used = pat0 match {
-    case RestrictableChoosePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _, _) =>
-      // Ignore the pattern since there is only variables, no nesting.
-      Used.of(sym.enumSym, sym)
-  }
-
-  /**
     * Returns the symbols used in the given list of pattern `ps`.
     */
   private def visitPats(ps: List[Pattern])(implicit ctx: SharedContext): Used = ps.foldLeft(Used.empty) {
@@ -1059,7 +1022,7 @@ object Redundancy {
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
-  private def deadDef(decl: Def, used: Used)(implicit ctx: SharedContext, root: Root): Boolean =
+  private def deadDef(decl: Def)(implicit ctx: SharedContext, root: Root): Boolean =
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
@@ -1075,7 +1038,7 @@ object Redundancy {
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
-  private def deadEffect(decl: Effect, used: Used)(implicit root: Root): Boolean =
+  private def deadEffect(decl: Effect, used: Used): Boolean =
     !decl.mod.isPublic &&
       !decl.sym.name.startsWith("_") &&
       !used.effectSyms.contains(decl.sym)
@@ -1083,7 +1046,7 @@ object Redundancy {
   /**
     * Returns `true` if the given `enm` is unused according to `used`.
     */
-  private def deadEnum(enm: Enum, used: Used)(implicit ctx: SharedContext): Boolean =
+  private def deadEnum(enm: Enum)(implicit ctx: SharedContext): Boolean =
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
       !ctx.enumSyms.containsKey(enm.sym)
@@ -1091,18 +1054,11 @@ object Redundancy {
   /**
     * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
     */
-  private def deadTag(enm: Enum, tag: Symbol.CaseSym, used: Used)(implicit ctx: SharedContext): Boolean =
+  private def deadTag(enm: Enum, tag: Symbol.CaseSym)(implicit ctx: SharedContext): Boolean =
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
       !tag.name.startsWith("_") &&
       !ctx.caseSyms.containsKey(tag)
-
-  /**
-    * Returns `true` if the given `tag` is unused according to the `usedTags`.
-    */
-  private def deadRestrictableTag(tag: Symbol.RestrictableCaseSym, usedTags: Set[Symbol.RestrictableCaseSym]): Boolean =
-    !tag.name.startsWith("_") &&
-      !usedTags.contains(tag)
 
   /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
@@ -1167,12 +1123,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
-
-    /**
-      * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
-      */
-    def of(sym: Symbol.RestrictableEnumSym, caze: Symbol.RestrictableCaseSym): Used = empty.copy(restrictableEnumSyms = MultiMap.singleton(sym, caze))
+    val empty: Used = Used(Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
       * Returns an object where the given hole symbol `sym` is marked as used.
@@ -1203,8 +1154,7 @@ object Redundancy {
   /**
     * A representation of used symbols.
     */
-  private case class Used(restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
-                          holeSyms: Set[Symbol.HoleSym],
+  private case class Used(holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           effectSyms: Set[Symbol.EffectSym],
                           occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
@@ -1223,7 +1173,6 @@ object Redundancy {
         this
       } else {
         Used(
-          this.restrictableEnumSyms ++ that.restrictableEnumSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.effectSyms ++ that.effectSyms,
@@ -1259,8 +1208,8 @@ object Redundancy {
       * Returns `this` without any unused variable errors.
       */
     def withoutUnusedVars: Used = copy(errors = errors.filter {
-      case e: RedundancyError.UnusedFormalParam => false
-      case e: RedundancyError.UnusedVarSym => false
+      case _: RedundancyError.UnusedFormalParam => false
+      case _: RedundancyError.UnusedVarSym => false
       case _ => true
     })
 
