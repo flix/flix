@@ -1198,7 +1198,10 @@ object Redundancy {
      * Marks all the given variable symbols `syms` as used.
      */
     def --(syms: Iterable[Symbol.VarSym]): Used =
-      if (syms.isEmpty) this else copy(varSyms = varSyms -- syms)
+      if (syms.isEmpty)
+        this
+      else
+        copy(varSyms = varSyms -- syms, occurrencesOf = occurrencesOf -- syms)
 
     /**
      * Returns `this` without any unused variable errors.
