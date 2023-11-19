@@ -82,80 +82,6 @@ object Redundancy {
   }
 
   /**
-    * Checks for unused symbols in the given signature and returns all used symbols.
-    */
-  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root, flix: Flix): Used = {
-    // Create fresh local context.
-    implicit val lctx: LocalContext = LocalContext.mk()
-
-    // Compute the used symbols inside the signature.
-    val usedExp = sig.exp match {
-      case None => Used.empty
-      case Some(exp) =>
-        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
-    }
-
-    // Check for unused parameters and remove all variable symbols.
-    val unusedFormalParams = sig.exp.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
-    val unusedTypeParams = findUnusedTypeParameters(sig.spec)
-
-    val usedAll = (usedExp ++
-      unusedFormalParams ++
-      unusedTypeParams).copy(varSyms = Set.empty)
-
-    // If the expression has no holes nor errors then we return usedAll.
-    // Otherwise, we discard all unused variable errors.
-    if (lctx.holeSyms.isEmpty && lctx.errorLocs.isEmpty)
-      usedAll
-    else
-      usedAll.withoutUnusedVars
-  }
-
-  /**
-    * Checks for unused symbols in the given definition and returns all used symbols.
-    */
-  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Used = {
-    // Create fresh local context.
-    implicit val lctx: LocalContext = LocalContext.mk()
-
-    // Compute the used symbols inside the definition.
-    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
-
-    val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
-    val unusedTypeParams = findUnusedTypeParameters(defn.spec)
-
-    // Check for unused parameters and remove all variable symbols.
-    val usedAll = (usedExp ++
-      unusedFormalParams ++
-      unusedTypeParams).copy(varSyms = Set.empty)
-
-    // If the expression has no holes nor errors then we return usedAll.
-    // Otherwise, we discard all unused variable errors.
-    if (lctx.holeSyms.isEmpty && lctx.errorLocs.isEmpty)
-      usedAll
-    else
-      usedAll.withoutUnusedVars
-  }
-
-  /**
-    * Finds unused formal parameters.
-    */
-  private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
-    fparams.collect {
-      case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
-    }
-  }
-
-  /**
-    * Finds unused type parameters.
-    */
-  private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = {
-    spec.tparams.collect {
-      case tparam if deadTypeVar(tparam.sym, spec.declaredScheme.base.typeVars.map(_.sym)) => UnusedTypeParam(tparam.name)
-    }
-  }
-
-  /**
     * Checks for unused definition symbols.
     */
   private def checkUnusedDefs(used: Used)(implicit sctx: SharedContext, root: Root): Used = {
@@ -234,6 +160,81 @@ object Redundancy {
       if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
     } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
+
+  /**
+    * Checks for unused symbols in the given definition and returns all used symbols.
+    */
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Used = {
+    // Create fresh local context.
+    implicit val lctx: LocalContext = LocalContext.mk()
+
+    // Compute the used symbols inside the definition.
+    val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
+
+    val unusedFormalParams = findUnusedFormalParameters(defn.spec.fparams, usedExp)
+    val unusedTypeParams = findUnusedTypeParameters(defn.spec)
+
+    // Check for unused parameters and remove all variable symbols.
+    val usedAll = (usedExp ++
+      unusedFormalParams ++
+      unusedTypeParams).copy(varSyms = Set.empty)
+
+    // If the expression has no holes nor errors then we return usedAll.
+    // Otherwise, we discard all unused variable errors.
+    if (lctx.holeSyms.isEmpty && lctx.errorLocs.isEmpty)
+      usedAll
+    else
+      usedAll.withoutUnusedVars
+  }
+
+  /**
+    * Checks for unused symbols in the given signature and returns all used symbols.
+    */
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root, flix: Flix): Used = {
+    // Create fresh local context.
+    implicit val lctx: LocalContext = LocalContext.mk()
+
+    // Compute the used symbols inside the signature.
+    val usedExp = sig.exp match {
+      case None => Used.empty
+      case Some(exp) =>
+        visitExp(exp, Env.empty ++ sig.spec.fparams.map(_.sym), RecursionContext.ofSig(sig.sym))
+    }
+
+    // Check for unused parameters and remove all variable symbols.
+    val unusedFormalParams = sig.exp.toList.flatMap(_ => findUnusedFormalParameters(sig.spec.fparams, usedExp))
+    val unusedTypeParams = findUnusedTypeParameters(sig.spec)
+
+    val usedAll = (usedExp ++
+      unusedFormalParams ++
+      unusedTypeParams).copy(varSyms = Set.empty)
+
+    // If the expression has no holes nor errors then we return usedAll.
+    // Otherwise, we discard all unused variable errors.
+    if (lctx.holeSyms.isEmpty && lctx.errorLocs.isEmpty)
+      usedAll
+    else
+      usedAll.withoutUnusedVars
+  }
+
+  /**
+    * Finds unused formal parameters.
+    */
+  private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
+    fparams.collect {
+      case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
+    }
+  }
+
+  /**
+    * Finds unused type parameters.
+    */
+  private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = {
+    spec.tparams.collect {
+      case tparam if deadTypeVar(tparam.sym, spec.declaredScheme.base.typeVars.map(_.sym)) => UnusedTypeParam(tparam.name)
+    }
+  }
+
 
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
