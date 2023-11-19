@@ -25,10 +25,10 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
+
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -51,31 +51,31 @@ object Redundancy {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
-    implicit val ctx: SharedContext = SharedContext.mk()
+    implicit val sctx: SharedContext = SharedContext.mk()
 
     // Computes all used symbols in all top-level defs (in parallel).
     val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
-      case (acc, (_, decl)) => acc ++ visitDef(decl)(ctx, root, flix)
+      case (acc, (_, decl)) => acc ++ visitDef(decl)(sctx, root, flix)
     }, _ ++ _)
 
     // Compute all used symbols in all instance defs (in parallel).
     val usedInstDefs = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
-      case (acc, decl) => acc ++ visitDef(decl)(ctx, root, flix)
+      case (acc, decl) => acc ++ visitDef(decl)(sctx, root, flix)
     }, _ ++ _)
 
     val usedSigs = ParOps.parAgg(root.sigs, Used.empty)({
-      case (acc, (_, decl)) => acc ++ visitSig(decl)(ctx, root, flix)
+      case (acc, (_, decl)) => acc ++ visitSig(decl)(sctx, root, flix)
     }, _ ++ _)
 
     val usedAll = usedDefs ++ usedInstDefs ++ usedSigs
 
     // Check for unused symbols.
     val usedRes =
-      checkUnusedDefs(usedAll)(ctx, root) ++
-        checkUnusedEnumsAndTags(usedAll)(ctx, root) ++
+      checkUnusedDefs(usedAll)(sctx, root) ++
+        checkUnusedEnumsAndTags(usedAll)(sctx, root) ++
         checkUnusedTypeParamsEnums()(root) ++
         checkRedundantTypeConstraints()(root, flix) ++
-        checkUnusedEffects(usedAll)(ctx, root)
+        checkUnusedEffects(usedAll)(sctx, root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -84,7 +84,7 @@ object Redundancy {
   /**
     * Checks for unused symbols in the given signature and returns all used symbols.
     */
-  private def visitSig(sig: Sig)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root, flix: Flix): Used = {
     // Create fresh local context.
     implicit val lctx: LocalContext = LocalContext.mk()
 
@@ -114,7 +114,7 @@ object Redundancy {
   /**
     * Checks for unused symbols in the given definition and returns all used symbols.
     */
-  private def visitDef(defn: Def)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Used = {
     // Create fresh local context.
     implicit val lctx: LocalContext = LocalContext.mk()
 
@@ -862,23 +862,7 @@ object Redundancy {
     }
     val total = head ++ body
 
-    // Check that no variable is used only once except if they are wild (_ prefix).
-    // Check additionally that there is only one mention of a wild variable.
-    // This error is already checked in a program like `A(_x) :- B(_x).` but
-    // not for `A(12) :- B(_x), C(_x).`.
-    val errors = c0.cparams.flatMap(constraintParam => {
-      val sym = constraintParam.sym
-      val occurrences = total.occurrencesOf.apply(sym)
-      if (occurrences.size == 1 && !sym.isWild) {
-        // Check that no variable is only used once
-        List(RedundancyError.IllegalSingleVariable(sym, occurrences.iterator.next()))
-      } else if (body.occurrencesOf.apply(sym).size > 1 && sym.isWild) {
-        // Check that wild variables are not used multiple times in the body
-        occurrences.map(loc => RedundancyError.HiddenVarSym(sym, loc))
-      } else Nil
-    })
-
-    (total -- c0.cparams.map(_.sym)) ++ errors
+    total -- c0.cparams.map(_.sym)
   }
 
   /**
@@ -1129,35 +1113,32 @@ object Redundancy {
     }
   }
 
+  /**
+    * Companion object for the [[Used]] class.
+    */
   private object Used {
 
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(Set.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(Set.empty, Set.empty)
 
     /**
       * Returns an object where the given variable symbol `sym` is marked as used.
       */
-    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym), occurrencesOf = ListMap.singleton(sym, sym.loc))
+    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
 
     /**
       * Returns an object where the given variable symbols `syms` are marked as used.
       */
-    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(
-      varSyms = syms,
-      occurrencesOf = syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
-        case (mm, sym) => mm + (sym -> sym.loc)
-      })
+    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(varSyms = syms)
 
   }
 
   /**
     * A representation of used symbols.
     */
-  private case class Used(varSyms: Set[Symbol.VarSym],
-                          occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
-                          errors: Set[RedundancyError]) {
+  private case class Used(varSyms: Set[Symbol.VarSym], errors: Set[RedundancyError]) {
 
     /**
       * Merges `this` and `that` where one of the two branches is executed
@@ -1172,7 +1153,6 @@ object Redundancy {
       } else {
         Used(
           this.varSyms ++ that.varSyms,
-          this.occurrencesOf ++ that.occurrencesOf,
           this.errors ++ that.errors
         )
       }
@@ -1200,7 +1180,7 @@ object Redundancy {
       if (syms.isEmpty)
         this
       else
-        copy(varSyms = varSyms -- syms, occurrencesOf = occurrencesOf -- syms)
+        copy(varSyms = varSyms -- syms)
 
     /**
       * Returns `this` without any unused variable errors.

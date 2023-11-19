@@ -401,36 +401,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that the given variable symbol `sym` is only used once in a constraint.
-    *
-    * @param sym the variable only used once
-    * @param loc the location of the error
-    */
-  case class IllegalSingleVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
-    def summary: String = s"Single use of variable '$sym'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> This variable is named, but only used once '${red(sym.text)}'. Use a wildcard instead?
-         |
-         |${code(loc, "the variable occurs here.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Prefix the variable name with a wildcard.
-         |  (2)  Replace the variable name with a wildcard.
-         |  (3)  Check for any spelling mistakes.
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate that an expression is useless.
     *
     * @param tpe the type of the expression.
