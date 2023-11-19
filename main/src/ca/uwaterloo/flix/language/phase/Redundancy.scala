@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Magnus Madsen
+ *  Copyright 2019, 2023 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,25 +30,26 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 /**
- * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
- *
- * For example, the redundancy phase ensures that there are no:
- *
- * - unused local variables.
- * - unused enums, definitions, ...
- * - useless expressions.
- *
- * and so on.
- *
- * The phase performs no AST rewrites; it can be disabled without affecting the runtime semantics.
- */
+  * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
+  *
+  * For example, the redundancy phase ensures that there are no:
+  *
+  * - unused local variables.
+  * - unused enums, definitions, ...
+  * - useless expressions.
+  *
+  * and so on.
+  *
+  * The phase performs no AST rewrites; it can be disabled without affecting the runtime semantics.
+  */
 object Redundancy {
 
   /**
-   * Checks the given AST `root` for redundancies.
-   */
+    * Checks the given AST `root` for redundancies.
+    */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
     implicit val ctx: SharedContext = SharedContext.mk()
 
@@ -81,9 +82,11 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused symbols in the given signature and returns all used symbols.
-   */
+    * Checks for unused symbols in the given signature and returns all used symbols.
+    */
   private def visitSig(sig: Sig)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
+    // Create fresh local context.
+    implicit val lctx: LocalContext = LocalContext.mk()
 
     // Compute the used symbols inside the signature.
     val usedExp = sig.exp match {
@@ -102,16 +105,18 @@ object Redundancy {
 
     // Check if the expression contains holes or errors.
     // If it does, we discard all unused local variable errors.
-    if (usedAll.holeSyms.isEmpty && !usedAll.hasErrorNode)
+    if (lctx.holeSyms.isEmpty && !usedAll.hasErrorNode)
       usedAll
     else
       usedAll.withoutUnusedVars
   }
 
   /**
-   * Checks for unused symbols in the given definition and returns all used symbols.
-   */
+    * Checks for unused symbols in the given definition and returns all used symbols.
+    */
   private def visitDef(defn: Def)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
+    // Create fresh local context.
+    implicit val lctx: LocalContext = LocalContext.mk()
 
     // Compute the used symbols inside the definition.
     val usedExp = visitExp(defn.exp, Env.empty ++ defn.spec.fparams.map(_.sym), RecursionContext.ofDef(defn.sym))
@@ -126,15 +131,15 @@ object Redundancy {
 
     // Check if the expression contains holes or errors.
     // If it does, we discard all unused local variable errors.
-    if (usedAll.holeSyms.isEmpty && !usedAll.hasErrorNode)
+    if (lctx.holeSyms.isEmpty && !usedAll.hasErrorNode)
       usedAll
     else
       usedAll.withoutUnusedVars
   }
 
   /**
-   * Finds unused formal parameters.
-   */
+    * Finds unused formal parameters.
+    */
   private def findUnusedFormalParameters(fparams: List[FormalParam], used: Used): List[UnusedFormalParam] = {
     fparams.collect {
       case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
@@ -142,8 +147,8 @@ object Redundancy {
   }
 
   /**
-   * Finds unused type parameters.
-   */
+    * Finds unused type parameters.
+    */
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = {
     spec.tparams.collect {
       case tparam if deadTypeVar(tparam.sym, spec.declaredScheme.base.typeVars.map(_.sym)) => UnusedTypeParam(tparam.name)
@@ -151,9 +156,9 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused definition symbols.
-   */
-  private def checkUnusedDefs(used: Used)(implicit ctx: SharedContext, root: Root): Used = {
+    * Checks for unused definition symbols.
+    */
+  private def checkUnusedDefs(used: Used)(implicit sctx: SharedContext, root: Root): Used = {
     root.defs.foldLeft(used) {
       case (acc, (_, decl)) if deadDef(decl) => acc + UnusedDefSym(decl.sym)
       case (acc, _) => acc
@@ -161,19 +166,19 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused effect symbols.
-   */
-  private def checkUnusedEffects(used: Used)(implicit ctx: SharedContext, root: Root): Used = {
+    * Checks for unused effect symbols.
+    */
+  private def checkUnusedEffects(used: Used)(implicit sctx: SharedContext, root: Root): Used = {
     root.effects.foldLeft(used) {
-      case (acc, (_, decl)) if deadEffect(decl, used) => acc + UnusedEffectSym(decl.sym)
+      case (acc, (_, decl)) if deadEffect(decl) => acc + UnusedEffectSym(decl.sym)
       case (acc, _) => acc
     }
   }
 
   /**
-   * Checks for unused enum symbols and tags.
-   */
-  private def checkUnusedEnumsAndTags(used: Used)(implicit ctx: SharedContext, root: Root): Used = {
+    * Checks for unused enum symbols and tags.
+    */
+  private def checkUnusedEnumsAndTags(used: Used)(implicit sctx: SharedContext, root: Root): Used = {
     root.enums.foldLeft(used) {
       case (acc, (sym, decl)) if deadEnum(decl) =>
         // The enum is private and never used
@@ -189,8 +194,8 @@ object Redundancy {
   }
 
   /**
-   * Checks for unused type parameters in enums.
-   */
+    * Checks for unused type parameters in enums.
+    */
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
@@ -207,8 +212,8 @@ object Redundancy {
   }
 
   /**
-   * Checks for redundant type constraints in the given `root`.
-   */
+    * Checks for redundant type constraints in the given `root`.
+    */
   private def checkRedundantTypeConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
     val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTypeConstraints(defn.spec.declaredScheme.tconstrs))
     val classErrors = ParOps.parMap(root.classes.values)(clazz => redundantTypeConstraints(clazz.superClasses))
@@ -219,8 +224,8 @@ object Redundancy {
   }
 
   /**
-   * Finds redundant type constraints in `tconstrs`.
-   */
+    * Finds redundant type constraints in `tconstrs`.
+    */
   private def redundantTypeConstraints(tconstrs: List[Ast.TypeConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
     for {
       (tconstr1, i1) <- tconstrs.zipWithIndex
@@ -231,9 +236,9 @@ object Redundancy {
   }
 
   /**
-   * Returns the symbols used in the given expression `e0` under the given environment `env0`.
-   */
-  private def visitExp(e0: Expr, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
+    * Returns the symbols used in the given expression `e0` under the given environment `env0`.
+    */
+  private def visitExp(e0: Expr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
     case Expr.Cst(_, _, _) => Used.empty
 
     case Expr.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
@@ -250,7 +255,7 @@ object Redundancy {
     case Expr.Def(sym, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
-        ctx.defSyms.put(sym, ())
+        sctx.defSyms.put(sym, ())
         Used.empty
       } else
         Used.empty
@@ -258,12 +263,14 @@ object Redundancy {
     case Expr.Sig(sym, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.sig.contains(sym)) {
-        ctx.sigSyms.put(sym, ())
+        sctx.sigSyms.put(sym, ())
         Used.empty
       } else
         Used.empty
 
-    case Expr.Hole(sym, _, _) => Used.of(sym)
+    case Expr.Hole(sym, _, _) =>
+      lctx.holeSyms += sym
+      Used.empty
 
     case Expr.HoleWithExp(exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -497,8 +504,8 @@ object Redundancy {
 
     case Expr.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _) =>
       val us = visitExp(exp, env0, rc)
-      ctx.enumSyms.put(sym.enumSym, ())
-      ctx.caseSyms.put(sym, ())
+      sctx.enumSyms.put(sym.enumSym, ())
+      sctx.caseSyms.put(sym, ())
       us
 
     case Expr.RestrictableTag(_, exp, _, _, _) =>
@@ -607,7 +614,7 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expr.Without(exp, effUse, _, _, _) =>
-      ctx.effSyms.put(effUse.sym, ())
+      sctx.effSyms.put(effUse.sym, ())
       visitExp(exp, env0, rc)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -623,7 +630,7 @@ object Redundancy {
       usedExp ++ usedRules
 
     case Expr.TryWith(exp, effUse, rules, _, _, _) =>
-      ctx.effSyms.put(effUse.sym, ())
+      sctx.effSyms.put(effUse.sym, ())
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body)) =>
@@ -635,7 +642,7 @@ object Redundancy {
       usedExp ++ usedRules
 
     case Expr.Do(opUse, exps, _, _, _) =>
-      ctx.effSyms.put(opUse.sym.eff, ())
+      sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
     case Expr.Resume(exp, _, _) =>
@@ -761,17 +768,17 @@ object Redundancy {
   }
 
   /**
-   * Visits the [[ParYieldFragment]]s `frags`.
-   *
-   * Returns a tuple of three entries:
-   *
-   * 1. The used variables
-   *
-   * 2. An updated environment with the free variables
-   *
-   * 3. All the free variables.
-   */
-  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
+    * Visits the [[ParYieldFragment]]s `frags`.
+    *
+    * Returns a tuple of three entries:
+    *
+    * 1. The used variables
+    *
+    * 2. An updated environment with the free variables
+    *
+    * 3. All the free variables.
+    */
+  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
       case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
         // Find free vars in pattern
@@ -797,39 +804,39 @@ object Redundancy {
   }
 
   /**
-   * Returns the symbols that the free variables shadow in env0.
-   */
+    * Returns the symbols that the free variables shadow in env0.
+    */
   private def findShadowedVarSyms(freeVars: Set[Symbol.VarSym], env0: Env): Used = {
     freeVars.map(sym => shadowing(sym.text, sym.loc, env0)).foldLeft(Used.empty)(_ ++ _)
   }
 
   /**
-   * Returns the set of unused vars from `freeVars` in `usedSyms`.
-   * I.e. if an element in `freeVars` is **not** used in `usedSyms` then
-   * it is a member of the returned set.
-   */
+    * Returns the set of unused vars from `freeVars` in `usedSyms`.
+    * I.e. if an element in `freeVars` is **not** used in `usedSyms` then
+    * it is a member of the returned set.
+    */
   private def findUnusedVarSyms(freeVars: Set[Symbol.VarSym], usedSyms: Used): Set[UnusedVarSym] = {
     freeVars.filter(sym => deadVarSym(sym, usedSyms)).map(UnusedVarSym)
   }
 
   /**
-   * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
-   */
-  private def visitExps(es: List[Expr], env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used =
+    * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
+    */
+  private def visitExps(es: List[Expr], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }
 
   /**
-   * Returns the symbols used in the given pattern `pat`.
-   */
-  private def visitPat(pat0: Pattern)(implicit ctx: SharedContext): Used = pat0 match {
+    * Returns the symbols used in the given pattern `pat`.
+    */
+  private def visitPat(pat0: Pattern)(implicit sctx: SharedContext): Used = pat0 match {
     case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
     case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) =>
-      ctx.enumSyms.put(sym.enumSym, ())
-      ctx.caseSyms.put(sym, ())
+      sctx.enumSyms.put(sym.enumSym, ())
+      sctx.caseSyms.put(sym, ())
       Used.empty
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
@@ -838,16 +845,16 @@ object Redundancy {
   }
 
   /**
-   * Returns the symbols used in the given list of pattern `ps`.
-   */
-  private def visitPats(ps: List[Pattern])(implicit ctx: SharedContext): Used = ps.foldLeft(Used.empty) {
+    * Returns the symbols used in the given list of pattern `ps`.
+    */
+  private def visitPats(ps: List[Pattern])(implicit sctx: SharedContext): Used = ps.foldLeft(Used.empty) {
     case (acc, pat) => acc ++ visitPat(pat)
   }
 
   /**
-   * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
-   */
-  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = {
+    * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
+    */
+  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = {
     val head = visitHeadPred(c0.head, env0, rc: RecursionContext)
     val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0, rc: RecursionContext)
@@ -874,17 +881,17 @@ object Redundancy {
   }
 
   /**
-   * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
-   */
-  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = h0 match {
+    * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
+    */
+  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0, rc)
   }
 
   /**
-   * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
-   */
-  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit ctx: SharedContext, root: Root, flix: Flix): Used = b0 match {
+    * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
+    */
+  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = b0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
         case (acc, term) => acc ++ Used.of(freeVars(term))
@@ -901,8 +908,8 @@ object Redundancy {
   }
 
   /**
-   * Returns true if the expression is pure and of impure function type.
-   */
+    * Returns true if the expression is pure and of impure function type.
+    */
   private def isUnderAppliedFunction(exp: Expr): Boolean = {
     val isPure = exp.eff == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
@@ -914,18 +921,18 @@ object Redundancy {
   }
 
   /**
-   * Returns the purity type of `this` curried arrow type.
-   *
-   * For example,
-   *
-   * {{{
-   * Int32                                        =>     throw
-   * Int32 -> String -> Int32 \ Pure              =>     Pure
-   * (Int32, String) -> String -> Bool \ IO   =>     Impure
-   * }}}
-   *
-   * NB: Assumes that `this` type is an arrow.
-   */
+    * Returns the purity type of `this` curried arrow type.
+    *
+    * For example,
+    *
+    * {{{
+    * Int32                                        =>     throw
+    * Int32 -> String -> Int32 \ Pure              =>     Pure
+    * (Int32, String) -> String -> Bool \ IO   =>     Impure
+    * }}}
+    *
+    * NB: Assumes that `this` type is an arrow.
+    */
   @tailrec
   private def curriedArrowPurityType(tpe: Type): Type = {
     val resType = tpe.arrowResultType
@@ -936,26 +943,26 @@ object Redundancy {
   }
 
   /**
-   * Returns true if the expression is pure.
-   */
+    * Returns true if the expression is pure.
+    */
   private def isPure(exp: Expr): Boolean =
     exp.eff == Type.Pure
 
   /**
-   * Returns true if the expression is pure.
-   */
+    * Returns true if the expression is pure.
+    */
   private def isUselessExpression(exp: Expr): Boolean =
     isPure(exp)
 
   /**
-   * Returns `true` if the expression must be used.
-   */
+    * Returns `true` if the expression must be used.
+    */
   private def isMustUse(exp: Expr)(implicit root: Root): Boolean =
     isMustUseType(exp.tpe) && !exp.isInstanceOf[Expr.UncheckedMaskingCast]
 
   /**
-   * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
-   */
+    * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
+    */
   private def isMustUseType(tpe: Type)(implicit root: Root): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Arrow(_)) => true
     case Some(TypeConstructor.Enum(sym, _)) => root.enums(sym).ann.isMustUse
@@ -963,8 +970,8 @@ object Redundancy {
   }
 
   /**
-   * Returns true if the expression is a hole.
-   */
+    * Returns true if the expression is a hole.
+    */
   private def isHole(exp: Expr): Boolean = exp match {
     case Expr.Hole(_, _, _) => true
     case Expr.HoleWithExp(_, _, _, _) => true
@@ -972,8 +979,8 @@ object Redundancy {
   }
 
   /**
-   * Returns the free variables in the pattern `p0`.
-   */
+    * Returns the free variables in the pattern `p0`.
+    */
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
     case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(sym, _, _) => Set(sym)
@@ -992,23 +999,23 @@ object Redundancy {
   }
 
   /**
-   * Returns the free variables in the restrictable pattern `p`.
-   */
+    * Returns the free variables in the restrictable pattern `p`.
+    */
   private def freeVars(p: RestrictableChoosePattern): Set[Symbol.VarSym] = p match {
     case RestrictableChoosePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
   }
 
   /**
-   * Returns the free variables in the VarOrWild.
-   */
+    * Returns the free variables in the VarOrWild.
+    */
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
     case RestrictableChoosePattern.Wild(_, _) => None
     case RestrictableChoosePattern.Var(sym, _, _) => Some(sym)
   }
 
   /**
-   * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
-   */
+    * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
+    */
   private def shadowing(name: String, loc: SourceLocation, env: Env): Used =
     env.names.get(name) match {
       case None =>
@@ -1023,40 +1030,40 @@ object Redundancy {
     }
 
   /**
-   * Returns `true` if the given definition `decl` is unused according to `used`.
-   */
-  private def deadDef(decl: Def)(implicit ctx: SharedContext, root: Root): Boolean =
+    * Returns `true` if the given definition `decl` is unused according to `used`.
+    */
+  private def deadDef(decl: Def)(implicit sctx: SharedContext, root: Root): Boolean =
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
-      !ctx.defSyms.containsKey(decl.sym)
+      !sctx.defSyms.containsKey(decl.sym)
 
   /**
-   * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
-   */
+    * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
+    */
   private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
     sym.toString == "main" || root.entryPoint.contains(sym)
 
   /**
-   * Returns `true` if the given definition `decl` is unused according to `used`.
-   */
-  private def deadEffect(decl: Effect, used: Used)(implicit ctx: SharedContext): Boolean =
+    * Returns `true` if the given definition `decl` is unused according to `used`.
+    */
+  private def deadEffect(decl: Effect)(implicit ctx: SharedContext): Boolean =
     !decl.mod.isPublic &&
       !decl.sym.name.startsWith("_") &&
       !ctx.effSyms.containsKey(decl.sym)
 
   /**
-   * Returns `true` if the given `enm` is unused according to `used`.
-   */
-  private def deadEnum(enm: Enum)(implicit ctx: SharedContext): Boolean =
+    * Returns `true` if the given `enm` is unused according to `used`.
+    */
+  private def deadEnum(enm: Enum)(implicit sctx: SharedContext): Boolean =
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
-      !ctx.enumSyms.containsKey(enm.sym)
+      !sctx.enumSyms.containsKey(enm.sym)
 
   /**
-   * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
-   */
+    * Returns `true` if the given `tag` of the given `enm` is unused according to `used`.
+    */
   private def deadTag(enm: Enum, tag: Symbol.CaseSym)(implicit ctx: SharedContext): Boolean =
     !enm.sym.name.startsWith("_") &&
       !enm.mod.isPublic &&
@@ -1064,58 +1071,58 @@ object Redundancy {
       !ctx.caseSyms.containsKey(tag)
 
   /**
-   * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
-   */
+    * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
+    */
   private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
     !tvar.isWild &&
       !used.contains(tvar)
   }
 
   /**
-   * Returns `true` if the local variable `tvar` is unused according to the argument `used`.
-   */
+    * Returns `true` if the local variable `tvar` is unused according to the argument `used`.
+    */
   private def deadVarSym(sym: Symbol.VarSym, used: Used): Boolean =
     !sym.text.startsWith("_") &&
       !used.varSyms.contains(sym)
 
   /**
-   * Companion object for the [[Env]] class.
-   */
+    * Companion object for the [[Env]] class.
+    */
   private object Env {
     /**
-     * Represents the empty environment.
-     */
+      * Represents the empty environment.
+      */
     val empty: Env = Env(Map.empty)
 
     /**
-     * Returns an environment with the given variable symbols `varSyms` in it.
-     */
+      * Returns an environment with the given variable symbols `varSyms` in it.
+      */
     def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
       case (acc, sym) => acc + sym
     }
   }
 
   /**
-   * Represents a name environment.
-   */
+    * Represents a name environment.
+    */
   private case class Env(names: Map[String, SourceLocation]) {
     /**
-     * Updates `this` environment with a new variable symbol `sym`.
-     */
+      * Updates `this` environment with a new variable symbol `sym`.
+      */
     def +(sym: Symbol.VarSym): Env = {
       copy(names = names + (sym.text -> sym.loc))
     }
 
     /**
-     * Updates `this` environment with a set of new variable symbols `varSyms`.
-     */
+      * Updates `this` environment with a set of new variable symbols `varSyms`.
+      */
     def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(this) {
       case (acc, sym) => acc + sym
     }
 
     /**
-     * Updates `this` environment with a new `name`.
-     */
+      * Updates `this` environment with a new `name`.
+      */
     def +(nameAndLoc: (String, SourceLocation)): Env = {
       copy(names = names + nameAndLoc)
     }
@@ -1124,23 +1131,18 @@ object Redundancy {
   private object Used {
 
     /**
-     * Represents the empty set of used symbols.
-     */
-    val empty: Used = Used(Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
+      * Represents the empty set of used symbols.
+      */
+    val empty: Used = Used(Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
-     * Returns an object where the given hole symbol `sym` is marked as used.
-     */
-    def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = Set(sym))
-
-    /**
-     * Returns an object where the given variable symbol `sym` is marked as used.
-     */
+      * Returns an object where the given variable symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym), occurrencesOf = ListMap.singleton(sym, sym.loc))
 
     /**
-     * Returns an object where the given variable symbols `syms` are marked as used.
-     */
+      * Returns an object where the given variable symbols `syms` are marked as used.
+      */
     def of(syms: Set[Symbol.VarSym]): Used = empty.copy(
       varSyms = syms,
       occurrencesOf = syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
@@ -1150,17 +1152,16 @@ object Redundancy {
   }
 
   /**
-   * A representation of used symbols.
-   */
-  private case class Used(holeSyms: Set[Symbol.HoleSym],
-                          varSyms: Set[Symbol.VarSym],
+    * A representation of used symbols.
+    */
+  private case class Used(varSyms: Set[Symbol.VarSym],
                           occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
                           hasErrorNode: Boolean,
                           errors: Set[RedundancyError]) {
 
     /**
-     * Merges `this` and `that` where one of the two branches is executed
-     */
+      * Merges `this` and `that` where one of the two branches is executed
+      */
     def ++(that: Used): Used =
       if (this eq that) {
         this
@@ -1170,7 +1171,6 @@ object Redundancy {
         this
       } else {
         Used(
-          this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.occurrencesOf ++ that.occurrencesOf,
           this.hasErrorNode || that.hasErrorNode,
@@ -1179,24 +1179,24 @@ object Redundancy {
       }
 
     /**
-     * Adds the given redundancy error `e` to `this` object.
-     */
+      * Adds the given redundancy error `e` to `this` object.
+      */
     def +(e: RedundancyError): Used = copy(errors = errors + e)
 
     /**
-     * Adds the given traversable of redundancy errors `es` to `this` object.
-     */
+      * Adds the given traversable of redundancy errors `es` to `this` object.
+      */
     def ++(es: Iterable[RedundancyError]): Used =
       if (es.isEmpty) this else copy(errors = errors ++ es)
 
     /**
-     * Marks the given variable symbol `sym` as used.
-     */
+      * Marks the given variable symbol `sym` as used.
+      */
     def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
 
     /**
-     * Marks all the given variable symbols `syms` as used.
-     */
+      * Marks all the given variable symbols `syms` as used.
+      */
     def --(syms: Iterable[Symbol.VarSym]): Used =
       if (syms.isEmpty)
         this
@@ -1204,8 +1204,8 @@ object Redundancy {
         copy(varSyms = varSyms -- syms, occurrencesOf = occurrencesOf -- syms)
 
     /**
-     * Returns `this` without any unused variable errors.
-     */
+      * Returns `this` without any unused variable errors.
+      */
     def withoutUnusedVars: Used = copy(errors = errors.filter {
       case _: RedundancyError.UnusedFormalParam => false
       case _: RedundancyError.UnusedVarSym => false
@@ -1213,46 +1213,37 @@ object Redundancy {
     })
 
     /**
-     * Returns `this` with an error node.
-     */
+      * Returns `this` with an error node.
+      */
     def withErrorNode: Used = copy(hasErrorNode = true)
 
     /**
-     * Returns Successful(a) unless `this` contains errors.
-     */
+      * Returns Successful(a) unless `this` contains errors.
+      */
     def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else SoftFailure(a, errors.to(LazyList))
   }
 
   /**
-   * Tracks the context of the explored expression, recalling the definition, signature,
-   * or recursive variable under which it is defined.
-   */
-  private case class RecursionContext(defn: Option[Symbol.DefnSym], sig: Option[Symbol.SigSym], vars: Set[Symbol.VarSym]) {
-    /**
-     * Adds the given variable to the context.
-     */
-    def withVar(v: Symbol.VarSym): RecursionContext = this.copy(vars = this.vars + v)
-  }
-
-  private object RecursionContext {
-    /**
-     * Initializes a context under the given definition.
-     */
-    def ofDef(defn: Symbol.DefnSym): RecursionContext = RecursionContext(defn = Some(defn), sig = None, vars = Set.empty)
-
-    /**
-     * Initializes a context under the given signature.
-     */
-    def ofSig(sig: Symbol.SigSym): RecursionContext = RecursionContext(defn = None, sig = Some(sig), vars = Set.empty)
+    * Companion object for [[LocalContext]].
+    */
+  private object LocalContext {
+    def mk(): LocalContext = new LocalContext(mutable.Set.empty)
   }
 
   /**
-   * Companion object for [[SharedContext]]
-   */
-  object SharedContext {
+    * A local non-shared context.
+    *
+    * @param holeSyms the hole symbols in the def or sig.
+    */
+  private case class LocalContext(holeSyms: mutable.Set[Symbol.HoleSym])
+
+  /**
+    * Companion object for [[SharedContext]]
+    */
+  private object SharedContext {
     /**
-     * Returns a fresh shared context.
-     */
+      * Returns a fresh shared context.
+      */
     def mk(): SharedContext = new SharedContext(
       new ConcurrentHashMap(),
       new ConcurrentHashMap(),
@@ -1262,18 +1253,43 @@ object Redundancy {
   }
 
   /**
-   * A global shared context. Must be thread-safe.
-   *
-   * @param defSyms  the def symbols used anywhere in the program.
-   * @param sigSyms  the sig symbols used anywhere in the program.
-   * @param effSyms  the eff symbols used anywhere in the program.
-   * @param enumSyms the enum symbols used anywhere in the program.
-   * @param caseSyms the case symbols used anywhere in the program.
-   */
-  class SharedContext(val defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
-                      val sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
-                      val effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
-                      val enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
-                      val caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
+    * A global shared context. Must be thread-safe.
+    *
+    * @param defSyms  the def symbols used anywhere in the program.
+    * @param sigSyms  the sig symbols used anywhere in the program.
+    * @param effSyms  the eff symbols used anywhere in the program.
+    * @param enumSyms the enum symbols used anywhere in the program.
+    * @param caseSyms the case symbols used anywhere in the program.
+    */
+  private case class SharedContext(defSyms: ConcurrentHashMap[Symbol.DefnSym, Unit],
+                                   sigSyms: ConcurrentHashMap[Symbol.SigSym, Unit],
+                                   effSyms: ConcurrentHashMap[Symbol.EffectSym, Unit],
+                                   enumSyms: ConcurrentHashMap[Symbol.EnumSym, Unit],
+                                   caseSyms: ConcurrentHashMap[Symbol.CaseSym, Unit])
 
+  /**
+    * Companion object for [[RecursionContext]].
+    */
+  private object RecursionContext {
+    /**
+      * Initializes a context under the given definition.
+      */
+    def ofDef(defn: Symbol.DefnSym): RecursionContext = RecursionContext(defn = Some(defn), sig = None, vars = Set.empty)
+
+    /**
+      * Initializes a context under the given signature.
+      */
+    def ofSig(sig: Symbol.SigSym): RecursionContext = RecursionContext(defn = None, sig = Some(sig), vars = Set.empty)
+  }
+
+  /**
+    * Tracks the context of the explored expression, recalling the definition, signature,
+    * or recursive variable under which it is defined.
+    */
+  private case class RecursionContext(defn: Option[Symbol.DefnSym], sig: Option[Symbol.SigSym], vars: Set[Symbol.VarSym]) {
+    /**
+      * Adds the given variable to the context.
+      */
+    def withVar(v: Symbol.VarSym): RecursionContext = this.copy(vars = this.vars + v)
+  }
 }
