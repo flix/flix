@@ -103,9 +103,9 @@ object Redundancy {
       unusedFormalParams ++
       unusedTypeParams).copy(varSyms = Set.empty)
 
-    // Check if the expression contains holes or errors.
-    // If it does, we discard all unused local variable errors.
-    if (lctx.holeSyms.isEmpty && !usedAll.hasErrorNode)
+    // If the expression has no holes nor errors then we return usedAll.
+    // Otherwise, we discard all unused variable errors.
+    if (lctx.holeSyms.isEmpty && lctx.errorLocs.isEmpty)
       usedAll
     else
       usedAll.withoutUnusedVars
@@ -129,9 +129,9 @@ object Redundancy {
       unusedFormalParams ++
       unusedTypeParams).copy(varSyms = Set.empty)
 
-    // Check if the expression contains holes or errors.
-    // If it does, we discard all unused local variable errors.
-    if (lctx.holeSyms.isEmpty && !usedAll.hasErrorNode)
+    // If the expression has no holes nor errors then we return usedAll.
+    // Otherwise, we discard all unused variable errors.
+    if (lctx.holeSyms.isEmpty && lctx.errorLocs.isEmpty)
       usedAll
     else
       usedAll.withoutUnusedVars
@@ -763,7 +763,8 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expr.Error(_, _, _) =>
-      Used.empty.withErrorNode
+      lctx.errorLocs += e0.loc
+      Used.empty
 
   }
 
@@ -1133,7 +1134,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
+    val empty: Used = Used(Set.empty, ListMap.empty, Set.empty)
 
     /**
       * Returns an object where the given variable symbol `sym` is marked as used.
@@ -1156,7 +1157,6 @@ object Redundancy {
     */
   private case class Used(varSyms: Set[Symbol.VarSym],
                           occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
-                          hasErrorNode: Boolean,
                           errors: Set[RedundancyError]) {
 
     /**
@@ -1173,7 +1173,6 @@ object Redundancy {
         Used(
           this.varSyms ++ that.varSyms,
           this.occurrencesOf ++ that.occurrencesOf,
-          this.hasErrorNode || that.hasErrorNode,
           this.errors ++ that.errors
         )
       }
@@ -1213,11 +1212,6 @@ object Redundancy {
     })
 
     /**
-      * Returns `this` with an error node.
-      */
-    def withErrorNode: Used = copy(hasErrorNode = true)
-
-    /**
       * Returns Successful(a) unless `this` contains errors.
       */
     def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else SoftFailure(a, errors.to(LazyList))
@@ -1227,15 +1221,16 @@ object Redundancy {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = new LocalContext(mutable.Set.empty)
+    def mk(): LocalContext = new LocalContext(mutable.Set.empty, mutable.Set.empty)
   }
 
   /**
-    * A local non-shared context.
+    * A local non-shared context. Does not need to be thread-safe.
     *
-    * @param holeSyms the hole symbols in the def or sig.
+    * @param holeSyms  the hole symbols in the def or sig.
+    * @param errorLocs the source locations of the error expressions.
     */
-  private case class LocalContext(holeSyms: mutable.Set[Symbol.HoleSym])
+  private case class LocalContext(holeSyms: mutable.Set[Symbol.HoleSym], errorLocs: mutable.Set[SourceLocation])
 
   /**
     * Companion object for [[SharedContext]]
