@@ -39,11 +39,11 @@ object Reducer {
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
     case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, loc) =>
+      implicit val lctx: LocalContext = LocalContext.mk()
       val cs = cparams.map(visitFormalParam)
       val fs = fparams.map(visitFormalParam)
-      val ls0 = mutable.ArrayBuffer[ReducedAst.LocalParam]()
-      val e = visitExpr(ls0, exp)
-      val ls = ls0.toList
+      val e = visitExpr(exp)
+      val ls = lctx.lparams.toList
       val stmt = ReducedAst.Stmt.Ret(e, e.tpe, e.loc)
       ReducedAst.Def(ann, mod, sym, cs, fs, ls, stmt, tpe, purity, loc)
   }
@@ -69,8 +69,7 @@ object Reducer {
       ReducedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExpr(lparams: mutable.ArrayBuffer[ReducedAst.LocalParam], exp0: LiftedAst.Expr)(implicit ctx: SharedContext): ReducedAst.Expr = {
-    val visitExpr = Reducer.visitExpr(lparams, _)
+  private def visitExpr(exp0: LiftedAst.Expr)(implicit lctx: LocalContext, ctx: SharedContext): ReducedAst.Expr = {
     exp0 match {
       case LiftedAst.Expr.Cst(cst, tpe, loc) =>
         ReducedAst.Expr.Cst(cst, tpe, loc)
@@ -113,19 +112,19 @@ object Reducer {
         ReducedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
       case LiftedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
-        lparams.addOne(ReducedAst.LocalParam(sym, exp1.tpe))
+        lctx.lparams.addOne(ReducedAst.LocalParam(sym, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         ReducedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
       case LiftedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-        lparams.addOne(ReducedAst.LocalParam(varSym, exp1.tpe))
+        lctx.lparams.addOne(ReducedAst.LocalParam(varSym, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
       case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
-        lparams.addOne(ReducedAst.LocalParam(sym, MonoType.Region))
+        lctx.lparams.addOne(ReducedAst.LocalParam(sym, MonoType.Region))
         val e = visitExpr(exp)
         ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
@@ -133,7 +132,7 @@ object Reducer {
         val e = visitExpr(exp)
         val rs = rules map {
           case LiftedAst.CatchRule(sym, clazz, body) =>
-            lparams.addOne(ReducedAst.LocalParam(sym, MonoType.Object))
+            lctx.lparams.addOne(ReducedAst.LocalParam(sym, MonoType.Object))
             val b = visitExpr(body)
             ReducedAst.CatchRule(sym, clazz, b)
         }
@@ -179,6 +178,19 @@ object Reducer {
     case LiftedAst.FormalParam(sym, mod, tpe, loc) =>
       ReducedAst.FormalParam(sym, mod, tpe, loc)
   }
+
+  /**
+    * Companion object for [[LocalContext]].
+    */
+  private object LocalContext {
+    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty)
+  }
+
+  /**
+    * A local non-shared context. Does not need to be thread-safe.
+    * @param lparams the bound variales in the def.
+    */
+  private case class LocalContext(lparams: mutable.ArrayBuffer[ReducedAst.LocalParam])
 
   /**
     * A context shared across threads.
