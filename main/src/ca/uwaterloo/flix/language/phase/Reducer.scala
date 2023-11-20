@@ -165,6 +165,7 @@ object Reducer {
       ctx.anonClasses.add(ReducedAst.AnonClass(name, clazz, tpe, specs, loc))
 
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, specs, es, loc)
+
   }
 
   private def visitCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
