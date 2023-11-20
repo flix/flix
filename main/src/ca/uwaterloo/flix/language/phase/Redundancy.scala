@@ -28,9 +28,9 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
-
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
@@ -53,88 +53,99 @@ object Redundancy {
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
     implicit val sctx: SharedContext = SharedContext.mk()
 
-    // Computes all used symbols in all top-level defs (in parallel).
-    val usedDefs = ParOps.parAgg(root.defs, Used.empty)({
+    val errorsFromDefs = ParOps.parAgg(root.defs, Used.empty)({
       case (acc, (_, decl)) => acc ++ visitDef(decl)(sctx, root, flix)
-    }, _ ++ _)
+    }, _ ++ _).errors.toList
 
-    // Compute all used symbols in all instance defs (in parallel).
-    val usedInstDefs = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
-      case (acc, decl) => acc ++ visitDef(decl)(sctx, root, flix)
-    }, _ ++ _)
-
-    val usedSigs = ParOps.parAgg(root.sigs, Used.empty)({
+    val errorsFromSigs = ParOps.parAgg(root.sigs, Used.empty)({
       case (acc, (_, decl)) => acc ++ visitSig(decl)(sctx, root, flix)
-    }, _ ++ _)
+    }, _ ++ _).errors.toList
 
-    val usedAll = usedDefs ++ usedInstDefs ++ usedSigs
+    val errorsFromInst = ParOps.parAgg(TypedAstOps.instanceDefsOf(root), Used.empty)({
+      case (acc, decl) => acc ++ visitDef(decl)(sctx, root, flix)
+    }, _ ++ _).errors.toList
 
     // Check for unused symbols.
-    val usedRes =
-      checkUnusedDefs(usedAll)(sctx, root) ++
-        checkUnusedEnumsAndTags(usedAll)(sctx, root) ++
+    val errors = {
+      errorsFromDefs ++
+        errorsFromInst ++
+        errorsFromSigs ++
+        checkUnusedDefs()(sctx, root) ++
+        checkUnusedEffects()(sctx, root) ++
+        checkUnusedEnumsAndTags()(sctx, root) ++
         checkUnusedTypeParamsEnums()(root) ++
-        checkRedundantTypeConstraints()(root, flix) ++
-        checkUnusedEffects(usedAll)(sctx, root)
+        checkRedundantTypeConstraints()(root, flix)
+    }
 
-    // Return the root if successful, otherwise returns all redundancy errors.
-    usedRes.toValidation(root)
+    // Determine whether to return success or soft failure.
+    if (errors.isEmpty)
+      Success(root)
+    else
+      SoftFailure(root, errors.to(LazyList))
   }
 
   /**
     * Checks for unused definition symbols.
     */
-  private def checkUnusedDefs(used: Used)(implicit sctx: SharedContext, root: Root): Used = {
-    root.defs.foldLeft(used) {
-      case (acc, (_, decl)) if deadDef(decl) => acc + UnusedDefSym(decl.sym)
-      case (acc, _) => acc
+  private def checkUnusedDefs()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, defn) <- root.defs) {
+      if (deadDef(defn)) {
+        result += UnusedDefSym(defn.sym)
+      }
     }
+    result.toList
   }
 
   /**
     * Checks for unused effect symbols.
     */
-  private def checkUnusedEffects(used: Used)(implicit sctx: SharedContext, root: Root): Used = {
-    root.effects.foldLeft(used) {
-      case (acc, (_, decl)) if deadEffect(decl) => acc + UnusedEffectSym(decl.sym)
-      case (acc, _) => acc
+  private def checkUnusedEffects()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, eff) <- root.effects) {
+      if (deadEffect(eff)) {
+        result += UnusedEffectSym(eff.sym)
+      }
     }
+    result.toList
   }
 
   /**
     * Checks for unused enum symbols and tags.
     */
-  private def checkUnusedEnumsAndTags(used: Used)(implicit sctx: SharedContext, root: Root): Used = {
-    root.enums.foldLeft(used) {
-      case (acc, (sym, decl)) if deadEnum(decl) =>
-        // The enum is private and never used
-        acc + UnusedEnumSym(sym)
+  private def checkUnusedEnumsAndTags()(implicit sctx: SharedContext, root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, enm) <- root.enums) {
+      if (deadEnum(enm)) {
+        result += UnusedEnumSym(enm.sym)
+      }
 
-      case (acc, (sym, decl)) =>
-        // Check for unused cases
-        decl.cases.foldLeft(acc) {
-          case (innerAcc, (tag, caze)) if deadTag(decl, tag) => innerAcc + UnusedEnumTag(sym, caze.sym)
-          case (innerAcc, _) => innerAcc
+      for ((tag, _) <- enm.cases) {
+        if (deadTag(enm, tag)) {
+          result += UnusedEnumTag(enm.sym, tag)
         }
+      }
     }
+    result.toList
   }
 
   /**
     * Checks for unused type parameters in enums.
     */
-  private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
-    root.enums.foldLeft(Used.empty) {
-      case (acc, (_, decl)) =>
-        val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
-          case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
-        }
-        val unusedTypeParams = decl.tparams.filter {
-          tparam =>
-            !usedTypeVars.contains(tparam.sym) &&
-              !tparam.name.name.startsWith("_")
-        }
-        acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
+  private def checkUnusedTypeParamsEnums()(implicit root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, decl) <- root.enums) {
+      val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
+        case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
+      }
+      val unusedTypeParams = decl.tparams.filter {
+        tparam =>
+          !usedTypeVars.contains(tparam.sym) &&
+            !tparam.name.name.startsWith("_")
+      }
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
+    result.toList
   }
 
   /**
@@ -1192,10 +1203,6 @@ object Redundancy {
       case _ => true
     })
 
-    /**
-      * Returns Successful(a) unless `this` contains errors.
-      */
-    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else SoftFailure(a, errors.to(LazyList))
   }
 
   /**
