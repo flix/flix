@@ -1625,20 +1625,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("IllegalSingleVariable.Predicate.01") {
-    val input =
-      s"""
-         |mod N {
-         |    def f(): #{ A(Int32), B(Int32), C(Int32) } =
-         |        #{
-         |            A(x) :- B(x), C(y).
-         |        }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.IllegalSingleVariable](result)
-  }
-
   test("UnusedDefSym.01") {
     val input =
       """

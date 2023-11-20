@@ -74,4 +74,14 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     }
   }
 
+  /**
+   * Returns `this` list map without the mapping for `k`.
+   */
+  def -(k: K): ListMap[K, V] = ListMap(m - k)
+
+  /**
+   * Returns ´this´ list map without the mappings for ´ks´.
+   */
+  def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
+
 }
