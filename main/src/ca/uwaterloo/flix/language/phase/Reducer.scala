@@ -18,8 +18,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.annotation.tailrec
+import scala.collection.immutable.Queue
 import scala.jdk.CollectionConverters._
 
 object Reducer {
@@ -265,53 +268,42 @@ object Reducer {
         // the enum type itself
         val eType = e.tpe
         // the types inside the cases
-        val caseTypes = e.cases.values.flatMap(c => nestedTypesOf(c.tpe)(root, flix))
+        val caseTypes = e.cases.values.map(_.tpe)
         sacc + eType ++ caseTypes
     }
 
     val result = defTypes ++ enumTypes
 
-    result.flatMap(t => nestedTypesOf(t)(root, flix))
+    nestedTypesOf(Set.empty, Queue.from(result))
   }
 
   /**
-    * Returns all the type components of the given type `tpe`.
+    * Returns all the type components of the given `types`.
     *
-    * For example, if the given type is `Array[(Bool, Char, Int)]`
-    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Array[(Bool, Char, Int)]`.
+    * For example, if the types is just the type `Array[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Array[(Bool, Char, Int)]`
+    * (and the types in `acc`).
     */
-  private def nestedTypesOf(tpe: MonoType)(implicit root: ReducedAst.Root, flix: Flix): Set[MonoType] = {
-    tpe match {
-      case MonoType.Unit => Set(tpe)
-      case MonoType.Bool => Set(tpe)
-      case MonoType.Char => Set(tpe)
-      case MonoType.Float32 => Set(tpe)
-      case MonoType.Float64 => Set(tpe)
-      case MonoType.BigDecimal => Set(tpe)
-      case MonoType.Int8 => Set(tpe)
-      case MonoType.Int16 => Set(tpe)
-      case MonoType.Int32 => Set(tpe)
-      case MonoType.Int64 => Set(tpe)
-      case MonoType.BigInt => Set(tpe)
-      case MonoType.String => Set(tpe)
-      case MonoType.Regex => Set(tpe)
-      case MonoType.Region => Set(tpe)
-
-      case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Enum(_) => Set(tpe)
-      case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
-
-      case MonoType.RecordEmpty => Set(tpe)
-      case MonoType.RecordExtend(_, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
-
-      case MonoType.SchemaEmpty => Set(tpe)
-      case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
-
-      case MonoType.Native(_) => Set(tpe)
+    @tailrec
+    def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
+      import MonoType._
+      types.dequeueOption match {
+        case Some((tpe, taskList)) =>
+          val taskList1 = tpe match {
+            case Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
+                 Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) |
+                 RecordEmpty | SchemaEmpty | Native(_) => taskList
+            case Array(elm) => taskList.enqueue(elm)
+            case Lazy(elm) => taskList.enqueue(elm)
+            case Ref(elm) => taskList.enqueue(elm)
+            case Tuple(elms) => taskList.enqueueAll(elms)
+            case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
+            case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
+            case SchemaExtend(_, t, rest) => taskList.enqueue(t).enqueue(rest)
+          }
+          nestedTypesOf(acc + tpe, taskList1)
+        case None => acc
+      }
     }
-  }
 
 }
