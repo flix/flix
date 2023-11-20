@@ -36,7 +36,7 @@ object ReducedAstPrinter {
         DocAst.Enum(ann, mod, sym, Nil, cases)
     }.toList
     val defs = root.defs.values.map {
-      case ReducedAst.Def(ann, mod, sym, cparams, fparams, stmt, tpe, purity, _) =>
+      case ReducedAst.Def(ann, mod, sym, cparams, fparams, _, stmt, tpe, purity, _) =>
         DocAst.Def(
           ann,
           mod,
