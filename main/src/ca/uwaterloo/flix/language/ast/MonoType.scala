@@ -82,4 +82,6 @@ object MonoType {
 
   case class Native(clazz: Class[_]) extends MonoType
 
+  val Object: MonoType = Native(classOf[java.lang.Object])
+
 }
