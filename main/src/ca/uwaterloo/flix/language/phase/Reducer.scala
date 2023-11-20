@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.Chain
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -284,26 +283,26 @@ object Reducer {
     * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Array[(Bool, Char, Int)]`
     * (and the types in `acc`).
     */
-    @tailrec
-    def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
-      import MonoType._
-      types.dequeueOption match {
-        case Some((tpe, taskList)) =>
-          val taskList1 = tpe match {
-            case Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
-                 Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) |
-                 RecordEmpty | SchemaEmpty | Native(_) => taskList
-            case Array(elm) => taskList.enqueue(elm)
-            case Lazy(elm) => taskList.enqueue(elm)
-            case Ref(elm) => taskList.enqueue(elm)
-            case Tuple(elms) => taskList.enqueueAll(elms)
-            case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
-            case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
-            case SchemaExtend(_, t, rest) => taskList.enqueue(t).enqueue(rest)
-          }
-          nestedTypesOf(acc + tpe, taskList1)
-        case None => acc
-      }
+  @tailrec
+  def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
+    import MonoType._
+    types.dequeueOption match {
+      case Some((tpe, taskList)) =>
+        val taskList1 = tpe match {
+          case Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
+               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) |
+               RecordEmpty | SchemaEmpty | Native(_) => taskList
+          case Array(elm) => taskList.enqueue(elm)
+          case Lazy(elm) => taskList.enqueue(elm)
+          case Ref(elm) => taskList.enqueue(elm)
+          case Tuple(elms) => taskList.enqueueAll(elms)
+          case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
+          case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
+          case SchemaExtend(_, t, rest) => taskList.enqueue(t).enqueue(rest)
+        }
+        nestedTypesOf(acc + tpe, taskList1)
+      case None => acc
     }
+  }
 
 }
