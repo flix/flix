@@ -253,7 +253,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.MissingThisArg](result)
+    expectError[SafetyError.NewObjectMissingThisArg](result)
   }
 
   test("TestInvalidThis.02") {
@@ -265,7 +265,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.IllegalThisType](result)
+    expectError[SafetyError.NewObjectIllegalThisType](result)
   }
 
   test("TestUnimplementedMethod.01") {
@@ -274,7 +274,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): ##java.lang.Runnable \ IO = new ##java.lang.Runnable {}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnimplementedMethod](result)
+    expectError[SafetyError.NewObjectMissingMethod](result)
   }
 
   test("TestExtraMethod.01") {
@@ -287,7 +287,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.ExtraMethod](result)
+    expectError[SafetyError.NewObjectUnreachableMethod](result)
   }
 
   test("TestNonDefaultConstructor.01") {
@@ -298,7 +298,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.MissingPublicZeroArgConstructor](result)
+    expectError[SafetyError.NewObjectMissingPublicZeroArgConstructor](result)
   }
 
   test("TestNonPublicInterface.01") {
@@ -309,7 +309,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.NonPublicClass](result)
+    expectError[SafetyError.NewObjectNonPublicCLass](result)
   }
 
   test("TestMissingDefaultTypeMatchCase.01") {

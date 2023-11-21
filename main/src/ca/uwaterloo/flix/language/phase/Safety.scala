@@ -723,14 +723,14 @@ object Safety {
       if (hasNonPrivateZeroArgConstructor(clazz))
         List.empty
       else
-        List(MissingPublicZeroArgConstructor(clazz, loc))
+        List(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
     }
 
     //
     // Check that `clazz` is public
     //
     val visibilityErrors = if (!isPublicClass(clazz))
-      List(NonPublicClass(clazz, loc))
+      List(NewObjectNonPublicCLass(clazz, loc))
     else
       List.empty
 
@@ -744,8 +744,8 @@ object Safety {
         val thisType = Type.eraseAliases(fparam.tpe)
         thisType match {
           case `tpe` => None
-          case Type.Unit => Some(MissingThisArg(clazz, ident.name, methodLoc))
-          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
+          case Type.Unit => Some(NewObjectMissingThisArg(clazz, ident.name, methodLoc))
+          case _ => Some(NewObjectIllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
         }
     }
 
@@ -761,13 +761,13 @@ object Safety {
     // Check that there are no unimplemented methods.
     //
     val unimplemented = mustImplement diff implemented
-    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
+    val unimplementedErrors = unimplemented.map(m => NewObjectMissingMethod(clazz, javaMethods(m), loc))
 
     //
     // Check that there are no methods that aren't in the interface
     //
     val extra = implemented diff canImplement
-    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
+    val extraErrors = extra.map(m => NewObjectUnreachableMethod(clazz, m.name, flixMethods(m).loc))
 
     constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }
