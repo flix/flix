@@ -162,8 +162,7 @@ object SafetyError {
      * Returns a formatted string with helpful suggestions.
      */
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |A lattice variable cannot be used as relational variable unless the atom
+      s"""A lattice variable cannot be used as relational variable unless the atom
          |from which it originates is marked with `fix`.
          |""".stripMargin
     })
@@ -235,9 +234,7 @@ object SafetyError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       if (!sym.isWild)
-        s"""
-           |${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
-           |""".stripMargin
+        s"""${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.""".stripMargin
       else
         ""
     })
@@ -338,13 +335,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate an impossible cast.
+   * An error raised to indicate an impossible unchecked cast.
    *
-   * @param from the type of the expression being cast.
-   * @param to   the type being cast to, i.e. the declared type or effect of the cast.
+   * @param from the source type.
+   * @param to   the destination type.
    * @param loc  the source location of the cast.
    */
-  case class ImpossibleCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Impossible cast."
 
     override def message(formatter: Formatter): String = {

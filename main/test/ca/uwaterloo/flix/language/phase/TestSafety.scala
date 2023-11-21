@@ -358,7 +358,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Bool = unchecked_cast("true" as Bool)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.02") {
@@ -367,7 +367,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): String = unchecked_cast(true as String)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.03") {
@@ -377,7 +377,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): A = unchecked_cast(true as A)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.04") {
@@ -387,7 +387,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Bool = unchecked_cast(A.A(false) as Bool)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.05") {
@@ -397,7 +397,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): A = unchecked_cast(1 as A)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.06") {
@@ -407,7 +407,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): Int32 = unchecked_cast(A.A(1) as Int32)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.07") {
@@ -417,7 +417,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): A = unchecked_cast("a" as A)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.08") {
@@ -427,7 +427,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def f(): String = unchecked_cast(A.A("a") as String)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("ImpossibleCast.09") {
@@ -437,7 +437,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    unchecked_cast(('a', 'b', false) as ##java.lang.String)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
+    expectError[SafetyError.ImpossibleUncheckedCast](result)
   }
 
   test("IllegalCheckedTypeCast.01") {
