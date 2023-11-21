@@ -32,6 +32,30 @@ sealed trait InstanceError extends CompilationMessage {
 object InstanceError {
 
   /**
+    * Error indicating a complex instance type.
+    *
+    * @param tpe the complex type.
+    * @param sym the class symbol.
+    * @param loc the location where the error occurred.
+    */
+  case class ComplexInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+    override def summary: String = "Complex instance type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+         |
+         |${code(loc, s"complex instance type")}
+         |
+         |An instance type must be a type constructor applied to zero or more distinct type variables.
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * Error indicating the duplicate use of a type variable in an instance type.
     *
     * @param tvar the duplicated type variable.
@@ -55,59 +79,6 @@ object InstanceError {
       s"${underline("Tip:")} Rename one of the instances of the type variable."
     })
 
-  }
-
-  /**
-    * Error indicating that the types of two instances overlap.
-    *
-    * @param sym  the class symbol.
-    * @param loc1 the location of the first instance.
-    * @param loc2 the location of the second instance.
-    */
-  case class OverlappingInstances(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
-    def summary: String = "Overlapping instances."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Overlapping instances for '${magenta(sym.name)}'.
-         |
-         |${code(loc1, "the first instance was declared here.")}
-         |
-         |${code(loc2, "the second instance was declared here.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip: ")} Remove or change the type of one of the instances."
-    })
-
-    def loc: SourceLocation = loc1
-  }
-
-  /**
-    * Error indicating a complex instance type.
-    *
-    * @param tpe the complex type.
-    * @param sym the class symbol.
-    * @param loc the location where the error occurred.
-    */
-  case class ComplexInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
-    override def summary: String = "Complex instance type."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
-         |
-         |${code(loc, s"complex instance type")}
-         |
-         |An instance type must be a type constructor applied to zero or more distinct type variables.
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -317,6 +288,35 @@ object InstanceError {
       import formatter._
       s"${underline("Tip:")} Add the missing type constraint."
     })
+  }
+
+  /**
+    * Error indicating that the types of two instances overlap.
+    *
+    * @param sym  the class symbol.
+    * @param loc1 the location of the first instance.
+    * @param loc2 the location of the second instance.
+    */
+  case class OverlappingInstances(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
+    def summary: String = "Overlapping instances."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Overlapping instances for '${magenta(sym.name)}'.
+         |
+         |${code(loc1, "the first instance was declared here.")}
+         |
+         |${code(loc2, "the second instance was declared here.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip: ")} Remove or change the type of one of the instances."
+    })
+
+    def loc: SourceLocation = loc1
   }
 
   /**
