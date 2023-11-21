@@ -111,7 +111,7 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """Flix uses lowercase variable name.
+      """Flix uses lowercase variable names.
         |
         |The type variable looks suspiciously like the name of a built-in type.
         |
