@@ -2,14 +2,13 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
-  * A common super-type for safety errors.
-  */
+ * A common super-type for safety errors.
+ */
 sealed trait SafetyError extends CompilationMessage {
   val kind: String = "Safety Error"
 }
@@ -147,7 +146,7 @@ object SafetyError {
    * @param sym the variable symbol.
    * @param loc the source location of the atom where the illegal use occurs.
    */
-  case class IllegalRelationalUseOfLatticeVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal relational use of the lattice variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -175,7 +174,7 @@ object SafetyError {
    *
    * @param loc the position of the body atom containing the illegal wildcard.
    */
-  case class IllegalNegativelyBoundWildcard(loc: SourceLocation) extends SafetyError {
+  case class IllegalNegativelyBoundWildCard(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound wildcard '_'."
 
     def message(formatter: Formatter): String = {
@@ -194,11 +193,11 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an illegal use of a wild variable in a negative atom.
-    *
-    * @param loc the position of the body atom containing the illegal variable.
-    */
-  case class IllegalNegativelyBoundWildVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+   * An error raised to indicate an illegal use of a wild variable in a negative atom.
+   *
+   * @param loc the position of the body atom containing the illegal variable.
+   */
+  case class IllegalNegativelyBoundWildVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -211,8 +210,8 @@ object SafetyError {
     }
 
     /**
-      * Returns a formatted string with helpful suggestions.
-      */
+     * Returns a formatted string with helpful suggestions.
+     */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -221,7 +220,7 @@ object SafetyError {
    *
    * @param loc the position of the body atom containing the illegal variable.
    */
-  case class IllegalNonPositivelyBoundVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+  case class IllegalNonPositivelyBoundVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal non-positively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -423,11 +422,11 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a class lacks a public zero argument constructor.
-    *
-    * @param clazz the class.
-    * @param loc   the source location of the new object expression.
-    */
+   * An error raised to indicate that a class lacks a public zero argument constructor.
+   *
+   * @param clazz the class.
+   * @param loc   the source location of the new object expression.
+   */
   case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
     def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
 
@@ -507,7 +506,7 @@ object SafetyError {
    * @param clazz the class.
    * @param loc   the source location of the new object expression.
    */
-  case class NewObjectNonPublicCLass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+  case class NewObjectNonPublicClass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
     def summary: String = s"Class '${clazz.getName}' is not public"
 
     def message(formatter: Formatter): String = {
@@ -553,4 +552,5 @@ object SafetyError {
     else
       s"##${t.getName}"
   }
+
 }

@@ -564,7 +564,7 @@ object Safety {
         case Denotation.Latticenal => terms.dropRight(1)
       }
       val err2 = relTerms.flatMap(freeVarsOf).filter(latVars.contains).map(
-        s => IllegalRelationalUseOfLatticeVariable(s, loc)
+        s => IllegalRelationalUseOfLatticeVar(s, loc)
       )
 
       // Combine the messages
@@ -587,7 +587,7 @@ object Safety {
     * @param loc the location of the atom containing the terms.
     */
   private def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
-    if (sym.isWild) IllegalNegativelyBoundWildVariable(sym, loc) else IllegalNonPositivelyBoundVariable(sym, loc)
+    if (sym.isWild) IllegalNegativelyBoundWildVar(sym, loc) else IllegalNonPositivelyBoundVar(sym, loc)
 
   /**
     * Returns all the positively defined variable symbols in the given constraint `c0`.
@@ -673,7 +673,7 @@ object Safety {
     })
 
     // Compute the lattice variables that are illegally used in the terms.
-    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVariable(sym, loc))
+    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVar(sym, loc))
   }
 
   /**
@@ -692,7 +692,7 @@ object Safety {
     */
   @tailrec
   private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
-    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
+    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildCard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Cst(_, _, _) => Nil
     case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
@@ -730,7 +730,7 @@ object Safety {
     // Check that `clazz` is public
     //
     val visibilityErrors = if (!isPublicClass(clazz))
-      List(NewObjectNonPublicCLass(clazz, loc))
+      List(NewObjectNonPublicClass(clazz, loc))
     else
       List.empty
 

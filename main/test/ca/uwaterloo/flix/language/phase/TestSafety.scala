@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable, IllegalPatternInBodyAtom}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalRelationalUseOfLatticeVar, IllegalPatternInBodyAtom}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -78,7 +78,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNonPositivelyBoundVariable](result)
+    expectError[IllegalNonPositivelyBoundVar](result)
   }
 
   test("NonPositivelyBoundVariable.02") {
@@ -89,7 +89,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
     """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNonPositivelyBoundVariable](result)
+    expectError[IllegalNonPositivelyBoundVar](result)
   }
 
   test("NonPositivelyBoundVariable.03") {
@@ -100,7 +100,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
     """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNonPositivelyBoundVariable](result)
+    expectError[IllegalNonPositivelyBoundVar](result)
   }
 
   test("NonPositivelyBoundVariable.04") {
@@ -116,7 +116,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    ()
     """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNonPositivelyBoundVariable](result)
+    expectError[IllegalNonPositivelyBoundVar](result)
   }
 
   // TODO NS-REFACTOR find out if wildcard and wild variable are different
@@ -128,7 +128,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildcard](result)
+    expectError[IllegalNegativelyBoundWildCard](result)
   }
 
 
@@ -141,7 +141,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildcard](result)
+    expectError[IllegalNegativelyBoundWildCard](result)
   }
 
   // TODO NS-REFACTOR find out if wildcard and wild variable are different
@@ -153,7 +153,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildcard](result)
+    expectError[IllegalNegativelyBoundWildCard](result)
   }
 
   test("NegativelyBoundWildcard.01") {
@@ -164,7 +164,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildcard](result)
+    expectError[IllegalNegativelyBoundWildCard](result)
   }
 
   test("NegativelyBoundWildcard.02") {
@@ -175,7 +175,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildcard](result)
+    expectError[IllegalNegativelyBoundWildCard](result)
   }
 
   test("NegativelyBoundWildcard.03") {
@@ -186,7 +186,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildcard](result)
+    expectError[IllegalNegativelyBoundWildCard](result)
   }
 
   test("UseOfLatticeVariable.01") {
@@ -197,7 +197,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[IllegalRelationalUseOfLatticeVariable](result)
+    expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
   test("UseOfLatticeVariable.02") {
@@ -208,7 +208,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[IllegalRelationalUseOfLatticeVariable](result)
+    expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
   test("UseOfLatticeVariable.03") {
@@ -219,7 +219,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[IllegalRelationalUseOfLatticeVariable](result)
+    expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
   test("UseOfLatticeVariable.04") {
@@ -230,7 +230,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[IllegalRelationalUseOfLatticeVariable](result)
+    expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
   test("UseOfLatticeVariable.05") {
@@ -241,7 +241,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[IllegalRelationalUseOfLatticeVariable](result)
+    expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
   test("TestInvalidThis.01") {
@@ -309,7 +309,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.NewObjectNonPublicCLass](result)
+    expectError[SafetyError.NewObjectNonPublicClass](result)
   }
 
   test("TestMissingDefaultTypeMatchCase.01") {
