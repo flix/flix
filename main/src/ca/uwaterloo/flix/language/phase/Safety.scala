@@ -55,7 +55,7 @@ object Safety {
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
         if (tpe.typeArguments.exists(_.kind == Kind.Eff))
-          List(SafetyError.SendableError(tpe, loc))
+          List(SafetyError.IllegalSendableInstance(tpe, loc))
         else
           Nil
     }
@@ -744,7 +744,7 @@ object Safety {
         val thisType = Type.eraseAliases(fparam.tpe)
         thisType match {
           case `tpe` => None
-          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
+          case Type.Unit => Some(MissingThisArg(clazz, ident.name, methodLoc))
           case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
         }
     }

@@ -253,7 +253,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.MissingThis](result)
+    expectError[SafetyError.MissingThisArg](result)
   }
 
   test("TestInvalidThis.02") {
@@ -340,7 +340,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |enum Enum1[r: Region](Array[Int32, r]) with Sendable
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.SendableError](result)
+    expectError[SafetyError.IllegalSendableInstance](result)
   }
 
   test("UnableToDeriveSendable.02") {
@@ -349,7 +349,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |instance Sendable[Array[a, r]]
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.SendableError](result)
+    expectError[SafetyError.IllegalSendableInstance](result)
   }
 
   test("ImpossibleCast.01") {
