@@ -17,12 +17,13 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, FormalParam, LocalParam, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label}
+import org.objectweb.asm.{ClassWriter, Label, Opcodes}
 
 /**
   * Generates byte code for the closure classes.
@@ -93,8 +94,16 @@ object GenClosureClasses {
       AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false, isVolatile = false)
     }
 
+    for ((x, i) <- defn.lparams.zipWithIndex) {
+      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+    }
+
+    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
+
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn)
+    compileInvokeMethod(visitor, classType)
+
+    compileFrameMethod(visitor, classType, defn)
 
     // getUniqueThreadClosure method of the class
     compileGetUniqueThreadClosureMethod(visitor, classType, defn, closureArgTypes)
@@ -109,11 +118,41 @@ object GenClosureClasses {
   /**
     * Invoke method for the given `defn`, `classType`, and `resultType`.
     */
-  private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+  private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference): Unit = {
     // Method header
     val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
     invokeMethod.visitCode()
+
+    invokeMethod.visitVarInsn(ALOAD, 0)
+    invokeMethod.visitInsn(ACONST_NULL)
+    val applyMethod = BackendObjType.Frame.ApplyMethod
+    invokeMethod.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
+
+    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(invokeMethod))
+
+    // Return
+    invokeMethod.visitMaxs(999, 999)
+    invokeMethod.visitEnd()
+  }
+
+
+  /**
+    * Invoke method for the given `defn`, `classType`, and `resultType`.
+    */
+  private def compileFrameMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+    val applyMethod = BackendObjType.Frame.ApplyMethod
+    // Method header
+    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
+    invokeMethod.visitCode()
+
+    for ((LocalParam(sym, tpe), ind) <- defn.lparams.zipWithIndex) {
+      invokeMethod.visitVarInsn(ALOAD, 0)
+      val erasedType = JvmOps.getErasedJvmType(tpe)
+      invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"l$ind", erasedType.toDescriptor)
+      val xStore = AsmOps.getStoreInstruction(erasedType)
+      invokeMethod.visitVarInsn(xStore, sym.getStackOffset + 1)
+    }
 
     // Enter label
     val enterLabel = new Label()
@@ -148,16 +187,16 @@ object GenClosureClasses {
 
     // Generating the expression
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
-    GenExpression.compileStmt(defn.stmt)(invokeMethod, ctx, root, flix)
+    GenExpression.compileStmt(defn.stmt)(invokeMethod, ctx, root, flix, newFrame(classType, defn))
 
     // returning a Value
     val returnValue = {
       import BytecodeInstructions._
       import BackendObjType._
       NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP() ~
-      xSwap(lowerLarge = BackendType.toErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
-      PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
-      xReturn(Result.toTpe)
+        xSwap(lowerLarge = BackendType.toErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
+        PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
+        xReturn(Result.toTpe)
     }
     returnValue(new BytecodeInstructions.F(invokeMethod))
 
@@ -166,9 +205,28 @@ object GenClosureClasses {
     invokeMethod.visitEnd()
   }
 
-  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                                  closureArgTypes: List[MonoType])(implicit root: Root, flix: Flix): Unit = {
+  private def newFrame(classType: JvmType.Reference, defn: Def): InstructionSet = {
+    import BytecodeInstructions._
+    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
+    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val params = fparams ++ cparams ++ lparams
 
+    def getPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
+      val className = classType.name.toInternalName
+      val fieldType = JvmOps.getErasedJvmType(tpe).toDescriptor
+      mv.visitFieldInsn(Opcodes.GETFIELD, className, name, fieldType)
+      mv.visitFieldInsn(Opcodes.PUTFIELD, className, name, fieldType)
+    })
+
+    NEW(classType.name) ~ DUP() ~ INVOKESPECIAL(classType.name, "<init>", MethodDescriptor.NothingToVoid) ~
+      params.foldLeft(nop()) {
+        case (acc, (name, tpe)) => acc ~ DUP() ~ thisLoad() ~ getPutField(name, tpe)
+      }
+  }
+
+  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
+                                                  closureArgTypes: List[MonoType]): Unit = {
     val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
 
     val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)

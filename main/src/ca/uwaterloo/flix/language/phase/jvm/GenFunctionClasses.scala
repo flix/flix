@@ -19,11 +19,12 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label}
+import org.objectweb.asm.{ClassWriter, Label, Opcodes}
 
 /**
   * Generates bytecode for the function classes.
@@ -67,16 +68,25 @@ object GenFunctionClasses {
 
     // `JvmType` of the interface for `def.tpe`
     val functionInterface = JvmOps.getFunctionInterfaceType(defn.arrowType)
+    val frameInterface = BackendObjType.Frame
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
-      functionInterface.name.toInternalName, null)
+      functionInterface.name.toInternalName, Array(frameInterface.jvmName.toInternalName))
+
+    for ((x, i) <- defn.lparams.zipWithIndex) {
+      visitor.visitField(ACC_PUBLIC, s"l$i", JvmOps.getErasedJvmType(x.tpe).toDescriptor, null, null)
+    }
+
+    visitor.visitField(ACC_PUBLIC, "pc", JvmType.PrimInt.toDescriptor, null, null)
 
     // Constructor of the class
     compileConstructor(functionInterface, visitor)
 
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn)
+    compileInvokeMethod(visitor, classType)
+
+    compileFrameMethod(visitor, classType, defn)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -100,16 +110,44 @@ object GenFunctionClasses {
   /**
     * Invoke method for the given `defn` and `classType`.
     */
-  private def compileInvokeMethod(visitor: ClassWriter,
-                                  classType: JvmType.Reference,
-                                  defn: Def)(implicit root: Root, flix: Flix): Unit = {
+  private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference): Unit = {
     // Method header
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, BackendObjType.Thunk.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, JvmType.Reference(BackendObjType.Result.jvmName)), null, null)
 
+    val applyMethod = BackendObjType.Frame.ApplyMethod
+    m.visitVarInsn(ALOAD, 0)
+    m.visitInsn(ACONST_NULL)
+    m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, applyMethod.name, applyMethod.d.toDescriptor, false)
+
+    BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
+
+    // Return
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
+
+  /**
+    * Invoke method for the given `defn` and `classType`.
+    */
+  private def compileFrameMethod(visitor: ClassWriter,
+                                  classType: JvmType.Reference,
+                                  defn: Def)(implicit root: Root, flix: Flix): Unit = {
+    // Method header
+    val applyMethod = BackendObjType.Frame.ApplyMethod
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
+
     // Enter label
     val enterLabel = new Label()
     m.visitCode()
+
+    for ((LocalParam(sym, tpe), ind) <- defn.lparams.zipWithIndex) {
+      m.visitVarInsn(ALOAD, 0)
+      val erasedType = JvmOps.getErasedJvmType(tpe)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"l$ind", erasedType.toDescriptor)
+      val xStore = AsmOps.getStoreInstruction(erasedType)
+      m.visitVarInsn(xStore, sym.getStackOffset + 1)
+    }
 
     // visiting the label
     m.visitLabel(enterLabel)
@@ -125,28 +163,46 @@ object GenFunctionClasses {
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
 
       // Storing the parameter on variable stack
-      val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      m.visitVarInsn(iSTORE, sym.getStackOffset + 1)
+      val xStore = AsmOps.getStoreInstruction(erasedType)
+      m.visitVarInsn(xStore, sym.getStackOffset + 1)
     }
 
     // Generating the expression
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
-    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
+    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix, newFrame(classType, defn))
 
     // returning a Value
     val returnValue = {
       import BytecodeInstructions._
       import BackendObjType._
       NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP() ~
-      xSwap(lowerLarge = BackendType.toErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
-      PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
-      xReturn(Result.toTpe)
+        xSwap(lowerLarge = BackendType.toErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
+        PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
+        xReturn(Result.toTpe)
     }
     returnValue(new BytecodeInstructions.F(m))
 
-    // Return
     m.visitMaxs(999, 999)
     m.visitEnd()
+  }
+
+  private def newFrame(classType: JvmType.Reference, defn: Def): InstructionSet = {
+    import BytecodeInstructions._
+    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val params = fparams ++ lparams
+
+    def getPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
+      val className = classType.name.toInternalName
+      val fieldType = JvmOps.getErasedJvmType(tpe).toDescriptor
+      mv.visitFieldInsn(Opcodes.GETFIELD, className, name, fieldType)
+      mv.visitFieldInsn(Opcodes.PUTFIELD, className, name, fieldType)
+    })
+
+    NEW(classType.name) ~ DUP() ~ INVOKESPECIAL(classType.name, "<init>", MethodDescriptor.NothingToVoid) ~
+      params.foldLeft(nop()){
+        case (acc, (name, tpe)) => acc ~ DUP() ~ thisLoad() ~ getPutField(name, tpe)
+      }
   }
 
 }
