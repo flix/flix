@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import scala.annotation.tailrec
 
@@ -49,6 +49,7 @@ object Stratifier {
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
+
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = ParOps.parTraverseValues(root.defs)(visitDef(_))
     val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
@@ -539,7 +540,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Unit, StratificationError] = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Unit, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -547,7 +548,10 @@ object Stratifier {
     val rg = g.restrict(key, labelEq(_, _))
 
     // Compute the stratification.
-    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc).map(_ => ()).recoverOne[Unit](_ => ())
+    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
+      case Result.Ok(_) => ().toSuccess
+      case Result.Err(e) => ().toSoftFailure(e)
+    }
   }
 
   /**
