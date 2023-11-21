@@ -390,7 +390,7 @@ object Kinder {
               ().toSuccess
             } else {
               val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-              KindError.MissingConstraint(clazzSym, arg, renv, loc).toFailure
+              KindError.MissingTypeClassConstraint(clazzSym, arg, renv, loc).toFailure
             }
           case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
         }
