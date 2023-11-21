@@ -533,7 +533,7 @@ object Safety {
         case Pattern.Var(_, _, _) => acc
         case Pattern.Wild(_, _) => acc
         case Pattern.Cst(_, _, _) => acc
-        case _ => UnexpectedPatternInBodyAtom(loc) :: acc
+        case _ => IllegalPatternInBodyAtom(loc) :: acc
       })
     case _ => Nil
   }

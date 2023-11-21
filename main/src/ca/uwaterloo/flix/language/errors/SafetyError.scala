@@ -245,6 +245,26 @@ object SafetyError {
   }
 
   /**
+   * An error raised to indicate an unexpected pattern bound in a body atom.
+   *
+   * @param loc the position of the body atom containing the unexpected pattern.
+   */
+  case class IllegalPatternInBodyAtom(loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Unexpected pattern in body atom."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected pattern in body atom.
+         |
+         |${code(loc, "pattern occurs in this body atom.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
    * Unable to derive Sendable error
    *
    * @param tpe the type that is not sendable.
@@ -518,26 +538,6 @@ object SafetyError {
          |>> Method '${red(name)}' not found in superclass '${red(clazz.getName)}'
          |
          |${code(loc, "the method occurs here.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised to indicate an unexpected pattern bound in a body atom.
-   *
-   * @param loc the position of the body atom containing the unexpected pattern.
-   */
-  case class UnexpectedPatternInBodyAtom(loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Unexpected pattern in body atom."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected pattern in body atom.
-         |
-         |${code(loc, "pattern occurs in this body atom.")}
          |""".stripMargin
     }
 

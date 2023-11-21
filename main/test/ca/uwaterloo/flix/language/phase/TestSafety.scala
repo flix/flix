@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable, UnexpectedPatternInBodyAtom}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable, IllegalPatternInBodyAtom}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -34,7 +34,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[UnexpectedPatternInBodyAtom](result)
+    expectError[IllegalPatternInBodyAtom](result)
   }
 
   test("UnexpectedBodyAtomPattern.02") {
@@ -45,7 +45,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[UnexpectedPatternInBodyAtom](result)
+    expectError[IllegalPatternInBodyAtom](result)
   }
 
   test("UnexpectedBodyAtomPattern.03") {
@@ -56,7 +56,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[UnexpectedPatternInBodyAtom](result)
+    expectError[IllegalPatternInBodyAtom](result)
   }
 
   test("UnexpectedBodyAtomPattern.04") {
@@ -67,7 +67,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |}
     """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[UnexpectedPatternInBodyAtom](result)
+    expectError[IllegalPatternInBodyAtom](result)
   }
 
   test("NonPositivelyBoundVariable.01") {
