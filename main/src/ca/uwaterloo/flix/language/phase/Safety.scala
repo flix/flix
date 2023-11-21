@@ -55,7 +55,7 @@ object Safety {
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
         if (tpe.typeArguments.exists(_.kind == Kind.Eff))
-          List(SafetyError.SendableError(tpe, loc))
+          List(SafetyError.IllegalSendableInstance(tpe, loc))
         else
           Nil
     }
@@ -377,46 +377,46 @@ object Safety {
 
       // Allow casting one Java type to another if there is a sub-type relationship.
       case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(left)) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(left)) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for String.
       case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for Regex.
       case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for BigInt.
       case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for BigDecimal.
       case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for Arrays.
       case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[Array[Object]])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[Array[Object]])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Disallow casting a type variable.
       case (src@Type.Var(_, _), _) =>
-        IllegalCastFromVar(src, to, loc) :: Nil
+        IllegalCheckedCastFromVar(src, to, loc) :: Nil
 
       // Disallow casting a type variable (symmetric case)
       case (_, dst@Type.Var(_, _)) =>
-        IllegalCastToVar(from, dst, loc) :: Nil
+        IllegalCheckedCastToVar(from, dst, loc) :: Nil
 
       // Disallow casting a Java type to any other type.
       case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-        IllegalCastToNonJava(clazz, to, loc) :: Nil
+        IllegalCheckedCastToNonJava(clazz, to, loc) :: Nil
 
       // Disallow casting a Java type to any other type (symmetric case).
       case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        IllegalCastFromNonJava(from, clazz, loc) :: Nil
+        IllegalCheckedCastFromNonJava(from, clazz, loc) :: Nil
 
       // Disallow all other casts.
-      case _ => IllegalCheckedTypeCast(from, to, loc) :: Nil
+      case _ => IllegalCheckedCast(from, to, loc) :: Nil
     }
   }
 
@@ -434,7 +434,7 @@ object Safety {
     * - No primitive type can be cast to a reference type and vice-versa.
     * - No Bool type can be cast to a non-Bool type  and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleCast] = {
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleUncheckedCast] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -456,19 +456,19 @@ object Safety {
 
       // Disallow casting a Boolean to another primitive type.
       case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       // Disallow casting a Boolean to another primitive type (symmetric case).
       case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       // Disallowing casting a non-primitive type to a primitive type.
       case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       // Disallowing casting a non-primitive type to a primitive type (symmetric case).
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       case _ => Nil
     }
@@ -533,7 +533,7 @@ object Safety {
         case Pattern.Var(_, _, _) => acc
         case Pattern.Wild(_, _) => acc
         case Pattern.Cst(_, _, _) => acc
-        case _ => UnexpectedPatternInBodyAtom(loc) :: acc
+        case _ => IllegalPatternInBodyAtom(loc) :: acc
       })
     case _ => Nil
   }
@@ -564,7 +564,7 @@ object Safety {
         case Denotation.Latticenal => terms.dropRight(1)
       }
       val err2 = relTerms.flatMap(freeVarsOf).filter(latVars.contains).map(
-        s => IllegalRelationalUseOfLatticeVariable(s, loc)
+        s => IllegalRelationalUseOfLatticeVar(s, loc)
       )
 
       // Combine the messages
@@ -587,7 +587,7 @@ object Safety {
     * @param loc the location of the atom containing the terms.
     */
   private def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
-    if (sym.isWild) IllegalNegativelyBoundWildVariable(sym, loc) else IllegalNonPositivelyBoundVariable(sym, loc)
+    if (sym.isWild) IllegalNegativelyBoundWildVar(sym, loc) else IllegalNonPositivelyBoundVar(sym, loc)
 
   /**
     * Returns all the positively defined variable symbols in the given constraint `c0`.
@@ -673,7 +673,7 @@ object Safety {
     })
 
     // Compute the lattice variables that are illegally used in the terms.
-    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVariable(sym, loc))
+    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVar(sym, loc))
   }
 
   /**
@@ -692,7 +692,7 @@ object Safety {
     */
   @tailrec
   private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
-    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
+    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildCard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Cst(_, _, _) => Nil
     case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
@@ -723,14 +723,14 @@ object Safety {
       if (hasNonPrivateZeroArgConstructor(clazz))
         List.empty
       else
-        List(MissingPublicZeroArgConstructor(clazz, loc))
+        List(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
     }
 
     //
     // Check that `clazz` is public
     //
     val visibilityErrors = if (!isPublicClass(clazz))
-      List(NonPublicClass(clazz, loc))
+      List(NewObjectNonPublicClass(clazz, loc))
     else
       List.empty
 
@@ -744,8 +744,8 @@ object Safety {
         val thisType = Type.eraseAliases(fparam.tpe)
         thisType match {
           case `tpe` => None
-          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
-          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
+          case Type.Unit => Some(NewObjectMissingThisArg(clazz, ident.name, methodLoc))
+          case _ => Some(NewObjectIllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
         }
     }
 
@@ -761,13 +761,13 @@ object Safety {
     // Check that there are no unimplemented methods.
     //
     val unimplemented = mustImplement diff implemented
-    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
+    val unimplementedErrors = unimplemented.map(m => NewObjectMissingMethod(clazz, javaMethods(m), loc))
 
     //
     // Check that there are no methods that aren't in the interface
     //
     val extra = implemented diff canImplement
-    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
+    val extraErrors = extra.map(m => NewObjectUnreachableMethod(clazz, m.name, flixMethods(m).loc))
 
     constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }
