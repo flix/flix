@@ -372,7 +372,7 @@ object InstanceError {
          |
          |${code(loc, s"unlawful signature")}
          |
-         |Create a law for '$sym' or remove the 'lawful' modifier.
+         |Create a law for '$sym' or remove the 'lawful' modifier from the trait.
          |""".stripMargin
     }
 
