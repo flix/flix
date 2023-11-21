@@ -16,13 +16,38 @@ sealed trait SafetyError extends CompilationMessage {
 object SafetyError {
 
   /**
+   * An error raised to indicate an illegal checked type cast.
+   *
+   * @param from the source type.
+   * @param to   the destination type.
+   * @param loc  the source location of the cast.
+   */
+  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    override def summary: String = "Illegal checked cast"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal checked cast.
+         |
+         |${code(loc, "illegal cast.")}
+         |
+         |From: ${FormatType.formatType(from, None)}
+         |To  : ${FormatType.formatType(to, None)}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
    * An error raised to indicate a cast from a non-Java type to a Java type.
    *
    * @param from the source type.
    * @param to   the destination type.
    * @param loc  the source location of the cast.
    */
-  case class IllegalCastFromNonJava(from: Type, to: java.lang.Class[_], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[_], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
 
     override def message(formatter: Formatter): String = {
@@ -47,7 +72,7 @@ object SafetyError {
    * @param to   the destination type.
    * @param loc  the source location of the cast.
    */
-  case class IllegalCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
 
     override def message(formatter: Formatter): String = {
@@ -72,7 +97,7 @@ object SafetyError {
    * @param to   the destination type.
    * @param loc  the source location of the cast.
    */
-  case class IllegalCastToNonJava(from: java.lang.Class[_], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastToNonJava(from: java.lang.Class[_], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
 
     override def message(formatter: Formatter): String = {
@@ -97,7 +122,7 @@ object SafetyError {
    * @param to   the destination type (the variable).
    * @param loc  the source location of the cast.
    */
-  case class IllegalCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
 
     override def message(formatter: Formatter): String = {
@@ -106,31 +131,6 @@ object SafetyError {
          |>> Illegal checked cast: Attempt to cast a type to a type variable.
          |
          |${code(loc, "illegal checked cast.")}
-         |
-         |From: ${FormatType.formatType(from, None)}
-         |To  : ${FormatType.formatType(to, None)}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-   * An error raised to indicate an illegal checked type cast.
-   *
-   * @param from the source type.
-   * @param to   the destination type.
-   * @param loc  the source location of the cast.
-   */
-  case class IllegalCheckedTypeCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
-    override def summary: String = "Illegal checked cast"
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal checked cast.
-         |
-         |${code(loc, "illegal cast.")}
          |
          |From: ${FormatType.formatType(from, None)}
          |To  : ${FormatType.formatType(to, None)}

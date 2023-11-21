@@ -377,46 +377,46 @@ object Safety {
 
       // Allow casting one Java type to another if there is a sub-type relationship.
       case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(left)) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(left)) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for String.
       case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for Regex.
       case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for BigInt.
       case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for BigDecimal.
       case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for Arrays.
       case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[Array[Object]])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[Array[Object]])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Disallow casting a type variable.
       case (src@Type.Var(_, _), _) =>
-        IllegalCastFromVar(src, to, loc) :: Nil
+        IllegalCheckedCastFromVar(src, to, loc) :: Nil
 
       // Disallow casting a type variable (symmetric case)
       case (_, dst@Type.Var(_, _)) =>
-        IllegalCastToVar(from, dst, loc) :: Nil
+        IllegalCheckedCastToVar(from, dst, loc) :: Nil
 
       // Disallow casting a Java type to any other type.
       case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-        IllegalCastToNonJava(clazz, to, loc) :: Nil
+        IllegalCheckedCastToNonJava(clazz, to, loc) :: Nil
 
       // Disallow casting a Java type to any other type (symmetric case).
       case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        IllegalCastFromNonJava(from, clazz, loc) :: Nil
+        IllegalCheckedCastFromNonJava(from, clazz, loc) :: Nil
 
       // Disallow all other casts.
-      case _ => IllegalCheckedTypeCast(from, to, loc) :: Nil
+      case _ => IllegalCheckedCast(from, to, loc) :: Nil
     }
   }
 
