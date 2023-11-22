@@ -190,7 +190,7 @@ object Unification {
           Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
-          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, renv, loc))
+          Err(TypeError.OccursCheck(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.UndefinedLabel(labelName, labelType, recordType)) =>
           Err(TypeError.UndefinedLabel(labelName, labelType, recordType, renv, loc))
@@ -199,7 +199,7 @@ object Unification {
           Err(TypeError.NonRecordType(tpe, renv, loc))
 
         case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
-          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, renv, loc))
+          Err(TypeError.UndefinedPred(predSym, predType, schemaType, renv, loc))
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
@@ -275,13 +275,13 @@ object Unification {
     // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
     def handler(i: Int)(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArg(sym, i, fullType1, fullType2, renv, loc)
 
       case TypeError.MismatchedArrowEffects(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArg(sym, i, fullType1, fullType2, renv, loc)
 
       case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArg(sym, i, fullType1, fullType2, renv, loc)
       case e => e
     }
 
