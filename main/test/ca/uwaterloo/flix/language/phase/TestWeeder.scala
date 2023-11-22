@@ -794,7 +794,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
            |    ()
            |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalJvmFieldOrMethodName](result)
+    expectError[WeederError.IllegalJavaFieldOrMethodName](result)
   }
 
   test("IllegalForFragment.01") {
@@ -869,7 +869,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): List[Int32] = foreach () 1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEmptyForFragment](result)
+    expectError[WeederError.EmptyForFragment](result)
   }
 
   test("IllegalEmptyForFragment.02") {
@@ -878,7 +878,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): List[Int32] = foreach () yield 1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEmptyForFragment](result)
+    expectError[WeederError.EmptyForFragment](result)
   }
 
   test("IllegalEmptyForFragment.03") {
@@ -887,7 +887,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): List[Int32] = forM () yield 1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEmptyForFragment](result)
+    expectError[WeederError.EmptyForFragment](result)
   }
 
   test("IllegalEmptyForFragment.04") {
@@ -896,7 +896,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): List[Int32] = forA () yield 1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEmptyForFragment](result)
+    expectError[WeederError.EmptyForFragment](result)
   }
 
   test("IllegalEmptyForFragment.05") {
@@ -905,7 +905,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Chain[String] = for () yield "a"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEmptyForFragment](result)
+    expectError[WeederError.EmptyForFragment](result)
   }
 
   test("IllegalUseAlias.01") {

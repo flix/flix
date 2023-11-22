@@ -881,7 +881,7 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.IllegalEmptyForFragment(loc)
+          val err = WeederError.EmptyForFragment(loc)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
       }.recoverOne {
@@ -894,7 +894,7 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.IllegalEmptyForFragment(loc)
+          val err = WeederError.EmptyForFragment(loc)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = WeederError.IllegalForFragment(loc1)
@@ -910,7 +910,7 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.IllegalEmptyForFragment(loc)
+          val err = WeederError.EmptyForFragment(loc)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = WeederError.IllegalForFragment(loc1)
@@ -926,7 +926,7 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.IllegalEmptyForFragment(loc)
+          val err = WeederError.EmptyForFragment(loc)
           WeededAst.Expr.Error(err).toSoftFailure(err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = WeederError.IllegalForFragment(loc1)
@@ -3254,7 +3254,7 @@ object Weeder {
     case Name.JavaName(sp1, components, sp2) =>
       // Ensure that the fqn has at least two components.
       if (components.length == 1) {
-        return WeederError.IllegalJvmFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+        return WeederError.IllegalJavaFieldOrMethodName(mkSL(sp1, sp2)).toFailure
       }
 
       // Compute the class and member name.

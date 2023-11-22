@@ -158,6 +158,35 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a loop does not contain any fragments.
+    *
+    * @param loc the location of the for-loop with no fragments.
+    */
+  case class EmptyForFragment(loc: SourceLocation) extends WeederError {
+    def summary: String = "A loop must iterate over some collection."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Loop does not iterate over any collection.
+         |
+         |${code(loc, "Loop does not iterate over any collection.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""A loop must contain a collection comprehension.
+         |
+         |A minimal loop is written as follows:
+         |
+         |    foreach (x <- xs) yield x
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate an empty interpolated expression (`"${}"`)
     *
     * @param loc the location where the error occurred.
@@ -333,35 +362,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a loop does not contain any fragments.
-    *
-    * @param loc the location of the for-loop with no fragments.
-    */
-  case class IllegalEmptyForFragment(loc: SourceLocation) extends WeederError {
-    def summary: String = "A loop must iterate over some collection."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Loop does not iterate over any collection.
-         |
-         |${code(loc, "Loop does not iterate over any collection.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""A loop must contain a collection comprehension.
-         |
-         |A minimal loop is written as follows:
-         |
-         |    foreach (x <- xs) yield x
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate that a loop does not iterate over any collection.
     *
     * @param loc the location of the for-loop in which the for-fragment appears.
@@ -488,7 +488,7 @@ object WeederError {
     *
     * @param loc the location of the name.
     */
-  case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
+  case class IllegalJavaFieldOrMethodName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal jvm field or method name."
 
     def message(formatter: Formatter): String = {
