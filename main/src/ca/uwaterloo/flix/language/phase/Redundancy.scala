@@ -409,7 +409,7 @@ object Redundancy {
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
       } else if (isMustUse(exp1)(root) && !isHole(exp1)) {
-        (us1 ++ us2) + MustUse(exp1.tpe, exp1.loc)
+        (us1 ++ us2) + UnusedMustUseValue(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
       }
@@ -613,10 +613,10 @@ object Redundancy {
         case Some(eff) =>
           (eff, exp.eff) match {
             case (Type.Pure, Type.Pure) =>
-              visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+              visitExp(exp, env0, rc) + RedundantUncheckedEffectCast(loc)
             case (Type.Var(eff1, _), Type.Var(eff2, _))
               if eff1 == eff2 =>
-              visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
+              visitExp(exp, env0, rc) + RedundantUncheckedEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
         case _ => visitExp(exp, env0, rc)
