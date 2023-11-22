@@ -34,52 +34,22 @@ object RedundancyError {
   /**
     * An error raised to indicate that the result of a pure expression is discarded.
     *
-    * @param loc the location of the inner expression.
+    * @param loc the location of the expression.
     */
   case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "A pure expression cannot be discarded."
+    def summary: String = "A pure expression should not be discarded."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> A pure expression cannot be discarded.
+         |
+         |>> A pure expression should not be discarded.
          |
          |${code(loc, "pure expression.")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that the value of an expression must be used.
-    *
-    * @param tpe the type of the expression.
-    * @param loc the location of the expression.
-    */
-  case class DiscardedMustUseValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Unused value but its type is marked as @MustUse"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unused value but its type is marked as @MustUse.
-         |
-         |${code(loc, "unused value.")}
-         |
-         |The expression has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the value.
-         |  (2)  Explicit mark the value as unused with `discard`.
-         |
-         |""".stripMargin
-    })
   }
 
   /**
@@ -502,6 +472,37 @@ object RedundancyError {
     })
 
     def loc: SourceLocation = sym.loc
+  }
+
+  /**
+    * An error raised to indicate that the value of an expression must be used.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class UnusedMustUseValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Unused value but its type is marked as @MustUse"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused value but its type is marked as @MustUse.
+         |
+         |${code(loc, "unused value.")}
+         |
+         |The expression has type '${FormatType.formatType(tpe)}'
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the value.
+         |  (2)  Explicit mark the value as unused with `discard`.
+         |
+         |""".stripMargin
+    })
   }
 
   /**

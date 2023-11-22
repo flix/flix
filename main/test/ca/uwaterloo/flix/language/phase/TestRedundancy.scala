@@ -1746,7 +1746,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.DiscardedMustUseValue](result)
+    expectError[RedundancyError.UnusedMustUseValue](result)
   }
 
   test("MustUse.02") {
@@ -1759,7 +1759,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.DiscardedMustUseValue](result)
+    expectError[RedundancyError.UnusedMustUseValue](result)
   }
 
   test("RedundantCheckedTypeCast.01") {
