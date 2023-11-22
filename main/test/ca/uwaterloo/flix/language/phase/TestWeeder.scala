@@ -741,49 +741,49 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalInt8.01") {
     val input = "def f(): Int8 = -1000i8"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalInt8.02") {
     val input = "def f(): Int8 = 1000i8"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalInt16.01") {
     val input = "def f(): Int16 = -100000i16"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalInt16.02") {
     val input = "def f(): Int16 = 100000i16"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalInt32.01") {
     val input = "def f(): Int32 = -10000000000i32"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalInt32.02") {
     val input = "def f(): Int32 = 10000000000i32"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalInt64.01") {
     val input = "def f(): Int64 = -100000000000000000000i64"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalInt64.02") {
     val input = "def f(): Int64 = 100000000000000000000i64"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidInt](result)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("IllegalJvmFieldOrMethodName.01") {
@@ -1203,7 +1203,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Regex = regex"[a-*"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidRegularExpression](result)
+    expectError[WeederError.MalformedRegex](result)
   }
 
   test("InvalidRegularExpression.02") {
@@ -1212,7 +1212,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Regex = regex"a{}"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidRegularExpression](result)
+    expectError[WeederError.MalformedRegex](result)
   }
 
   test("InvalidRegularExpression.03") {
@@ -1221,7 +1221,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Regex = regex"a{-1}"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidRegularExpression](result)
+    expectError[WeederError.MalformedRegex](result)
   }
 
   test("InvalidRegularExpression.04") {
@@ -1230,7 +1230,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Regex = regex"\\p{InvalidGroupName}*"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidRegularExpression](result)
+    expectError[WeederError.MalformedRegex](result)
   }
 
   test("IllegalRecordPattern.01") {

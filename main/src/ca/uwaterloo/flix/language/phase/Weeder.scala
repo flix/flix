@@ -3063,61 +3063,61 @@ object Weeder {
   /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
-  private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError.InvalidInt] = try {
+  private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError.MalformedInt] = try {
     val s = sign + digits
     JByte.parseByte(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => InvalidInt(loc).toFailure
+    case _: NumberFormatException => MalformedInt(loc).toFailure
   }
 
   /**
     * Attempts to parse the given int16 with `sign` and `digits`.
     */
-  private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError.InvalidInt] = try {
+  private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError.MalformedInt] = try {
     val s = sign + digits
     JShort.parseShort(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => InvalidInt(loc).toFailure
+    case _: NumberFormatException => MalformedInt(loc).toFailure
   }
 
   /**
     * Attempts to parse the given int32 with `sign` and `digits`.
     */
-  private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError.InvalidInt] = try {
+  private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError.MalformedInt] = try {
     val s = sign + digits
     JInt.parseInt(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => InvalidInt(loc).toFailure
+    case _: NumberFormatException => MalformedInt(loc).toFailure
   }
 
   /**
     * Attempts to parse the given int64 with `sign` and `digits`.
     */
-  private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError.InvalidInt] = try {
+  private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError.MalformedInt] = try {
     val s = sign + digits
     JLong.parseLong(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => InvalidInt(loc).toFailure
+    case _: NumberFormatException => MalformedInt(loc).toFailure
   }
 
   /**
     * Attempts to parse the given BigInt with `sign` and `digits`.
     */
-  private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError.InvalidInt] = try {
+  private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError.MalformedInt] = try {
     val s = sign + digits
     new BigInteger(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => InvalidInt(loc).toFailure
+    case _: NumberFormatException => MalformedInt(loc).toFailure
   }
 
   /**
     * Attempts to compile the given regular expression into a Pattern.
     */
-  private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.InvalidRegularExpression] = try {
-    val patt = JPattern.compile(regex)
-    patt.toSuccess
+  private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.MalformedRegex] = try {
+    val pat = JPattern.compile(regex)
+    pat.toSuccess
   } catch {
-    case ex: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, ex.getMessage, loc).toFailure
+    case ex: PatternSyntaxException => WeederError.MalformedRegex(regex, ex.getMessage, loc).toFailure
   }
 
   /**

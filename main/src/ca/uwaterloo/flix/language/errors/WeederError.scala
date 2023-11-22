@@ -821,57 +821,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an int is out of bounds.
-    *
-    * @param loc the location where the illegal int occurs.
-    */
-  case class InvalidInt(loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Illegal int."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal int.
-         |
-         |${code(loc, "illegal int.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate that the case of an alias does not match the case of the original value.
-    *
-    * @param pat the invalid regular expression
-    * @param loc the location where the error occurred
-    */
-  case class InvalidRegularExpression(pat: String, err: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = s"The pattern literal '$pat' is not a valid regular expression."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Invalid regular expression pattern literal.
-         |
-         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
-         |
-         |Pattern compilation error:
-         |$err
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"A pattern literal must be a valid regular expression."
-    })
-  }
-
-  /**
     * An error raised to indicate a non-single character literal.
     *
     * @param chars the characters in the character literal.
@@ -920,6 +869,57 @@ object WeederError {
       s"${underline("Tip:")} Ensure that the literal is within bounds."
     })
 
+  }
+
+  /**
+    * An error raised to indicate that an int is out of bounds.
+    *
+    * @param loc the location where the illegal int occurs.
+    */
+  case class MalformedInt(loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = "Illegal int."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal int.
+         |
+         |${code(loc, "illegal int.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that the literal is within bounds."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param pat the invalid regular expression
+    * @param loc the location where the error occurred
+    */
+  case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"The pattern literal '$pat' is not a valid regular expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid regular expression pattern literal.
+         |
+         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
+         |
+         |Pattern compilation error:
+         |$err
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"A pattern literal must be a valid regular expression."
+    })
   }
 
   /**
