@@ -389,32 +389,6 @@ object TypeError {
   }
 
   /**
-    * Missing type class instance for a function type.
-    *
-    * @param clazz the class of the instance.
-    * @param tpe   the type of the instance.
-    * @param renv  the rigidity environment.
-    * @param loc   the location where the error occurred.
-    */
-  case class MissingArrowInstance(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
-         |
-         |>> Did you forget to apply the function to all of its arguments?
-         |
-         |${code(loc, s"missing instance")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * Missing type class instance.
     *
     * @param clazz the class of the instance.
@@ -429,6 +403,32 @@ object TypeError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
+         |
+         |${code(loc, s"missing instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Missing type class instance for a function type.
+    *
+    * @param clazz the class of the instance.
+    * @param tpe   the type of the instance.
+    * @param renv  the rigidity environment.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingInstanceArrow(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
+         |
+         |>> Did you forget to apply the function to all of its arguments?
          |
          |${code(loc, s"missing instance")}
          |
@@ -508,40 +508,6 @@ object TypeError {
   }
 
   /**
-    * Missing `ToString` instance.
-    *
-    * @param tpe  the type of the instance.
-    * @param renv the rigidity environment.
-    * @param loc  the location where the error occurred.
-    */
-  case class MissingInstanceToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> ToString is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of ToString.
-         |
-         |${code(loc, s"missing ToString instance")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
-         |
-         |  (a) define an instance of ToString for '${formatType(tpe, Some(renv))}', or
-         |  (b) use 'with' to derive an instance of ToString for '${formatType(tpe, Some(renv))}', for example:.
-         |
-         |  enum Color with ToString {
-         |    case Red, Green, Blue
-         |  }
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
     * Missing `Sendable` instance.
     *
     * @param tpe  the type of the instance.
@@ -568,6 +534,40 @@ object TypeError {
          |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe, Some(renv))}', for example:.
          |
          |  enum Color with Sendable {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * Missing `ToString` instance.
+    *
+    * @param tpe  the type of the instance.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
+    */
+  case class MissingInstanceToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> ToString is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of ToString.
+         |
+         |${code(loc, s"missing ToString instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
+         |
+         |  (a) define an instance of ToString for '${formatType(tpe, Some(renv))}', or
+         |  (b) use 'with' to derive an instance of ToString for '${formatType(tpe, Some(renv))}', for example:.
+         |
+         |  enum Color with ToString {
          |    case Red, Green, Blue
          |  }
          |

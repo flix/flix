@@ -260,7 +260,7 @@ object TypeInference {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
-                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
+                          TypeError.MissingInstanceArrow(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                         case _ =>
                           if (tconstr.head.sym.name == "Eq")
                             TypeError.MissingInstanceEq(tconstr.arg, renv0, tconstr.loc)
