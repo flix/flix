@@ -1844,7 +1844,7 @@ object Weeder {
   private def createRestrictableChooseRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expr], b0: WeededAst.Expr): Validation[WeededAst.RestrictableChooseRule, WeederError] = {
     // Check that guard is not present
     val gVal = g0 match {
-      case Some(g) => WeederError.RestrictableChooseGuard(star, g.loc).toFailure
+      case Some(g) => WeederError.IllegalRestrictableChooseGuard(star, g.loc).toFailure
       case None => ().toSuccess
     }
     // Check that patterns are only tags of variables (or wildcards as variables, or unit)
@@ -2043,7 +2043,7 @@ object Weeder {
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
       flatMapN(weedCharSequence(chars)) {
         case string if string.lengthIs == 1 => Ast.Constant.Char(string.head).toSuccess
-        case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
+        case string => WeederError.MalformedChar(string, mkSL(sp1, sp2)).toFailure
       }
 
     case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
@@ -3025,27 +3025,27 @@ object Weeder {
   /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError.InvalidFloat] = try {
+  private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError.MalformedFloat] = try {
     val s = s"$sign$before.$after"
     stripUnderscores(s).toFloat.toSuccess
   } catch {
-    case _: NumberFormatException => InvalidFloat(loc).toFailure
+    case _: NumberFormatException => MalformedFloat(loc).toFailure
   }
 
   /**
     * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError.InvalidFloat] = try {
+  private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError.MalformedFloat] = try {
     val s = s"$sign$before.$after"
     stripUnderscores(s).toDouble.toSuccess
   } catch {
-    case _: NumberFormatException => InvalidFloat(loc).toFailure
+    case _: NumberFormatException => MalformedFloat(loc).toFailure
   }
 
   /**
     * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
     */
-  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, WeederError.InvalidFloat] = try {
+  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, WeederError.MalformedFloat] = try {
     val frac = after match {
       case Some(digits) => "." + digits
       case None => ""
@@ -3057,7 +3057,7 @@ object Weeder {
     val s = s"$sign$before$frac$pow"
     new BigDecimal(stripUnderscores(s)).toSuccess
   } catch {
-    case _: NumberFormatException => InvalidFloat(loc).toFailure
+    case _: NumberFormatException => MalformedFloat(loc).toFailure
   }
 
   /**

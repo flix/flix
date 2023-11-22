@@ -301,7 +301,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Char = 'ab'
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonSingleCharacter](result)
+    expectError[WeederError.MalformedChar](result)
   }
 
   test("NonSingleCharacter.Char.02") {
@@ -310,7 +310,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Char = ''
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonSingleCharacter](result)
+    expectError[WeederError.MalformedChar](result)
   }
 
   test("NonSingleCharacter.Patten.Char.01") {
@@ -322,7 +322,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonSingleCharacter](result)
+    expectError[WeederError.MalformedChar](result)
   }
 
   test("NonLinearPattern.01") {

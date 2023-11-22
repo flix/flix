@@ -774,6 +774,32 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate the presence of a guard in a restrictable choice rule.
+    *
+    * @param star whether the choose is of the star kind.
+    * @param loc  the location where the error occurs.
+    */
+  case class IllegalRestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError {
+    private val operationName: String = if (star) "choose*" else "choose"
+
+    def summary: String = s"cases of $operationName do not allow guards."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $summary
+         |
+         |${code(loc, "Disallowed guard.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that an inner function is annotated with an illegal annotation.
     *
     * @param loc the location of the inner function.
@@ -792,31 +818,6 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that a float is out of bounds.
-    *
-    * @param loc the location where the illegal float occurs.
-    */
-  case class InvalidFloat(loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Illegal float."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal float.
-         |
-         |${code(loc, "illegal float.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
-
   }
 
   /**
@@ -868,6 +869,57 @@ object WeederError {
     def explain(formatter: Formatter): Option[String] = Some({
       s"A pattern literal must be a valid regular expression."
     })
+  }
+
+  /**
+    * An error raised to indicate a non-single character literal.
+    *
+    * @param chars the characters in the character literal.
+    * @param loc   the location where the error occurred.
+    */
+  case class MalformedChar(chars: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = "Non-single-character literal."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-single-character literal.
+         |
+         |${code(loc, "non-single-character literal")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A character literal must consist of a single character."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate that a float is out of bounds.
+    *
+    * @param loc the location where the illegal float occurs.
+    */
+  case class MalformedFloat(loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = "Illegal float."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal float.
+         |
+         |${code(loc, "illegal float.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that the literal is within bounds."
+    })
+
   }
 
   /**
@@ -976,32 +1028,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a non-single character literal.
-    *
-    * @param chars the characters in the character literal.
-    * @param loc   the location where the error occurred.
-    */
-  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Non-single-character literal."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Non-single-character literal.
-         |
-         |${code(loc, "non-single-character literal")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} A character literal must consist of a single character."
-    })
-
-  }
-
-  /**
     * An error raised to indicate a non-Unit return type of an effect operation.
     *
     * @param loc the location where the error occurred.
@@ -1015,6 +1041,28 @@ object WeederError {
          |>> Non-Unit return type. All effect operations must return Unit.
          |
          |${code(loc, "non-Unit return type")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a non-unary associated type.
+    *
+    * @param numParams the number of parameters of the associated type.
+    * @param loc       the location where the error occurred.
+    */
+  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError {
+    override def summary: String = "Non-unary associated type signature."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-unary associated type signature.
+         |
+         |${code(loc, s"Associated types must have exactly one parameter, but $numParams are given here.")}
          |
          |""".stripMargin
     }
@@ -1046,54 +1094,6 @@ object WeederError {
       s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
     })
 
-  }
-
-  /**
-    * An error raised to indicate the presence of a guard in a restrictable choice rule.
-    *
-    * @param star whether the choose is of the star kind.
-    * @param loc  the location where the error occurs.
-    */
-  case class RestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError {
-    private val operationName: String = if (star) "choose*" else "choose"
-
-    def summary: String = s"cases of $operationName do not allow guards."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> $summary
-         |
-         |${code(loc, "Disallowed guard.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate a non-unary associated type.
-    *
-    * @param numParams the number of parameters of the associated type.
-    * @param loc       the location where the error occurred.
-    */
-  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError {
-    override def summary: String = "Non-unary associated type signature."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Non-unary associated type signature.
-         |
-         |${code(loc, s"Associated types must have exactly one parameter, but $numParams are given here.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -1170,4 +1170,5 @@ object WeederError {
       */
     def explain(formatter: Formatter): Option[String] = None
   }
+
 }
