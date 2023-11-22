@@ -71,11 +71,11 @@ object CodeActionProvider {
     case RedundancyError.UnusedEnumTag(_, caseSym) if onSameLine(range, caseSym.loc) =>
       mkUnusedEnumTagCodeAction(caseSym, uri) :: Nil
 
-    case TypeError.MissingEq(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceEq(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingEq(tpe, uri)
-    case TypeError.MissingOrder(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceOrder(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingOrder(tpe, uri)
-    case TypeError.MissingToString(tpe, _, loc) if onSameLine(range, loc) =>
+    case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
 
     case _ => Nil

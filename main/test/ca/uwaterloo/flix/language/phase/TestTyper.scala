@@ -113,7 +113,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestOccurs01") {
     val input = "def foo(a: #{A(Int32) | r}, b: #{B(Int32) | r}): #{A(Int32), B(Int32)} = solve (a <+> b)"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.OccursCheckError](result)
+    expectError[TypeError.OccursCheck](result)
   }
 
   test("TestMismatchedTypes.01") {
@@ -350,7 +350,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingEq](result)
+    expectError[TypeError.MissingInstanceEq](result)
   }
 
   test("MissingEq.01") {
@@ -363,7 +363,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(x: E, y: E): Bool = x == y
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingEq](result)
+    expectError[TypeError.MissingInstanceEq](result)
   }
 
   test("MissingSendable.01") {
@@ -377,7 +377,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingSendable](result)
+    expectError[TypeError.MissingInstanceSendable](result)
   }
 
   test("MissingSendable.02") {
@@ -391,7 +391,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42), NotSendable.NotSendable(43)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingSendable](result)
+    expectError[TypeError.MissingInstanceSendable](result)
   }
 
   test("MissingOrder.01") {
@@ -404,7 +404,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(x: E, y: E): Bool = x <= y
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingOrder](result)
+    expectError[TypeError.MissingInstanceOrder](result)
   }
 
   test("MissingToString.01") {
@@ -417,7 +417,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingToString](result)
+    expectError[TypeError.MissingInstanceToString](result)
   }
 
   test("MissingArrowInstance.01") {
@@ -642,7 +642,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): Unit \ E = do E.op("hello", "world")
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.InvalidOpParamCount](result)
+    expectError[TypeError.MismatchedOpArity](result)
   }
 
   test("Test.InvalidOpParamCount.Handler.01") {
@@ -659,7 +659,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.InvalidOpParamCount](result)
+    expectError[TypeError.MismatchedOpArity](result)
   }
 
   test("Test.UnexpectedType.OpParam.01") {
@@ -789,7 +789,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def g(): Box[Int32] = f(Box.Box(123))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgument](result)
+    expectError[TypeError.UnexpectedArg](result)
   }
 
   test("Test.UnexpectedArgument.02") {
@@ -804,7 +804,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): Unit = noE(_ -> do E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgument](result)
+    expectError[TypeError.UnexpectedArg](result)
   }
 
   test("Test.UnexpectedArgument.03") {
@@ -819,7 +819,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def foo(): Unit = mustE(x -> x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgument](result)
+    expectError[TypeError.UnexpectedArg](result)
   }
 
   test("Test.UnexpectedArgument.04") {
@@ -830,7 +830,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |law l: forall (x: Int32, y: Bool) . f(x, y)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgument](result)
+    expectError[TypeError.UnexpectedArg](result)
   }
 
   test("Test.UnexpectedArgument.05") {
@@ -845,7 +845,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       |def g(): Bool = f(mkE)
       |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgument](result)
+    expectError[TypeError.UnexpectedArg](result)
   }
 
   test("Test.UnexpectedArgument.06") {
@@ -859,7 +859,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgument](result)
+    expectError[TypeError.UnexpectedArg](result)
   }
 
   test("TestChoose.01") {
