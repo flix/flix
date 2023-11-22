@@ -597,7 +597,7 @@ object Redundancy {
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
-            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc)
+            visitExp(exp, env0, rc) + RedundantUncheckedTypeCast(loc)
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
@@ -613,7 +613,7 @@ object Redundancy {
         case Some(eff) =>
           (eff, exp.eff) match {
             case (Type.Pure, Type.Pure) =>
-              visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+              visitExp(exp, env0, rc) + RedundantUncheckedEffectCast(loc)
             case (Type.Var(eff1, _), Type.Var(eff2, _))
               if eff1 == eff2 =>
               visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)

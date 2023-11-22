@@ -1481,7 +1481,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantEffectCast](result)
+    expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
   test("RedundantPurityCast.02") {
@@ -1493,7 +1493,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantEffectCast](result)
+    expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
   test("RedundantEffectCast.01") {
@@ -1775,7 +1775,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
   }
 
   test("RedundantCheckedTypeCast.02") {
@@ -1793,7 +1793,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
   }
 
   test("RedundantCheckedTypeCast.03") {
@@ -1812,7 +1812,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
   }
 
   test("RedundantCheckedTypeCast.04") {
@@ -1828,7 +1828,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
   }
 
   test("RedundantCheckedTypeCast.05") {
@@ -1846,7 +1846,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
   }
 
 
@@ -1870,7 +1870,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedTypeCast](result)
+    expectError[RedundancyError.RedundantUncheckedTypeCast](result)
   }
 
   ignore("RedundantCheckedEffectCast.01") {

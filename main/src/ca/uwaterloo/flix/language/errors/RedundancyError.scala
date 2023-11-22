@@ -104,27 +104,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a checked type cast is redundant.
-    *
-    * @param loc the source location of the redundant cast.
-    */
-  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant type cast. The expression already has the required type."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant type cast. The expression already has the required type.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate a redundant discard of a unit value.
     *
     * @param loc the location of the inner expression.
@@ -145,11 +124,32 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that a checked type cast is redundant.
+    *
+    * @param loc the source location of the redundant cast.
+    */
+  case class RedundantUncheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant type cast. The expression already has the required type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant type cast. The expression already has the required type.
+         |
+         |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that an effect cast is redundant.
     *
     * @param loc the source location of the cast.
     */
-  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError {
     def summary: String = "Redundant effect cast. The expression is already pure."
 
     def message(formatter: Formatter): String = {
