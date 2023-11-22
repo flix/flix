@@ -158,27 +158,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a record pattern has shape the illegal shape `{ | r }`.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
-    override def summary: String = "A record pattern must specify at least one field."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected record pattern.
-         |
-         |${code(loc, "A record pattern must specify at least one field.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an empty interpolated expression (`"${}"`)
     *
     * @param loc the location where the error occurred.
@@ -204,6 +183,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a record pattern has shape the illegal shape `{ | r }`.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "A record pattern must specify at least one field."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected record pattern.
+         |
+         |${code(loc, "A record pattern must specify at least one field.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that a negative atom is marked as fixed.
     *
     * @param loc the location where the illegal fixed atom occurs.
@@ -225,56 +225,6 @@ object WeederError {
       * Returns a formatted string with helpful suggestions.
       */
     def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that a float is out of bounds.
-    *
-    * @param loc the location where the illegal float occurs.
-    */
-  case class IllegalFloat(loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Illegal float."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal float.
-         |
-         |${code(loc, "illegal float.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate that an int is out of bounds.
-    *
-    * @param loc the location where the illegal int occurs.
-    */
-  case class IllegalInt(loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Illegal int."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal int.
-         |
-         |${code(loc, "illegal int.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that the literal is within bounds."
-    })
-
   }
 
   /**
@@ -842,6 +792,56 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a float is out of bounds.
+    *
+    * @param loc the location where the illegal float occurs.
+    */
+  case class InvalidFloat(loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = "Illegal float."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal float.
+         |
+         |${code(loc, "illegal float.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that the literal is within bounds."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate that an int is out of bounds.
+    *
+    * @param loc the location where the illegal int occurs.
+    */
+  case class InvalidInt(loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = "Illegal int."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal int.
+         |
+         |${code(loc, "illegal int.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that the literal is within bounds."
+    })
+
   }
 
   /**
