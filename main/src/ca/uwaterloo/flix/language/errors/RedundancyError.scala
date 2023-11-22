@@ -145,27 +145,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a checked type cast is redundant.
-    *
-    * @param loc the source location of the redundant cast.
-    */
-  case class RedundantUncheckedTypeCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant type cast. The expression already has the required type."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant type cast. The expression already has the required type.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate that an effect cast is redundant.
     *
     * @param loc the source location of the cast.
@@ -177,6 +156,27 @@ object RedundancyError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Redundant effect cast. The expression is already pure.
+         |
+         |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a checked type cast is redundant.
+    *
+    * @param loc the source location of the redundant cast.
+    */
+  case class RedundantUncheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant type cast. The expression already has the required type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant type cast. The expression already has the required type.
          |
          |${code(loc, "redundant cast.")}
          |
