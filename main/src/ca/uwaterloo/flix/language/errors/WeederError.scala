@@ -374,29 +374,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal wildcard in an expression.
-    *
-    * @param loc the location where the illegal wildcard occurs.
-    */
-  case class IllegalWildcard(loc: SourceLocation) extends WeederError {
-    def summary: String = "Wildcard not allowed here."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Wildcard not allowed here.
-         |
-         |${code(loc, "illegal wildcard.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate a mismatched arity.
     *
     * @param expected the expected arity.
@@ -709,11 +686,11 @@ object WeederError {
   /**
     * An error raised to indicate that the case of an alias does not match the case of the original value.
     *
-    * @param patt the invalid regular expression
-    * @param loc  the location where the error occurred
+    * @param pat the invalid regular expression
+    * @param loc the location where the error occurred
     */
-  case class InvalidRegularExpression(patt: String, err: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
+  case class InvalidRegularExpression(pat: String, err: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"The pattern literal '$pat' is not a valid regular expression."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -723,7 +700,7 @@ object WeederError {
          |${code(loc, "The pattern literal is not a well-formed regular expression.")}
          |
          |Pattern compilation error:
-         |${err}
+         |$err
          |""".stripMargin
     }
 
@@ -1023,14 +1000,14 @@ object WeederError {
     * @param loc      the location where the error occurred
     */
   case class IllegalUseAlias(fromName: String, toName: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"The case of '${fromName}' does not match the case of '${toName}'."
+    def summary: String = s"The case of '$fromName' does not match the case of '$toName'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Mismatched alias case.
          |
-         |${code(loc, s"The case of '${fromName}' does not match the case of '${toName}'.")}
+         |${code(loc, s"The case of '$fromName' does not match the case of '$toName'.")}
          |
          |""".stripMargin
     }
@@ -1083,7 +1060,7 @@ object WeederError {
       s"""${line(kind, source.name)}
          |>> Non-unary associated type signature.
          |
-         |${code(loc, s"Associated types must have exactly one parameter, but ${numParams} are given here.")}
+         |${code(loc, s"Associated types must have exactly one parameter, but $numParams are given here.")}
          |
          |""".stripMargin
     }
