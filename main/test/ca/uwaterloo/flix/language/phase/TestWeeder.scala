@@ -244,7 +244,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): String = "\Q"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
+    expectError[WeederError.IllegalEscapeSequence](result)
   }
 
   test("InvalidEscapeSequence.Char.01") {
@@ -253,7 +253,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Char = '\Q'
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
+    expectError[WeederError.IllegalEscapeSequence](result)
   }
 
   test("InvalidEscapeSequence.Interpolation.01") {
@@ -262,7 +262,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): String = '${25}\Q'
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
+    expectError[WeederError.IllegalEscapeSequence](result)
   }
 
   test("InvalidEscapeSequence.Patten.String.01") {
@@ -274,7 +274,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
+    expectError[WeederError.IllegalEscapeSequence](result)
   }
 
   test("InvalidEscapeSequence.Patten.Char.01") {
@@ -286,13 +286,13 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
+    expectError[WeederError.IllegalEscapeSequence](result)
   }
 
   test("HalfInterpolationEscape.02") {
     val input = s"""pub def foo(): String = "\\$$ {""""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
+    expectError[WeederError.IllegalEscapeSequence](result)
   }
 
   test("NonSingleCharacter.Char.01") {
@@ -606,7 +606,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
+    expectError[WeederError.MismatchedTypeParameters](result)
   }
 
   test("InconsistentTypeParameters.02") {
@@ -615,7 +615,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |type alias T[a, b: Bool] = Int32
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
+    expectError[WeederError.MismatchedTypeParameters](result)
   }
 
   test("InconsistentTypeParameters.03") {
@@ -624,7 +624,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |enum T[a, b: Bool](Int32)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
+    expectError[WeederError.MismatchedTypeParameters](result)
   }
 
   test("UnkindedTypeParameters.01") {

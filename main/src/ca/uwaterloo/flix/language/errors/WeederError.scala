@@ -373,37 +373,12 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate type params where some (but not all) are explicitly kinded.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
-    def summary: String = "Either all or none of the type parameters must be annotated with a kind."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Inconsistent type parameters.
-         |
-         |${code(loc, "inconsistent type parameters")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
-    })
-
-  }
-
-  /**
     * An error raised to indicate an invalid escape sequence.
     *
     * @param char the invalid escape character.
     * @param loc  the location where the error occurred.
     */
-  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends IllegalLiteral {
+  case class IllegalEscapeSequence(char: Char, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message(formatter: Formatter): String = {
@@ -921,6 +896,31 @@ object WeederError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate type params where some (but not all) are explicitly kinded.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError {
+    def summary: String = "Either all or none of the type parameters must be annotated with a kind."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Inconsistent type parameters.
+         |
+         |${code(loc, "inconsistent type parameters")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
     })
 
   }

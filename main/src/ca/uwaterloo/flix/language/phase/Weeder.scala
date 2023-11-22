@@ -1985,13 +1985,13 @@ object Weeder {
           // Case 3.2: Interpolation escape
           case "$" => rest match {
             case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '$' :: acc)
-            case _ => WeederError.InvalidEscapeSequence('$', mkSL(sp1, sp2)).toFailure
+            case _ => WeederError.IllegalEscapeSequence('$', mkSL(sp1, sp2)).toFailure
           }
 
           // Case 3.3 Debug escape
           case "%" => rest match {
             case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '%' :: acc)
-            case _ => WeederError.InvalidEscapeSequence('%', mkSL(sp1, sp2)).toFailure
+            case _ => WeederError.IllegalEscapeSequence('%', mkSL(sp1, sp2)).toFailure
           }
 
           // Case 3.3: Unicode escape
@@ -2016,7 +2016,7 @@ object Weeder {
           }
 
           // Case 3.4: Invalid escape character
-          case _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
+          case _ => WeederError.IllegalEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
         }
       }
     }
@@ -2834,7 +2834,7 @@ object Weeder {
         // Case 3: some unkinded and some kinded
         case (_ :: _, _ :: _) =>
           val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
-          WeederError.InconsistentTypeParameters(loc).toFailure
+          WeederError.MismatchedTypeParameters(loc).toFailure
         // Case 4: no type parameters: should be prevented by parser
         case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
