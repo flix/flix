@@ -228,29 +228,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal intrinsic.
-    *
-    * @param loc the location where the illegal intrinsic occurs.
-    */
-  case class IllegalIntrinsic(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal intrinsic"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal intrinsic.
-         |
-         |${code(loc, "illegal intrinsic.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an illegal modifier.
     *
     * @param loc the location where the illegal modifier occurs.
@@ -1111,6 +1088,29 @@ object WeederError {
          |>> Undefined annotation '${red(name)}'.
          |
          |${code(loc, "undefined annotation.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an illegal intrinsic.
+    *
+    * @param loc the location where the illegal intrinsic occurs.
+    */
+  case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal intrinsic"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal intrinsic.
+         |
+         |${code(loc, "illegal intrinsic.")}
          |""".stripMargin
     }
 

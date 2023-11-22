@@ -789,7 +789,7 @@ object Weeder {
           case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expr.ScopeExit(e1, e2, loc).toSuccess
 
           case _ =>
-            val err = WeederError.IllegalIntrinsic(loc)
+            val err = WeederError.UndefinedIntrinsic(loc)
             WeededAst.Expr.Error(err).toSoftFailure(err)
         }
       }.recoverOne {

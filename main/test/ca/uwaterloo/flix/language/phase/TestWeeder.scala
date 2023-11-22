@@ -81,7 +81,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalIntrinsic](result)
+    expectError[WeederError.UndefinedIntrinsic](result)
   }
 
   test("EmptyInterpolatedExpression.01") {
