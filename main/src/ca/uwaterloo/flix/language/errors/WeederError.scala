@@ -779,12 +779,12 @@ object WeederError {
     * @param loc   the location where the error occurred.
     */
   case class MalformedChar(chars: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Non-single-character literal."
+    def summary: String = "Malformed, non-single-character literal."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Non-single-character literal.
+         |>> Malformed, non-single-character literal.
          |
          |${code(loc, "non-single-character literal")}
          |
@@ -804,14 +804,14 @@ object WeederError {
     * @param loc the location where the illegal float occurs.
     */
   case class MalformedFloat(loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Illegal float."
+    def summary: String = "Malformed float."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal float.
+         |>> Malformed float.
          |
-         |${code(loc, "illegal float.")}
+         |${code(loc, "malformed float.")}
          |
          |""".stripMargin
     }
@@ -829,14 +829,14 @@ object WeederError {
     * @param loc the location where the illegal int occurs.
     */
   case class MalformedInt(loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Illegal int."
+    def summary: String = "Malformed int."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal int.
+         |>> Malformed int.
          |
-         |${code(loc, "illegal int.")}
+         |${code(loc, "malformed int.")}
          |
          |""".stripMargin
     }
@@ -855,14 +855,14 @@ object WeederError {
     * @param loc the location where the error occurred
     */
   case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = s"The pattern literal '$pat' is not a valid regular expression."
+    def summary: String = s"Malformed regular expression."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Invalid regular expression pattern literal.
+         |>> Malformed regular expression.
          |
-         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
+         |${code(loc, "malformed regex.")}
          |
          |Pattern compilation error:
          |$err
@@ -881,7 +881,7 @@ object WeederError {
     * @param loc  the location where the error occurred.
     */
   case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = s"Malformed unicode escape sequence '$code'."
+    def summary: String = s"Malformed unicode escape sequence."
 
     def message(formatter: Formatter): String = {
       import formatter.{line, code => fmtcode}
