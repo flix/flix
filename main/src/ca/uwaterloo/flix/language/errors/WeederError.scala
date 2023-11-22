@@ -158,6 +158,52 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a record pattern has shape the illegal shape `{ | r }`.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "A record pattern must specify at least one field."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected record pattern.
+         |
+         |${code(loc, "A record pattern must specify at least one field.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an empty interpolated expression (`"${}"`)
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
+    def summary: String = "Empty interpolated expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Empty interpolated expression.
+         |
+         |${code(loc, "empty interpolated expression")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
+    })
+
+  }
+
+  /**
     * An error raised to indicate that a negative atom is marked as fixed.
     *
     * @param loc the location where the illegal fixed atom occurs.
@@ -179,29 +225,6 @@ object WeederError {
       * Returns a formatted string with helpful suggestions.
       */
     def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that the formal parameter lacks a type declaration.
-    *
-    * @param name the name of the parameter.
-    * @param loc  the location of the formal parameter.
-    */
-  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |>> The formal parameter '${red(name)}' must have a declared type.
-         |
-         |${code(loc, "has no declared type.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-
   }
 
   /**
@@ -374,139 +397,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a mismatched arity.
-    *
-    * @param expected the expected arity.
-    * @param actual   the actual arity.
-    * @param loc      the location where mismatch occurs.
-    */
-  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Mismatched arity: expected: $expected, actual: $actual.
-         |
-         |${code(loc, "mismatched arity.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate the presence of a guard in a restrictable choice rule.
-    *
-    * @param star whether the choose is of the star kind.
-    * @param loc  the location where the error occurs.
-    */
-  case class RestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError {
-    private val operationName: String = if (star) "choose*" else "choose"
-
-    def summary: String = s"cases of $operationName do not allow guards."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> $summary
-         |
-         |${code(loc, "Disallowed guard.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-
-  /**
-    * An error raised to indicate an unsupported restrictable choice rule pattern.
-    *
-    * @param star whether the choose is of the star kind.
-    * @param loc  the location where the error occurs.
-    */
-  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError {
-    private val operationName: String = if (star) "choose*" else "choose"
-
-    def summary: String = s"Unsupported $operationName pattern, only enums with variables are allowed."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> $summary
-         |
-         |${code(loc, "Unsupported pattern.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
-    *
-    * @param name the name of the variable.
-    * @param loc1 the location of the first use of the variable.
-    * @param loc2 the location of the second use of the variable.
-    */
-  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    def summary: String = s"Multiple occurrences of '$name' in pattern."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Multiple occurrences of '${red(name)}' in pattern.
-         |
-         |${code(loc1, "the first occurrence was here.")}
-         |
-         |${code(loc2, "the second occurrence was here.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} A variable may only occur once in a pattern."
-    })
-
-    def loc: SourceLocation = loc1 min loc2
-
-  }
-
-  /**
-    * An error raised to indicate an undefined annotation.
-    *
-    * @param name the name of the undefined annotation.
-    * @param loc  the location of the annotation.
-    */
-  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Undefined annotation $name"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined annotation '${red(name)}'.
-         |
-         |${code(loc, "undefined annotation.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an illegal private declaration.
     *
     * @param ident the name of the declaration.
@@ -581,57 +471,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate type params that are not kinded.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
-    def summary: String = "Type parameters here must be annotated with a kind."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unkinded type parameters.
-         |
-         |${code(loc, "unkinded type parameters")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Type parameters here must be annotated with a kind."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate a malformed unicode escape sequence.
-    *
-    * @param code the escape sequence
-    * @param loc  the location where the error occurred.
-    */
-  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = s"Malformed unicode escape sequence '$code'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.{line, code => fmtcode}
-      s"""${line(kind, source.name)}
-         |>> Malformed unicode escape sequence.
-         |
-         |${fmtcode(loc, "malformed unicode escape sequence")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
-    })
-
-  }
-
-  /**
     * An error raised to indicate an invalid escape sequence.
     *
     * @param char the invalid escape character.
@@ -653,109 +492,6 @@ object WeederError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\${', '\\n', and '\\r'."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate a non-single character literal.
-    *
-    * @param chars the characters in the character literal.
-    * @param loc   the location where the error occurred.
-    */
-  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = "Non-single-character literal."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Non-single-character literal.
-         |
-         |${code(loc, "non-single-character literal")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} A character literal must consist of a single character."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate that the case of an alias does not match the case of the original value.
-    *
-    * @param pat the invalid regular expression
-    * @param loc the location where the error occurred
-    */
-  case class InvalidRegularExpression(pat: String, err: String, loc: SourceLocation) extends IllegalLiteral {
-    def summary: String = s"The pattern literal '$pat' is not a valid regular expression."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Invalid regular expression pattern literal.
-         |
-         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
-         |
-         |Pattern compilation error:
-         |$err
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"A pattern literal must be a valid regular expression."
-    })
-  }
-
-  /**
-    * An error raised to indicate an empty interpolated expression (`"${}"`)
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
-    def summary: String = "Empty interpolated expression."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Empty interpolated expression.
-         |
-         |${code(loc, "empty interpolated expression")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate that a newly defined name is reserved.
-    *
-    * @param ident the reserved name that conflicts.
-    * @param loc   the location where the error occurred.
-    */
-  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
-    def summary: String = "Re-definition of a reserved name."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Re-definition of reserved name '${red(ident.name)}'.
-         |
-         |${code(loc, "re-definition of a reserved name")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
     })
 
   }
@@ -849,27 +585,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a non-Unit return type of an effect operation.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class NonUnitOperationType(loc: SourceLocation) extends WeederError {
-    def summary: String = "Non-Unit return type. All effect operations must return Unit."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Non-Unit return type. All effect operations must return Unit.
-         |
-         |${code(loc, "non-Unit return type")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an enum using both singleton and multiton syntaxes.
     *
     * @param loc the location where the error occurred.
@@ -931,7 +646,6 @@ object WeederError {
          |""".stripMargin
     })
   }
-
 
   /**
     * An error raised to indicate that a loop does not iterate over any collection.
@@ -1047,28 +761,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a non-unary associated type.
-    *
-    * @param numParams the number of parameters of the associated type.
-    * @param loc       the location where the error occurred.
-    */
-  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError {
-    override def summary: String = "Non-unary associated type signature."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Non-unary associated type signature.
-         |
-         |${code(loc, s"Associated types must have exactly one parameter, but $numParams are given here.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an ill-formed equality constraint.
     *
     * @param loc the location where the error occurred.
@@ -1103,27 +795,6 @@ object WeederError {
          |>> Illegal effect set member.
          |
          |${code(loc, s"Effect sets may only contain variables and constants.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that a record pattern has shape the illegal shape `{ | r }`.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError {
-    override def summary: String = "A record pattern must specify at least one field."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected record pattern.
-         |
-         |${code(loc, "A record pattern must specify at least one field.")}
          |
          |""".stripMargin
     }
@@ -1171,5 +842,332 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param pat the invalid regular expression
+    * @param loc the location where the error occurred
+    */
+  case class InvalidRegularExpression(pat: String, err: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"The pattern literal '$pat' is not a valid regular expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid regular expression pattern literal.
+         |
+         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
+         |
+         |Pattern compilation error:
+         |$err
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"A pattern literal must be a valid regular expression."
+    })
+  }
+
+  /**
+    * An error raised to indicate a malformed unicode escape sequence.
+    *
+    * @param code the escape sequence
+    * @param loc  the location where the error occurred.
+    */
+  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"Malformed unicode escape sequence '$code'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.{line, code => fmtcode}
+      s"""${line(kind, source.name)}
+         |>> Malformed unicode escape sequence.
+         |
+         |${fmtcode(loc, "malformed unicode escape sequence")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate that the formal parameter lacks a type declaration.
+    *
+    * @param name the name of the parameter.
+    * @param loc  the location of the formal parameter.
+    */
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
+    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> The formal parameter '${red(name)}' must have a declared type.
+         |
+         |${code(loc, "has no declared type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+
+  }
+
+  /**
+    * An error raised to indicate a mismatched arity.
+    *
+    * @param expected the expected arity.
+    * @param actual   the actual arity.
+    * @param loc      the location where mismatch occurs.
+    */
+  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Mismatched arity: expected: $expected, actual: $actual.
+         |
+         |${code(loc, "mismatched arity.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
+    *
+    * @param name the name of the variable.
+    * @param loc1 the location of the first use of the variable.
+    * @param loc2 the location of the second use of the variable.
+    */
+  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    def summary: String = s"Multiple occurrences of '$name' in pattern."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Multiple occurrences of '${red(name)}' in pattern.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A variable may only occur once in a pattern."
+    })
+
+    def loc: SourceLocation = loc1 min loc2
+
+  }
+
+  /**
+    * An error raised to indicate a non-single character literal.
+    *
+    * @param chars the characters in the character literal.
+    * @param loc   the location where the error occurred.
+    */
+  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = "Non-single-character literal."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-single-character literal.
+         |
+         |${code(loc, "non-single-character literal")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A character literal must consist of a single character."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate a non-Unit return type of an effect operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnitOperationType(loc: SourceLocation) extends WeederError {
+    def summary: String = "Non-Unit return type. All effect operations must return Unit."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-Unit return type. All effect operations must return Unit.
+         |
+         |${code(loc, "non-Unit return type")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a newly defined name is reserved.
+    *
+    * @param ident the reserved name that conflicts.
+    * @param loc   the location where the error occurred.
+    */
+  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = "Re-definition of a reserved name."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Re-definition of reserved name '${red(ident.name)}'.
+         |
+         |${code(loc, "re-definition of a reserved name")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate the presence of a guard in a restrictable choice rule.
+    *
+    * @param star whether the choose is of the star kind.
+    * @param loc  the location where the error occurs.
+    */
+  case class RestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError {
+    private val operationName: String = if (star) "choose*" else "choose"
+
+    def summary: String = s"cases of $operationName do not allow guards."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $summary
+         |
+         |${code(loc, "Disallowed guard.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a non-unary associated type.
+    *
+    * @param numParams the number of parameters of the associated type.
+    * @param loc       the location where the error occurred.
+    */
+  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError {
+    override def summary: String = "Non-unary associated type signature."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-unary associated type signature.
+         |
+         |${code(loc, s"Associated types must have exactly one parameter, but $numParams are given here.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an undefined annotation.
+    *
+    * @param name the name of the undefined annotation.
+    * @param loc  the location of the annotation.
+    */
+  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Undefined annotation $name"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined annotation '${red(name)}'.
+         |
+         |${code(loc, "undefined annotation.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate type params that are not kinded.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
+    def summary: String = "Type parameters here must be annotated with a kind."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unkinded type parameters.
+         |
+         |${code(loc, "unkinded type parameters")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type parameters here must be annotated with a kind."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate an unsupported restrictable choice rule pattern.
+    *
+    * @param star whether the choose is of the star kind.
+    * @param loc  the location where the error occurs.
+    */
+  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError {
+    private val operationName: String = if (star) "choose*" else "choose"
+
+    def summary: String = s"Unsupported $operationName pattern, only enums with variables are allowed."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $summary
+         |
+         |${code(loc, "Unsupported pattern.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 }
