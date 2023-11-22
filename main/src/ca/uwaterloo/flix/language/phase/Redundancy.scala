@@ -409,7 +409,7 @@ object Redundancy {
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
       } else if (isMustUse(exp1)(root) && !isHole(exp1)) {
-        (us1 ++ us2) + MustUse(exp1.tpe, exp1.loc)
+        (us1 ++ us2) + DiscardedMustUseValue(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
       }
