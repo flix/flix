@@ -550,7 +550,7 @@ object Stratifier {
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
       case Result.Ok(_) => ().toSuccess
-      case Result.Err(e) => ().toSoftFailure(e)
+      case Result.Err(e) => Validation.softFailure((), e)
     }
   }
 

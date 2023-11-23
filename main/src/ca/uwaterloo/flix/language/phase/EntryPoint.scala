@@ -88,7 +88,7 @@ object EntryPoint {
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
       case Some(sym) => root.defs.get(sym) match {
-        case None => None.toSoftFailure(EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)))
+        case None => Validation.softFailure(None, EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)))
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
     }
@@ -149,8 +149,7 @@ object EntryPoint {
 
         // Case 2: Bad arguments. SoftError
         // Case 3: argVal was None. SoftError
-        case _ =>
-          ().toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        case _ => Validation.softFailure((), EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
       }
   }
 
@@ -176,7 +175,7 @@ object EntryPoint {
           ().toSuccess
         } else {
           // Case 3: Bad result type. Error.
-          ().toSoftFailure(EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
+          Validation.softFailure((), EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
         }
       }
   }

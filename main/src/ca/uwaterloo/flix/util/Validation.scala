@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.errors.Recoverable
 import scala.collection.mutable
 
 sealed trait Validation[+T, +E] {
@@ -106,6 +107,11 @@ object Validation {
       }
     }
   }
+
+  /**
+    * Returns a [[Validation.SoftFailure]] containing `t` with the error `e`.
+    */
+  def softFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, LazyList(e))
 
   /**
     * Represents a successful validation with the empty list.

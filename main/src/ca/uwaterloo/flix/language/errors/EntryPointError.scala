@@ -33,7 +33,7 @@ object EntryPointError {
     * @param sym the entry point function.
     * @param loc the location where the error occurred.
     */
-  case class IllegalEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+  case class IllegalEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
 
     override def summary: String = s"Unexpected entry point argument(s)."
 
@@ -56,7 +56,7 @@ object EntryPointError {
     * @param tpe the result type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError {
+  case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError with Recoverable {
 
     override def summary: String = s"Unexpected entry point result type: ${FormatType.formatType(tpe)}."
 
@@ -93,7 +93,7 @@ object EntryPointError {
     * @param sym the entry point function.
     * @param loc the location where the error occurred.
     */
-  case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+  case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
     override def summary: String = s"Entry point ${sym} not found."
 
     // NB: We do not print the source location,
