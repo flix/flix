@@ -62,12 +62,6 @@ object GenFunAndClosureClasses {
   private case object Closure extends FunctionKind
 
   private def genCode(classType: JvmType.Reference, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
-    // example for def checkLength(Int, String): Bool = ...
-    // public final class Def$checkLength extends Fn2$Int$Obj$Bool {
-    //   public Def$checkLength() { ... }
-    //   public final Cont$Bool invoke() { ... }
-    // }
-
     val visitor = AsmOps.mkClassWriter()
 
     // Header
