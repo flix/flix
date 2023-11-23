@@ -422,23 +422,23 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("recoverOne01") {
-    val ex = new RuntimeException()
-    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
-    val result = ex.toFailure.recoverOne(f)
-    assertResult(ex.toString.toSoftFailure(ex))(result)
+    val e = DummyError()
+    val f: PartialFunction[DummyError, String] = (e: DummyError) => e.toString
+    val v = e.toFailure.recoverOne(f)
+    assertResult(Validation.softFailure(e.toString, e))(v)
   }
 
   test("recoverOne02") {
-    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
-    val result = "abc".toSuccess.recoverOne(f)
-    assertResult("abc".toSuccess)(result)
+    val f: PartialFunction[DummyError, String] = (e: DummyError) => e.toString
+    val v = "abc".toSuccess.recoverOne(f)
+    assertResult("abc".toSuccess)(v)
   }
 
   test("recoverOne03") {
-    val ex = new RuntimeException()
-    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
-    val result = ex.toString.toSoftFailure(ex).recoverOne(f)
-    assertResult(ex.toString.toSoftFailure(ex))(result)
+    val e = DummyError()
+    val f: PartialFunction[DummyError, String] = (e: DummyError) => e.toString
+    val r = Validation.softFailure(e.toString, e).recoverOne(f)
+    assertResult(Validation.softFailure(e.toString, e))(r)
   }
 
   test("recoverOne04") {

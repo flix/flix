@@ -136,7 +136,7 @@ object EntryPoint {
         // Case 1: One arg. Ok :)
         case arg :: Nil => Some(arg).toSuccess
         // Case 2: Multiple args. Error.
-        case _ :: _ :: _ => None.toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        case _ :: _ :: _ => Validation.softFailure(None, EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
