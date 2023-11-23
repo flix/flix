@@ -123,7 +123,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[(a, Int32)]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
+    expectError[InstanceError.ComplexInstance](result)
   }
 
   test("Test.ComplexInstanceType.02") {
@@ -134,7 +134,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[Unit -> a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
+    expectError[InstanceError.ComplexInstance](result)
   }
 
   test("Test.ComplexInstanceType.03") {
@@ -149,7 +149,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[Box[Int32]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
+    expectError[InstanceError.ComplexInstance](result)
   }
 
   test("Test.ComplexInstanceType.05") {
@@ -160,7 +160,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[Int32 -> b \ e]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
+    expectError[InstanceError.ComplexInstance](result)
   }
 
   test("Test.ComplexInstanceType.06") {
@@ -175,7 +175,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[Box[a] -> b \ e]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
+    expectError[InstanceError.ComplexInstance](result)
   }
 
   test("Test.ComplexInstanceType.07") {
@@ -186,7 +186,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
+    expectError[InstanceError.ComplexInstance](result)
   }
 
   test("Test.DuplicateTypeParameter.01") {
@@ -197,7 +197,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[(a, a)]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
+    expectError[InstanceError.DuplicateTypeVar](result)
   }
 
   test("Test.DuplicateTypeParameter.02") {
@@ -208,7 +208,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[a -> a \ ef]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
+    expectError[InstanceError.DuplicateTypeVar](result)
   }
 
   test("Test.DuplicateTypeParameter.03") {
@@ -223,7 +223,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance C[DoubleBox[a, a]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.DuplicateTypeVariableOccurrence](result)
+    expectError[InstanceError.DuplicateTypeVar](result)
   }
 
   test("Test.MissingImplementation.01") {
@@ -356,7 +356,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ExtraneousDefinition](result)
+    expectError[InstanceError.ExtraneousDef](result)
   }
 
   test("Test.OrphanInstance.01") {
@@ -497,7 +497,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.MissingImplementation](result)
-    expectError[InstanceError.ExtraneousDefinition](result)
+    expectError[InstanceError.ExtraneousDef](result)
   }
 
   test("Test.IllegalOverride.01") {
@@ -546,8 +546,8 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
-    rejectError[InstanceError.ExtraneousDefinition](result)
+    expectError[InstanceError.ComplexInstance](result)
+    rejectError[InstanceError.ExtraneousDef](result)
   }
 
   test("Test.TypeAliasInstance.01") {
@@ -597,7 +597,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingConstraint](result)
+    expectError[InstanceError.MissingTypeClassConstraint](result)
   }
 
   test("Test.MissingConstraint.02") {
@@ -614,7 +614,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance E[(a, b)] with C[a], C[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingConstraint](result)
+    expectError[InstanceError.MissingTypeClassConstraint](result)
   }
 
   test("Test.MissingConstraint.03") {
@@ -627,6 +627,6 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)] with D[a], D[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    rejectError[InstanceError.MissingConstraint](result)
+    rejectError[InstanceError.MissingTypeClassConstraint](result)
   }
 }

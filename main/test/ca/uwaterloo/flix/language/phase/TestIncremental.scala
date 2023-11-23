@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArgument
+import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArg
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -169,7 +169,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub def f(x: Int32): Bool = x == 0
          |
          |""".stripMargin)
-    expectError[UnexpectedArgument](flix.compile())
+    expectError[UnexpectedArg](flix.compile())
   }
 
   test("Incremental.05") {

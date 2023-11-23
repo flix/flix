@@ -29,28 +29,29 @@ sealed trait DerivationError extends CompilationMessage {
 }
 
 object DerivationError {
+
   /**
-    * Illegal type class derivation for an empty enum
+    * Illegal type class derivation for an empty enum.
     *
-    * @param clazz The type class being derived
-    * @param loc   The location where the error occured
+    * @param sym      the enum symbol.
+    * @param classSym the class symbol of what is being derived.
+    * @param loc      The source location where the error occurred.
     */
-  case class IllegalDerivationForEmptyEnum(`enum`: Symbol.EnumSym, clazz: Symbol.ClassSym, classLoc: SourceLocation)(implicit flix: Flix) extends DerivationError {
-    def summary: String = s"Illegal type class derivation for empty enum ${`enum`.toString}"
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends DerivationError {
+    def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""
-         |>> Illegal type class derivation for an empty enum
+      s"""${line(kind, source.name)}
+         |>> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
          |
-         |Attempted to derive an instance of ${cyan(clazz.toString)} for enum ${cyan(`enum`.toString)} but it is empty
+         |${code(loc, "illegal derivation")}
          |
-         |${code(classLoc, "illegal type class derivation")}
+         |Flix cannot derive any instances for an empty enumeration.
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some("Empty enums cannot derive type classes")
-
-    def loc = classLoc
+    def explain(formatter: Formatter): Option[String] = None
   }
+
 }

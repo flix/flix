@@ -32,6 +32,27 @@ trait RedundancyError extends CompilationMessage {
 object RedundancyError {
 
   /**
+    * An error raised to indicate that the result of a pure expression is discarded.
+    *
+    * @param loc the location of the expression.
+    */
+  case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "A pure expression should not be discarded."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> A pure expression should not be discarded.
+         |
+         |${code(loc, "pure expression.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that the variable symbol `sym` is hidden.
     *
     * @param sym the hidden variable symbol.
@@ -62,9 +83,142 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that a checked effect cast is redundant.
+    *
+    * @param loc the source location of the cast.
+    */
+  case class RedundantCheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect cast. The expression already has the required effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant effect cast. The expression already has the required effect.
+         |
+         |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a checked type cast is redundant.
+    *
+    * @param loc the source location of the cast.
+    */
+  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant type cast. The expression already has the required type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant type cast. The expression already has the required type.
+         |
+         |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a redundant discard of a unit value.
+    *
+    * @param loc the location of the inner expression.
+    */
+  case class RedundantDiscard(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant discard of unit value."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant discard of unit value.
+         |
+         |${code(loc, "discarded unit value.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an effect cast is redundant.
+    *
+    * @param loc the source location of the cast.
+    */
+  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect cast. The expression is already pure."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant effect cast. The expression is already pure.
+         |
+         |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a checked type cast is redundant.
+    *
+    * @param loc the source location of the redundant cast.
+    */
+  case class RedundantUncheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant type cast. The expression already has the required type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant type cast. The expression already has the required type.
+         |
+         |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a redundant type constraint.
+    *
+    * @param entailingTconstr the tconstr that entails the other.
+    * @param redundantTconstr the tconstr that is made redundant by the other.
+    * @param loc              the location where the error occured.
+    */
+  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Redundant type constraint."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
+         |
+         |${code(loc, "redundant type constraint.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Remove the type constraint.
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate that a name has been shadowed.
     *
-    * @param shadowed the shadowed name.
+    * @param shadowed  the shadowed name.
     * @param shadowing the shadowing name.
     */
   case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
@@ -92,7 +246,7 @@ object RedundancyError {
   /**
     * An error raised to indicate that a name is shadowing another name.
     *
-    * @param shadowed the shadowed name.
+    * @param shadowed  the shadowed name.
     * @param shadowing the shadowing name.
     */
   case class ShadowingName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
@@ -115,6 +269,72 @@ object RedundancyError {
     def explain(formatter: Formatter): Option[String] = None
 
     def loc: SourceLocation = shadowing
+  }
+
+  /**
+    * An error raised to indicate that an impure function expression is useless
+    * is statement position.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Under applied function. Missing function argument(s)?"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Under applied function. ${applicationAdvice(tpe)}
+         |
+         |${code(loc, "the function is not fully-applied and hence has no effect.")}
+         |
+         |The function has type '${FormatType.formatType(tpe)}'
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Give the function (additional) arguments.
+         |  (2)  Use the result computed by the expression.
+         |  (3)  Remove the expression statement.
+         |  (4)  Introduce a let-binding with a wildcard name.
+         |
+         |""".stripMargin
+    })
+
+    /**
+      * Creates an advice string about applied the arguments of the curried arrow `tpe`.
+      *
+      * OBS: If `tpe` is not arrow type then an exception is thrown.
+      */
+    private def applicationAdvice(tpe: Type): String = {
+      val arguments = curriedArrowArgTypes(tpe)
+      if (arguments.isEmpty) { // fallback message
+        "Missing function argument(s)?"
+      } else {
+        val argumentStrings = arguments.map(t => s"${FormatType.formatType(t)}").mkString(", ")
+        s"Missing argument(s) of type: $argumentStrings."
+      }
+    }
+
+    /**
+      * Returns the argument types of `this` curried arrow type.
+      * Returns `Nil` if `this` is not an arrow type.
+      *
+      * For example,
+      *
+      * {{{
+      * Int32                               =>     Nil
+      * Int32 -> String -> Int32            =>     List(Int32, String)
+      * (Int32, String) -> String -> Bool   =>     List(Int32, String, String)
+      * }}}
+      */
+    private def curriedArrowArgTypes(tpe: Type): List[Type] = tpe.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => tpe.arrowArgTypes ++ curriedArrowArgTypes(tpe.arrowResultType)
+      case _ => Nil
+    }
   }
 
   /**
@@ -149,60 +369,29 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that the enum with the symbol `sym` is not used.
+    * An error raised to indicate that the effect with the symbol `sym` is not used.
     *
-    * @param sym the unused enum symbol.
+    * @param sym the unused effect symbol.
     */
-  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
-    def summary: String = "Unused enum."
+  case class UnusedEffectSym(sym: Symbol.EffectSym) extends RedundancyError {
+    def summary: String = s"Unused effect '${sym.name}'.'"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
+         |>> Unused effect '${red(sym.name)}'. The effect is never referenced.
          |
-         |${code(sym.loc, "unused enum.")}
+         |${code(sym.loc, "unused effect.")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
+      s"""Possible fixes:
          |
-         |  (1)  Use the enum.
-         |  (2)  Remove the enum.
-         |  (3)  Mark the enum as public.
-         |  (4)  Prefix the enum name with an underscore.
-         |
-         |""".stripMargin
-    })
-
-    def loc: SourceLocation = sym.loc
-  }
-
-  /**
-    * An error raised to indicate that the restrictable enum with the symbol `sym` is not used.
-    */
-  case class UnusedRestrictableEnumSym(sym: Symbol.RestrictableEnumSym) extends RedundancyError {
-    def summary: String = "Unused enum."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
-         |
-         |${code(sym.loc, "unused enum.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the enum.
-         |  (2)  Remove the enum.
-         |  (3)  Mark the enum as public.
-         |  (4)  Prefix the enum name with an underscore.
+         |  (1)  Use the effect.
+         |  (2)  Remove the effect.
+         |  (3)  Mark the effect as public.
+         |  (4)  Prefix the effect name with an underscore.
          |
          |""".stripMargin
     })
@@ -244,62 +433,30 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that in the restrictable enum with symbol `sym` the case `tag` is not used.
+    * An error raised to indicate that the enum with the symbol `sym` is not used.
     *
-    * @param sym the enum symbol.
-    * @param tag the unused tag.
+    * @param sym the unused enum symbol.
     */
-  case class UnusedRestrictableEnumTag(sym: Symbol.RestrictableEnumSym, tag: Symbol.RestrictableCaseSym) extends RedundancyError {
-    def summary: String = s"Unused case '${tag.name}'."
+  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
+    def summary: String = "Unused enum."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
+         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
-         |${code(tag.loc, "unused tag.")}
+         |${code(sym.loc, "unused enum.")}
          |""".stripMargin
-
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
-         |  (1)  Use the case.
-         |  (2)  Remove the case.
-         |  (3)  Prefix the case with an underscore.
-         |
-         |""".stripMargin
-    })
-
-    def loc: SourceLocation = sym.loc
-  }
-
-  /**
-    * An error raised to indicate that the effect with the symbol `sym` is not used.
-    *
-    * @param sym the unused effect symbol.
-    */
-  case class UnusedEffectSym(sym: Symbol.EffectSym) extends RedundancyError {
-    def summary: String = s"Unused effect '${sym.name}'.'"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unused effect '${red(sym.name)}'. The effect is never referenced.
-         |
-         |${code(sym.loc, "unused effect.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""Possible fixes:
-         |
-         |  (1)  Use the effect.
-         |  (2)  Remove the effect.
-         |  (3)  Mark the effect as public.
-         |  (4)  Prefix the effect name with an underscore.
+         |  (1)  Use the enum.
+         |  (2)  Remove the enum.
+         |  (3)  Mark the enum as public.
+         |  (4)  Prefix the enum name with an underscore.
          |
          |""".stripMargin
     })
@@ -336,6 +493,37 @@ object RedundancyError {
     })
 
     def loc: SourceLocation = sym.loc
+  }
+
+  /**
+    * An error raised to indicate that the value of an expression must be used.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class UnusedMustUseValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Unused value but its type is marked as @MustUse"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused value but its type is marked as @MustUse.
+         |
+         |${code(loc, "unused value.")}
+         |
+         |The expression has type '${FormatType.formatType(tpe)}'
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the value.
+         |  (2)  Explicit mark the value as unused with `discard`.
+         |
+         |""".stripMargin
+    })
   }
 
   /**
@@ -430,236 +618,6 @@ object RedundancyError {
          |
          |""".stripMargin
     })
-  }
-
-  /**
-    * An error raised to indicate that the value of an expression must be used.
-    *
-    * @param tpe the type of the expression.
-    * @param loc the location of the expression.
-    */
-  case class MustUse(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Unused value but its type is marked as @MustUse"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unused value but its type is marked as @MustUse.
-         |
-         |${code(loc, "unused value.")}
-         |
-         |The expression has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the value.
-         |  (2)  Explicit mark the value as unused with `discard`.
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
-    * An error raised to indicate that an impure function expression is useless
-    * is statement position.
-    *
-    * @param tpe the type of the expression.
-    * @param loc the location of the expression.
-    */
-  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Under applied function. Missing function argument(s)?"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Under applied function. ${applicationAdvice(tpe)}
-         |
-         |${code(loc, "the function is not fully-applied and hence has no effect.")}
-         |
-         |The function has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Give the function (additional) arguments.
-         |  (2)  Use the result computed by the expression.
-         |  (3)  Remove the expression statement.
-         |  (4)  Introduce a let-binding with a wildcard name.
-         |
-         |""".stripMargin
-    })
-
-    /**
-      * Creates an advice string about applied the arguments of the curried arrow `tpe`.
-      *
-      * OBS: If `tpe` is not arrow type then an exception is thrown.
-      */
-    private def applicationAdvice(tpe: Type): String = {
-      val arguments = curriedArrowArgTypes(tpe)
-      if (arguments.isEmpty) { // fallback message
-        "Missing function argument(s)?"
-      } else {
-        val argumentStrings = arguments.map(t => s"${FormatType.formatType(t)}").mkString(", ")
-        s"Missing argument(s) of type: $argumentStrings."
-      }
-    }
-
-    /**
-      * Returns the argument types of `this` curried arrow type.
-      * Returns `Nil` if `this` is not an arrow type.
-      *
-      * For example,
-      *
-      * {{{
-      * Int32                               =>     Nil
-      * Int32 -> String -> Int32            =>     List(Int32, String)
-      * (Int32, String) -> String -> Bool   =>     List(Int32, String, String)
-      * }}}
-      */
-    private def curriedArrowArgTypes(tpe: Type): List[Type] = tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => tpe.arrowArgTypes ++ curriedArrowArgTypes(tpe.arrowResultType)
-      case _ => Nil
-    }
-  }
-
-  /**
-    * An error raised to indicate that an effect cast is redundant.
-    *
-    * @param loc the source location of the cast.
-    */
-  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant effect cast. The expression is already pure."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant effect cast. The expression is already pure.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that a checked type cast is redundant.
-    *
-    * @param loc the source location of the redundant cast.
-    */
-  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant type cast. The expression already has the required type."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant type cast. The expression already has the required type.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that a checked effect cast is redundant.
-    *
-    * @param loc the source location of the cast.
-    */
-  case class RedundantCheckedEffectCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant effect cast. The expression already has the required effect."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant effect cast. The expression already has the required effect.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-
-  /**
-    * An error raised to indicate a redundant type constraint.
-    *
-    * @param entailingTconstr the tconstr that entails the other.
-    * @param redundantTconstr the tconstr that is made redundant by the other.
-    * @param loc              the location where the error occured.
-    */
-  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Redundant type constraint."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
-         |
-         |${code(loc, "redundant type constraint.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Remove the type constraint.
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
-    * An error raised to indicate that the result of a pure expression is discarded.
-    *
-    * @param loc the location of the inner expression.
-    */
-  case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "A pure expression cannot be discarded."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> A pure expression cannot be discarded.
-         |
-         |${code(loc, "pure expression.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate a redundant discard of a unit value.
-    *
-    * @param loc the location of the inner expression.
-    */
-  case class RedundantDiscard(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant discard of unit value."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant discard of unit value.
-         |
-         |${code(loc, "discarded unit value.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
 }

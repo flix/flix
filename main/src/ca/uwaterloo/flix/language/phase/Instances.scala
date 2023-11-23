@@ -89,7 +89,7 @@ object Instances {
         // Case 2: Any type in the class namespace: not an orphan
         case _ if (clazz.sym.namespace) == ns.idents.map(_.name) => Nil
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
-        case _ => List(InstanceError.OrphanInstance(tpe, clazz.sym, clazz.loc))
+        case _ => List(InstanceError.OrphanInstance(clazz.sym, tpe, clazz.loc))
       }
     }
 
@@ -101,19 +101,19 @@ object Instances {
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _, _) => tpe match {
         case _: Type.Cst => Nil
-        case _: Type.Var => List(InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc))
+        case _: Type.Var => List(InstanceError.ComplexInstance(tpe, clazz.sym, clazz.loc))
         case _: Type.Apply =>
           val (_, errs0) = tpe.typeArguments.foldLeft((List.empty[Type.Var], List.empty[InstanceError])) {
             // Case 1: Type variable
             case ((seen, errs), tvar: Type.Var) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
-                (seen, List(InstanceError.DuplicateTypeVariableOccurrence(tvar, clazz.sym, clazz.loc)))
+                (seen, List(InstanceError.DuplicateTypeVar(tvar, clazz.sym, clazz.loc)))
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen, errs)
             // Case 2: Non-variable. Error.
-            case ((seen, errs), _) => (seen, InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc) :: errs)
+            case ((seen, errs), _) => (seen, InstanceError.ComplexInstance(tpe, clazz.sym, clazz.loc) :: errs)
           }
           errs0
         case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, clazz.sym, clazz.loc))
@@ -128,8 +128,8 @@ object Instances {
       Unification.unifyTypes(inst1.tpe, inst2.tpe, RigidityEnv.empty) match {
         case Ok(_) =>
           List(
-            InstanceError.OverlappingInstances(inst1.clazz.loc, inst2.clazz.loc),
-            InstanceError.OverlappingInstances(inst2.clazz.loc, inst1.clazz.loc)
+            InstanceError.OverlappingInstances(inst1.clazz.sym, inst1.clazz.loc, inst2.clazz.loc),
+            InstanceError.OverlappingInstances(inst1.clazz.sym, inst2.clazz.loc, inst1.clazz.loc)
           )
         case Err(_) => Nil
       }
@@ -169,7 +169,7 @@ object Instances {
       val extraDefVal = inst.defs.flatMap {
         defn =>
           clazz.sigs.find(_.sym.name == defn.sym.text) match {
-            case None => List(InstanceError.ExtraneousDefinition(defn.sym, defn.sym.loc))
+            case None => List(InstanceError.ExtraneousDef(defn.sym, inst.clazz.sym, defn.sym.loc))
             case _ => Nil
           }
       }
@@ -208,7 +208,7 @@ object Instances {
                     ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
                       case Validation.Success(_) => Nil
                       case failure => failure.errors.map {
-                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, clazz.loc)
+                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                       }
                     }

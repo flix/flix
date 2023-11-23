@@ -1413,12 +1413,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UselessExpression.03") {
     val input =
       """
-         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
-         |
-         |def f(): Unit =
-         |    hof(x -> (x, 21), 42);
-         |    ()
-         |""".stripMargin
+        |def hof(f: a -> b \ e, x: a): b \ e = f(x)
+        |
+        |def f(): Unit =
+        |    hof(x -> (x, 21), 42);
+        |    ()
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UselessExpression](result)
   }
@@ -1449,12 +1449,12 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnderAppliedFunction.03") {
     val input =
       """
-         |def hof(f: a -> b \ e, x: a): b \ e = f(x)
-         |
-         |def f(): Unit =
-         |    hof(x -> (x, ref 21 @ Static));
-         |    ()
-         |""".stripMargin
+        |def hof(f: a -> b \ e, x: a): b \ e = f(x)
+        |
+        |def f(): Unit =
+        |    hof(x -> (x, ref 21 @ Static));
+        |    ()
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnderAppliedFunction](result)
   }
@@ -1477,11 +1477,11 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantPurityCast.01") {
     val input =
       """
-         |pub def f(): Int32 = unchecked_cast(123 as _ \ Pure)
-         |
+        |pub def f(): Int32 = unchecked_cast(123 as _ \ Pure)
+        |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantEffectCast](result)
+    expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
   test("RedundantPurityCast.02") {
@@ -1493,17 +1493,17 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantEffectCast](result)
+    expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantEffectCast.01") {
+  test("RedundantUncheckedEffectCast.01") {
     val input =
       raw"""
            |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(g(123) as _ \ ef)
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+    expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
   test("RedundantTypeConstraint.Class.01") {
@@ -1746,7 +1746,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.MustUse](result)
+    expectError[RedundancyError.UnusedMustUseValue](result)
   }
 
   test("MustUse.02") {
@@ -1759,7 +1759,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.MustUse](result)
+    expectError[RedundancyError.UnusedMustUseValue](result)
   }
 
   test("RedundantCheckedTypeCast.01") {
@@ -1848,7 +1848,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
-
 
   test("RedundantCheckedTypeCast.06") {
     val input =

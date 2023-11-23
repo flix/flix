@@ -260,16 +260,16 @@ object TypeInference {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
-                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
+                          TypeError.MissingInstanceArrow(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                         case _ =>
                           if (tconstr.head.sym.name == "Eq")
-                            TypeError.MissingEq(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceEq(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "Order")
-                            TypeError.MissingOrder(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceOrder(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "ToString")
-                            TypeError.MissingToString(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceToString(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "Sendable")
-                            TypeError.MissingSendable(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceSendable(tconstr.arg, renv0, tconstr.loc)
                           else
                             TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                       }
@@ -1056,7 +1056,7 @@ object TypeInference {
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
           if (expected.length != actual.length) {
-            InferMonad.errPoint(TypeError.InvalidOpParamCount(op, expected = expected.length, actual = actual.length, loc))
+            InferMonad.errPoint(TypeError.MismatchedOpArity(op, expected = expected.length, actual = actual.length, loc))
           } else {
             traverseM(expected zip actual) {
               case (ex, ac) =>
@@ -1116,7 +1116,7 @@ object TypeInference {
         }
 
         if (operation.spec.fparams.length != args.length) {
-          InferMonad.errPoint(TypeError.InvalidOpParamCount(op.sym, expected = operation.spec.fparams.length, actual = args.length, loc))
+          InferMonad.errPoint(TypeError.MismatchedOpArity(op.sym, expected = operation.spec.fparams.length, actual = args.length, loc))
         } else {
           val argM = (args zip operation.spec.fparams) map {
             case (arg, fparam) => visitArg(arg, fparam)
