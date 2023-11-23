@@ -31,7 +31,7 @@ import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
 object GenFunAndClosureClasses {
 
   /**
-    * Returns the set of function and closures classes for the given set of definitions `defs`.
+    * Returns a map of function- and closure-classes for the given set `defs`.
     */
   def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
@@ -64,6 +64,62 @@ object GenFunAndClosureClasses {
 
   private case object Closure extends FunctionKind
 
+  /**
+    * `(a|b)` is used to represent the function (left) or closure version (right)
+    *
+    * ```
+    * public final class (Def$example|Clo$example$152) extends (Fn2$Obj$Int$Obj|Clo2$Obj$Int$Obj) implements Frame {
+    *   // locals variables (present for both functions and closures)
+    *   public int l0;
+    *   public char l1;
+    *   public Object l2;
+    *   // closure params (assumed empty for functions
+    *   public int clo0;
+    *   public byte clo1;
+    *   // function arguments (present for both functions and closures)
+    *   public Object arg0;
+    *   public int arg1
+    *
+    *   public final Result invoke() { return this.applyFrame(null); }
+    *
+    *   public final Result applyFrame(Value resumptionArg) {
+    *     // fields are put into the local frame according to symbol data
+    *     int ? = this.l0;
+    *     char ? = this.l1;
+    *     Object ? = this.l2;
+    *
+    *     EnterLabel:
+    *
+    *     int ? = this.clo0;
+    *     byte ? = this.clo1;
+    *     Object ? = this.arg0;
+    *     int ? = this.arg1;
+    *
+    *     // body code ...
+    *   }
+    *
+    *   public final (Def$example|Clo$example$152) copy {
+    *     (Def$example|Clo$example$152) x = new (Def$example|Clo$example$152)();
+    *     x.arg0 = this.arg0;
+    *     x.arg1 = this.arg1
+    *     x.clo0 = this.clo0;
+    *     x.clo1 = this.clo1;
+    *     x.l0 = this.l0;
+    *     x.l1 = this.l1;
+    *     x.l2 = this.l2;
+    *     return x;
+    *   }
+    *
+    *   // Only for closures
+    *   public Clo2$Obj$Int$Obj getUniqueThreadClosure() {
+    *     Clo$example$152 x = new Clo$example$152();
+    *     x.clo0 = this.clo0;
+    *     x.clo1 = this.clo1;
+    *     return x;
+    *   }
+    * }
+    * ```
+    */
   private def genCode(classType: JvmType.Reference, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
@@ -123,7 +179,6 @@ object GenFunAndClosureClasses {
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)(new BytecodeInstructions.F(m))
 
-    // Return
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
@@ -181,6 +236,9 @@ object GenFunAndClosureClasses {
     m.visitVarInsn(xStore, localIndex)
   }
 
+  /**
+    * make a new `classType` with all the fields set to the same as `this`.
+    */
   private def mkCopy(classType: JvmType.Reference, defn: Def): InstructionSet = {
     import BytecodeInstructions._
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
@@ -203,12 +261,12 @@ object GenFunAndClosureClasses {
 
   private val copyName: String = "copy"
 
-  private def nothingToTypeDescriptor(t: JvmType.Reference): MethodDescriptor = {
+  private def nothingToTDescriptor(t: JvmType.Reference): MethodDescriptor = {
     MethodDescriptor.mkDescriptor()(BackendObjType.Native(t.name).toTpe)
   }
 
   private def compileCopyMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTypeDescriptor(classType).toDescriptor, null, null)
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(classType).toDescriptor, null, null)
     m.visitCode()
 
     mkCopy(classType, defn)(new BytecodeInstructions.F(m))
