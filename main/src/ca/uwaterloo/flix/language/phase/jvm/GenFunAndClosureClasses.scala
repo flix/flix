@@ -210,7 +210,7 @@ object GenFunAndClosureClasses {
 
     // Generating the expression
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
-    val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTypeDescriptor(classType).toDescriptor, false))
+    val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix, newFrame)
 
     // returning a Value
