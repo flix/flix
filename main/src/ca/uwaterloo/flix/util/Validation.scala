@@ -110,17 +110,12 @@ object Validation {
   /**
     * Represents a successful validation with the empty list.
     */
-  final val SuccessNil = Success(Nil)
+  private val SuccessNil = Success(Nil)
 
   /**
     * Represents a successful validation with the empty option.
     */
-  final val SuccessNone = Success(None)
-
-  /**
-    * Represents a successful validation with the unit value.
-    */
-  final val SuccessUnit = Success(())
+  private val SuccessNone = Success(None)
 
   /**
     * Represents a success `value`.
@@ -252,7 +247,7 @@ object Validation {
     *
     * Preserves all errors.
     */
-  def flatten[U, E](t1: Validation[Validation[U, E], E]): Validation[U, E] = t1 match {
+  private def flatten[U, E](t1: Validation[Validation[U, E], E]): Validation[U, E] = t1 match {
     case Success(Success(t)) =>
       Success(t)
     case Success(SoftFailure(t, e)) =>
@@ -274,7 +269,7 @@ object Validation {
     *
     * Preserves all errors.
     */
-  def ap[T1, U, E](f: Validation[T1 => U, E])(t1: Validation[T1, E]): Validation[U, E] =
+  private def ap[T1, U, E](f: Validation[T1 => U, E])(t1: Validation[T1, E]): Validation[U, E] =
     (f, t1) match {
       case (Success(g), Success(v)) =>
         Success(g(v))
@@ -519,45 +514,6 @@ object Validation {
                                                  t7: Validation[T7, E])
                                                 (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7))
-
-  /**
-    * Sequences over t1, t2, and t3.
-    */
-  def sequenceT[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E]): Validation[(T1, T2, T3), E] =
-    mapN(t1, t2, t3)(Function.untupled(identity))
-
-  /**
-    * Sequences over t1, t2, t3, and t4.
-    */
-  def sequenceT[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                      t4: Validation[T4, E]): Validation[(T1, T2, T3, T4), E] =
-    mapN(t1, t2, t3, t4)(Function.untupled(identity))
-
-  /**
-    * Sequences over t1, t2, t3, t4, and t5.
-    */
-  def sequenceT[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                          t4: Validation[T4, E], t5: Validation[T5, E]): Validation[(T1, T2, T3, T4, T5), E] =
-    mapN(t1, t2, t3, t4, t5)(Function.untupled(identity))
-
-  /**
-    * Sequences over t1, t2, t3, t4, t5, and t6.
-    */
-  def sequenceT[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E]): Validation[(T1, T2, T3, T4, T5, T6), E] =
-    mapN(t1, t2, t3, t4, t5, t6) {
-      case (u1, u2, u3, u4, u5, u6) => (u1, u2, u3, u4, u5, u6)
-    }
-
-  /**
-    * Sequences over t1, t2, t3, t4, t5, and t6.
-    */
-  def sequenceT[T1, T2, T3, T4, T5, T6, T7, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
-                                                  t7: Validation[T7, E]): Validation[(T1, T2, T3, T4, T5, T6, T7), E] =
-    mapN(t1, t2, t3, t4, t5, t6, t7) {
-      case (u1, u2, u3, u4, u5, u6, u7) => (u1, u2, u3, u4, u5, u6, u7)
-    }
 
   /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.
