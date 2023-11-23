@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, FormalParam, LocalParam, Root}
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -55,10 +55,13 @@ object GenFunAndClosureClasses {
   }
 
   private def isClosure(defn: Def): Boolean = defn.cparams.nonEmpty
+
   private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
 
   private sealed trait FunctionKind
+
   private case object Function extends FunctionKind
+
   private case object Closure extends FunctionKind
 
   private def genCode(classType: JvmType.Reference, kind: FunctionKind, defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
@@ -133,12 +136,12 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
 
     // + 1 since index 0 is `this`
-    val lparams = defn.lparams.zipWithIndex.map{case (lp, i) => (s"l$i", lp.sym.getStackOffset + 1, lp.tpe)}
-    val cparams = defn.cparams.zipWithIndex.map{case (cp, i) => (s"clo$i", cp.sym.getStackOffset + 1, cp.tpe)}
-    val fparams = defn.fparams.zipWithIndex.map{case (fp, i) => (s"arg$i", fp.sym.getStackOffset + 1, fp.tpe)}
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset + 1, lp.tpe) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset + 1, cp.tpe) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset + 1, fp.tpe) }
 
     def loadParamsOf(params: List[(String, Int, MonoType)]): Unit = {
-      params.foreach{case (name, offset, tpe) => loadFromField(m, classType, name, offset, tpe)}
+      params.foreach { case (name, offset, tpe) => loadFromField(m, classType, name, offset, tpe) }
     }
 
     m.visitCode()
@@ -157,8 +160,8 @@ object GenFunAndClosureClasses {
 
     // returning a Value
     val returnValue = {
-      import BytecodeInstructions._
       import BackendObjType._
+      import BytecodeInstructions._
       NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP() ~
         xSwap(lowerLarge = BackendType.toErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
         PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
