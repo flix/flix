@@ -162,7 +162,7 @@ object WeederError {
     *
     * @param loc the location of the for-loop with no fragments.
     */
-  case class EmptyForFragment(loc: SourceLocation) extends WeederError {
+  case class EmptyForFragment(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "A loop must iterate over some collection."
 
     def message(formatter: Formatter): String = {
@@ -191,7 +191,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
+  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Empty interpolated expression."
 
     def message(formatter: Formatter): String = {
@@ -366,7 +366,7 @@ object WeederError {
     *
     * @param loc the location of the for-loop in which the for-fragment appears.
     */
-  case class IllegalForFragment(loc: SourceLocation) extends WeederError {
+  case class IllegalForFragment(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "A foreach expression must start with a collection comprehension."
 
     def message(formatter: Formatter): String = {
@@ -535,7 +535,7 @@ object WeederError {
     * @param name the part of the module name that does not begin with an uppercase symbol.
     * @param loc  the location where the error occurred
     */
-  case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError {
+  case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError with Recoverable {
 
     override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
 
@@ -675,7 +675,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalResume(loc: SourceLocation) extends WeederError {
+  case class IllegalResume(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler."
 
     def message(formatter: Formatter): String = {
@@ -955,7 +955,7 @@ object WeederError {
     * @param actual   the actual arity.
     * @param loc      the location where mismatch occurs.
     */
-  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
+  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
 
     def message(formatter: Formatter): String = {
@@ -1102,7 +1102,7 @@ object WeederError {
     *
     * @param loc the location where the illegal intrinsic occurs.
     */
-  case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
+  case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Illegal intrinsic"
 
     def message(formatter: Formatter): String = {
