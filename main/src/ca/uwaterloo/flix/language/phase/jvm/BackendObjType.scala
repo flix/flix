@@ -1343,7 +1343,7 @@ object BackendObjType {
       * [..., Result] --> [..., Thunk|Value]
       * side effect: might return
       */
-    def handleSuspension(): InstructionSet = {
+    def handleSuspension(pc: Int, newFrame: InstructionSet): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
       ifCondition(Condition.NE) {
         DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
@@ -1356,7 +1356,8 @@ object BackendObjType {
         DUP2() ~ GETFIELD(Suspension.ResumptionField) ~ PUTFIELD(Suspension.ResumptionField) ~ // [..., s', s]
         DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
         // Make the new frame and push it
-        pushNull() ~ // TODO
+        newFrame ~
+        /* TODO with pc */
         INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
         PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
         POP() ~ // [..., s']
@@ -1371,9 +1372,9 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: Might return
       */
-    def unwindThunkToType(tpe: BackendType): InstructionSet = {
+    def unwindThunkToType(pc: Int, newFrame: InstructionSet, tpe: BackendType): InstructionSet = {
       unwindThunk() ~
-      handleSuspension() ~
+      handleSuspension(pc, newFrame) ~
       CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
     }
 
@@ -1451,27 +1452,24 @@ object BackendObjType {
   case object Frame extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkAbstractClass(this.jvmName)
+      val cm = mkInterface(this.jvmName)
 
-      cm.mkConstructor(Constructor)
-      cm.mkAbstractMethod(ApplyMethod)
+      cm.mkInterfaceMethod(ApplyMethod)
       cm.mkStaticMethod(StaticApplyMethod)
 
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
-
-    def ApplyMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "apply", mkDescriptor(Value.toTpe)(Result.toTpe))
+    def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "applyFrame", mkDescriptor(Value.toTpe)(Result.toTpe))
 
     def StaticApplyMethod: StaticMethod = StaticMethod(
       this.jvmName,
       IsPublic,
-      IsFinal,
-      "apply",
+      NotFinal,
+      "applyFrameStatic",
       mkDescriptor(Frame.toTpe, Value.toTpe)(Result.toTpe),
       Some(_ => withName(0, Frame.toTpe){f => withName(1, Value.toTpe){resumeArg => {
-        f.load() ~ resumeArg.load() ~ INVOKEVIRTUAL(Frame.ApplyMethod) ~ ARETURN()
+        f.load() ~ resumeArg.load() ~ INVOKEINTERFACE(Frame.ApplyMethod) ~ ARETURN()
       }}}))
   }
 

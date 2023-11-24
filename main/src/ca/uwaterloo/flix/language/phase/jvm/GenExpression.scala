@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
@@ -38,7 +39,7 @@ object GenExpression {
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
+  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): Unit = exp0 match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Ast.Constant.Unit =>
@@ -1234,7 +1235,8 @@ object GenExpression {
               s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
-          BackendObjType.Result.unwindThunkToType(BackendType.toErasedBackendType(closureResultType))(new BytecodeInstructions.F(mv))
+          val erasedResult = BackendType.toErasedBackendType(closureResultType)
+          BackendObjType.Result.unwindThunkToType(0 /* TODO */, newFrame, erasedResult)(new BytecodeInstructions.F(mv))
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1274,7 +1276,7 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        BackendObjType.Result.unwindThunkToType(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
+        BackendObjType.Result.unwindThunkToType(0 /* TODO */, newFrame, BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
@@ -1308,7 +1310,7 @@ object GenExpression {
       val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
       val ctx1 = ctx.copy(lenv = updatedJumpLabels)
       // Compiling the exp
-      compileExpr(exp)(mv, ctx1, root, flix)
+      compileExpr(exp)(mv, ctx1, root, flix, newFrame)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -1318,7 +1320,7 @@ object GenExpression {
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpr(branchExp)(mv, ctx1, root, flix)
+        compileExpr(branchExp)(mv, ctx1, root, flix, newFrame)
         // Skip the rest of the branches
         mv.visitJumpInsn(GOTO, endLabel)
       }
@@ -1509,7 +1511,7 @@ object GenExpression {
   /**
     * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
     */
-  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = stmt0 match {
+  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): Unit = stmt0 match {
     case Stmt.Ret(e, _, _) => compileExpr(e)
   }
 
