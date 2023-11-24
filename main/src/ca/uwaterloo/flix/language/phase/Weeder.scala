@@ -97,7 +97,7 @@ object Weeder {
           val s = i.name
           val first = s.substring(0, 1)
           if (first.toUpperCase != first)
-            ().toSoftFailure(WeederError.IllegalModuleName(s, i.loc))
+            Validation.softFailure((), WeederError.IllegalModuleName(s, i.loc))
           else
             ().toSuccess
       }
@@ -790,7 +790,7 @@ object Weeder {
 
           case _ =>
             val err = WeederError.UndefinedIntrinsic(loc)
-            WeededAst.Expr.Error(err).toSoftFailure(err)
+            Validation.softFailure(WeededAst.Expr.Error(err), err)
         }
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -882,7 +882,7 @@ object Weeder {
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
           val err = WeederError.EmptyForFragment(loc)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -895,10 +895,10 @@ object Weeder {
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
           val err = WeederError.EmptyForFragment(loc)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = WeederError.IllegalForFragment(loc1)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ForEach(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -911,10 +911,10 @@ object Weeder {
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
           val err = WeederError.EmptyForFragment(loc)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = WeederError.IllegalForFragment(loc1)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -927,10 +927,10 @@ object Weeder {
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
           val err = WeederError.EmptyForFragment(loc)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = WeederError.IllegalForFragment(loc1)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ForEachYield(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -1467,11 +1467,11 @@ object Weeder {
             // Case 4: empty interpolated expression
             case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
               val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
-              WeededAst.Expr.Error(err).toSoftFailure(err)
+              Validation.softFailure(WeededAst.Expr.Error(err), err)
             // Case 5: empty interpolated debug
             case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
               val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
-              WeededAst.Expr.Error(err).toSoftFailure(err)
+              Validation.softFailure(WeededAst.Expr.Error(err), err)
           }
       }
 
@@ -1570,7 +1570,7 @@ object Weeder {
             // Case 2: Not in a handler. Error.
             case SyntacticEnv.Top =>
               val err = WeederError.IllegalResume(loc)
-              WeededAst.Expr.Error(err).toSoftFailure(err)
+              Validation.softFailure(WeededAst.Expr.Error(err), err)
           }
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -1701,7 +1701,7 @@ object Weeder {
         case _ if exps.length != idents.length =>
           // Check for mismatched arity
           val err = WeederError.MismatchedArity(exps.length, idents.length, loc)
-          WeededAst.Expr.Error(err).toSoftFailure(err)
+          Validation.softFailure(WeededAst.Expr.Error(err), err)
         case es =>
           val init = WeededAst.Expr.FixpointConstraintSet(Nil, loc)
           es.zip(idents.toList).foldRight(init: WeededAst.Expr) {

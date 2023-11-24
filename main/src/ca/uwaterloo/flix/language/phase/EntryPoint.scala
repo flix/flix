@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Level, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
-import ca.uwaterloo.flix.util.Validation.{ToSoftFailure, ToSuccess, flatMapN, mapN}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -88,7 +88,7 @@ object EntryPoint {
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
       case Some(sym) => root.defs.get(sym) match {
-        case None => None.toSoftFailure(EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)))
+        case None => Validation.softFailure(None, EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)))
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
     }
@@ -136,7 +136,7 @@ object EntryPoint {
         // Case 1: One arg. Ok :)
         case arg :: Nil => Some(arg).toSuccess
         // Case 2: Multiple args. Error.
-        case _ :: _ :: _ => None.toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        case _ :: _ :: _ => Validation.softFailure(None, EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
@@ -149,8 +149,7 @@ object EntryPoint {
 
         // Case 2: Bad arguments. SoftError
         // Case 3: argVal was None. SoftError
-        case _ =>
-          ().toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
+        case _ => Validation.softFailure((), EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
       }
   }
 
@@ -176,7 +175,7 @@ object EntryPoint {
           ().toSuccess
         } else {
           // Case 3: Bad result type. Error.
-          ().toSoftFailure(EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
+          Validation.softFailure((), EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
         }
       }
   }

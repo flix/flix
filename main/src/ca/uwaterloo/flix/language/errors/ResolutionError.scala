@@ -66,7 +66,7 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
+  case class IllegalNonJavaType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Illegal non-Java type. Expected class or interface type."
 
     // TODO need to format unkinded types!

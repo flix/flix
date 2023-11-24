@@ -1512,7 +1512,7 @@ object Resolver {
                   ResolvedAst.Expr.NewObject(name, clazz, ms, loc).toSuccess
                 case _ =>
                   val err = ResolutionError.IllegalNonJavaType(t, t.loc)
-                  ResolvedAst.Expr.Error(err).toSoftFailure(err)
+                  Validation.softFailure(ResolvedAst.Expr.Error(err), err)
               }
           }
 
