@@ -63,9 +63,8 @@ object JvmBackend {
 
       // Generate function classes.
       val functionInterfaces = erasedFunctionTypes.map(genClass).toMap
-      val functionClasses = GenFunctionClasses.gen(root.defs)
+      val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
-      val closureClasses = GenClosureClasses.gen(root.defs)
 
       // Generate enum classes.
       val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
@@ -119,9 +118,8 @@ object JvmBackend {
         mainClass,
         namespaceClasses,
         functionInterfaces,
-        functionClasses,
+        functionAndClosureClasses,
         closureAbstractClasses,
-        closureClasses,
         enumInterfaces,
         tagClasses,
         tupleClasses,
