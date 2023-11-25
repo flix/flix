@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.errors.Recoverable
+import ca.uwaterloo.flix.language.errors.{Recoverable, Unrecoverable}
 import ca.uwaterloo.flix.util.Validation._
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -110,14 +110,6 @@ class TestValidation extends AnyFunSuite {
       case z => z.toChar.toString
     }
     assertResult(SoftFailure("e", LazyList(ex)))(result)
-  }
-
-  test("map10") {
-    val ex = new RuntimeException()
-    val result = ex.toFailure[String, Exception].map {
-      case x => x.toUpperCase
-    }
-    assertResult(Failure(LazyList(ex)))(result)
   }
 
   test("mapN01") {
@@ -232,23 +224,10 @@ class TestValidation extends AnyFunSuite {
     assertResult(SoftFailure("OOFOOF", LazyList(ex)))(result)
   }
 
-  test("flatMapN06") {
-    val ex1 = new RuntimeException()
-    val ex2 = new RuntimeException()
-    val result = flatMapN("foo".toSuccess[String, Exception]) {
-      case x => flatMapN(SoftFailure(x.toUpperCase, LazyList(ex1))) {
-        case y => flatMapN(y.reverse.toSuccess) {
-          case _ => ex2.toFailure
-        }
-      }
-    }
-    assertResult(Failure(LazyList(ex1, ex2)))(result)
-  }
-
   test("andThen03") {
-    val ex = new RuntimeException()
-    val result = flatMapN("foo".toSuccess[String, Exception]) {
-      case x => ex.toFailure
+    val ex = DummyUnrecoverable()
+    val result = flatMapN("foo".toSuccess[String, DummyUnrecoverable]) {
+      case x => Validation.hardFailure(ex)
     }
     assertResult(Failure(LazyList(ex)))(result)
   }
@@ -399,13 +378,13 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("toSoftFailure01") {
-    val e = DummyError()
+    val e = DummyRecoverable()
     val v = Validation.softFailure("abc", e)
     assertResult(SoftFailure("abc", LazyList(e)))(v)
   }
 
   test("toSoftFailure02") {
-    val e = DummyError()
+    val e = DummyRecoverable()
     val v = Validation.softFailure("abc", e)
     val result = mapN(v) {
       case s => s.reverse
@@ -414,7 +393,7 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("toSoftFailure03") {
-    val e = DummyError()
+    val e = DummyRecoverable()
     val v = mapN(Validation.softFailure("abc", e)) {
       case s => s.reverse
     }
@@ -422,32 +401,28 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("recoverOne01") {
-    val e = DummyError()
-    val f: PartialFunction[DummyError, String] = (e: DummyError) => e.toString
-    val v = e.toFailure.recoverOne(f)
-    assertResult(Validation.softFailure(e.toString, e))(v)
-  }
-
-  test("recoverOne02") {
-    val f: PartialFunction[DummyError, String] = (e: DummyError) => e.toString
+    val f: PartialFunction[DummyRecoverable, String] = (e: DummyRecoverable) => e.toString
     val v = "abc".toSuccess.recoverOne(f)
     assertResult("abc".toSuccess)(v)
   }
 
-  test("recoverOne03") {
-    val e = DummyError()
-    val f: PartialFunction[DummyError, String] = (e: DummyError) => e.toString
+  test("recoverOne02") {
+    val e = DummyRecoverable()
+    val f: PartialFunction[DummyRecoverable, String] = (e: DummyRecoverable) => e.toString
     val r = Validation.softFailure(e.toString, e).recoverOne(f)
     assertResult(Validation.softFailure(e.toString, e))(r)
   }
 
-  test("recoverOne04") {
+  test("recoverOne03") {
     val ex = new RuntimeException()
     val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
     val result = Validation.Failure(LazyList(ex, ex)).recoverOne(f)
     assertResult(Validation.Failure(LazyList(ex, ex)))(result)
   }
 
-  case class DummyError() extends Recoverable
+  trait DummyError
 
+  case class DummyRecoverable() extends DummyError with Recoverable
+
+  case class DummyUnrecoverable() extends DummyError with Unrecoverable
 }
