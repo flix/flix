@@ -118,7 +118,7 @@ object Validation {
     *
     * Otherwise returns [[Validation.SoftFailure]] containing `t` with the non-empty errors `es`.
     */
-  def softFailures[T, E <: Recoverable](t: T, es: Iterable[E]): Validation[T, E] = {
+  def toSuccessOrSoftFailure[T, E <: Recoverable](t: T, es: Iterable[E]): Validation[T, E] = {
     if (es.isEmpty)
       Validation.Success(t)
     else

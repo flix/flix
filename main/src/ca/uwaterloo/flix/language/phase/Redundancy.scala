@@ -77,7 +77,7 @@ object Redundancy {
     }
 
     // Determine whether to return success or soft failure.
-    Validation.softFailures(root, errors)
+    Validation.toSuccessOrSoftFailure(root, errors)
   }
 
   /**
