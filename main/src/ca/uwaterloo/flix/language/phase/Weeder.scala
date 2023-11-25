@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
+import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -90,14 +91,14 @@ object Weeder {
     * Is successful if all parts in `names` begin with uppercase letters.
     * Returns a SoftFailure otherwise.
     */
-  private def visitModuleName(names: Name.NName): Validation[Unit, WeederError.IllegalModuleName] = {
-    names.idents.foldLeft(().toSuccess[Unit, WeederError.IllegalModuleName]) {
+  private def visitModuleName(names: Name.NName): Validation[Unit, IllegalModuleName] = {
+    names.idents.foldLeft(().toSuccess[Unit, IllegalModuleName]) {
       case (acc, i) => flatMapN(acc) {
         _ =>
           val s = i.name
           val first = s.substring(0, 1)
           if (first.toUpperCase != first)
-            Validation.softFailure((), WeederError.IllegalModuleName(s, i.loc))
+            Validation.toSoftFailure((), IllegalModuleName(s, i.loc))
           else
             ().toSuccess
       }
@@ -366,7 +367,7 @@ object Weeder {
           }
         // Case 4: both singleton and multiton syntax used: Error.
         case (Some(_), Some(_)) =>
-          WeederError.IllegalEnum(ident.loc).toFailure
+          Validation.toHardFailure(IllegalEnum(ident.loc))
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -423,7 +424,7 @@ object Weeder {
           }
         // Case 4: both singleton and multiton syntax used: Error.
         case (Some(_), Some(_)) =>
-          WeederError.IllegalEnum(ident.loc).toFailure
+          Validation.toHardFailure(IllegalEnum(ident.loc))
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -508,8 +509,8 @@ object Weeder {
             case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
 
             // Case 3: Multiple params. Error.
-            case WeededAst.TypeParams.Kinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
-            case WeededAst.TypeParams.Unkinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
+            case WeededAst.TypeParams.Kinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
+            case WeededAst.TypeParams.Unkinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparamVal) {
             case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
@@ -530,7 +531,7 @@ object Weeder {
         // Case 2: One argument. Visit it.
         case Some(hd :: Nil) => visitType(hd)
         // Case 3: Multiple arguments. Error.
-        case Some(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
+        case Some(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
       }
       val tpeVal = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
@@ -564,7 +565,7 @@ object Weeder {
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
-        WeederError.IllegalJavaClass(alias, loc).toFailure
+        Validation.toHardFailure(IllegalJavaClass(alias, loc))
       }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
@@ -584,7 +585,7 @@ object Weeder {
   private def checkAliasCase(name: String, aliasOpt: Option[Name.Ident]): Validation[Unit, WeederError] = {
     aliasOpt match {
       case Some(alias) if (alias.name.charAt(0).isUpper != name(0).isUpper) =>
-        WeederError.IllegalUseAlias(name, alias.name, alias.loc).toFailure
+        Validation.toHardFailure(IllegalUseAlias(name, alias.name, alias.loc))
       case _ => ().toSuccess
     }
   }
@@ -641,14 +642,14 @@ object Weeder {
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expr.Use(us, e, mkSL(sp1, sp2))
       }.recoverOne {
-        case err: WeederError.IllegalJavaClass => WeededAst.Expr.Error(err)
+        case err: IllegalJavaClass => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
       mapN(weedLiteral(lit)) {
         case l => WeededAst.Expr.Cst(l, mkSL(sp1, sp2))
       }.recoverOne {
-        case err: WeederError.IllegalLiteral => WeededAst.Expr.Error(err)
+        case err: IllegalLiteral => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
@@ -789,8 +790,8 @@ object Weeder {
           case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expr.ScopeExit(e1, e2, loc).toSuccess
 
           case _ =>
-            val err = WeederError.UndefinedIntrinsic(loc)
-            Validation.softFailure(WeededAst.Expr.Error(err), err)
+            val err = UndefinedIntrinsic(loc)
+            Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         }
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -881,8 +882,8 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.EmptyForFragment(loc)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = EmptyForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -894,11 +895,11 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.EmptyForFragment(loc)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = EmptyForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = WeederError.IllegalForFragment(loc1)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = IllegalForFragment(loc1)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ForEach(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -910,11 +911,11 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.EmptyForFragment(loc)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = EmptyForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = WeederError.IllegalForFragment(loc1)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = IllegalForFragment(loc1)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -926,11 +927,11 @@ object Weeder {
       val e = visitExp(exp, senv)
       flatMapN(fs, e) {
         case _ if frags.isEmpty =>
-          val err = WeederError.EmptyForFragment(loc)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = EmptyForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = WeederError.IllegalForFragment(loc1)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = IllegalForFragment(loc1)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ForEachYield(fs1, e1, loc).toSuccess
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -957,7 +958,7 @@ object Weeder {
             Ast.Annotations(annotations).toSuccess
           }
           else {
-            WeederError.IllegalInnerFunctionAnnotation(loc).toFailure
+            Validation.toHardFailure(IllegalInnerFunctionAnnotation(loc))
           }
         case anns => anns.toSuccess
       }
@@ -1466,12 +1467,12 @@ object Weeder {
               }
             // Case 4: empty interpolated expression
             case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
-              val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
-              Validation.softFailure(WeededAst.Expr.Error(err), err)
+              val err = EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+              Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
             // Case 5: empty interpolated debug
             case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
-              val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
-              Validation.softFailure(WeededAst.Expr.Error(err), err)
+              val err = EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+              Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
           }
       }
 
@@ -1569,8 +1570,8 @@ object Weeder {
               WeededAst.Expr.Resume(arg, loc).toSuccess
             // Case 2: Not in a handler. Error.
             case SyntacticEnv.Top =>
-              val err = WeederError.IllegalResume(loc)
-              Validation.softFailure(WeededAst.Expr.Error(err), err)
+              val err = IllegalResume(loc)
+              Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
           }
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
@@ -1700,8 +1701,8 @@ object Weeder {
       flatMapN(traverse(exps)(visitExp(_, senv))) {
         case _ if exps.length != idents.length =>
           // Check for mismatched arity
-          val err = WeederError.MismatchedArity(exps.length, idents.length, loc)
-          Validation.softFailure(WeededAst.Expr.Error(err), err)
+          val err = MismatchedArity(exps.length, idents.length, loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case es =>
           val init = WeededAst.Expr.FixpointConstraintSet(Nil, loc)
           es.zip(idents.toList).foldRight(init: WeededAst.Expr) {
@@ -1844,7 +1845,7 @@ object Weeder {
   private def createRestrictableChooseRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expr], b0: WeededAst.Expr): Validation[WeededAst.RestrictableChooseRule, WeederError] = {
     // Check that guard is not present
     val gVal = g0 match {
-      case Some(g) => WeederError.IllegalRestrictableChooseGuard(star, g.loc).toFailure
+      case Some(g) => Validation.toHardFailure(IllegalRestrictableChooseGuard(star, g.loc))
       case None => ().toSuccess
     }
     // Check that patterns are only tags of variables (or wildcards as variables, or unit)
@@ -1856,17 +1857,17 @@ object Weeder {
               case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc).toSuccess
               case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc).toSuccess
               case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc).toSuccess
-              case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
+              case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(star, other.loc))
             }
           case Pattern.Wild(loc) => List(WeededAst.RestrictableChoosePattern.Wild(loc)).toSuccess
           case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoosePattern.Var(ident, loc)).toSuccess
           case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoosePattern.Wild(loc)).toSuccess
-          case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
+          case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(star, other.loc))
         }
         mapN(innerVal) {
           case inner => WeededAst.RestrictableChoosePattern.Tag(qname, inner, loc)
         }
-      case other => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
+      case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(star, p0.loc))
     }
     mapN(gVal, pVal) {
       case (_, p) => WeededAst.RestrictableChooseRule(p, b0)
@@ -1952,21 +1953,21 @@ object Weeder {
     * Translates the hex code into the corresponding character.
     * Returns an error if the code is not hexadecimal.
     */
-  private def translateHexCode(code: String, loc: SourceLocation): Validation[Char, WeederError.MalformedUnicodeEscapeSequence] = {
+  private def translateHexCode(code: String, loc: SourceLocation): Validation[Char, MalformedUnicodeEscapeSequence] = {
     try {
       Integer.parseInt(code, 16).toChar.toSuccess
     } catch {
-      case _: NumberFormatException => WeederError.MalformedUnicodeEscapeSequence(code, loc).toFailure
+      case _: NumberFormatException => Validation.toHardFailure(MalformedUnicodeEscapeSequence(code, loc))
     }
   }
 
   /**
     * Performs weeding on the given sequence of CharCodes.
     */
-  private def weedCharSequence(chars0: Seq[ParsedAst.CharCode]): Validation[String, WeederError.IllegalLiteral] = {
+  private def weedCharSequence(chars0: Seq[ParsedAst.CharCode]): Validation[String, IllegalLiteral] = {
 
     @tailrec
-    def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Validation[String, WeederError.IllegalLiteral] = {
+    def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Validation[String, IllegalLiteral] = {
       chars match {
         // Case 1: End of the sequence
         case Nil => acc.reverse.mkString.toSuccess
@@ -1985,13 +1986,13 @@ object Weeder {
           // Case 3.2: Interpolation escape
           case "$" => rest match {
             case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '$' :: acc)
-            case _ => WeederError.IllegalEscapeSequence('$', mkSL(sp1, sp2)).toFailure
+            case _ => Validation.toHardFailure(IllegalEscapeSequence('$', mkSL(sp1, sp2)))
           }
 
           // Case 3.3 Debug escape
           case "%" => rest match {
             case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '%' :: acc)
-            case _ => WeederError.IllegalEscapeSequence('%', mkSL(sp1, sp2)).toFailure
+            case _ => Validation.toHardFailure(IllegalEscapeSequence('%', mkSL(sp1, sp2)))
           }
 
           // Case 3.3: Unicode escape
@@ -2012,11 +2013,11 @@ object Weeder {
             case rest2 =>
               val code = rest2.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
               val sp2 = code.lastOption.getOrElse(esc).sp2
-              WeederError.MalformedUnicodeEscapeSequence(code.mkString, mkSL(esc.sp1, sp2)).toFailure
+              Validation.toHardFailure(MalformedUnicodeEscapeSequence(code.mkString, mkSL(esc.sp1, sp2)))
           }
 
           // Case 3.4: Invalid escape character
-          case _ => WeederError.IllegalEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
+          case _ => Validation.toHardFailure(IllegalEscapeSequence(char.head, mkSL(sp1, sp2)))
         }
       }
     }
@@ -2027,7 +2028,7 @@ object Weeder {
   /**
     * Performs weeding on the given literal.
     */
-  private def weedLiteral(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[Ast.Constant, WeederError.IllegalLiteral] = lit0 match {
+  private def weedLiteral(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[Ast.Constant, IllegalLiteral] = lit0 match {
     case ParsedAst.Literal.Unit(_, _) =>
       Ast.Constant.Unit.toSuccess
 
@@ -2043,7 +2044,7 @@ object Weeder {
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
       flatMapN(weedCharSequence(chars)) {
         case string if string.lengthIs == 1 => Ast.Constant.Char(string.head).toSuccess
-        case string => WeederError.MalformedChar(string, mkSL(sp1, sp2)).toFailure
+        case string => Validation.toHardFailure(MalformedChar(string, mkSL(sp1, sp2)))
       }
 
     case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
@@ -2122,14 +2123,14 @@ object Weeder {
               seen += (ident.name -> ident)
               WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
             case Some(otherIdent) =>
-              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+              Validation.toHardFailure(NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)))
           }
         }
 
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
         flatMapN(weedLiteral(lit): Validation[Ast.Constant, WeederError]) {
-          case Ast.Constant.Null => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
-          case Ast.Constant.Regex(_) => WeederError.IllegalRegexPattern(mkSL(sp1, sp2)).toFailure
+          case Ast.Constant.Null => Validation.toHardFailure(IllegalNullPattern(mkSL(sp1, sp2)))
+          case Ast.Constant.Regex(_) => Validation.toHardFailure(IllegalRegexPattern(mkSL(sp1, sp2)))
           case l => WeededAst.Pattern.Cst(l, mkSL(sp1, sp2)).toSuccess
         }
 
@@ -2179,7 +2180,7 @@ object Weeder {
               case (_, p) if p.isEmpty =>
                 // Check that we have not seen the label symbol in a pattern before.
                 seen.get(label.name) match {
-                  case Some(dup) => WeederError.NonLinearPattern(label.name, dup.loc, label.loc).toFailure
+                  case Some(dup) => Validation.toHardFailure(NonLinearPattern(label.name, dup.loc, label.loc))
                   case None =>
                     // It was unseen until now, so we add it to the seen variables.
                     seen += label.name -> label
@@ -2205,10 +2206,10 @@ object Weeder {
           case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc).toSuccess
 
           // Bad Pattern { | r }
-          case (Nil, Some(r)) => WeederError.EmptyRecordExtensionPattern(r.loc).toFailure
+          case (Nil, Some(r)) => Validation.toHardFailure(EmptyRecordExtensionPattern(r.loc))
 
           // Bad Pattern e.g., { x, ... | (1, 2, 3) }
-          case (_, Some(r)) => WeederError.IllegalRecordExtensionPattern(r.loc).toFailure
+          case (_, Some(r)) => Validation.toHardFailure(IllegalRecordExtensionPattern(r.loc))
         }
     }
 
@@ -2256,7 +2257,7 @@ object Weeder {
       // Check for `[[IllegalFixedAtom]]`.
       //
       if (polarity == Ast.Polarity.Negative && fixity == Ast.Fixity.Fixed) {
-        return WeederError.IllegalFixedAtom(mkSL(sp1, sp2)).toFailure
+        return Validation.toHardFailure(IllegalFixedAtom(mkSL(sp1, sp2)))
       }
 
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
@@ -2333,7 +2334,7 @@ object Weeder {
     case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
     case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
     case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
-    case name => WeederError.UndefinedAnnotation(name, ident.loc).toFailure
+    case name => Validation.toHardFailure(UndefinedAnnotation(name, ident.loc))
   }
 
   /**
@@ -2353,8 +2354,8 @@ object Weeder {
             val loc2 = mkSL(modifier.sp1, modifier.sp2)
             Failure(LazyList(
               // NB: We report an error at both source locations.
-              WeederError.DuplicateModifier(name, loc1, loc2),
-              WeederError.DuplicateModifier(name, loc2, loc1)
+              DuplicateModifier(name, loc1, loc2),
+              DuplicateModifier(name, loc2, loc1)
             ))
         }
     }
@@ -2380,7 +2381,7 @@ object Weeder {
     if (legalModifiers contains modifier)
       modifier.toSuccess
     else
-      IllegalModifier(mkSL(m.sp1, m.sp2)).toFailure
+      Validation.toHardFailure(IllegalModifier(mkSL(m.sp1, m.sp2)))
   }
 
   /**
@@ -2390,7 +2391,7 @@ object Weeder {
     if (mods.exists(_.name == "pub")) {
       ().toSuccess
     } else {
-      WeederError.IllegalPrivateDeclaration(ident, ident.loc).toFailure
+      Validation.toHardFailure(IllegalPrivateDeclaration(ident, ident.loc))
     }
   }
 
@@ -2403,7 +2404,7 @@ object Weeder {
       // safe to take head and tail since parsing ensures nonempty type parameters if explicit
       val sp1 = tparams.head.sp1
       val sp2 = tparams.last.sp2
-      WeederError.IllegalEffectTypeParams(mkSL(sp1, sp2)).toFailure
+      Validation.toHardFailure(IllegalEffectTypeParams(mkSL(sp1, sp2)))
   }
 
   /**
@@ -2411,14 +2412,14 @@ object Weeder {
     */
   private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
     case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" => ().toSuccess
-    case _ => WeederError.NonUnitOperationType(loc).toFailure
+    case _ => Validation.toHardFailure(NonUnitOperationType(loc))
   }
 
   /**
     * Returns an error if a type is present.
     */
   private def requireNoEffect(tpe: Option[ParsedAst.Type], loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case Some(_) => WeederError.IllegalOperationEffect(loc).toFailure
+    case Some(_) => Validation.toHardFailure(IllegalOperationEffect(loc))
     case None => ().toSuccess
   }
 
@@ -2647,7 +2648,7 @@ object Weeder {
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
-      WeederError.IllegalEffectSetMember(mkSL(sp1, sp2)).toFailure
+      Validation.toHardFailure(IllegalEffectSetMember(mkSL(sp1, sp2)))
   }
 
   /**
@@ -2761,9 +2762,9 @@ object Weeder {
             case (mod, tpeOpt) =>
               (tpeOpt, typePresence) match {
                 // Case 1: Required but missing. Error.
-                case (None, Presence.Required) => MissingFormalParamAscription(ident.name, mkSL(sp1, sp2)).toFailure
+                case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, mkSL(sp1, sp2)))
                 // Case 2: Forbidden but present. Error.
-                case (Some(_), Presence.Forbidden) => IllegalFormalParamAscription(mkSL(sp1, sp2)).toFailure
+                case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(mkSL(sp1, sp2)))
                 // Case 3: No violation. Good to go.
                 case _ => WeededAst.FormalParam(ident, mod, tpeOpt, mkSL(sp1, sp2)).toSuccess
               }
@@ -2834,7 +2835,7 @@ object Weeder {
         // Case 3: some unkinded and some kinded
         case (_ :: _, _ :: _) =>
           val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
-          WeederError.MismatchedTypeParameters(loc).toFailure
+          Validation.toHardFailure(MismatchedTypeParameters(loc))
         // Case 4: no type parameters: should be prevented by parser
         case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
@@ -2853,7 +2854,7 @@ object Weeder {
         // Case 1: some unkinded type params
         case (_, _ :: _) =>
           val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
-          WeederError.UnkindedTypeParameters(loc).toFailure
+          Validation.toHardFailure(UnkindedTypeParameters(loc))
         // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
         // Case 3: no type parameters: should be prevented by parser
@@ -2891,7 +2892,7 @@ object Weeder {
       val checkVal = if (isAllVars(tparam0)) {
         ().toSuccess
       } else {
-        WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
+        Validation.toHardFailure(IllegalTypeConstraintParameter(mkSL(sp1, sp2)))
       }
       mapN(tpeVal, checkVal) {
         case (tpe, check) => WeededAst.TypeConstraint(clazz, tpe, mkSL(sp1, sp2))
@@ -2911,7 +2912,7 @@ object Weeder {
         case (t1, t2) =>
           t1 match {
             case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, _) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
-            case _ => WeederError.IllegalEqualityConstraint(loc).toFailure
+            case _ => Validation.toHardFailure(IllegalEqualityConstraint(loc))
           }
       }
   }
@@ -2921,7 +2922,7 @@ object Weeder {
     */
   private def visitName(ident: Name.Ident): Validation[Unit, WeederError] = {
     if (ReservedWords.contains(ident.name)) {
-      WeederError.ReservedName(ident, ident.loc).toFailure
+      Validation.toHardFailure(ReservedName(ident, ident.loc))
     } else {
       ().toSuccess
     }
@@ -3025,27 +3026,27 @@ object Weeder {
   /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError.MalformedFloat] = try {
+  private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, MalformedFloat] = try {
     val s = s"$sign$before.$after"
     stripUnderscores(s).toFloat.toSuccess
   } catch {
-    case _: NumberFormatException => MalformedFloat(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedFloat(loc))
   }
 
   /**
     * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError.MalformedFloat] = try {
+  private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, MalformedFloat] = try {
     val s = s"$sign$before.$after"
     stripUnderscores(s).toDouble.toSuccess
   } catch {
-    case _: NumberFormatException => MalformedFloat(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedFloat(loc))
   }
 
   /**
     * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
     */
-  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, WeederError.MalformedFloat] = try {
+  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, MalformedFloat] = try {
     val frac = after match {
       case Some(digits) => "." + digits
       case None => ""
@@ -3057,67 +3058,67 @@ object Weeder {
     val s = s"$sign$before$frac$pow"
     new BigDecimal(stripUnderscores(s)).toSuccess
   } catch {
-    case _: NumberFormatException => MalformedFloat(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedFloat(loc))
   }
 
   /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
-  private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError.MalformedInt] = try {
+  private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, MalformedInt] = try {
     val s = sign + digits
     JByte.parseByte(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => MalformedInt(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedInt(loc))
   }
 
   /**
     * Attempts to parse the given int16 with `sign` and `digits`.
     */
-  private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError.MalformedInt] = try {
+  private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Short, MalformedInt] = try {
     val s = sign + digits
     JShort.parseShort(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => MalformedInt(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedInt(loc))
   }
 
   /**
     * Attempts to parse the given int32 with `sign` and `digits`.
     */
-  private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError.MalformedInt] = try {
+  private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Int, MalformedInt] = try {
     val s = sign + digits
     JInt.parseInt(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => MalformedInt(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedInt(loc))
   }
 
   /**
     * Attempts to parse the given int64 with `sign` and `digits`.
     */
-  private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError.MalformedInt] = try {
+  private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Long, MalformedInt] = try {
     val s = sign + digits
     JLong.parseLong(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => MalformedInt(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedInt(loc))
   }
 
   /**
     * Attempts to parse the given BigInt with `sign` and `digits`.
     */
-  private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError.MalformedInt] = try {
+  private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, MalformedInt] = try {
     val s = sign + digits
     new BigInteger(stripUnderscores(s), radix).toSuccess
   } catch {
-    case _: NumberFormatException => MalformedInt(loc).toFailure
+    case _: NumberFormatException => Validation.toHardFailure(MalformedInt(loc))
   }
 
   /**
     * Attempts to compile the given regular expression into a Pattern.
     */
-  private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.MalformedRegex] = try {
+  private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, MalformedRegex] = try {
     val pat = JPattern.compile(regex)
     pat.toSuccess
   } catch {
-    case ex: PatternSyntaxException => WeederError.MalformedRegex(regex, ex.getMessage, loc).toFailure
+    case ex: PatternSyntaxException => Validation.toHardFailure(MalformedRegex(regex, ex.getMessage, loc))
   }
 
   /**
@@ -3254,7 +3255,7 @@ object Weeder {
     case Name.JavaName(sp1, components, sp2) =>
       // Ensure that the fqn has at least two components.
       if (components.length == 1) {
-        return WeederError.IllegalJavaFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+        return Validation.toHardFailure(IllegalJavaFieldOrMethodName(mkSL(sp1, sp2)))
       }
 
       // Compute the class and member name.

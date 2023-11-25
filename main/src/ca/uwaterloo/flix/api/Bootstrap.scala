@@ -16,13 +16,12 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 
 import java.io.{PrintStream, PrintWriter}
@@ -45,7 +44,7 @@ object Bootstrap {
     // Check that the current working directory is usable.
     //
     if (!Files.isDirectory(p) || !Files.isReadable(p) || !Files.isWritable(p)) {
-      return Validation.hardFailure(BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting."))
+      return Validation.toHardFailure(BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting."))
     }
 
     //
@@ -362,25 +361,25 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val tomlPath = Bootstrap.getManifestFile(projectPath)
     val manifest = ManifestParser.parse(tomlPath) match {
       case Ok(m) => m
-      case Err(e) => return Validation.hardFailure(BootstrapError.ManifestParseError(e))
+      case Err(e) => return Validation.toHardFailure(BootstrapError.ManifestParseError(e))
     }
 
     // 2. Check each dependency is available or download it.
     val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
       case Ok(l) => l
-      case Err(e) => return Validation.hardFailure(BootstrapError.FlixPackageError(e))
+      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
     }
     FlixPackageManager.installAll(manifests, projectPath, apiKey) match {
       case Ok(l) => flixPackagePaths = l
-      case Err(e) => return BootstrapError.FlixPackageError(e).toFailure
+      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
     }
     MavenPackageManager.installAll(manifests, projectPath) match {
       case Ok(l) => mavenPackagePaths = l
-      case Err(e) => return BootstrapError.MavenPackageError(e).toFailure
+      case Err(e) => return Validation.toHardFailure(BootstrapError.MavenPackageError(e))
     }
     JarPackageManager.installAll(manifests, projectPath) match {
       case Ok(l) => jarPackagePaths = l
-      case Err(e) => return BootstrapError.JarPackageError(e).toFailure
+      case Err(e) => return Validation.toHardFailure(BootstrapError.JarPackageError(e))
     }
     out.println("Dependency resolution completed.")
 
@@ -473,8 +472,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     reconfigureFlix(flix)
 
     flix.check() match {
-      case Validation.Success(root) => ().toSuccess
-      case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
+      case Validation.Success(_) => ().toSuccess
+      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
     }
   }
 
@@ -494,7 +493,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     flix.compile() match {
       case Validation.Success(r) => Validation.Success(r)
-      case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
+      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
     }
   }
 
@@ -510,7 +509,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return BootstrapError.FileError(s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite.").toFailure
+      return Validation.toHardFailure(BootstrapError.FileError(s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite."))
     }
 
     // Construct a new zip file.
@@ -533,7 +532,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     } match {
       case Success(()) => ().toSuccess
-      case Failure(e) => BootstrapError.GeneralError(List(e.getMessage)).toFailure
+      case Failure(e) => Validation.toHardFailure(BootstrapError.GeneralError(List(e.getMessage)))
     }
   }
 
@@ -543,7 +542,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def buildPkg(o: Options): Validation[Unit, BootstrapError] = {
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
-      return BootstrapError.FileError("Cannot create a Flix package without a `flix.toml` file.").toFailure
+      return Validation.toHardFailure(BootstrapError.FileError("Cannot create a Flix package without a `flix.toml` file."))
     }
 
     // Create the artifact directory, if it does not exist.
@@ -554,7 +553,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
-      return BootstrapError.FileError(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite.").toFailure
+      return Validation.toHardFailure(BootstrapError.FileError(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite."))
     }
 
     // Copy the `flix.toml` to the artifact directory.
@@ -576,7 +575,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     } match {
       case Success(()) => ().toSuccess
-      case Failure(e) => BootstrapError.FileError(e.getMessage).toFailure
+      case Failure(e) => Validation.toHardFailure(BootstrapError.FileError(e.getMessage))
     }
   }
 
@@ -607,8 +606,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
     } match {
-      case Validation.Success(root) => ().toSuccess
-      case failure => BootstrapError.GeneralError(flix.mkMessages(failure.errors)).toFailure
+      case Validation.Success(_) => ().toSuccess
+      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
     }
   }
 
@@ -634,7 +633,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       compilationResult =>
         Tester.run(Nil, compilationResult) match {
           case Ok(_) => ().toSuccess
-          case Err(_) => BootstrapError.GeneralError(List("Tester Error")).toFailure
+          case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("Tester Error")))
         }
     }
   }

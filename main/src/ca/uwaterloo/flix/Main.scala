@@ -118,7 +118,7 @@ object Main {
       cmdOpts.command match {
         case Command.None =>
           SimpleRunner.run(cwd, cmdOpts, options) match {
-            case Validation.Success(_) =>
+            case Result.Ok(_) =>
               System.exit(0)
             case _ =>
               System.exit(1)

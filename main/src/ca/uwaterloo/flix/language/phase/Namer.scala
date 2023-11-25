@@ -1180,7 +1180,7 @@ object Namer {
         //
         if (isSuspiciousTypeVarName(ident.name)) {
           // TODO NS-REFACTOR maybe check this at declaration site instead of use site
-          Validation.hardFailure(NameError.SuspiciousTypeVarName(ident.name, loc))
+          Validation.toHardFailure(NameError.SuspiciousTypeVarName(ident.name, loc))
         } else {
           NamedAst.Type.Var(ident, loc).toSuccess
         }
