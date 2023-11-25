@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Magnus Madsen
+ * Copyright 2018, 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,18 @@ object Validation {
     * Returns a [[Validation.SoftFailure]] containing `t` with the error `e`.
     */
   def softFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, LazyList(e))
+
+  /**
+    * Returns a [[Validation.Success]] containing `t` if `es` is empty.
+    *
+    * Otherwise returns [[Validation.SoftFailure]] containing `t` with the non-empty errors `es`.
+    */
+  def softFailures[T, E <: Recoverable](t: T, es: Iterable[E]): Validation[T, E] = {
+    if (es.isEmpty)
+      Validation.Success(t)
+    else
+      Validation.SoftFailure(t, es.to(LazyList))
+  }
 
   /**
     * Represents a successful validation with the empty list.
