@@ -24,8 +24,10 @@ import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for redundancy errors.
+  *
+  * All [[RedundancyError]]s are [[Recoverable]].
   */
-trait RedundancyError extends CompilationMessage {
+trait RedundancyError extends CompilationMessage with Recoverable {
   val kind: String = "Redundancy Error"
 }
 
@@ -36,7 +38,7 @@ object RedundancyError {
     *
     * @param loc the location of the expression.
     */
-  case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
+  case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "A pure expression should not be discarded."
 
     def message(formatter: Formatter): String = {
@@ -58,7 +60,7 @@ object RedundancyError {
     * @param sym the hidden variable symbol.
     * @param loc the source location of the use.
     */
-  case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
+  case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Hidden variable symbol."
 
     def message(formatter: Formatter): String = {
@@ -87,7 +89,7 @@ object RedundancyError {
     *
     * @param loc the source location of the cast.
     */
-  case class RedundantCheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantCheckedEffectCast(loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Redundant effect cast. The expression already has the required effect."
 
     def message(formatter: Formatter): String = {
@@ -108,7 +110,7 @@ object RedundancyError {
     *
     * @param loc the source location of the cast.
     */
-  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Redundant type cast. The expression already has the required type."
 
     def message(formatter: Formatter): String = {
@@ -129,7 +131,7 @@ object RedundancyError {
     *
     * @param loc the location of the inner expression.
     */
-  case class RedundantDiscard(loc: SourceLocation) extends RedundancyError {
+  case class RedundantDiscard(loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Redundant discard of unit value."
 
     def message(formatter: Formatter): String = {
@@ -149,7 +151,7 @@ object RedundancyError {
     *
     * @param loc the source location of the cast.
     */
-  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Redundant effect cast. The expression is already pure."
 
     def message(formatter: Formatter): String = {
@@ -170,7 +172,7 @@ object RedundancyError {
     *
     * @param loc the source location of the redundant cast.
     */
-  case class RedundantUncheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+  case class RedundantUncheckedTypeCast(loc: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Redundant type cast. The expression already has the required type."
 
     def message(formatter: Formatter): String = {
@@ -193,7 +195,7 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
     def summary: String = "Redundant type constraint."
 
     def message(formatter: Formatter): String = {
@@ -221,7 +223,7 @@ object RedundancyError {
     * @param shadowed  the shadowed name.
     * @param shadowing the shadowing name.
     */
-  case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+  case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Shadowed name."
 
     def message(formatter: Formatter): String = {
@@ -249,7 +251,7 @@ object RedundancyError {
     * @param shadowed  the shadowed name.
     * @param shadowing the shadowing name.
     */
-  case class ShadowingName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+  case class ShadowingName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError with Recoverable {
     def summary: String = "Shadowing name."
 
     def message(formatter: Formatter): String = {
@@ -278,7 +280,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
     def summary: String = "Under applied function. Missing function argument(s)?"
 
     def message(formatter: Formatter): String = {
@@ -342,7 +344,7 @@ object RedundancyError {
     *
     * @param sym the unused def symbol.
     */
-  case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
+  case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError with Recoverable {
     def summary: String = "Unused definition."
 
     def message(formatter: Formatter): String = {
@@ -373,7 +375,7 @@ object RedundancyError {
     *
     * @param sym the unused effect symbol.
     */
-  case class UnusedEffectSym(sym: Symbol.EffectSym) extends RedundancyError {
+  case class UnusedEffectSym(sym: Symbol.EffectSym) extends RedundancyError with Recoverable {
     def summary: String = s"Unused effect '${sym.name}'.'"
 
     def message(formatter: Formatter): String = {
@@ -405,7 +407,7 @@ object RedundancyError {
     * @param sym the enum symbol.
     * @param tag the unused tag.
     */
-  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Symbol.CaseSym) extends RedundancyError {
+  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Symbol.CaseSym) extends RedundancyError with Recoverable {
     def summary: String = s"Unused case '${tag.name}'."
 
     def message(formatter: Formatter): String = {
@@ -437,7 +439,7 @@ object RedundancyError {
     *
     * @param sym the unused enum symbol.
     */
-  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
+  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError with Recoverable {
     def summary: String = "Unused enum."
 
     def message(formatter: Formatter): String = {
@@ -469,7 +471,7 @@ object RedundancyError {
     *
     * @param sym the unused variable symbol.
     */
-  case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
+  case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError with Recoverable {
     def summary: String = "Unused formal parameter."
 
     def message(formatter: Formatter): String = {
@@ -501,7 +503,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UnusedMustUseValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class UnusedMustUseValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
     def summary: String = "Unused value but its type is marked as @MustUse"
 
     def message(formatter: Formatter): String = {
@@ -531,7 +533,7 @@ object RedundancyError {
     *
     * @param ident the unused type variable.
     */
-  case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
+  case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError with Recoverable {
     def summary: String = "Unused type parameter."
 
     def message(formatter: Formatter): String = {
@@ -562,7 +564,7 @@ object RedundancyError {
     *
     * @param sym the unused variable symbol.
     */
-  case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
+  case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError with Recoverable {
     def summary: String = "Unused local variable."
 
     def message(formatter: Formatter): String = {
@@ -594,7 +596,7 @@ object RedundancyError {
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class UselessExpression(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class UselessExpression(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
     def summary: String = "Useless expression."
 
     def message(formatter: Formatter): String = {

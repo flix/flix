@@ -16,13 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances {
@@ -30,12 +28,10 @@ object Instances {
   /**
     * Validates instances and classes in the given AST root.
     */
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Instances") {
-    val errs = visitInstances(root, oldRoot, changeSet) ::: visitClasses(root)
-    errs match {
-      case Nil => ().toSuccess
-      case es => Validation.SoftFailure((), LazyList.from(es))
-    }
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, InstanceError] = flix.phase("Instances") {
+    val errors = visitInstances(root, oldRoot, changeSet) ::: visitClasses(root)
+
+    Validation.toSuccessOrSoftFailure(root, errors)
   }
 
   /**
@@ -87,7 +83,7 @@ object Instances {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
         // Case 2: Any type in the class namespace: not an orphan
-        case _ if (clazz.sym.namespace) == ns.idents.map(_.name) => Nil
+        case _ if clazz.sym.namespace == ns.idents.map(_.name) => Nil
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
         case _ => List(InstanceError.OrphanInstance(clazz.sym, tpe, clazz.loc))
       }
@@ -184,9 +180,10 @@ object Instances {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
-        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
-          case (subst, econstrs) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
-        }
+        superInst =>
+          Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
+            case (subst, _) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
+          }
       }.nextOption()
     }
 

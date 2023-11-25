@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, 
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -78,10 +77,7 @@ object Redundancy {
     }
 
     // Determine whether to return success or soft failure.
-    if (errors.isEmpty)
-      Success(root)
-    else
-      SoftFailure(root, errors.to(LazyList))
+    Validation.toSuccessOrSoftFailure(root, errors)
   }
 
   /**

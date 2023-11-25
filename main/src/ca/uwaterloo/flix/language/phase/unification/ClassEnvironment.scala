@@ -131,7 +131,7 @@ object ClassEnvironment {
     }
 
     tconstrGroups match {
-      case Nil => UnificationError.NoMatchingInstance(tconstr).toFailure
+      case Nil => Validation.hardFailure(UnificationError.NoMatchingInstance(tconstr))
       case tconstrs :: Nil =>
         // apply the base tconstr location to the new tconstrs
         tconstrs.map(_.copy(loc = tconstr.loc)).toSuccess

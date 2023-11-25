@@ -113,11 +113,9 @@ object PatMatch {
       val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp, root)).flatten
       // Only need to check sigs with implementations
       val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp(_, root))
+      val errors = defErrs ++ instanceDefErrs ++ sigsErrs
 
-      (defErrs ++ instanceDefErrs ++ sigsErrs).toList match {
-        case Nil => Validation.Success(root)
-        case errs => Validation.SoftFailure(root, LazyList.from(errs))
-      }
+      Validation.toSuccessOrSoftFailure(root, errors)
     }
 
   /**

@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type}
+import ca.uwaterloo.flix.language.errors.Unrecoverable
 
 /**
   * A common super-type for unification errors.
@@ -117,7 +118,7 @@ object UnificationError {
     *
     * @param tconstr the type constraint.
     */
-  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError
+  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError with Unrecoverable
 
   /**
     * A unification error resulting from multiple matching instances.

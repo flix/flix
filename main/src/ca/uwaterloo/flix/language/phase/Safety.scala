@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -28,28 +27,23 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Safety") {
-
+  def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phase("Safety") {
     //
     // Collect all errors.
     //
     val defErrors = ParOps.parMap(root.defs.values)(visitDef(_, root)).flatten.toList
-
     val errors = defErrors ++ visitSendable(root)
 
     //
     // Check if any errors were found.
     //
-    if (errors.isEmpty)
-      Validation.Success(root)
-    else
-      Validation.SoftFailure(root, errors.to(LazyList))
+    Validation.toSuccessOrSoftFailure(root, errors)
   }
 
   /**
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
-  private def visitSendable(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitSendable(root: Root)(implicit flix: Flix): List[SafetyError] = {
     val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
@@ -64,7 +58,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): List[SafetyError] = {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
@@ -74,7 +68,7 @@ object Safety {
   /**
     * Checks that if `def0` is a test entry point that it is well-behaved.
     */
-  private def visitTestEntryPoint(def0: Def): List[CompilationMessage] = {
+  private def visitTestEntryPoint(def0: Def): List[SafetyError] = {
     if (def0.spec.ann.isTest) {
       def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
 
@@ -98,12 +92,12 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expr, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(e0: Expr, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[SafetyError] = {
 
     /**
       * Local visitor.
       */
-    def visit(exp0: Expr): List[CompilationMessage] = exp0 match {
+    def visit(exp0: Expr): List[SafetyError] = exp0 match {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(_, _, _) => Nil
@@ -477,7 +471,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def checkConstraint(c0: Constraint, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[SafetyError] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -527,7 +521,7 @@ object Safety {
   /**
     * Performs safety check on the pattern of an atom body.
     */
-  private def checkBodyPattern(p0: Predicate.Body): List[CompilationMessage] = p0 match {
+  private def checkBodyPattern(p0: Predicate.Body): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, _, _, _, terms, _, loc) =>
       terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
         case Pattern.Var(_, _, _) => acc
@@ -542,7 +536,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv, root: Root)(implicit flix: Flix): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // check for non-positively bound negative variables.
       val err1 = polarity match {
@@ -653,7 +647,7 @@ object Safety {
   /**
     * Checks for `IllegalRelationalUseOfLatticeVariable` in the given `head` predicate.
     */
-  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[CompilationMessage] = head match {
+  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[SafetyError] = head match {
     case Predicate.Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
       // Check the relational terms ("the keys").
       checkTerms(terms.dropRight(1), latVars, loc)
@@ -666,7 +660,7 @@ object Safety {
     * Checks that the free variables of the terms does not contain any of the variables in `latVars`.
     * If they do contain a lattice variable then a `IllegalRelationalUseOfLatticeVariable` is created.
     */
-  private def checkTerms(terms: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
+  private def checkTerms(terms: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[SafetyError] = {
     // Compute the free variables in all terms.
     val allVars = terms.foldLeft(Set.empty[Symbol.VarSym])({
       case (acc, term) => acc ++ freeVars(term).keys
@@ -681,7 +675,7 @@ object Safety {
     *
     * @param loc the location of the atom containing the terms.
     */
-  private def visitPats(terms: List[Pattern], loc: SourceLocation): List[CompilationMessage] = {
+  private def visitPats(terms: List[Pattern], loc: SourceLocation): List[SafetyError] = {
     terms.flatMap(visitPat(_, loc))
   }
 
@@ -691,7 +685,7 @@ object Safety {
     * @param loc the location of the atom containing the term.
     */
   @tailrec
-  private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
+  private def visitPat(term: Pattern, loc: SourceLocation): List[SafetyError] = term match {
     case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildCard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Cst(_, _, _) => Nil
@@ -704,14 +698,14 @@ object Safety {
   /**
     * Helper function for [[visitPat]].
     */
-  private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
+  private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[SafetyError] = {
     visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
   }
 
   /**
     * Ensures that `methods` fully implement `clazz`
     */
-  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[SafetyError] = {
     //
     // Check that `clazz` doesn't have a non-default constructor
     //

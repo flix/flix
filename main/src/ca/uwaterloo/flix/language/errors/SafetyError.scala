@@ -7,22 +7,24 @@ import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
- * A common super-type for safety errors.
- */
-sealed trait SafetyError extends CompilationMessage {
+  * A common super-type for safety errors.
+  *
+  * All [[SafetyError]]s are [[Recoverable]].
+  */
+sealed trait SafetyError extends CompilationMessage with Recoverable {
   val kind: String = "Safety Error"
 }
 
 object SafetyError {
 
   /**
-   * An error raised to indicate an illegal checked type cast.
-   *
-   * @param from the source type.
-   * @param to   the destination type.
-   * @param loc  the source location of the cast.
-   */
-  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    * An error raised to indicate an illegal checked type cast.
+    *
+    * @param from the source type.
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
+    */
+  case class IllegalCheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
     override def summary: String = "Illegal checked cast"
 
     override def message(formatter: Formatter): String = {
@@ -41,13 +43,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate a cast from a non-Java type to a Java type.
-   *
-   * @param from the source type.
-   * @param to   the destination type.
-   * @param loc  the source location of the cast.
-   */
-  case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[_], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    * An error raised to indicate a cast from a non-Java type to a Java type.
+    *
+    * @param from the source type.
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
+    */
+  case class IllegalCheckedCastFromNonJava(from: Type, to: java.lang.Class[_], loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
     override def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
 
     override def message(formatter: Formatter): String = {
@@ -66,13 +68,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate a cast from a type variable to a type.
-   *
-   * @param from the source type (the variable).
-   * @param to   the destination type.
-   * @param loc  the source location of the cast.
-   */
-  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    * An error raised to indicate a cast from a type variable to a type.
+    *
+    * @param from the source type (the variable).
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
+    */
+  case class IllegalCheckedCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
     override def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
 
     override def message(formatter: Formatter): String = {
@@ -91,13 +93,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate a cast from a Java type to a non-Java type.
-   *
-   * @param from the source type.
-   * @param to   the destination type.
-   * @param loc  the source location of the cast.
-   */
-  case class IllegalCheckedCastToNonJava(from: java.lang.Class[_], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    * An error raised to indicate a cast from a Java type to a non-Java type.
+    *
+    * @param from the source type.
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
+    */
+  case class IllegalCheckedCastToNonJava(from: java.lang.Class[_], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
     override def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
 
     override def message(formatter: Formatter): String = {
@@ -116,13 +118,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate a cast from a type to a type variable.
-   *
-   * @param from the source type.
-   * @param to   the destination type (the variable).
-   * @param loc  the source location of the cast.
-   */
-  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    * An error raised to indicate a cast from a type to a type variable.
+    *
+    * @param from the source type.
+    * @param to   the destination type (the variable).
+    * @param loc  the source location of the cast.
+    */
+  case class IllegalCheckedCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
     override def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
 
     override def message(formatter: Formatter): String = {
@@ -141,12 +143,12 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate an illegal relational use of the lattice variable `sym`.
-   *
-   * @param sym the variable symbol.
-   * @param loc the source location of the atom where the illegal use occurs.
-   */
-  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
+    *
+    * @param sym the variable symbol.
+    * @param loc the source location of the atom where the illegal use occurs.
+    */
+  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Illegal relational use of the lattice variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -159,8 +161,8 @@ object SafetyError {
     }
 
     /**
-     * Returns a formatted string with helpful suggestions.
-     */
+      * Returns a formatted string with helpful suggestions.
+      */
     def explain(formatter: Formatter): Option[String] = Some({
       s"""A lattice variable cannot be used as relational variable unless the atom
          |from which it originates is marked with `fix`.
@@ -169,11 +171,11 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate an illegal use of a wildcard in a negative atom.
-   *
-   * @param loc the position of the body atom containing the illegal wildcard.
-   */
-  case class IllegalNegativelyBoundWildCard(loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate an illegal use of a wildcard in a negative atom.
+    *
+    * @param loc the position of the body atom containing the illegal wildcard.
+    */
+  case class IllegalNegativelyBoundWildCard(loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Illegal negatively bound wildcard '_'."
 
     def message(formatter: Formatter): String = {
@@ -186,17 +188,17 @@ object SafetyError {
     }
 
     /**
-     * Returns a formatted string with helpful suggestions.
-     */
+      * Returns a formatted string with helpful suggestions.
+      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-   * An error raised to indicate an illegal use of a wild variable in a negative atom.
-   *
-   * @param loc the position of the body atom containing the illegal variable.
-   */
-  case class IllegalNegativelyBoundWildVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate an illegal use of a wild variable in a negative atom.
+    *
+    * @param loc the position of the body atom containing the illegal variable.
+    */
+  case class IllegalNegativelyBoundWildVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Illegal negatively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -209,17 +211,17 @@ object SafetyError {
     }
 
     /**
-     * Returns a formatted string with helpful suggestions.
-     */
+      * Returns a formatted string with helpful suggestions.
+      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-   * An error raised to indicate an illegal use of a non-positively bound variable in a negative atom.
-   *
-   * @param loc the position of the body atom containing the illegal variable.
-   */
-  case class IllegalNonPositivelyBoundVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate an illegal use of a non-positively bound variable in a negative atom.
+    *
+    * @param loc the position of the body atom containing the illegal variable.
+    */
+  case class IllegalNonPositivelyBoundVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Illegal non-positively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -241,11 +243,11 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate an unexpected pattern bound in a body atom.
-   *
-   * @param loc the position of the body atom containing the unexpected pattern.
-   */
-  case class IllegalPatternInBodyAtom(loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate an unexpected pattern bound in a body atom.
+    *
+    * @param loc the position of the body atom containing the unexpected pattern.
+    */
+  case class IllegalPatternInBodyAtom(loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Unexpected pattern in body atom."
 
     def message(formatter: Formatter): String = {
@@ -261,12 +263,12 @@ object SafetyError {
   }
 
   /**
-   * Unable to derive Sendable error
-   *
-   * @param tpe the type that is not sendable.
-   * @param loc the location where the error occurred.
-   */
-  case class IllegalSendableInstance(tpe: Type, loc: SourceLocation) extends SafetyError {
+    * Unable to derive Sendable error
+    *
+    * @param tpe the type that is not sendable.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalSendableInstance(tpe: Type, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Cannot derive Sendable for $tpe"
 
     def message(formatter: Formatter): String = {
@@ -291,12 +293,12 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate that a function marked with the `@test` annotation
-   * has at least one non-unit parameter.
-   *
-   * @param loc the source location of the parameter.
-   */
-  case class IllegalTestParameters(loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate that a function marked with the `@test` annotation
+    * has at least one non-unit parameter.
+    *
+    * @param loc the source location of the parameter.
+    */
+  case class IllegalTestParameters(loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Test entry point must not have parameters."
 
     def message(formatter: Formatter): String = {
@@ -335,13 +337,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate an impossible unchecked cast.
-   *
-   * @param from the source type.
-   * @param to   the destination type.
-   * @param loc  the source location of the cast.
-   */
-  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
+    * An error raised to indicate an impossible unchecked cast.
+    *
+    * @param from the source type.
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
+    */
+  case class ImpossibleUncheckedCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError with Recoverable {
     override def summary: String = "Impossible cast."
 
     override def message(formatter: Formatter): String = {
@@ -360,11 +362,11 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate that a TypeMatch expression is missing a default case.
-   *
-   * @param loc the location where the error occurred.
-   */
-  case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate that a TypeMatch expression is missing a default case.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class MissingDefaultTypeMatchCase(loc: SourceLocation) extends SafetyError with Recoverable {
     override def summary: String = s"Missing default case."
 
     override def message(formatter: Formatter): String = {
@@ -390,14 +392,14 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate an invalid `this` parameter for a method.
-   *
-   * @param clazz           The expected `this` type.
-   * @param illegalThisType The incorrect `this` type.
-   * @param name            The name of the method with the invalid `this` parameter.
-   * @param loc             The source location of the method.
-   */
-  case class NewObjectIllegalThisType(clazz: java.lang.Class[_], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate an invalid `this` parameter for a method.
+    *
+    * @param clazz           The expected `this` type.
+    * @param illegalThisType The incorrect `this` type.
+    * @param name            The name of the method with the invalid `this` parameter.
+    * @param loc             The source location of the method.
+    */
+  case class NewObjectIllegalThisType(clazz: java.lang.Class[_], illegalThisType: Type, name: String, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Invalid `this` parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
@@ -419,12 +421,12 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate that a class lacks a public zero argument constructor.
-   *
-   * @param clazz the class.
-   * @param loc   the source location of the new object expression.
-   */
-  case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate that a class lacks a public zero argument constructor.
+    *
+    * @param clazz the class.
+    * @param loc   the source location of the new object expression.
+    */
+  case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
 
     def message(formatter: Formatter): String = {
@@ -440,13 +442,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate an unimplemented superclass method
-   *
-   * @param clazz  The type of the superclass.
-   * @param method The unimplemented method.
-   * @param loc    The source location of the object derivation.
-   */
-  case class NewObjectMissingMethod(clazz: java.lang.Class[_], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate an unimplemented superclass method
+    *
+    * @param clazz  The type of the superclass.
+    * @param method The unimplemented method.
+    * @param loc    The source location of the object derivation.
+    */
+  case class NewObjectMissingMethod(clazz: java.lang.Class[_], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"No implementation found for method '${method.getName}' of superclass '${clazz.getName}'."
 
     def message(formatter: Formatter): String = {
@@ -470,13 +472,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate a missing `this` parameter for a method.
-   *
-   * @param clazz The expected `this` type.
-   * @param name  The name of the method with the invalid `this` parameter.
-   * @param loc   The source location of the method.
-   */
-  case class NewObjectMissingThisArg(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate a missing `this` parameter for a method.
+    *
+    * @param clazz The expected `this` type.
+    * @param name  The name of the method with the invalid `this` parameter.
+    * @param loc   The source location of the method.
+    */
+  case class NewObjectMissingThisArg(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Missing `this` parameter for method '$name'."
 
     def message(formatter: Formatter): String = {
@@ -498,12 +500,12 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate that a class is non-public.
-   *
-   * @param clazz the class.
-   * @param loc   the source location of the new object expression.
-   */
-  case class NewObjectNonPublicClass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate that a class is non-public.
+    *
+    * @param clazz the class.
+    * @param loc   the source location of the new object expression.
+    */
+  case class NewObjectNonPublicClass(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Class '${clazz.getName}' is not public"
 
     def message(formatter: Formatter): String = {
@@ -519,13 +521,13 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate that an object derivation includes a method that doesn't exist in the superclass being implemented.
-   *
-   * @param clazz The type of superclass
-   * @param name  The name of the extra method.
-   * @param loc   The source location of the method.
-   */
-  case class NewObjectUnreachableMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError {
+    * An error raised to indicate that an object derivation includes a method that doesn't exist in the superclass being implemented.
+    *
+    * @param clazz The type of superclass
+    * @param name  The name of the extra method.
+    * @param loc   The source location of the method.
+    */
+  case class NewObjectUnreachableMethod(clazz: java.lang.Class[_], name: String, loc: SourceLocation) extends SafetyError with Recoverable {
     def summary: String = s"Method '$name' not found in superclass '${clazz.getName}'"
 
     def message(formatter: Formatter): String = {
@@ -541,8 +543,8 @@ object SafetyError {
   }
 
   /**
-   * Format a Java type suitable for method implementation.
-   */
+    * Format a Java type suitable for method implementation.
+    */
   private def formatJavaType(t: java.lang.Class[_]): String = {
     if (t.isPrimitive || t.isArray)
       Type.getFlixType(t).toString
