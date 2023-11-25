@@ -16,13 +16,12 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 
 import java.io.{PrintStream, PrintWriter}

@@ -557,13 +557,6 @@ object Validation {
     def toSuccess[U >: T, E]: Validation[U, E] = Success(t)
   }
 
-  /**
-    * Adds an implicit `toFailure` method.
-    */
-  implicit class ToFailure[+E](val e: E) {
-    def toFailure[V, F >: E]: Validation[V, F] = Failure(e #:: LazyList.empty)
-  }
-
   // TODO: Everything below this line is deprecated.
 
   /**

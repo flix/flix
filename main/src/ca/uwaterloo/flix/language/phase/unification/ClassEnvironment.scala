@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec

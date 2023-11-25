@@ -652,7 +652,7 @@ object Resolver {
           case Some(seenLoc) => dupErrs.append(ResolutionError.DuplicateAssocTypeDef(ident.name, seenLoc, ident.loc))
         }
     }
-    val dupVal = Validation.sequenceX(dupErrs.map(_.toFailure))
+    val dupVal = Validation.sequenceX(dupErrs.map(e => Validation.toHardFailure(e)))
 
     // check that all associated types are covered
     val missingVal = Validation.traverseX(clazz.assocs) {
@@ -660,7 +660,7 @@ object Resolver {
         if (assocIdents.exists { ident => ident.name == sym.name }) {
           ().toSuccess
         } else {
-          ResolutionError.MissingAssocTypeDef(sym.name, loc).toFailure
+          Validation.toHardFailure(ResolutionError.MissingAssocTypeDef(sym.name, loc))
         }
     }
 
@@ -685,7 +685,7 @@ object Resolver {
       val symVal = clazz.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) if sym.name == ident.name => sym
       } match {
-        case None => ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc).toFailure
+        case None => Validation.toHardFailure(ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc))
         case Some(sym) => sym.toSuccess
       }
       mapN(symVal, argVal, tpeVal) {
@@ -707,7 +707,7 @@ object Resolver {
       if (tvars.contains(tvar)) {
         ().toSuccess
       } else {
-        ResolutionError.IllegalSignature(sym, sym.loc).toFailure
+        Validation.toHardFailure(ResolutionError.IllegalSignature(sym, sym.loc))
       }
   }
 
@@ -725,13 +725,13 @@ object Resolver {
           case _ =>
             lookupRestrictableEnum(qname, env, ns0, root) match {
               case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
-              case _failure => ResolutionError.UndefinedKind(qname, ns0, loc).toFailure
+              case _failure => Validation.toHardFailure(ResolutionError.UndefinedKind(qname, ns0, loc))
             }
         }
       } else {
         lookupRestrictableEnum(qname, env, ns0, root) match {
           case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
-          case _failure => ResolutionError.UndefinedKind(qname, ns0, loc).toFailure
+          case _failure => Validation.toHardFailure(ResolutionError.UndefinedKind(qname, ns0, loc))
         }
       }
     case NamedAst.Kind.Arrow(k10, k20, loc) =>
@@ -2005,7 +2005,7 @@ object Resolver {
           // don't compare a sym against itself
           if i1 != i2
           if sym1 == sym2
-        } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
+        } yield Validation.toHardFailure(ResolutionError.DuplicateDerivation(sym1, loc1, loc2))
 
         Validation.sequenceX(failures) map {
           _ => Ast.Derivations(derives, derives0.loc)
@@ -2033,7 +2033,7 @@ object Resolver {
     if (DerivableSyms.contains(sym)) {
       ().toSuccess
     } else {
-      ResolutionError.IllegalDerivation(sym, DerivableSyms, loc).toFailure
+      Validation.toHardFailure(ResolutionError.IllegalDerivation(sym, DerivableSyms, loc))
     }
   }
 
@@ -2048,10 +2048,10 @@ object Resolver {
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
-          case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
-          case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Sealed => Validation.toHardFailure(ResolutionError.SealedClass(clazz.sym, ns0, qname.loc))
+          case ClassAccessibility.Inaccessible => Validation.toHardFailure(ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
-      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
+      case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
     }
   }
 
@@ -2066,9 +2066,9 @@ object Resolver {
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
-          case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
+          case ClassAccessibility.Inaccessible => Validation.toHardFailure(ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
-      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
+      case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
     }
   }
 
@@ -2090,13 +2090,13 @@ object Resolver {
         if (isDefAccessible(defn, ns0)) {
           ResolvedTerm.Def(defn).toSuccess
         } else {
-          ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
+          Validation.toHardFailure(ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         if (isSigAccessible(sig, ns0)) {
           ResolvedTerm.Sig(sig).toSuccess
         } else {
-          ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
+          Validation.toHardFailure(ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
         }
       //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
       //        // Multiple case matches. Error.
@@ -2109,7 +2109,7 @@ object Resolver {
         ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
-      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc).toFailure
+      case _ => Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc))
     }
   }
 
@@ -2124,9 +2124,9 @@ object Resolver {
         if (isOpAccessible(op, ns0)) {
           op.toSuccess
         } else {
-          ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc).toFailure
+          Validation.toHardFailure(ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
         }
-      case _ => ResolutionError.UndefinedOp(qname, qname.loc).toFailure
+      case _ => Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
     }
   }
 
@@ -2139,7 +2139,7 @@ object Resolver {
       case None =>
         val nname = eff.sym.namespace :+ eff.sym.name
         val qname = Name.mkQName(nname, ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
-        ResolutionError.UndefinedOp(qname, ident.loc).toFailure
+        Validation.toHardFailure(ResolutionError.UndefinedOp(qname, ident.loc))
       case Some(op) => op.toSuccess
     }
   }
@@ -2155,7 +2155,7 @@ object Resolver {
 
     matches match {
       // Case 0: No matches. Error.
-      case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc))
       // Case 1: Exactly one match. Success.
       case caze :: _ => caze.toSuccess
       // Case 2: Multiple matches. Error
@@ -2175,7 +2175,7 @@ object Resolver {
 
     matches match {
       // Case 0: No matches. Error.
-      case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc))
       // Case 1: Exactly one match. Success.
       case caze :: Nil => caze.toSuccess
       // Case 2: Multiple matches. Error
@@ -2193,7 +2193,7 @@ object Resolver {
     }
 
     matches match {
-      case Nil => ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, qname.loc))
       case enum :: _ => enum.toSuccess
     }
   }
@@ -2254,7 +2254,7 @@ object Resolver {
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
             case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
-            case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+            case TypeLookupResult.NotFound => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, loc))
           }
       }
 
@@ -2267,7 +2267,7 @@ object Resolver {
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
           case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
-          case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+          case TypeLookupResult.NotFound => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, loc))
         }
 
       case NamedAst.Type.Tuple(elms0, loc) =>
@@ -2439,7 +2439,7 @@ object Resolver {
         val numParams = tparams.length
         if (targs.length < numParams) {
           // Case 1: The type alias is under-applied.
-          ResolutionError.UnderAppliedTypeAlias(sym, loc).toFailure
+          Validation.toHardFailure(ResolutionError.UnderAppliedTypeAlias(sym, loc))
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
@@ -2453,7 +2453,7 @@ object Resolver {
       case UnkindedType.UnappliedAssocType(sym, loc) =>
         targs match {
           // Case 1: The associated type is under-applied.
-          case Nil => ResolutionError.UnderAppliedAssocType(sym, loc).toFailure
+          case Nil => Validation.toHardFailure(ResolutionError.UnderAppliedAssocType(sym, loc))
 
           // Case 2: The associated type is fully applied.
           // Apply the types first type inside the assoc type, then apply any leftover types.
@@ -2466,7 +2466,7 @@ object Resolver {
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 UnkindedType.mkApply(assoc, targTl, tpe0.loc).toSuccess
               case _ =>
-                ResolutionError.IllegalAssocTypeApplication(tpe0.loc).toFailure
+                Validation.toHardFailure(ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
             }
         }
 
@@ -2640,7 +2640,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
+    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
   /**
@@ -2651,7 +2651,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
+    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
   /**
@@ -2662,7 +2662,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => getEffectIfAccessible(eff, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure)
+    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedEffect(qname, ns0, qname.loc)))
   }
 
   /**
@@ -2674,12 +2674,12 @@ object Resolver {
         case Wildness.AllowWild =>
           Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc).toSuccess
         case Wildness.ForbidWild =>
-          ResolutionError.IllegalWildType(ident, ident.loc).toFailure
+          Validation.toHardFailure(ResolutionError.IllegalWildType(ident, ident.loc))
       }
     } else {
       env(ident.name).collectFirst {
         case Resolution.TypeVar(sym) => sym.toSuccess
-      }.getOrElse(ResolutionError.UndefinedTypeVar(ident.name, ident.loc).toFailure)
+      }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedTypeVar(ident.name, ident.loc)))
     }
   }
 
@@ -2690,7 +2690,7 @@ object Resolver {
     env(ident.name).collectFirst {
       case Resolution.Var(sym) => sym.toSuccess
       // TODO NS-REFACTOR add tests
-    }.getOrElse(ResolutionError.UndefinedVar(ident.name, ident.loc).toFailure)
+    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedVar(ident.name, ident.loc)))
   }
 
 
@@ -2781,7 +2781,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure
+      case None => Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc))
       case Some(decl) => decl.toSuccess
     }
   }
@@ -2937,7 +2937,7 @@ object Resolver {
     //
     // The enum is not accessible.
     //
-    ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc).toFailure
+    Validation.toHardFailure(ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc))
   }
 
   /**
@@ -2969,7 +2969,7 @@ object Resolver {
     //
     // The enum is not accessible.
     //
-    ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc).toFailure
+    Validation.toHardFailure(ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc))
   }
 
 
@@ -3021,7 +3021,7 @@ object Resolver {
     //
     // The type alias is not accessible.
     //
-    ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc).toFailure
+    Validation.toHardFailure(ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc))
   }
 
   /**
@@ -3088,7 +3088,7 @@ object Resolver {
     //
     // The type alias is not accessible.
     //
-    ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc).toFailure
+    Validation.toHardFailure(ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc))
   }
 
   /**
@@ -3110,8 +3110,8 @@ object Resolver {
     val initialize = false
     Class.forName(className, initialize, flix.jarLoader).toSuccess
   } catch {
-    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
-    case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
+    case ex: ClassNotFoundException => Validation.toHardFailure(ResolutionError.UndefinedJvmClass(className, loc))
+    case ex: NoClassDefFoundError => Validation.toHardFailure(ResolutionError.MissingJvmDependency(className, ex.getMessage, loc))
   }
 
   /**
@@ -3124,9 +3124,9 @@ object Resolver {
         // Lookup the constructor with the appropriate signature.
         clazz.getConstructor(sig: _*).toSuccess
       } catch {
-        case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
-        case ex: NoSuchMethodException => ResolutionError.UndefinedJvmConstructor(className, sig, clazz.getConstructors.toList, loc).toFailure
-        case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(className, ex.getMessage, loc).toFailure
+        case ex: ClassNotFoundException => Validation.toHardFailure(ResolutionError.UndefinedJvmClass(className, loc))
+        case ex: NoSuchMethodException => Validation.toHardFailure(ResolutionError.UndefinedJvmConstructor(className, sig, clazz.getConstructors.toList, loc))
+        case ex: NoClassDefFoundError => Validation.toHardFailure(ResolutionError.MissingJvmDependency(className, ex.getMessage, loc))
       }
     }
   }
@@ -3162,7 +3162,7 @@ object Resolver {
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
-                  ResolutionError.MismatchingReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc).toFailure
+                  Validation.toHardFailure(ResolutionError.MismatchingReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc))
                 else
                   method.toSuccess
 
@@ -3172,8 +3172,9 @@ object Resolver {
         } catch {
           case ex: NoSuchMethodException =>
             val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
-            ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc).toFailure
-          case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc).toFailure
+            Validation.toHardFailure(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc))
+          case ex: NoClassDefFoundError =>
+            Validation.toHardFailure(ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc))
         }
     }
   }
@@ -3194,8 +3195,9 @@ object Resolver {
     } catch {
       case ex: NoSuchFieldException =>
         val candidateFields = clazz.getFields.toList
-        ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static, candidateFields, loc).toFailure
-      case ex: NoClassDefFoundError => ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc).toFailure
+        Validation.toHardFailure(ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static, candidateFields, loc))
+      case ex: NoClassDefFoundError =>
+        Validation.toHardFailure(ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc))
     }
   }
 
@@ -3259,7 +3261,7 @@ object Resolver {
               mapN(getJVMType(elmTyp, loc)) {
                 case elmClass => getJVMArrayType(elmClass)
               }
-            case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+            case _ => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
           }
 
         case TypeConstructor.Vector =>
@@ -3268,7 +3270,7 @@ object Resolver {
               mapN(getJVMType(elmTyp, loc)) {
                 case elmClass => getJVMArrayType(elmClass)
               }
-            case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+            case _ => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
           }
 
         case TypeConstructor.Native(clazz) => clazz.toSuccess
@@ -3277,31 +3279,31 @@ object Resolver {
 
         case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-        case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.And => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.True => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.False => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Not => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.And => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Or => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
 
-        case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Effect(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.EffUniv => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Complement => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Null => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Intersection => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.RecordRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.RegionToStar => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Relation => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.SchemaRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.Pure => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseSet(_, _) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseUnion(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Union => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Effect(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.EffUniv => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Lattice => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Lazy => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Complement => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Null => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Intersection => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.RecordRowEmpty => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.RecordRowExtend(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.RegionToStar => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Relation => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SchemaRowEmpty => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SchemaRowExtend(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Pure => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseComplement(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseSet(_, _) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseIntersection(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseUnion(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
@@ -3332,7 +3334,7 @@ object Resolver {
             if (returnsUnit) Class.forName("java.util.function.DoubleConsumer").toSuccess else Class.forName("java.util.function.DoubleFunction").toSuccess
           case Double :: Boolean :: Nil => Class.forName("java.util.function.DoublePredicate").toSuccess
           case Double :: Double :: Nil => Class.forName("java.util.function.DoubleUnaryOperator").toSuccess
-          case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+          case _ => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
         }
 
       // Case 3: Enum. Return an object type.
@@ -3343,12 +3345,12 @@ object Resolver {
       case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
 
       // Case 5: Illegal type. Error.
-      case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.CaseSet => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.CaseComplement => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.CaseUnion => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.CaseIntersection => ResolutionError.IllegalType(tpe, loc).toFailure
-      case _: UnkindedType.AssocType => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.Var => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseSet => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseComplement => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseUnion => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseIntersection => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.AssocType => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
 
       // Case 6: Unexpected type. Crash.
       case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)
@@ -3438,7 +3440,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, isUse = true, loc).toFailure
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns, Map.empty, isUse = true, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess

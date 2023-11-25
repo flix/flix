@@ -41,7 +41,7 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
+  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Illegal type."
 
     // TODO need to format ill-kinded type!
@@ -95,7 +95,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -122,7 +122,7 @@ object ResolutionError {
     * @param ns  the namespace from which the class is sealed.
     * @param loc the location where the error occurred.
     */
-  case class SealedClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class SealedClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Sealed."
 
     def message(formatter: Formatter): String = {
@@ -149,7 +149,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -176,7 +176,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -202,7 +202,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleOp(sym: Symbol.OpSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleOp(sym: Symbol.OpSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -228,7 +228,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -255,7 +255,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleRestrictableEnum(sym: Symbol.RestrictableEnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleRestrictableEnum(sym: Symbol.RestrictableEnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -282,7 +282,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Inaccessible type alias ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -309,7 +309,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleEffect(sym: Symbol.EffectSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class InaccessibleEffect(sym: Symbol.EffectSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Inaccessible effect alias ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -377,7 +377,7 @@ object ResolutionError {
     * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -403,7 +403,7 @@ object ResolutionError {
     * @param name the name of the variable.
     * @param loc  the location of the undefined variable.
     */
-  case class UndefinedVar(name: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedVar(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined variable '$name'."
 
     def message(formatter: Formatter): String = {
@@ -426,7 +426,7 @@ object ResolutionError {
     * @param name the name of the type variable.
     * @param loc  the location of the undefined type variable.
     */
-  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined type variable '$name'."
 
     def message(formatter: Formatter): String = {
@@ -451,7 +451,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined class: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -477,7 +477,7 @@ object ResolutionError {
     * @param qname the qualified name of the operation.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined operation '${qname.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -503,7 +503,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined effect '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -530,7 +530,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined tag: '${tag}'."
 
     def message(formatter: Formatter): String = {
@@ -556,7 +556,7 @@ object ResolutionError {
     * @param qn  associated type.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined associated type: '${qn}'."
 
     def message(formatter: Formatter): String = {
@@ -582,7 +582,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined type: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -609,7 +609,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined kind: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
@@ -633,7 +633,7 @@ object ResolutionError {
     * @param name the class name.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined Java class: '${name}'."
 
     def message(formatter: Formatter): String = {
@@ -664,7 +664,7 @@ object ResolutionError {
     * @param constructors the constructors in the class.
     * @param loc          the location of the constructor name.
     */
-  case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Undefined constructor."
 
     def message(formatter: Formatter): String = {
@@ -706,7 +706,7 @@ object ResolutionError {
     * @param methods    the methods of the class.
     * @param loc        the location of the method name.
     */
-  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = {
       if (!static) {
         s"Undefined object method."
@@ -753,7 +753,7 @@ object ResolutionError {
     * @param expectedType the expected type.
     * @param loc          the location of the method name.
     */
-  case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError {
+  case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = {
       s"Mismatching return type."
     }
@@ -784,7 +784,7 @@ object ResolutionError {
     * @param fields    the fields of the class.
     * @param loc       the location of the method name.
     */
-  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = {
       if (!static) {
         s"Undefined object field."
@@ -825,7 +825,7 @@ object ResolutionError {
     * @param dependency the full path of the dependency.
     * @param loc        the location where the error occurred.
     */
-  case class MissingJvmDependency(className: String, dependency: String, loc: SourceLocation) extends ResolutionError {
+  case class MissingJvmDependency(className: String, dependency: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Missing dependency ${dependency} for JVM class ${className}."
 
     /**
@@ -893,7 +893,7 @@ object ResolutionError {
     * @param loc1 the location of the first occurrence.
     * @param loc2 the location of the second occurrence.
     */
-  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -924,7 +924,7 @@ object ResolutionError {
     * @param legalSyms the list of class symbols of legal derivations.
     * @param loc       the location where the error occurred.
     */
-  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -949,7 +949,7 @@ object ResolutionError {
     * @param sym the type alias.
     * @param loc the location where the error occurred.
     */
-  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
+  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -974,7 +974,7 @@ object ResolutionError {
     * @param sym the associated type.
     * @param loc the location where the error occurred.
     */
-  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
+  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Under-applied associated type: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -999,7 +999,7 @@ object ResolutionError {
     * @param sym the symbol of the signature.
     * @param loc the location where the error occurred.
     */
-  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError {
+  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Unexpected signature which does not mention the type variable of the class."
 
     def message(formatter: Formatter): String = {
@@ -1023,7 +1023,7 @@ object ResolutionError {
     * @param ident the name of the wildcard type.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError {
+  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Illegal wildcard type: '$ident'."
 
     def message(formatter: Formatter): String = {
@@ -1076,7 +1076,7 @@ object ResolutionError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
+  case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = " Illegal associated type application."
 
     override def message(formatter: Formatter): String = {
@@ -1100,7 +1100,7 @@ object ResolutionError {
     * @param loc1 the location of the first associated type definition.
     * @param loc2 the location of the second associated type definition.
     */
-  case class DuplicateAssocTypeDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+  case class DuplicateAssocTypeDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Duplicate associated type definition: $name."
 
     // TODO ASSOC-TYPES also show other loc
@@ -1124,7 +1124,7 @@ object ResolutionError {
     * @param name the name of the missing associated type definition.
     * @param loc the location of the instance symbol where the error occurred.
     */
-  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError {
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Missing associated type definition: $name."
 
     override def message(formatter: Formatter): String = {
