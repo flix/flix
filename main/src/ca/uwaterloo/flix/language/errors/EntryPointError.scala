@@ -21,6 +21,11 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
+/**
+  * A common super-type for EntryPoint errors.
+  *
+  * All [[EntryPointError]]s are [[Recoverable]].
+  */
 sealed trait EntryPointError extends CompilationMessage {
   val kind: String = "Entry Point Error"
 }
