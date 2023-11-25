@@ -40,7 +40,7 @@ object TypeError {
     * @param inferred the inferred effect.
     * @param loc      the location where the error occurred.
     */
-  case class EffectfulDeclaredAsPure(inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class EffectfulDeclaredAsPure(inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
     def summary: String = "Effectful function declared as pure."
 
     def message(formatter: Formatter): String = {
@@ -73,7 +73,7 @@ object TypeError {
     * @param inferred the inferred effect.
     * @param loc      the location where the error occurred.
     */
-  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
     def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
 
     def message(formatter: Formatter): String = {
@@ -96,7 +96,7 @@ object TypeError {
     * @param inferred the inferred type scheme.
     * @param loc      the location where the error occurred.
     */
-  case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
     def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared)}'."
 
     def message(formatter: Formatter): String = {
@@ -143,7 +143,7 @@ object TypeError {
     *
     * @param loc the location where the error occurred.
     */
-  case class ImpureDeclaredAsPure(loc: SourceLocation) extends TypeError {
+  case class ImpureDeclaredAsPure(loc: SourceLocation) extends TypeError with Unrecoverable {
     def summary: String = "Impure function declared as pure."
 
     def message(formatter: Formatter): String = {
