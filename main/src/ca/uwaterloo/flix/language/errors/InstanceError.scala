@@ -24,8 +24,10 @@ import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for instance errors.
+  *
+  * All [[InstanceError]]s are [[Recoverable]].
   */
-sealed trait InstanceError extends CompilationMessage {
+sealed trait InstanceError extends CompilationMessage with Recoverable {
   val kind: String = "Instance Error"
 }
 
@@ -38,7 +40,7 @@ object InstanceError {
     * @param sym the class symbol.
     * @param loc the location where the error occurred.
     */
-  case class ComplexInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class ComplexInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = "Complex instance type."
 
     def message(formatter: Formatter): String = {
@@ -63,7 +65,7 @@ object InstanceError {
     * @param sym  the class symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = "Duplicate type variable."
 
     def message(formatter: Formatter): String = {
@@ -90,7 +92,7 @@ object InstanceError {
     * @param classSym the class symbol.
     * @param loc      the location of the definition.
     */
-  case class ExtraneousDef(defnSym: Symbol.DefnSym, classSym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class ExtraneousDef(defnSym: Symbol.DefnSym, classSym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError with Recoverable {
     def summary: String = "Extraneous implementation."
 
     def message(formatter: Formatter): String = {
@@ -116,7 +118,7 @@ object InstanceError {
     * @param clazz the class symbol.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError with Recoverable {
     override def summary: String = "Associated type in instance type."
 
     def message(formatter: Formatter): String = {
@@ -140,7 +142,7 @@ object InstanceError {
     * @param sym the def that the modifier was applied to.
     * @param loc the location where the error occurred.
     */
-  case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+  case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError with Recoverable {
     override def summary: String = s"Illegal override of '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -166,7 +168,7 @@ object InstanceError {
     * @param clazz the class symbol.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError with Recoverable {
     override def summary: String = "Type alias in instance type."
 
     def message(formatter: Formatter): String = {
@@ -192,7 +194,7 @@ object InstanceError {
     * @param expected the scheme of the signature
     * @param actual   the scheme of the definition
     */
-  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme)(implicit flix: Flix) extends InstanceError {
+  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme)(implicit flix: Flix) extends InstanceError with Recoverable {
     def summary: String = "Mismatched signature."
 
     def message(formatter: Formatter): String = {
@@ -220,7 +222,7 @@ object InstanceError {
     * @param sig the missing signature.
     * @param loc the location of the instance.
     */
-  case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
+  case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends InstanceError with Recoverable {
     def summary: String = "Missing implementation."
 
     def message(formatter: Formatter): String = {
@@ -247,7 +249,7 @@ object InstanceError {
     * @param superClass the symbol of the super class.
     * @param loc        the location where the error occurred.
     */
-  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = s"Missing super class instance '$superClass'."
 
     def message(formatter: Formatter): String = {
@@ -277,7 +279,7 @@ object InstanceError {
     * @param superClass the superclass that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingTypeClassConstraint(tconstr: Ast.TypeConstraint, superClass: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class MissingTypeClassConstraint(tconstr: Ast.TypeConstraint, superClass: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = s"Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}"
 
     override def message(formatter: Formatter): String = {
@@ -305,7 +307,7 @@ object InstanceError {
     * @param loc1 the location of the first instance.
     * @param loc2 the location of the second instance.
     */
-  case class OverlappingInstances(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
+  case class OverlappingInstances(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError with Recoverable {
     def summary: String = "Overlapping instances."
 
     def message(formatter: Formatter): String = {
@@ -335,7 +337,7 @@ object InstanceError {
     * @param tpe the instance type.
     * @param loc the location where the error occurred.
     */
-  case class OrphanInstance(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
+  case class OrphanInstance(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = "Orphan instance."
 
     def message(formatter: Formatter): String = {
@@ -359,7 +361,7 @@ object InstanceError {
     * @param sym the symbol of the unlawful signature.
     * @param loc the location where the error occurred.
     */
-  case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
+  case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError with Recoverable {
     override def summary: String = s"Unlawful signature '$sym'."
 
     def message(formatter: Formatter): String = {
@@ -385,7 +387,7 @@ object InstanceError {
     * @param sym the def that is missing the modifier.
     * @param loc the location where the error occurred.
     */
-  case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
+  case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError with Recoverable {
     override def summary: String = s"Unmarked override '$sym'."
 
     def message(formatter: Formatter): String = {
