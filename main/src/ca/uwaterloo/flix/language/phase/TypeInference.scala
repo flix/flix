@@ -288,10 +288,10 @@ object TypeInference {
 
                     if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
                       // Case 1: Declared as pure, but impure.
-                      return Validation.hardFailure(TypeError.ImpureDeclaredAsPure(loc))
+                      return Validation.toHardFailure(TypeError.ImpureDeclaredAsPure(loc))
                     } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
                       // Case 2: Declared as pure, but effectful.
-                      return Validation.hardFailure(TypeError.EffectfulDeclaredAsPure(inferredEff, loc))
+                      return Validation.toHardFailure(TypeError.EffectfulDeclaredAsPure(inferredEff, loc))
                     } else {
                       // Case 3: Check if it is the effect that cannot be generalized.
                       val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
@@ -303,10 +303,10 @@ object TypeInference {
 
                         case _failure =>
                           // Case 3.2: The effect cannot be generalized.
-                          return Validation.hardFailure(TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc))
+                          return Validation.toHardFailure(TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc))
                       }
 
-                      return Validation.hardFailure(TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc))
+                      return Validation.toHardFailure(TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc))
                     }
                   } else {
                     // Case 3: instance error

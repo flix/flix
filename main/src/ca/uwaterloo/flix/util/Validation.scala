@@ -112,12 +112,12 @@ object Validation {
   /**
     * Returns a [[Validation.SoftFailure]] containing `t` with the error `e`.
     */
-  def softFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, LazyList(e))
+  def toSoftFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, LazyList(e))
 
   /**
     * Returns a [[Validation.Failure]] with the error `e`.
     */
-  def hardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.Failure(LazyList(e))
+  def toHardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.Failure(LazyList(e))
 
   /**
     * Returns a [[Validation.Success]] containing `t` if `es` is empty.
