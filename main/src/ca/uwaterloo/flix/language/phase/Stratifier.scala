@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
@@ -46,7 +45,7 @@ object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
 
@@ -63,7 +62,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given class `c0`.
     */
-  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, CompilationMessage] = {
+  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, StratificationError] = {
     val newLaws = traverse(c0.laws)(visitDef(_))
     val newSigs = traverse(c0.sigs)(visitSig(_))
     mapN(newLaws, newSigs) {
@@ -74,7 +73,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given sig `s0`.
     */
-  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, CompilationMessage] = {
+  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, StratificationError] = {
     val newExp = traverseOpt(s0.exp)(visitExp(_))
     mapN(newExp){
       case ne => s0.copy(exp = ne)
@@ -85,13 +84,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, StratificationError] =
     traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, StratificationError] =
     visitExp(def0.exp) map {
       case e => def0.copy(exp = e)
     }
