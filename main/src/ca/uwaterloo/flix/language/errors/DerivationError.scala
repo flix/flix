@@ -37,7 +37,7 @@ object DerivationError {
     * @param classSym the class symbol of what is being derived.
     * @param loc      The source location where the error occurred.
     */
-  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends DerivationError {
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends DerivationError with Unrecoverable {
     def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {

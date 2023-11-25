@@ -45,7 +45,7 @@ object Bootstrap {
     // Check that the current working directory is usable.
     //
     if (!Files.isDirectory(p) || !Files.isReadable(p) || !Files.isWritable(p)) {
-      return BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting.").toFailure
+      return Validation.hardFailure(BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting."))
     }
 
     //
@@ -362,13 +362,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val tomlPath = Bootstrap.getManifestFile(projectPath)
     val manifest = ManifestParser.parse(tomlPath) match {
       case Ok(m) => m
-      case Err(e) => return BootstrapError.ManifestParseError(e).toFailure
+      case Err(e) => return Validation.hardFailure(BootstrapError.ManifestParseError(e))
     }
 
     // 2. Check each dependency is available or download it.
     val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
       case Ok(l) => l
-      case Err(e) => return BootstrapError.FlixPackageError(e).toFailure
+      case Err(e) => return Validation.hardFailure(BootstrapError.FlixPackageError(e))
     }
     FlixPackageManager.installAll(manifests, projectPath, apiKey) match {
       case Ok(l) => flixPackagePaths = l
