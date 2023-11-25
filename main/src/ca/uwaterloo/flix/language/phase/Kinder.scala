@@ -390,7 +390,7 @@ object Kinder {
               ().toSuccess
             } else {
               val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-              KindError.MissingTypeClassConstraint(clazzSym, arg, renv, loc).toFailure
+              Validation.hardFailure(KindError.MissingTypeClassConstraint(clazzSym, arg, renv, loc))
             }
           case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
         }
@@ -1175,7 +1175,7 @@ object Kinder {
       case Some(actualKind) =>
         unify(expectedKind, actualKind) match {
           case Some(kind) => sym.withKind(kind).toSuccess
-          case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc).toFailure
+          case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc))
         }
     }
   }
@@ -1193,14 +1193,14 @@ object Kinder {
     case UnkindedType.Cst(TypeConstructor.Effect(sym), loc) if (sym == IoSym || sym == NonDetSym) =>
       unify(expectedKind, Kind.Eff) match {
         case Some(_) => Type.Cst(TypeConstructor.EffUniv, loc).toSuccess
-        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc).toFailure
+        case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc))
       }
 
     case UnkindedType.Cst(cst, loc) =>
       val kind = cst.kind
       unify(expectedKind, kind) match {
         case Some(_) => Type.Cst(cst, loc).toSuccess
-        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+        case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 
     case UnkindedType.Apply(t10, t20, loc) =>
@@ -1217,7 +1217,7 @@ object Kinder {
     case UnkindedType.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, taenv, root)
-        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc).toFailure
+        case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc))
       }
 
     case UnkindedType.Alias(cst, args0, t0, loc) =>
@@ -1230,7 +1230,7 @@ object Kinder {
           flatMapN(argsVal, tpeVal) {
             case (args, t) => unify(t.kind, expectedKind) match {
               case Some(_) => Type.Alias(cst, args, t, loc).toSuccess
-              case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc).toFailure
+              case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
             }
           }
       }
@@ -1249,7 +1249,7 @@ object Kinder {
               mapN(argVal) {
                 case arg => Type.AssocType(cst, arg, kind, loc)
               }
-            case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc).toFailure
+            case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc))
           }
       }
 
@@ -1261,21 +1261,21 @@ object Kinder {
           mapN(effVal) {
             case eff => Type.mkApply(Type.Cst(TypeConstructor.Arrow(arity), loc), List(eff), loc)
           }
-        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+        case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 
     case UnkindedType.Enum(sym, loc) =>
       val kind = getEnumKind(root.enums(sym))
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.Enum(sym, k), loc).toSuccess
-        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+        case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 
     case UnkindedType.RestrictableEnum(sym, loc) =>
       val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
       unify(kind, expectedKind) match {
         case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc).toSuccess
-        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+        case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc))
       }
 
     case UnkindedType.CaseSet(cases, loc) =>
@@ -1287,7 +1287,7 @@ object Kinder {
             // Case 1: The kinds unify. Update the kind.
             case Some(k) => k.toSuccess
             // Case 2: The kinds do not unify. Error.
-            case None => KindError.MismatchedKinds(kindAcc, symKind, loc).toFailure
+            case None => Validation.hardFailure(KindError.MismatchedKinds(kindAcc, symKind, loc))
           }
       }
 
@@ -1298,9 +1298,9 @@ object Kinder {
             // Case 1:  We have an explicit case kind.
             case Some(Kind.CaseSet(sym)) => Type.Cst(TypeConstructor.CaseSet(cases.to(SortedSet), sym), loc).toSuccess
             // Case 2: We have a generic case kind. Error.
-            case Some(Kind.WildCaseSet) => KindError.UninferrableKind(loc).toFailure
+            case Some(Kind.WildCaseSet) => Validation.hardFailure(KindError.UninferrableKind(loc))
             // Case 3: Unexpected kind. Error.
-            case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
+            case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
 
             case Some(_) => throw InternalCompilerException("unexpected non-case set kind", loc)
           }
@@ -1313,7 +1313,7 @@ object Kinder {
         t =>
           unify(t.kind, expectedKind) match {
             case Some(Kind.CaseSet(enumSym)) => Type.mkCaseComplement(t, enumSym, loc).toSuccess
-            case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc).toFailure
+            case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc))
             case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
           }
       }
@@ -1329,14 +1329,14 @@ object Kinder {
             // Case 1: The kinds unify.
             case Some(k) => k.toSuccess
             // Case 2: The kinds do not unify. Error.
-            case None => KindError.MismatchedKinds(t1.kind, t2.kind, loc).toFailure
+            case None => Validation.hardFailure(KindError.MismatchedKinds(t1.kind, t2.kind, loc))
           }
 
           flatMapN(actualKindVal) {
             case actualKind =>
               unify(actualKind, expectedKind) match {
                 case Some(Kind.CaseSet(enumSym)) => Type.mkCaseUnion(t1, t2, enumSym, loc).toSuccess
-                case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
+                case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
                 case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
               }
           }
@@ -1353,14 +1353,14 @@ object Kinder {
             // Case 1: The kinds unify.
             case Some(k) => k.toSuccess
             // Case 2: The kinds do not unify. Error.
-            case None => KindError.MismatchedKinds(t1.kind, t2.kind, loc).toFailure
+            case None => Validation.hardFailure(KindError.MismatchedKinds(t1.kind, t2.kind, loc))
           }
 
           flatMapN(actualKindVal) {
             case actualKind =>
               unify(actualKind, expectedKind) match {
                 case Some(Kind.CaseSet(enumSym)) => Type.mkCaseIntersection(t1, t2, enumSym, loc).toSuccess
-                case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
+                case None => Validation.hardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc))
                 case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
               }
           }
@@ -1807,7 +1807,7 @@ object Kinder {
       case (tvar, kind) => map.get(tvar) match {
         case Some(kind0) => unify(kind0, kind) match {
           case Some(minKind) => KindEnv(map + (tvar -> minKind)).toSuccess
-          case None => KindError.MismatchedKinds(kind0, kind, tvar.loc).toFailure
+          case None => Validation.hardFailure(KindError.MismatchedKinds(kind0, kind, tvar.loc))
         }
         case None => KindEnv(map + (tvar -> kind)).toSuccess
       }
