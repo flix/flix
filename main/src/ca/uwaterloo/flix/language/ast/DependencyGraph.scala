@@ -21,7 +21,7 @@ import scala.jdk.CollectionConverters._
 
 class DependencyGraph(root: TypedAst.Root) {
 
-  private val dependencies: ConcurrentHashMap[(Source, Target), ()] = new ConcurrentHashMap()
+  private val dependencies: ConcurrentHashMap[(Source, Target), Unit] = new ConcurrentHashMap()
 
   def lookupEnumSym(sym: Symbol.EnumSym)(implicit src: Source): TypedAst.Enum = {
     val result = root.enums(sym)
@@ -33,21 +33,33 @@ class DependencyGraph(root: TypedAst.Root) {
   override def toString: String = {
     val sb = new StringBuilder()
     for (((src, target), _) <- dependencies.asScala) {
-      sb.append(s"$src  -->  $target")
+      sb.append(f"$src%-50s -> $target%-20s")
+      sb.append("\n")
     }
     sb.toString()
   }
 }
 
-sealed trait Source
+sealed trait Source {
+  final override def toString: String = this match {
+    case Source.Def(sym) => sym.toString
+    case Source.Sig(sym) => sym.toString
+  }
+}
 
 object Source {
 
   case class Def(sym: Symbol.DefnSym) extends Source
 
+  case class Sig(sym: Symbol.SigSym) extends Source
+
 }
 
-sealed trait Target
+sealed trait Target {
+  final override def toString: String = this match {
+    case Target.Enum(sym) => sym.toString
+  }
+}
 
 object Target {
 
