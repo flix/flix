@@ -34,12 +34,17 @@ import org.objectweb.asm._
   */
 object GenExpression {
 
-  case class MethodContext(clazz: JvmType.Reference, entryPoint: Label, lenv: Map[Symbol.LabelSym, Label])
+  case class MethodContext(
+    clazz: JvmType.Reference,
+    entryPoint: Label,
+    lenv: Map[Symbol.LabelSym, Label],
+    newFrame: InstructionSet
+  )
 
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): Unit = exp0 match {
+  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, pc: Int): Unit = exp0 match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Ast.Constant.Unit =>
@@ -1236,7 +1241,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
           val erasedResult = BackendType.toErasedBackendType(closureResultType)
-          BackendObjType.Result.unwindThunkToType(0 /* TODO */, newFrame, erasedResult)(new BytecodeInstructions.F(mv))
+          BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, erasedResult)(new BytecodeInstructions.F(mv))
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1276,7 +1281,7 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        BackendObjType.Result.unwindThunkToType(0 /* TODO */, newFrame, BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
+        BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
@@ -1310,7 +1315,7 @@ object GenExpression {
       val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
       val ctx1 = ctx.copy(lenv = updatedJumpLabels)
       // Compiling the exp
-      compileExpr(exp)(mv, ctx1, root, flix, newFrame)
+      compileExpr(exp)(mv, ctx1, root, flix, pc)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -1320,7 +1325,7 @@ object GenExpression {
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpr(branchExp)(mv, ctx1, root, flix, newFrame)
+        compileExpr(branchExp)(mv, ctx1, root, flix, pc)
         // Skip the rest of the branches
         mv.visitJumpInsn(GOTO, endLabel)
       }
@@ -1511,11 +1516,11 @@ object GenExpression {
   /**
     * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
     */
-  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): Unit = stmt0 match {
+  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, pc: Int): Unit = stmt0 match {
     case Stmt.Ret(e, _, _) => compileExpr(e)
   }
 
-  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
+  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, pc: Int): (Label, Label) = {
     compileExpr(exp1)
     compileExpr(exp2)
     val condElse = new Label()
@@ -1531,13 +1536,13 @@ object GenExpression {
     visitor.visitLabel(condEnd)
   }
 
-  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, pc: Int): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitJumpInsn(opcode, condElse)
     visitComparisonEpilogue(mv, condElse, condEnd)
   }
 
-  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, pc: Int): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitInsn(opcode)
     mv.visitJumpInsn(cmpOpcode, condElse)
@@ -1625,7 +1630,7 @@ object GenExpression {
   /**
     * Pushes arguments onto the stack ready to invoke a method
     */
-  private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, pc: Int): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpr(arg)
