@@ -583,22 +583,19 @@ object Reducer {
         //
         val (e2, binders2, mustBind2) = letBindEffectsAndTryBind(exp2)
         val (e1, binders1, mustBind1) = letBindEffects(b => b | mustBind2, exp1)
-        val mustBindTemp = mustBind2 || mustBind1
-        val mustBind = mustBindThis(mustBindTemp)
+        val mustBind = mustBind2 || mustBind1
         val bc = if (mustBind) Chain(Binder(Expr.Let(sym, e1, null, tpe, purity, loc))) else Chain()
         val e = if (mustBind) e2 else Expr.Let(sym, e1, e2, tpe, purity, loc)
         (e, binders1 ++ bc ++ binders2, mustBind)
       case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
         val (e2, binders2, mustBind2) = letBindEffectsAndTryBind(exp2)
         val (e1, binders1, mustBind1) = letBindEffectsAndTryBind(exp1)
-        val mustBindTemp = mustBind2 || mustBind1
-        val mustBind = mustBindThis(mustBindTemp)
+        val mustBind = mustBind2 || mustBind1
         val bc = if (mustBind) Chain(Binder(Expr.LetRec(varSym, index, defSym, e1, null, tpe, purity, loc))) else Chain()
         val e = if (mustBind) e2 else Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
         (e, binders1 ++ bc ++ binders2, mustBind)
       case ReducedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
-        val (e, binders, mustBindTemp) = letBindEffectsAndTryBind(exp)
-        val mustBind = mustBindThis(mustBindTemp)
+        val (e, binders, mustBind) = letBindEffectsAndTryBind(exp)
         val bc = if (mustBind) Chain(Binder(Expr.Scope(sym, e, tpe, purity, loc))) else Chain()
         val res = if (mustBind) e else Expr.Scope(sym, e, tpe, purity, loc)
         (res, bc ++ binders, mustBind)
@@ -628,6 +625,8 @@ object Reducer {
         (newObject, binders, mustBind)
       case ReducedAst.Expr.Resume(_, _, loc) => throw InternalCompilerException("Explicit resume not supported", loc)
     }
+    // invariant: |binders| > 0 => mustBind
+    assert(if (binders.nonEmpty) mustBind else true, exp.getClass.getName)
     val (e1, binders1) = bindIfTrue(e, mustBindThis(mustBind))
     (e1, binders ++ binders1, mustBind)
   }
