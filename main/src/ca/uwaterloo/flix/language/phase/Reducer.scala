@@ -16,8 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Expr, Stmt}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -34,9 +37,10 @@ object Reducer {
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffs = ParOps.parMapValues(root.effects)(visitEff)
 
-    val newRoot = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
-    val types = typesOf(newRoot)
-    newRoot.copy(types = types)
+    val root1 = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
+    val types = typesOf(root1)
+    val root2 = root1.copy(types = types)
+    root2.copy(defs = root2.defs.map { case (sym, defn) => (sym, defn.copy(stmt = letBindEffectsStmt(defn.stmt))) })
   }
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
@@ -184,14 +188,14 @@ object Reducer {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty)
+    def mk(): LocalContext = LocalContext(mutable.ArrayDeque.empty)
   }
 
   /**
     * A local non-shared context. Does not need to be thread-safe.
     * @param lparams the bound variales in the def.
     */
-  private case class LocalContext(lparams: mutable.ArrayBuffer[ReducedAst.LocalParam])
+  private case class LocalContext(lparams: mutable.ArrayDeque[ReducedAst.LocalParam])
 
   /**
     * A context shared across threads.
@@ -304,7 +308,7 @@ object Reducer {
     * (and the types in `acc`).
     */
   @tailrec
-  def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
+  private def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
     import MonoType._
     types.dequeueOption match {
       case Some((tpe, taskList)) =>
@@ -325,4 +329,221 @@ object Reducer {
     }
   }
 
+  // <a> means any expression, a is a variable
+  // [[...]] means the translation of ... (expr -> Monad[expr])
+  // [{[...]}] means the translation of ... where letbinding does not bubble out (expr -> expr)
+
+  //
+  // [[<a> + do E()]]
+  // --------------
+  // let tmp1 = [[<a>]];
+  // let tmp2 = do E();
+  // tmp1 + tmp2
+  //
+
+  //
+  // [[<a> + do E(do F())]]
+  // --------------
+  // let tmp1 = [[<a>]];
+  // let tmp2 = do F();
+  // let tmp3 = do E(tmp2);
+  // tmp1 + tmp3
+  //
+
+  //
+  // [[f(<a>, b, 2+3, do E(25), <c>]]
+  // --------------
+  // let tmp1 = f;
+  // let tmp2 = [[<a>]];
+  // let tmp3 = b;
+  // let tmp4 = 2+3;
+  // let tmp5 = 25;
+  // let tmp6 = do E(tmp4);
+  // tmp1(tmp2, tmp3, tmp4, tmp6, [[<c>]])
+  //
+
+  //
+  // [[if (<a>) then <b> else do E()]]
+  // --------------
+  // if ([[<a>]] then [{[<b>]}] else do E()
+  //
+
+  //
+  // [[<c> + (if (<a>) then <b> else do E())]]
+  // --------------
+  // let tmp1 = [[<c>]];
+  // let tmp2 = if ([[<a>]] then [{[<b>]}] else do E();
+  // tmp1 + tmp2
+  //
+
+  //
+  // [[(a + b + c) + (<d> + do E())]]
+  // --------------
+  // let tmp1 = (a + b + c);
+  // let tmp2 = [[<d>]];
+  // let tmp3 = do E()
+  // let tmp4 = tmp2 + tmp3;
+  // tmp1 + tmp4
+  //
+
+  //
+  // [[<a> + {let b = <c>; do E()}]]
+  // --------------
+  // let tmp1 = [[<a>]]
+  // let b = [[<c>]]
+  // let tmp = do E()
+  // tmp1 + tmp2
+  //
+
+  private case class Binder(sym: Symbol.VarSym, var exp: ReducedAst.Expr)
+
+  private type Bound[A] = (A, Chain[Binder], Boolean)
+
+  private object Bound {
+    def traverseReverse[A](bl: Bound[List[A]], f: A => Bound[ReducedAst.Expr])(implicit flix: Flix): Bound[List[ReducedAst.Expr]] = {
+      val (l, binders, mustBind) = bl
+      var bs = binders
+      var mb = mustBind
+      val acc: mutable.ArrayBuffer[ReducedAst.Expr] = mutable.ArrayBuffer.empty
+      for (elem <- l.reverseIterator) {
+        val (e, bs1, mb1) = f(elem)
+        bs = bs1 ++ bs
+        mb = mb || mb1
+        if (mb) {
+          val (b, ee) = letBindThing(e)
+          bs = b ++ bs
+          acc.append(ee)
+        } else acc.append(e)
+      }
+      (acc.reverse.toList, bs, mb)
+    }
+  }
+
+  private def letBindEffectsStmt(stmt: ReducedAst.Stmt)(implicit flix: Flix): ReducedAst.Stmt = stmt match {
+    case Stmt.Ret(expr, tpe, loc) => Stmt.Ret(letBindEffectsTopLevel(expr), tpe, loc)
+  }
+
+  private def letBindEffectsTopLevel(exp: ReducedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp match {
+    // fancy
+    case Expr.ApplyAtomic(AtomicOp.Spawn, exps, tpe, purity, loc) => Expr.Cst(Ast.Constant.Str("wipSpawn"), tpe, loc)
+    case Expr.ApplyAtomic(AtomicOp.Lazy, exps, tpe, purity, loc) => Expr.Cst(Ast.Constant.Str("wipLazy"), tpe, loc)
+    case Expr.Branch(exp, branches, tpe, purity, loc) => Expr.Cst(Ast.Constant.Str("wipBranch"), tpe, loc)
+    case Expr.JumpTo(sym, tpe, purity, loc) => Expr.Cst(Ast.Constant.Str("wipJumpTo"), tpe, loc)
+    case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+      val (binders, e1) = letBindEffectsWithBinder(exp1)
+      val e2 = letBindEffectsTopLevel(exp2)
+      val e = Expr.Let(sym, e1, e2, tpe, purity, loc)
+      bindBinders(binders, e)
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => Expr.Cst(Ast.Constant.Str("wipLetRec"), tpe, loc)
+    case Expr.Scope(sym, exp, tpe, purity, loc) => Expr.Cst(Ast.Constant.Str("wipScope"), tpe, loc)
+    case Expr.TryCatch(exp, rules, tpe, purity, loc) => Expr.Cst(Ast.Constant.Str("wipTryCatch"), tpe, loc)
+    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      val rules1 = rules.map(hr => hr.copy(exp = letBindEffectsTopLevel(hr.exp)))
+      Expr.TryWith(letBindEffectsTopLevel(exp), effUse, rules1, tpe, purity, loc)
+    // simple
+    case _: Expr.Cst | _: Expr.Var | _: Expr.ApplyAtomic | _: Expr.ApplyClo | _: Expr.ApplyDef |
+         _: Expr.ApplySelfTail | _: Expr.IfThenElse | _: Expr.Do | _: Expr.Resume |
+         _: Expr.NewObject => {
+      val (binders, e) = letBindEffectsWithBinder(exp)
+      bindBinders(binders, e)
+    }
+  }
+
+  /** binds the first binder as the outermost one */
+  private def bindBinders(binders: List[Binder], e: ReducedAst.Expr): ReducedAst.Expr = {
+    binders.foldRight(e) {
+      case (Binder(sym, binderExp), accExp) =>
+        ReducedAst.Expr.Let(sym, binderExp, accExp, accExp.tpe, accExp.purity.combineWith(binderExp.purity), SourceLocation.Unknown)
+    }
+  }
+
+  /** The first binder should be the outermost bound */
+  private def letBindEffectsWithBinder(exp: ReducedAst.Expr)(implicit flix: Flix): (List[Binder], ReducedAst.Expr) = {
+    val (e, binders, _) = letBindEffects(exp)
+    (binders.toList, e)
+  }
+
+  /**
+    * Invariant: All effectful applications and Do operations will happen with
+    * an empty operand stack.
+    *
+    * first binder is the outermost one
+    */
+  private def letBindEffects(exp: ReducedAst.Expr)(implicit flix: Flix): Bound[ReducedAst.Expr] = {
+    val (e: Expr, binders: Chain[Binder], mustBind: Boolean) = exp match {
+      case ReducedAst.Expr.Cst(_, _, _) => (exp, Chain.empty, false)
+      case ReducedAst.Expr.Var(_, _, _) => (exp, Chain.empty, false)
+      case aa@ReducedAst.Expr.ApplyAtomic(AtomicOp.Spawn, exps, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeApplyAtomicSpawn"), exp.tpe, exp.loc), Chain.empty, false)
+      case aa@ReducedAst.Expr.ApplyAtomic(AtomicOp.Lazy, exps, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeApplyAtomicLazy"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+        val (exps1, binders, mustBind) = Bound.traverseReverse((exps, Chain.empty, false), letBindEffects)
+        val aa1 = ReducedAst.Expr.ApplyAtomic(op, exps1, tpe, purity, loc)
+        (aa1, binders, mustBind)
+      case ReducedAst.Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+        val (exps1, binders3, mustBind2) = Bound.traverseReverse((exps, Chain.empty, false), letBindEffects)
+        val (e1temp, binders1, mustBind1) = letBindEffects(exp)
+        val (e1, binders2) = bindIfTrue(e1temp, mustBind1 || mustBind2)
+        val ac = ReducedAst.Expr.ApplyClo(e1, exps1, ct, tpe, purity, loc)
+        val mb = purity == Purity.Impure
+        (ac, binders1 ++ binders2 ++ binders3, mb && mustBind1 && mustBind2)
+      case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+        val (exps1, binders, mustBind) = Bound.traverseReverse((exps, Chain.empty, false), letBindEffects)
+        val ac = ReducedAst.Expr.ApplyDef(sym, exps1, ct, tpe, purity, loc)
+        val mb = purity == Purity.Impure
+        (ac, binders, mb && mustBind)
+      case ReducedAst.Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeApplySelfTail"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeIfThenElse"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.Branch(exp, branches, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeBranch"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeJumpTo"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+        //
+        // [[let b = do E(); do E()]]
+        // --------------
+        // let tmp = do E();
+        // let b = tmp;
+        // do E()
+        //
+        val (e2, binders2, mustBind2) = letBindEffects(exp2)
+        val (e1, binders1, mustBind1) = letBindEffects(exp1)
+        val b = Binder(sym, e1)
+        (e2, binders1 ++ Chain(b) ++ binders2, mustBind2 || mustBind1)
+      case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeLetRec"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.Scope(sym, exp, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeScope"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeTryCatch"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) => (Expr.Cst(Ast.Constant.Str("wipeTryWith"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.Do(op, exps, tpe, purity, loc) =>
+        val (exps1, _, _) = Bound.traverseReverse((exps, Chain.empty, false), letBindEffects)
+        val exp1 = ReducedAst.Expr.Do(op, exps1, tpe, purity, loc)
+        (exp1, Chain.empty, true)
+      case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc) => (Expr.Cst(Ast.Constant.Str("wipeNewObject"), exp.tpe, exp.loc), Chain.empty, false)
+      case ReducedAst.Expr.Resume(_, _, loc) => throw InternalCompilerException("Explicit resume not supported", loc)
+    }
+    val (e1, binders1) = bindIfTrue(e, mustBind)
+    (e1, binders ++ binders1, mustBind)
+  }
+
+  private def bindIfTrue(e: Expr, mustBind: Boolean)(implicit flix: Flix): (Expr, Chain[Binder]) = {
+    if (mustBind) {
+      val (binders1, e1) = letBindThing(e)
+      (e1, binders1)
+    } else {
+      (e, Chain.empty)
+    }
+  }
+
+  private def letBindThing(exp: Expr)(implicit flix: Flix): (Chain[Binder], ReducedAst.Expr) = exp match {
+    case Expr.ApplyAtomic(AtomicOp.Spawn, _, _, _, _) |
+         Expr.ApplyAtomic(AtomicOp.Lazy, _, _, _, _) |
+         _: Expr.ApplyClo | _: Expr.ApplyDef |
+         _: Expr.ApplySelfTail | _: Expr.ApplySelfTail |
+         _: Expr.IfThenElse | _: Expr.Branch | _: Expr.JumpTo |
+         _: Expr.Scope | _: Expr.TryCatch | _: Expr.TryWith |
+         _: Expr.Do | _: Expr.NewObject => {
+      val fresh = Symbol.freshVarSym("anf", BoundBy.Let, exp.loc)(Level.Default, flix)
+      (Chain(Binder(fresh, exp)), ReducedAst.Expr.Var(fresh, exp.tpe, exp.loc))
+    }
+    case _: Expr.Cst | _: Expr.Var | _: Expr.ApplyAtomic => (Chain.empty, exp)
+    case _: Expr.Resume => throw InternalCompilerException("unexpected ast node", SourceLocation.Unknown)
+    case _: Expr.LetRec | _: Expr.Let => throw InternalCompilerException("unexpected ast node", SourceLocation.Unknown)
+  }
 }
