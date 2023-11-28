@@ -595,10 +595,8 @@ object Reducer {
         val e = if (mustBind) e2 else Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
         (e, binders1 ++ bc ++ binders2, mustBind)
       case ReducedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
-        val (e, binders, mustBind) = letBindEffectsAndTryBind(exp)
-        val bc = if (mustBind) Chain(Binder(Expr.Scope(sym, e, tpe, purity, loc))) else Chain()
-        val res = if (mustBind) e else Expr.Scope(sym, e, tpe, purity, loc)
-        (res, bc ++ binders, mustBind)
+        val (e, mustBind) = letBindEffectsTopLevel(exp)
+        (Expr.Scope(sym, e, tpe, purity, loc), Chain.empty, mustBind)
       case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val (rules1, mustBinds) = rules.map(cr => {
           val (e, mustBind) = letBindEffectsTopLevel(cr.exp)
