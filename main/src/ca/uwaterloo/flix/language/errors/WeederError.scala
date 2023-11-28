@@ -41,7 +41,7 @@ object WeederError {
     * @param loc1 the location of the first annotation.
     * @param loc2 the location of the second annotation.
     */
-  case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
     def message(formatter: Formatter): String = {

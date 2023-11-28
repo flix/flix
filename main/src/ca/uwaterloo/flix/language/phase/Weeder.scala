@@ -2290,51 +2290,52 @@ object Weeder {
   /**
     * Weeds the given sequence of parsed annotation `xs`.
     */
-  private def visitAnnotations(xs: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[Ast.Annotations, WeederError] = {
-    // collect seen annotations.
+  private def visitAnnotations(anns: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[Ast.Annotations, WeederError] = {
+    //
+    // Check for [[DuplicateAnnotation]].
+    //
+    val errors = mutable.ListBuffer.empty[WeederError.DuplicateAnnotation]
     val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
-    // loop through each annotation.
-    val result = xs.toList.collect {
-      case x: ParsedAst.Annotation => seen.get(x.ident.name) match {
+    for (a <- anns) {
+      seen.get(a.ident.name) match {
         case None =>
-          seen += (x.ident.name -> x)
-          visitAnnotation(x.ident)
+          seen += (a.ident.name -> a)
         case Some(otherAnn) =>
-          val name = x.ident.name
-          val loc1 = mkSL(otherAnn.sp1, otherAnn.sp2)
-          val loc2 = mkSL(x.sp1, x.sp2)
-          Failure(LazyList(
-            // NB: We report an error at both source locations.
-            DuplicateAnnotation(name, loc1, loc2),
-            DuplicateAnnotation(name, loc2, loc1),
-          ))
+          val name = a.ident.name
+          val loc1 = otherAnn.ident.loc
+          val loc2 = a.ident.loc
+          // NB: We report an error at both source locations.
+          errors += DuplicateAnnotation(name, loc1, loc2)
+          errors += DuplicateAnnotation(name, loc2, loc1)
       }
     }
 
-    sequence(result).map {
-      case anns => Ast.Annotations(anns)
+    traverse(anns)(visitAnnotation).withSoftFailures(errors).map {
+      case as => Ast.Annotations(as)
     }
   }
 
   /**
     * Performs weeding on the given annotation.
     */
-  private def visitAnnotation(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
-    case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
-    case "test" => Ast.Annotation.Test(ident.loc).toSuccess
-    case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
-    case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
-    case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
-    case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
-    case "Parallel" => Ast.Annotation.Parallel(ident.loc).toSuccess
-    case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
-    case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
-    case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
-    case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
-    case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
-    case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
-    case name => Validation.toHardFailure(UndefinedAnnotation(name, ident.loc))
+  private def visitAnnotation(ann: ParsedAst.Annotation)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ann match {
+    case ParsedAst.Annotation(_, ident, _) => ident.name match {
+      case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
+      case "test" => Ast.Annotation.Test(ident.loc).toSuccess
+      case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
+      case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
+      case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
+      case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
+      case "Parallel" => Ast.Annotation.Parallel(ident.loc).toSuccess
+      case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
+      case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
+      case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
+      case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
+      case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
+      case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
+      case name => Validation.toHardFailure(UndefinedAnnotation(name, ident.loc))
+    }
   }
 
   /**
