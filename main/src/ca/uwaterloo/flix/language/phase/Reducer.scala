@@ -498,11 +498,29 @@ object Reducer {
   private def bindBinders(binders: Chain[Binder], e: ReducedAst.Expr): ReducedAst.Expr = {
     binders.foldRight(e) {
       case (Binder(Expr.Let(sym, binderExp, _, _, _, loc)), accExp) =>
-        ReducedAst.Expr.Let(sym, binderExp, accExp, accExp.tpe, accExp.purity.combineWith(binderExp.purity), loc)
+        val lett = e => ReducedAst.Expr.Let(sym, e, accExp, accExp.tpe, accExp.purity.combineWith(binderExp.purity), loc)
+        val (binders, res) = hoist(lett, binderExp, Chain.empty)
+        bindBinders(binders, res)
       case (Binder(Expr.LetRec(varSym, i, defSym, binderExp, _, _, _, loc)), accExp) =>
-        ReducedAst.Expr.LetRec(varSym, i, defSym, binderExp, accExp, accExp.tpe, accExp.purity.combineWith(binderExp.purity), loc)
+        val letRec = e => ReducedAst.Expr.LetRec(varSym, i, defSym, e, accExp, accExp.tpe, accExp.purity.combineWith(binderExp.purity), loc)
+        val (binders, res) = hoist(letRec, binderExp, Chain.empty)
+        bindBinders(binders, res)
       case (Binder(_), _) => throw InternalCompilerException("unexpected Binder", SourceLocation.Unknown)
     }
+  }
+
+  /**
+    * let x = {let y = z; q}; t
+    * same as
+    * let y  z; let x = q; t
+    */
+  @tailrec
+  private def hoist(binder: ReducedAst.Expr => ReducedAst.Expr, binding: ReducedAst.Expr, acc: Chain[Binder]): (Chain[Binder], ReducedAst.Expr) = binding match {
+    case Expr.Let(_, _, exp2, _, _, _) =>
+      hoist(binder, exp2, acc ++ Chain(Binder(binding)))
+    case Expr.LetRec(_, _, _, _, exp2, _, _, _) =>
+      hoist(binder, exp2, acc ++ Chain(Binder(binding)))
+    case other => (acc, binder(other))
   }
 
   /**
@@ -545,14 +563,14 @@ object Reducer {
         val ite = ReducedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
         (ite, binders, mustBind1 || mustBind2 || mustBind3)
       case ReducedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
-        val (branches1, mustBinds) = branches.map{case (sym, branchExp) =>
-          val (e, mustBind) = letBindEffectsTopLevel(branchExp)
-          ((sym, e), mustBind)
+        val (e, mustBind) = letBindEffectsTopLevel(exp)
+        val (branches1, mustBinds) = branches.map {
+          case (sym, branchExp) =>
+            val (be, mustBind) = letBindEffectsTopLevel(branchExp)
+            ((sym, be), mustBind)
         }.unzip
-        val mbs = mustBinds.exists(identity)
-        val (e, binders, mustBind) = letBindEffects(_ || mbs, exp)
-        val b = ReducedAst.Expr.Branch(e, branches1.toMap, tpe, purity, loc)
-        (b, binders, mbs || mustBind)
+        val branch = Expr.Branch(e, branches1.toMap, tpe, purity, loc)
+        (branch, Chain.empty, mustBind || mustBinds.exists(identity))
       case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
         (ReducedAst.Expr.JumpTo(sym, tpe, purity, loc), Chain.empty, false)
       case ReducedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
