@@ -466,6 +466,7 @@ object Indexer {
     case Pattern.Record(pats, pat, _, _) =>
       Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordLabelPattern) ++ visitPat(pat)
     case Pattern.RecordEmpty(_, _) => Index.empty
+    case Pattern.Error(_, _) => Index.empty
   }
 
   /**

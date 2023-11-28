@@ -597,6 +597,8 @@ object SemanticTokensProvider {
       patsVal ++ patVal ++ tVal
 
     case Pattern.RecordEmpty(tpe, _) => Iterator.empty
+
+    case Pattern.Error(_, _) => Iterator.empty
   }
 
   /**

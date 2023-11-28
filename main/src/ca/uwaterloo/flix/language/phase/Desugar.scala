@@ -871,6 +871,9 @@ object Desugar {
 
     case WeededAst.Pattern.RecordEmpty(loc) =>
       DesugaredAst.Pattern.RecordEmpty(loc)
+
+    case WeededAst.Pattern.Error(loc) =>
+      DesugaredAst.Pattern.Error(loc)
   }
 
   /**

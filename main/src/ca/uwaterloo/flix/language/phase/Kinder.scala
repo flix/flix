@@ -1079,6 +1079,8 @@ object Kinder {
       }
 
     case ResolvedAst.Pattern.RecordEmpty(loc) => KindedAst.Pattern.RecordEmpty(loc).toSuccess
+
+    case ResolvedAst.Pattern.Error(loc) => KindedAst.Pattern.Error(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
   /**
