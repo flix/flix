@@ -31,7 +31,7 @@ object Safety {
     //
     // Collect all errors.
     //
-    val defErrors = ParOps.parMap(root.defs.values)(visitDef(_, root)).flatten.toList
+    val defErrors = ParOps.parMap(root.defs.values)(visitDef).flatten.toList
     val errors = defErrors ++ visitSendable(root)
 
     //
@@ -43,7 +43,7 @@ object Safety {
   /**
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
-  private def visitSendable(root: Root)(implicit flix: Flix): List[SafetyError] = {
+  private def visitSendable(root: Root): List[SafetyError] = {
     val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
@@ -58,11 +58,11 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): List[SafetyError] = {
+  private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitTestEntryPoint(def0) ::: visitExp(def0.exp, renv, root)
+    visitTestEntryPoint(def0) ::: visitExp(def0.exp, renv)
   }
 
   /**
@@ -92,7 +92,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expr, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[SafetyError] = {
+  private def visitExp(e0: Expr, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
 
     /**
       * Local visitor.
@@ -132,7 +132,7 @@ object Safety {
       case Expr.Let(_, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.LetRec(_, ann, _, exp1, exp2, _, _, _) =>
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
       case Expr.Region(_, _) =>
@@ -242,8 +242,7 @@ object Safety {
           case CheckedCastType.EffectCast =>
             val from = Type.eraseAliases(exp.eff)
             val to = Type.eraseAliases(eff)
-            val errors = verifyCheckedEffectCast(from, to, renv, loc)
-            visit(exp) ++ errors
+            visit(exp)
         }
 
       case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
@@ -326,7 +325,7 @@ object Safety {
         visit(exp)
 
       case Expr.FixpointConstraintSet(cs, _, _) =>
-        cs.flatMap(checkConstraint(_, renv, root))
+        cs.flatMap(checkConstraint(_, renv))
 
       case Expr.FixpointLambda(_, exp, _, _, _) =>
         visit(exp)
@@ -415,14 +414,6 @@ object Safety {
   }
 
   /**
-    * Checks if the given effect cast is legal.
-    */
-  private def verifyCheckedEffectCast(from: Type, to: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    // Effect casts are -- by construction in the Typer -- safe.
-    Nil
-  }
-
-  /**
     * Checks if there are any impossible casts, i.e. casts that always fail.
     *
     * - No primitive type can be cast to a reference type and vice-versa.
@@ -471,7 +462,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[SafetyError] = {
+  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -503,7 +494,7 @@ object Safety {
     // Check that all negative atoms only use positively defined variable symbols
     // and that lattice variables are not used in relational position.
     //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv, root))
+    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv))
 
     //
     // Check that the free relational variables in the head atom are not lattice variables.
@@ -536,7 +527,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv, root: Root)(implicit flix: Flix): List[SafetyError] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // check for non-positively bound negative variables.
       val err1 = polarity match {
@@ -564,14 +555,14 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
-    case Predicate.Body.Functional(outVars, exp, loc) =>
+    case Predicate.Body.Functional(_, exp, loc) =>
       // check for non-positively in variables (free variables in exp).
       val inVars = freeVars(exp).keySet intersect quantVars
       val err1 = ((inVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
 
-      err1 ::: visitExp(exp, renv, root)
+      err1 ::: visitExp(exp, renv)
 
-    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
+    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv)
 
   }
 
