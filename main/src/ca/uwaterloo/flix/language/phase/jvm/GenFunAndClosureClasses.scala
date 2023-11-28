@@ -34,6 +34,7 @@ object GenFunAndClosureClasses {
     * Returns a map of function- and closure-classes for the given set `defs`.
     */
   def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    println(defs.values.size)
     ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
 
       case (macc, closure) if isClosure(closure) =>

@@ -632,7 +632,7 @@ class Flix {
     // Return the result.
     Validation.Success(result)
   } catch {
-    case ex: InternalCompilerException =>
+    case ex: RuntimeException =>
       CrashHandler.handleCrash(ex)(this)
       throw ex
     case ex: java.lang.VerifyError =>
