@@ -730,6 +730,7 @@ object Resolver {
             lookupRestrictableEnum(qname, env, ns0, root) match {
               case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
               case _failure =>
+                // We don't know the kind, but we can find the best match.
                 val closestMatch = Similarity.closestMatch(name, Kinds)
                 Validation.toSoftFailure(closestMatch, ResolutionError.UndefinedKind(qname, ns0, loc))
             }
@@ -739,6 +740,7 @@ object Resolver {
         lookupRestrictableEnum(qname, env, ns0, root) match {
           case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
           case _failure =>
+            // We don't know the kind, so default to Star.
             Validation.toSoftFailure(Kind.Star, ResolutionError.UndefinedKind(qname, ns0, loc))
         }
       }
