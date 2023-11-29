@@ -931,6 +931,9 @@ object TypeReconstruction {
 
     case KindedAst.Pattern.RecordEmpty(loc) =>
       TypedAst.Pattern.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
+
+    case KindedAst.Pattern.Error(tvar, loc) =>
+      TypedAst.Pattern.Error(subst(tvar), loc)
   }
 
 

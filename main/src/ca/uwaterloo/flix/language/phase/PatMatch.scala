@@ -720,6 +720,7 @@ object PatMatch {
       val pVal = patToCtor(pat)
       TyCon.Record(patsVal, pVal)
     case Pattern.RecordEmpty(_, _) => TyCon.RecordEmpty
+    case Pattern.Error(_, _) => TyCon.Wild
   }
 
   /**
